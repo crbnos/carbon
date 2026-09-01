@@ -478,7 +478,9 @@ export default function AuthenticatedRoute() {
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
                   />
-                  <Outlet />
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
+                    <Outlet />
+                  </div>
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>

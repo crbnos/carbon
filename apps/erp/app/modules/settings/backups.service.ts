@@ -17,6 +17,31 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // `backup*Path` helpers in packages/jobs/.../company-backup.ts.
 const SNAPSHOT_PREFIX = "_pre-restore-";
 
+/**
+ * One FK edge whose rows escape company scope, as the export/restore jobs record
+ * it in their failure marker. Typed here rather than imported from `@carbon/jobs`
+ * — the app must not pull job internals (and Node `Buffer` with them) into its
+ * bundle.
+ */
+export type ScopeViolationSummary = {
+  table: string;
+  column: string;
+  refTable: string;
+  rows: number;
+};
+
+/** DISTINCT rows per table. The ONLY shape a user-facing total may be summed from. */
+export type RowsByTable = { table: string; rows: number };
+
+/**
+ * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
+ * EDGE — a row escaping scope through three of its foreign keys appears three
+ * times there — so totals must come from the per-table distinct counts.
+ */
+export function totalScopeRows(rowsByTable: RowsByTable[]): number {
+  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
+}
+
 /** Supabase storage caps a `list` call; page until a short page comes back. */
 const BACKUP_LIST_PAGE_SIZE = 100;
 const BACKUP_LIST_MAX_PAGES = 50;
@@ -55,6 +80,8 @@ export async function exportCompanyBackup(
     userId: string;
     label?: string;
     includeStorage?: "none" | "all";
+    /** Opt-in recovery: leave out rows whose links escape company scope. */
+    skipCorrupted?: boolean;
   }
 ) {
   return client.functions.invoke("export-company", { body: args });
@@ -87,6 +114,10 @@ export type CompanyBackupSummary = {
     status: BackupCompatibilityStatus;
     findings: CompatibilityFinding[];
   } | null;
+  /** Per-edge breakdown of what a `skipCorrupted` export left out; `[]` for a full export. */
+  excludedRows: NonNullable<Manifest["excludedRows"]>;
+  /** DISTINCT excluded rows per table — sum this, never `excludedRows`. */
+  excludedRowsByTable: RowsByTable[];
 };
 
 /**
@@ -139,6 +170,8 @@ export async function listCompanyBackupFolders(
           rows: 0,
           sizeBytes: 0,
           compatibility: null,
+          excludedRows: [],
+          excludedRowsByTable: [],
           manifest: null
         };
         const mf = await client.storage
@@ -157,6 +190,8 @@ export async function listCompanyBackupFolders(
             summary.sizeBytes = (m.storage ?? [])
               .filter((x) => x.included)
               .reduce((sum, x) => sum + (x.size ?? 0), 0);
+            summary.excludedRows = m.excludedRows ?? [];
+            summary.excludedRowsByTable = m.excludedRowsByTable ?? [];
             summary.manifest = { ...m, tables: m.tables ?? [] };
           } catch {
             // Manifest present but unreadable — treat as a partial/aborted
@@ -211,6 +246,11 @@ export async function getCompanyRestoreRuns(
       error?: string | null;
       startedAt?: string;
       progress?: { phase: string; done: number; total: number };
+      filePath?: string;
+      includeStorage?: "none" | "all";
+      reason?: "scope-violations";
+      violations?: ScopeViolationSummary[];
+      violationRowsByTable?: RowsByTable[];
     };
     return {
       restoreRunId: meta.restoreRunId ?? m.entityId,
@@ -219,7 +259,14 @@ export async function getCompanyRestoreRuns(
       label: meta.label ?? null,
       error: meta.error ?? null,
       progress: meta.progress ?? null,
-      startedAt: meta.startedAt ?? m.createdAt
+      startedAt: meta.startedAt ?? m.createdAt,
+      // Why it failed + what it was restoring, so the recovery action can
+      // restart the same restore once the live data is fixed.
+      reason: meta.reason ?? null,
+      violations: meta.violations ?? [],
+      violationRowsByTable: meta.violationRowsByTable ?? [],
+      filePath: meta.filePath ?? null,
+      includeStorage: meta.includeStorage ?? null
     };
   });
 
@@ -264,6 +311,15 @@ export type CompanyExportRun = {
   progress: { phase: string; done: number; total: number } | null;
   startedAt: string | null;
   error: string | null;
+  /** "scope-violations" = the closure guard refused; the only failure with a skip recovery. */
+  reason: "scope-violations" | null;
+  /** Per-edge breakdown for the details popover. */
+  violations: ScopeViolationSummary[];
+  /** DISTINCT rows per table — sum this for anything a user reads. */
+  violationRowsByTable: RowsByTable[];
+  /** What the failed run asked for, so the retry can reuse it. */
+  label: string | null;
+  includeStorage: "none" | "all" | null;
 };
 
 /**
@@ -292,13 +348,23 @@ export async function getCompanyExportRun(
     startedAt?: string;
     progress?: { phase: string; done: number; total: number };
     error?: string;
+    reason?: "scope-violations";
+    violations?: ScopeViolationSummary[];
+    violationRowsByTable?: RowsByTable[];
+    label?: string | null;
+    includeStorage?: "none" | "all";
   };
   return {
     data: {
       status: meta.status ?? "running",
       progress: meta.progress ?? null,
       startedAt: meta.startedAt ?? marker.data.createdAt,
-      error: meta.error ?? null
+      error: meta.error ?? null,
+      reason: meta.reason ?? null,
+      violations: meta.violations ?? [],
+      violationRowsByTable: meta.violationRowsByTable ?? [],
+      label: meta.label ?? null,
+      includeStorage: meta.includeStorage ?? null
     },
     error: null
   };

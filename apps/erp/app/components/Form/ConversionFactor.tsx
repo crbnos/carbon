@@ -171,12 +171,18 @@ const ConversionFactor = forwardRef<
       t
     ]);
 
+    // Equal codes force the factor to 1 only when a unit of measure CHANGES
+    // into equality — never on mount, where the codes can already be equal
+    // and the stored factor must be displayed (and submitted) as stored.
+    const wasEqual = useRef(inventoryCode === purchasingCode);
     useEffect(() => {
-      if (inventoryCode === purchasingCode) {
+      const isEqual = inventoryCode === purchasingCode;
+      if (isEqual && !wasEqual.current) {
         setConversionFactor(1);
         setControlValue(1);
         initialValue.current = 1;
       }
+      wasEqual.current = isEqual;
     }, [inventoryCode, purchasingCode, setControlValue]);
 
     const onPurchaseUnitChange = (v: number) => {

@@ -15,6 +15,8 @@ Routing operations are scheduled onto work centers, and a work center's rates pr
   - **Overhead rate**: Cost per hour of overhead.
   - **Department**: The department the work center rolls up to.
   - **Default unit**: The standard factor time is expressed in (e.g. *Minutes/Piece*).
+  - **Always on**: Lights-out (24×7) operation. The scheduler treats the work center as continuously open, and it is exempt from a location's staffing-required policy.
+  - **Shifts**: Shifts assigned to this work center. They define its operating hours for scheduling; without them, the location's shifts (or a stock Mon–Fri, 8-hour week) apply.
 
 ## Processes
 
@@ -26,9 +28,11 @@ A work center is **not** a fixed asset. The machine you schedule production on (
 
 Rates exist at two layers. When an operation picks a work center, that work center's rates are **copied onto the operation** as a snapshot. That's what drives the cost *estimate*. The **actual** labor and machine cost posted to the ledger reads the work center's *live* rate at the time the production event was logged. The two can diverge if a rate changes after an operation is planned.
 
-## Capacity
+## Capacity and operating hours
 
-Work centers have no fixed capacity field. Load is derived from the durations of the operations scheduled onto them. Shifts in Carbon are an employee-and-location concept and aren't bound to work centers. A work center can also be temporarily **blocked** by an in-progress maintenance task that takes it down.
+A work center is a **finite resource**: the `docs/reference/scheduling` places one operation on it at a time, inside its real operating hours. Those hours come from a ladder, first rule wins: **Always on** (lights-out, continuously open) → the work center's own assigned shifts → the location's shifts → a stock Mon–Fri, 8-hour week. Booked time is materialized as capacity reservation rows, which is what the Forecast page draws.
+
+An open maintenance task that takes the work center offline subtracts its downtime from those hours (lights-out machines included), so the scheduler routes work around a machine that's down rather than booking it.
 
 ## Related
 
