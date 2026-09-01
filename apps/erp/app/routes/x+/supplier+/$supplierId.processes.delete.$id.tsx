@@ -44,13 +44,18 @@ export async function clientAction({
   serverAction
 }: ClientActionFunctionArgs) {
   const processId = new URL(request.url).searchParams.get("processId");
-  if (processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(processId).queryKey,
-      null
-    );
+  try {
+    return await serverAction();
+  } finally {
+    // Invalidate AFTER the delete commits so the reactive useSupplierProcesses
+    // observer refetches the remaining rows (invalidating before serverAction
+    // would race the mutation and repopulate stale data).
+    if (processId) {
+      window.clientCache?.invalidateQueries({
+        queryKey: supplierProcessesQuery(processId).queryKey
+      });
+    }
   }
-  return await serverAction();
 }
 
 export default function DeleteSupplierProcessRoute() {

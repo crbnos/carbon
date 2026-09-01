@@ -62,8 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export async function clientAction({
   request,
-  serverAction,
-  params
+  serverAction
 }: ClientActionFunctionArgs) {
   const formData = await request.clone().formData(); // if we. don't clone it we can't access it in the action
   const validation = await validator(supplierProcessValidator).validate(
@@ -74,13 +73,18 @@ export async function clientAction({
     return validationError(validation.error);
   }
 
-  if (validation.data.processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(validation.data.processId).queryKey,
-      null
-    );
+  const { processId } = validation.data;
+  try {
+    return await serverAction();
+  } finally {
+    // Invalidate AFTER the update commits so the reactive useSupplierProcesses
+    // observer refetches the updated supplier without a page refresh.
+    if (processId) {
+      window.clientCache?.invalidateQueries({
+        queryKey: supplierProcessesQuery(processId).queryKey
+      });
+    }
   }
-  return await serverAction();
 }
 
 export default function SupplierProcessRoute() {
