@@ -2,7 +2,7 @@
 # Shared build for React Router SSR apps. Build: docker build --build-arg APP=erp -t carbon/erp .
 ARG APP
 
-FROM node:22 AS deps
+FROM node:26 AS deps
 WORKDIR /repo
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json lingui.config.js ./
@@ -30,7 +30,7 @@ FROM deps AS ops
 WORKDIR /repo/packages/database
 CMD ["bash"]
 
-FROM node:22-slim AS runner
+FROM node:26-slim AS runner
 ARG APP
 WORKDIR /repo
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
