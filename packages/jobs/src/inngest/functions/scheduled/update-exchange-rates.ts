@@ -131,29 +131,61 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         EUR: ratesEUR
       };
 
-      for (const integration of integrations.data) {
-        logger.info("Processing integration for company", {
-          companyId: integration.companyId
-        });
+      // `currency` rows are scoped to a company GROUP, but `companyIntegration`
+      // is scoped to a COMPANY. Rebasing once per company therefore wrote every
+      // company's own base-currency view into the same shared rows, so a group
+      // whose companies use different base currencies had them overwrite each
+      // other and the last one processed won for everybody.
+      //
+      // Resolve the group's base currency first, then rebase and write once.
+      const companies = await serviceRole
+        .from("company")
+        .select("id, companyGroupId, baseCurrencyCode")
+        .in(
+          "id",
+          integrations.data.map((i) => i.companyId)
+        );
 
-        const company = await serviceRole
-          .from("company")
-          .select("*")
-          .eq("id", integration.companyId)
-          .single();
+      if (companies.error) {
+        logger.error("Error fetching companies", { error: companies.error });
+        return;
+      }
 
-        if (company.error) {
-          logger.error("Error fetching company", {
-            companyId: integration.companyId,
-            error: company.error
+      const groups = new Map<string, { code: string; companyId: string }[]>();
+      for (const company of companies.data ?? []) {
+        if (!company.companyGroupId) {
+          logger.warn("Company has no companyGroupId, skipping", {
+            companyId: company.id
           });
           continue;
         }
+        if (!company.baseCurrencyCode) {
+          logger.warn("Company has no baseCurrencyCode, skipping", {
+            companyId: company.id
+          });
+          continue;
+        }
+        const bucket = groups.get(company.companyGroupId) ?? [];
+        bucket.push({ code: company.baseCurrencyCode, companyId: company.id });
+        groups.set(company.companyGroupId, bucket);
+      }
 
-        const baseCurrencyCode = company.data.baseCurrencyCode as CurrencyCode;
-        let rates: Rates | undefined;
-        rates = cachedRates[baseCurrencyCode];
-        // Check if the rates for this base currency are cached, and if not compute them
+      for (const [companyGroupId, members] of groups) {
+        const bases = [...new Set(members.map((m) => m.code))];
+
+        // One shared rate set cannot express two base currencies at once, and
+        // nothing in the schema records a group-level base. Refuse rather than
+        // let one member silently rebase the other's rates.
+        if (bases.length > 1) {
+          logger.error(
+            "Company group has members with different base currencies; refusing to rebase shared rates",
+            { companyGroupId, baseCurrencyCodes: bases }
+          );
+          continue;
+        }
+
+        const baseCurrencyCode = bases[0] as CurrencyCode;
+        let rates = cachedRates[baseCurrencyCode];
         if (rates) {
           logger.info("Using cached rates", { baseCurrencyCode });
         } else {
@@ -168,30 +200,35 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         const updatedAt = new Date().toISOString();
 
         try {
-          if (!company.data.companyGroupId) {
-            logger.warn("Company has no companyGroupId, skipping", {
-              companyId: integration.companyId
-            });
-            continue;
-          }
           const { data, error } = await serviceRole
             .from("currency")
             .select("*")
-            .eq("companyGroupId", company.data.companyGroupId);
+            .eq("companyGroupId", companyGroupId);
 
           if (error) {
-            logger.error("Error fetching currencies for company", {
-              companyId: integration.companyId,
+            logger.error("Error fetching currencies for group", {
+              companyGroupId,
               error
             });
             continue;
           }
 
           if (!data || data.length === 0) {
-            logger.info("No currencies found for company", {
-              companyId: integration.companyId
-            });
+            logger.info("No currencies found for group", { companyGroupId });
             continue;
+          }
+
+          // A currency the feed omits keeps whatever rate it already had. That
+          // is silent staleness, so name them rather than dropping them quietly.
+          const missing = data
+            .filter((currency) => !rates[currency.code as CurrencyCode])
+            .map((currency) => currency.code);
+          if (missing.length > 0) {
+            logger.warn("No rate returned for these currencies; leaving them stale", {
+              companyGroupId,
+              baseCurrencyCode,
+              currencyCodes: missing
+            });
           }
 
           const updates = data
@@ -201,37 +238,38 @@ export const updateExchangeRatesFunction = inngest.createFunction(
               // decimals, which zeroed every 0-decimal currency's fraction and
               // silently froze rates that rounded to 0
               exchangeRate: round(Number(rates[currency.code as CurrencyCode])),
+              updatedBy: "system",
               updatedAt
             }))
             .filter((currency) => currency.exchangeRate);
 
           if (updates.length === 0) {
-            logger.info("No currency updates needed for company", {
-              companyId: integration.companyId
+            logger.info("No currency updates needed for group", {
+              companyGroupId
             });
             continue;
           }
 
-          logger.info("Updating currencies for company", {
+          logger.info("Updating currencies for group", {
             count: updates.length,
-            companyId: integration.companyId
+            companyGroupId
           });
           const { error: upsertError } = await serviceRole
             .from("currency")
             .upsert(updates);
           if (upsertError) {
-            logger.error("Error updating currencies for company", {
-              companyId: integration.companyId,
+            logger.error("Error updating currencies for group", {
+              companyGroupId,
               error: upsertError
             });
           } else {
-            logger.info("Successfully updated currencies for company", {
-              companyId: integration.companyId
+            logger.info("Successfully updated currencies for group", {
+              companyGroupId
             });
           }
         } catch (err) {
-          logger.error("Unexpected error processing company", {
-            companyId: integration.companyId,
+          logger.error("Unexpected error processing group", {
+            companyGroupId,
             error: err
           });
         }
