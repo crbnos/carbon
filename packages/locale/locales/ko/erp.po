@@ -827,6 +827,9 @@ msgstr "정보"
 msgid "About (notification)"
 msgstr "정보 (알림)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "흡수"
 
@@ -1160,6 +1163,9 @@ msgstr "메모 추가"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "이 유지보수 작업지시에 대한 메모와 문서를 추가하세요"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "공정작업 추가"
@@ -2413,6 +2419,9 @@ msgstr "자동 업데이트 및 백업"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "산출물이 보고될 때 작업의 미추적 자재를 비례 배분하여 자동으로 소비합니다 — 추적 자재는 수동으로 출고됩니다."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "칸반이 스캔되면 작업을 자동으로 릴리즈"
 
@@ -2706,6 +2715,9 @@ msgstr "{byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "차원별"
@@ -3416,6 +3428,9 @@ msgstr "시스템 전반의 다양한 거래 유형에 사용되는 기본 계�
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "회계연도 및 세무연도의 시작 월을 설정하세요"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "공급업체 거래로부터 구매 품목 원가를 언제 업데이트할지 설정하세요."
@@ -5210,6 +5225,9 @@ msgstr "변경 설명"
 msgid "Description of Issue"
 msgstr "이슈 설명"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "상세"
 
@@ -5953,6 +5971,9 @@ msgstr "이메일 알림이 설정되지 않음"
 
 msgid "Emails"
 msgstr "이메일"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "이모지"
@@ -10344,6 +10365,9 @@ msgstr "없음"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "이 위치에서 \"{0}\"와 일치하는 항목이 없습니다."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
@@ -12445,6 +12469,9 @@ msgstr "슬롯 제거"
 
 msgid "Remove sort by column"
 msgstr "열 정렬 제거"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "이 저장 유형을 참조하는 모든 저장 단위에서 제거하고 삭제합니다. 이 작업은 되돌릴 수 없습니다."

@@ -66,6 +66,9 @@ msgstr "+{overflow} more"
 msgid "About"
 msgstr "About"
 
+msgid "About this field"
+msgstr "About this field"
+
 msgid "Accept"
 msgstr "Accept"
 

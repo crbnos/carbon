@@ -827,6 +827,9 @@ msgstr "À propos"
 msgid "About (notification)"
 msgstr "À propos (notification)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Absorption"
 
@@ -1160,6 +1163,9 @@ msgstr "Ajouter une note"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Ajouter des notes et de la documentation pour cette demande de maintenance"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "Ajouter une opération"
@@ -2413,6 +2419,9 @@ msgstr "Mises à jour et sauvegardes automatiques"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consommation automatique au prorata des matériaux non tracés d'un travail lors du signalement de la production — les matériaux tracés sont émis manuellement."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Libérer automatiquement la tâche lorsque le kanban est scanné"
 
@@ -2706,6 +2715,9 @@ msgstr "par {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "En acceptant l'invitation, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité</1>."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "Par dimension"
@@ -3416,6 +3428,9 @@ msgstr "Configurez les comptes par défaut utilisés pour différents types de t
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Configurez les mois de début de vos exercices fiscaux et fiscaux"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Configurez quand les coûts des articles achetés doivent être mis à jour à partir des transactions des fournisseurs."
@@ -5210,6 +5225,9 @@ msgstr "Description du changement"
 msgid "Description of Issue"
 msgstr "Description du problème"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "Détail"
 
@@ -5953,6 +5971,9 @@ msgstr "Les notifications par e-mail ne sont pas configurées"
 
 msgid "Emails"
 msgstr "E-mails"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -10344,6 +10365,9 @@ msgstr "Rien"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Rien à cet emplacement ne correspond à \"{0}\"."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Aucun autre article à cet endroit n'a de stock à prélever."
 
@@ -12445,6 +12469,9 @@ msgstr "Supprimer l'emplacement"
 
 msgid "Remove sort by column"
 msgstr "Supprimer le tri par colonne"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Supprimez ce type de stockage de toutes les unités de stockage qui le référencent et supprimez-le. Cette action ne peut pas être annulée."

@@ -827,6 +827,9 @@ msgstr "O mnie"
 msgid "About (notification)"
 msgstr "Informacje (powiadomienie)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Absorpcja"
 
@@ -1160,6 +1163,9 @@ msgstr "Dodaj notatkę"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Dodaj notatki i dokumentację dla tego zgłoszenia serwisowego"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "Dodaj operację"
@@ -2413,6 +2419,9 @@ msgstr "Automatyczne aktualizacje i kopie zapasowe"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatyczne, proporcjonalne zużycie materiałów nieparowanych pracy po zgłoszeniu wydajności — materiały śledzone są wydawane ręcznie."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Automatycznie zwolnij zadanie po zeskanowaniu kanban"
 
@@ -2706,6 +2715,9 @@ msgstr "przez {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Akceptując zaproszenie, zgadzasz się na <0>Warunki Usługi</0> i <1>Politykę Prywatności</1>."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "Wg wymiaru"
@@ -3416,6 +3428,9 @@ msgstr "Skonfiguruj domyślne konta używane dla różnych typów transakcji w c
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Skonfiguruj miesiące rozpoczęcia dla lat obrachunkowych i podatkowych"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Skonfiguruj, kiedy koszty zakupionych pozycji powinny być aktualizowane z transakcji dostawcy."
@@ -5210,6 +5225,9 @@ msgstr "Opis Zmiany"
 msgid "Description of Issue"
 msgstr "Opis problemu"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "Szczegóły"
 
@@ -5953,6 +5971,9 @@ msgstr "Powiadomienia e-mail nie są skonfigurowane"
 
 msgid "Emails"
 msgstr "Wiadomości e-mail"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -10344,6 +10365,9 @@ msgstr "Nic"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nic w tej lokalizacji nie pasuje do \"{0}\"."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "W tym miejscu nic innego nie ma zapasów do pobrania."
 
@@ -12445,6 +12469,9 @@ msgstr "Usuń slot"
 
 msgid "Remove sort by column"
 msgstr "Usuń sortowanie według kolumny"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Usuń ten typ magazynu ze wszystkich jednostek magazynowych, które się do niego odwołują, i usuń go. Tej operacji nie można cofnąć."

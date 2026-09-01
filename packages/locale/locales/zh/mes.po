@@ -66,6 +66,9 @@ msgstr "还有 +{overflow} 个"
 msgid "About"
 msgstr "关于"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Accept"
 msgstr "接收"
 

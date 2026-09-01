@@ -827,6 +827,9 @@ msgstr "Über"
 msgid "About (notification)"
 msgstr "Über (Benachrichtigung)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Absorption"
 
@@ -1160,6 +1163,9 @@ msgstr "Notiz hinzufügen"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Notizen und Dokumentation für diesen Wartungseinsatz hinzufügen"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "Operation hinzufügen"
@@ -2413,6 +2419,9 @@ msgstr "Automatische Updates und Sicherungen"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatischer, anteiliger Verbrauch der ungespurten Materialien eines Auftrags, wenn die Leistung gemeldet wird — verfolgte Materialien werden manuell ausgegeben."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Den Auftrag automatisch freigeben, wenn der Kanban gescannt wird"
 
@@ -2706,6 +2715,9 @@ msgstr "von {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Durch Annahme der Einladung stimmen Sie den <0>Nutzungsbedingungen</0> und der <1>Datenschutzrichtlinie</1> zu."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "Nach Dimension"
@@ -3416,6 +3428,9 @@ msgstr "Konfigurieren Sie die Standardkonten, die für verschiedene Transaktions
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Konfigurieren Sie die Startmonate für Ihre Geschäfts- und Steuerjahre"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Konfigurieren Sie, wann die Kosten gekaufter Artikel aus Lieferantentransaktionen aktualisiert werden sollen."
@@ -5210,6 +5225,9 @@ msgstr "Änderungsbeschreibung"
 msgid "Description of Issue"
 msgstr "Problembeschreibung"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -5953,6 +5971,9 @@ msgstr "E-Mail-Benachrichtigungen nicht konfiguriert"
 
 msgid "Emails"
 msgstr "E-Mails"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -10344,6 +10365,9 @@ msgstr "Nichts"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nichts an diesem Ort stimmt mit \"{0}\" überein."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
 
@@ -12445,6 +12469,9 @@ msgstr "Slot entfernen"
 
 msgid "Remove sort by column"
 msgstr "Sortierung nach Spalte entfernen"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Entfernen Sie diesen Speichertyp aus allen referenzierenden Speichereinheiten und löschen Sie ihn. Dies kann nicht rückgängig gemacht werden."

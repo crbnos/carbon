@@ -827,6 +827,9 @@ msgstr "关于"
 msgid "About (notification)"
 msgstr "关于（通知）"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "吸收"
 
@@ -1160,6 +1163,9 @@ msgstr "添加备注"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "为此维护调度添加备注和文档"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "添加操作"
@@ -2413,6 +2419,9 @@ msgstr "自动更新和备份"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "报告输出时，自动按比例消耗工作的未跟踪材料—跟踪的材料手动发出。"
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "当扫描看板时自动释放作业"
 
@@ -2706,6 +2715,9 @@ msgstr "由 {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "通过接受邀请，您同意<0>服务条款</0>和<1>隐私政策</1>。"
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "按维度"
@@ -3416,6 +3428,9 @@ msgstr "配置用于系统中各种交易类型的默认账户"
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "配置您的财政年度和税务年度的开始月份"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "配置何时应从供应商交易更新采购项目成本。"
@@ -5210,6 +5225,9 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "详情"
 
@@ -5953,6 +5971,9 @@ msgstr "电子邮件通知未配置"
 
 msgid "Emails"
 msgstr "电子邮件"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "表情符号"
@@ -10344,6 +10365,9 @@ msgstr "无"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "此位置处没有与\"{0}\"匹配的内容。"
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
@@ -12445,6 +12469,9 @@ msgstr "移除插槽"
 
 msgid "Remove sort by column"
 msgstr "删除按列排序"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"

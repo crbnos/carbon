@@ -66,6 +66,9 @@ msgstr "+{overflow} daha fazla"
 msgid "About"
 msgstr "Hakkında"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Accept"
 msgstr "Kabul Et"
 

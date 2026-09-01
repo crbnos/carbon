@@ -827,6 +827,9 @@ msgstr "Sobre"
 msgid "About (notification)"
 msgstr "Sobre (notificação)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Absorção"
 
@@ -1160,6 +1163,9 @@ msgstr "Adicionar Nota"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Adicione notas e documentação para este despacho de manutenção"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "Adicionar Operação"
@@ -2413,6 +2419,9 @@ msgstr "Atualizações e backups automáticos"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consumo automático e rateado de materiais não rastreados de um trabalho quando a saída é relatada — os materiais rastreados são emitidos manualmente."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Liberar automaticamente o trabalho quando o kanban é digitalizado"
 
@@ -2706,6 +2715,9 @@ msgstr "por {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Ao aceitar o convite, você concorda com os <0>Termos de Serviço</0> e a <1>Política de Privacidade</1>."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "Por dimensão"
@@ -3416,6 +3428,9 @@ msgstr "Configure as contas padrão usadas para vários tipos de transação em 
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Configure os meses de início para seus anos fiscais e tributários"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Configure quando os custos dos itens comprados devem ser atualizados a partir das transações do fornecedor."
@@ -5210,6 +5225,9 @@ msgstr "Descrição da Alteração"
 msgid "Description of Issue"
 msgstr "Descrição do Problema"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "Detalhe"
 
@@ -5953,6 +5971,9 @@ msgstr "Notificações de email não configuradas"
 
 msgid "Emails"
 msgstr "E-mails"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -10344,6 +10365,9 @@ msgstr "Nada"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nada neste local corresponde a \"{0}\"."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nada mais neste local tem estoque para puxar."
 
@@ -12445,6 +12469,9 @@ msgstr "Remover slot"
 
 msgid "Remove sort by column"
 msgstr "Remover ordenação por coluna"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Remova este tipo de armazenamento de todas as unidades de armazenamento que o referenciam e o delete. Isto não pode ser desfeito."

@@ -66,6 +66,9 @@ msgstr "+{overflow} その他"
 msgid "About"
 msgstr "バージョン情報"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Accept"
 msgstr "受け入れ"
 

@@ -827,6 +827,9 @@ msgstr "Hakkında"
 msgid "About (notification)"
 msgstr "Hakkında (bildirim)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Emilim"
 
@@ -1160,6 +1163,9 @@ msgstr "Not Ekle"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Bu bakım sevkiyatı için notlar ve dokümantasyon ekleyin"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "İşlem Ekle"
@@ -2413,6 +2419,9 @@ msgstr "Otomatik güncellemeler ve yedeklemeler"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Çıktı raporlandığında bir işin izlenmeyen malzemelerin otomatik, orantılı tüketimi — izlenen malzeme el ile verilir."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Kanban taranmış olduğunda işi otomatik olarak serbest bırak"
 
@@ -2706,6 +2715,9 @@ msgstr "by {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Davetiyeyi kabul ederek, <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılırsınız."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "Boyuta göre"
@@ -3416,6 +3428,9 @@ msgstr "Sisteminizdeki çeşitli işlem türleri için kullanılan varsayılan h
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Mali ve muhasebe yıllarınız için başlangıç aylarını yapılandırın"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Satın alınan ürün maliyetlerinin tedarikçi işlemlerinden ne zaman güncelleneceğini yapılandırın."
@@ -5210,6 +5225,9 @@ msgstr "Değişiklimin Açıklaması"
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "Detay"
 
@@ -5953,6 +5971,9 @@ msgstr "E-posta bildirimleri yapılandırılmamış"
 
 msgid "Emails"
 msgstr "E-posta Adresleri"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -10344,6 +10365,9 @@ msgstr "Hiçbir şey"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
@@ -12445,6 +12469,9 @@ msgstr "Yuva kaldır"
 
 msgid "Remove sort by column"
 msgstr "Sıralamayı kaldır"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Bu depolama türünü tüm referans veren depolama birimlerinden kaldırır ve siler. Bu geri alınamaz."

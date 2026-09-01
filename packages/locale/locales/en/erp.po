@@ -827,6 +827,9 @@ msgstr "About"
 msgid "About (notification)"
 msgstr "About (notification)"
 
+msgid "About this field"
+msgstr "About this field"
+
 msgid "Absorption"
 msgstr "Absorption"
 
@@ -1160,6 +1163,9 @@ msgstr "Add Note"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Add notes and documentation for this maintenance dispatch"
+
+msgid "Add operation"
+msgstr "Add operation"
 
 msgid "Add Operation"
 msgstr "Add Operation"
@@ -2413,6 +2419,9 @@ msgstr "Automatic updates and backups"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr "Automatically create a Google Meet video conference link for this event"
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Automatically release the job when the kanban is scanned"
 
@@ -2706,6 +2715,9 @@ msgstr "by {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
+
+msgid "By default it'll be 30 min post start time"
+msgstr "By default it'll be 30 min post start time"
 
 msgid "By dimension"
 msgstr "By dimension"
@@ -3416,6 +3428,9 @@ msgstr "Configure the default accounts used for various transaction types across
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Configure the start months for your fiscal and tax years"
+
+msgid "Configure the steps above first."
+msgstr "Configure the steps above first."
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Configure when purchased item costs should be updated from supplier transactions."
@@ -5210,6 +5225,9 @@ msgstr "Description of Change"
 msgid "Description of Issue"
 msgstr "Description of Issue"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr "Description of the event. You can use HTML tags here."
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -5953,6 +5971,9 @@ msgstr "Email notifications not configured"
 
 msgid "Emails"
 msgstr "Emails"
+
+msgid "Emails of the attendees (guests)"
+msgstr "Emails of the attendees (guests)"
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -10344,6 +10365,9 @@ msgstr "Nothing"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nothing at this location matches \"{0}\"."
 
+msgid "Nothing can work on this result."
+msgstr "Nothing can work on this result."
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
 
@@ -12445,6 +12469,9 @@ msgstr "Remove slot"
 
 msgid "Remove sort by column"
 msgstr "Remove sort by column"
+
+msgid "Remove this operation"
+msgstr "Remove this operation"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Remove this storage type from all referencing storage units and delete it. This cannot be undone."

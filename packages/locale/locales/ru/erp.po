@@ -827,6 +827,9 @@ msgstr "О программе"
 msgid "About (notification)"
 msgstr "О (уведомление)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Абсорбция"
 
@@ -1160,6 +1163,9 @@ msgstr "Добавить примечание"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "Добавьте заметки и документацию для этого наряда на техническое обслуживание"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "Добавить операцию"
@@ -2413,6 +2419,9 @@ msgstr "Автоматические обновления и резервные 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Автоматически отпустить задание при сканировании канбана"
 
@@ -2706,6 +2715,9 @@ msgstr "от {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "По измерению"
@@ -3416,6 +3428,9 @@ msgstr "Настройте учетные записи по умолчанию, 
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Настройте месяцы начала вашего финансового и налогового годов"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Настройте, когда стоимость приобретенных товаров должна обновляться на основе операций поставщика."
@@ -5210,6 +5225,9 @@ msgstr "Описание изменения"
 msgid "Description of Issue"
 msgstr "Описание проблемы"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "Подробности"
 
@@ -5953,6 +5971,9 @@ msgstr "Уведомления по электронной почте не на�
 
 msgid "Emails"
 msgstr "Письма"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "Эмодзи"
@@ -10344,6 +10365,9 @@ msgstr "Ничего"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "В этом месте нет ничего, соответствующего \"{0}\"."
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
@@ -12445,6 +12469,9 @@ msgstr "Удалить слот"
 
 msgid "Remove sort by column"
 msgstr "Удалить сортировку по столбцу"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Удалите этот тип хранилища из всех ссылающихся на него единиц хранения и удалите его. Это невозможно отменить."

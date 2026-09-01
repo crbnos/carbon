@@ -827,6 +827,9 @@ msgstr "के बारे में"
 msgid "About (notification)"
 msgstr "के बारे में (सूचना)"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "अवशोषण"
 
@@ -1160,6 +1163,9 @@ msgstr "नोट जोड़ें"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "इस रखरखाव डिस्पैच के लिए नोट्स और दस्तावेज़ जोड़ें"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "ऑपरेशन जोड़ें"
@@ -2413,6 +2419,9 @@ msgstr "स्वचालित अपडेट और बैकअप"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "कनबन स्कैन किए जाने पर जॉब को स्वचालित रूप से रिलीज़ करें"
 
@@ -2706,6 +2715,9 @@ msgstr "द्वारा {byUser}"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "आयाम द्वारा"
@@ -3416,6 +3428,9 @@ msgstr "विभिन्न लेनदेन प्रकारों के
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "अपने वित्तीय और कर वर्षों के लिए शुरुआती महीनों को कॉन्फ़िगर करें"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "खरीदी गई वस्तु की लागत को आपूर्तिकर्ता लेनदेन से कब अपडेट किया जाना चाहिए, इसे कॉन्फ़िगर करें।"
@@ -5210,6 +5225,9 @@ msgstr "परिवर्तन का विवरण"
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "विवरण"
 
@@ -5953,6 +5971,9 @@ msgstr "ईमेल सूचनाएं कॉन्फ़िगर नही
 
 msgid "Emails"
 msgstr "ईमेल"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "इमोजी"
@@ -10344,6 +10365,9 @@ msgstr "कुछ नहीं"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता।"
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
 
@@ -12445,6 +12469,9 @@ msgstr "स्लॉट हटाएं"
 
 msgid "Remove sort by column"
 msgstr "कॉलम द्वारा सॉर्ट हटाएं"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "इस स्टोरेज प्रकार को सभी संदर्भित स्टोरेज इकाइयों से हटाएं और इसे हटाएं। यह पूर्ववत नहीं किया जा सकता।"

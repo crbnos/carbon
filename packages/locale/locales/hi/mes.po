@@ -66,6 +66,9 @@ msgstr "+{overflow} अधिक"
 msgid "About"
 msgstr "के बारे में"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Accept"
 msgstr "स्वीकार करें"
 

@@ -827,6 +827,9 @@ msgstr "について"
 msgid "About (notification)"
 msgstr "について（通知）"
 
+msgid "About this field"
+msgstr ""
+
 msgid "Absorption"
 msgstr "吸収"
 
@@ -1160,6 +1163,9 @@ msgstr "ノートを追加"
 
 msgid "Add notes and documentation for this maintenance dispatch"
 msgstr "このメンテナンスディスパッチのメモとドキュメントを追加"
+
+msgid "Add operation"
+msgstr ""
 
 msgid "Add Operation"
 msgstr "操作を追加"
@@ -2413,6 +2419,9 @@ msgstr "自動更新とバックアップ"
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "出力が報告されるとジョブの追跡されていない材料の自動的な比例消費。追跡された材料は手動で発行されます。"
 
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr ""
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "カンバンがスキャンされたときに自動的にジョブをリリースします"
 
@@ -2706,6 +2715,9 @@ msgstr "{byUser}による"
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "招待を受け入れることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
+
+msgid "By default it'll be 30 min post start time"
+msgstr ""
 
 msgid "By dimension"
 msgstr "ディメンション別"
@@ -3416,6 +3428,9 @@ msgstr "様々なトランザクションタイプに使用されるデフォル
 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "会計年度と税務年度の開始月を設定します"
+
+msgid "Configure the steps above first."
+msgstr ""
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "購入した品目のコストをサプライヤー取引から更新するタイミングを設定します。"
@@ -5210,6 +5225,9 @@ msgstr "変更の説明"
 msgid "Description of Issue"
 msgstr "問題の説明"
 
+msgid "Description of the event. You can use HTML tags here."
+msgstr ""
+
 msgid "Detail"
 msgstr "詳細"
 
@@ -5953,6 +5971,9 @@ msgstr "メール通知が設定されていません"
 
 msgid "Emails"
 msgstr "メール"
+
+msgid "Emails of the attendees (guests)"
+msgstr ""
 
 msgid "Emoji"
 msgstr "絵文字"
@@ -10344,6 +10365,9 @@ msgstr "なし"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "この場所には\"{0}\"に一致するものはありません。"
 
+msgid "Nothing can work on this result."
+msgstr ""
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
@@ -12445,6 +12469,9 @@ msgstr "スロットを削除"
 
 msgid "Remove sort by column"
 msgstr "列でソートを削除"
+
+msgid "Remove this operation"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "このストレージタイプをすべての参照ストレージユニットから削除し、削除します。これは元に戻すことはできません。"
