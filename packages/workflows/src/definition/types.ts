@@ -210,7 +210,10 @@ export type VariableRef = z.infer<typeof variableRefSchema>;
 /** The item a looping node is currently on: a filter's list, or a batched action's. */
 export const itemRefSchema = z.object({
   kind: z.literal("item"),
-  path: z.array(z.string()).default([])
+  path: z.array(z.string()).default([]),
+  /** The operation card this ref lives in (data-node chains). Absent = the
+   * first card, which for every pre-chain ref is the only card. */
+  card: z.string().optional()
 });
 export type ItemRef = z.infer<typeof itemRefSchema>;
 

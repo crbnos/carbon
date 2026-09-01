@@ -110,13 +110,13 @@ describe("conditionExecutor", () => {
     );
     if (result.status !== "Succeeded") throw new Error("Expected Succeeded");
     const detail = result.detail;
-    expect(detail).toBeDefined();
-    expect(detail?.kind).toBe("condition");
-    expect(detail?.paths).toHaveLength(2);
-    expect(detail?.paths[0]?.taken).toBe(false);
-    expect(detail?.paths[0]?.evaluations.length).toBeGreaterThan(0);
-    expect(detail?.paths[1]?.taken).toBe(true);
-    expect(detail?.paths[1]?.evaluations).toEqual([]);
+    if (detail?.kind !== "condition")
+      throw new Error("Expected condition detail");
+    expect(detail.paths).toHaveLength(2);
+    expect(detail.paths[0]?.taken).toBe(false);
+    expect(detail.paths[0]?.evaluations.length).toBeGreaterThan(0);
+    expect(detail.paths[1]?.taken).toBe(true);
+    expect(detail.paths[1]?.evaluations).toEqual([]);
   });
 
   it("skip: detail's last path has an evaluation carrying a reason", async () => {
@@ -142,8 +142,9 @@ describe("conditionExecutor", () => {
     );
     if (result.status !== "Skipped") throw new Error("Expected Skipped");
     const detail = result.detail;
-    expect(detail).toBeDefined();
-    const lastPath = detail?.paths.at(-1);
+    if (detail?.kind !== "condition")
+      throw new Error("Expected condition detail");
+    const lastPath = detail.paths.at(-1);
     expect(lastPath?.evaluations.length).toBeGreaterThan(0);
     expect(lastPath?.evaluations.at(-1)?.reason).toBeTruthy();
   });

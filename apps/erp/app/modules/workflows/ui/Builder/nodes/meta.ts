@@ -1,10 +1,6 @@
 import { OPERATOR_LABELS } from "@carbon/utils";
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
-import {
-  DATA_OPERATIONS,
-  integrationStepId,
-  operationOf
-} from "@carbon/workflows";
+import { cardsOf, DATA_OPERATIONS, integrationStepId } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
@@ -167,13 +163,20 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
     hasTarget: NODE_ACCEPTS_INCOMING.filter,
     summary: (node) => {
       if (node.type !== "filter") return undefined;
-      // Same fallback as the node kind and the form, so a raw node cannot read as
-      // one operation on the card and run as another.
-      const operation = operationOf(node.data.operation);
-      if (operation !== "filter") {
-        return DATA_OPERATIONS[operation].label;
+      // The same normalizer the form, validator and runtime read, so the card
+      // cannot describe a different chain than the one that runs.
+      const cards = cardsOf(node);
+      if (cards.length > 1) {
+        return cards
+          .map((card) => DATA_OPERATIONS[card.operation].label)
+          .join(" → ");
       }
-      const n = node.data.clauses?.length ?? 0;
+      const [card] = cards;
+      if (card === undefined) return undefined;
+      if (card.operation !== "filter") {
+        return DATA_OPERATIONS[card.operation].label;
+      }
+      const n = card.clauses.length;
       return n > 0
         ? `Keep items matching ${count(n, "rule", "rules")}`
         : undefined;

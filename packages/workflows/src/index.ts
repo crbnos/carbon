@@ -23,10 +23,14 @@ export {
   walkPath
 } from "./definition/catalog";
 export {
+  cardsOf,
   DATA_OPERATIONS,
   type DataOperation,
   type DataOperationSpec,
-  operationOf
+  foldOperationTypes,
+  operationOf,
+  operationsFor,
+  truncateStarvedCards
 } from "./definition/data-operations";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export { REFERENCE_ISSUE_CODES } from "./definition/issues";
@@ -78,6 +82,7 @@ export type {
   FilterNode,
   IntegrationNode,
   LookupNode,
+  OperationCard,
   Origin,
   TriggerNode,
   WorkflowDefinition,

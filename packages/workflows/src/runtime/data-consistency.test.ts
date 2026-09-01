@@ -219,3 +219,144 @@ describe("the data node's declared type and its runtime agree", () => {
     expect(result.status).toBe("Skipped");
   });
 });
+
+describe("operation chains at run time", () => {
+  const chainNode = (
+    operations: FilterNode["data"]["operations"]
+  ): FilterNode => ({
+    id: "d1",
+    name: "d1",
+    type: "filter",
+    position: { x: 0, y: 0 },
+    data: {
+      source: { kind: "ref", nodeId: "s1", output: "result", path: [] },
+      combinator: "and",
+      clauses: [],
+      operation: "filter",
+      flatten: false,
+      operations
+    }
+  });
+
+  const shape = { kind: "record" as const, fields: { v: t.string } };
+  const rows = (values: string[]) =>
+    listValue(
+      shape,
+      values.map((v) => fromColumn(shape, { v }))
+    ).value;
+
+  it("folds filter → pluck → count, with one detail row per card", async () => {
+    const target = chainNode([
+      {
+        id: "c1",
+        operation: "filter",
+        combinator: "and",
+        clauses: [
+          {
+            left: { kind: "item", path: ["v"], card: "c1" },
+            operator: "eq",
+            right: {
+              kind: "literal",
+              type: t.string,
+              value: "yes"
+            }
+          }
+        ],
+        flatten: false
+      },
+      {
+        id: "c2",
+        operation: "pluck",
+        combinator: "and",
+        clauses: [],
+        field: "v",
+        flatten: false
+      },
+      {
+        id: "c3",
+        operation: "count",
+        combinator: "and",
+        clauses: [],
+        flatten: false
+      }
+    ]);
+    const list = rows(["yes", "no", "yes", "no", "yes"]);
+    const ctx = createRuntimeContext({ outputs: { s1: { result: list } } });
+    const result = await filterExecutor.execute(target, ctx);
+
+    if (result.status !== "Succeeded") throw new Error("Expected Succeeded");
+    expect(result.outputs?.result).toEqual(primitiveValue("number", 3));
+    // The node reads as its LAST card...
+    expect(result.summary).toBe("Counted 3.");
+    // ...and the detail tells the whole story, in run order.
+    if (result.detail?.kind !== "data") throw new Error("Expected data detail");
+    expect(result.detail.cards).toEqual([
+      {
+        id: "c1",
+        operation: "filter",
+        summary: "Kept 3 of 5.",
+        status: "Succeeded"
+      },
+      {
+        id: "c2",
+        operation: "pluck",
+        summary: "Took 3 values.",
+        status: "Succeeded"
+      },
+      {
+        id: "c3",
+        operation: "count",
+        summary: "Counted 3.",
+        status: "Succeeded"
+      }
+    ]);
+  });
+
+  it("skips the node at the card that cannot run, naming its position", async () => {
+    const target = chainNode([
+      {
+        id: "c1",
+        operation: "filter",
+        combinator: "and",
+        clauses: [],
+        flatten: false
+      },
+      // A draft: pluck with no field chosen. The validator would refuse it,
+      // but a draft is never validated.
+      {
+        id: "c2",
+        operation: "pluck",
+        combinator: "and",
+        clauses: [],
+        flatten: false
+      }
+    ]);
+    const ctx = createRuntimeContext({
+      outputs: { s1: { result: rows(["yes"]) } }
+    });
+    const result = await filterExecutor.execute(target, ctx);
+
+    if (result.status !== "Skipped") throw new Error("Expected Skipped");
+    expect(result.reason).toContain("Step 2");
+    expect(result.reason).toContain("No field was chosen to take.");
+    if (result.detail?.kind !== "data") throw new Error("Expected data detail");
+    expect(result.detail.cards).toHaveLength(2);
+    expect(result.detail.cards[1]?.status).toBe("Skipped");
+  });
+
+  it("keeps a single card's summary and skip wording exactly as before", async () => {
+    const ctx = createRuntimeContext({
+      outputs: { s1: { result: rows(["a", "b"]) } }
+    });
+    const counted = await filterExecutor.execute(node("count"), ctx);
+    expect(counted.status === "Succeeded" && counted.summary).toBe(
+      "Counted 2."
+    );
+
+    // No "Step 1" prefix when the card IS the node.
+    const plucked = await filterExecutor.execute(node("pluck"), ctx);
+    expect(plucked.status === "Skipped" && plucked.reason).toBe(
+      "No field was chosen to take."
+    );
+  });
+});

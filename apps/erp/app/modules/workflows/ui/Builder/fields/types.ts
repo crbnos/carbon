@@ -5,6 +5,9 @@ export type FieldContext = {
   nodeId: string;
   /** True inside a filter node's clauses or a batch-mode action where `item` is offered. */
   inLoop: boolean;
+  /** The operation card these values live in (data-node chains). Stamped onto every
+   * item ref the picker inserts, so "the current item" types by ITS card. */
+  itemCard?: string;
   /** The action runs once per item, so a list may fill a single-value input.
    * Deliberately not `inLoop`: filter clauses set that too, and there the
    * relaxation must not apply. */
@@ -21,6 +24,11 @@ export type ValueFieldProps = {
   required?: boolean;
   /** Glossary term for the ⓘ hover next to the label. */
   helpTermId?: TermId;
+  /** Free-text ⓘ hover — a vendor's own field description. `helpTermId` wins. */
+  help?: string;
+  /** The catalog's default for this input, shown when nothing is stored yet —
+   * a boolean control especially must display what the run will actually send. */
+  defaultValue?: unknown;
   choices?: readonly string[];
   value: ValueOrRef | undefined;
   onChange: (next: ValueOrRef | undefined) => void;

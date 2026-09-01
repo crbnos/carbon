@@ -1121,6 +1121,69 @@ describe("the current item", () => {
     );
   });
 
+  // A chained data node scopes "the current item" per CARD: a filter card after a
+  // pluck loops over the plucked values, not the node's source — and the ref's
+  // `card` id is what layer 5 resolves it by.
+  const chainOn = (clauses: unknown[]) =>
+    define(
+      [
+        trigger(),
+        lookup("find", "part", "list"),
+        {
+          id: "f1",
+          name: "f1",
+          type: "filter",
+          position: { x: 0, y: 0 },
+          data: {
+            source: ref("find", "result"),
+            clauses: [],
+            operations: [
+              { id: "c1", operation: "pluck", field: "name" },
+              { id: "c2", operation: "filter", clauses }
+            ]
+          }
+        }
+      ],
+      [
+        edge("e1", "trigger", "out", "find"),
+        edge("e2", "find", "success", "f1")
+      ]
+    );
+
+  it("types a card's item by the card the ref names", () => {
+    const definition = chainOn([
+      {
+        left: { kind: "item", path: [], card: "c2" },
+        operator: "eq",
+        right: literal("string", "Bolt")
+      }
+    ]);
+    expect(validateDefinition(definition, catalog)).toEqual([]);
+  });
+
+  it("reports a property the card's items do not have", () => {
+    // The plucked values are strings; `unitPrice` was the SOURCE's property.
+    const definition = chainOn([
+      {
+        left: { kind: "item", path: ["unitPrice"], card: "c2" },
+        operator: "gt",
+        right: literal("number", 10)
+      }
+    ]);
+    expect(codes(definition)).toContain("UNKNOWN_VARIABLE");
+  });
+
+  it("reports ITEM_OUTSIDE_LOOP when the ref names no card and card 1 does not loop", () => {
+    const definition = chainOn([
+      {
+        left: { kind: "item", path: [] },
+        operator: "eq",
+        right: literal("string", "Bolt")
+      }
+    ]);
+    expect(codes(definition)).toContain("ITEM_OUTSIDE_LOOP");
+  });
+
   // The next three assert ITEM_OUTSIDE_LOOP is suppressed when a deeper cause exists.
   it("reports only UNKNOWN_ENTITY when the list's record type is gone", () => {
     const thin = createFixtureCatalog({ omitEntities: ["part"] });

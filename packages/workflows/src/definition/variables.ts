@@ -131,7 +131,7 @@ export function createContext(
   };
 
   const resolveItem = (ref: ItemRef, atNodeId: string): ResolvedRef => {
-    const loop = loopListOf(atNodeId);
+    const loop = loopListOf(atNodeId, ref.card);
     if (loop === undefined) return { failure: "no-loop" };
     if (!("type" in loop)) return loop;
     const resolved = walkPath(loop.type.of, ref.path, catalog);
@@ -156,11 +156,13 @@ export function createContext(
     return "type" in resolved ? resolved.type : undefined;
   };
 
-  const loopListOf = (nodeId: string): LoopList | undefined => {
-    if (loopCache.has(nodeId)) return loopCache.get(nodeId);
+  const loopListOf = (nodeId: string, card?: string): LoopList | undefined => {
+    const key = `${nodeId}\u0000${card ?? ""}`;
+    if (loopCache.has(key)) return loopCache.get(key);
     const node = byId.get(nodeId);
-    const loop = node === undefined ? undefined : getNodeLoopList(node, ctx);
-    loopCache.set(nodeId, loop);
+    const loop =
+      node === undefined ? undefined : getNodeLoopList(node, ctx, card);
+    loopCache.set(key, loop);
     return loop;
   };
 

@@ -71,7 +71,9 @@ export interface NodeContext {
   resolveValue(value: ValueOrRef, atNodeId: string): ResolvedRef;
   typeOf(value: ValueOrRef, atNodeId: string): ValueType | undefined;
   outputsOf(nodeId: string): NodeOutputs | undefined;
-  loopListOf(nodeId: string): LoopList | undefined;
+  /** `card` scopes the answer to one operation card of a data-node chain;
+   * every other kind ignores it. */
+  loopListOf(nodeId: string, card?: string): LoopList | undefined;
 }
 
 /** Everything one kind of node declares about itself. */
@@ -81,8 +83,9 @@ export interface NodeKind<N extends WorkflowNode> {
   values(node: N): ValueSite[];
   /** What it hands onward; `undefined` when its catalog entry is missing. */
   outputs(node: N, ctx: NodeContext): NodeOutputs | undefined;
-  /** The one list this node works through, or undefined when it does not loop. */
-  loopList(node: N, ctx: NodeContext): LoopList | undefined;
+  /** The one list this node works through, or undefined when it does not loop.
+   * `card` names an operation card of a data-node chain; other kinds ignore it. */
+  loopList(node: N, ctx: NodeContext, card?: string): LoopList | undefined;
   /** Is its catalog entry resolvable? Type checking is skipped when not. */
   configured(node: N, ctx: NodeContext): boolean;
   checkTypes(node: N, ctx: NodeContext): WorkflowIssue[];
@@ -785,8 +788,9 @@ export const getNodeOutputs = (
 
 export const getNodeLoopList = (
   node: WorkflowNode,
-  ctx: NodeContext
-): LoopList | undefined => kindOf(node).loopList(node, ctx);
+  ctx: NodeContext,
+  card?: string
+): LoopList | undefined => kindOf(node).loopList(node, ctx, card);
 
 export const isNodeConfigured = (
   node: WorkflowNode,

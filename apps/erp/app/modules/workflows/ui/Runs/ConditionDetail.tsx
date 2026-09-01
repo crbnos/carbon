@@ -84,7 +84,7 @@ export function ConditionDetail({
   const d = detail as Record<string, unknown>;
   if (d.kind !== "condition") return null;
 
-  const paths = d.paths as NodeDetail["paths"];
+  const paths = d.paths as Extract<NodeDetail, { kind: "condition" }>["paths"];
   if (!Array.isArray(paths) || paths.length === 0) return null;
 
   return (

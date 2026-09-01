@@ -3,6 +3,7 @@ import type {
   RequiredPermission,
   WorkflowCatalog
 } from "../definition/catalog";
+import type { DataOperation } from "../definition/data-operations";
 import type { WorkflowNode } from "../definition/schema";
 import type {
   Combinator,
@@ -110,15 +111,26 @@ export type ClauseEvaluation = {
 };
 
 /** Why a node did what it did. Diagnostics, never node data. */
-export type NodeDetail = {
-  kind: "condition";
-  paths: Array<{
-    pathId: string;
-    combinator: Combinator;
-    evaluations: ClauseEvaluation[];
-    taken: boolean;
-  }>;
-};
+export type NodeDetail =
+  | {
+      kind: "condition";
+      paths: Array<{
+        pathId: string;
+        combinator: Combinator;
+        evaluations: ClauseEvaluation[];
+        taken: boolean;
+      }>;
+    }
+  | {
+      /** A data node's chain, one row per operation card, in run order. */
+      kind: "data";
+      cards: Array<{
+        id: string;
+        operation: DataOperation;
+        summary: string;
+        status: "Succeeded" | "Skipped";
+      }>;
+    };
 
 export type NodeResult =
   | {

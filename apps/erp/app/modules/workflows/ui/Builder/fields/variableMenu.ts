@@ -60,6 +60,8 @@ type Options = {
    * not offered; drilling into it still is, which is where its name lives. */
   textOnly?: boolean;
   inLoop?: boolean;
+  /** The operation card an inserted item ref should be scoped to (data-node chains). */
+  itemCard?: string;
   /** The action runs once per item, so a list may fill a single-value input. */
   batching?: boolean;
   /** Resolves a catalog label key to display text. Defaults to the fallback, which is what
@@ -113,6 +115,7 @@ export function variableMenuItems(
     accepts,
     textOnly,
     inLoop,
+    itemCard,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
@@ -178,7 +181,11 @@ export function variableMenuItems(
   }
 
   if (inLoop) {
-    const ref = { kind: "item" as const, path: [] };
+    const ref = {
+      kind: "item" as const,
+      path: [],
+      ...(itemCard ? { card: itemCard } : {})
+    };
     items.push({
       id: encodeTokenId(ref),
       label: refLabel(ref),
@@ -199,6 +206,7 @@ export function variableTree(
     accepts,
     textOnly,
     inLoop,
+    itemCard,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
@@ -323,7 +331,11 @@ export function variableTree(
   );
 
   if (inLoop) {
-    const ref = { kind: "item" as const, path: [] };
+    const ref = {
+      kind: "item" as const,
+      path: [],
+      ...(itemCard ? { card: itemCard } : {})
+    };
     roots.push({
       key: "item",
       label: "Current item",

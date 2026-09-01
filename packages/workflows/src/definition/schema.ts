@@ -84,6 +84,22 @@ const lookupNode = z.object({
   })
 });
 
+/** One step of the data node's chain. Identity is load-bearing: React keys,
+ * issue field paths (`operations.{id}.…`) and run-detail rows all key on it. */
+const operationCardSchema = z.object({
+  id: z.string(),
+  operation: dataOperationSchema.default("filter"),
+  combinator: combinatorSchema.default("and"),
+  clauses: z.array(clauseSchema).default([]),
+  /** `pluck` only: a dotted path to the field projected off each item. */
+  field: z.string().optional(),
+  /** `pluck` only: flatten a list-valued field into ONE list, since
+   * `list<list<T>>` is unrepresentable. Off by default so a card never stores a
+   * flag that means nothing; the builder sets it when the field is a list. */
+  flatten: z.boolean().default(false)
+});
+export type OperationCard = z.infer<typeof operationCardSchema>;
+
 /** The data node. Still typed `"filter"`: every saved workflow holds that literal,
  * and `operation` defaults to `"filter"`, so a node stored before this existed
  * parses and behaves exactly as it did — no format bump, no migration. */
@@ -100,7 +116,10 @@ const filterNode = z.object({
     /** `pluck` only: flatten a list-valued field into ONE list, since
      * `list<list<T>>` is unrepresentable. Off by default so a node never stores a
      * flag that means nothing; the builder sets it when the field is a list. */
-    flatten: z.boolean().default(false)
+    flatten: z.boolean().default(false),
+    /** The chain. Absent on every pre-chain definition — `cardsOf` synthesizes
+     * one card from the flat fields above, which stay for exactly that reason. */
+    operations: z.array(operationCardSchema).max(20).optional()
   })
 });
 
