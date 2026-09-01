@@ -59,3 +59,15 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
 EXPOSE 3000
 WORKDIR /repo/apps/${APP}
 CMD ["pnpm","run","start"]
+
+# --- Ops image (DB migrations + first-boot seed) --------------------------
+# The migrate Job (supabase migration up) and the seed Helm hook (tsx src/seed.ts)
+# repurpose the app build to run one-off ops tasks. They need the supabase CLI
+# and tsx/esbuild — exactly the build tooling the `runner` stage strips for its
+# CVE posture. Rather than un-harden the served image, publish a separate
+# un-stripped ops image from the `deps` stage for those short-lived Jobs. It is
+# never exposed and is scanned report-only (it intentionally carries build-tool
+# CVEs). migrate.yml and charts/apps seed-job point at carbon/ops:<same-tag>.
+FROM deps AS ops
+WORKDIR /repo/packages/database
+CMD ["bash"]
