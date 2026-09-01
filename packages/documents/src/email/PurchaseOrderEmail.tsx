@@ -18,7 +18,7 @@ import {
   getPurchaseOrderDisplayId,
   getTotal
 } from "../utils/purchase-order";
-import { getMoneyFormatter } from "../utils/shared";
+import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -67,6 +67,14 @@ const PurchaseOrderEmail = ({
   // The DOCUMENT's currency, not the company's — a supplier priced in JPY must
   // not be emailed as "$20.00". Decimals come from that currency's row.
   const formatter = getMoneyFormatter(
+    locale,
+    currencyDecimals,
+    purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
+  );
+  // A unit price is a RATE, not a settlement amount: the currency's
+  // decimals are its FLOOR, not its ceiling, so a sub-cent price does not
+  // print as 0.00. The PDFs already split these two kinds.
+  const rateFormatter = getRateFormatter(
     locale,
     currencyDecimals,
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
@@ -273,7 +281,7 @@ const PurchaseOrderEmail = ({
                         // column -- supplierUnitPrice is what the supplier
                         // quoted, and it is what getLineTotal already sums.
                         line.supplierUnitPrice
-                        ? formatter.format(line.supplierUnitPrice)
+                        ? rateFormatter.format(line.supplierUnitPrice)
                         : "-"}
                   </Text>
                 </Column>
