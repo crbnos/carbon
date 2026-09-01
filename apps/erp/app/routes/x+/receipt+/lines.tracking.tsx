@@ -178,7 +178,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         .single(),
       client
         .from("trackedEntity")
-        .select("id, status, attributes")
+        .select("id, status, attributes, itemId")
         .eq("id", trackedEntityId)
         .eq("companyId", companyId)
         .single()
@@ -233,15 +233,53 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
     }
 
-    const expected = await client
-      .from("salesReturnOrderLineTrackedEntity")
-      .select("trackedEntityId")
-      .eq("salesReturnOrderLineId", receiptLine.data.lineId)
-      .eq("trackedEntityId", trackedEntityId)
+    // "Which serial is it" lives entirely on the receipt — the RMA does not
+    // pre-pick serials. Authorization is provenance: the entity must be the
+    // return line's item and must have left on a posted shipment to this
+    // return's customer, whatever serial the customer actually sent back.
+    const returnLine = await client
+      .from("salesReturnOrderLine")
+      .select("itemId, salesReturnOrderId")
+      .eq("id", receiptLine.data.lineId)
+      .eq("companyId", companyId)
       .maybeSingle();
-    if (!expected.data) {
+    if (
+      !returnLine.data ||
+      returnLine.data.salesReturnOrderId !== receipt.data.sourceDocumentId
+    ) {
       return data(
-        { error: "Entity is not expected on this return line" },
+        { error: "Return line does not belong to this receipt's return order" },
+        { status: 400 }
+      );
+    }
+    if (entity.data.itemId !== returnLine.data.itemId) {
+      return data(
+        { error: "Entity is a different item than this return line" },
+        { status: 400 }
+      );
+    }
+
+    const returnOrder = await client
+      .from("salesReturnOrder")
+      .select("customerId")
+      .eq("id", returnLine.data.salesReturnOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    const shipmentId = attributes["Shipment"];
+    const shippedToCustomer =
+      returnOrder.data?.customerId && typeof shipmentId === "string"
+        ? await client
+            .from("shipment")
+            .select("id")
+            .eq("id", shipmentId)
+            .eq("companyId", companyId)
+            .eq("customerId", returnOrder.data.customerId)
+            .eq("status", "Posted")
+            .maybeSingle()
+        : { data: null };
+    if (!shippedToCustomer.data) {
+      return data(
+        { error: "Entity was not shipped to this customer" },
         { status: 400 }
       );
     }

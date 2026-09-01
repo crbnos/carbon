@@ -6723,9 +6723,6 @@ msgstr "Oczekiwane Potwierdzenie Odbioru"
 msgid "Expected Receipt Date"
 msgstr "Oczekiwana data przyjęcia"
 
-msgid "Expected serials/batches"
-msgstr "Oczekiwane numery seryjne/partie"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Konto wydatków dla sald klientów odpisanych jako nieściągalne przy rozliczeniu należności"
 
@@ -11896,9 +11893,6 @@ msgstr "Wybierz wartość z wcześniejszego kroku"
 msgid "Pick a variable…"
 msgstr "Wybierz zmienną…"
 
-msgid "Pick expected serials/batches"
-msgstr "Wybierz oczekiwane numery seryjne/partie"
-
 msgid "Pick List"
 msgstr "Lista pobrania"
 
@@ -13496,6 +13490,9 @@ msgstr "zasoby"
 msgid "Resources"
 msgstr "Zasoby"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "opłata za uzupełnienie zapasów"
 
@@ -13505,6 +13502,9 @@ msgstr "Procent opłaty za uzupełnienie zapasów"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Opłata za zwrot do magazynu {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Do przywrócenia ze zmianami"
@@ -14609,9 +14609,6 @@ msgstr "Serializuj i sprzedawaj swoje części"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Numery seryjne i partie dostępne, które zostały otrzymane od tego dostawcy"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Numery seryjne i partie wysłane wcześniej do tego klienta"
-
 msgid "Serials/batches to return"
 msgstr "Numery seryjne/partie do zwrotu"
 
@@ -14915,6 +14912,9 @@ msgstr "Niedozbór {itemName}"
 
 msgid "Shortcuts"
 msgstr "Skróty"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Pokaż kolumnę czytelnego identyfikatora klienta na liście klientów, formularzach klientów i listach rozwijanych. Klienci są nadal identyfikowani wewnętrznie w każdym przypadku."

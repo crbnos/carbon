@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-01T19:26:55.668Z",
-  "totalTools": 1540,
+  "generated": "2026-09-01T19:59:47.080Z",
+  "totalTools": 1539,
   "modules": 15,
   "tools": [
     {
@@ -38489,7 +38489,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "create pricing rule",
-      "paramCount": 70,
+      "paramCount": 69,
       "serviceParams": [
         "client",
         "companyId",
@@ -38699,9 +38699,6 @@
             "type": "string"
           },
           "salesInvoiceLineId": {
-            "type": "string"
-          },
-          "trackedEntityIds": {
             "type": "string"
           },
           "disposition": {
@@ -45187,7 +45184,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert sales return order line",
-      "paramCount": 12,
+      "paramCount": 11,
       "serviceParams": [
         "client",
         "line"
@@ -45231,9 +45228,6 @@
             "type": "string"
           },
           "salesInvoiceLineId": {
-            "type": "string"
-          },
-          "trackedEntityIds": {
             "type": "string"
           },
           "_operation": {
@@ -45299,42 +45293,6 @@
         },
         "required": [
           "lineId"
-        ]
-      }
-    },
-    {
-      "name": "sales_setSalesReturnOrderLineTrackedEntities",
-      "module": "sales",
-      "classification": "DESTRUCTIVE",
-      "description": "set sales return order line tracked entities",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "lineId",
-        "companyId",
-        "entityIds",
-        "userId"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "lineId": {
-            "type": "string"
-          },
-          "entityIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "lineId",
-          "entityIds"
         ]
       }
     },

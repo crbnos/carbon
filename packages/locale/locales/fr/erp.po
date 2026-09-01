@@ -6723,9 +6723,6 @@ msgstr "Réception prévue"
 msgid "Expected Receipt Date"
 msgstr "Date de réception prévue"
 
-msgid "Expected serials/batches"
-msgstr "Numéros de série/lots attendus"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Compte de charge pour les soldes clients radiés comme irrécouvrables lors du règlement des comptes clients"
 
@@ -11896,9 +11893,6 @@ msgstr "Choisir une valeur d'une étape antérieure"
 msgid "Pick a variable…"
 msgstr "Choisir une variable…"
 
-msgid "Pick expected serials/batches"
-msgstr "Sélectionner les numéros de série/lots attendus"
-
 msgid "Pick List"
 msgstr "Liste de prélèvement"
 
@@ -13496,6 +13490,9 @@ msgstr "ressources"
 msgid "Resources"
 msgstr "Ressources"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "frais de reconstitution de stock"
 
@@ -13505,6 +13502,9 @@ msgstr "Pourcentage des frais de reconstitution de stock"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Frais de restockage {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Restaurable avec des modifications"
@@ -14609,9 +14609,6 @@ msgstr "Sérialisez et vendez vos pièces"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Numéros de série et lots en stock reçus de ce fournisseur"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Numéros de série et lots précédemment expédiés à ce client"
-
 msgid "Serials/batches to return"
 msgstr "Numéros de série/lots à retourner"
 
@@ -14915,6 +14912,9 @@ msgstr "Prélèvement court {itemName}"
 
 msgid "Shortcuts"
 msgstr "Raccourcis"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Afficher une colonne ID client lisible sur la liste des clients, les formulaires clients et les listes déroulantes. Les clients sont toujours identifiés en interne de toute façon."

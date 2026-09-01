@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   cn,
   DropdownMenu,
@@ -15,13 +16,14 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import {
+  LuChevronDown,
   LuCirclePlus,
   LuEllipsisVertical,
   LuFileInput,
   LuTrash
 } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
-import { Empty } from "~/components";
+import { Empty, ItemThumbnail } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -84,7 +86,7 @@ export default function PurchaseReturnOrderExplorer() {
 
   return (
     <>
-      <VStack className="w-full h-[calc(100dvh-99px)] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height))] justify-between">
         <VStack
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
@@ -178,10 +180,12 @@ function PurchaseReturnOrderLineItem({
   isDisabled,
   onDelete
 }: PurchaseReturnOrderLineItemProps) {
+  const { t } = useLingui();
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
   const permissions = usePermissions();
+  const disclosure = useDisclosure();
   const location = useOptimisticLocation();
   const navigate = useNavigate();
 
@@ -204,6 +208,7 @@ function PurchaseReturnOrderLineItem({
         onClick={onLineClick}
       >
         <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+          <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
           <VStack spacing={0} className="min-w-0">
             <span className="font-semibold line-clamp-1">
               {line.item?.readableIdWithRevision}
@@ -211,43 +216,87 @@ function PurchaseReturnOrderLineItem({
             <span className="text-muted-foreground text-xs truncate line-clamp-1">
               {line.item?.name}
             </span>
-            <HStack spacing={2} className="pt-1">
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {line.quantityShipped ?? 0} / {line.quantity ?? 0}
-              </span>
-            </HStack>
           </VStack>
         </HStack>
         <div className="absolute right-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label="More"
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                icon={<LuEllipsisVertical />}
-                size="md"
-                variant="solid"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                destructive
-                disabled={
-                  isDisabled || !permissions.can("delete", "purchasing")
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(line);
-                }}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete Line</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HStack spacing={1}>
+            <IconButton
+              aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
+              className={cn(
+                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                disclosure.isOpen && "-rotate-180"
+              )}
+              icon={<LuChevronDown />}
+              size="md"
+              variant="solid"
+              onClick={(e) => {
+                e.stopPropagation();
+                disclosure.onToggle();
+              }}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="More"
+                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  icon={<LuEllipsisVertical />}
+                  size="md"
+                  variant="solid"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  destructive
+                  disabled={
+                    isDisabled || !permissions.can("delete", "purchasing")
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(line);
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  <Trans>Delete Line</Trans>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </HStack>
         </div>
       </HStack>
+      {disclosure.isOpen && (
+        <VStack
+          spacing={1}
+          className="border-b border-border px-3 py-2 text-xs"
+        >
+          <HStack className="w-full justify-between">
+            <span className="text-muted-foreground">
+              <Trans>Shipped</Trans>
+            </span>
+            <span className="tabular-nums">
+              {line.quantityShipped ?? 0} / {line.quantity ?? 0}
+            </span>
+          </HStack>
+          {line.returnReason?.name && (
+            <HStack className="w-full justify-between">
+              <span className="text-muted-foreground">
+                <Trans>Reason</Trans>
+              </span>
+              <span>{line.returnReason.name}</span>
+            </HStack>
+          )}
+          {line.closedComplete && (
+            <HStack className="w-full justify-between">
+              <span className="text-muted-foreground">
+                <Trans>Shipping</Trans>
+              </span>
+              <Badge variant="secondary">
+                <Trans>Closed</Trans>
+              </Badge>
+            </HStack>
+          )}
+        </VStack>
+      )}
     </VStack>
   );
 }

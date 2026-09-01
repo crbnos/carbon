@@ -7,16 +7,11 @@ import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 import type { Receipt, ReceiptLine } from "../../types";
 
-type ExpectedEntity = {
-  salesReturnOrderLineId: string;
-  trackedEntityId: string;
+type CandidateEntity = {
+  id: string;
+  readableId: string | null;
+  status: string;
   quantity: number;
-  trackedEntity: {
-    id: string;
-    readableId: string | null;
-    status: string;
-    quantity: number;
-  } | null;
 };
 
 type AssignedRow = {
@@ -26,11 +21,14 @@ type AssignedRow = {
 
 /**
  * Tracking UI for sales-return receipt lines: instead of typing new
- * serial/batch numbers, the user picks WHICH expected entities (from the RMA
- * line's picks) actually arrived. Assignment re-tags the EXISTING entity with
- * the receipt-line attributes (lines.tracking `returnEntity` branch); posting
- * then reactivates that same entity On Hold. Blind lines (no expected
- * entities) fall back to the standard entry forms passed as children.
+ * serial/batch numbers, the user picks WHICH entities actually arrived.
+ * Candidates are every serial/batch of the line's item shipped to this
+ * return's customer — "which serial is it" lives entirely on the receipt,
+ * so a different serial than anyone expected still works. Assignment re-tags
+ * the EXISTING entity with the receipt-line attributes (lines.tracking
+ * `returnEntity` branch); posting then reactivates that same entity On Hold.
+ * Blind lines (nothing shipped on record) fall back to the standard entry
+ * forms passed as children.
  */
 export function ReturnEntityForm({
   receipt,
@@ -46,15 +44,15 @@ export function ReturnEntityForm({
   children: ReactNode;
 }) {
   const { t } = useLingui();
-  const expectedFetcher = useFetcher<{
-    entities: ExpectedEntity[];
+  const candidatesFetcher = useFetcher<{
+    candidates: CandidateEntity[];
     assigned: AssignedRow[];
   }>();
   const assignFetcher = useFetcher<{ error?: string }>();
 
   const reload = () => {
     if (line.lineId) {
-      expectedFetcher.load(
+      candidatesFetcher.load(
         `${path.to.receiptLinesReturnEntities}?lineId=${line.lineId}&receiptLineId=${line.id}`
       );
     }
@@ -73,11 +71,11 @@ export function ReturnEntityForm({
     }
   }, [assignFetcher.state]);
 
-  const expected = expectedFetcher.data?.entities;
+  const candidates = candidatesFetcher.data?.candidates;
 
   const assignedByEntityId = useMemo(() => {
     const map = new Map<string, { index: number | null }>();
-    for (const row of expectedFetcher.data?.assigned ?? []) {
+    for (const row of candidatesFetcher.data?.assigned ?? []) {
       const attributes = (row.attributes ?? {}) as Record<string, unknown>;
       const index = attributes["Receipt Line Index"];
       map.set(row.id, {
@@ -85,27 +83,24 @@ export function ReturnEntityForm({
       });
     }
     return map;
-  }, [expectedFetcher.data?.assigned]);
+  }, [candidatesFetcher.data?.assigned]);
 
-  if (!line.lineId || (expected && expected.length === 0)) {
-    // Blind return: no expected entities — standard serial/batch entry
+  if (!line.lineId || (candidates && candidates.length === 0)) {
+    // Blind return: nothing shipped on record — standard serial/batch entry
     return <>{children}</>;
   }
 
-  if (!expected) {
+  if (!candidates) {
     return null; // loading
   }
 
-  const selectable = expected.filter(
-    (e) =>
-      e.trackedEntity &&
-      (e.trackedEntity.status === "Consumed" ||
-        assignedByEntityId.has(e.trackedEntityId))
+  const selectable = candidates.filter(
+    (e) => e.status === "Consumed" || assignedByEntityId.has(e.id)
   );
 
   const options = selectable.map((e) => ({
-    value: e.trackedEntityId,
-    label: e.trackedEntity?.readableId ?? e.trackedEntityId
+    value: e.id,
+    label: e.readableId ?? e.id
   }));
 
   const assign = (

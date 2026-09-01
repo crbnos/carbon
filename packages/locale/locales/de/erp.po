@@ -6723,9 +6723,6 @@ msgstr "Erwarteter Eingang"
 msgid "Expected Receipt Date"
 msgstr "Erwartetes Eingangsdatum"
 
-msgid "Expected serials/batches"
-msgstr "Erwartete Seriennummern/Chargen"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Aufwandskonto für Kundensalden, die beim Debitoren-Abgleich als uneinbringlich abgeschrieben werden"
 
@@ -11896,9 +11893,6 @@ msgstr "Wählen Sie einen Wert aus einem früheren Schritt"
 msgid "Pick a variable…"
 msgstr "Wählen Sie eine Variable…"
 
-msgid "Pick expected serials/batches"
-msgstr "Erwartete Seriennummern/Chargen auswählen"
-
 msgid "Pick List"
 msgstr "Pickliste"
 
@@ -13496,6 +13490,9 @@ msgstr "Ressourcen"
 msgid "Resources"
 msgstr "Ressourcen"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "Restockgebühr"
 
@@ -13505,6 +13502,9 @@ msgstr "Restockgebühren-Prozentsatz"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Wiedereinlagerungsgebühr {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Mit Änderungen wiederherstellbar"
@@ -14609,9 +14609,6 @@ msgstr "Serialisieren und verkaufen Sie Ihre Teile"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Im Bestand befindliche Serien- und Chargen, die von diesem Lieferanten eingegangen sind"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Serien- und Chargen, die zuvor an diesen Kunden versandt wurden"
-
 msgid "Serials/batches to return"
 msgstr "Serien-/Chargen zum Zurückgeben"
 
@@ -14915,6 +14912,9 @@ msgstr "Kurzbestand {itemName}"
 
 msgid "Shortcuts"
 msgstr "Tastenkombinationen"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Zeigen Sie eine lesbare Kundennummern-Spalte in der Kundenliste, Kundenformularen und Dropdowns an. Kunden werden intern in jedem Fall identifiziert."

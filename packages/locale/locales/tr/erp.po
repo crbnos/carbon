@@ -6723,9 +6723,6 @@ msgstr "Beklenen Teslim Alma"
 msgid "Expected Receipt Date"
 msgstr "Beklenen Teslim Alma Tarihi"
 
-msgid "Expected serials/batches"
-msgstr "Beklenen seri/toplu numara"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Alacak hesapları uzlaşması sırasında tahsil edilemez olarak silinen müşteri bakiyeleri için gider hesabı"
 
@@ -11896,9 +11893,6 @@ msgstr "Önceki bir adımdan bir değer seçin"
 msgid "Pick a variable…"
 msgstr "Bir değişken seçin…"
 
-msgid "Pick expected serials/batches"
-msgstr "Beklenen seri numaraları/partileri seç"
-
 msgid "Pick List"
 msgstr "Seçim Listesi"
 
@@ -13496,6 +13490,9 @@ msgstr "kaynaklar"
 msgid "Resources"
 msgstr "Kaynaklar"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "yeniden stok alma ücreti"
 
@@ -13505,6 +13502,9 @@ msgstr "Yeniden Stok Alma Ücreti Yüzdesi"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Yeniden stoklama ücreti {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Değişikliklerle geri yüklenebilir"
@@ -14609,9 +14609,6 @@ msgstr "Parçalarınızı seri hale getirin ve satın"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Bu tedarikçiden alınan eldeki seri numaralar ve partiler"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Daha önce bu müşteriye gönderilen seri numaralar ve partiler"
-
 msgid "Serials/batches to return"
 msgstr "İade edilecek Seri Numaralar/Partiler"
 
@@ -14915,6 +14912,9 @@ msgstr "Kısmi toplama {itemName}"
 
 msgid "Shortcuts"
 msgstr "Kısayollar"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde okunabilir bir Müşteri Kimliği sütunu gösterir. Müşteriler her iki durumda da dahili olarak tanımlanmaya devam eder."

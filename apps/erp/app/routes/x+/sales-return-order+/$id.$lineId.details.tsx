@@ -9,11 +9,8 @@ import {
   getReturnReasonsList,
   getSalesReturnOrder,
   getSalesReturnOrderLine,
-  getSalesReturnOrderLineTrackedEntities,
-  getShippedTrackedEntitiesForCustomer,
   isSalesReturnOrderLocked,
   salesReturnOrderLineValidator,
-  setSalesReturnOrderLineTrackedEntities,
   upsertSalesReturnOrderLine
 } from "~/modules/sales";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
@@ -31,8 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const [salesReturnOrder, line, returnReasons] = await Promise.all([
-    getSalesReturnOrder(client, orderId),
+  const [line, returnReasons] = await Promise.all([
     getSalesReturnOrderLine(client, lineId),
     getReturnReasonsList(client, companyId)
   ]);
@@ -46,18 +42,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-
-  const [trackedEntities, shippedEntities] = await Promise.all([
-    getSalesReturnOrderLineTrackedEntities(client, [lineId]),
-    salesReturnOrder.data?.customerId
-      ? getShippedTrackedEntitiesForCustomer(
-          client,
-          companyId,
-          salesReturnOrder.data.customerId,
-          line.data.itemId
-        )
-      : Promise.resolve({ data: [], error: null })
-  ]);
 
   if (line.data.salesReturnOrderId !== orderId) {
     throw redirect(
@@ -119,21 +103,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     line: line.data,
     returnReasons: returnReasons.data ?? [],
-    trackedEntityIds: (trackedEntities.data ?? []).map(
-      (entity) => entity.trackedEntityId
-    ),
-    // Serial/batch labels for the picked entities — the shipped-entities list
-    // only covers currently returnable serials, so a pick that has since been
-    // received (or otherwise changed status) still needs its readable id.
-    pickedEntityLabels: Object.fromEntries(
-      (trackedEntities.data ?? [])
-        .filter((entity) => entity.trackedEntity?.readableId)
-        .map((entity) => [
-          entity.trackedEntityId,
-          entity.trackedEntity!.readableId as string
-        ])
-    ),
-    shippedEntities: shippedEntities.data ?? [],
     linkage: {
       shipmentReadableId,
       salesOrderReadableId,
@@ -173,7 +142,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id: _id, trackedEntityIds, ...d } = validation.data;
+  const { id: _id, ...d } = validation.data;
 
   // The lock guard above checked the URL's order — verify the line actually
   // belongs to it, and never re-parent it to the form's copy of the id.
@@ -226,35 +195,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const setEntities = await setSalesReturnOrderLineTrackedEntities(
-    client,
-    lineId,
-    companyId,
-    trackedEntityIds ?? [],
-    userId
-  );
-  if (setEntities.error) {
-    throw redirect(
-      path.to.salesReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(setEntities.error, "Failed to set tracked entities")
-      )
-    );
-  }
-
   throw redirect(path.to.salesReturnOrderLine(orderId, lineId));
 }
 
 export default function SalesReturnOrderLineDetailsRoute() {
-  const {
-    line,
-    returnReasons,
-    trackedEntityIds,
-    pickedEntityLabels,
-    shippedEntities,
-    linkage
-  } = useLoaderData<typeof loader>();
+  const { line, returnReasons, linkage } = useLoaderData<typeof loader>();
   const { id: orderId, lineId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
@@ -278,7 +223,6 @@ export default function SalesReturnOrderLineDetailsRoute() {
     salesOrderLineId: line.salesOrderLineId ?? undefined,
     shipmentLineId: line.shipmentLineId ?? undefined,
     salesInvoiceLineId: line.salesInvoiceLineId ?? undefined,
-    trackedEntityIds,
     ...getCustomFields(line.customFields)
   };
 
@@ -288,8 +232,6 @@ export default function SalesReturnOrderLineDetailsRoute() {
       initialValues={initialValues}
       line={fullLine}
       returnReasons={returnReasons}
-      shippedEntities={shippedEntities}
-      pickedEntityLabels={pickedEntityLabels}
       linkage={linkage}
     />
   );

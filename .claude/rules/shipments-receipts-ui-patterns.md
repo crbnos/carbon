@@ -34,7 +34,8 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
   shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
-  sales-return receipts (same-serial re-entry, guarded to expected entities).
+  sales-return receipts (same-serial re-entry, guarded by provenance: the entity must be the
+  return line's item and shipped to that return's customer on a posted shipment).
 - `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
 - `fixed-asset-lines.update.tsx` — upsert `shipmentFixedAssetLine` (`shipped`/`received` bool, `serialNumber`).

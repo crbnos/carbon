@@ -6327,7 +6327,7 @@ export async function getSalesReturnOrderLines(
   return client
     .from("salesReturnOrderLine")
     .select(
-      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType)"
+      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType, thumbnailPath)"
     )
     .eq("salesReturnOrderId", salesReturnOrderId)
     .eq("companyId", companyId)
@@ -6534,32 +6534,6 @@ export async function deleteSalesReturnOrderLine(
   lineId: string
 ) {
   return client.from("salesReturnOrderLine").delete().eq("id", lineId);
-}
-
-export async function setSalesReturnOrderLineTrackedEntities(
-  client: SupabaseClient<Database>,
-  lineId: string,
-  companyId: string,
-  entityIds: string[],
-  userId: string
-) {
-  const deleteExisting = await client
-    .from("salesReturnOrderLineTrackedEntity")
-    .delete()
-    .eq("salesReturnOrderLineId", lineId)
-    .eq("companyId", companyId);
-  if (deleteExisting.error) return deleteExisting;
-  if (entityIds.length === 0) return deleteExisting;
-
-  return client.from("salesReturnOrderLineTrackedEntity").insert(
-    entityIds.map((trackedEntityId) => ({
-      salesReturnOrderLineId: lineId,
-      trackedEntityId,
-      quantity: 1,
-      companyId,
-      createdBy: userId
-    }))
-  );
 }
 
 export async function getSalesReturnOrderReceipts(

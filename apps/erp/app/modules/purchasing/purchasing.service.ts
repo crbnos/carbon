@@ -3083,7 +3083,7 @@ export async function getPurchaseReturnOrderLines(
   return client
     .from("purchaseReturnOrderLine")
     .select(
-      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType)"
+      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType, thumbnailPath)"
     )
     .eq("purchaseReturnOrderId", purchaseReturnOrderId)
     .eq("companyId", companyId)

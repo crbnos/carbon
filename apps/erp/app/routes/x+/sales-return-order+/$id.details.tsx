@@ -1,10 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Card,
-  CardAttribute,
-  CardAttributeLabel,
-  CardAttributes,
-  CardAttributeValue,
   CardContent,
   CardHeader,
   CardTitle,
@@ -14,9 +10,8 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import { CustomerAvatar, Hyperlink } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, useRouteData } from "~/hooks";
+import { Hyperlink } from "~/components";
+import { useDateFormatter } from "~/hooks";
 import ReceiptStatus from "~/modules/inventory/ui/Receipts/ReceiptStatus";
 import MemoStatus from "~/modules/invoicing/ui/Memo/MemoStatus";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
@@ -25,11 +20,7 @@ import {
   getSalesReturnOrderIssues,
   getSalesReturnOrderReceipts
 } from "~/modules/sales";
-import SalesReturnOrderStatus from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderStatus";
-import type {
-  SalesReturnOrder,
-  SalesReturnOrderLine
-} from "~/modules/sales/ui/SalesReturnOrders/types";
+import SalesReturnOrderSummary from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderSummary";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -59,79 +50,11 @@ export default function SalesReturnOrderDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
-  const routeData = useRouteData<{
-    salesReturnOrder: SalesReturnOrder;
-    lines: SalesReturnOrderLine[];
-  }>(path.to.salesReturnOrder(id));
-
   const { formatDate } = useDateFormatter();
-  const salesReturnOrder = routeData?.salesReturnOrder;
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>{salesReturnOrder?.salesReturnOrderId}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardAttributes>
-            <CardAttribute>
-              <CardAttributeLabel>
-                <Trans>Customer</Trans>
-              </CardAttributeLabel>
-              <CardAttributeValue>
-                <CustomerAvatar
-                  customerId={salesReturnOrder?.customerId ?? null}
-                />
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>
-                <Trans>Status</Trans>
-              </CardAttributeLabel>
-              <CardAttributeValue>
-                <SalesReturnOrderStatus status={salesReturnOrder?.status} />
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>
-                <Trans>Order Date</Trans>
-              </CardAttributeLabel>
-              <CardAttributeValue>
-                {formatDate(salesReturnOrder?.orderDate)}
-              </CardAttributeValue>
-            </CardAttribute>
-            {salesReturnOrder?.expirationDate && (
-              <CardAttribute>
-                <CardAttributeLabel>
-                  <Trans>Expiration Date</Trans>
-                </CardAttributeLabel>
-                <CardAttributeValue>
-                  {formatDate(salesReturnOrder?.expirationDate)}
-                </CardAttributeValue>
-              </CardAttribute>
-            )}
-            <CardAttribute>
-              <CardAttributeLabel>
-                <Trans>Currency</Trans>
-              </CardAttributeLabel>
-              <CardAttributeValue>
-                <Enumerable value={salesReturnOrder?.currencyCode ?? null} />
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>
-                <Trans>Lines</Trans>
-              </CardAttributeLabel>
-              <CardAttributeValue>
-                <span className="tabular-nums">
-                  {routeData?.lines?.length ?? 0}
-                </span>
-              </CardAttributeValue>
-            </CardAttribute>
-          </CardAttributes>
-        </CardContent>
-      </Card>
+      <SalesReturnOrderSummary />
 
       <Card>
         <CardHeader>

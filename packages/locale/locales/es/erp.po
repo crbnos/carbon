@@ -6723,9 +6723,6 @@ msgstr "Recepción Esperada"
 msgid "Expected Receipt Date"
 msgstr "Fecha de Recepción Esperada"
 
-msgid "Expected serials/batches"
-msgstr "Números de serie/lotes esperados"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Cuenta de gastos para saldos de clientes cancelados como incobrables en la liquidación de cuentas por cobrar"
 
@@ -11896,9 +11893,6 @@ msgstr "Elige un valor de un paso anterior"
 msgid "Pick a variable…"
 msgstr "Elige una variable…"
 
-msgid "Pick expected serials/batches"
-msgstr "Seleccionar números de serie/lotes esperados"
-
 msgid "Pick List"
 msgstr "Lista de Picking"
 
@@ -13496,6 +13490,9 @@ msgstr "recursos"
 msgid "Resources"
 msgstr "Recursos"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "tarifa de reabastecimiento"
 
@@ -13505,6 +13502,9 @@ msgstr "Porcentaje de tarifa de reabastecimiento"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Cargo por reposición {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Restaurable con cambios"
@@ -14609,9 +14609,6 @@ msgstr "Serializa y vende tus piezas"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Números de serie y lotes disponibles que fueron recibidos de este proveedor"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Números de serie y lotes previamente enviados a este cliente"
-
 msgid "Serials/batches to return"
 msgstr "Números de serie/lotes a devolver"
 
@@ -14915,6 +14912,9 @@ msgstr "Recogida corta {itemName}"
 
 msgid "Shortcuts"
 msgstr "Atajos"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostrar una columna de ID de cliente legible en la lista de clientes, formularios de clientes y listas desplegables. Los clientes se identifican internamente de cualquier forma."

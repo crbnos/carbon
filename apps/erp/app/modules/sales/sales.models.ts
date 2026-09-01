@@ -1068,8 +1068,7 @@ export const salesReturnOrderLineValidator = z.object({
   returnReasonId: zfd.text(z.string().optional()),
   salesOrderLineId: zfd.text(z.string().optional()),
   shipmentLineId: zfd.text(z.string().optional()),
-  salesInvoiceLineId: zfd.text(z.string().optional()),
-  trackedEntityIds: zfd.repeatableOfType(z.string()).optional()
+  salesInvoiceLineId: zfd.text(z.string().optional())
 });
 
 export const salesReturnOrderDispositionValidator = z.object({

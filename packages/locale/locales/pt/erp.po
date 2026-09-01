@@ -6723,9 +6723,6 @@ msgstr "Recebimento Esperado"
 msgid "Expected Receipt Date"
 msgstr "Data de Recebimento Esperada"
 
-msgid "Expected serials/batches"
-msgstr "Números de série/lotes esperados"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Conta de despesa para saldos de clientes cancelados como incobrável na liquidação de contas a receber"
 
@@ -11896,9 +11893,6 @@ msgstr "Escolha um valor de uma etapa anterior"
 msgid "Pick a variable…"
 msgstr "Escolha uma variável…"
 
-msgid "Pick expected serials/batches"
-msgstr "Selecione números de série/lotes esperados"
-
 msgid "Pick List"
 msgstr "Lista de Coleta"
 
@@ -13496,6 +13490,9 @@ msgstr "recursos"
 msgid "Resources"
 msgstr "Recursos"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "taxa de reabastecimento"
 
@@ -13505,6 +13502,9 @@ msgstr "Percentual de Taxa de Reabastecimento"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Taxa de reposição {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Restaurável com alterações"
@@ -14609,9 +14609,6 @@ msgstr "Serialize e venda suas peças"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Números de série e lotes em estoque que foram recebidos deste fornecedor"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Números de série e lotes previamente enviados para este cliente"
-
 msgid "Serials/batches to return"
 msgstr "Números de série/lotes para devolver"
 
@@ -14915,6 +14912,9 @@ msgstr "Colheita curta {itemName}"
 
 msgid "Shortcuts"
 msgstr "Atalhos"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostrar uma coluna de ID de Cliente legível na lista de clientes, formulários de clientes e menus suspensos. Os clientes ainda são identificados internamente de qualquer forma."

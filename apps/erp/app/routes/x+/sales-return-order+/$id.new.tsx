@@ -8,7 +8,6 @@ import {
   getSalesReturnOrder,
   isSalesReturnOrderLocked,
   salesReturnOrderLineValidator,
-  setSalesReturnOrderLineTrackedEntities,
   upsertSalesReturnOrderLine
 } from "~/modules/sales";
 import { setCustomFields } from "~/utils/form";
@@ -57,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id: _id, trackedEntityIds, ...d } = validation.data;
+  const { id: _id, ...d } = validation.data;
 
   // The locked-order guard above checked the URL's order — write to that same
   // order, never the form's copy of the id.
@@ -80,22 +79,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (trackedEntityIds && trackedEntityIds.length > 0) {
-    const setEntities = await setSalesReturnOrderLineTrackedEntities(
-      client,
-      createLine.data.id,
-      companyId,
-      trackedEntityIds,
-      userId
-    );
-    if (setEntities.error) {
-      throw redirect(
-        path.to.salesReturnOrderLine(orderId, createLine.data.id),
-        await flash(
-          request,
-          error(setEntities.error, "Failed to set tracked entities")
-        )
-      );
+  // A line added from a document knows its sales order — link the header
+  // automatically when it isn't linked yet. The first line's order wins and a
+  // manually-linked header is never overwritten, so multi-order returns still
+  // work. Best-effort: a failure here leaves the manual link available.
+  if (!salesReturnOrder.data?.salesOrderId && d.salesOrderLineId) {
+    const salesOrderLine = await client
+      .from("salesOrderLine")
+      .select("salesOrderId")
+      .eq("id", d.salesOrderLineId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (salesOrderLine.data?.salesOrderId) {
+      await client
+        .from("salesReturnOrder")
+        .update({
+          salesOrderId: salesOrderLine.data.salesOrderId,
+          updatedBy: userId
+        })
+        .eq("id", orderId)
+        .eq("companyId", companyId);
     }
   }
 

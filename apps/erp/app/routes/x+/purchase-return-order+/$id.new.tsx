@@ -80,6 +80,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // A line added from a document knows its purchase order — link the header
+  // automatically when it isn't linked yet. The first line's order wins and a
+  // manually-linked header is never overwritten, so multi-order returns still
+  // work. Best-effort: a failure here leaves the manual link available.
+  if (!purchaseReturnOrder.data?.purchaseOrderId) {
+    let purchaseOrderLineId = d.purchaseOrderLineId ?? null;
+    if (!purchaseOrderLineId && d.receiptLineId) {
+      const receiptLine = await client
+        .from("receiptLine")
+        .select("lineId")
+        .eq("id", d.receiptLineId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      purchaseOrderLineId = receiptLine.data?.lineId ?? null;
+    }
+    if (purchaseOrderLineId) {
+      const purchaseOrderLine = await client
+        .from("purchaseOrderLine")
+        .select("purchaseOrderId")
+        .eq("id", purchaseOrderLineId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (purchaseOrderLine.data?.purchaseOrderId) {
+        await client
+          .from("purchaseReturnOrder")
+          .update({
+            purchaseOrderId: purchaseOrderLine.data.purchaseOrderId,
+            updatedBy: userId
+          })
+          .eq("id", orderId)
+          .eq("companyId", companyId);
+      }
+    }
+  }
+
   if (trackedEntityIds && trackedEntityIds.length > 0) {
     const setEntities = await setPurchaseReturnOrderLineTrackedEntities(
       client,

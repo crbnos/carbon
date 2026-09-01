@@ -6723,9 +6723,6 @@ msgstr "अपेक्षित रसीद"
 msgid "Expected Receipt Date"
 msgstr "अपेक्षित प्राप्ति तारीख"
 
-msgid "Expected serials/batches"
-msgstr "अपेक्षित सीरीज़/बैच"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "ग्राहक शेष राशि के लिए व्यय खाता जो प्राप्य खाते समझौते पर अनिर्धारक के रूप में लिखा गया है"
 
@@ -11896,9 +11893,6 @@ msgstr "पहले के एक चरण से मान चुनें"
 msgid "Pick a variable…"
 msgstr "एक वेरिएबल चुनें…"
 
-msgid "Pick expected serials/batches"
-msgstr "अपेक्षित सीरीज/बैच चुनें"
-
 msgid "Pick List"
 msgstr "पिक लिस्ट"
 
@@ -13496,6 +13490,9 @@ msgstr "संसाधन"
 msgid "Resources"
 msgstr "संसाधन"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "पुनः स्टॉक शुल्क"
 
@@ -13505,6 +13502,9 @@ msgstr "पुनः स्टॉक शुल्क प्रतिशत"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "पुनर्भंडारण शुल्क {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "बदलावों के साथ पुनर्स्थापना योग्य"
@@ -14609,9 +14609,6 @@ msgstr "अपने पार्ट्स को सीरियलाइज़
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "इस आपूर्तिकर्ता से प्राप्त सीरीज़ और बैच"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "पहले इस ग्राहक को भेजी गई सीरीज़ और बैच"
-
 msgid "Serials/batches to return"
 msgstr "लौटाने के लिए सीरीज़/बैच"
 
@@ -14915,6 +14912,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Shortcuts"
 msgstr "शॉर्टकट"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "ग्राहक सूची, ग्राहक फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक आईडी कॉलम दिखाएं। ग्राहकों की पहचान आंतरिक रूप से किसी भी तरह से की जाती है।"

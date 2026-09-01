@@ -4,8 +4,7 @@ import type {
   getSalesReturnOrderIssues,
   getSalesReturnOrderLines,
   getSalesReturnOrderLineTrackedEntities,
-  getSalesReturnOrderReceipts,
-  getShippedTrackedEntitiesForCustomer
+  getSalesReturnOrderReceipts
 } from "../../sales.service";
 
 export type SalesReturnOrder =
@@ -32,8 +31,4 @@ export type SalesReturnOrderCredit = NonNullable<
 
 export type SalesReturnOrderIssue = NonNullable<
   Awaited<ReturnType<typeof getSalesReturnOrderIssues>>["data"]
->[number];
-
-export type ShippedTrackedEntity = NonNullable<
-  Awaited<ReturnType<typeof getShippedTrackedEntitiesForCustomer>>["data"]
 >[number];

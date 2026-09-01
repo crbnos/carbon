@@ -6723,9 +6723,6 @@ msgstr "Ricevimento Previsto"
 msgid "Expected Receipt Date"
 msgstr "Data di Ricezione Prevista"
 
-msgid "Expected serials/batches"
-msgstr "Seriali/lotti attesi"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Conto di Spesa per i saldi dei Clienti cancellati come inesigibili alla regolazione dei Crediti verso clienti"
 
@@ -11896,9 +11893,6 @@ msgstr "Scegli un valore da un passaggio precedente"
 msgid "Pick a variable…"
 msgstr "Scegli una variabile…"
 
-msgid "Pick expected serials/batches"
-msgstr "Seleziona i numeri di serie/lotti previsti"
-
 msgid "Pick List"
 msgstr "Elenco di prelievo"
 
@@ -13496,6 +13490,9 @@ msgstr "risorse"
 msgid "Resources"
 msgstr "Risorse"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "canone di rifornimento"
 
@@ -13505,6 +13502,9 @@ msgstr "Percentuale Canone di Rifornimento"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Costo di ristoccaggio {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Ripristinabile con modifiche"
@@ -14609,9 +14609,6 @@ msgstr "Serializza e vendi i tuoi componenti"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Numeri di serie e lotti disponibili ricevuti da questo fornitore"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Numeri di serie e lotti precedentemente spediti a questo cliente"
-
 msgid "Serials/batches to return"
 msgstr "Numeri di serie/lotti da restituire"
 
@@ -14915,6 +14912,9 @@ msgstr "Prelievo incompleto {itemName}"
 
 msgid "Shortcuts"
 msgstr "Scorciatoie"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostra una colonna ID Cliente leggibile nell'elenco clienti, nei moduli cliente e nei menu a discesa. I clienti sono comunque identificati internamente in entrambi i casi."

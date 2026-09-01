@@ -6723,9 +6723,6 @@ msgstr "Expected Receipt"
 msgid "Expected Receipt Date"
 msgstr "Expected Receipt Date"
 
-msgid "Expected serials/batches"
-msgstr "Expected serials/batches"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Expense account for customer balances written off as uncollectable on AR settlement"
 
@@ -11896,9 +11893,6 @@ msgstr "Pick a value from an earlier step"
 msgid "Pick a variable…"
 msgstr "Pick a variable…"
 
-msgid "Pick expected serials/batches"
-msgstr "Pick expected serials/batches"
-
 msgid "Pick List"
 msgstr "Pick List"
 
@@ -13496,6 +13490,9 @@ msgstr "resources"
 msgid "Resources"
 msgstr "Resources"
 
+msgid "Restock"
+msgstr "Restock"
+
 msgid "restock fee"
 msgstr "restock fee"
 
@@ -13505,6 +13502,9 @@ msgstr "Restock Fee Percent"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Restocking fee {0}"
+
+msgid "Restocking fee:"
+msgstr "Restocking fee:"
 
 msgid "Restorable with changes"
 msgstr "Restorable with changes"
@@ -14609,9 +14609,6 @@ msgstr "Serialize & sell your parts"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Serials and batches on hand that were received from this supplier"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Serials and batches previously shipped to this customer"
-
 msgid "Serials/batches to return"
 msgstr "Serials/batches to return"
 
@@ -14915,6 +14912,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Shortcuts"
 msgstr "Shortcuts"
+
+msgid "Show"
+msgstr "Show"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."

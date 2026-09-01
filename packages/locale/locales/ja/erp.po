@@ -6723,9 +6723,6 @@ msgstr "予想受取日"
 msgid "Expected Receipt Date"
 msgstr "予想受取日"
 
-msgid "Expected serials/batches"
-msgstr "予想されるシリアル/バッチ"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "売掛金決済において回収不可能として償却された得意先残高の費用勘定"
 
@@ -11896,9 +11893,6 @@ msgstr "前のステップの値を選択"
 msgid "Pick a variable…"
 msgstr "変数を選択..."
 
-msgid "Pick expected serials/batches"
-msgstr "予想されるシリアル/バッチを選択"
-
 msgid "Pick List"
 msgstr "ピッキングリスト"
 
@@ -13496,6 +13490,9 @@ msgstr "リソース"
 msgid "Resources"
 msgstr "リソース"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "再在庫手数料"
 
@@ -13505,6 +13502,9 @@ msgstr "再在庫手数料率"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "返品手数料 {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "変更ありで復元可能"
@@ -14609,9 +14609,6 @@ msgstr "部品をシリアル化して販売する"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "このサプライヤーから受け取った手元のシリアルとバッチ"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "以前この顧客に発送されたシリアルとバッチ"
-
 msgid "Serials/batches to return"
 msgstr "返却するシリアル/バッチ"
 
@@ -14915,6 +14912,9 @@ msgstr "短いピック {itemName}"
 
 msgid "Shortcuts"
 msgstr "ショートカット"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "得意先リスト、得意先フォーム、ドロップダウンで読みやすい得意先IDカラムを表示します。得意先はどちらの方法でも内部的に識別されます。"

@@ -6723,9 +6723,6 @@ msgstr "예상 입고"
 msgid "Expected Receipt Date"
 msgstr "예상 입고일"
 
-msgid "Expected serials/batches"
-msgstr "예상 일련 번호/배치"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "매출채권 정산 시 회수 불가로 상각된 고객 잔액에 대한 비용 계정"
 
@@ -11896,9 +11893,6 @@ msgstr "이전 단계에서 값 선택"
 msgid "Pick a variable…"
 msgstr "변수 선택…"
 
-msgid "Pick expected serials/batches"
-msgstr "예상되는 일련번호/배치 선택"
-
 msgid "Pick List"
 msgstr "피킹 목록"
 
@@ -13496,6 +13490,9 @@ msgstr "자원"
 msgid "Resources"
 msgstr "자원"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "재입고 수수료"
 
@@ -13505,6 +13502,9 @@ msgstr "재입고 수수료 비율"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "재입고 수수료 {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "변경 사항과 함께 복원 가능"
@@ -14609,9 +14609,6 @@ msgstr "부품에 일련번호를 부여하고 판매하세요."
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "이 공급업체에서 받은 현재 보유 중인 일련번호 및 배치"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "이전에 이 고객에게 배송된 일련번호 및 배치"
-
 msgid "Serials/batches to return"
 msgstr "반품할 일련번호/배치"
 
@@ -14915,6 +14912,9 @@ msgstr "{itemName} 부족 피킹"
 
 msgid "Shortcuts"
 msgstr "단축키"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID 열을 표시합니다. 어느 쪽이든 고객은 내부적으로 동일하게 식별됩니다."

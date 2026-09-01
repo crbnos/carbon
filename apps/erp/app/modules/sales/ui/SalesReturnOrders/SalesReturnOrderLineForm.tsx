@@ -1,6 +1,5 @@
 import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
-import type { TrackedEntityOption } from "@carbon/react";
 import {
   Badge,
   Button,
@@ -8,7 +7,6 @@ import {
   FormControl,
   FormLabel,
   HStack,
-  IconButton,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -20,21 +18,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  TrackedEntityPicker,
   toast,
-  useDisclosure,
-  useMount,
-  VStack
+  useMount
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import {
-  LuCirclePlus,
-  LuCircleStop,
-  LuLoaderCircle,
-  LuX
-} from "react-icons/lu";
+import { LuCircleStop, LuLoaderCircle } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
@@ -57,11 +47,7 @@ import {
   salesReturnDispositionType,
   salesReturnOrderLineValidator
 } from "../../sales.models";
-import type {
-  SalesReturnOrder,
-  SalesReturnOrderLine,
-  ShippedTrackedEntity
-} from "./types";
+import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
 type SalesReturnOrderLineFormProps = {
   initialValues: z.infer<typeof salesReturnOrderLineValidator>;
@@ -71,10 +57,6 @@ type SalesReturnOrderLineFormProps = {
   line?: SalesReturnOrderLine;
   /** Return reasons from the route loader; fetched on mount when absent */
   returnReasons?: { id: string; name: string }[];
-  /** Serials/batches shipped to this customer for the line's item */
-  shippedEntities?: ShippedTrackedEntity[];
-  /** Readable ids for already-picked entities no longer in shippedEntities */
-  pickedEntityLabels?: Record<string, string>;
   /** Readable ids for the linked source documents */
   linkage?: {
     shipmentReadableId?: string | null;
@@ -89,8 +71,6 @@ const SalesReturnOrderLineForm = ({
   onClose,
   line,
   returnReasons,
-  shippedEntities,
-  pickedEntityLabels,
   linkage
 }: SalesReturnOrderLineFormProps) => {
   const { t } = useLingui();
@@ -262,23 +242,6 @@ const SalesReturnOrderLineForm = ({
     });
   };
 
-  // Expected serials/batches for Serial/Batch items
-  const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>(
-    initialValues.trackedEntityIds ?? []
-  );
-  const pickerDisclosure = useDisclosure();
-  const isTracked = ["Serial", "Batch"].includes(itemData.trackingType);
-  const entityById = new Map(
-    (shippedEntities ?? []).map((entity) => [entity.id, entity])
-  );
-  const pickerEntities: TrackedEntityOption[] = (shippedEntities ?? [])
-    .filter((entity) => !selectedEntityIds.includes(entity.id))
-    .map((entity) => ({
-      trackedEntityId: entity.id,
-      readableId: entity.readableId,
-      availableQuantity: entity.quantity ?? 1
-    }));
-
   const isDisabled = isEditing
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
@@ -343,14 +306,6 @@ const SalesReturnOrderLineForm = ({
               {initialValues.salesInvoiceLineId && (
                 <Hidden name="salesInvoiceLineId" />
               )}
-              {selectedEntityIds.map((entityId) => (
-                <input
-                  key={entityId}
-                  type="hidden"
-                  name="trackedEntityIds"
-                  value={entityId}
-                />
-              ))}
               <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                 <Item
                   name="itemId"
@@ -428,45 +383,6 @@ const SalesReturnOrderLineForm = ({
                 )}
                 <CustomFormFields table="salesReturnOrderLine" />
               </div>
-
-              {isEditing && isTracked && shippedEntities && (
-                <VStack spacing={2} className="pt-4">
-                  {/* plain label: FormLabel requires a FormControl context */}
-                  <label className="text-sm font-medium">
-                    <Trans>Expected serials/batches</Trans>
-                  </label>
-                  <HStack spacing={2} className="flex-wrap">
-                    {selectedEntityIds.map((entityId) => (
-                      <Badge key={entityId} variant="secondary">
-                        {entityById.get(entityId)?.readableId ??
-                          pickedEntityLabels?.[entityId] ??
-                          entityId}
-                        <IconButton
-                          aria-label={t`Remove`}
-                          icon={<LuX />}
-                          size="sm"
-                          variant="ghost"
-                          isDisabled={isLocked}
-                          onClick={() =>
-                            setSelectedEntityIds((ids) =>
-                              ids.filter((id) => id !== entityId)
-                            )
-                          }
-                        />
-                      </Badge>
-                    ))}
-                    <Button
-                      leftIcon={<LuCirclePlus />}
-                      variant="secondary"
-                      size="sm"
-                      isDisabled={isLocked || pickerEntities.length === 0}
-                      onClick={pickerDisclosure.onOpen}
-                    >
-                      <Trans>Add</Trans>
-                    </Button>
-                  </HStack>
-                </VStack>
-              )}
             </ModalCardBody>
             <ModalCardFooter>
               <HStack className="w-full justify-between">
@@ -504,23 +420,6 @@ const SalesReturnOrderLineForm = ({
           </ValidatedForm>
         </ModalCardContent>
       </ModalCard>
-      {pickerDisclosure.isOpen && (
-        <TrackedEntityPicker
-          trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
-          entities={pickerEntities}
-          title={t`Pick expected serials/batches`}
-          description={t`Serials and batches previously shipped to this customer`}
-          onSelect={(selection) => {
-            setSelectedEntityIds((ids) =>
-              ids.includes(selection.trackedEntityId)
-                ? ids
-                : [...ids, selection.trackedEntityId]
-            );
-            pickerDisclosure.onClose();
-          }}
-          onClose={pickerDisclosure.onClose}
-        />
-      )}
     </ModalCardProvider>
   );
 };

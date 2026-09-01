@@ -6,11 +6,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getSalesReturnOrder,
-  getSalesReturnOrderLines,
-  getSalesReturnOrderLineTrackedEntities
-} from "~/modules/sales";
+import { getSalesReturnOrder, getSalesReturnOrderLines } from "~/modules/sales";
 import {
   SalesReturnOrderExplorer,
   SalesReturnOrderHeader,
@@ -54,16 +50,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.salesReturnOrders);
   }
 
-  const lineIds = (lines.data ?? []).map((line) => line.id);
-  const trackedEntities =
-    lineIds.length > 0
-      ? await getSalesReturnOrderLineTrackedEntities(client, lineIds)
-      : { data: [], error: null };
-
   return {
     salesReturnOrder: salesReturnOrder.data,
-    lines: lines.data ?? [],
-    trackedEntities: trackedEntities.data ?? []
+    lines: lines.data ?? []
   };
 }
 
@@ -74,15 +63,15 @@ export default function SalesReturnOrderRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
         <SalesReturnOrderHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<SalesReturnOrderExplorer />}
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <VStack spacing={2} className="p-2">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>
                 </div>

@@ -6723,9 +6723,6 @@ msgstr "Ожидаемое получение"
 msgid "Expected Receipt Date"
 msgstr "Ожидаемая дата получения"
 
-msgid "Expected serials/batches"
-msgstr "Ожидаемые серийные номера/партии"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Счет расходов для остатков покупателей, списанных как безнадежные при урегулировании дебиторской задолженности"
 
@@ -11896,9 +11893,6 @@ msgstr "Выберите значение из предыдущего шага"
 msgid "Pick a variable…"
 msgstr "Выберите переменную…"
 
-msgid "Pick expected serials/batches"
-msgstr "Выбрать ожидаемые серийные номера/партии"
-
 msgid "Pick List"
 msgstr "Список подбора"
 
@@ -13496,6 +13490,9 @@ msgstr "ресурсы"
 msgid "Resources"
 msgstr "Ресурсы"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "комиссия за пополнение запасов"
 
@@ -13505,6 +13502,9 @@ msgstr "Процент комиссии за пополнение запасов
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "Комиссия за пополнение запасов: {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Восстановима с изменениями"
@@ -14609,9 +14609,6 @@ msgstr "Сериализуйте и продавайте свои детали"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Серийные номера и партии на складе, полученные от этого поставщика"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "Серийные номера и партии, отправленные ранее этому клиенту"
-
 msgid "Serials/batches to return"
 msgstr "Серийные номера/партии для возврата"
 
@@ -14915,6 +14912,9 @@ msgstr "Короткий отбор {itemName}"
 
 msgid "Shortcuts"
 msgstr "Сочетания клавиш"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Показывать столбец с читаемым ID Покупателя в списке покупателей, формах и выпадающих списках. Покупатели по-прежнему идентифицируются внутренне одинаково."

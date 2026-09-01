@@ -6723,9 +6723,6 @@ msgstr "预期收货"
 msgid "Expected Receipt Date"
 msgstr "预期收货日期"
 
-msgid "Expected serials/batches"
-msgstr "预期序列号/批次"
-
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
 
@@ -11896,9 +11893,6 @@ msgstr "从早期步骤选择一个值"
 msgid "Pick a variable…"
 msgstr "选择变量…"
 
-msgid "Pick expected serials/batches"
-msgstr "选择预期序列号/批次"
-
 msgid "Pick List"
 msgstr "拣货单"
 
@@ -13496,6 +13490,9 @@ msgstr "资源"
 msgid "Resources"
 msgstr "资源"
 
+msgid "Restock"
+msgstr ""
+
 msgid "restock fee"
 msgstr "补货费"
 
@@ -13505,6 +13502,9 @@ msgstr "补货费百分比"
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
 msgstr "补货费 {0}"
+
+msgid "Restocking fee:"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "可恢复（有变更）"
@@ -14609,9 +14609,6 @@ msgstr "序列化并销售您的零件"
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "从该供应商收到的现有序列号和批次"
 
-msgid "Serials and batches previously shipped to this customer"
-msgstr "之前发送给该客户的序列号和批次"
-
 msgid "Serials/batches to return"
 msgstr "待退货的序列号/批次"
 
@@ -14915,6 +14912,9 @@ msgstr "短缺拣货 {itemName}"
 
 msgid "Shortcuts"
 msgstr "快捷键"
+
+msgid "Show"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID列。无论哪种方式，客户在内部仍然可以被识别。"
