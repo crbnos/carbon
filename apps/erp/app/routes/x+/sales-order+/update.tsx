@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { resolveCurrencyAndRate } from "~/modules/accounting";
 import { isSalesOrderLocked } from "~/modules/sales";
@@ -50,9 +51,9 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("salesOrder")
         .update({
           exchangeRate: rate,
-          exchangeRateUpdatedAt: new Date().toISOString(),
+          exchangeRateUpdatedAt: datetime.timestamp(),
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .in("id", ids as string[]);
     }
@@ -79,9 +80,9 @@ export async function action({ request }: ActionFunctionArgs) {
               customerId: value ?? undefined,
               currencyCode: resolved.data.currencyCode,
               exchangeRate: resolved.data.exchangeRate,
-              exchangeRateUpdatedAt: new Date().toISOString(),
+              exchangeRateUpdatedAt: datetime.timestamp(),
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .in("id", ids as string[]);
         }
@@ -110,9 +111,9 @@ export async function action({ request }: ActionFunctionArgs) {
         .update({
           currencyCode: resolved.data.currencyCode,
           exchangeRate: resolved.data.exchangeRate,
-          exchangeRateUpdatedAt: new Date().toISOString(),
+          exchangeRateUpdatedAt: datetime.timestamp(),
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .in("id", ids as string[]);
     }

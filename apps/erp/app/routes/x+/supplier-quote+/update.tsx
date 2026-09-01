@@ -59,9 +59,9 @@ export async function action({ request }: ActionFunctionArgs) {
               supplierId: value ?? undefined,
               currencyCode: resolved.data.currencyCode,
               exchangeRate: resolved.data.exchangeRate,
-              exchangeRateUpdatedAt: new Date().toISOString(),
+              exchangeRateUpdatedAt: datetime.timestamp(),
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .in("id", ids as string[]);
         }
@@ -90,9 +90,9 @@ export async function action({ request }: ActionFunctionArgs) {
         .update({
           currencyCode: resolved.data.currencyCode,
           exchangeRate: resolved.data.exchangeRate,
-          exchangeRateUpdatedAt: new Date().toISOString(),
+          exchangeRateUpdatedAt: datetime.timestamp(),
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .in("id", ids as string[]);
     }
