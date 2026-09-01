@@ -178,7 +178,9 @@ const CurrencyForm = ({
                   name="historicalExchangeRate"
                   label={t`Historical Rate (Equity)`}
                   termId="historical-exchange-rate"
-                  minValue={0}
+                  // Same reasoning as exchangeRate above: a floor CLAMPS on blur, so a
+                  // typed 0 would commit as the step and pass .positive().
+                  minValue={undefined}
                   step={INPUT_STEP.exchangeRate}
                   formatOptions={INPUT_FORMAT.exchangeRate}
                   helperText="Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
