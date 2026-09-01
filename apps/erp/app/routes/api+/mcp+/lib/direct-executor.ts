@@ -63,8 +63,24 @@ function enrichWithAuthContext(
   fields: AuthField[],
   operation?: McpOperation
 ): unknown {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return value;
   if (fields.length === 0) return value;
+
+  // Array payloads (e.g. the row list for upsertQuoteLinePrices) need per-element
+  // stamping — enrichment never reached inside them, so a NOT NULL createdBy on
+  // the row table failed. Only createdBy is injected into elements (and only for
+  // an insert): element keys are spread straight into an INSERT, so injecting
+  // companyId/updatedBy could add a column the row table doesn't have. The
+  // service owns companyId for these rows. createdBy is stamped AFTER the spread
+  // so a caller can't forge audit attribution by supplying it in a row.
+  if (Array.isArray(value)) {
+    if (operation === "update" || !fields.includes("createdBy")) return value;
+    return value.map((element) =>
+      element && typeof element === "object" && !Array.isArray(element)
+        ? { ...(element as Record<string, unknown>), createdBy: context.userId }
+        : element
+    );
+  }
 
   const enriched: Record<string, unknown> = {
     ...(value as Record<string, unknown>)

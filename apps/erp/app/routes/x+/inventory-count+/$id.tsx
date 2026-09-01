@@ -27,7 +27,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Inventory Count`, to: path.to.inventoryCounts },
     (data) => data?.inventoryCount?.inventoryCountId
-  )
+  ),
+  module: "inventory"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -140,7 +141,7 @@ export default function InventoryCountDetailRoute() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100dvh-49px)] w-full overflow-hidden">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] w-full overflow-hidden">
         <InventoryCountDetails
           inventoryCount={inventoryCount}
           lines={lines}

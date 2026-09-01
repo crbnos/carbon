@@ -8,6 +8,7 @@ import {
   deleteJobMaterial,
   recalculateJobOperationDependencies
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -39,6 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const recalculateResult = await recalculateJobOperationDependencies(
     getCarbonServiceRole(),
+    getDatabaseClient(),
     {
       jobId,
       companyId,

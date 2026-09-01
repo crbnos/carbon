@@ -1,4 +1,9 @@
 import type { Database } from "@carbon/database";
+import type {
+  BackupCompatibilityStatus,
+  CompatibilityFinding,
+  Manifest
+} from "@carbon/jobs/backups";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Company backup data access. The export edge function is a thin auth boundary;
@@ -11,6 +16,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // snapshots use the same layout under a `_pre-restore-*` name. Must match the
 // `backup*Path` helpers in packages/jobs/.../company-backup.ts.
 const SNAPSHOT_PREFIX = "_pre-restore-";
+
+/** Supabase storage caps a `list` call; page until a short page comes back. */
+const BACKUP_LIST_PAGE_SIZE = 100;
+const BACKUP_LIST_MAX_PAGES = 50;
 
 /**
  * Remove every object under a prefix (recursing into folders) so a deleted
@@ -62,64 +71,101 @@ export type CompanyBackupSummary = {
   rows: number;
   /** Total bundled asset bytes (the bulk of a backup's footprint). */
   sizeBytes: number;
+  /**
+   * "Would this backup restore into TODAY's schema?" — computed live against
+   * the current schema by `getCompanyBackups` (backups.server.ts) on every
+   * load, never stored. The hard refusal is still `assertBackupImportable`
+   * inside the restore job; this is the same diff, disclosed upfront.
+   *
+   * `null` when the schema could not be read (database unreachable, pool
+   * exhausted). That is "we did not check", NOT "clean" — the row shows no
+   * badge and the restore screen says so. Never substitute a `ready` verdict
+   * here: claiming a backup is restorable without comparing anything is the
+   * exact failure this whole computation replaced.
+   */
+  compatibility: {
+    status: BackupCompatibilityStatus;
+    findings: CompatibilityFinding[];
+  } | null;
 };
 
 /**
- * List a company's backups (the `exports/<name>/` folders, snapshots excluded),
- * reading each manifest for its metadata. Manifests are tiny, so the per-backup
- * reads run in parallel.
+ * List a company's backup folders (`exports/<name>/`, snapshots excluded),
+ * reading each manifest for its metadata. Storage layer only: `compatibility`
+ * is a placeholder here — `getCompanyBackups` in backups.server.ts computes
+ * the real verdict from the returned `manifest` (server-only, since it needs
+ * `@carbon/jobs/backups` and a schema read) and strips it before the loader
+ * returns.
  */
-export async function listCompanyBackups(
+export async function listCompanyBackupFolders(
   client: SupabaseClient<Database>,
   companyId: string
-): Promise<{ data: CompanyBackupSummary[] | null; error: Error | null }> {
-  const { data, error } = await client.storage
-    .from(companyId)
-    .list("exports", { limit: 100 });
-  if (error) return { data: null, error };
+): Promise<{
+  data: (CompanyBackupSummary & { manifest: Manifest | null })[] | null;
+  error: Error | null;
+}> {
+  // Paged: storage caps a list call, and an un-listed backup can be neither
+  // restored nor deleted. The page cap only guards a misbehaving storage
+  // response from looping forever.
+  const entries: Awaited<
+    ReturnType<ReturnType<typeof client.storage.from>["list"]>
+  >["data"] = [];
+  for (let page = 0; page < BACKUP_LIST_MAX_PAGES; page++) {
+    const { data, error } = await client.storage
+      .from(companyId)
+      .list("exports", {
+        limit: BACKUP_LIST_PAGE_SIZE,
+        offset: page * BACKUP_LIST_PAGE_SIZE
+      });
+    if (error) return { data: null, error };
+    entries.push(...(data ?? []));
+    if ((data?.length ?? 0) < BACKUP_LIST_PAGE_SIZE) break;
+  }
 
-  const folders = (data ?? []).filter(
+  const folders = entries.filter(
     (e) => e.id === null && !e.name.startsWith(SNAPSHOT_PREFIX)
   );
 
   const backups = await Promise.all(
-    folders.map(async (folder): Promise<CompanyBackupSummary> => {
-      const summary: CompanyBackupSummary = {
-        name: folder.name,
-        status: "pending",
-        exportedAt: null,
-        label: null,
-        rows: 0,
-        sizeBytes: 0
-      };
-      const mf = await client.storage
-        .from(companyId)
-        .download(`exports/${folder.name}/manifest.json`);
-      if (mf.data) {
-        try {
-          const m = JSON.parse(await mf.data.text()) as {
-            exportedAt?: string;
-            label?: string | null;
-            tables?: Array<{ rows?: number }>;
-            storage?: Array<{ size?: number; included?: boolean }>;
-          };
-          summary.status = "ready";
-          summary.exportedAt = m.exportedAt ?? null;
-          summary.label = m.label ?? null;
-          summary.rows = (m.tables ?? []).reduce(
-            (sum, t) => sum + (t.rows ?? 0),
-            0
-          );
-          summary.sizeBytes = (m.storage ?? [])
-            .filter((x) => x.included)
-            .reduce((sum, x) => sum + (x.size ?? 0), 0);
-        } catch {
-          // Manifest present but unreadable — treat as a partial/aborted export
-          // (stays "pending"); still listed by name so the user can delete it.
+    folders.map(
+      async (
+        folder
+      ): Promise<CompanyBackupSummary & { manifest: Manifest | null }> => {
+        const summary: CompanyBackupSummary & { manifest: Manifest | null } = {
+          name: folder.name,
+          status: "pending",
+          exportedAt: null,
+          label: null,
+          rows: 0,
+          sizeBytes: 0,
+          compatibility: null,
+          manifest: null
+        };
+        const mf = await client.storage
+          .from(companyId)
+          .download(`exports/${folder.name}/manifest.json`);
+        if (mf.data) {
+          try {
+            const m = JSON.parse(await mf.data.text()) as Manifest;
+            summary.status = "ready";
+            summary.exportedAt = m.exportedAt ?? null;
+            summary.label = m.label ?? null;
+            summary.rows = (m.tables ?? []).reduce(
+              (sum, t) => sum + (t.rows ?? 0),
+              0
+            );
+            summary.sizeBytes = (m.storage ?? [])
+              .filter((x) => x.included)
+              .reduce((sum, x) => sum + (x.size ?? 0), 0);
+            summary.manifest = { ...m, tables: m.tables ?? [] };
+          } catch {
+            // Manifest present but unreadable — treat as a partial/aborted
+            // export (stays "pending"); still listed so the user can delete it.
+          }
         }
+        return summary;
       }
-      return summary;
-    })
+    )
   );
 
   backups.sort((a, b) =>

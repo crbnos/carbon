@@ -1,0 +1,6401 @@
+{
+  "kind": "carbon-company-backup",
+  "version": 1,
+  "schemaVersion": "20260825075035",
+  "sourceCompanyId": "schema-baseline",
+  "sourceCompanyGroupId": null,
+  "sourceCompanyName": null,
+  "exportedAt": "2026-08-25T13:16:57.172Z",
+  "exportedBy": "schema-baseline",
+  "label": "schema baseline",
+  "includeStorage": "none",
+  "tables": [
+    {
+      "name": "ability",
+      "rows": 0,
+      "columns": [
+        "active",
+        "curve",
+        "shadowWeeks",
+        "createdAt",
+        "updatedAt",
+        "id",
+        "companyId",
+        "name",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "account",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "updatedBy",
+        "isGroup",
+        "parentId",
+        "class",
+        "accountType",
+        "isSystem",
+        "tags",
+        "companyGroupId",
+        "name",
+        "createdAt",
+        "active",
+        "id",
+        "consolidatedRate",
+        "incomeBalance",
+        "number",
+        "createdBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "accountDefault",
+      "rows": 0,
+      "columns": [
+        "serviceChargeAccount",
+        "supplierWriteOffAccount",
+        "goodsReceivedNotInvoicedAccount",
+        "retainedEarningsAccount",
+        "maintenanceAccount",
+        "salesAccount",
+        "prepaymentAccount",
+        "overheadVarianceAccount",
+        "realizedExchangeLossAccount",
+        "purchaseVarianceAccount",
+        "realizedExchangeGainAccount",
+        "accumulatedDepreciationOnDisposalAccount",
+        "bankForeignCurrencyAccount",
+        "materialVarianceAccount",
+        "inventoryAdjustmentVarianceAccount",
+        "assetLossOnDisposalAccount",
+        "finishedGoodsAccount",
+        "companyId",
+        "deferredTaxExpenseAccountId",
+        "deferredTaxLiabilityAccountId",
+        "salesTaxPayableAccount",
+        "purchaseTaxPayableAccount",
+        "overheadAbsorptionAccount",
+        "rawMaterialsAccount",
+        "laborAndMachineVarianceAccount",
+        "workInProgressAccount",
+        "updatedBy",
+        "laborAbsorptionAccount",
+        "assetDepreciationExpenseAccount",
+        "salesDiscountAccount",
+        "costOfGoodsSoldAccount",
+        "customerWriteOffAccount",
+        "assetGainOnDisposalAccount",
+        "customerPaymentDiscountAccount",
+        "currencyTranslationAccount",
+        "reverseChargeSalesTaxPayableAccount",
+        "supplierPaymentDiscountAccount",
+        "payablesAccount",
+        "accumulatedDepreciationAccount",
+        "intercompanyReceivablesAccount",
+        "receivablesAccount",
+        "bankLocalCurrencyAccount",
+        "scrapAccount",
+        "subcontractingVarianceAccount",
+        "assetAquisitionCostOnDisposalAccount",
+        "bankCashAccount",
+        "indirectCostAccount",
+        "roundingAccount",
+        "lotSizeVarianceAccount",
+        "intercompanyPayablesAccount",
+        "supplierPrepaymentAccount",
+        "assetAquisitionCostAccount",
+        "interestAccount"
+      ]
+    },
+    {
+      "name": "accountingPeriod",
+      "rows": 0,
+      "columns": [
+        "closedAt",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
+        "fiscalYear",
+        "startDate",
+        "lockedBy",
+        "lockedAt",
+        "companyId",
+        "closeStatus",
+        "closedBy",
+        "status",
+        "periodNumber",
+        "endDate"
+      ]
+    },
+    {
+      "name": "accountingPeriodBalance",
+      "rows": 0,
+      "columns": [
+        "endingBalance",
+        "accountId",
+        "accountingPeriodId",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "endingBalanceDate",
+        "companyId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "accountingSyncOperation",
+      "rows": 0,
+      "columns": [
+        "entityId",
+        "updatedAt",
+        "completedAt",
+        "externalId",
+        "createdBy",
+        "updatedBy",
+        "createdAt",
+        "entityType",
+        "integration",
+        "errorMessage",
+        "trigger",
+        "lastAttemptAt",
+        "id",
+        "idempotencyKey",
+        "direction",
+        "errorCode",
+        "companyId",
+        "metadata",
+        "attemptCount",
+        "status"
+      ]
+    },
+    {
+      "name": "accountingSyncTieOut",
+      "rows": 0,
+      "columns": [
+        "blockedAmount",
+        "id",
+        "excludedAmount",
+        "carbonPostedAmount",
+        "internalDelta",
+        "companyId",
+        "createdBy",
+        "pendingAmount",
+        "docBackedAmount",
+        "accountId",
+        "providerAmount",
+        "computedAt",
+        "createdAt",
+        "updatedAt",
+        "updatedBy",
+        "accountingPeriodId",
+        "integration",
+        "externalDelta",
+        "syncedAmount"
+      ]
+    },
+    {
+      "name": "address",
+      "rows": 0,
+      "columns": [
+        "phone",
+        "companyId",
+        "addressLine1",
+        "postalCode",
+        "fax",
+        "id",
+        "countryCode",
+        "addressLine2",
+        "city",
+        "stateProvince"
+      ]
+    },
+    {
+      "name": "agentThread",
+      "rows": 0,
+      "columns": [
+        "modelId",
+        "userId",
+        "title",
+        "createdBy",
+        "updatedBy",
+        "id",
+        "lastContext",
+        "companyId",
+        "updatedAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "agentMessage",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "threadId",
+        "finishReason",
+        "outputTokens",
+        "id",
+        "inputTokens",
+        "createdBy",
+        "feedback",
+        "role",
+        "companyId",
+        "updatedAt",
+        "feedbackNote",
+        "context",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "agentMessagePart",
+      "rows": 0,
+      "columns": [
+        "textContent",
+        "toolOutput",
+        "id",
+        "toolCallId",
+        "toolInput",
+        "toolClassification",
+        "messageId",
+        "toolDurationMs",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
+        "toolState",
+        "type",
+        "toolName",
+        "updatedAt",
+        "orderIndex",
+        "companyId",
+        "errorMessage"
+      ]
+    },
+    {
+      "name": "approvalRequest",
+      "rows": 0,
+      "columns": [
+        "requestedBy",
+        "decisionBy",
+        "id",
+        "decisionNotes",
+        "decisionAt",
+        "updatedAt",
+        "documentType",
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "amount",
+        "requestedAt",
+        "createdAt",
+        "documentId",
+        "status"
+      ]
+    },
+    {
+      "name": "approvalRule",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "companyId",
+        "documentType",
+        "lowerBoundAmount",
+        "updatedBy",
+        "createdBy",
+        "id",
+        "escalationDays",
+        "enabled",
+        "approverGroupIds",
+        "updatedAt",
+        "defaultApproverId"
+      ]
+    },
+    {
+      "name": "auditLogArchive",
+      "rows": 0,
+      "columns": [
+        "endDate",
+        "archivePath",
+        "startDate",
+        "sizeBytes",
+        "id",
+        "rowCount",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "changeOrderRequiredAction",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "name",
+        "active",
+        "createdBy",
+        "updatedAt",
+        "companyId",
+        "createdAt",
+        "customFields",
+        "id"
+      ]
+    },
+    {
+      "name": "changeOrderType",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "createdAt",
+        "companyId",
+        "updatedBy",
+        "id",
+        "updatedAt",
+        "name"
+      ]
+    },
+    {
+      "name": "companyAccountsPayableBillingAddress",
+      "rows": 0,
+      "columns": [
+        "email",
+        "phone",
+        "id",
+        "state",
+        "name",
+        "updatedBy",
+        "fax",
+        "countryCode",
+        "updatedAt",
+        "city",
+        "addressLine1",
+        "addressLine2",
+        "postalCode"
+      ]
+    },
+    {
+      "name": "companyAccountsReceivableBillingAddress",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "city",
+        "postalCode",
+        "addressLine1",
+        "addressLine2",
+        "state",
+        "email",
+        "phone",
+        "id",
+        "fax",
+        "countryCode",
+        "name",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "companySettings",
+      "rows": 0,
+      "columns": [
+        "includeMaterialsOnTraveler",
+        "qualityIssueTarget",
+        "materialGeneratedIds",
+        "accountingEnabled",
+        "returnPickedMaterialTiming",
+        "accountsPayableAddress",
+        "inventoryJobCompletedNotificationGroup",
+        "accountsReceivableAddress",
+        "gaugeCalibrationExpiredNotificationGroup",
+        "consoleEnabled",
+        "digitalQuoteEnabled",
+        "incompletePickingListPolicy",
+        "inventoryShelfLife",
+        "showCustomerReadableId",
+        "productLabelSize",
+        "updateLeadTimesOnReceipt",
+        "enforceInspectionFourEyes",
+        "requireMfa",
+        "useMetric",
+        "accountsPayableEmail",
+        "salesJobCompletedNotificationGroup",
+        "id",
+        "plmReleaseControl",
+        "autoStartOperationTimer",
+        "timeCardEnabled",
+        "shelfLabelSize",
+        "showCurrencyTrailingZeros",
+        "printing",
+        "defaultCustomerCc",
+        "accountsReceivableEmail",
+        "qualityDispatchNotificationGroup",
+        "showSupplierReadableId",
+        "samplingStandard",
+        "maintenanceDispatchNotificationGroup",
+        "digitalQuoteNotificationGroup",
+        "purchasePriceUpdateTiming",
+        "digitalQuoteIncludesPurchaseOrders",
+        "autoSelectMaterialWithoutPickingList",
+        "supplierQuoteNotificationGroup",
+        "otherDispatchNotificationGroup",
+        "assetTaxDepreciationEnabled",
+        "rfqReadyNotificationGroup",
+        "quoteLineCategoryMarkups",
+        "kanbanOutput",
+        "operationsDispatchNotificationGroup",
+        "defaultSupplierCc",
+        "assetTaxRate"
+      ]
+    },
+    {
+      "name": "companyUsage",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "users",
+        "companyId",
+        "id",
+        "createdAt",
+        "aiTokens",
+        "tasks",
+        "nextResetDatetime"
+      ]
+    },
+    {
+      "name": "consumable",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "updatedAt",
+        "companyId",
+        "id",
+        "updatedBy",
+        "createdBy",
+        "approvedBy",
+        "approved",
+        "customFields",
+        "tags"
+      ]
+    },
+    {
+      "name": "contact",
+      "rows": 0,
+      "columns": [
+        "homePhone",
+        "fax",
+        "firstName",
+        "title",
+        "id",
+        "workPhone",
+        "mobilePhone",
+        "lastName",
+        "companyId",
+        "notes",
+        "isCustomer",
+        "email"
+      ]
+    },
+    {
+      "name": "costCenter",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "companyId",
+        "parentCostCenterId",
+        "createdBy",
+        "updatedAt",
+        "ownerId",
+        "name",
+        "createdAt",
+        "id",
+        "customFields"
+      ]
+    },
+    {
+      "name": "currency",
+      "rows": 0,
+      "columns": [
+        "exchangeRate",
+        "updatedBy",
+        "tags",
+        "historicalExchangeRate",
+        "code",
+        "customFields",
+        "createdAt",
+        "id",
+        "decimalPlaces",
+        "updatedAt",
+        "companyGroupId",
+        "createdBy",
+        "active"
+      ]
+    },
+    {
+      "name": "customField",
+      "rows": 0,
+      "columns": [
+        "required",
+        "sortOrder",
+        "table",
+        "active",
+        "dataTypeId",
+        "updatedBy",
+        "tags",
+        "name",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "id",
+        "updatedAt",
+        "listOptions"
+      ]
+    },
+    {
+      "name": "customerStatus",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "createdAt",
+        "companyId",
+        "updatedAt",
+        "id",
+        "tags",
+        "updatedBy",
+        "name",
+        "customFields"
+      ]
+    },
+    {
+      "name": "customerType",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "companyId",
+        "protected",
+        "createdAt",
+        "tags",
+        "updatedAt",
+        "name",
+        "createdBy",
+        "id",
+        "customFields"
+      ]
+    },
+    {
+      "name": "department",
+      "rows": 0,
+      "columns": [
+        "tags",
+        "updatedAt",
+        "name",
+        "createdAt",
+        "customFields",
+        "id",
+        "updatedBy",
+        "parentDepartmentId",
+        "companyId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "depreciationRun",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "status",
+        "periodEnd",
+        "postedAt",
+        "updatedBy",
+        "createdAt",
+        "depreciationRunId",
+        "postedBy",
+        "id",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "dimension",
+      "rows": 0,
+      "columns": [
+        "name",
+        "updatedAt",
+        "createdAt",
+        "id",
+        "updatedBy",
+        "required",
+        "companyGroupId",
+        "entityType",
+        "createdBy",
+        "active"
+      ]
+    },
+    {
+      "name": "dimensionValue",
+      "rows": 0,
+      "columns": [
+        "dimensionId",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "companyGroupId",
+        "name",
+        "updatedBy",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "document",
+      "rows": 0,
+      "columns": [
+        "path",
+        "createdAt",
+        "sourceDocument",
+        "active",
+        "readGroups",
+        "companyId",
+        "id",
+        "writeGroups",
+        "description",
+        "updatedBy",
+        "name",
+        "type",
+        "createdBy",
+        "size",
+        "sourceDocumentId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "documentExtraction",
+      "rows": 0,
+      "columns": [
+        "filteredData",
+        "id",
+        "createdBy",
+        "documentType",
+        "updatedBy",
+        "companyId",
+        "extractedData",
+        "error",
+        "storagePath",
+        "createdAt",
+        "sourceDocument",
+        "updatedAt",
+        "sourceDocumentId",
+        "status"
+      ]
+    },
+    {
+      "name": "documentFavorite",
+      "rows": 0,
+      "columns": ["userId", "documentId"]
+    },
+    {
+      "name": "documentLabel",
+      "rows": 0,
+      "columns": ["userId", "documentId", "label", "companyId"]
+    },
+    {
+      "name": "documentSection",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "updatedAt",
+        "createdAt",
+        "id",
+        "updatedBy",
+        "config",
+        "placement",
+        "name",
+        "createdBy",
+        "content"
+      ]
+    },
+    {
+      "name": "documentTemplate",
+      "rows": 0,
+      "columns": [
+        "documentType",
+        "formatVersion",
+        "settings",
+        "blocks",
+        "updatedBy",
+        "updatedAt",
+        "companyId",
+        "headerSectionId",
+        "createdBy",
+        "footerSectionId",
+        "id",
+        "createdAt",
+        "theme"
+      ]
+    },
+    {
+      "name": "documentTransaction",
+      "rows": 0,
+      "columns": [
+        "type",
+        "userId",
+        "createdAt",
+        "documentId",
+        "id",
+        "companyId"
+      ]
+    },
+    {
+      "name": "employeeType",
+      "rows": 0,
+      "columns": [
+        "systemType",
+        "protected",
+        "companyId",
+        "createdAt",
+        "name",
+        "updatedAt",
+        "id"
+      ]
+    },
+    {
+      "name": "employee",
+      "rows": 0,
+      "columns": ["companyId", "id", "employeeTypeId", "active", "pin"]
+    },
+    {
+      "name": "employeeAbility",
+      "rows": 0,
+      "columns": [
+        "lastTrainingDate",
+        "active",
+        "abilityId",
+        "trainingCompleted",
+        "id",
+        "trainingDays",
+        "employeeId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "employeeTypePermission",
+      "rows": 0,
+      "columns": [
+        "view",
+        "employeeTypeId",
+        "updatedAt",
+        "module",
+        "update",
+        "createdAt",
+        "delete",
+        "create"
+      ]
+    },
+    {
+      "name": "eventSystemSubscription",
+      "rows": 0,
+      "columns": [
+        "name",
+        "active",
+        "config",
+        "createdAt",
+        "id",
+        "filter",
+        "companyId",
+        "table",
+        "handlerType",
+        "operations"
+      ]
+    },
+    {
+      "name": "exchangeRateHistory",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "id",
+        "updatedAt",
+        "updatedBy",
+        "currencyCode",
+        "companyGroupId",
+        "createdAt",
+        "effectiveDate",
+        "rate"
+      ]
+    },
+    {
+      "name": "externalIntegrationMapping",
+      "rows": 0,
+      "columns": [
+        "entityType",
+        "companyId",
+        "createdAt",
+        "lastSyncedAt",
+        "updatedAt",
+        "id",
+        "remoteUpdatedAt",
+        "allowDuplicateExternalId",
+        "integration",
+        "entityId",
+        "updatedBy",
+        "metadata",
+        "createdBy",
+        "externalId"
+      ]
+    },
+    {
+      "name": "fiscalYearSettings",
+      "rows": 0,
+      "columns": ["taxStartMonth", "updatedBy", "startMonth", "companyId"]
+    },
+    {
+      "name": "fixedAssetClass",
+      "rows": 0,
+      "columns": [
+        "accumulatedDepreciationAccountId",
+        "customFields",
+        "writeOffAccountId",
+        "macrsPropertyClass",
+        "taxDepreciationMethod",
+        "name",
+        "residualValuePercent",
+        "gainOnDisposalAccountId",
+        "id",
+        "depreciationExpenseAccountId",
+        "writeDownAccountId",
+        "updatedBy",
+        "assetAccountId",
+        "depreciationMethod",
+        "description",
+        "taxUsefulLifeMonths",
+        "companyId",
+        "bonusDepreciationPercent",
+        "createdBy",
+        "taxResidualValuePercent",
+        "macrsConvention",
+        "updatedAt",
+        "usefulLifeMonths",
+        "createdAt",
+        "lossOnDisposalAccountId"
+      ]
+    },
+    {
+      "name": "gaugeType",
+      "rows": 0,
+      "columns": [
+        "name",
+        "updatedBy",
+        "id",
+        "createdBy",
+        "customFields",
+        "companyId",
+        "updatedAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "group",
+      "rows": 0,
+      "columns": [
+        "isEmployeeTypeGroup",
+        "companyId",
+        "isIdentityGroup",
+        "isCustomerTypeGroup",
+        "isSupplierOrgGroup",
+        "id",
+        "updatedAt",
+        "isCustomerOrgGroup",
+        "name",
+        "isSupplierTypeGroup",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "holiday",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "customFields",
+        "name",
+        "createdBy",
+        "updatedAt",
+        "id",
+        "tags",
+        "createdAt",
+        "date",
+        "companyId"
+      ]
+    },
+    {
+      "name": "implementationCheckState",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "kind",
+        "itemKey",
+        "value",
+        "updatedBy",
+        "companyId",
+        "createdBy",
+        "id",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "implementationFieldValue",
+      "rows": 0,
+      "columns": [
+        "id",
+        "createdAt",
+        "companyId",
+        "updatedAt",
+        "createdBy",
+        "value",
+        "fieldKey",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "implementationRow",
+      "rows": 0,
+      "columns": [
+        "sortOrder",
+        "payload",
+        "collection",
+        "createdAt",
+        "id",
+        "updatedAt",
+        "createdBy",
+        "companyId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "invite",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "acceptedAt",
+        "id",
+        "updatedBy",
+        "createdAt",
+        "revokedAt",
+        "attestedAt",
+        "code",
+        "role",
+        "attestedBy",
+        "createdBy",
+        "email",
+        "permissions"
+      ]
+    },
+    {
+      "name": "itarCertification",
+      "rows": 0,
+      "columns": [
+        "docHash",
+        "ipAddress",
+        "complianceContact",
+        "id",
+        "certifiedAt",
+        "title",
+        "companyId",
+        "expiresAt",
+        "updatedBy",
+        "updatedAt",
+        "createdAt",
+        "userAgent",
+        "docVersion",
+        "fullLegalName",
+        "createdBy",
+        "type",
+        "userId"
+      ]
+    },
+    {
+      "name": "itemPostingGroup",
+      "rows": 0,
+      "columns": [
+        "active",
+        "description",
+        "createdAt",
+        "companyId",
+        "name",
+        "updatedBy",
+        "customFields",
+        "id",
+        "updatedAt",
+        "tags",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "itemStockQuantities",
+      "rows": 0,
+      "columns": ["quantityOnHand", "locationId", "companyId", "itemId"]
+    },
+    {
+      "name": "journal",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "postedAt",
+        "accountingPeriodId",
+        "companyId",
+        "updatedBy",
+        "eliminationKind",
+        "updatedAt",
+        "postedBy",
+        "reversalOfId",
+        "postingDate",
+        "tags",
+        "status",
+        "createdBy",
+        "description",
+        "reversedById",
+        "createdAt",
+        "journalEntryId",
+        "id",
+        "sourceType"
+      ]
+    },
+    {
+      "name": "journalLine",
+      "rows": 0,
+      "columns": [
+        "accountId",
+        "createdBy",
+        "customFields",
+        "accrual",
+        "intercompanyPartnerId",
+        "amount",
+        "documentType",
+        "updatedAt",
+        "updatedBy",
+        "createdAt",
+        "description",
+        "quantity",
+        "documentLineReference",
+        "externalDocumentId",
+        "id",
+        "journalLineReference",
+        "documentId",
+        "journalId",
+        "companyId",
+        "tags"
+      ]
+    },
+    {
+      "name": "intercompanyTransaction",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "status",
+        "sourceJournalLineId",
+        "amount",
+        "targetCompanyId",
+        "sourceCompanyId",
+        "createdAt",
+        "targetJournalLineId",
+        "id",
+        "description",
+        "documentId",
+        "currencyCode",
+        "documentType",
+        "companyGroupId",
+        "eliminationJournalId"
+      ]
+    },
+    {
+      "name": "intercompanyEliminationLine",
+      "rows": 0,
+      "columns": [
+        "journalLineId",
+        "updatedBy",
+        "intercompanyTransactionId",
+        "role",
+        "amount",
+        "createdAt",
+        "quantity",
+        "id",
+        "accountId",
+        "updatedAt",
+        "companyId",
+        "createdBy",
+        "itemId"
+      ]
+    },
+    {
+      "name": "journalLineDimension",
+      "rows": 0,
+      "columns": [
+        "id",
+        "createdAt",
+        "journalLineId",
+        "companyId",
+        "dimensionId",
+        "valueId"
+      ]
+    },
+    {
+      "name": "location",
+      "rows": 0,
+      "columns": [
+        "countryCode",
+        "latitude",
+        "updatedAt",
+        "name",
+        "createdBy",
+        "stateProvince",
+        "id",
+        "timezone",
+        "longitude",
+        "postalCode",
+        "addressLine2",
+        "addressLine1",
+        "createdAt",
+        "tags",
+        "code",
+        "customFields",
+        "updatedBy",
+        "companyId",
+        "city"
+      ]
+    },
+    {
+      "name": "fixedAsset",
+      "rows": 0,
+      "columns": [
+        "name",
+        "fixedAssetClassId",
+        "macrsPropertyClass",
+        "acquisitionDate",
+        "depreciationStartDate",
+        "createdAt",
+        "locationId",
+        "status",
+        "notes",
+        "assetLifetimeUsage",
+        "accumulatedDepreciation",
+        "updatedBy",
+        "taxUsefulLifeMonths",
+        "description",
+        "saleProceeds",
+        "acquisitionCost",
+        "macrsConvention",
+        "accumulatedTaxDepreciation",
+        "bonusDepreciationPercent",
+        "fixedAssetId",
+        "taxResidualValuePercent",
+        "depreciationMethod",
+        "updatedAt",
+        "createdBy",
+        "customFields",
+        "residualValuePercent",
+        "disposalDate",
+        "id",
+        "usefulLifeMonths",
+        "companyId",
+        "taxDepreciationMethod",
+        "serialNumber",
+        "disposalMethod"
+      ]
+    },
+    {
+      "name": "depreciationRunLine",
+      "rows": 0,
+      "columns": [
+        "fixedAssetId",
+        "amount",
+        "companyId",
+        "taxAmount",
+        "depreciationRunId",
+        "id",
+        "journalId"
+      ]
+    },
+    {
+      "name": "fixedAssetDisposal",
+      "rows": 0,
+      "columns": [
+        "netBookValueAtDisposal",
+        "companyId",
+        "id",
+        "createdBy",
+        "journalId",
+        "createdAt",
+        "fixedAssetId",
+        "updatedBy",
+        "saleProceeds",
+        "gainLoss",
+        "disposalMethod",
+        "disposalDate"
+      ]
+    },
+    {
+      "name": "fixedAssetUsageLog",
+      "rows": 0,
+      "columns": [
+        "fixedAssetId",
+        "createdBy",
+        "updatedBy",
+        "id",
+        "companyId",
+        "periodStart",
+        "periodEnd",
+        "createdAt",
+        "unitsProduced"
+      ]
+    },
+    {
+      "name": "inventoryCount",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "companyId",
+        "createdAt",
+        "snapshotAt",
+        "postedBy",
+        "notes",
+        "id",
+        "postedAt",
+        "isBlind",
+        "inventoryCountId",
+        "updatedBy",
+        "locationId",
+        "scope",
+        "createdBy",
+        "status",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "maintenanceFailureMode",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "createdBy",
+        "updatedAt",
+        "createdAt",
+        "name",
+        "type",
+        "id",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "materialForm",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "code",
+        "name",
+        "createdAt",
+        "tags",
+        "id",
+        "updatedBy",
+        "companyId",
+        "customFields",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "materialDimension",
+      "rows": 0,
+      "columns": ["id", "materialFormId", "companyId", "name", "isMetric"]
+    },
+    {
+      "name": "materialSubstance",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "companyId",
+        "updatedBy",
+        "createdBy",
+        "name",
+        "updatedAt",
+        "code",
+        "id",
+        "tags",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "materialFinish",
+      "rows": 0,
+      "columns": ["materialSubstanceId", "companyId", "name", "id"]
+    },
+    {
+      "name": "materialGrade",
+      "rows": 0,
+      "columns": ["name", "companyId", "id", "materialSubstanceId"]
+    },
+    {
+      "name": "materialType",
+      "rows": 0,
+      "columns": [
+        "materialSubstanceId",
+        "code",
+        "materialFormId",
+        "name",
+        "id",
+        "companyId"
+      ]
+    },
+    {
+      "name": "material",
+      "rows": 0,
+      "columns": [
+        "dimensionId",
+        "finishId",
+        "materialSubstanceId",
+        "updatedBy",
+        "materialFormId",
+        "gradeId",
+        "createdBy",
+        "tags",
+        "materialTypeId",
+        "updatedAt",
+        "createdAt",
+        "customFields",
+        "approved",
+        "companyId",
+        "id",
+        "approvedBy"
+      ]
+    },
+    {
+      "name": "membership",
+      "rows": 0,
+      "columns": ["memberGroupId", "memberUserId", "id", "groupId"]
+    },
+    {
+      "name": "modelUpload",
+      "rows": 0,
+      "columns": [
+        "glbPath",
+        "thumbnailPath",
+        "name",
+        "createdAt",
+        "optimizedSize",
+        "updatedAt",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "originalSize",
+        "size",
+        "processingStatus",
+        "modelPath",
+        "processedAt",
+        "componentCount",
+        "companyId",
+        "optimizedAt",
+        "optimizeError",
+        "autodeskUrn",
+        "optimizedModelPath",
+        "processingError",
+        "optimizeStatus",
+        "graphPath",
+        "originalPath"
+      ]
+    },
+    {
+      "name": "assemblyPlanJob",
+      "rows": 0,
+      "columns": [
+        "planPath",
+        "error",
+        "status",
+        "kind",
+        "stats",
+        "updatedAt",
+        "id",
+        "createdBy",
+        "createdAt",
+        "companyId",
+        "modelUploadId"
+      ]
+    },
+    {
+      "name": "noQuoteReason",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "createdAt",
+        "companyId",
+        "createdBy",
+        "customFields",
+        "name",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "nonConformanceRequiredAction",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "id",
+        "systemType",
+        "updatedBy",
+        "companyId",
+        "createdAt",
+        "updatedAt",
+        "active",
+        "name"
+      ]
+    },
+    {
+      "name": "nonConformanceType",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "id",
+        "customFields",
+        "name",
+        "createdBy",
+        "updatedBy",
+        "createdAt",
+        "companyId"
+      ]
+    },
+    {
+      "name": "nonConformanceWorkflow",
+      "rows": 0,
+      "columns": [
+        "id",
+        "approvalRequirements",
+        "tags",
+        "source",
+        "updatedBy",
+        "createdAt",
+        "name",
+        "active",
+        "priority",
+        "companyId",
+        "updatedAt",
+        "content",
+        "description",
+        "createdBy",
+        "requiredActionIds"
+      ]
+    },
+    {
+      "name": "nonConformance",
+      "rows": 0,
+      "columns": [
+        "id",
+        "updatedBy",
+        "nonConformanceWorkflowId",
+        "status",
+        "createdBy",
+        "dueDate",
+        "nonConformanceId",
+        "locationId",
+        "requiredActionIds",
+        "approvalRequirements",
+        "createdAt",
+        "tags",
+        "assignee",
+        "content",
+        "source",
+        "updatedAt",
+        "closeDate",
+        "openDate",
+        "customFields",
+        "description",
+        "nonConformanceTypeId",
+        "name",
+        "quantity",
+        "companyId",
+        "priority"
+      ]
+    },
+    {
+      "name": "changeOrder",
+      "rows": 0,
+      "columns": [
+        "assignee",
+        "createdAt",
+        "sourceType",
+        "dueDate",
+        "companyId",
+        "description",
+        "createdBy",
+        "status",
+        "updatedAt",
+        "customFields",
+        "tags",
+        "name",
+        "approvalRequirements",
+        "reasonForChange",
+        "type",
+        "openDate",
+        "changeOrderTypeId",
+        "id",
+        "nonConformanceId",
+        "updatedBy",
+        "priority",
+        "changeOrderId",
+        "requiredActionIds",
+        "sourceId"
+      ]
+    },
+    {
+      "name": "changeOrderActionTask",
+      "rows": 0,
+      "columns": [
+        "status",
+        "name",
+        "updatedAt",
+        "assignee",
+        "dueDate",
+        "createdAt",
+        "updatedBy",
+        "actionTypeId",
+        "createdBy",
+        "changeOrderId",
+        "notes",
+        "tags",
+        "id",
+        "sortOrder",
+        "companyId",
+        "completedDate"
+      ]
+    },
+    {
+      "name": "nonConformanceApprovalTask",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "dueDate",
+        "updatedBy",
+        "status",
+        "updatedAt",
+        "approvalType",
+        "assignee",
+        "id",
+        "sortOrder",
+        "companyId",
+        "completedDate",
+        "nonConformanceId",
+        "createdBy",
+        "notes",
+        "tags"
+      ]
+    },
+    {
+      "name": "nonConformanceReviewer",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "createdAt",
+        "title",
+        "assignee",
+        "updatedBy",
+        "createdBy",
+        "id",
+        "companyId",
+        "status",
+        "nonConformanceId",
+        "notes",
+        "completedDate"
+      ]
+    },
+    {
+      "name": "note",
+      "rows": 0,
+      "columns": [
+        "active",
+        "noteRichText",
+        "note",
+        "createdAt",
+        "id",
+        "updatedAt",
+        "companyId",
+        "documentId",
+        "updatedBy",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "notification",
+      "rows": 0,
+      "columns": [
+        "seenAt",
+        "userId",
+        "from",
+        "documentId",
+        "id",
+        "documentType",
+        "payload",
+        "title",
+        "topic",
+        "companyId",
+        "digestedInto",
+        "description",
+        "event",
+        "readAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "notificationDelivery",
+      "rows": 0,
+      "columns": [
+        "documentId",
+        "lastDeliveryId",
+        "event",
+        "userId",
+        "successCount",
+        "id",
+        "createdAt",
+        "lastDeliveredAt",
+        "companyId"
+      ]
+    },
+    {
+      "name": "notificationPreference",
+      "rows": 0,
+      "columns": [
+        "topic",
+        "updatedAt",
+        "channel",
+        "companyId",
+        "enabled",
+        "id",
+        "userId"
+      ]
+    },
+    {
+      "name": "oauthCode",
+      "rows": 0,
+      "columns": [
+        "scope",
+        "id",
+        "codeChallenge",
+        "redirectUri",
+        "code",
+        "codeChallengeMethod",
+        "expiresAt",
+        "companyId",
+        "userId",
+        "clientId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "onshapeSyncRun",
+      "rows": 0,
+      "columns": [
+        "cancelledBy",
+        "totalRevisions",
+        "unmatchedOverflow",
+        "finishedAt",
+        "skippedNonModel",
+        "error",
+        "createdBy",
+        "revisionsScanned",
+        "createdAt",
+        "ambiguousOverflow",
+        "ambiguousReleases",
+        "status",
+        "failed",
+        "startedAt",
+        "updatedAt",
+        "pagesProcessed",
+        "skippedAlreadySynced",
+        "synced",
+        "id",
+        "updatedBy",
+        "skippedNoItem",
+        "matched",
+        "skippedTooLarge",
+        "companyId",
+        "unmatchedReleases"
+      ]
+    },
+    {
+      "name": "part",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "id",
+        "updatedBy",
+        "toDate",
+        "customFields",
+        "companyId",
+        "createdAt",
+        "fromDate",
+        "updatedAt",
+        "tags",
+        "approved",
+        "approvedBy"
+      ]
+    },
+    {
+      "name": "paymentTerm",
+      "rows": 0,
+      "columns": [
+        "daysDiscount",
+        "daysDue",
+        "tags",
+        "active",
+        "discountPercentage",
+        "updatedBy",
+        "customFields",
+        "name",
+        "createdBy",
+        "companyId",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "calculationMethod"
+      ]
+    },
+    {
+      "name": "periodCloseTaskDefinition",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "autoCheckKey",
+        "updatedAt",
+        "taskType",
+        "name",
+        "updatedBy",
+        "required",
+        "id",
+        "active",
+        "defaultAssigneeId",
+        "sortOrder",
+        "customFields",
+        "companyId",
+        "createdAt",
+        "severity",
+        "isSystem"
+      ]
+    },
+    {
+      "name": "periodCloseTask",
+      "rows": 0,
+      "columns": [
+        "taskType",
+        "id",
+        "required",
+        "status",
+        "sortOrder",
+        "severity",
+        "evidenceJournalId",
+        "companyId",
+        "completedBy",
+        "notes",
+        "skippedReason",
+        "updatedAt",
+        "updatedBy",
+        "assigneeId",
+        "name",
+        "autoCheckKey",
+        "definitionId",
+        "accountingPeriodId",
+        "completedAt",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "pickingList",
+      "rows": 0,
+      "columns": [
+        "notes",
+        "status",
+        "locationId",
+        "assignee",
+        "updatedAt",
+        "createdAt",
+        "companyId",
+        "customFields",
+        "pickingListId",
+        "dueDate",
+        "updatedBy",
+        "createdBy",
+        "id"
+      ]
+    },
+    {
+      "name": "pricingRule",
+      "rows": 0,
+      "columns": [
+        "itemIds",
+        "id",
+        "customerIds",
+        "priority",
+        "name",
+        "validFrom",
+        "customerTypeIds",
+        "maxQuantity",
+        "createdAt",
+        "itemPostingGroupId",
+        "amount",
+        "updatedAt",
+        "active",
+        "updatedBy",
+        "companyId",
+        "createdBy",
+        "amountType",
+        "ruleType",
+        "validTo",
+        "minQuantity"
+      ]
+    },
+    {
+      "name": "printJob",
+      "rows": 0,
+      "columns": [
+        "description",
+        "sourceDocumentId",
+        "companyId",
+        "attempts",
+        "updatedAt",
+        "printerUrl",
+        "origin",
+        "id",
+        "sourceDocumentReadableId",
+        "sourceDocument",
+        "completedAt",
+        "contentType",
+        "status",
+        "createdBy",
+        "updatedBy",
+        "createdAt",
+        "error",
+        "content"
+      ]
+    },
+    {
+      "name": "printerRoute",
+      "rows": 0,
+      "columns": [
+        "format",
+        "locationId",
+        "name",
+        "printerUrl",
+        "templateId",
+        "createdAt",
+        "id",
+        "mediaSizeId",
+        "companyId",
+        "updatedAt",
+        "apiKey"
+      ]
+    },
+    {
+      "name": "process",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedAt",
+        "id",
+        "tags",
+        "updatedBy",
+        "processType",
+        "active",
+        "name",
+        "customFields",
+        "completeAllOnScan",
+        "createdAt",
+        "defaultStandardFactor",
+        "companyId"
+      ]
+    },
+    {
+      "name": "procedure",
+      "rows": 0,
+      "columns": [
+        "processId",
+        "tags",
+        "description",
+        "content",
+        "updatedAt",
+        "version",
+        "name",
+        "updatedBy",
+        "createdAt",
+        "assignee",
+        "createdBy",
+        "companyId",
+        "id",
+        "status"
+      ]
+    },
+    {
+      "name": "procedureParameter",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "key",
+        "value",
+        "companyId",
+        "updatedAt",
+        "procedureId",
+        "createdAt",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "purchasingRfq",
+      "rows": 0,
+      "columns": [
+        "expirationDate",
+        "createdAt",
+        "revisionId",
+        "status",
+        "createdBy",
+        "updatedBy",
+        "employeeId",
+        "companyId",
+        "internalNotes",
+        "locationId",
+        "updatedAt",
+        "customFields",
+        "rfqId",
+        "rfqDate",
+        "notes",
+        "id",
+        "assignee"
+      ]
+    },
+    {
+      "name": "purchasingRfqFavorite",
+      "rows": 0,
+      "columns": ["userId", "rfqId"]
+    },
+    {
+      "name": "qualityDocument",
+      "rows": 0,
+      "columns": [
+        "assignee",
+        "version",
+        "description",
+        "updatedBy",
+        "status",
+        "createdBy",
+        "companyId",
+        "name",
+        "tags",
+        "content",
+        "updatedAt",
+        "id",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "reportPin",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "pinned",
+        "createdAt",
+        "reportKey",
+        "updatedAt",
+        "userId"
+      ]
+    },
+    {
+      "name": "reportView",
+      "rows": 0,
+      "columns": [
+        "config",
+        "name",
+        "reportKey",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "visibility",
+        "companyId",
+        "updatedAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "scrapReason",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedAt",
+        "createdAt",
+        "companyId",
+        "updatedBy",
+        "id",
+        "customFields",
+        "name"
+      ]
+    },
+    {
+      "name": "searchIndexRegistry",
+      "rows": 0,
+      "columns": ["lastRebuiltAt", "companyId", "createdAt"]
+    },
+    {
+      "name": "sequence",
+      "rows": 0,
+      "columns": [
+        "next",
+        "companyId",
+        "updatedBy",
+        "step",
+        "updatedAt",
+        "table",
+        "suffix",
+        "size",
+        "prefix",
+        "name"
+      ]
+    },
+    {
+      "name": "service",
+      "rows": 0,
+      "columns": [
+        "approved",
+        "updatedAt",
+        "serviceType",
+        "toDate",
+        "approvedBy",
+        "createdAt",
+        "tags",
+        "updatedBy",
+        "companyId",
+        "createdBy",
+        "id",
+        "customFields",
+        "fromDate"
+      ]
+    },
+    {
+      "name": "shift",
+      "rows": 0,
+      "columns": [
+        "tags",
+        "saturday",
+        "locationId",
+        "updatedBy",
+        "createdBy",
+        "endTime",
+        "startTime",
+        "companyId",
+        "updatedAt",
+        "customFields",
+        "monday",
+        "id",
+        "wednesday",
+        "friday",
+        "sunday",
+        "createdAt",
+        "name",
+        "active",
+        "tuesday",
+        "thursday"
+      ]
+    },
+    {
+      "name": "employeeJob",
+      "rows": 0,
+      "columns": [
+        "title",
+        "shiftId",
+        "managerId",
+        "companyId",
+        "departmentId",
+        "updatedBy",
+        "id",
+        "startDate",
+        "locationId",
+        "tags",
+        "customFields",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "employeeShift",
+      "rows": 0,
+      "columns": ["shiftId", "companyId", "employeeId", "id"]
+    },
+    {
+      "name": "shippingMethod",
+      "rows": 0,
+      "columns": [
+        "active",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "createdAt",
+        "updatedAt",
+        "tags",
+        "name",
+        "trackingUrl",
+        "customFields",
+        "companyId",
+        "carrier",
+        "carrierAccountId"
+      ]
+    },
+    {
+      "name": "shippingTerm",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "name",
+        "createdBy",
+        "tags",
+        "id",
+        "updatedAt",
+        "active",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "slackDocumentThread",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "documentId",
+        "documentType",
+        "channelId",
+        "updatedBy",
+        "createdBy",
+        "companyId",
+        "threadTs",
+        "id",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "stockTransfer",
+      "rows": 0,
+      "columns": [
+        "tags",
+        "locationId",
+        "status",
+        "createdAt",
+        "assignee",
+        "completedAt",
+        "stockTransferId",
+        "customFields",
+        "createdBy",
+        "updatedBy",
+        "updatedAt",
+        "id",
+        "notes",
+        "companyId"
+      ]
+    },
+    {
+      "name": "storageRule",
+      "rows": 0,
+      "columns": [
+        "filteredItemGroupIds",
+        "filteredItemMatchAll",
+        "description",
+        "customFields",
+        "name",
+        "conditionAst",
+        "updatedBy",
+        "message",
+        "filteredItemTypes",
+        "targetType",
+        "companyId",
+        "updatedAt",
+        "appliesToAll",
+        "createdBy",
+        "surfaces",
+        "createdAt",
+        "id",
+        "active",
+        "severity"
+      ]
+    },
+    {
+      "name": "storageType",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "createdBy",
+        "companyId",
+        "createdAt",
+        "customFields",
+        "name",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "suggestion",
+      "rows": 0,
+      "columns": [
+        "userId",
+        "emoji",
+        "path",
+        "attachmentPath",
+        "companyId",
+        "suggestion",
+        "tags",
+        "createdAt",
+        "id"
+      ]
+    },
+    {
+      "name": "supplierType",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "companyId",
+        "protected",
+        "createdAt",
+        "updatedAt",
+        "tags",
+        "name",
+        "createdBy",
+        "id",
+        "customFields"
+      ]
+    },
+    {
+      "name": "tableView",
+      "rows": 0,
+      "columns": [
+        "columnPinning",
+        "filters",
+        "createdAt",
+        "name",
+        "sortOrder",
+        "id",
+        "columnVisibility",
+        "sorts",
+        "columnOrder",
+        "description",
+        "table",
+        "createdBy",
+        "updatedBy",
+        "type",
+        "companyId"
+      ]
+    },
+    {
+      "name": "tag",
+      "rows": 0,
+      "columns": [
+        "name",
+        "updatedBy",
+        "table",
+        "createdBy",
+        "createdAt",
+        "companyId"
+      ]
+    },
+    {
+      "name": "terms",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "salesTerms",
+        "updatedAt",
+        "id",
+        "purchasingTerms"
+      ]
+    },
+    {
+      "name": "timeCardEntry",
+      "rows": 0,
+      "columns": [
+        "autoCloseShiftId",
+        "companyId",
+        "clockIn",
+        "clockOut",
+        "updatedBy",
+        "createdBy",
+        "employeeId",
+        "note",
+        "updatedAt",
+        "createdAt",
+        "id"
+      ]
+    },
+    {
+      "name": "tool",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "tags",
+        "approvedBy",
+        "approved",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "companyId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "trackedActivity",
+      "rows": 0,
+      "columns": [
+        "type",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
+        "id",
+        "attributes",
+        "sourceDocument",
+        "sourceDocumentId",
+        "companyId",
+        "sourceDocumentReadableId"
+      ]
+    },
+    {
+      "name": "training",
+      "rows": 0,
+      "columns": [
+        "status",
+        "tags",
+        "content",
+        "id",
+        "estimatedDuration",
+        "type",
+        "name",
+        "companyId",
+        "updatedAt",
+        "updatedBy",
+        "createdBy",
+        "assignee",
+        "processId",
+        "frequency",
+        "createdAt",
+        "description",
+        "version"
+      ]
+    },
+    {
+      "name": "trainingAssignment",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "groupIds",
+        "companyId",
+        "updatedAt",
+        "id",
+        "createdBy",
+        "trainingId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "trainingCompletion",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "createdBy",
+        "trainingAssignmentId",
+        "completedBy",
+        "period",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "employeeId",
+        "companyId",
+        "completedAt"
+      ]
+    },
+    {
+      "name": "trainingQuestion",
+      "rows": 0,
+      "columns": [
+        "sortOrder",
+        "tolerance",
+        "createdBy",
+        "updatedBy",
+        "question",
+        "createdAt",
+        "type",
+        "options",
+        "correctNumber",
+        "correctBoolean",
+        "id",
+        "required",
+        "companyId",
+        "trainingId",
+        "updatedAt",
+        "matchingPairs",
+        "correctAnswers"
+      ]
+    },
+    {
+      "name": "unitOfMeasure",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "active",
+        "name",
+        "companyId",
+        "updatedBy",
+        "customFields",
+        "code",
+        "createdBy",
+        "id",
+        "updatedAt",
+        "tags"
+      ]
+    },
+    {
+      "name": "item",
+      "rows": 0,
+      "columns": [
+        "thumbnailPath",
+        "type",
+        "revisionStatus",
+        "modelUploadId",
+        "createdAt",
+        "updatedAt",
+        "revision",
+        "createdBy",
+        "name",
+        "description",
+        "assignee",
+        "defaultMethodType",
+        "notes",
+        "changeOrderId",
+        "unitOfMeasureCode",
+        "id",
+        "replenishmentSystem",
+        "embedding",
+        "updatedBy",
+        "companyId",
+        "readableId",
+        "sourcingType",
+        "mpn",
+        "itemTrackingType",
+        "trackingMethod",
+        "active"
+      ]
+    },
+    {
+      "name": "assemblyComponentMapping",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "createdAt",
+        "modelUploadId",
+        "companyId",
+        "updatedBy",
+        "id",
+        "createdBy",
+        "geometryHash",
+        "itemId",
+        "confidence"
+      ]
+    },
+    {
+      "name": "assemblyInstruction",
+      "rows": 0,
+      "columns": [
+        "status",
+        "customFields",
+        "settings",
+        "id",
+        "companyId",
+        "publishedAt",
+        "name",
+        "createdBy",
+        "updatedAt",
+        "rootInstructionId",
+        "updatedBy",
+        "tags",
+        "assemblyPlanJobId",
+        "version",
+        "createdAt",
+        "modelUploadId",
+        "itemId"
+      ]
+    },
+    {
+      "name": "assemblyInstructionStep",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "unitOfMeasureCode",
+        "instructionText",
+        "buildWave",
+        "status",
+        "listValues",
+        "assemblyInstructionId",
+        "componentNodeIds",
+        "createdBy",
+        "type",
+        "updatedBy",
+        "minValue",
+        "id",
+        "required",
+        "durationSeconds",
+        "description",
+        "updatedAt",
+        "explode",
+        "camera",
+        "sortOrder",
+        "parentStepId",
+        "fileTypes",
+        "warnings",
+        "notes",
+        "createdAt",
+        "motion",
+        "title",
+        "fastener",
+        "maxValue",
+        "planConfidence"
+      ]
+    },
+    {
+      "name": "assemblyInstructionStepMaterial",
+      "rows": 0,
+      "columns": [
+        "sortOrder",
+        "createdBy",
+        "quantity",
+        "itemId",
+        "companyId",
+        "id",
+        "updatedBy",
+        "createdAt",
+        "updatedAt",
+        "stepId"
+      ]
+    },
+    {
+      "name": "assemblyInstructionStepSlide",
+      "rows": 0,
+      "columns": [
+        "size",
+        "modelUploadId",
+        "imagePath",
+        "updatedBy",
+        "caption",
+        "annotations",
+        "createdBy",
+        "stepId",
+        "updatedAt",
+        "sortOrder",
+        "id",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "assemblyInstructionStepTool",
+      "rows": 0,
+      "columns": [
+        "id",
+        "updatedBy",
+        "companyId",
+        "stepId",
+        "createdAt",
+        "updatedAt",
+        "sortOrder",
+        "quantity",
+        "itemId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "assemblyUnit",
+      "rows": 0,
+      "columns": [
+        "itemId",
+        "componentNodeIds",
+        "name",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "sourceGroupId",
+        "companyId",
+        "modelUploadId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "batchProperty",
+      "rows": 0,
+      "columns": [
+        "sortOrder",
+        "updatedBy",
+        "createdBy",
+        "id",
+        "updatedAt",
+        "createdAt",
+        "itemId",
+        "listOptions",
+        "companyId",
+        "label",
+        "dataType"
+      ]
+    },
+    {
+      "name": "changeOrderSupersession",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "supersessionMode",
+        "successorEffectivityDate",
+        "predecessorItemId",
+        "successorItemId",
+        "discontinuationDate",
+        "updatedAt",
+        "createdAt",
+        "id",
+        "createdBy",
+        "companyId",
+        "changeOrderId"
+      ]
+    },
+    {
+      "name": "configurationParameterGroup",
+      "rows": 0,
+      "columns": [
+        "itemId",
+        "companyId",
+        "id",
+        "sortOrder",
+        "name",
+        "isUngrouped"
+      ]
+    },
+    {
+      "name": "configurationParameter",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "dataType",
+        "label",
+        "materialFormFilterId",
+        "key",
+        "configurationParameterGroupId",
+        "createdBy",
+        "companyId",
+        "id",
+        "listOptions",
+        "itemId",
+        "updatedBy",
+        "createdAt",
+        "sortOrder"
+      ]
+    },
+    {
+      "name": "configurationRule",
+      "rows": 0,
+      "columns": [
+        "itemId",
+        "updatedBy",
+        "field",
+        "updatedAt",
+        "companyId",
+        "code"
+      ]
+    },
+    {
+      "name": "demandForecast",
+      "rows": 0,
+      "columns": [
+        "periodId",
+        "forecastQuantity",
+        "notes",
+        "forecastMethod",
+        "updatedBy",
+        "locationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "itemId",
+        "updatedAt",
+        "confidence"
+      ]
+    },
+    {
+      "name": "demandProjection",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "forecastMethod",
+        "notes",
+        "forecastQuantity",
+        "periodId",
+        "confidence",
+        "updatedAt",
+        "itemId",
+        "createdBy",
+        "createdAt",
+        "companyId",
+        "locationId",
+        "id"
+      ]
+    },
+    {
+      "name": "inspectionDocument",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "samplingSeverity",
+        "samplingSampleSize",
+        "version",
+        "samplingInspectionLevel",
+        "createdBy",
+        "fileName",
+        "drawingNumber",
+        "partId",
+        "updatedBy",
+        "samplingAql",
+        "samplingPercentage",
+        "storagePath",
+        "id",
+        "defaultPageWidth",
+        "uploadedBy",
+        "pageCount",
+        "defaultPageHeight",
+        "samplingPlanType",
+        "createdAt",
+        "companyId"
+      ]
+    },
+    {
+      "name": "inspectionFeature",
+      "rows": 0,
+      "columns": [
+        "inspectionDocumentId",
+        "updatedBy",
+        "samplingPlanType",
+        "unit",
+        "tolerancePlus",
+        "createdBy",
+        "toleranceMinus",
+        "id",
+        "description",
+        "samplingPercentage",
+        "samplingAql",
+        "companyId",
+        "updatedAt",
+        "pageNumber",
+        "nominalValue",
+        "createdAt",
+        "samplingInspectionLevel",
+        "label",
+        "samplingSampleSize",
+        "type",
+        "samplingSeverity"
+      ]
+    },
+    {
+      "name": "balloon",
+      "rows": 0,
+      "columns": [
+        "regionY",
+        "updatedBy",
+        "companyId",
+        "inspectionFeatureId",
+        "updatedAt",
+        "createdBy",
+        "pageNumber",
+        "xCoordinate",
+        "regionWidth",
+        "inspectionDocumentId",
+        "createdAt",
+        "regionX",
+        "yCoordinate",
+        "regionHeight",
+        "id"
+      ]
+    },
+    {
+      "name": "inventoryCountLine",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "locationId",
+        "countedBy",
+        "trackedEntityId",
+        "inventoryCountId",
+        "postedItemLedgerId",
+        "itemId",
+        "customFields",
+        "updatedAt",
+        "storageUnitId",
+        "systemQuantity",
+        "id",
+        "readableId",
+        "countedQuantity",
+        "createdAt",
+        "countedAt",
+        "companyId"
+      ]
+    },
+    {
+      "name": "itemCost",
+      "rows": 0,
+      "columns": [
+        "itemPostingGroupId",
+        "tags",
+        "createdBy",
+        "updatedBy",
+        "itemId",
+        "createdAt",
+        "updatedAt",
+        "costIsAdjusted",
+        "standardCost",
+        "costingMethod",
+        "companyId",
+        "customFields",
+        "unitCost"
+      ]
+    },
+    {
+      "name": "itemInspectionDocumentAssignment",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "usage",
+        "createdAt",
+        "itemId",
+        "updatedBy",
+        "inspectionDocumentId",
+        "companyId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "itemPlanning",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "locationId",
+        "minimumOrderQuantity",
+        "reorderPoint",
+        "demandAccumulationSafetyStock",
+        "itemId",
+        "demandAccumulationIncludesInventory",
+        "reorderQuantity",
+        "minimumReserveQuantity",
+        "critical",
+        "maximumOrderQuantity",
+        "reorderingPolicy",
+        "createdAt",
+        "updatedBy",
+        "maximumInventoryQuantity",
+        "demandAccumulationPeriod",
+        "tags",
+        "updatedAt",
+        "createdBy",
+        "orderMultiple",
+        "customFields"
+      ]
+    },
+    {
+      "name": "itemSerialSequence",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "step",
+        "createdAt",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "next",
+        "itemId",
+        "prefix",
+        "size",
+        "updatedAt",
+        "suffix"
+      ]
+    },
+    {
+      "name": "itemShelfLife",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "updatedAt",
+        "mode",
+        "companyId",
+        "itemId",
+        "updatedBy",
+        "customFields",
+        "createdBy",
+        "triggerProcessId",
+        "days",
+        "triggerTiming",
+        "calculateFromBom"
+      ]
+    },
+    {
+      "name": "itemSupersession",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "successorEffectivityDate",
+        "itemId",
+        "createdAt",
+        "updatedAt",
+        "conversionFactor",
+        "successorItemId",
+        "supersessionMode",
+        "discontinuationDate"
+      ]
+    },
+    {
+      "name": "itemUnitSalePrice",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "createdAt",
+        "customFields",
+        "unitSalePrice",
+        "priceIncludesTax",
+        "createdBy",
+        "itemId",
+        "updatedBy",
+        "allowInvoiceDiscount",
+        "currencyCode",
+        "tags",
+        "salesUnitOfMeasureCode",
+        "salesBlocked",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "makeMethod",
+      "rows": 0,
+      "columns": [
+        "id",
+        "tags",
+        "status",
+        "updatedAt",
+        "itemId",
+        "customFields",
+        "version",
+        "changeOrderId",
+        "createdBy",
+        "createdAt",
+        "companyId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "changeOrderAffectedItem",
+      "rows": 0,
+      "columns": [
+        "newItemId",
+        "id",
+        "discontinuationDate",
+        "draftMakeMethodId",
+        "changeOrderId",
+        "companyId",
+        "updatedAt",
+        "successorEffectivityDate",
+        "supersessionMode",
+        "changeSummary",
+        "changeType",
+        "updatedBy",
+        "createdBy",
+        "sortOrder",
+        "itemId",
+        "createdAt",
+        "baseMakeMethodId"
+      ]
+    },
+    {
+      "name": "nonConformanceItem",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "quantity",
+        "nonConformanceId",
+        "createdBy",
+        "disposition",
+        "id",
+        "updatedAt",
+        "itemId",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "onshapeItemSyncState",
+      "rows": 0,
+      "columns": [
+        "partNumber",
+        "error",
+        "documentId",
+        "companyId",
+        "releaseState",
+        "source",
+        "revision",
+        "id",
+        "observedOnly",
+        "updatedAt",
+        "skipReason",
+        "runId",
+        "documentPath",
+        "assetKind",
+        "itemId",
+        "versionId",
+        "createdAt",
+        "elementId",
+        "modelUploadId",
+        "status",
+        "createdBy",
+        "revisionId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "procedureStep",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "companyId",
+        "procedureId",
+        "unitOfMeasureCode",
+        "maxValue",
+        "id",
+        "minValue",
+        "listValues",
+        "sortOrder",
+        "createdAt",
+        "name",
+        "description",
+        "type",
+        "required",
+        "fileTypes",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "purchasingRfqLine",
+      "rows": 0,
+      "columns": [
+        "inventoryUnitOfMeasureCode",
+        "createdAt",
+        "itemId",
+        "description",
+        "createdBy",
+        "updatedBy",
+        "quantity",
+        "companyId",
+        "conversionFactor",
+        "internalNotes",
+        "updatedAt",
+        "customFields",
+        "purchasingRfqId",
+        "purchaseUnitOfMeasureCode",
+        "order",
+        "id",
+        "externalNotes"
+      ]
+    },
+    {
+      "name": "qualityDocumentStep",
+      "rows": 0,
+      "columns": [
+        "unitOfMeasureCode",
+        "maxValue",
+        "updatedAt",
+        "qualityDocumentId",
+        "companyId",
+        "sortOrder",
+        "id",
+        "minValue",
+        "listValues",
+        "type",
+        "description",
+        "name",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
+        "fileTypes",
+        "required"
+      ]
+    },
+    {
+      "name": "riskRegister",
+      "rows": 0,
+      "columns": [
+        "source",
+        "createdBy",
+        "notes",
+        "updatedBy",
+        "title",
+        "updatedAt",
+        "description",
+        "severity",
+        "assignee",
+        "itemId",
+        "id",
+        "sourceId",
+        "createdAt",
+        "companyId",
+        "type",
+        "status",
+        "likelihood"
+      ]
+    },
+    {
+      "name": "storageRuleItemAssignment",
+      "rows": 0,
+      "columns": [
+        "ruleId",
+        "updatedBy",
+        "itemId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "trackedEntity",
+      "rows": 0,
+      "columns": [
+        "sourceDocumentReadableId",
+        "createdAt",
+        "id",
+        "readableId",
+        "companyId",
+        "createdBy",
+        "quantity",
+        "expirationDate",
+        "itemId",
+        "sourceDocumentId",
+        "attributes",
+        "status",
+        "updatedBy",
+        "sourceDocument"
+      ]
+    },
+    {
+      "name": "nonConformanceItemTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "quantity",
+        "createdAt",
+        "trackedEntityId",
+        "nonConformanceId",
+        "companyId",
+        "id",
+        "updatedAt",
+        "updatedBy",
+        "createdBy",
+        "nonConformanceItemId"
+      ]
+    },
+    {
+      "name": "nonConformanceTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "id",
+        "createdBy",
+        "nonConformanceId",
+        "updatedBy",
+        "createdAt",
+        "companyId",
+        "trackedEntityId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "trackedActivityInput",
+      "rows": 0,
+      "columns": [
+        "trackedActivityId",
+        "createdAt",
+        "trackedEntityId",
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "trackedActivityOutput",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "createdAt",
+        "trackedEntityId",
+        "createdBy",
+        "trackedActivityId"
+      ]
+    },
+    {
+      "name": "userAttributeCategory",
+      "rows": 0,
+      "columns": [
+        "id",
+        "updatedAt",
+        "emoji",
+        "active",
+        "name",
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "protected",
+        "public",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "userAttribute",
+      "rows": 0,
+      "columns": [
+        "listOptions",
+        "id",
+        "createdAt",
+        "updatedAt",
+        "active",
+        "createdBy",
+        "name",
+        "updatedBy",
+        "attributeDataTypeId",
+        "canSelfManage",
+        "userAttributeCategoryId",
+        "sortOrder"
+      ]
+    },
+    {
+      "name": "userAttributeValue",
+      "rows": 0,
+      "columns": [
+        "valueDate",
+        "updatedBy",
+        "valueText",
+        "valueBoolean",
+        "userId",
+        "valueNumeric",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "createdBy",
+        "valueUser",
+        "valueFile",
+        "userAttributeId"
+      ]
+    },
+    {
+      "name": "userModulePreference",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "module",
+        "updatedAt",
+        "position",
+        "userId",
+        "id",
+        "hidden"
+      ]
+    },
+    {
+      "name": "userToCompany",
+      "rows": 0,
+      "columns": ["companyId", "userId", "role"]
+    },
+    {
+      "name": "warehouse",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "locationId",
+        "requiresPick",
+        "requiresReceive",
+        "requiresPutAway",
+        "createdAt",
+        "updatedBy",
+        "name",
+        "requiresShipment",
+        "companyId",
+        "active",
+        "id",
+        "createdBy",
+        "requiresBin"
+      ]
+    },
+    {
+      "name": "warehouseTransfer",
+      "rows": 0,
+      "columns": [
+        "toLocationId",
+        "fromLocationId",
+        "updatedAt",
+        "expectedReceiptDate",
+        "status",
+        "createdAt",
+        "customFields",
+        "tags",
+        "updatedBy",
+        "transferId",
+        "notes",
+        "companyId",
+        "id",
+        "reference",
+        "createdBy",
+        "transferDate"
+      ]
+    },
+    {
+      "name": "workCenter",
+      "rows": 0,
+      "columns": [
+        "description",
+        "createdAt",
+        "tags",
+        "overheadRate",
+        "defaultStandardFactor",
+        "laborRate",
+        "departmentId",
+        "customFields",
+        "updatedBy",
+        "machineRate",
+        "updatedAt",
+        "createdBy",
+        "name",
+        "locationId",
+        "active",
+        "id",
+        "requiredAbilityId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "maintenanceSchedule",
+      "rows": 0,
+      "columns": [
+        "thursday",
+        "wednesday",
+        "workCenterId",
+        "description",
+        "updatedBy",
+        "skipHolidays",
+        "estimatedDuration",
+        "frequency",
+        "friday",
+        "createdBy",
+        "sunday",
+        "saturday",
+        "updatedAt",
+        "tuesday",
+        "createdAt",
+        "name",
+        "monday",
+        "locationId",
+        "nextDueAt",
+        "active",
+        "companyId",
+        "id",
+        "lastGeneratedAt",
+        "procedureId",
+        "priority"
+      ]
+    },
+    {
+      "name": "maintenanceDispatch",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "companyId",
+        "plannedStartTime",
+        "priority",
+        "nonConformanceId",
+        "actualEndTime",
+        "createdBy",
+        "status",
+        "content",
+        "actualStartTime",
+        "completedAt",
+        "assignee",
+        "locationId",
+        "updatedBy",
+        "id",
+        "maintenanceScheduleId",
+        "severity",
+        "actualFailureModeId",
+        "source",
+        "oeeImpact",
+        "maintenanceDispatchId",
+        "plannedEndTime",
+        "workCenterId",
+        "procedureId",
+        "suspectedFailureModeId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "maintenanceDispatchComment",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "comment",
+        "companyId",
+        "createdAt",
+        "id",
+        "updatedAt",
+        "maintenanceDispatchId"
+      ]
+    },
+    {
+      "name": "maintenanceDispatchEvent",
+      "rows": 0,
+      "columns": [
+        "notes",
+        "employeeId",
+        "workCenterId",
+        "updatedBy",
+        "startTime",
+        "createdBy",
+        "maintenanceDispatchId",
+        "updatedAt",
+        "endTime",
+        "companyId",
+        "id",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "maintenanceDispatchItem",
+      "rows": 0,
+      "columns": [
+        "unitCost",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "companyId",
+        "createdAt",
+        "maintenanceDispatchId",
+        "updatedAt",
+        "unitOfMeasureCode",
+        "itemId",
+        "quantity"
+      ]
+    },
+    {
+      "name": "maintenanceDispatchItemTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "quantity",
+        "trackedEntityId",
+        "companyId",
+        "updatedBy",
+        "maintenanceDispatchItemId",
+        "createdBy",
+        "id",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "maintenanceDispatchWorkCenter",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "workCenterId",
+        "createdAt",
+        "id",
+        "updatedAt",
+        "maintenanceDispatchId"
+      ]
+    },
+    {
+      "name": "maintenanceScheduleItem",
+      "rows": 0,
+      "columns": [
+        "unitOfMeasureCode",
+        "createdBy",
+        "itemId",
+        "quantity",
+        "companyId",
+        "updatedBy",
+        "id",
+        "createdAt",
+        "updatedAt",
+        "maintenanceScheduleId"
+      ]
+    },
+    {
+      "name": "storageRuleWorkCenterAssignment",
+      "rows": 0,
+      "columns": [
+        "ruleId",
+        "workCenterId",
+        "updatedBy",
+        "createdBy",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "storageUnit",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "warehouseId",
+        "storageTypeIds",
+        "active",
+        "workCenterId",
+        "companyId",
+        "tags",
+        "customFields",
+        "updatedBy",
+        "parentId",
+        "locationId",
+        "isWorkCenterDefault",
+        "createdBy",
+        "name",
+        "updatedAt",
+        "id"
+      ]
+    },
+    {
+      "name": "itemLedger",
+      "rows": 0,
+      "columns": [
+        "documentLineId",
+        "companyId",
+        "entryNumber",
+        "itemId",
+        "scrapReasonId",
+        "locationId",
+        "id",
+        "storageUnitId",
+        "documentId",
+        "entryType",
+        "postingDate",
+        "createdAt",
+        "trackedEntityId",
+        "correctionOfItemLedgerId",
+        "externalDocumentId",
+        "updatedBy",
+        "documentType",
+        "comment",
+        "quantity",
+        "trackedEntityStatus",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "pickMethod",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "customFields",
+        "itemId",
+        "sortMethod",
+        "updatedAt",
+        "locationId",
+        "createdBy",
+        "updatedBy",
+        "defaultStorageUnitId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "warehouseTransferLine",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "quantity",
+        "createdBy",
+        "itemId",
+        "fromLocationId",
+        "notes",
+        "shippedQuantity",
+        "updatedAt",
+        "createdAt",
+        "transferId",
+        "companyId",
+        "updatedBy",
+        "toStorageUnitId",
+        "fromStorageUnitId",
+        "unitOfMeasureCode",
+        "id",
+        "toLocationId",
+        "receivedQuantity"
+      ]
+    },
+    {
+      "name": "workCenterProcess",
+      "rows": 0,
+      "columns": [
+        "workCenterId",
+        "updatedBy",
+        "processId",
+        "createdAt",
+        "createdBy",
+        "companyId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "workCenterReplacementPart",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "itemId",
+        "quantity",
+        "unitOfMeasureCode",
+        "updatedAt",
+        "createdAt",
+        "workCenterId",
+        "companyId",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "contractor",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "id",
+        "customFields",
+        "tags",
+        "updatedAt",
+        "hoursPerWeek",
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "active"
+      ]
+    },
+    {
+      "name": "contractorAbility",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "createdBy",
+        "companyId",
+        "abilityId",
+        "contractorId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "costLedger",
+      "rows": 0,
+      "columns": [
+        "documentType",
+        "itemLedgerType",
+        "postingDate",
+        "nominalCost",
+        "remainingQuantity",
+        "appliesToCostLedgerId",
+        "supplierId",
+        "companyId",
+        "quantity",
+        "costLedgerType",
+        "documentId",
+        "itemId",
+        "createdAt",
+        "entryNumber",
+        "cost",
+        "adjustment",
+        "id",
+        "externalDocumentId"
+      ]
+    },
+    {
+      "name": "customer",
+      "rows": 0,
+      "columns": [
+        "fax",
+        "currencyCode",
+        "tags",
+        "taxPercent",
+        "updatedAt",
+        "embedding",
+        "salesContactId",
+        "logo",
+        "website",
+        "customerStatusId",
+        "customerTypeId",
+        "customFields",
+        "defaultCc",
+        "accountManagerId",
+        "intercompanyCompanyId",
+        "createdBy",
+        "id",
+        "companyId",
+        "createdAt",
+        "assignee",
+        "readableId",
+        "name",
+        "updatedBy",
+        "phone"
+      ]
+    },
+    {
+      "name": "customerAccount",
+      "rows": 0,
+      "columns": ["customerId", "id", "active", "companyId"]
+    },
+    {
+      "name": "customerItemPriceOverride",
+      "rows": 0,
+      "columns": [
+        "customerTypeId",
+        "updatedAt",
+        "itemId",
+        "validTo",
+        "notes",
+        "createdAt",
+        "updatedBy",
+        "customerId",
+        "companyId",
+        "active",
+        "createdBy",
+        "applyRulesOnTop",
+        "id",
+        "validFrom"
+      ]
+    },
+    {
+      "name": "customerItemPriceOverrideBreak",
+      "rows": 0,
+      "columns": [
+        "id",
+        "updatedBy",
+        "companyId",
+        "customerItemPriceOverrideId",
+        "createdAt",
+        "updatedAt",
+        "active",
+        "overridePrice",
+        "quantity",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "customerLocation",
+      "rows": 0,
+      "columns": [
+        "customerId",
+        "companyId",
+        "id",
+        "tags",
+        "customFields",
+        "addressId",
+        "name"
+      ]
+    },
+    {
+      "name": "customerContact",
+      "rows": 0,
+      "columns": [
+        "contactId",
+        "customerLocationId",
+        "tags",
+        "userId",
+        "customerId",
+        "companyId",
+        "id",
+        "customFields"
+      ]
+    },
+    {
+      "name": "customerPartToItem",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "itemId",
+        "customerPartRevision",
+        "customerId",
+        "id",
+        "customerPartId"
+      ]
+    },
+    {
+      "name": "customerPayment",
+      "rows": 0,
+      "columns": [
+        "invoiceCustomerId",
+        "updatedAt",
+        "customerId",
+        "updatedBy",
+        "invoiceCustomerContactId",
+        "invoiceCustomerLocationId",
+        "companyId",
+        "paymentTermId"
+      ]
+    },
+    {
+      "name": "customerShipping",
+      "rows": 0,
+      "columns": [
+        "incotermLocation",
+        "updatedBy",
+        "customerId",
+        "shippingMethodId",
+        "shippingCustomerId",
+        "incoterm",
+        "updatedAt",
+        "shippingTermId",
+        "shippingCustomerLocationId",
+        "shippingCustomerContactId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "customerTax",
+      "rows": 0,
+      "columns": [
+        "taxExemptionCertificateNumber",
+        "eori",
+        "vatNumber",
+        "taxExempt",
+        "taxExemptionCertificatePath",
+        "updatedAt",
+        "taxId",
+        "taxExemptionReason",
+        "customerId",
+        "companyId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "fixture",
+      "rows": 0,
+      "columns": [
+        "itemId",
+        "tags",
+        "updatedBy",
+        "createdBy",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "customFields",
+        "approved",
+        "customerId",
+        "companyId",
+        "approvedBy"
+      ]
+    },
+    {
+      "name": "nonConformanceCustomer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "createdBy",
+        "nonConformanceId",
+        "updatedBy",
+        "createdAt",
+        "customerId",
+        "companyId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "opportunity",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "requestForQuoteDocumentPath",
+        "purchaseOrderDocumentPath",
+        "id",
+        "customerId"
+      ]
+    },
+    {
+      "name": "salesOrder",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "salesOrderId",
+        "companyId",
+        "completedDate",
+        "customerId",
+        "customerEngineeringContactId",
+        "customerContactId",
+        "externalNotes",
+        "customerLocationId",
+        "id",
+        "customerReference",
+        "sentCompleteDate",
+        "internalNotes",
+        "revisionId",
+        "closedAt",
+        "status",
+        "createdBy",
+        "updatedAt",
+        "opportunityId",
+        "currencyCode",
+        "exchangeRateUpdatedAt",
+        "exchangeRate",
+        "assignee",
+        "updatedBy",
+        "orderDate",
+        "createdAt",
+        "salesPersonId",
+        "locationId",
+        "closedBy"
+      ]
+    },
+    {
+      "name": "salesOrderFavorite",
+      "rows": 0,
+      "columns": ["userId", "salesOrderId"]
+    },
+    {
+      "name": "salesOrderLine",
+      "rows": 0,
+      "columns": [
+        "invoicedComplete",
+        "addOnCost",
+        "companyId",
+        "pricingRuleId",
+        "unitOfMeasureCode",
+        "updatedBy",
+        "storageUnitId",
+        "sentComplete",
+        "setupPrice",
+        "internalNotes",
+        "itemId",
+        "unitPrice",
+        "salesOrderLineType",
+        "methodType",
+        "createdAt",
+        "shippingCost",
+        "nonTaxableAddOnCost",
+        "assetId",
+        "status",
+        "taxPercent",
+        "customFields",
+        "priceTrace",
+        "quantitySent",
+        "sortOrder",
+        "id",
+        "saleQuantity",
+        "updatedAt",
+        "quantityInvoiced",
+        "externalNotes",
+        "salesOrderId",
+        "locationId",
+        "createdBy",
+        "sentDate",
+        "exchangeRate",
+        "accountId",
+        "promisedDate",
+        "description",
+        "modelUploadId"
+      ]
+    },
+    {
+      "name": "nonConformanceSalesOrderLine",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "salesOrderLineId",
+        "salesOrderId",
+        "salesOrderReadableId",
+        "updatedBy",
+        "createdBy",
+        "nonConformanceId",
+        "companyId",
+        "updatedAt",
+        "id"
+      ]
+    },
+    {
+      "name": "salesOrderPayment",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "updatedBy",
+        "invoiceCustomerId",
+        "paymentComplete",
+        "updatedAt",
+        "id",
+        "customFields",
+        "invoiceCustomerLocationId",
+        "invoiceCustomerContactId",
+        "paymentTermId"
+      ]
+    },
+    {
+      "name": "salesOrderShipment",
+      "rows": 0,
+      "columns": [
+        "supplierId",
+        "locationId",
+        "updatedBy",
+        "dropShipment",
+        "notes",
+        "customerId",
+        "id",
+        "trackingNumber",
+        "receiptPromisedDate",
+        "assignee",
+        "customFields",
+        "shippingTermId",
+        "supplierLocationId",
+        "shippingMethodId",
+        "deliveryDate",
+        "receiptRequestedDate",
+        "shippingCost",
+        "customerLocationId",
+        "incotermLocation",
+        "companyId",
+        "incoterm",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "salesOrderStatusHistory",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "status",
+        "createdAt",
+        "createdBy",
+        "salesOrderId",
+        "companyId",
+        "id"
+      ]
+    },
+    {
+      "name": "salesOrderTransaction",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "id",
+        "salesOrderId",
+        "createdAt",
+        "userId",
+        "type"
+      ]
+    },
+    {
+      "name": "salesRfq",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "rfqId",
+        "locationId",
+        "completedDate",
+        "customerEngineeringContactId",
+        "customerReference",
+        "expirationDate",
+        "internalNotes",
+        "rfqDate",
+        "id",
+        "noQuoteReasonId",
+        "customerId",
+        "salesPersonId",
+        "assignee",
+        "revisionId",
+        "status",
+        "createdBy",
+        "updatedAt",
+        "opportunityId",
+        "customerContactId",
+        "externalNotes",
+        "updatedBy",
+        "employeeId",
+        "createdAt",
+        "tags",
+        "customerLocationId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "salesRfqFavorite",
+      "rows": 0,
+      "columns": ["userId", "rfqId"]
+    },
+    {
+      "name": "salesRfqLine",
+      "rows": 0,
+      "columns": [
+        "externalNotes",
+        "id",
+        "order",
+        "description",
+        "customFields",
+        "salesRfqId",
+        "updatedAt",
+        "internalNotes",
+        "unitOfMeasureCode",
+        "itemId",
+        "customerPartRevision",
+        "companyId",
+        "tags",
+        "createdBy",
+        "updatedBy",
+        "customerPartId",
+        "modelUploadId",
+        "createdAt",
+        "quantity"
+      ]
+    },
+    {
+      "name": "externalLink",
+      "rows": 0,
+      "columns": [
+        "documentId",
+        "customerId",
+        "companyId",
+        "createdAt",
+        "documentType",
+        "supplierId",
+        "id",
+        "expiresAt"
+      ]
+    },
+    {
+      "name": "quote",
+      "rows": 0,
+      "columns": [
+        "currencyCode",
+        "expirationDate",
+        "exchangeRateUpdatedAt",
+        "customerId",
+        "id",
+        "salesPersonId",
+        "internalNotes",
+        "estimatorId",
+        "digitalQuoteRejectedByEmail",
+        "digitalQuoteAcceptedByEmail",
+        "digitalQuoteAcceptedBy",
+        "customerContactId",
+        "quoteId",
+        "opportunityId",
+        "assignee",
+        "updatedAt",
+        "locationId",
+        "exchangeRate",
+        "customFields",
+        "dueDate",
+        "createdBy",
+        "customerLocationId",
+        "tags",
+        "updatedBy",
+        "digitalQuoteRejectedBy",
+        "externalNotes",
+        "customerEngineeringContactId",
+        "status",
+        "completedDate",
+        "externalLinkId",
+        "createdAt",
+        "companyId",
+        "customerReference",
+        "revisionId"
+      ]
+    },
+    {
+      "name": "job",
+      "rows": 0,
+      "columns": [
+        "salesOrderId",
+        "quantityComplete",
+        "jobId",
+        "actualTime",
+        "tags",
+        "configuration",
+        "dueDate",
+        "companyId",
+        "quantity",
+        "estimatedTime",
+        "deadlineType",
+        "id",
+        "priority",
+        "storageUnitId",
+        "scrapQuantity",
+        "updatedAt",
+        "locationId",
+        "createdAt",
+        "quantityShipped",
+        "itemId",
+        "unitOfMeasureCode",
+        "quoteLineId",
+        "quoteId",
+        "status",
+        "startDate",
+        "customFields",
+        "updatedBy",
+        "completedDate",
+        "assignee",
+        "customerId",
+        "releasedDate",
+        "modelUploadId",
+        "notes",
+        "quantityReceivedToInventory",
+        "salesOrderLineId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "fulfillment",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "type",
+        "quantity",
+        "jobId",
+        "createdBy",
+        "salesOrderLineId",
+        "companyId",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "jobFavorite",
+      "rows": 0,
+      "columns": ["jobId", "userId"]
+    },
+    {
+      "name": "quoteFavorite",
+      "rows": 0,
+      "columns": ["quoteId", "userId"]
+    },
+    {
+      "name": "quoteLine",
+      "rows": 0,
+      "columns": [
+        "locationId",
+        "externalNotes",
+        "sortOrder",
+        "status",
+        "quoteRevisionId",
+        "internalNotes",
+        "customFields",
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "tags",
+        "updatedAt",
+        "additionalCharges",
+        "estimatorId",
+        "modelUploadId",
+        "priceTrace",
+        "methodType",
+        "itemType",
+        "pricingRuleId",
+        "configuration",
+        "noQuoteReason",
+        "customerPartId",
+        "createdBy",
+        "unitOfMeasureCode",
+        "quoteId",
+        "itemId",
+        "taxPercent",
+        "id",
+        "description",
+        "unitPricePrecision",
+        "customerPartRevision"
+      ]
+    },
+    {
+      "name": "quoteLinePrice",
+      "rows": 0,
+      "columns": [
+        "priceSource",
+        "createdAt",
+        "companyId",
+        "updatedBy",
+        "quoteId",
+        "categoryMarkups",
+        "leadTime",
+        "createdBy",
+        "discountPercent",
+        "quantity",
+        "unitPrice",
+        "quoteLineId",
+        "shippingCost",
+        "exchangeRate",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "quotePayment",
+      "rows": 0,
+      "columns": [
+        "invoiceCustomerLocationId",
+        "invoiceCustomerContactId",
+        "companyId",
+        "paymentTermId",
+        "invoiceCustomerId",
+        "updatedAt",
+        "customFields",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "quoteShipment",
+      "rows": 0,
+      "columns": [
+        "incoterm",
+        "id",
+        "shippingCost",
+        "companyId",
+        "locationId",
+        "updatedAt",
+        "incotermLocation",
+        "receiptRequestedDate",
+        "shippingTermId",
+        "shippingMethodId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "gauge",
+      "rows": 0,
+      "columns": [
+        "gaugeTypeId",
+        "gaugeStatus",
+        "storageUnitId",
+        "gaugeId",
+        "lastCalibrationDate",
+        "description",
+        "gaugeCalibrationStatus",
+        "id",
+        "gaugeRole",
+        "dateAcquired",
+        "lastCalibrationStatus",
+        "nextCalibrationDate",
+        "supplierId",
+        "modelNumber",
+        "customFields",
+        "createdAt",
+        "companyId",
+        "locationId",
+        "updatedAt",
+        "updatedBy",
+        "calibrationIntervalInMonths",
+        "createdBy",
+        "serialNumber"
+      ]
+    },
+    {
+      "name": "gaugeCalibrationRecord",
+      "rows": 0,
+      "columns": [
+        "approvedBy",
+        "measurementStandard",
+        "inspectionStatus",
+        "dateCalibrated",
+        "updatedBy",
+        "requiresRepair",
+        "calibrationAttempts",
+        "createdBy",
+        "requiresAction",
+        "humidity",
+        "supplierId",
+        "gaugeId",
+        "updatedAt",
+        "temperature",
+        "companyId",
+        "notes",
+        "createdAt",
+        "id",
+        "customFields",
+        "requiresAdjustment"
+      ]
+    },
+    {
+      "name": "inspection",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "supplierId",
+        "sourceDocument",
+        "notes",
+        "status",
+        "aql",
+        "dispositionedAt",
+        "inspectionLevel",
+        "updatedBy",
+        "codeLetter",
+        "itemId",
+        "dispositionedBy",
+        "acceptanceNumber",
+        "sourceDocumentReadableId",
+        "companyId",
+        "createdBy",
+        "samplingPlanType",
+        "lotSize",
+        "sourceDocumentLineId",
+        "sourceDocumentId",
+        "rejectionNumber",
+        "inspectionId",
+        "severity",
+        "updatedAt",
+        "itemReadableId",
+        "inspectionDocumentId",
+        "sampleSize",
+        "id",
+        "samplingStandard"
+      ]
+    },
+    {
+      "name": "inspectionSample",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "companyId",
+        "inspectionId",
+        "inspectedBy",
+        "updatedAt",
+        "createdAt",
+        "id",
+        "inspectedAt",
+        "trackedEntityId",
+        "status",
+        "notes",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "inspectionMeasurement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectedAt",
+        "createdBy",
+        "status",
+        "inspectionId",
+        "updatedBy",
+        "inspectedBy",
+        "companyId",
+        "createdAt",
+        "value",
+        "inspectionFeatureId",
+        "updatedAt",
+        "inspectionSampleId",
+        "notes"
+      ]
+    },
+    {
+      "name": "inspectionSamplingPlan",
+      "rows": 0,
+      "columns": [
+        "id",
+        "createdBy",
+        "updatedBy",
+        "rejectionNumber",
+        "inspectionId",
+        "companyId",
+        "createdAt",
+        "acceptanceNumber",
+        "updatedAt",
+        "sampleSize",
+        "inspectionFeatureId",
+        "codeLetter"
+      ]
+    },
+    {
+      "name": "nonConformanceInspection",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "inspectionId",
+        "updatedBy",
+        "createdAt",
+        "nonConformanceId",
+        "id",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "inspectionHistory",
+      "rows": 0,
+      "columns": [
+        "severity",
+        "lotSize",
+        "id",
+        "defectsFound",
+        "aql",
+        "sampleSize",
+        "updatedBy",
+        "companyId",
+        "inspectionId",
+        "createdBy",
+        "samplingStandard",
+        "outcome",
+        "inspectionLevel",
+        "itemId",
+        "createdAt",
+        "supplierId"
+      ]
+    },
+    {
+      "name": "itemReplenishment",
+      "rows": 0,
+      "columns": [
+        "leadTime",
+        "tags",
+        "purchasingUnitOfMeasureCode",
+        "updatedBy",
+        "conversionFactor",
+        "createdBy",
+        "updatedAt",
+        "scrapPercentage",
+        "createdAt",
+        "preferredSupplierId",
+        "customFields",
+        "lotSize",
+        "manufacturingBlocked",
+        "companyId",
+        "itemId",
+        "requiresConfiguration",
+        "purchasingBlocked"
+      ]
+    },
+    {
+      "name": "jobMakeMethod",
+      "rows": 0,
+      "columns": [
+        "version",
+        "quantityPerParent",
+        "trackedEntityId",
+        "createdAt",
+        "itemId",
+        "requiresBatchTracking",
+        "parentMaterialId",
+        "companyId",
+        "customFields",
+        "id",
+        "updatedAt",
+        "updatedBy",
+        "createdBy",
+        "requiresSerialTracking",
+        "jobId",
+        "itemScrapPercentage"
+      ]
+    },
+    {
+      "name": "jobMaterial",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "customFields",
+        "itemId",
+        "companyId",
+        "substitutedFromItemId",
+        "requiresSerialTracking",
+        "order",
+        "defaultStorageUnit",
+        "unitOfMeasureCode",
+        "itemScrapPercentage",
+        "jobMakeMethodId",
+        "itemType",
+        "estimatedQuantity",
+        "updatedAt",
+        "jobOperationId",
+        "createdAt",
+        "jobId",
+        "unitCost",
+        "createdBy",
+        "scrapQuantity",
+        "substitutionFactor",
+        "storageUnitId",
+        "requiresBatchTracking",
+        "description",
+        "kit",
+        "quantity",
+        "id",
+        "quantityIssued",
+        "methodType"
+      ]
+    },
+    {
+      "name": "stockTransferLine",
+      "rows": 0,
+      "columns": [
+        "fromStorageUnitId",
+        "id",
+        "pickedQuantity",
+        "trackedEntityId",
+        "quantity",
+        "createdBy",
+        "stockTransferId",
+        "requiresSerialTracking",
+        "updatedAt",
+        "createdAt",
+        "requiresBatchTracking",
+        "itemId",
+        "toStorageUnitId",
+        "jobMaterialId",
+        "companyId",
+        "jobId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "jobMaterialStep",
+      "rows": 0,
+      "columns": ["quantity", "jobOperationStepId", "jobMaterialId"]
+    },
+    {
+      "name": "jobOperation",
+      "rows": 0,
+      "columns": [
+        "procedureId",
+        "tags",
+        "updatedAt",
+        "laborUnit",
+        "id",
+        "setupUnit",
+        "inspectionDocumentId",
+        "createdAt",
+        "workCenterId",
+        "hasConflict",
+        "machineUnit",
+        "dueDate",
+        "jobId",
+        "status",
+        "overheadRate",
+        "conflictReason",
+        "companyId",
+        "laborTime",
+        "quantityReworked",
+        "targetQuantity",
+        "operationQuantity",
+        "setupTime",
+        "customFields",
+        "processId",
+        "operationLeadTime",
+        "machineTime",
+        "quantityComplete",
+        "reworkId",
+        "operationSupplierProcessId",
+        "operationUnitCost",
+        "laborRate",
+        "createdBy",
+        "machineRate",
+        "manuallyScheduled",
+        "assemblyInstructionId",
+        "operationMinimumCost",
+        "operationType",
+        "startDate",
+        "order",
+        "operationOrder",
+        "jobMakeMethodId",
+        "quantityScrapped",
+        "assignee",
+        "workInstruction",
+        "description",
+        "priority",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "jobOperationDependency",
+      "rows": 0,
+      "columns": [
+        "dependsOnId",
+        "operationId",
+        "jobId",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "jobOperationParameter",
+      "rows": 0,
+      "columns": [
+        "key",
+        "updatedAt",
+        "id",
+        "updatedBy",
+        "createdAt",
+        "operationId",
+        "value",
+        "createdBy",
+        "companyId"
+      ]
+    },
+    {
+      "name": "jobOperationTool",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "operationId",
+        "createdAt",
+        "id",
+        "updatedBy",
+        "createdBy",
+        "quantity",
+        "toolId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "nonConformanceJobOperation",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "id",
+        "updatedAt",
+        "createdBy",
+        "updatedBy",
+        "nonConformanceId",
+        "jobReadableId",
+        "createdAt",
+        "jobId",
+        "jobOperationId"
+      ]
+    },
+    {
+      "name": "pickingListLine",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "quantityReturned",
+        "createdBy",
+        "jobId",
+        "jobMaterialId",
+        "quantityToPick",
+        "status",
+        "jobOperationId",
+        "updatedAt",
+        "createdAt",
+        "pickingListId",
+        "companyId",
+        "updatedBy",
+        "storageUnitId",
+        "quantityPicked",
+        "toStorageUnitId",
+        "id",
+        "itemId"
+      ]
+    },
+    {
+      "name": "pickingListLineTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "quantityPicked",
+        "quantity",
+        "companyId",
+        "trackedEntityId",
+        "pickingListLineId"
+      ]
+    },
+    {
+      "name": "productionEvent",
+      "rows": 0,
+      "columns": [
+        "notes",
+        "updatedAt",
+        "endTime",
+        "employeeId",
+        "type",
+        "startTime",
+        "createdBy",
+        "companyId",
+        "id",
+        "createdAt",
+        "workCenterId",
+        "jobOperationId",
+        "updatedBy",
+        "postedToGL"
+      ]
+    },
+    {
+      "name": "productionQuantity",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "id",
+        "createdBy",
+        "laborProductionEventId",
+        "inspectionSampleId",
+        "updatedBy",
+        "jobOperationId",
+        "notes",
+        "createdAt",
+        "setupProductionEventId",
+        "updatedAt",
+        "inspectionId",
+        "type",
+        "scrapReasonId",
+        "quantity",
+        "machineProductionEventId"
+      ]
+    },
+    {
+      "name": "jobOperationNote",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "companyId",
+        "note",
+        "updatedBy",
+        "id",
+        "productionQuantityId",
+        "createdBy",
+        "jobOperationId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "rework",
+      "rows": 0,
+      "columns": [
+        "targetJobOperationId",
+        "triggeredAtJobOperationId",
+        "reason",
+        "updatedAt",
+        "requestedById",
+        "companyId",
+        "jobId",
+        "quantity",
+        "id",
+        "completedAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "jobOperationStep",
+      "rows": 0,
+      "columns": [
+        "listValues",
+        "minValue",
+        "companyId",
+        "name",
+        "updatedAt",
+        "type",
+        "fileTypes",
+        "id",
+        "maxValue",
+        "unitOfMeasureCode",
+        "nonConformanceActionId",
+        "description",
+        "required",
+        "createdAt",
+        "assemblyInstructionStepId",
+        "createdBy",
+        "updatedBy",
+        "sortOrder",
+        "nonConformanceInvestigationId",
+        "operationId"
+      ]
+    },
+    {
+      "name": "jobOperationStepRecord",
+      "rows": 0,
+      "columns": [
+        "index",
+        "userValue",
+        "numericValue",
+        "booleanValue",
+        "createdAt",
+        "updatedAt",
+        "jobOperationStepId",
+        "id",
+        "companyId",
+        "value",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "jobOperationStepSlide",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "imagePath",
+        "caption",
+        "annotations",
+        "sortOrder",
+        "updatedAt",
+        "createdAt",
+        "stepId",
+        "modelUploadId",
+        "companyId",
+        "size",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "jobOperationToolStep",
+      "rows": 0,
+      "columns": ["jobOperationStepId", "jobOperationToolId"]
+    },
+    {
+      "name": "kanban",
+      "rows": 0,
+      "columns": [
+        "purchaseUnitOfMeasureCode",
+        "autoRelease",
+        "autoStartJob",
+        "createdBy",
+        "itemId",
+        "storageUnitId",
+        "id",
+        "conversionFactor",
+        "companyId",
+        "supplierId",
+        "quantity",
+        "updatedAt",
+        "replenishmentSystem",
+        "jobId",
+        "updatedBy",
+        "completedBarcodeOverride",
+        "locationId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "memo",
+      "rows": 0,
+      "columns": [
+        "postedAt",
+        "memoId",
+        "reference",
+        "postingDate",
+        "exchangeRate",
+        "updatedAt",
+        "currencyCode",
+        "id",
+        "amount",
+        "supplierId",
+        "customFields",
+        "notes",
+        "direction",
+        "status",
+        "voidedAt",
+        "voidedBy",
+        "memoDate",
+        "updatedBy",
+        "createdAt",
+        "reasonAccount",
+        "companyId",
+        "customerId",
+        "postedBy",
+        "createdBy",
+        "journalId"
+      ]
+    },
+    {
+      "name": "methodMaterial",
+      "rows": 0,
+      "columns": [
+        "order",
+        "tags",
+        "updatedAt",
+        "itemType",
+        "kit",
+        "quantity",
+        "materialMakeMethodId",
+        "methodType",
+        "customFields",
+        "methodOperationId",
+        "scrapQuantity",
+        "itemId",
+        "sourcingType",
+        "id",
+        "companyId",
+        "createdBy",
+        "unitOfMeasureCode",
+        "createdAt",
+        "storageUnitIds",
+        "makeMethodId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "methodMaterialStep",
+      "rows": 0,
+      "columns": ["methodOperationStepId", "methodMaterialId", "quantity"]
+    },
+    {
+      "name": "methodOperation",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "laborTime",
+        "operationSupplierProcessId",
+        "processId",
+        "laborUnit",
+        "setupUnit",
+        "operationLeadTime",
+        "createdAt",
+        "machineTime",
+        "description",
+        "tags",
+        "operationUnitCost",
+        "operationOrder",
+        "updatedAt",
+        "order",
+        "setupTime",
+        "workCenterId",
+        "operationType",
+        "id",
+        "workInstruction",
+        "companyId",
+        "operationMinimumCost",
+        "procedureId",
+        "machineUnit",
+        "assemblyInstructionId",
+        "customFields",
+        "createdBy",
+        "makeMethodId",
+        "inspectionDocumentId"
+      ]
+    },
+    {
+      "name": "methodOperationParameter",
+      "rows": 0,
+      "columns": [
+        "key",
+        "updatedAt",
+        "id",
+        "updatedBy",
+        "createdAt",
+        "operationId",
+        "value",
+        "createdBy",
+        "companyId"
+      ]
+    },
+    {
+      "name": "methodOperationStep",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "sortOrder",
+        "operationId",
+        "unitOfMeasureCode",
+        "assemblyInstructionStepId",
+        "description",
+        "createdAt",
+        "required",
+        "type",
+        "fileTypes",
+        "maxValue",
+        "id",
+        "listValues",
+        "minValue",
+        "companyId",
+        "name",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "methodOperationStepSlide",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "imagePath",
+        "caption",
+        "sortOrder",
+        "annotations",
+        "updatedAt",
+        "createdAt",
+        "modelUploadId",
+        "stepId",
+        "companyId",
+        "size",
+        "updatedBy",
+        "id"
+      ]
+    },
+    {
+      "name": "methodOperationTool",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "quantity",
+        "toolId",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "createdAt",
+        "operationId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "methodOperationToolStep",
+      "rows": 0,
+      "columns": ["methodOperationToolId", "methodOperationStepId"]
+    },
+    {
+      "name": "nonConformanceActionProcess",
+      "rows": 0,
+      "columns": [
+        "actionTaskId",
+        "updatedBy",
+        "id",
+        "createdBy",
+        "processId",
+        "companyId",
+        "updatedAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "nonConformanceActionTask",
+      "rows": 0,
+      "columns": [
+        "completedDate",
+        "companyId",
+        "sortOrder",
+        "id",
+        "tags",
+        "notes",
+        "nonConformanceId",
+        "createdBy",
+        "actionTypeId",
+        "supplierId",
+        "updatedBy",
+        "createdAt",
+        "dueDate",
+        "assignee",
+        "updatedAt",
+        "status"
+      ]
+    },
+    {
+      "name": "nonConformanceSupplier",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "companyId",
+        "supplierId",
+        "createdAt",
+        "updatedBy",
+        "nonConformanceId",
+        "createdBy",
+        "id",
+        "externalLinkId"
+      ]
+    },
+    {
+      "name": "partner",
+      "rows": 0,
+      "columns": [
+        "abilityId",
+        "active",
+        "createdAt",
+        "companyId",
+        "hoursPerWeek",
+        "updatedBy",
+        "customFields",
+        "updatedAt",
+        "id",
+        "tags",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "payment",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "paymentDate",
+        "status",
+        "paymentType",
+        "memo",
+        "voidedAt",
+        "voidedBy",
+        "postedBy",
+        "journalId",
+        "createdBy",
+        "createdAt",
+        "companyId",
+        "bankAccount",
+        "customerId",
+        "postingDate",
+        "exchangeRate",
+        "updatedAt",
+        "postedAt",
+        "paymentId",
+        "reference",
+        "supplierId",
+        "customFields",
+        "id",
+        "currencyCode",
+        "totalAmount"
+      ]
+    },
+    {
+      "name": "purchaseInvoiceDelivery",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "incotermLocation",
+        "id",
+        "customFields",
+        "incoterm",
+        "updatedAt",
+        "locationId",
+        "supplierShippingCost",
+        "updatedBy",
+        "shippingTermId",
+        "shippingMethodId"
+      ]
+    },
+    {
+      "name": "purchaseInvoiceStatusHistory",
+      "rows": 0,
+      "columns": ["invoiceId", "status", "id", "companyId", "createdAt"]
+    },
+    {
+      "name": "purchaseOrderDelivery",
+      "rows": 0,
+      "columns": [
+        "receiptPromisedDate",
+        "customerId",
+        "trackingNumber",
+        "id",
+        "dropShipment",
+        "notes",
+        "companyId",
+        "locationId",
+        "customFields",
+        "updatedAt",
+        "tags",
+        "receiptRequestedDate",
+        "customerLocationId",
+        "incotermLocation",
+        "deliveryDate",
+        "incoterm",
+        "supplierShippingCost",
+        "updatedBy",
+        "shippingMethodId",
+        "shippingTermId"
+      ]
+    },
+    {
+      "name": "purchaseOrderFavorite",
+      "rows": 0,
+      "columns": ["userId", "purchaseOrderId"]
+    },
+    {
+      "name": "purchaseOrderLine",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "locationId",
+        "costCenterId",
+        "inventoryUnitOfMeasureCode",
+        "invoicedComplete",
+        "taxPercent",
+        "quantityShipped",
+        "receivedComplete",
+        "jobOperationId",
+        "internalNotes",
+        "customFields",
+        "sortOrder",
+        "companyId",
+        "assetId",
+        "storageUnitId",
+        "setupPrice",
+        "promisedDate",
+        "itemId",
+        "purchaseOrderLineType",
+        "supplierUnitPrice",
+        "createdBy",
+        "supplierPartId",
+        "accountId",
+        "supplierTaxAmount",
+        "requiredDate",
+        "updatedBy",
+        "quantityReceived",
+        "supplierShippingCost",
+        "id",
+        "purchaseQuantity",
+        "externalNotes",
+        "createdAt",
+        "description",
+        "tags",
+        "receivedDate",
+        "conversionFactor",
+        "jobId",
+        "exchangeRate",
+        "purchaseOrderId",
+        "modelUploadId",
+        "quantityInvoiced",
+        "ownerId",
+        "purchaseUnitOfMeasureCode"
+      ]
+    },
+    {
+      "name": "nonConformancePurchaseOrderLine",
+      "rows": 0,
+      "columns": [
+        "purchaseOrderReadableId",
+        "purchaseOrderId",
+        "purchaseOrderLineId",
+        "createdAt",
+        "id",
+        "updatedAt",
+        "companyId",
+        "nonConformanceId",
+        "updatedBy",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "purchaseOrderStatusHistory",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderId",
+        "createdBy",
+        "createdAt",
+        "status",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "purchaseOrderTransaction",
+      "rows": 0,
+      "columns": [
+        "purchaseOrderId",
+        "companyId",
+        "id",
+        "type",
+        "userId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "purchasingRfqSupplier",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "updatedBy",
+        "companyId",
+        "supplierId",
+        "createdBy",
+        "id",
+        "purchasingRfqId"
+      ]
+    },
+    {
+      "name": "purchasingRfqToPurchaseOrder",
+      "rows": 0,
+      "columns": ["companyId", "purchaseOrderId", "purchasingRfqId"]
+    },
+    {
+      "name": "purchasingRfqToSupplierQuote",
+      "rows": 0,
+      "columns": ["purchasingRfqId", "supplierQuoteId", "companyId"]
+    },
+    {
+      "name": "quoteMakeMethod",
+      "rows": 0,
+      "columns": [
+        "customFields",
+        "itemId",
+        "companyId",
+        "parentMaterialId",
+        "quoteLineId",
+        "version",
+        "quantityPerParent",
+        "id",
+        "createdBy",
+        "updatedBy",
+        "createdAt",
+        "updatedAt",
+        "quoteId",
+        "tags"
+      ]
+    },
+    {
+      "name": "quoteMaterial",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "storageUnitId",
+        "createdBy",
+        "scrapQuantity",
+        "unitCost",
+        "quoteOperationId",
+        "methodType",
+        "tags",
+        "customFields",
+        "quoteMakeMethodId",
+        "quoteLineId",
+        "createdAt",
+        "itemId",
+        "kit",
+        "itemType",
+        "unitOfMeasureCode",
+        "description",
+        "id",
+        "quantity",
+        "order",
+        "quoteId",
+        "companyId",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "quoteMaterialStep",
+      "rows": 0,
+      "columns": ["quoteOperationStepId", "quoteMaterialId", "quantity"]
+    },
+    {
+      "name": "quoteOperation",
+      "rows": 0,
+      "columns": [
+        "machineUnit",
+        "machineRate",
+        "description",
+        "operationLeadTime",
+        "setupTime",
+        "companyId",
+        "quoteId",
+        "operationUnitCost",
+        "inspectionDocumentId",
+        "setupUnit",
+        "id",
+        "laborUnit",
+        "tags",
+        "procedureId",
+        "machineTime",
+        "operationSupplierProcessId",
+        "workInstruction",
+        "workCenterId",
+        "operationMinimumCost",
+        "laborRate",
+        "quoteLineId",
+        "quoteMakeMethodId",
+        "assemblyInstructionId",
+        "createdBy",
+        "updatedAt",
+        "createdAt",
+        "laborTime",
+        "overheadRate",
+        "customFields",
+        "processId",
+        "operationType",
+        "operationOrder",
+        "updatedBy",
+        "order"
+      ]
+    },
+    {
+      "name": "quoteOperationParameter",
+      "rows": 0,
+      "columns": [
+        "operationId",
+        "value",
+        "createdBy",
+        "companyId",
+        "key",
+        "updatedAt",
+        "id",
+        "updatedBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "quoteOperationStep",
+      "rows": 0,
+      "columns": [
+        "unitOfMeasureCode",
+        "description",
+        "required",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
+        "operationId",
+        "sortOrder",
+        "listValues",
+        "minValue",
+        "name",
+        "companyId",
+        "updatedAt",
+        "type",
+        "fileTypes",
+        "id",
+        "maxValue"
+      ]
+    },
+    {
+      "name": "quoteOperationStepSlide",
+      "rows": 0,
+      "columns": [
+        "modelUploadId",
+        "stepId",
+        "createdAt",
+        "updatedAt",
+        "updatedBy",
+        "id",
+        "size",
+        "companyId",
+        "imagePath",
+        "caption",
+        "createdBy",
+        "sortOrder",
+        "annotations"
+      ]
+    },
+    {
+      "name": "quoteOperationTool",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "id",
+        "updatedBy",
+        "updatedAt",
+        "operationId",
+        "companyId",
+        "createdBy",
+        "quantity",
+        "toolId"
+      ]
+    },
+    {
+      "name": "quoteOperationToolStep",
+      "rows": 0,
+      "columns": ["quoteOperationStepId", "quoteOperationToolId"]
+    },
+    {
+      "name": "receiptFixedAssetLine",
+      "rows": 0,
+      "columns": [
+        "serialNumber",
+        "createdBy",
+        "purchaseOrderLineId",
+        "received",
+        "companyId",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "updatedBy",
+        "receiptId"
+      ]
+    },
+    {
+      "name": "receiptLine",
+      "rows": 0,
+      "columns": [
+        "requiresBatchTracking",
+        "unitPrice",
+        "createdBy",
+        "updatedBy",
+        "requiresSerialTracking",
+        "conversionFactor",
+        "itemId",
+        "lineId",
+        "createdAt",
+        "outstandingQuantity",
+        "unitOfMeasure",
+        "id",
+        "locationId",
+        "orderQuantity",
+        "companyId",
+        "receiptId",
+        "updatedAt",
+        "storageUnitId",
+        "receivedQuantity"
+      ]
+    },
+    {
+      "name": "nonConformanceReceiptLine",
+      "rows": 0,
+      "columns": [
+        "receiptId",
+        "receiptLineId",
+        "createdAt",
+        "receiptReadableId",
+        "nonConformanceId",
+        "createdBy",
+        "updatedBy",
+        "id",
+        "updatedAt",
+        "companyId"
+      ]
+    },
+    {
+      "name": "salesInvoice",
+      "rows": 0,
+      "columns": [
+        "internalNotes",
+        "opportunityId",
+        "invoiceCustomerLocationId",
+        "createdBy",
+        "customerId",
+        "status",
+        "locationId",
+        "totalAmount",
+        "totalTax",
+        "companyId",
+        "totalDiscount",
+        "exchangeRate",
+        "currencyCode",
+        "exchangeRateUpdatedAt",
+        "dateDue",
+        "createdAt",
+        "customerReference",
+        "invoiceCustomerContactId",
+        "tags",
+        "externalNotes",
+        "postingDate",
+        "updatedAt",
+        "shipmentId",
+        "subtotal",
+        "updatedBy",
+        "invoiceId",
+        "datePaid",
+        "invoiceCustomerId",
+        "assignee",
+        "id",
+        "paymentTermId",
+        "customFields",
+        "dateIssued"
+      ]
+    },
+    {
+      "name": "salesInvoiceLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "assetId",
+        "opportunityId",
+        "unitOfMeasureCode",
+        "nonTaxableAddOnCost",
+        "methodType",
+        "internalNotes",
+        "setupPrice",
+        "invoiceId",
+        "updatedAt",
+        "storageUnitId",
+        "customFields",
+        "salesOrderLineId",
+        "createdBy",
+        "quantity",
+        "externalNotes",
+        "companyId",
+        "locationId",
+        "itemId",
+        "modelUploadId",
+        "addOnCost",
+        "unitPrice",
+        "description",
+        "exchangeRate",
+        "invoiceLineType",
+        "sortOrder",
+        "shippingCost",
+        "taxPercent",
+        "salesOrderId",
+        "accountId",
+        "updatedBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "salesInvoiceShipment",
+      "rows": 0,
+      "columns": [
+        "shippingTermId",
+        "incoterm",
+        "locationId",
+        "shippingMethodId",
+        "companyId",
+        "updatedBy",
+        "createdBy",
+        "id",
+        "customFields",
+        "incotermLocation",
+        "shippingCost",
+        "updatedAt",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "invoiceSettlement",
+      "rows": 0,
+      "columns": [
+        "targetExchangeRate",
+        "writeOffAmount",
+        "id",
+        "targetMemoId",
+        "paymentId",
+        "appliedDate",
+        "createdAt",
+        "sourceExchangeRate",
+        "discountAmount",
+        "targetPurchaseInvoiceId",
+        "appliedViaPaymentId",
+        "createdBy",
+        "updatedBy",
+        "memoId",
+        "companyId",
+        "targetSalesInvoiceId",
+        "appliedAmount"
+      ]
+    },
+    {
+      "name": "shipmentFixedAssetLine",
+      "rows": 0,
+      "columns": [
+        "serialNumber",
+        "createdBy",
+        "shipped",
+        "salesOrderLineId",
+        "companyId",
+        "id",
+        "updatedAt",
+        "createdAt",
+        "updatedBy",
+        "shipmentId"
+      ]
+    },
+    {
+      "name": "shipmentLine",
+      "rows": 0,
+      "columns": [
+        "requiresBatchTracking",
+        "lineId",
+        "itemId",
+        "updatedBy",
+        "updatedAt",
+        "outstandingQuantity",
+        "unitPrice",
+        "fulfillmentId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "requiresSerialTracking",
+        "shipmentId",
+        "shippedQuantity",
+        "storageUnitId",
+        "locationId",
+        "id",
+        "unitOfMeasure",
+        "orderQuantity"
+      ]
+    },
+    {
+      "name": "nonConformanceShipmentLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "updatedAt",
+        "companyId",
+        "nonConformanceId",
+        "updatedBy",
+        "createdBy",
+        "shipmentReadableId",
+        "shipmentId",
+        "shipmentLineId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "supplier",
+      "rows": 0,
+      "columns": [
+        "defaultCc",
+        "accountManagerId",
+        "createdBy",
+        "supplierStatus",
+        "companyId",
+        "id",
+        "createdAt",
+        "assignee",
+        "readableId",
+        "updatedBy",
+        "name",
+        "phone",
+        "taxPercent",
+        "currencyCode",
+        "fax",
+        "updatedAt",
+        "tags",
+        "embedding",
+        "logo",
+        "purchasingContactId",
+        "intercompanyCompanyId",
+        "website",
+        "supplierTypeId",
+        "customFields"
+      ]
+    },
+    {
+      "name": "supplierAccount",
+      "rows": 0,
+      "columns": ["active", "companyId", "supplierId", "id"]
+    },
+    {
+      "name": "supplierInteraction",
+      "rows": 0,
+      "columns": ["companyId", "supplierId", "id"]
+    },
+    {
+      "name": "receipt",
+      "rows": 0,
+      "columns": [
+        "supplierId",
+        "postingDate",
+        "updatedAt",
+        "receiptId",
+        "companyId",
+        "sourceDocumentReadableId",
+        "id",
+        "status",
+        "invoiced",
+        "externalDocumentId",
+        "sourceDocument",
+        "locationId",
+        "createdAt",
+        "customFields",
+        "tags",
+        "updatedBy",
+        "createdBy",
+        "supplierInteractionId",
+        "postedBy",
+        "internalNotes",
+        "assignee",
+        "sourceDocumentId"
+      ]
+    },
+    {
+      "name": "shipment",
+      "rows": 0,
+      "columns": [
+        "sourceDocumentReadableId",
+        "supplierId",
+        "customerId",
+        "id",
+        "postingDate",
+        "externalDocumentId",
+        "trackingNumber",
+        "status",
+        "customFields",
+        "externalNotes",
+        "shipmentId",
+        "invoiced",
+        "opportunityId",
+        "supplierInteractionId",
+        "updatedAt",
+        "internalNotes",
+        "updatedBy",
+        "postedBy",
+        "createdBy",
+        "sourceDocumentId",
+        "shippingMethodId",
+        "tags",
+        "assignee",
+        "locationId",
+        "sourceDocument",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "supplierLedger",
+      "rows": 0,
+      "columns": [
+        "entryNumber",
+        "createdAt",
+        "amount",
+        "companyId",
+        "id",
+        "externalDocumentId",
+        "postingDate",
+        "documentType",
+        "supplierId",
+        "documentId"
+      ]
+    },
+    {
+      "name": "supplierLocation",
+      "rows": 0,
+      "columns": [
+        "tags",
+        "id",
+        "companyId",
+        "supplierId",
+        "name",
+        "addressId",
+        "customFields"
+      ]
+    },
+    {
+      "name": "supplierContact",
+      "rows": 0,
+      "columns": [
+        "supplierId",
+        "companyId",
+        "id",
+        "customFields",
+        "contactId",
+        "supplierLocationId",
+        "tags",
+        "userId"
+      ]
+    },
+    {
+      "name": "purchaseInvoice",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "invoiceSupplierId",
+        "updatedAt",
+        "exchangeRate",
+        "id",
+        "paymentTermId",
+        "currencyCode",
+        "createdBy",
+        "internalNotes",
+        "invoiceSupplierContactId",
+        "supplierInteractionId",
+        "invoiceId",
+        "status",
+        "dateIssued",
+        "subtotal",
+        "updatedBy",
+        "totalDiscount",
+        "assignee",
+        "datePaid",
+        "postingDate",
+        "exchangeRateUpdatedAt",
+        "supplierReference",
+        "companyId",
+        "locationId",
+        "tags",
+        "customFields",
+        "invoiceSupplierLocationId",
+        "totalAmount",
+        "totalTax",
+        "supplierId",
+        "dateDue"
+      ]
+    },
+    {
+      "name": "purchaseOrder",
+      "rows": 0,
+      "columns": [
+        "internalNotes",
+        "orderDate",
+        "supplierReference",
+        "supplierInteractionId",
+        "supplierLocationId",
+        "id",
+        "supplierContactId",
+        "tags",
+        "jobId",
+        "supplierId",
+        "jobReadableId",
+        "purchaseOrderId",
+        "companyId",
+        "customFields",
+        "createdAt",
+        "externalNotes",
+        "closedBy",
+        "currencyCode",
+        "assignee",
+        "updatedBy",
+        "status",
+        "exchangeRate",
+        "purchaseOrderType",
+        "exchangeRateUpdatedAt",
+        "createdBy",
+        "updatedAt",
+        "revisionId",
+        "closedAt"
+      ]
+    },
+    {
+      "name": "purchaseInvoiceLine",
+      "rows": 0,
+      "columns": [
+        "tags",
+        "modelUploadId",
+        "createdAt",
+        "supplierTaxAmount",
+        "exchangeRate",
+        "sortOrder",
+        "inventoryUnitOfMeasureCode",
+        "costCenterId",
+        "invoiceLineType",
+        "quantity",
+        "purchaseOrderId",
+        "ownerId",
+        "customFields",
+        "accountId",
+        "companyId",
+        "supplierUnitPrice",
+        "jobOperationId",
+        "assetId",
+        "purchaseUnitOfMeasureCode",
+        "purchaseOrderLineId",
+        "taxPercent",
+        "createdBy",
+        "storageUnitId",
+        "supplierShippingCost",
+        "updatedBy",
+        "internalNotes",
+        "serviceId",
+        "invoiceId",
+        "description",
+        "requiredDate",
+        "updatedAt",
+        "itemId",
+        "conversionFactor",
+        "locationId",
+        "id"
+      ]
+    },
+    {
+      "name": "purchaseInvoicePriceChange",
+      "rows": 0,
+      "columns": [
+        "newPrice",
+        "invoiceLineId",
+        "previousPrice",
+        "newQuantity",
+        "companyId",
+        "id",
+        "previousQuantity",
+        "invoiceId",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "purchaseOrderPayment",
+      "rows": 0,
+      "columns": [
+        "paymentTermId",
+        "tags",
+        "invoiceSupplierContactId",
+        "invoiceSupplierLocationId",
+        "paymentComplete",
+        "id",
+        "updatedAt",
+        "customFields",
+        "companyId",
+        "updatedBy",
+        "invoiceSupplierId"
+      ]
+    },
+    {
+      "name": "supplierPart",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "supplierUnitOfMeasureCode",
+        "orderMultiple",
+        "unitPrice",
+        "supplierPartId",
+        "customFields",
+        "supplierId",
+        "conversionFactor",
+        "createdAt",
+        "id",
+        "companyId",
+        "minimumOrderQuantity",
+        "itemId",
+        "updatedAt",
+        "tags",
+        "createdBy",
+        "active"
+      ]
+    },
+    {
+      "name": "supplierPartPrice",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "leadTime",
+        "updatedBy",
+        "supplierPartId",
+        "updatedAt",
+        "createdAt",
+        "quantity",
+        "sourceDocumentId",
+        "createdBy",
+        "unitPrice",
+        "sourceType"
+      ]
+    },
+    {
+      "name": "supplierPayment",
+      "rows": 0,
+      "columns": [
+        "invoiceSupplierId",
+        "customFields",
+        "updatedAt",
+        "tags",
+        "updatedBy",
+        "supplierId",
+        "invoiceSupplierLocationId",
+        "invoiceSupplierContactId",
+        "companyId",
+        "paymentTermId"
+      ]
+    },
+    {
+      "name": "supplierProcess",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "processId",
+        "minimumCost",
+        "companyId",
+        "updatedBy",
+        "createdBy",
+        "id",
+        "leadTime",
+        "supplierId",
+        "tags",
+        "createdAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "supplierQuote",
+      "rows": 0,
+      "columns": [
+        "supplierContactId",
+        "supplierId",
+        "id",
+        "supplierQuoteType",
+        "status",
+        "assignee",
+        "supplierQuoteId",
+        "exchangeRateUpdatedAt",
+        "supplierInteractionId",
+        "supplierLocationId",
+        "externalNotes",
+        "expirationDate",
+        "supplierReference",
+        "createdAt",
+        "updatedAt",
+        "createdBy",
+        "exchangeRate",
+        "companyId",
+        "externalLinkId",
+        "tags",
+        "customFields",
+        "revisionId",
+        "currencyCode",
+        "quotedDate",
+        "internalNotes",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "supplierQuoteFavorite",
+      "rows": 0,
+      "columns": ["supplierQuoteId", "userId"]
+    },
+    {
+      "name": "supplierQuoteLine",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "customFields",
+        "supplierQuoteRevisionId",
+        "quantity",
+        "sortOrder",
+        "description",
+        "costCenterId",
+        "conversionFactor",
+        "tags",
+        "itemId",
+        "externalNotes",
+        "updatedAt",
+        "requiredDate",
+        "internalNotes",
+        "companyId",
+        "supplierQuoteId",
+        "createdBy",
+        "inventoryUnitOfMeasureCode",
+        "accountId",
+        "supplierPartId",
+        "purchaseUnitOfMeasureCode",
+        "ownerId",
+        "supplierPartRevision",
+        "id",
+        "supplierQuoteLineType"
+      ]
+    },
+    {
+      "name": "supplierQuoteLinePrice",
+      "rows": 0,
+      "columns": [
+        "exchangeRate",
+        "taxPercent",
+        "supplierQuoteId",
+        "supplierShippingCost",
+        "companyId",
+        "createdBy",
+        "supplierQuoteLineId",
+        "supplierTaxAmount",
+        "updatedBy",
+        "supplierUnitPrice",
+        "createdAt",
+        "leadTime",
+        "updatedAt",
+        "quantity"
+      ]
+    },
+    {
+      "name": "supplierShipping",
+      "rows": 0,
+      "columns": [
+        "shippingSupplierLocationId",
+        "shippingSupplierContactId",
+        "companyId",
+        "shippingTermId",
+        "incoterm",
+        "incotermLocation",
+        "shippingSupplierId",
+        "customFields",
+        "updatedAt",
+        "tags",
+        "updatedBy",
+        "supplierId",
+        "shippingMethodId"
+      ]
+    },
+    {
+      "name": "supplierTax",
+      "rows": 0,
+      "columns": [
+        "taxExemptionCertificateNumber",
+        "eori",
+        "vatNumber",
+        "taxExempt",
+        "updatedAt",
+        "taxExemptionCertificatePath",
+        "taxId",
+        "taxExemptionReason",
+        "updatedBy",
+        "supplierId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "workflow",
+      "rows": 0,
+      "columns": [
+        "description",
+        "name",
+        "activeVersionId",
+        "updatedBy",
+        "ownerId",
+        "companyId",
+        "updatedAt",
+        "nextRunAt",
+        "createdBy",
+        "id",
+        "canvasState",
+        "createdAt",
+        "active"
+      ]
+    },
+    {
+      "name": "workflowVersion",
+      "rows": 0,
+      "columns": [
+        "formatVersion",
+        "edges",
+        "workflowId",
+        "versionNumber",
+        "nodes",
+        "updatedAt",
+        "createdAt",
+        "id",
+        "updatedBy",
+        "createdBy",
+        "companyId"
+      ]
+    },
+    {
+      "name": "workflowRun",
+      "rows": 0,
+      "columns": [
+        "createdAt",
+        "eventId",
+        "isTest",
+        "error",
+        "depth",
+        "compactedAt",
+        "startedAt",
+        "workflowId",
+        "causedByRunId",
+        "workflowVersionId",
+        "durationMs",
+        "completedAt",
+        "triggerTable",
+        "ownerId",
+        "id",
+        "statusReason",
+        "sourceEventId",
+        "path",
+        "rootRunId",
+        "companyId",
+        "triggerRecordId",
+        "status"
+      ]
+    },
+    {
+      "name": "workflowStepRun",
+      "rows": 0,
+      "columns": [
+        "nodeId",
+        "branchTaken",
+        "durationMs",
+        "compactedAt",
+        "sequence",
+        "completedAt",
+        "runId",
+        "detail",
+        "createdAt",
+        "itemKey",
+        "id",
+        "statusReason",
+        "output",
+        "nodeType",
+        "error",
+        "startedAt",
+        "companyId",
+        "status",
+        "input"
+      ]
+    },
+    {
+      "name": "workflowTriggerEvent",
+      "rows": 0,
+      "columns": [
+        "workflowId",
+        "workflowVersionId",
+        "createdAt",
+        "eventId",
+        "companyId",
+        "id",
+        "origin"
+      ]
+    }
+  ],
+  "storage": [],
+  "excludedTables": [
+    "apiKey",
+    "apiKeyRateLimit",
+    "companyIntegration",
+    "oauthClient",
+    "oauthToken",
+    "webhook"
+  ],
+  "excludedRows": []
+}

@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -50,7 +50,7 @@ export async function getOpenJobs(
     )
     .eq("companyId", args.companyId)
     .eq("locationId", args.locationId)
-    .in("status", ["Ready", "In Progress", "Paused"])
+    .in("status", [...activeJobStatuses])
     .order("jobId", { ascending: true });
 }
 
@@ -468,7 +468,9 @@ export async function getModelUploadsByIds(
 ) {
   return client
     .from("modelUpload")
-    .select("id, name, modelPath, thumbnailPath, glbPath, processingStatus")
+    .select(
+      "id, name, modelPath, thumbnailPath, glbPath, processingStatus, optimizedModelPath"
+    )
     .in("id", ids);
 }
 
@@ -1150,6 +1152,120 @@ export async function getNonConformanceActions(
   }[];
 }
 
+export async function getOperationEligibility(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; employeeId: string; companyId: string }
+): Promise<{ eligible: boolean; reason: string | null }> {
+  const { operationId, employeeId, companyId } = args;
+
+  // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
+  // error must not brick the shop floor — the scheduler is the primary
+  // enforcement of ability requirements; this gate is a best-effort backstop.
+  // The requirement comes from the operation's PROCESS: process.requiresAbility
+  // gates, and the ability linked 1:1 to the process (ability.processId) is
+  // what the employee must be qualified for.
+  const operation = await client
+    .from("jobOperation")
+    .select("processId")
+    .eq("id", operationId)
+    .maybeSingle();
+
+  if (operation.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch jobOperation",
+      operation.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!operation.data?.processId) {
+    return { eligible: true, reason: null };
+  }
+
+  const process = await client
+    .from("process")
+    .select("name, requiresAbility")
+    .eq("id", operation.data.processId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (process.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch process",
+      process.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!process.data?.requiresAbility) {
+    return { eligible: true, reason: null };
+  }
+
+  const ability = await client
+    .from("ability")
+    .select("id, name")
+    .eq("processId", operation.data.processId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (ability.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch ability",
+      ability.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!ability.data) {
+    // requiresAbility is on but no linked ability exists — data anomaly,
+    // don't block the floor
+    return { eligible: true, reason: null };
+  }
+
+  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+
+  const employeeAbility = await client
+    .from("employeeAbility")
+    .select("expiresAt")
+    .eq("employeeId", employeeId)
+    .eq("abilityId", ability.data.id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (employeeAbility.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch employeeAbility",
+      employeeAbility.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  // Qualification is presence-based: the row existing means qualified, subject
+  // only to expiry below.
+  if (!employeeAbility.data) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — not qualified`
+    };
+  }
+
+  const todayDate = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+  if (
+    employeeAbility.data.expiresAt !== null &&
+    employeeAbility.data.expiresAt <= todayDate
+  ) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
+    };
+  }
+
+  return { eligible: true, reason: null };
+}
+
 export async function getProcessesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1526,6 +1642,22 @@ export async function getWorkCentersByLocation(
   });
 
   return { data: mergedData, error: null };
+}
+
+/**
+ * The operator's people assignment (manning-board station) for a date. Multiple
+ * rows are possible at multi-shift locations; callers take the first.
+ */
+export async function getMyPeopleAssignment(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string; date: string }
+) {
+  return client
+    .from("peopleAssignment")
+    .select("id, workCenterId, shiftId")
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("date", args.date);
 }
 
 export async function getWorkCentersByCompany(
@@ -2024,4 +2156,31 @@ export async function getJobMethodBomIdMap(
   });
 
   return bomIdMap;
+}
+
+/**
+ * Stamp the schedule as outdated so the debounced replan wave regenerates the
+ * affected location. Mirrors production.service.ts's helper (ERP) — used here
+ * when a MES maintenance dispatch changes a work center's downtime window.
+ */
+export async function notifyScheduleInputsChanged(
+  companyId: string,
+  kind:
+    | "ability"
+    | "shift"
+    | "employee-shift"
+    | "work-center"
+    | "location"
+    | "reorder"
+    | "people",
+  reason: string,
+  entityId?: string
+) {
+  const { trigger } = await import("@carbon/jobs");
+  await trigger("schedule-inputs-changed", {
+    companyId,
+    kind,
+    reason,
+    entityId
+  });
 }

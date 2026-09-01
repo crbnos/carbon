@@ -32,6 +32,16 @@ paths, derive:
   corpus (`apps/erp/app/modules/agent/kb/`) so the generated copy ships in this same
   commit instead of drifting behind the docs (same model as the `.po` files —
   see `.ai/rules/agent-knowledge-base.md`).
+- `WORKFLOW_CATALOG_RELEVANT` — the diff touches `SCHEMA_CHANGED` paths,
+  `packages/database/src/swagger-docs-schema.ts`, or the workflow catalog source
+  (`packages/workflows/src/catalog/**`, e.g. `entities.ts`, `actions.ts`,
+  `moments.ts`, `operations.ts`, `labels.ts`). The catalog is generated from the DB
+  schema plus that source, so a new column or entity change silently staleness the
+  committed `*.generated.ts`. When true, Gate 1c regenerates the catalog so the
+  generated copy ships in this same commit. This gate fails **regularly** and is
+  easy to miss — a schema change that adds a column the workflow engine surfaces
+  breaks `check:workflow-catalog` even though nothing under `packages/workflows`
+  was edited by hand.
 - `I18N_RELEVANT` — the diff adds/edits UI source that can introduce new
   translatable strings (`apps/erp/app/**`, `apps/mes/app/**`,
   `packages/react/src/**`) **or** touches any `packages/locale/locales/**/*.po`.
@@ -64,6 +74,14 @@ pnpm run generate:types
 pnpm run generate:agent-kb
 # then include the regenerated apps/erp/app/modules/agent/kb/** in the commit
 # (runs before biome so the regenerated manifest.json gets formatted too)
+
+# Gate 1c — workflow catalog (only if WORKFLOW_CATALOG_RELEVANT)
+pnpm run generate:workflow-catalog          # regenerate from schema + catalog source
+pnpm run check:workflow-catalog             # must exit 0
+# then include the regenerated packages/workflows/src/catalog/*.generated.ts in the commit.
+# If check:workflow-catalog still fails after regenerating (e.g. a declared moment
+# with no raise site, or a raise site naming an undeclared moment) it is a real
+# code problem, not staleness — fix the source per its message, don't commit around it.
 
 # Gate 2 — format + lint (auto-fixes in place)
 pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
@@ -146,6 +164,7 @@ git commit -m "<type>(<scope>): <description>"
 | Gate | Result | Notes |
 |------|--------|-------|
 | generate:types | PASS / SKIP | |
+| workflow-catalog | PASS / SKIP | <regenerated + check exit 0> |
 | biome | PASS | <files auto-fixed> |
 | typecheck (<pkgs>) | PASS | |
 | test (<pkgs>) | PASS | <pre-existing failures noted> |

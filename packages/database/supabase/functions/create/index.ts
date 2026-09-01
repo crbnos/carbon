@@ -383,13 +383,13 @@ serve(async (req: Request) => {
           if (actionTasksToDelete.length > 0) {
             await trx
               .deleteFrom("nonConformanceActionTask")
-              .where("id", "=", actionTasksToDelete)
+              .where("id", "in", actionTasksToDelete)
               .execute();
           }
           if (approvalTasksToDelete.length > 0) {
             await trx
               .deleteFrom("nonConformanceApprovalTask")
-              .where("id", "=", approvalTasksToDelete)
+              .where("id", "in", approvalTasksToDelete)
               .execute();
           }
 

@@ -47,6 +47,7 @@ import {
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
 import {
+  useCompanySettings,
   useCurrencyDecimals,
   useModelUpload,
   useNextItemId,
@@ -177,6 +178,8 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
 
   const { id, onIdChange, loading } = useNextItemId("Part");
   const permissions = usePermissions();
+  const companySettings = useCompanySettings();
+  const allowLowercaseItemIds = companySettings?.allowLowercaseItemIds === true;
   const isEditing = !!initialValues.id;
 
   const translateItemTrackingType = (v: string) =>
@@ -278,7 +281,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
-                    isUppercase
+                    isUppercase={!allowLowercaseItemIds}
                   />
                 )}
                 <Input

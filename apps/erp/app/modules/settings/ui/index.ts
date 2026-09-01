@@ -11,6 +11,7 @@ export * from "./DemoData";
 export * from "./Integrations";
 export * from "./ItarCertifications";
 export * from "./Printing";
+export * from "./Security";
 export * from "./Sequences";
 export * from "./SerialNumbers";
 export * from "./Theme";

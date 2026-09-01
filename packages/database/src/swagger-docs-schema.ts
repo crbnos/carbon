@@ -5899,6 +5899,12 @@ export default {
             $ref: "#/parameters/rowFilter.trainings.versions"
           },
           {
+            $ref: "#/parameters/rowFilter.trainings.grantsAbilityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trainings.grantsAbilityName"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -6811,6 +6817,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7014,6 +7023,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7169,6 +7181,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
@@ -16015,6 +16030,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.unitCostSource"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId"
           },
           {
@@ -16057,6 +16075,195 @@ export default {
           }
         },
         tags: ["quoteMaterialWithMakeMethodId"]
+      }
+    },
+    "/ssoDomain": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.domain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verificationToken"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ssoDomain"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ssoDomain"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ssoDomain"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ssoDomain"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.domain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verificationToken"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoDomain"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.domain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verificationToken"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.ssoDomain"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoDomain"]
       }
     },
     "/itemUnitSalePrice": {
@@ -19304,6 +19511,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.productionQuantity"
@@ -23434,6 +23650,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.code"
           },
           {
+            $ref: "#/parameters/rowFilter.location.requiresStaffing"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -23550,6 +23769,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.code"
           },
           {
+            $ref: "#/parameters/rowFilter.location.requiresStaffing"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23618,6 +23840,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.code"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.requiresStaffing"
           },
           {
             $ref: "#/parameters/body.location"
@@ -24079,6 +24304,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24177,6 +24405,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -24227,6 +24458,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
           },
           {
             $ref: "#/parameters/body.process"
@@ -24749,6 +24983,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.departmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.alwaysOn"
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.locationName"
@@ -27061,19 +27298,13 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.abilityId"
           },
           {
-            $ref: "#/parameters/rowFilter.employeeAbility.active"
-          },
-          {
             $ref: "#/parameters/rowFilter.employeeAbility.lastTrainingDate"
           },
           {
-            $ref: "#/parameters/rowFilter.employeeAbility.trainingDays"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeeAbility.trainingCompleted"
-          },
-          {
             $ref: "#/parameters/rowFilter.employeeAbility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeAbility.expiresAt"
           },
           {
             $ref: "#/parameters/select"
@@ -27144,19 +27375,13 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.abilityId"
           },
           {
-            $ref: "#/parameters/rowFilter.employeeAbility.active"
-          },
-          {
             $ref: "#/parameters/rowFilter.employeeAbility.lastTrainingDate"
           },
           {
-            $ref: "#/parameters/rowFilter.employeeAbility.trainingDays"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeeAbility.trainingCompleted"
-          },
-          {
             $ref: "#/parameters/rowFilter.employeeAbility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeAbility.expiresAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -27181,19 +27406,13 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.abilityId"
           },
           {
-            $ref: "#/parameters/rowFilter.employeeAbility.active"
-          },
-          {
             $ref: "#/parameters/rowFilter.employeeAbility.lastTrainingDate"
           },
           {
-            $ref: "#/parameters/rowFilter.employeeAbility.trainingDays"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeeAbility.trainingCompleted"
-          },
-          {
             $ref: "#/parameters/rowFilter.employeeAbility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeAbility.expiresAt"
           },
           {
             $ref: "#/parameters/body.employeeAbility"
@@ -31321,6 +31540,12 @@ export default {
             $ref: "#/parameters/rowFilter.employees.locationName"
           },
           {
+            $ref: "#/parameters/rowFilter.employees.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employees.shiftName"
+          },
+          {
             $ref: "#/parameters/rowFilter.employees.status"
           },
           {
@@ -31999,6 +32224,15 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
@@ -32172,6 +32406,15 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
@@ -32297,6 +32540,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/rowFilter.job.productionQuantity"
@@ -32746,6 +32998,69 @@ export default {
           }
         },
         tags: ["supplierPartPrice"]
+      }
+    },
+    "/jobOperationQueueTime": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.readyAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.firstEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.queueHours"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationQueueTime"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["jobOperationQueueTime"]
       }
     },
     "/contact": {
@@ -33844,6 +34159,186 @@ export default {
           }
         },
         tags: ["nonConformanceItemTrackedEntity"]
+      }
+    },
+    "/peopleAbsence": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.date"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/peopleAbsence"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["peopleAbsence"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.peopleAbsence"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["peopleAbsence"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.date"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["peopleAbsence"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.date"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAbsence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.peopleAbsence"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["peopleAbsence"]
       }
     },
     "/depreciationRunLine": {
@@ -36568,6 +37063,9 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceDispatch.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceDispatch.takesWorkCenterOffline"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -36708,6 +37206,9 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceDispatch.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceDispatch.takesWorkCenterOffline"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -36800,6 +37301,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.maintenanceDispatch.procedureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceDispatch.takesWorkCenterOffline"
           },
           {
             $ref: "#/parameters/body.maintenanceDispatch"
@@ -41494,7 +41998,13 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/select"
@@ -41694,7 +42204,13 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -41848,7 +42364,13 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/body.jobOperation"
@@ -43261,6 +43783,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43392,6 +43917,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -43475,6 +44003,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
           },
           {
             $ref: "#/parameters/body.quoteMaterial"
@@ -48841,6 +49372,195 @@ export default {
           }
         },
         tags: ["jobOperationParameter"]
+      }
+    },
+    "/ssoConnection": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.providerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.metadataUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.metadataXml"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ssoConnection"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ssoConnection"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ssoConnection"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ssoConnection"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.providerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.metadataUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.metadataXml"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoConnection"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.providerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.metadataUrl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.metadataXml"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.ssoConnection"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoConnection"]
       }
     },
     "/gaugeType": {
@@ -56913,6 +57633,168 @@ export default {
         tags: ["approvalRequest"]
       }
     },
+    "/workCenterShift": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenterShift"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["workCenterShift"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenterShift"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["workCenterShift"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterShift"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterShift.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.workCenterShift"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterShift"]
+      }
+    },
     "/salesRfqLines": {
       get: {
         parameters: [
@@ -61456,6 +62338,12 @@ export default {
             $ref: "#/parameters/rowFilter.ability.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.ability.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.recertifyEveryDays"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -61545,6 +62433,12 @@ export default {
             $ref: "#/parameters/rowFilter.ability.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.ability.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.recertifyEveryDays"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -61586,6 +62480,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.ability.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.recertifyEveryDays"
           },
           {
             $ref: "#/parameters/body.ability"
@@ -62152,6 +63052,9 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceSchedule.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.takesWorkCenterOffline"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -62286,6 +63189,9 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceSchedule.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.takesWorkCenterOffline"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -62372,6 +63278,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.maintenanceSchedule.procedureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.takesWorkCenterOffline"
           },
           {
             $ref: "#/parameters/body.maintenanceSchedule"
@@ -66071,6 +66980,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.processes.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.requiresAbility"
           },
           {
             $ref: "#/parameters/rowFilter.processes.workCenters"
@@ -71148,6 +72060,222 @@ export default {
         tags: ["nonConformanceTrackedEntity"]
       }
     },
+    "/peopleAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.date"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.overtimeHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.hours"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/peopleAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["peopleAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.peopleAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["peopleAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.date"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.overtimeHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.hours"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["peopleAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.date"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.shiftId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.overtimeHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.peopleAssignment.hours"
+          },
+          {
+            $ref: "#/parameters/body.peopleAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["peopleAssignment"]
+      }
+    },
     "/terms": {
       get: {
         parameters: [
@@ -71281,6 +72409,105 @@ export default {
           }
         },
         tags: ["terms"]
+      }
+    },
+    "/ssoReservedDomain": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoReservedDomain.domain"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ssoReservedDomain"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ssoReservedDomain"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ssoReservedDomain"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ssoReservedDomain"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoReservedDomain.domain"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoReservedDomain"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoReservedDomain.domain"
+          },
+          {
+            $ref: "#/parameters/body.ssoReservedDomain"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoReservedDomain"]
       }
     },
     "/modules": {
@@ -75373,6 +76600,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.departmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.alwaysOn"
+          },
+          {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.locationName"
           },
           {
@@ -78358,6 +79588,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
           },
           {
@@ -79397,6 +80630,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.maintenanceSchedules.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedules.procedureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedules.takesWorkCenterOffline"
           },
           {
             $ref: "#/parameters/rowFilter.maintenanceSchedules.workCenterName"
@@ -81403,6 +82642,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.departmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -81516,6 +82758,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.departmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -81581,6 +82826,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenter.departmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
           },
           {
             $ref: "#/parameters/body.workCenter"
@@ -81841,6 +83089,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.training.grantsAbilityId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -81951,6 +83202,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.training.grantsAbilityId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -82013,6 +83267,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.training.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.training.grantsAbilityId"
           },
           {
             $ref: "#/parameters/body.training"
@@ -85867,6 +87124,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -86067,6 +87327,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -86219,6 +87482,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireMfa"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -86431,6 +87697,249 @@ export default {
           }
         },
         tags: ["part"]
+      }
+    },
+    "/capacityReservation": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.operationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.startAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.endAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scenarioId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.earliestStartAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scheduleNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/capacityReservation"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["capacityReservation"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.capacityReservation"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["capacityReservation"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.operationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.startAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.endAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scenarioId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.earliestStartAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scheduleNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["capacityReservation"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.operationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.startAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.endAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scenarioId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.earliestStartAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scheduleNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
+            $ref: "#/parameters/body.capacityReservation"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["capacityReservation"]
       }
     },
     "/approvalRule": {
@@ -101542,6 +103051,16 @@ export default {
         },
         versions: {
           format: "jsonb"
+        },
+        grantsAbilityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        grantsAbilityName: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -102115,6 +103634,10 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         inspectionDocumentId: {
@@ -106365,6 +107888,10 @@ export default {
           format: "text",
           type: "string"
         },
+        unitCostSource: {
+          format: "text",
+          type: "string"
+        },
         quoteMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -106373,6 +107900,76 @@ export default {
         version: {
           format: "numeric",
           type: "number"
+        }
+      },
+      type: "object"
+    },
+    ssoDomain: {
+      required: [
+        "id",
+        "companyId",
+        "connectionId",
+        "domain",
+        "verificationToken",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ssod'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        connectionId: {
+          format: "text",
+          type: "string"
+        },
+        domain: {
+          format: "text",
+          type: "string"
+        },
+        verificationToken: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "pending",
+          enum: ["pending", "verified"],
+          format: 'public."ssoDomainStatus"',
+          type: "string"
+        },
+        verifiedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -108111,6 +109708,18 @@ export default {
         priority: {
           format: "double precision",
           type: "number"
+        },
+        projectedCompletionAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        scheduleOutdatedReason: {
+          format: "text",
+          type: "string"
+        },
+        scheduleOutdatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         },
         productionQuantity: {
           format: "numeric",
@@ -110000,7 +111609,8 @@ export default {
         "timezone",
         "companyId",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "requiresStaffing"
       ],
       properties: {
         id: {
@@ -110085,6 +111695,11 @@ export default {
         code: {
           format: "text",
           type: "string"
+        },
+        requiresStaffing: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -110439,7 +112054,8 @@ export default {
         "createdAt",
         "processType",
         "completeAllOnScan",
-        "active"
+        "active",
+        "requiresAbility"
       ],
       properties: {
         id: {
@@ -110519,6 +112135,11 @@ export default {
         },
         active: {
           default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        requiresAbility: {
+          default: false,
           format: "boolean",
           type: "boolean"
         }
@@ -110802,6 +112423,10 @@ export default {
             "Note:\nThis is a Foreign Key to `department.id`.<fk table='department' column='id'/>",
           format: "text",
           type: "string"
+        },
+        alwaysOn: {
+          format: "boolean",
+          type: "boolean"
         },
         locationName: {
           format: "text",
@@ -111748,14 +113373,7 @@ export default {
       type: "object"
     },
     employeeAbility: {
-      required: [
-        "id",
-        "employeeId",
-        "abilityId",
-        "active",
-        "trainingDays",
-        "companyId"
-      ],
+      required: ["id", "employeeId", "abilityId", "companyId"],
       properties: {
         id: {
           default: "public.id('ea'::text)",
@@ -111773,29 +113391,18 @@ export default {
           format: "text",
           type: "string"
         },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean"
-        },
         lastTrainingDate: {
           format: "date",
           type: "string"
-        },
-        trainingDays: {
-          default: 0,
-          format: "numeric",
-          type: "number"
-        },
-        trainingCompleted: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         },
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        expiresAt: {
+          format: "date",
           type: "string"
         }
       },
@@ -113887,6 +115494,16 @@ export default {
           format: "text",
           type: "string"
         },
+        shiftId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shift.id`.<fk table='shift' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        shiftName: {
+          format: "text",
+          type: "string"
+        },
         status: {
           format: "text",
           type: "string"
@@ -114325,6 +115942,22 @@ export default {
           format: "double precision",
           type: "number"
         },
+        projectedCompletionAt: {
+          description:
+            "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        scheduleOutdatedReason: {
+          description:
+            'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
+          format: "text",
+          type: "string"
+        },
+        scheduleOutdatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         productionQuantity: {
           format: "numeric",
           type: "number"
@@ -114505,6 +116138,46 @@ export default {
         },
         leadTime: {
           default: 0,
+          format: "numeric",
+          type: "number"
+        }
+      },
+      type: "object"
+    },
+    jobOperationQueueTime: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        firstEventAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        queueHours: {
           format: "numeric",
           type: "number"
         }
@@ -115037,6 +116710,72 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    peopleAbsence: {
+      required: [
+        "id",
+        "companyId",
+        "employeeId",
+        "date",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pabs'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        date: {
+          format: "date",
+          type: "string"
+        },
+        shiftId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shift.id`.<fk table='shift' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        note: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -116056,7 +117795,8 @@ export default {
         "createdBy",
         "createdAt",
         "oeeImpact",
-        "severity"
+        "severity",
+        "takesWorkCenterOffline"
       ],
       properties: {
         id: {
@@ -116204,6 +117944,13 @@ export default {
             "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
           format: "text",
           type: "string"
+        },
+        takesWorkCenterOffline: {
+          default: false,
+          description:
+            "While this dispatch is open, its work center(s) contribute no scheduling capacity between (actualStartTime ?? plannedStartTime ?? createdAt) and (actualEndTime ?? plannedEndTime ?? open-ended).",
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -118802,6 +120549,8 @@ export default {
           type: "string"
         },
         dueDate: {
+          description:
+            "Backward demand-anchored need-by: finish by this day or the job slips. Stable (changes only when job dueDate, routing, or lead times change). manuallyScheduled = a human owns this value.",
           format: "date",
           type: "string"
         },
@@ -118841,10 +120590,20 @@ export default {
           format: "text",
           type: "string"
         },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        projectedCompletionAt: {
+          description:
+            "Forward finite simulation: when this operation is projected to finish. Volatile (rewritten every regen).",
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -119413,7 +121172,8 @@ export default {
         "createdBy",
         "quoteMakeMethodId",
         "scrapQuantity",
-        "kit"
+        "kit",
+        "unitCostSource"
       ],
       properties: {
         id: {
@@ -119540,6 +121300,11 @@ export default {
         storageUnitId: {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        unitCostSource: {
+          default: "system",
           format: "text",
           type: "string"
         }
@@ -122052,6 +123817,75 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    ssoConnection: {
+      required: [
+        "id",
+        "companyId",
+        "providerId",
+        "active",
+        "requireSso",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('sso'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        providerId: {
+          format: "text",
+          type: "string"
+        },
+        metadataUrl: {
+          format: "text",
+          type: "string"
+        },
+        metadataXml: {
+          format: "text",
+          type: "string"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireSso: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -125478,6 +127312,64 @@ export default {
       },
       type: "object"
     },
+    workCenterShift: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "shiftId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('wcsh'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        shiftId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shift.id`.<fk table='shift' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesRfqLines: {
       properties: {
         id: {
@@ -126692,6 +128584,8 @@ export default {
           type: "string"
         },
         itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -127905,6 +129799,16 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        recertifyEveryDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -128173,7 +130077,8 @@ export default {
         "friday",
         "saturday",
         "sunday",
-        "skipHolidays"
+        "skipHolidays",
+        "takesWorkCenterOffline"
       ],
       properties: {
         id: {
@@ -128302,6 +130207,13 @@ export default {
             "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
           format: "text",
           type: "string"
+        },
+        takesWorkCenterOffline: {
+          default: false,
+          description:
+            "When true, PM dispatches generated from this schedule are created with takesWorkCenterOffline = true and a bounded plannedEndTime (plannedStartTime + estimatedDuration), so the finite scheduler subtracts that window from the work center's capacity. Requires estimatedDuration to be set.",
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -130199,6 +132111,10 @@ export default {
           type: "boolean"
         },
         active: {
+          format: "boolean",
+          type: "boolean"
+        },
+        requiresAbility: {
           format: "boolean",
           type: "boolean"
         },
@@ -132533,6 +134449,96 @@ export default {
       },
       type: "object"
     },
+    peopleAssignment: {
+      required: [
+        "id",
+        "companyId",
+        "locationId",
+        "workCenterId",
+        "employeeId",
+        "date",
+        "createdBy",
+        "createdAt",
+        "overtimeHours"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pasn'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        date: {
+          format: "date",
+          type: "string"
+        },
+        shiftId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shift.id`.<fk table='shift' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        note: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        overtimeHours: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        hours: {
+          format: "numeric",
+          type: "number"
+        }
+      },
+      type: "object"
+    },
     terms: {
       required: ["id"],
       properties: {
@@ -132556,6 +134562,17 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    ssoReservedDomain: {
+      required: ["domain"],
+      properties: {
+        domain: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         }
@@ -134544,6 +136561,10 @@ export default {
           format: "text",
           type: "string"
         },
+        alwaysOn: {
+          format: "boolean",
+          type: "boolean"
+        },
         locationName: {
           format: "text",
           type: "string"
@@ -136272,6 +138293,10 @@ export default {
           format: "text",
           type: "string"
         },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -136944,6 +138969,16 @@ export default {
             "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string"
+        },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        takesWorkCenterOffline: {
+          format: "boolean",
+          type: "boolean"
         },
         workCenterName: {
           format: "text",
@@ -137819,7 +139854,8 @@ export default {
         "createdBy",
         "createdAt",
         "machineRate",
-        "overheadRate"
+        "overheadRate",
+        "alwaysOn"
       ],
       properties: {
         id: {
@@ -137928,6 +139964,11 @@ export default {
             "Note:\nThis is a Foreign Key to `department.id`.<fk table='department' column='id'/>",
           format: "text",
           type: "string"
+        },
+        alwaysOn: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -138101,6 +140142,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        grantsAbilityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -139737,7 +141784,8 @@ export default {
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
         "showCurrencyTrailingZeros",
-        "requireMfa"
+        "requireMfa",
+        "allowLowercaseItemIds"
       ],
       properties: {
         id: {
@@ -139993,6 +142041,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        allowLowercaseItemIds: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -140061,6 +142114,115 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    capacityReservation: {
+      required: [
+        "id",
+        "companyId",
+        "resourceKind",
+        "resourceId",
+        "operationId",
+        "jobId",
+        "startAt",
+        "endAt",
+        "createdBy",
+        "createdAt",
+        "isPlaceholder"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cres'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        resourceKind: {
+          enum: ["WorkCenter", "OperatorPool", "Employee"],
+          format: 'public."capacityResourceKind"',
+          type: "string"
+        },
+        resourceId: {
+          format: "text",
+          type: "string"
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        startAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        endAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        scenarioId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        earliestStartAt: {
+          description:
+            "When the operation could have started at the earliest; startAt - earliestStartAt is time spent waiting. Null when unknown (legacy rows).",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        scheduleNote: {
+          description:
+            'Human-readable reason for the placement timing (English, engine-generated), e.g. "Waited 14h for the work center - queued behind J000010 (2 ops)". Null when the operation started as early as it could.',
+          format: "text",
+          type: "string"
+        },
+        workHours: {
+          description:
+            "Actual work content (hours) inside this reservation; endAt - startAt minus off-shift pauses. Null on legacy rows and manual pins.",
+          format: "numeric",
+          type: "number"
+        },
+        isPlaceholder: {
+          default: false,
+          description:
+            "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -143501,6 +145663,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.trainings.grantsAbilityId": {
+      name: "grantsAbilityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.trainings.grantsAbilityName": {
+      name: "grantsAbilityName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.companyUsage": {
       name: "companyUsage",
       description: "companyUsage",
@@ -144151,6 +146325,12 @@ export default {
     },
     "rowFilter.jobOperationsWithDependencies.assemblyInstructionId": {
       name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationsWithDependencies.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -148900,6 +151080,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteMaterialWithMakeMethodId.unitCostSource": {
+      name: "unitCostSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId": {
       name: "quoteMaterialMakeMethodId",
       required: false,
@@ -148908,6 +151094,81 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.version": {
       name: "version",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ssoDomain": {
+      name: "ssoDomain",
+      description: "ssoDomain",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ssoDomain"
+      }
+    },
+    "rowFilter.ssoDomain.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.connectionId": {
+      name: "connectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.domain": {
+      name: "domain",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.verificationToken": {
+      name: "verificationToken",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.verifiedAt": {
+      name: "verifiedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -150864,6 +153125,24 @@ export default {
     },
     "rowFilter.jobs.priority": {
       name: "priority",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobs.projectedCompletionAt": {
+      name: "projectedCompletionAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobs.scheduleOutdatedReason": {
+      name: "scheduleOutdatedReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobs.scheduleOutdatedAt": {
+      name: "scheduleOutdatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -153058,6 +155337,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.location.requiresStaffing": {
+      name: "requiresStaffing",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.kanbans": {
       name: "kanbans",
       description: "kanbans",
@@ -153592,6 +155877,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.process.requiresAbility": {
+      name: "requiresAbility",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierShipping": {
       name: "supplierShipping",
       description: "supplierShipping",
@@ -153903,6 +156194,12 @@ export default {
     },
     "rowFilter.workCenters.departmentId": {
       name: "departmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.alwaysOn": {
+      name: "alwaysOn",
       required: false,
       in: "query",
       type: "string"
@@ -154957,32 +157254,20 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.employeeAbility.active": {
-      name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.employeeAbility.lastTrainingDate": {
       name: "lastTrainingDate",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.employeeAbility.trainingDays": {
-      name: "trainingDays",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.employeeAbility.trainingCompleted": {
-      name: "trainingCompleted",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.employeeAbility.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeeAbility.expiresAt": {
+      name: "expiresAt",
       required: false,
       in: "query",
       type: "string"
@@ -157392,6 +159677,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.employees.shiftId": {
+      name: "shiftId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employees.shiftName": {
+      name: "shiftName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.employees.status": {
       name: "status",
       required: false,
@@ -157824,6 +160121,28 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.projectedCompletionAt": {
+      name: "projectedCompletionAt",
+      description:
+        "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.scheduleOutdatedReason": {
+      name: "scheduleOutdatedReason",
+      description:
+        'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.scheduleOutdatedAt": {
+      name: "scheduleOutdatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.job.productionQuantity": {
       name: "productionQuantity",
       required: false,
@@ -158012,6 +160331,57 @@ export default {
     },
     "rowFilter.supplierPartPrice.leadTime": {
       name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.jobOperationQueueTime": {
+      name: "jobOperationQueueTime",
+      description: "jobOperationQueueTime",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationQueueTime"
+      }
+    },
+    "rowFilter.jobOperationQueueTime.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.readyAt": {
+      name: "readyAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.firstEventAt": {
+      name: "firstEventAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.queueHours": {
+      name: "queueHours",
       required: false,
       in: "query",
       type: "string"
@@ -158616,6 +160986,75 @@ export default {
     },
     "rowFilter.nonConformanceItemTrackedEntity.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.peopleAbsence": {
+      name: "peopleAbsence",
+      description: "peopleAbsence",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/peopleAbsence"
+      }
+    },
+    "rowFilter.peopleAbsence.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.date": {
+      name: "date",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.shiftId": {
+      name: "shiftId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.note": {
+      name: "note",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAbsence.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -159899,6 +162338,14 @@ export default {
     },
     "rowFilter.maintenanceDispatch.procedureId": {
       name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.maintenanceDispatch.takesWorkCenterOffline": {
+      name: "takesWorkCenterOffline",
+      description:
+        "While this dispatch is open, its work center(s) contribute no scheduling capacity between (actualStartTime ?? plannedStartTime ?? createdAt) and (actualEndTime ?? plannedEndTime ?? open-ended).",
       required: false,
       in: "query",
       type: "string"
@@ -162626,6 +165073,8 @@ export default {
     },
     "rowFilter.jobOperation.dueDate": {
       name: "dueDate",
+      description:
+        "Backward demand-anchored need-by: finish by this day or the job slips. Stable (changes only when job dueDate, routing, or lead times change). manuallyScheduled = a human owns this value.",
       required: false,
       in: "query",
       type: "string"
@@ -162671,8 +165120,22 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobOperation.inspectionDocumentId": {
       name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperation.projectedCompletionAt": {
+      name: "projectedCompletionAt",
+      description:
+        "Forward finite simulation: when this operation is projected to finish. Volatile (rewritten every regen).",
       required: false,
       in: "query",
       type: "string"
@@ -163450,6 +165913,12 @@ export default {
     },
     "rowFilter.quoteMaterial.storageUnitId": {
       name: "storageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteMaterial.unitCostSource": {
+      name: "unitCostSource",
       required: false,
       in: "query",
       type: "string"
@@ -166369,6 +168838,81 @@ export default {
     },
     "rowFilter.jobOperationParameter.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ssoConnection": {
+      name: "ssoConnection",
+      description: "ssoConnection",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ssoConnection"
+      }
+    },
+    "rowFilter.ssoConnection.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.providerId": {
+      name: "providerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.metadataUrl": {
+      name: "metadataUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.metadataXml": {
+      name: "metadataXml",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.requireSso": {
+      name: "requireSso",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoConnection.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -170142,6 +172686,63 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.workCenterShift": {
+      name: "workCenterShift",
+      description: "workCenterShift",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenterShift"
+      }
+    },
+    "rowFilter.workCenterShift.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.shiftId": {
+      name: "shiftId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterShift.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesRfqLines": {
       name: "salesRfqLines",
       description: "salesRfqLines",
@@ -172901,6 +175502,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.ability.processId": {
+      name: "processId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ability.recertifyEveryDays": {
+      name: "recertifyEveryDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.assemblyInstructions": {
       name: "assemblyInstructions",
       description: "assemblyInstructions",
@@ -173326,6 +175939,14 @@ export default {
     },
     "rowFilter.maintenanceSchedule.procedureId": {
       name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.maintenanceSchedule.takesWorkCenterOffline": {
+      name: "takesWorkCenterOffline",
+      description:
+        "When true, PM dispatches generated from this schedule are created with takesWorkCenterOffline = true and a bounded plannedEndTime (plannedStartTime + estimatedDuration), so the finite scheduler subtracts that window from the work center's capacity. Requires estimatedDuration to be set.",
       required: false,
       in: "query",
       type: "string"
@@ -175413,6 +178034,12 @@ export default {
     },
     "rowFilter.processes.active": {
       name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.requiresAbility": {
+      name: "requiresAbility",
       required: false,
       in: "query",
       type: "string"
@@ -178033,6 +180660,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.peopleAssignment": {
+      name: "peopleAssignment",
+      description: "peopleAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/peopleAssignment"
+      }
+    },
+    "rowFilter.peopleAssignment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.date": {
+      name: "date",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.shiftId": {
+      name: "shiftId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.note": {
+      name: "note",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.overtimeHours": {
+      name: "overtimeHours",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.peopleAssignment.hours": {
+      name: "hours",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.terms": {
       name: "terms",
       description: "terms",
@@ -178068,6 +180788,21 @@ export default {
     },
     "rowFilter.terms.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ssoReservedDomain": {
+      name: "ssoReservedDomain",
+      description: "ssoReservedDomain",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ssoReservedDomain"
+      }
+    },
+    "rowFilter.ssoReservedDomain.domain": {
+      name: "domain",
       required: false,
       in: "query",
       type: "string"
@@ -180295,6 +183030,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.workCentersWithBlockingStatus.alwaysOn": {
+      name: "alwaysOn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.workCentersWithBlockingStatus.locationName": {
       name: "locationName",
       required: false,
@@ -182239,6 +184980,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobOperationsWithMakeMethods.readyAt": {
+      name: "readyAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId": {
       name: "inspectionDocumentId",
       required: false,
@@ -183027,6 +185774,18 @@ export default {
     },
     "rowFilter.maintenanceSchedules.locationId": {
       name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.maintenanceSchedules.procedureId": {
+      name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.maintenanceSchedules.takesWorkCenterOffline": {
+      name: "takesWorkCenterOffline",
       required: false,
       in: "query",
       type: "string"
@@ -184126,6 +186885,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.workCenter.alwaysOn": {
+      name: "alwaysOn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itemSupersession": {
       name: "itemSupersession",
       description: "itemSupersession",
@@ -184308,6 +187073,12 @@ export default {
     },
     "rowFilter.training.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.training.grantsAbilityId": {
+      name: "grantsAbilityId",
       required: false,
       in: "query",
       type: "string"
@@ -186328,6 +189099,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.allowLowercaseItemIds": {
+      name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.part": {
       name: "part",
       description: "part",
@@ -186405,6 +189182,125 @@ export default {
     },
     "rowFilter.part.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.capacityReservation": {
+      name: "capacityReservation",
+      description: "capacityReservation",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/capacityReservation"
+      }
+    },
+    "rowFilter.capacityReservation.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.resourceKind": {
+      name: "resourceKind",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.resourceId": {
+      name: "resourceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.operationId": {
+      name: "operationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.startAt": {
+      name: "startAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.endAt": {
+      name: "endAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.scenarioId": {
+      name: "scenarioId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.earliestStartAt": {
+      name: "earliestStartAt",
+      description:
+        "When the operation could have started at the earliest; startAt - earliestStartAt is time spent waiting. Null when unknown (legacy rows).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.scheduleNote": {
+      name: "scheduleNote",
+      description:
+        'Human-readable reason for the placement timing (English, engine-generated), e.g. "Waited 14h for the work center - queued behind J000010 (2 ops)". Null when the operation started as early as it could.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.workHours": {
+      name: "workHours",
+      description:
+        "Actual work content (hours) inside this reservation; endAt - startAt minus off-shift pauses. Null on legacy rows and manual pins.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.isPlaceholder": {
+      name: "isPlaceholder",
+      description:
+        "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
       required: false,
       in: "query",
       type: "string"

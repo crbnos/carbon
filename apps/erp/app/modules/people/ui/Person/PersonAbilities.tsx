@@ -1,66 +1,52 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
-
-import { Trans, useLingui } from "@lingui/react/macro";
-import clsx from "clsx";
-import type { IconType } from "react-icons";
-import { BsBarChartFill, BsCheckLg } from "react-icons/bs";
-import { FaThumbsUp } from "react-icons/fa";
-import { Link } from "react-router";
-import { DateTime } from "~/components";
-import type { EmployeeAbility } from "~/modules/resources/types";
 import {
-  AbilityEmployeeStatus,
-  getTrainingStatus
-} from "~/modules/resources/types";
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  HStack,
+  IconButton
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { LuCirclePlus, LuPencil } from "react-icons/lu";
+import { Link, useNavigate } from "react-router";
+import { DateTime } from "~/components";
+import { usePermissions } from "~/hooks";
+import { EmployeeAbilityStatus } from "~/modules/resources";
+import type { EmployeeAbility } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 type PersonAbilitiesProps = {
+  personId: string;
   abilities: EmployeeAbility[];
 };
 
-const AbilityIcons: Record<
-  AbilityEmployeeStatus,
-  {
-    icon: IconType;
-  }
-> = {
-  [AbilityEmployeeStatus.Complete]: {
-    icon: BsCheckLg
-  },
-  [AbilityEmployeeStatus.InProgress]: {
-    icon: BsBarChartFill
-  },
-  [AbilityEmployeeStatus.NotStarted]: {
-    icon: FaThumbsUp
-  }
-};
-
-const PersonAbilities = ({ abilities }: PersonAbilitiesProps) => {
+const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
   const { t } = useLingui();
+  const navigate = useNavigate();
+  const permissions = usePermissions();
+  const canUpdate = permissions.can("update", "resources");
 
-  const abilityDescriptions: Record<AbilityEmployeeStatus, string> = {
-    [AbilityEmployeeStatus.Complete]: t`Fully trained for`,
-    [AbilityEmployeeStatus.InProgress]: t`Currently training for`,
-    [AbilityEmployeeStatus.NotStarted]: t`Not started training for`
-  };
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <Trans>Abilities</Trans>
-        </CardTitle>
+        <HStack className="w-full justify-between">
+          <CardTitle>
+            <Trans>Abilities</Trans>
+          </CardTitle>
+          {canUpdate && (
+            <Button asChild variant="secondary" leftIcon={<LuCirclePlus />}>
+              <Link to={path.to.newPersonAbility(personId)}>
+                <Trans>Add Ability</Trans>
+              </Link>
+            </Button>
+          )}
+        </HStack>
       </CardHeader>
       <CardContent>
         {abilities?.length > 0 ? (
           <ul className="flex flex-col gap-4 w-full">
             {abilities.map((employeeAbility) => {
-              const abilityStatus =
-                getTrainingStatus(employeeAbility) ??
-                AbilityEmployeeStatus.NotStarted;
-
-              const { icon } = AbilityIcons[abilityStatus];
-              const description = abilityDescriptions[abilityStatus];
-
               if (
                 !employeeAbility.ability ||
                 Array.isArray(employeeAbility.ability)
@@ -68,41 +54,23 @@ const PersonAbilities = ({ abilities }: PersonAbilitiesProps) => {
                 return null;
               }
 
-              let Icon = icon;
+              const editPath = path.to.employeeAbility(
+                employeeAbility.ability.id,
+                employeeAbility.id
+              );
 
               return (
                 <li key={employeeAbility.id}>
-                  <div className="grid-cols-[auto_1fr_auto] space-x-4">
-                    <div
-                      className={clsx(
-                        "flex h-10 w-10 rounded-full items-center justify-center",
-                        {
-                          "bg-emerald-500 text-white":
-                            abilityStatus === AbilityEmployeeStatus.Complete,
-                          "bg-blue-400 text-white dark:bg-blue-500 dark:text-white":
-                            abilityStatus === AbilityEmployeeStatus.InProgress,
-                          "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200":
-                            abilityStatus === AbilityEmployeeStatus.NotStarted
-                        }
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex h-full items-center">
-                      <p>
-                        {description}{" "}
-                        <Link
-                          className="font-bold"
-                          to={path.to.employeeAbility(
-                            employeeAbility.ability.id,
-                            employeeAbility.id
-                          )}
-                        >
-                          {employeeAbility.ability.name}
-                        </Link>
-                      </p>
-                    </div>
-                    <div className="flex h-full items-center">
+                  <HStack className="w-full justify-between">
+                    <HStack spacing={2}>
+                      <Link className="font-medium" to={editPath}>
+                        {employeeAbility.ability.name}
+                      </Link>
+                      <EmployeeAbilityStatus
+                        employeeAbility={employeeAbility}
+                      />
+                    </HStack>
+                    <HStack spacing={2}>
                       <p className="text-sm text-muted-foreground">
                         <DateTime
                           value={employeeAbility.lastTrainingDate}
@@ -113,8 +81,16 @@ const PersonAbilities = ({ abilities }: PersonAbilitiesProps) => {
                           }}
                         />
                       </p>
-                    </div>
-                  </div>
+                      {canUpdate && (
+                        <IconButton
+                          aria-label={t`Edit ability`}
+                          variant="ghost"
+                          icon={<LuPencil />}
+                          onClick={() => navigate(editPath)}
+                        />
+                      )}
+                    </HStack>
+                  </HStack>
                 </li>
               );
             })}

@@ -26,6 +26,7 @@ import { plmReleaseControl } from "~/modules/items";
 import {
   getCompanySettings,
   plmReleaseControlValidator,
+  updateAllowLowercaseItemIdsSetting,
   updateMaterialGeneratedIdsSetting,
   updateMetricSettings,
   updatePlmReleaseControlSetting
@@ -83,6 +84,17 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return { success: false, message: result.error.message };
       return { success: true, message: "Material units setting updated" };
+    }
+
+    case "allowLowercaseItemIds": {
+      const result = await updateAllowLowercaseItemIdsSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error)
+        return { success: false, message: result.error.message };
+      return { success: true, message: "Item ID casing setting updated" };
     }
 
     case "plmReleaseControl": {
@@ -153,8 +165,18 @@ export default function ItemsSettingsRoute() {
     [fetcher]
   );
 
+  const handleLowercaseItemIdsToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "allowLowercaseItemIds", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
@@ -204,6 +226,47 @@ export default function ItemsSettingsRoute() {
               <Switch
                 checked={companySettings.materialGeneratedIds ?? false}
                 onCheckedChange={handleMaterialIdsToggle}
+                disabled={isToggling}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Item IDs</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Control whether item IDs (parts, materials, consumables, tools,
+                and services) may contain lowercase characters.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {companySettings.allowLowercaseItemIds ? (
+                    <Trans>Lowercase item IDs are allowed</Trans>
+                  ) : (
+                    <Trans>Item IDs are forced to uppercase</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {companySettings.allowLowercaseItemIds ? (
+                    <Trans>Item IDs keep the casing you type.</Trans>
+                  ) : (
+                    <Trans>
+                      Enable to allow lowercase characters in item IDs.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={companySettings.allowLowercaseItemIds ?? false}
+                onCheckedChange={handleLowercaseItemIdsToggle}
                 disabled={isToggling}
               />
             </HStack>

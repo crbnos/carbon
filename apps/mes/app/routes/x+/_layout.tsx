@@ -106,8 +106,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 export const middleware: MiddlewareFunction[] = [userMiddleware];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const { accessToken, companyId, expiresAt, expiresIn, userId } =
-    await requireAuthSession(request, { verify: true });
+  const authSession = await requireAuthSession(request, { verify: true });
+  const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
   // share a client between requests
   const client = getCarbon(accessToken);
@@ -187,9 +187,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const mfaRequired =
     !consoleMode &&
     (CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true);
-  const mfaEnrollmentRequired = mfaRequired
-    ? !(await userHasVerifiedTotpFactor(userId))
-    : false;
+  // SSO sessions trust the IdP for MFA in all environments, including
+  // controlled — user decision, mirroring the ERP shell.
+  const ssoMfaExempt = Boolean(authSession.ssoProviderId);
+  const mfaEnrollmentRequired =
+    mfaRequired && !ssoMfaExempt
+      ? !(await userHasVerifiedTotpFactor(userId))
+      : false;
 
   // Get active maintenance count after we have the location
   const activeMaintenanceCount = await getActiveMaintenanceEventsCount(

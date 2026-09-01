@@ -3,11 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateJobOperationDueDate } from "~/modules/production";
+import {
+  notifyScheduleInputsChanged,
+  updateJobOperationDueDate
+} from "~/modules/production";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -27,6 +30,15 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(update.error, "Failed to update due date"))
     );
   }
+
+  // A pin is a need-by override that must propagate upstream through the
+  // backward pass — trigger the regen wave rather than waiting for the next
+  // unrelated input change.
+  await notifyScheduleInputsChanged(
+    companyId,
+    "reorder",
+    "Operation due date pinned"
+  );
 
   return {};
 }

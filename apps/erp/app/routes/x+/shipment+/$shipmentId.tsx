@@ -18,7 +18,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Shipments`, to: path.to.shipments },
     (data) => data?.shipment?.shipmentId
-  )
+  ),
+  module: "inventory"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -105,7 +106,7 @@ export default function ShipmentRoute() {
   if (!shipmentId) throw new Error("Could not find shipmentId");
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
         <div className="flex flex-col gap-2 pb-16 w-full">
           <Outlet />

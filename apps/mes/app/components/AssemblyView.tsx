@@ -165,6 +165,9 @@ type SlideModel = {
   modelPath: string | null;
   thumbnailPath: string | null;
   glbPath: string | null;
+  // The optimiser's output, recorded by model-optimize. Preferred over deriving
+  // the path, which is only ever a guess.
+  optimizedModelPath?: string | null;
   processingStatus?: string | null;
 };
 
@@ -1021,10 +1024,17 @@ export function AssemblyView({
     if (slide.modelUploadId) {
       const model = slideModels?.[slide.modelUploadId] ?? null;
       // ModelPreview loads the assembler-converted GLB fast tier when present and
-      // falls back to parsing the raw upload client-side (WASM tier).
+      // falls back to parsing the raw upload client-side (WASM tier). Only a REAL
+      // recorded artifact may be passed as glbUrl: a non-null value makes
+      // ModelPreview treat a server model as available and skip the raw tier
+      // entirely (`useRawTier` requires `!hasServerModel`), so guessing the
+      // optimiser's `optimized.glb` path left an unconverted model showing
+      // "Couldn't load the 3D model." instead of rendering from the raw upload.
       const glbUrl = model?.glbPath
         ? getPrivateUrl(model.glbPath)
-        : optimizedModelPreviewUrl(model?.modelPath ?? null);
+        : model?.optimizedModelPath
+          ? getPrivateUrl(model.optimizedModelPath)
+          : null;
       const rawUrl = model?.modelPath ? getPrivateUrl(model.modelPath) : null;
       return {
         kind: "model" as const,

@@ -32,7 +32,7 @@ export default function ConfirmMagicLink() {
           alt={t`Carbon Logo`}
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <div className="flex flex-col items-center text-center">
           <Heading size="h3" className="tracking-tight">
             <Trans>Sign in to Carbon</Trans>
