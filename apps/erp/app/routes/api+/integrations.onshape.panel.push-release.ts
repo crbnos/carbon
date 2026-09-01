@@ -617,6 +617,15 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("integration", "onshape")
       .eq("entityType", "methodMaterial")
       .in("metadata->>makeMethodId", baseMethodIds);
+    // This whole block exists to stop the released BOM being written on top
+    // of the lines the revision copy already carried over. A failed read
+    // degrades to "nothing to dedupe", which is precisely the case that
+    // doubles every line — so report it rather than proceeding blind.
+    if (baseMapped.error) {
+      summary.errors.push(
+        `Could not identify the Onshape lines copied from the base revisions (${baseMapped.error.message}); released BOMs may contain duplicates`
+      );
+    }
     const baseLineIds = (baseMapped.data ?? []).map(
       (mapping) => mapping.entityId
     );
@@ -638,6 +647,13 @@ export async function action({ request }: ActionFunctionArgs) {
           .eq("companyId", companyId)
           .in("makeMethodId", [...baseMethodIdByTargetMethodId.keys()])
       ]);
+      if (baseLines.error || copies.error) {
+        summary.errors.push(
+          `Could not compare the copied lines against the base revisions (${
+            (baseLines.error ?? copies.error)?.message ?? "read failed"
+          }); released BOMs may contain duplicates`
+        );
+      }
       const copiedKeysByBaseMethodId = new Map<string, Set<string>>();
       for (const line of baseLines.data ?? []) {
         const keys =
@@ -657,7 +673,15 @@ export async function action({ request }: ActionFunctionArgs) {
         })
         .map((line) => line.id);
       if (toDelete.length > 0) {
-        await client.from("methodMaterial").delete().in("id", toDelete);
+        const deduped = await client
+          .from("methodMaterial")
+          .delete()
+          .in("id", toDelete);
+        if (deduped.error) {
+          summary.errors.push(
+            `Could not remove the lines copied from the base revisions (${deduped.error.message}); released BOMs may contain duplicates`
+          );
+        }
       }
     }
   }
@@ -672,21 +696,36 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("integration", "onshape")
       .eq("entityType", "methodMaterial")
       .in("metadata->>makeMethodId", targetMethodIds);
+    if (mapped.error) {
+      summary.errors.push(
+        `Could not find the lines a previous release push wrote (${mapped.error.message}); this push may add a second copy of them`
+      );
+    }
     if ((mapped.data ?? []).length > 0) {
-      await client
+      const removedLines = await client
         .from("methodMaterial")
         .delete()
         .in(
           "id",
           (mapped.data ?? []).map((mapping) => mapping.entityId)
         );
-      await serviceRole
+      if (removedLines.error) {
+        summary.errors.push(
+          `Could not replace the lines a previous release push wrote (${removedLines.error.message}); this push may add a second copy of them`
+        );
+      }
+      const removedMappings = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
         .in(
           "id",
           (mapped.data ?? []).map((mapping) => mapping.id)
         );
+      if (removedMappings.error) {
+        summary.errors.push(
+          `Could not clear the ownership records for the replaced released lines (${removedMappings.error.message})`
+        );
+      }
     }
   }
   summary.methodsTouched += bomTargets.length;
@@ -750,22 +789,32 @@ export async function action({ request }: ActionFunctionArgs) {
       order += 1;
       summary.linesWritten += 1;
 
-      await client.from("externalIntegrationMapping").insert({
-        entityType: "methodMaterial",
-        entityId: inserted.data.id,
-        integration: "onshape",
-        metadata: {
-          makeMethodId: methodId,
-          documentId: plan.documentId,
-          elementId: item.elementId,
-          partNumber: child.partNumber,
-          index: child.index,
-          releaseId: plan.releaseId
-        },
-        lastSyncedAt: datetime.timestamp(),
-        companyId,
-        createdBy: userId
-      });
+      // A released line with no ownership record is indistinguishable from a
+      // manual one, and manual lines are preserved across revisions by
+      // design — so it would never be replaced again.
+      const lineMapping = await client
+        .from("externalIntegrationMapping")
+        .insert({
+          entityType: "methodMaterial",
+          entityId: inserted.data.id,
+          integration: "onshape",
+          metadata: {
+            makeMethodId: methodId,
+            documentId: plan.documentId,
+            elementId: item.elementId,
+            partNumber: child.partNumber,
+            index: child.index,
+            releaseId: plan.releaseId
+          },
+          lastSyncedAt: datetime.timestamp(),
+          companyId,
+          createdBy: userId
+        });
+      if (lineMapping.error) {
+        summary.errors.push(
+          `${label} → ${child.partNumber}: line written but not linked to Onshape (${lineMapping.error.message}); a later push will duplicate it`
+        );
+      }
     }
   }
 
@@ -777,43 +826,64 @@ export async function action({ request }: ActionFunctionArgs) {
     const pushedAt = datetime.timestamp();
     // One row per item, one per external id: both uniqueness constraints
     // depend on this delete running before the insert.
-    await serviceRole
+    const clearedByItem = await serviceRole
       .from("externalIntegrationMapping")
       .delete()
       .eq("companyId", companyId)
       .eq("integration", "onshape")
       .eq("entityType", "item")
       .eq("entityId", row.id);
-    await serviceRole
+    const clearedByExternal = clearedByItem.error
+      ? null
+      : await serviceRole
+          .from("externalIntegrationMapping")
+          .delete()
+          .eq("companyId", companyId)
+          .eq("integration", "onshape")
+          .eq("entityType", "item")
+          .eq("externalId", externalId);
+    if (clearedByItem.error || clearedByExternal?.error) {
+      // Inserting anyway would leave two rows for one item, which makes the
+      // owned-field lock's `.maybeSingle()` error and silently unlocks
+      // name and description on the item page.
+      summary.errors.push(
+        `${item.partNumber} Rev ${item.revision}: revision written but its previous Onshape link could not be cleared (${
+          (clearedByItem.error ?? clearedByExternal?.error)?.message ??
+          "delete failed"
+        }); push the release again`
+      );
+      continue;
+    }
+    const releaseMapping = await client
       .from("externalIntegrationMapping")
-      .delete()
-      .eq("companyId", companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "item")
-      .eq("externalId", externalId);
-    await client.from("externalIntegrationMapping").insert({
-      entityType: "item",
-      entityId: row.id,
-      integration: "onshape",
-      externalId,
-      metadata: {
-        kind: "release",
-        releaseId: plan.releaseId,
-        releaseName: plan.releaseName,
-        documentId: plan.documentId,
-        elementId: item.elementId,
-        wv: "v",
-        wvId: item.versionId,
-        partNumber: item.partNumber,
-        revision: item.revision,
-        pushedBy: userId,
-        pushedAt,
-        planId
-      },
-      lastSyncedAt: pushedAt,
-      companyId,
-      createdBy: userId
-    });
+      .insert({
+        entityType: "item",
+        entityId: row.id,
+        integration: "onshape",
+        externalId,
+        metadata: {
+          kind: "release",
+          releaseId: plan.releaseId,
+          releaseName: plan.releaseName,
+          documentId: plan.documentId,
+          elementId: item.elementId,
+          wv: "v",
+          wvId: item.versionId,
+          partNumber: item.partNumber,
+          revision: item.revision,
+          pushedBy: userId,
+          pushedAt,
+          planId
+        },
+        lastSyncedAt: pushedAt,
+        companyId,
+        createdBy: userId
+      });
+    if (releaseMapping.error) {
+      summary.errors.push(
+        `${item.partNumber} Rev ${item.revision}: revision written but not linked to Onshape (${releaseMapping.error.message}); it is invisible to change detection and to Detach`
+      );
+    }
   }
 
   // New revisions become the default their consumers resolve to (the
