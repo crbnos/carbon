@@ -315,6 +315,9 @@ export async function action({ request }: ActionFunctionArgs) {
       const validation =
         await validator(exportSkipValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
+      // The banner posts the Create form's current values, and that form is
+      // seeded from this same failed run — so these fallbacks only matter if the
+      // fields are missing entirely.
       const label = validation.data.label || run.data.label || undefined;
       const includeStorage =
         validation.data.includeStorage ?? run.data.includeStorage ?? "none";
@@ -558,6 +561,18 @@ export default function BackupsRoute() {
   // of its FKs is one row, and this number sits on an irreversible-delete button.
   const purgeRowCount = totalScopeRows(purgeRun?.violationRowsByTable ?? []);
   const exportChoices = useExportChoices();
+  // A failed run's label and include setting seed the form, so "Skip corrupted
+  // rows and retry" reuses what that run asked for and the person can see it.
+  // `defaultValues` is only read on mount, hence the key.
+  const exportDefaults = {
+    key:
+      exportFailed && exportRun?.startedAt
+        ? `failed-${exportRun.startedAt}`
+        : "new",
+    label: (exportFailed ? exportRun?.label : null) ?? "",
+    includeStorage: ((exportFailed ? exportRun?.includeStorage : null) ??
+      "none") as "none" | "all"
+  };
 
   const startRevert = (runId: string) => {
     fetcher.submit(
@@ -602,9 +617,13 @@ export default function BackupsRoute() {
           <Card className="flex flex-col">
             <ValidatedForm
               id={EXPORT_FORM_ID}
+              key={exportDefaults.key}
               method="post"
               validator={exportValidator}
-              defaultValues={{ label: "", includeStorage: "none" }}
+              defaultValues={{
+                label: exportDefaults.label,
+                includeStorage: exportDefaults.includeStorage
+              }}
               fetcher={fetcher}
               className="flex flex-1 flex-col"
             >
