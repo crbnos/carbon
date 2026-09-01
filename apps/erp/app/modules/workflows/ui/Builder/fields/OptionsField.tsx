@@ -29,6 +29,7 @@ function literalList(value: ValueOrRef | undefined): string[] {
  */
 export function OptionsField({
   label,
+  help,
   source,
   type,
   values,
@@ -40,6 +41,8 @@ export function OptionsField({
   isReadOnly
 }: {
   label: string;
+  /** The vendor's own field description, for the ⓘ hover. */
+  help?: string;
   source: OptionsSource;
   type: ValueType;
   /** Current literal values of this input's `dependsOn` inputs. */
@@ -70,7 +73,7 @@ export function OptionsField({
       .map((name) => dependencyLabels[name] ?? name)
       .join(", ");
     return (
-      <Field label={label} required={required} issue={issue}>
+      <Field label={label} help={help} required={required} issue={issue}>
         <p className="text-sm text-muted-foreground">
           <Trans>Choose {named} first.</Trans>
         </p>
@@ -83,7 +86,7 @@ export function OptionsField({
   // sending the author off to fix data that was never the problem.
   if (loaded && errorCode) {
     return (
-      <Field label={label} required={required} issue={issue}>
+      <Field label={label} help={help} required={required} issue={issue}>
         <div className="flex flex-wrap items-center gap-2">
           {/* The specific reason when the provider knew one — "this account needs
               to be reconnected" is actionable, "couldn't load the choices" is not. */}
@@ -126,7 +129,7 @@ export function OptionsField({
   // do anything about is worse than a link out.
   if (loaded && options.length === 0 && emptyHref) {
     return (
-      <Field label={label} required={required} issue={issue}>
+      <Field label={label} help={help} required={required} issue={issue}>
         <p className="text-sm text-muted-foreground">
           <Trans>
             Nothing to choose yet -{" "}
@@ -143,7 +146,7 @@ export function OptionsField({
   const placeholder = isLoading || !loaded ? t`Loading…` : t`Select an option…`;
 
   return (
-    <Field label={label} required={required} issue={issue}>
+    <Field label={label} help={help} required={required} issue={issue}>
       {type.kind === "list" ? (
         <MultiSelect
           options={options}

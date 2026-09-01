@@ -52,7 +52,19 @@ export async function buildPieceActionDeclarations(): Promise<
           required: mapped.required,
           label: mapped.label,
           ...(mapped.choices === undefined ? {} : { choices: mapped.choices }),
-          ...(mapped.options === undefined ? {} : { options: mapped.options })
+          ...(mapped.options === undefined ? {} : { options: mapped.options }),
+          ...(mapped.defaultValue === undefined
+            ? {}
+            : {
+                defaultValue: mapped.defaultValue as
+                  | string
+                  | number
+                  | boolean
+                  | string[]
+              }),
+          ...(mapped.description === undefined
+            ? {}
+            : { description: mapped.description })
         };
 
         const visibility = visibilityOf(
@@ -71,7 +83,23 @@ export async function buildPieceActionDeclarations(): Promise<
         // A hidden input is never REQUIRED of the author — it is satisfied by a
         // pinned value or the piece's own default — but it stays editable under
         // Advanced for anyone who needs it.
-        else advancedInputs[propName] = { ...declared, required: false };
+        else {
+          advancedInputs[propName] = {
+            ...declared,
+            required: false,
+            // The EFFECTIVE default — an allowlist pin beats the piece's own —
+            // so an untouched Advanced toggle displays what the run will send.
+            ...(visibility.value !== undefined
+              ? {
+                  defaultValue: visibility.value as
+                    | string
+                    | number
+                    | boolean
+                    | string[]
+                }
+              : {})
+          };
+        }
       }
 
       // An action that does not describe what it returns is REFUSED, not exposed

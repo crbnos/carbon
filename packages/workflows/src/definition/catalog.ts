@@ -47,7 +47,9 @@ export interface CatalogInput {
   choices?: readonly string[];
   /** What the builder seeds a new node with. Must be drawn from `choices` when both are
    * set. Stored like any other value — nothing reads it at run time. */
-  defaultValue?: string | readonly string[];
+  defaultValue?: string | number | boolean | readonly string[];
+  /** The vendor's own explanation of the field, for the builder's ⓘ hover. */
+  description?: string;
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
   /** This input is prose a person reads, so a record dropped into it renders as a link

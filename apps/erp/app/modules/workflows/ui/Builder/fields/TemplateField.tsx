@@ -8,6 +8,7 @@ export function TemplateField({
   label,
   required,
   helpTermId,
+  help,
   value,
   onChange,
   context,
@@ -20,6 +21,7 @@ export function TemplateField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
     >
       {/* These are the prose inputs — a subject, a message body, a webhook payload.

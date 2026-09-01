@@ -349,12 +349,14 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       },
       end_date_time: {
         type: { kind: "primitive", of: "date" },
-        required: false
+        required: false,
+        description: "By default it'll be 30 min post start time"
       },
       location: { type: { kind: "primitive", of: "string" }, required: false },
       description: {
         type: { kind: "primitive", of: "string" },
-        required: false
+        required: false,
+        description: "Description of the event. You can use HTML tags here."
       },
       colorId: {
         type: { kind: "primitive", of: "string" },
@@ -371,30 +373,38 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       },
       attendees: {
         type: { kind: "list", of: { kind: "primitive", of: "string" } },
-        required: false
+        required: false,
+        description: "Emails of the attendees (guests)"
       },
       guests_can_modify: {
         type: { kind: "primitive", of: "boolean" },
-        required: false
+        required: false,
+        defaultValue: false
       },
       guests_can_invite_others: {
         type: { kind: "primitive", of: "boolean" },
-        required: false
+        required: false,
+        defaultValue: false
       },
       guests_can_see_other_guests: {
         type: { kind: "primitive", of: "boolean" },
-        required: false
+        required: false,
+        defaultValue: false
       },
       create_meet_link: {
         type: { kind: "primitive", of: "boolean" },
-        required: false
+        required: false,
+        defaultValue: false,
+        description:
+          "Automatically create a Google Meet video conference link for this event"
       }
     },
     advancedInputs: {
       send_notifications: {
         type: { kind: "primitive", of: "string" },
         required: false,
-        choices: ["all", "externalOnly", "none"]
+        choices: ["all", "externalOnly", "none"],
+        defaultValue: "all"
       }
     },
     outputs: {
@@ -466,11 +476,16 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       event_types: {
         type: { kind: "list", of: { kind: "primitive", of: "string" } },
         required: false,
-        choices: ["default", "outOfOffice", "focusTime", "workingLocation"]
+        choices: ["default", "outOfOffice", "focusTime", "workingLocation"],
+        defaultValue: ["default", "focusTime", "outOfOffice"],
+        description: "Select event types"
       },
       singleEvents: {
         type: { kind: "primitive", of: "boolean" },
-        required: false
+        required: false,
+        defaultValue: true,
+        description:
+          "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
       }
     },
     outputs: {

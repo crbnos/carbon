@@ -17,6 +17,8 @@ export function ValueField({
   accepts,
   required,
   helpTermId,
+  help,
+  defaultValue,
   choices,
   value,
   onChange,
@@ -47,6 +49,7 @@ export function ValueField({
         label={label}
         required={required}
         helpTermId={helpTermId}
+        help={help}
         issue={issue}
       >
         <InlineValueEditor
@@ -76,6 +79,7 @@ export function ValueField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
     >
       {/* The popup anchors to the control itself. A field is either a value you write
@@ -112,6 +116,7 @@ export function ValueField({
             <LiteralControl
               type={type}
               choices={choices}
+              defaultValue={defaultValue}
               value={
                 value?.kind === "literal"
                   ? (value.value as

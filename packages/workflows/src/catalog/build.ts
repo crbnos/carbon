@@ -84,7 +84,9 @@ export interface BuiltActionInput {
   required: boolean;
   choices?: readonly string[];
   /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string | readonly string[];
+  defaultValue?: string | number | boolean | readonly string[];
+  /** Vendor prose for the ⓘ tooltip; rendered through the label catalog. */
+  description?: string;
   template?: boolean;
   /** Prose a person reads: a record dropped in renders as a link when the caller
    * supplies a resolver. Not set on webhook bodies. */
@@ -165,7 +167,13 @@ function buildDeclaredInputs(
       type: spec.type,
       required: spec.required,
       ...(spec.choices ? { choices: spec.choices } : {}),
-      ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
+      // `!== undefined`, never truthiness: `false` and `0` are real defaults.
+      ...(spec.defaultValue !== undefined
+        ? { defaultValue: spec.defaultValue }
+        : {}),
+      ...(spec.description !== undefined
+        ? { description: spec.description }
+        : {}),
       ...(spec.template ? { template: true } : {}),
       ...(spec.linkify ? { linkify: true } : {}),
       ...(spec.pairs ? { pairs: true } : {}),
@@ -202,6 +210,11 @@ function labelDeclaration(
     assertLabelIsSafe(key, label);
     labels[key] = label;
     if (spec.help !== undefined) help[key] = spec.help;
+    // The tooltip rides the label catalog so it is translated like the label.
+    if (spec.description !== undefined) {
+      assertLabelIsSafe(`${key}.description`, spec.description);
+      labels[`${key}.description`] = spec.description;
+    }
   }
 }
 
@@ -512,10 +525,13 @@ export function validateCatalogInputs(
       }
       if (spec.defaultValue !== undefined && spec.choices !== undefined) {
         // One default or a set of them — a multi-select seeds several at once.
+        // A boolean or number default has no choices to be a member of.
         const defaults =
           typeof spec.defaultValue === "string"
             ? [spec.defaultValue]
-            : spec.defaultValue;
+            : Array.isArray(spec.defaultValue)
+              ? spec.defaultValue
+              : [];
         for (const value of defaults) {
           if (spec.choices.includes(value)) continue;
           problems.push(

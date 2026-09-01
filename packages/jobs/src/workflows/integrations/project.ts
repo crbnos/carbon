@@ -18,7 +18,13 @@ const logger = getLogger("jobs", "workflows", "integrations");
  */
 export function projectOutputs(
   schema: PieceOutputSchema | undefined,
-  response: unknown
+  response: unknown,
+  options: {
+    /** Sort each projected list's rows by this field, ascending, BEFORE the
+     * size cap — so the cap cuts the tail of the ordering, never a whole
+     * category the vendor happened to return last. */
+    sortItemsBy?: string;
+  } = {}
 ): Record<string, RuntimeValue> {
   if (schema === undefined) return { count: countOf(undefined) };
 
@@ -42,16 +48,17 @@ export function projectOutputs(
         // reported zero purely because of key order.
         if (listed === undefined || items.length > listed.length)
           listed = items;
-        const rows = items
-          .slice(0, MAX_LIST_ITEMS)
-          .map((item) =>
+        const rows = sortRows(
+          items.map((item) =>
             Object.fromEntries(
               Object.entries(where.items ?? {}).map(([field, path]) => [
                 field,
                 readPath(item, path)
               ])
             )
-          );
+          ),
+          options.sortItemsBy
+        ).slice(0, MAX_LIST_ITEMS);
         outputs[name] = fromColumn(type, rows);
         continue;
       }
@@ -70,6 +77,25 @@ export function projectOutputs(
     // Nothing was shaped, so nothing is known to have come back.
     return { count: countOf([]) };
   }
+}
+
+/** Ascending by one projected field; rows without it sink to the end. ISO
+ * datetimes compare correctly as strings, which is what the field holds for
+ * every sort the allowlist declares. Copied then sorted, so equal keys keep
+ * vendor order only as far as the engine's sort is stable (V8's is). */
+function sortRows(
+  rows: Record<string, unknown>[],
+  by: string | undefined
+): Record<string, unknown>[] {
+  if (by === undefined) return rows;
+  return [...rows].sort((a, b) => {
+    const left = a[by];
+    const right = b[by];
+    if (left === right) return 0;
+    if (left === undefined || left === null) return 1;
+    if (right === undefined || right === null) return -1;
+    return String(left) < String(right) ? -1 : 1;
+  });
 }
 
 /** How many items came back: a list's length, else 1 for a single response. */

@@ -60,6 +60,12 @@ export interface AllowlistEntry {
    * default that is WRONG for us — the generic rules in `visibility.ts` handle
    * merely-uninteresting fields with no per-action data. */
   props?: Record<string, Record<string, AllowlistPropOverride>>;
+  /** Per-action: sort the projected list's items by this projected field,
+   * ascending, before the size cap. For a vendor that returns results in no
+   * useful order (Google's events.list groups a recurring series' instances
+   * together), the cap would otherwise cut whole event types instead of the
+   * far future. */
+  sortItemsBy?: Record<string, string>;
 }
 
 export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
@@ -77,6 +83,9 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
       url: "https://www.googleapis.com/oauth2/v2/userinfo",
       field: "email"
     },
+    // events.list without `orderBy` groups a series' expanded instances into one
+    // block; chronological is the only order a calendar question means.
+    sortItemsBy: { google_calendar_get_events: "startDateTime" },
     props: {
       google_calendar_get_events: {
         // "Expand Recurring Event?" defaults to FALSE upstream, and an unexpanded

@@ -177,6 +177,38 @@ describe("projectOutputs", () => {
     expect(projectOutputs(undefined, { anything: true }).count).toBeDefined();
   });
 
+  it("sorts the items chronologically before the cap when asked", () => {
+    // Google's events.list groups a recurring series' instances into one block;
+    // unsorted, the cap cut whole event types instead of the far future.
+    const many = [
+      { summary: "Demo Day", start: { dateTime: "2026-09-04T14:00:00Z" } },
+      { summary: "Demo Day", start: { dateTime: "2026-09-11T14:00:00Z" } },
+      { summary: "Standup", start: { dateTime: "2026-09-07T09:00:00Z" } },
+      { summary: "No start", start: {} }
+    ];
+    const outputs = projectOutputs(GET_EVENTS, response(many), {
+      sortItemsBy: "startDateTime"
+    });
+    const rows = items(outputs);
+    expect(
+      rows.map(
+        (row) => (row as { fields: Record<string, unknown> }).fields.summary
+      )
+    ).toBeDefined();
+    const starts = rows.map(
+      (row) =>
+        (row as { fields: Record<string, { value: unknown }> }).fields
+          .startDateTime?.value ?? null
+    );
+    expect(starts.slice(0, 3)).toEqual([
+      "2026-09-04T14:00:00.000Z",
+      "2026-09-07T09:00:00.000Z",
+      "2026-09-11T14:00:00.000Z"
+    ]);
+    // The row with no start sinks to the end rather than leading the list.
+    expect(starts[3]).toBeNull();
+  });
+
   it("counts the biggest declared list, not whichever came first in the schema", () => {
     // An empty list declared ahead of the real one reported zero purely on key
     // order — the author's "did anything come back?" answered wrong.

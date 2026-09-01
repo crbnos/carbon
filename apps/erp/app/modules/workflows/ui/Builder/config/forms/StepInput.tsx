@@ -30,6 +30,8 @@ export type StepInputArgs = {
   inputDef: CatalogInput;
   label: string;
   helpTermId?: TermId;
+  /** The vendor's own field description, already label-resolved. */
+  help?: string;
   /** Every input on the node, for gates and for fetched-choice dependencies. */
   inputs: Record<string, ValueOrRef>;
   issues?: WorkflowIssue[];
@@ -48,6 +50,7 @@ export function renderStepInput({
   inputDef,
   label,
   helpTermId,
+  help,
   inputs,
   issues,
   nodeId,
@@ -80,6 +83,7 @@ export function renderStepInput({
       <OptionsField
         key={`${name}:${dependsOn.map((d) => values[d]).join(":")}`}
         label={label}
+        help={help}
         source={inputDef.options}
         type={inputDef.type}
         values={values}
@@ -99,6 +103,7 @@ export function renderStepInput({
         key={name}
         label={label}
         helpTermId={helpTermId}
+        help={help}
         type={inputDef.type}
         required={inputDef.required}
         value={inputs[name]}
@@ -117,6 +122,7 @@ export function renderStepInput({
         key={name}
         label={label}
         helpTermId={helpTermId}
+        help={help}
         type={inputDef.type}
         required={inputDef.required}
         options={choiceOptions(inputDef.choices)}
@@ -135,6 +141,7 @@ export function renderStepInput({
         key={name}
         label={label}
         helpTermId={helpTermId}
+        help={help}
         type={inputDef.type}
         required={inputDef.required}
         value={inputs[name]}
@@ -152,6 +159,8 @@ export function renderStepInput({
       key={name}
       label={label}
       helpTermId={helpTermId}
+      help={help}
+      defaultValue={inputDef.defaultValue}
       type={inputDef.type}
       required={inputDef.required}
       choices={inputDef.choices}

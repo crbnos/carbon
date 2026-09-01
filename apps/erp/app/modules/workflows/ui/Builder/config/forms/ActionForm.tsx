@@ -380,6 +380,14 @@ export function ActionForm({
       inputDef,
       label: inputLabel(name),
       helpTermId: workflowFieldHelp(actionInputLabelKey(actionId, name)),
+      // A hand-written action may carry a description too; translated like its label.
+      help:
+        inputDef.description === undefined
+          ? undefined
+          : label(
+              `${actionInputLabelKey(actionId, name)}.description`,
+              inputDef.description
+            ),
       inputs,
       issues,
       nodeId: node.id,

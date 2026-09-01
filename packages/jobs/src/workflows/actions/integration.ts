@@ -107,7 +107,9 @@ export async function runIntegrationAction(args: {
     return {
       ok: true,
       outputs: {
-        ...projectOutputs(action.outputSchema, result),
+        ...projectOutputs(action.outputSchema, result, {
+          sortItemsBy: PIECE_ALLOWLIST[pieceName]?.sortItemsBy?.[actionName]
+        }),
         result: {
           kind: "primitive",
           of: "string",

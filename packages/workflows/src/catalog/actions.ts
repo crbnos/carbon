@@ -13,8 +13,14 @@ export interface ActionInputLike {
   /** Allowed literal values. The generated side infers these from the database schema;
    * a hand-written action is not a schema entity, so it must say so here. */
   choices?: readonly string[];
-  /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string | readonly string[];
+  /** The vendor's own explanation of the field, shown as an ⓘ tooltip. Free
+   * text (translated through the label catalog), unlike `help`, which names a
+   * Carbon glossary term. */
+  description?: string;
+  /** What the builder seeds a new node with. Nothing reads it at run time.
+   * Booleans and numbers are real members: a checkbox's `false` is a value, and
+   * dropping it by truthiness made an OFF toggle mean "vendor decides". */
+  defaultValue?: string | number | boolean | readonly string[];
   /** The value is a set of name/value rows. */
   pairs?: boolean;
   /** Only shown, and only required, while `input` holds one of `equals`. */

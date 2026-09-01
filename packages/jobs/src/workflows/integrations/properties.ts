@@ -27,6 +27,12 @@ export interface MappedProperty {
   type: ValueType;
   required: boolean;
   label: string;
+  /** The piece's own pre-fill, carried so the builder can seed it as a stored
+   * value. `!== undefined`, never truthiness: `false` is the whole point for a
+   * checkbox — dropped, an OFF toggle silently meant "vendor decides". */
+  defaultValue?: unknown;
+  /** The piece's own explanation of the field, for the builder's ⓘ tooltip. */
+  description?: string;
   choices?: readonly string[];
   /** Values come from the vendor while editing; the builder fetches them. */
   options?: OptionsSource;
@@ -57,7 +63,16 @@ export function toValueType(
 ): MappedProperty {
   const label = property.displayName ?? name;
   const required = property.required === true;
-  const base = { required, label };
+  const base = {
+    required,
+    label,
+    ...(property.defaultValue === undefined
+      ? {}
+      : { defaultValue: property.defaultValue }),
+    ...(property.description === undefined
+      ? {}
+      : { description: property.description })
+  };
 
   switch (property.type) {
     case "SHORT_TEXT":

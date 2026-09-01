@@ -36,6 +36,10 @@ type LiteralControlProps = {
   type: ValueType;
   choices?: readonly string[];
   value: string | number | boolean | null | undefined;
+  /** The catalog's default, shown when nothing is stored yet. A boolean control
+   * especially must display what the run will actually send — an untouched
+   * toggle rendered OFF while the effective default was ON lied twice over. */
+  defaultValue?: unknown;
   onChange: (next: ValueOrRef | undefined) => void;
   /** Opens the variable menu. Every control here has two modes, and `{` is the one
    * way into the second. */
@@ -48,6 +52,7 @@ export function LiteralControl({
   type,
   choices,
   value,
+  defaultValue,
   onChange,
   onRequestVariable,
   isReadOnly = false
@@ -157,7 +162,12 @@ export function LiteralControl({
       }
 
       case "boolean": {
-        const boolValue = typeof value === "boolean" ? value : false;
+        const boolValue =
+          typeof value === "boolean"
+            ? value
+            : typeof defaultValue === "boolean"
+              ? defaultValue
+              : false;
         return shell(
           <Switch
             checked={boolValue}

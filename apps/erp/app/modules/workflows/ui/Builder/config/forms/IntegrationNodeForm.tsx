@@ -103,9 +103,35 @@ export function IntegrationNodeForm({
     updateNodeData(node.id, { piece: next, action: "", inputs: {} });
   }
 
+  // Seed the piece's own pre-fills as STORED literals, exactly as ActionForm
+  // seeds catalog defaults. What a person sees in an untouched field must be
+  // what the run sends: a checkbox whose vendor default is ON rendered as an
+  // OFF toggle while sending nothing was a lie in both directions.
+  //
+  // VISIBLE inputs only. An Advanced input's seeded default would be a node
+  // value, and a node value wins over an allowlist pin — seeding there would
+  // silently defeat every pin (`singleEvents` first among them). Hidden props
+  // are satisfied at run time by the pin or the piece's own default.
+  function seededInputs(nextStepId: string): Record<string, ValueOrRef> {
+    const definition = catalog.getIntegration(nextStepId);
+    const seeded: Record<string, ValueOrRef> = {};
+    for (const [name, input] of Object.entries(definition?.inputs ?? {})) {
+      if (input.defaultValue === undefined) continue;
+      seeded[name] = {
+        kind: "literal",
+        type: input.type,
+        value: input.defaultValue
+      };
+    }
+    return seeded;
+  }
+
   function handleStepChange(next: string) {
     if (next === action) return;
-    updateNodeData(node.id, { action: next, inputs: {} });
+    updateNodeData(node.id, {
+      action: next,
+      inputs: piece ? seededInputs(integrationStepId(piece, next)) : {}
+    });
   }
 
   function handleInputChange(name: string, value: ValueOrRef | undefined) {
@@ -246,6 +272,14 @@ export function IntegrationNodeForm({
               helpTermId: workflowFieldHelp(
                 actionInputLabelKey(stepId ?? "", name)
               ),
+              // The vendor's own field description, translated like its label.
+              help:
+                inputDef.description === undefined
+                  ? undefined
+                  : label(
+                      `${actionInputLabelKey(stepId ?? "", name)}.description`,
+                      inputDef.description
+                    ),
               inputs,
               issues,
               nodeId: node.id,
@@ -276,6 +310,13 @@ export function IntegrationNodeForm({
                   name,
                   inputDef,
                   label: inputLabel(name),
+                  help:
+                    inputDef.description === undefined
+                      ? undefined
+                      : label(
+                          `${actionInputLabelKey(stepId ?? "", name)}.description`,
+                          inputDef.description
+                        ),
                   helpTermId: workflowFieldHelp(
                     actionInputLabelKey(stepId ?? "", name)
                   ),
