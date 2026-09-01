@@ -31,7 +31,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 DROP TRIGGER IF EXISTS update_sales_invoice_line_exchange_rate_trigger ON "salesInvoice";
 CREATE TRIGGER update_sales_invoice_line_exchange_rate_trigger
@@ -52,7 +52,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 DROP TRIGGER IF EXISTS sales_invoice_line_exchange_rate_insert_trigger ON "salesInvoiceLine";
 CREATE TRIGGER sales_invoice_line_exchange_rate_insert_trigger
