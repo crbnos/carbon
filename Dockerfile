@@ -41,14 +41,21 @@ COPY --from=build /repo/apps/${APP} ./apps/${APP}
 # (removed just above), no app runtime imports it, and its GHSA-r292-9mhp-454m
 # DoS fix (tar@7.5.21) is not published to npm yet — so it cannot be pinned away
 # and is instead removed from the image where the scanner sees it.
+# npm itself is stripped for the same reason: the runtime uses corepack/pnpm and
+# never invokes npm, but npm (pulled as a devDep via linguito, and shipped
+# globally by the node base image) vendors its own copies of tar/pacote/sigstore/
+# ip-address/etc. — including the only remaining Trivy CRITICALs (npm's bundled
+# tar). Dropping npm clears those at the source and shrinks the image.
 RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
         -name 'esbuild@*' -o -name '@esbuild+*' -o \
         -name 'supabase@*' -o \
         -name 'tar@*' -o \
+        -name 'npm@*' -o \
         -name '@typescript+native-preview-*' \
     \) -prune -exec rm -rf {} + ; \
-    find node_modules -type d -name '@esbuild' -prune -exec rm -rf {} + 2>/dev/null || true
+    find node_modules -type d -name '@esbuild' -prune -exec rm -rf {} + 2>/dev/null || true ; \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 EXPOSE 3000
 WORKDIR /repo/apps/${APP}
 CMD ["pnpm","run","start"]
