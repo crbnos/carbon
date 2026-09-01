@@ -42,8 +42,15 @@ export default defineConfig(({ isSsrBuild, mode }) => {
          * crashes on cold start with "Cannot find module 'react'". Bundling it
          * inline resolves react/prop-types against the app's copies at build
          * time, the same reason the react-* packages above are inlined.
+         *
+         * Build-only: react-csv also declares `"jsnext:main": "src/index.js"`,
+         * so when inlined in the dev server Vite picks the untranspiled ESM
+         * source, whose `import { func } from "prop-types"` fails under Node's
+         * CJS interop ("Named export 'func' not found"). In dev the CJS entry is
+         * externalized and `require`d directly, which works via pnpm's store.
          */
-        "react-csv",
+
+        ...(isSsrBuild ? ["react-csv"] : []),
         /**
          * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
          * its nested zustand v3, while the app uses zustand v5 (no default
@@ -93,7 +100,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
         "@carbon/form": path.resolve(
           __dirname,
-          "../../packages/form/src/index.tsx",
+          "../../packages/form/src/index.tsx"
         ),
       },
     },
