@@ -266,7 +266,11 @@ const SalesOrderEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.salesOrderLineType === "Comment"
                       ? "-"
-                      : formatter.format(line.unitPrice ?? 0)}
+                      : // `formatter` is the DOCUMENT currency (above), and
+                        // salesOrderLine.unitPrice is stored in BASE --
+                        // convertedUnitPrice is the document-currency mirror,
+                        // and it is what getLineTotal already sums.
+                        formatter.format(line.convertedUnitPrice ?? 0)}
                   </Text>
                 </Column>
                 <Column className="text-right pr-5 align-top w-[100px]">

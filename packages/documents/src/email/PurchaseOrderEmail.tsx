@@ -268,8 +268,12 @@ const PurchaseOrderEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.purchaseOrderLineType === "Comment"
                       ? "-"
-                      : line.unitPrice
-                        ? formatter.format(line.unitPrice)
+                      : // `formatter` is the SUPPLIER's currency (above), and
+                        // purchaseOrderLine.unitPrice is the GENERATED BASE
+                        // column -- supplierUnitPrice is what the supplier
+                        // quoted, and it is what getLineTotal already sums.
+                        line.supplierUnitPrice
+                        ? formatter.format(line.supplierUnitPrice)
                         : "-"}
                   </Text>
                 </Column>
