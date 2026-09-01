@@ -277,6 +277,11 @@ export async function action({ request }: ActionFunctionArgs) {
     return target;
   };
 
+  // Plan-level problems that belong to no single part — currently only a
+  // failed list-option append, which leaves parts carrying a value the field
+  // does not list.
+  const warnings: string[] = [];
+
   // ---- Custom fields: list options + current part values, before the loop -
   // Every value this apply could write, per field. An adopt/update writes
   // only its owned-mode values, so a default-mode value must not append an
@@ -309,8 +314,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // holds parts permissions, not settings, so the append needs the
       // service role. A failure is deliberately non-fatal — the plan is
       // already taken, the value is written regardless, and the next push
-      // of the same value retries the append.
-      await serviceRole
+      // of the same value retries the append. It is NOT silent, though: the
+      // value lands in a List field that does not contain it, and the ERP
+      // renders that as an unknown option with nothing to explain it.
+      const appended = await serviceRole
         .from("customField")
         .update({
           listOptions: [...(definition.listOptions ?? []), ...missing],
@@ -319,6 +326,13 @@ export async function action({ request }: ActionFunctionArgs) {
         })
         .eq("id", definition.id)
         .eq("companyId", companyId);
+      if (appended.error) {
+        warnings.push(
+          `${definition.name}: could not add the option${
+            missing.length > 1 ? "s" : ""
+          } ${missing.join(", ")} to the field (${appended.error.message}); parts carry the value but the field does not list it`
+        );
+      }
     }
   }
 
@@ -502,20 +516,35 @@ export async function action({ request }: ActionFunctionArgs) {
     // by entityId OR externalId is what the uniqueness constraints rely on.
     const externalId = externalIdForPart(documentId, elementId, partId);
     const now = datetime.timestamp();
-    await serviceRole
+    // Both deletes must land before the insert. A second row for the same
+    // item makes the owned-field lock's `.maybeSingle()` error, which
+    // silently unlocks name and description on the item page — so a failure
+    // here stops this part rather than inserting alongside.
+    const clearedByItem = await serviceRole
       .from("externalIntegrationMapping")
       .delete()
       .eq("companyId", companyId)
       .eq("integration", "onshape")
       .eq("entityType", "item")
       .eq("entityId", itemId);
-    await serviceRole
-      .from("externalIntegrationMapping")
-      .delete()
-      .eq("companyId", companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "item")
-      .eq("externalId", externalId);
+    const clearedByExternal = clearedByItem.error
+      ? null
+      : await serviceRole
+          .from("externalIntegrationMapping")
+          .delete()
+          .eq("companyId", companyId)
+          .eq("integration", "onshape")
+          .eq("entityType", "item")
+          .eq("externalId", externalId);
+    if (clearedByItem.error || clearedByExternal?.error) {
+      results.push({
+        partId,
+        action: "error",
+        message:
+          "Item saved but its previous Onshape link could not be cleared; push again"
+      });
+      continue;
+    }
     const inserted = await client.from("externalIntegrationMapping").insert({
       entityType: "item",
       entityId: itemId,
@@ -573,7 +602,11 @@ export async function action({ request }: ActionFunctionArgs) {
         { id: `${planId}:${itemId}:${elementId}` }
       );
     } catch (error) {
-      await serviceRole
+      // Roll the mapping back so the next plan does not read "unchanged" and
+      // skip the export forever. If the rollback itself fails, say so — the
+      // advice to "push again" would otherwise be wrong, since the stale
+      // mapping makes the next push a no-op.
+      const rolledBack = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
         .eq("companyId", companyId)
@@ -585,9 +618,11 @@ export async function action({ request }: ActionFunctionArgs) {
         action: "error",
         itemId,
         readableId,
-        message: `Item saved but the model export could not be queued; push again (${
-          error instanceof Error ? error.message : "event send failed"
-        })`
+        message: rolledBack.error
+          ? `Item saved but the model export could not be queued, and the Onshape link could not be rolled back (${rolledBack.error.message}); detach this item before pushing again`
+          : `Item saved but the model export could not be queued; push again (${
+              error instanceof Error ? error.message : "event send failed"
+            })`
       });
       continue;
     }
@@ -605,7 +640,9 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  return data({ results }, { headers: { "Cache-Control": "no-store" } });
+  return data(warnings.length > 0 ? { results, warnings } : { results }, {
+    headers: { "Cache-Control": "no-store" }
+  });
 }
 
 /**
