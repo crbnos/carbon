@@ -123,6 +123,11 @@ msgstr "{0} संचालन · {totalQuantity} भाग"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} इस प्रक्रिया पर संचालन सूचीबद्ध नहीं हैं: {1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} ऑपरेशन · {1} टुकड़े"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -142,6 +147,10 @@ msgstr "{0} पंजीकृत"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} स्क्रैप किया गया"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} सुझाए गए बैच"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1 पार्ट छोड़ दिया गया — निर्�
 
 msgid "1 problem — not published"
 msgstr "1 समस्या — प्रकाशित नहीं"
+
+msgid "1 suggested batch"
+msgstr "1 सुझाया गया बैच"
 
 msgid "1 unposted document"
 msgstr "1 अपोस्ट किया गया दस्तावेज़"
@@ -5791,6 +5803,10 @@ msgstr "देय"
 msgid "Due (by due date)"
 msgstr "देय (देय तारीख तक)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "देय {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -5824,6 +5840,15 @@ msgstr "देय दिन"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod} के बाद देय दिन"
+
+msgid "due in {days} days"
+msgstr "{days} दिन में देय"
+
+msgid "due in 1 day"
+msgstr "1 दिन में देय"
+
+msgid "due now"
+msgstr "अभी देय"
 
 msgid "Due within"
 msgstr "के भीतर देय"
@@ -7290,6 +7315,9 @@ msgstr "इस कंपनी को एक यथार्थवादी उ�
 
 msgid "Filled with a default"
 msgstr "डिफ़ॉल्ट के साथ भरा गया"
+
+msgid "fills a run"
+msgstr "एक रन को भरता है"
 
 msgid "Filter"
 msgstr "फ़िल्टर करें"
@@ -13977,7 +14005,6 @@ msgstr "शनिवार"
 msgid "Save"
 msgstr "सहेजें"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "सहेजें {0}"
@@ -15475,9 +15502,6 @@ msgstr "एआई के साथ मैपिंग सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
-
-msgid "Suggested"
-msgstr "सुझाए गए"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"
@@ -17586,6 +17610,10 @@ msgstr "अप्रयुक्त सामग्री को वर्क �
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "{0} तक की बचत"
 
 msgid "Update"
 msgstr "अपडेट करें"

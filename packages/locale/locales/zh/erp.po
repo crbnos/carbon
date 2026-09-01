@@ -123,6 +123,11 @@ msgstr "{0} 工序 · {totalQuantity} 零件"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} 个此工序的操作未列出：{1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} 道工序 · {1} 件"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -142,6 +147,10 @@ msgstr "{0}已登记"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 报废"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} 个建议生产批次"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1 个零件已跳过 — 没有需要生产的"
 
 msgid "1 problem — not published"
 msgstr "1个问题——未发布"
+
+msgid "1 suggested batch"
+msgstr "1 个建议生产批次"
 
 msgid "1 unposted document"
 msgstr "1个未过账的文件"
@@ -5791,6 +5803,10 @@ msgstr "到期"
 msgid "Due (by due date)"
 msgstr "截止期限（按截止日期）"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "截止 {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "截止日期 {0}"
@@ -5824,6 +5840,15 @@ msgstr "到期天数"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "到期天数（{selectedCalculationMethod}之后）"
+
+msgid "due in {days} days"
+msgstr "在 {days} 天内到期"
+
+msgid "due in 1 day"
+msgstr "明天到期"
+
+msgid "due now"
+msgstr "立即到期"
 
 msgid "Due within"
 msgstr "应收期限"
@@ -7290,6 +7315,9 @@ msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。
 
 msgid "Filled with a default"
 msgstr "填充默认值"
+
+msgid "fills a run"
+msgstr "可组成一个生产批次"
 
 msgid "Filter"
 msgstr "筛选"
@@ -13977,7 +14005,6 @@ msgstr "星期六"
 msgid "Save"
 msgstr "保存"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "保存 {0}"
@@ -15475,9 +15502,6 @@ msgstr "使用 AI 建议映射"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
-
-msgid "Suggested"
-msgstr "建议的"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -17586,6 +17610,10 @@ msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
 
 msgid "UoM"
 msgstr "计量单位"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "最多可节省 {0}"
 
 msgid "Update"
 msgstr "更新"

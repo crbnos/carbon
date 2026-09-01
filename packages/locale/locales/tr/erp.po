@@ -123,6 +123,11 @@ msgstr "{0} operasyon · {totalQuantity} parça"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} bu süreçteki operasyonlar listelenmemiştir: {1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} işlem · {1} adet"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -142,6 +147,10 @@ msgstr "{0} kaydedildi"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} hurdaya alındı"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} önerilen parti"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1 parça atlandı — yapılacak bir şey yok"
 
 msgid "1 problem — not published"
 msgstr "1 sorun — yayınlanmadı"
+
+msgid "1 suggested batch"
+msgstr "1 önerilen parti"
 
 msgid "1 unposted document"
 msgstr "1 deftere geçmemiş belge"
@@ -5791,6 +5803,10 @@ msgstr "Vade"
 msgid "Due (by due date)"
 msgstr "Vadesi (vade tarihine göre)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "teslim {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vadesi {0}"
@@ -5824,6 +5840,15 @@ msgstr "Vade Günleri"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Sonraki Gün Sayısı {selectedCalculationMethod} sonrası"
+
+msgid "due in {days} days"
+msgstr "{days} gün içinde teslim"
+
+msgid "due in 1 day"
+msgstr "1 gün içinde teslim"
+
+msgid "due now"
+msgstr "hemen teslim"
 
 msgid "Due within"
 msgstr "Süresi içinde"
@@ -7290,6 +7315,9 @@ msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her 
 
 msgid "Filled with a default"
 msgstr "Varsayılan değerle dolduruldu"
+
+msgid "fills a run"
+msgstr "bir seriyi doldurur"
 
 msgid "Filter"
 msgstr "Filtre"
@@ -13977,7 +14005,6 @@ msgstr "Cumartesi"
 msgid "Save"
 msgstr "Kaydet"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "{0} kaydet"
@@ -15475,9 +15502,6 @@ msgstr "Yapay Zeka ile Eşlemeleri Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
-
-msgid "Suggested"
-msgstr "Önerilen"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."
@@ -17586,6 +17610,10 @@ msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme.
 
 msgid "UoM"
 msgstr "Birim"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "en fazla {0} tasarruf"
 
 msgid "Update"
 msgstr "Güncelle"

@@ -60,6 +60,7 @@ import {
   LuPackageSearch,
   LuPlus,
   LuSearch,
+  LuSparkles,
   LuTimer,
   LuTriangleAlert,
   LuX
@@ -245,7 +246,10 @@ function materialChips(candidate: BatchCandidate): string[] {
 
 // A candidate's material signature: the sorted set of its BOM lines'
 // signatures (see lineSignature). Two candidates with the same signature are
-// nesting-compatible and can be grouped/suggested as a batch.
+// nesting-compatible and can be grouped/suggested as a batch. When an operation
+// consumes no BOM materials (assembly of made sub-parts), fall back to the
+// produced item — the same-part ops still group and get suggested, mirroring
+// lineSignature's own per-line item fallback.
 function candidateSignature(
   candidate: BatchCandidate,
   rules: Required<BatchRules> = DEFAULT_RESOLVED_RULES
@@ -255,6 +259,7 @@ function candidateSignature(
     const s = lineSignature(m, rules);
     if (s) sigs.add(s);
   }
+  if (sigs.size === 0) return candidate.itemReadableId ?? "";
   return [...sigs].sort().join(" + ");
 }
 
@@ -299,6 +304,115 @@ function batchEstimateMs(members: BatchCandidate[]): number {
 
 function dueDateOf(candidate: BatchCandidate): string | null {
   return candidate.dueDate ?? candidate.jobDueDate;
+}
+
+// A ranked suggested batch: a nesting-compatible group plus the signals that
+// place it. `score` blends setup saved, due urgency, capacity fit, and how
+// specifically the group's materials match; `reason` names the dominant driver
+// for the banner copy.
+type Suggestion = {
+  sig: string;
+  members: BatchCandidate[];
+  saving: number;
+  totalQuantity: number;
+  earliestDue: string | null;
+  fillRatio: number | null;
+  score: number;
+  reason: "urgent" | "fills" | "setup" | "group";
+};
+
+// Score every ≥2-member group and return the best few. Two-pass: gather raw
+// signals, then normalise across the set so one big group can't crowd out a
+// small-but-urgent one. `todayOrdinal` is CalendarDate.compare's reference (a
+// day count), `repCapacity` the representative run size for the scoped process.
+function rankSuggestions(
+  groups: Map<string, BatchCandidate[]>,
+  rules: Required<BatchRules>,
+  repCapacity: number | null,
+  daysUntil: (due: string) => number
+): Suggestion[] {
+  const raw = [...groups.entries()]
+    .filter(([, g]) => g.length >= 2)
+    // A shared signature already pins the must dimensions, but a group where
+    // some members simply lack a must value could still be unsafe — never
+    // suggest a group that would fail the server's own check.
+    .filter(
+      ([, g]) => mustViolations(rules, g.map(candidateValueSets)).length === 0
+    )
+    .map(([sig, g]) => {
+      const saving = groupSetupSaving(g);
+      const totalQuantity = g.reduce(
+        (s, c) => s + (c.operationQuantity ?? 0),
+        0
+      );
+      const dues = g
+        .map(dueDateOf)
+        .filter((d): d is string => Boolean(d))
+        .sort();
+      const earliestDue = dues[0] ?? null;
+      const daysToDue = earliestDue
+        ? Math.max(0, daysUntil(earliestDue))
+        : null;
+      const fillRatio =
+        repCapacity && repCapacity > 0 ? totalQuantity / repCapacity : null;
+      // Rough tightness proxy: how many dimension tokens the group shares.
+      const specificity = sig.split(/ [·+] /).filter(Boolean).length;
+      return {
+        sig,
+        members: g,
+        saving,
+        totalQuantity,
+        earliestDue,
+        daysToDue,
+        fillRatio,
+        specificity
+      };
+    });
+
+  if (raw.length === 0) return [];
+
+  const maxSaving = Math.max(1, ...raw.map((r) => r.saving));
+  const maxSpec = Math.max(1, ...raw.map((r) => r.specificity));
+
+  return raw
+    .map((r): Suggestion => {
+      const setupScore = r.saving / maxSaving;
+      const urgencyScore = r.daysToDue == null ? 0 : 1 / (1 + r.daysToDue / 7);
+      const fitScore =
+        r.fillRatio == null
+          ? 0.4 // neutral — no capacity model to judge against
+          : r.fillRatio <= 1
+            ? r.fillRatio // fuller is better, up to a full run
+            : Math.max(0, 1 - (r.fillRatio - 1)); // over-capacity falls off
+      const specScore = r.specificity / maxSpec;
+      const score =
+        0.4 * setupScore +
+        0.35 * urgencyScore +
+        0.15 * fitScore +
+        0.1 * specScore;
+
+      const reason: Suggestion["reason"] =
+        urgencyScore >= 0.5
+          ? "urgent"
+          : r.fillRatio != null && r.fillRatio >= 0.85 && r.fillRatio <= 1.15
+            ? "fills"
+            : r.saving > 0
+              ? "setup"
+              : "group";
+
+      return {
+        sig: r.sig,
+        members: r.members,
+        saving: r.saving,
+        totalQuantity: r.totalQuantity,
+        earliestDue: r.earliestDue,
+        fillRatio: r.fillRatio,
+        score,
+        reason
+      };
+    })
+    .sort((a, b) => b.score - a.score || b.members.length - a.members.length)
+    .slice(0, 6);
 }
 
 // Numbered wizard step marker (StockTransferWizard precedent).
@@ -742,11 +856,29 @@ export function BatchBuilder({
 
   const visible = useMemo(() => filtered.slice(0, MAX_VISIBLE), [filtered]);
 
-  // Suggested batches: groups of ≥2 unselected candidates sharing a material
-  // signature, ranked by the setup time batching them would save. One click
-  // merges the group into the selection. (Table view only — the grouped view's
-  // sections carry the same information.)
+  // A representative run size for the scoped process: the largest batchCapacity
+  // among the work centers that can run it here. Lets suggestions favour groups
+  // that fill a run without blowing past it.
+  const repCapacity = useMemo(() => {
+    const eligible = workCenters.filter(
+      (wc) =>
+        (!wc.locationId || wc.locationId === locationId) &&
+        (!processId || wc.processes.includes(processId))
+    );
+    const caps = eligible
+      .map((wc) => wc.batchCapacity)
+      .filter((c): c is number => c != null && c > 0);
+    return caps.length ? Math.max(...caps) : null;
+  }, [workCenters, locationId, processId]);
+
+  // Suggested batches: groups of ≥2 unselected, co-selectable candidates sharing
+  // a material signature, SCORED by setup saved + due urgency + capacity fit +
+  // match tightness (see rankSuggestions). One click merges a group into the
+  // selection. (Table view only — the grouped view's sections carry the same
+  // information.)
   const suggestions = useMemo(() => {
+    const now = today(getLocalTimeZone());
+    const daysUntil = (due: string) => parseDate(due).compare(now);
     const groups = new Map<string, BatchCandidate[]>();
     for (const c of candidates) {
       if (selectedById.has(c.id)) continue;
@@ -757,18 +889,8 @@ export function BatchBuilder({
       g.push(c);
       groups.set(sig, g);
     }
-    return [...groups.entries()]
-      .filter(([, g]) => g.length >= 2)
-      .map(([sig, g]) => ({
-        sig,
-        members: g,
-        saving: groupSetupSaving(g)
-      }))
-      .sort(
-        (a, b) => b.saving - a.saving || b.members.length - a.members.length
-      )
-      .slice(0, 6);
-  }, [candidates, selectedById, lockedById, rules]);
+    return rankSuggestions(groups, rules, repCapacity, daysUntil);
+  }, [candidates, selectedById, lockedById, rules, repCapacity]);
 
   const toggle = useCallback(
     (candidate: BatchCandidate) => {
@@ -1362,6 +1484,110 @@ function FacetChip({
   );
 }
 
+// Prominent, scored entry point at the top of the operations list: "N suggested
+// batches", each a one-click apply with the reason it's worth doing (soonest due,
+// fills a run, setup saved). Ranked by rankSuggestions; must-incompatible groups
+// never appear.
+function SuggestionsBanner({
+  suggestions,
+  onApply
+}: {
+  suggestions: Suggestion[];
+  onApply: (members: BatchCandidate[]) => void;
+}) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const now = today(getLocalTimeZone());
+  const topSaving = Math.max(0, ...suggestions.map((s) => s.saving));
+
+  const reasonChip = (s: Suggestion) => {
+    if (s.reason === "urgent" && s.earliestDue) {
+      const days = parseDate(s.earliestDue).compare(now);
+      const label =
+        days <= 0
+          ? t`due now`
+          : days === 1
+            ? t`due in 1 day`
+            : t`due in ${days} days`;
+      return (
+        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[11px] tabular-nums text-amber-600 dark:text-amber-400">
+          <LuCalendarClock className="size-3" />
+          {label}
+        </span>
+      );
+    }
+    if (s.reason === "fills" && s.fillRatio != null) {
+      return (
+        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[11px] text-sky-600 dark:text-sky-400">
+          <LuLayers className="size-3" />
+          {t`fills a run`}
+        </span>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-border bg-gradient-to-b from-emerald-500/[0.07] to-transparent shadow-sm">
+      <div className="flex items-center gap-2 px-3.5 py-2.5">
+        <span className="flex size-6 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+          <LuSparkles className="size-3.5" />
+        </span>
+        <span className="text-sm font-medium">
+          {suggestions.length === 1
+            ? t`1 suggested batch`
+            : t`${suggestions.length} suggested batches`}
+        </span>
+        {topSaving > 0 && (
+          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+            {t`up to ${formatDurationMilliseconds(topSaving, {
+              style: "short"
+            })} saved`}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col">
+        {suggestions.map((s) => (
+          <button
+            key={s.sig}
+            type="button"
+            onClick={() => onApply(s.members)}
+            className="group flex w-full items-center gap-3 border-t border-border/60 px-3.5 py-2.5 text-left transition-colors hover:bg-emerald-500/[0.06] active:bg-emerald-500/10"
+          >
+            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[13px] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
+              {s.members.length}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-sm font-medium" title={s.sig}>
+                  {s.sig}
+                </span>
+                {reasonChip(s)}
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {t`${s.members.length} ops · ${s.totalQuantity} pcs`}
+                {s.earliestDue
+                  ? ` · ${t`due ${formatDate(s.earliestDue, undefined, locale)}`}`
+                  : ""}
+              </span>
+            </div>
+            {s.saving > 0 && (
+              <span className="hidden flex-shrink-0 items-center gap-1 text-xs tabular-nums text-emerald-600 sm:flex dark:text-emerald-400">
+                <LuTimer className="size-3" />
+                {formatDurationMilliseconds(s.saving, { style: "short" })}
+              </span>
+            )}
+            <span className="flex flex-shrink-0 items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors group-hover:border-emerald-500/40 group-hover:bg-emerald-500/10 group-hover:text-emerald-700 dark:group-hover:text-emerald-300">
+              <LuPlus className="size-3" />
+              {t`Add`}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ComposePanel({
   view,
   onViewChange,
@@ -1397,7 +1623,7 @@ function ComposePanel({
   onFacetChange: (key: string, values: string[]) => void;
   dueWindow: number | null;
   onDueWindowChange: (days: number | null) => void;
-  suggestions: { sig: string; members: BatchCandidate[]; saving: number }[];
+  suggestions: Suggestion[];
   onApplySuggestion: (members: BatchCandidate[]) => void;
   visible: BatchCandidate[];
   totalFiltered: number;
@@ -1509,32 +1735,10 @@ function ComposePanel({
           )}
         </HStack>
         {view === "table" && suggestions.length > 0 && (
-          <HStack spacing={2} className="flex-wrap items-center">
-            <span className="text-xs text-muted-foreground">
-              <Trans>Suggested</Trans>
-            </span>
-            {suggestions.map((s) => (
-              <Button
-                key={s.sig}
-                size="sm"
-                variant="secondary"
-                leftIcon={<LuLayers className="size-3" />}
-                onClick={() => onApplySuggestion(s.members)}
-                title={s.sig}
-              >
-                <span className="tabular-nums">{s.members.length}</span>
-                <span className="mx-1">·</span>
-                <span className="max-w-[160px] truncate">{s.sig}</span>
-                {s.saving > 0 && (
-                  <span className="ml-1.5 text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
-                    {t`save ${formatDurationMilliseconds(s.saving, {
-                      style: "short"
-                    })}`}
-                  </span>
-                )}
-              </Button>
-            ))}
-          </HStack>
+          <SuggestionsBanner
+            suggestions={suggestions}
+            onApply={onApplySuggestion}
+          />
         )}
       </VStack>
 

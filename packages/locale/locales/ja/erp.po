@@ -123,6 +123,11 @@ msgstr "{0}件の作業 · {totalQuantity}部品"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "このプロセスの{0}の操作はリストされていません: {1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} 作業 · {1} 個"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -142,6 +147,10 @@ msgstr "{0}登録済み"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0}廃棄"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "推奨バッチ {0} 個"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1個の部品はスキップ済 — 製造する必要がありません
 
 msgid "1 problem — not published"
 msgstr "1個の問題 — 公開済ではありません"
+
+msgid "1 suggested batch"
+msgstr "推奨バッチ 1 個"
 
 msgid "1 unposted document"
 msgstr "1 件の未転記文書"
@@ -5791,6 +5803,10 @@ msgstr "期限"
 msgid "Due (by due date)"
 msgstr "期限（期限日による）"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "納期 {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
@@ -5824,6 +5840,15 @@ msgstr "期日"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod}後の支払期日"
+
+msgid "due in {days} days"
+msgstr "{days} 日後が納期"
+
+msgid "due in 1 day"
+msgstr "1 日後が納期"
+
+msgid "due now"
+msgstr "本日が納期"
 
 msgid "Due within"
 msgstr "期限内"
@@ -7290,6 +7315,9 @@ msgstr "この会社に現実的な業界ストーリーを入れて、すべて
 
 msgid "Filled with a default"
 msgstr "デフォルト値で埋められました"
+
+msgid "fills a run"
+msgstr "1 ラン分を満たす"
 
 msgid "Filter"
 msgstr "絞り込み"
@@ -13977,7 +14005,6 @@ msgstr "土曜日"
 msgid "Save"
 msgstr "保存"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "{0}を保存"
@@ -15475,9 +15502,6 @@ msgstr "AIでマッピングを提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"
-
-msgid "Suggested"
-msgstr "提案"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
@@ -17586,6 +17610,10 @@ msgstr "未使用のピッキング済み材料が作業区から倉庫に戻さ
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "最大 {0} 削減"
 
 msgid "Update"
 msgstr "更新"

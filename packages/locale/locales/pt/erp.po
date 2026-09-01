@@ -123,6 +123,11 @@ msgstr "{0} operações · {totalQuantity} peças"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} operações neste processo não estão listadas: {1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} ops · {1} peças"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"
@@ -142,6 +147,10 @@ msgstr "{0} registado"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} descartado"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} lotes sugeridos"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1 peça ignorada — nada para fabricar"
 
 msgid "1 problem — not published"
 msgstr "1 problema — não publicado"
+
+msgid "1 suggested batch"
+msgstr "1 lote sugerido"
 
 msgid "1 unposted document"
 msgstr "1 documento não lançado"
@@ -5791,6 +5803,10 @@ msgstr "Vencimento"
 msgid "Due (by due date)"
 msgstr "Vencido (por data de vencimento)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "vencimento {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vencimento {0}"
@@ -5824,6 +5840,15 @@ msgstr "Dias de Vencimento"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Dias de Vencimento após {selectedCalculationMethod}"
+
+msgid "due in {days} days"
+msgstr "vencimento em {days} dias"
+
+msgid "due in 1 day"
+msgstr "vencimento em 1 dia"
+
+msgid "due now"
+msgstr "vencimento agora"
 
 msgid "Due within"
 msgstr "Vencimento em"
@@ -7290,6 +7315,9 @@ msgstr "Preencha esta empresa com uma história de indústria realista para que 
 
 msgid "Filled with a default"
 msgstr "Preenchido com um padrão"
+
+msgid "fills a run"
+msgstr "completa uma execução"
 
 msgid "Filter"
 msgstr "Filtro"
@@ -13977,7 +14005,6 @@ msgstr "Sábado"
 msgid "Save"
 msgstr "Salvar"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "economiza {0}"
@@ -15475,9 +15502,6 @@ msgstr "Sugerir mapeamentos com IA"
 
 msgid "Suggest with AI"
 msgstr "Sugerir com IA"
-
-msgid "Suggested"
-msgstr "Sugerido"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Pedidos sugeridos que você ainda não realizou."
@@ -17586,6 +17610,10 @@ msgstr "Material coletado não utilizado devolvido do centro de trabalho para o 
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "economia até {0}"
 
 msgid "Update"
 msgstr "Atualizar"

@@ -163,6 +163,7 @@ const ProcessForm = ({
                   name="batchable"
                   label={t`Batchable`}
                   description={t`Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath`}
+                  bordered
                 />
                 <BatchCompatibilityRules />
                 <CustomFormFields table="process" />
@@ -253,7 +254,7 @@ function BatchCompatibilityRules() {
       {rules.map((rule) => (
         <div
           key={rule.name}
-          className="grid grid-cols-[1fr_9rem] items-center gap-4"
+          className="grid grid-cols-[1fr_10rem] items-center gap-4"
         >
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="text-sm">{rule.label}</span>

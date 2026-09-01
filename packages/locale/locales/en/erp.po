@@ -123,6 +123,11 @@ msgstr "{0} operations · {totalQuantity} parts"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} operations on this process are not listed: {1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} ops · {1} pcs"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -142,6 +147,10 @@ msgstr "{0} registered"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} scrapped"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} suggested batches"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1 part skipped — nothing to make"
 
 msgid "1 problem — not published"
 msgstr "1 problem — not published"
+
+msgid "1 suggested batch"
+msgstr "1 suggested batch"
 
 msgid "1 unposted document"
 msgstr "1 unposted document"
@@ -5791,6 +5803,10 @@ msgstr "Due"
 msgid "Due (by due date)"
 msgstr "Due (by due date)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "due {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -5824,6 +5840,15 @@ msgstr "Due Days"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Due Days after {selectedCalculationMethod}"
+
+msgid "due in {days} days"
+msgstr "due in {days} days"
+
+msgid "due in 1 day"
+msgstr "due in 1 day"
+
+msgid "due now"
+msgstr "due now"
 
 msgid "Due within"
 msgstr "Due within"
@@ -7290,6 +7315,9 @@ msgstr "Fill this company with a realistic industry story so every screen has so
 
 msgid "Filled with a default"
 msgstr "Filled with a default"
+
+msgid "fills a run"
+msgstr "fills a run"
 
 msgid "Filter"
 msgstr "Filter"
@@ -13977,7 +14005,6 @@ msgstr "Saturday"
 msgid "Save"
 msgstr "Save"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "save {0}"
@@ -15475,9 +15502,6 @@ msgstr "Suggest mappings with AI"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"
-
-msgid "Suggested"
-msgstr "Suggested"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."
@@ -17586,6 +17610,10 @@ msgstr "Unused picked material flushed back from the work center to the warehous
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "up to {0} saved"
 
 msgid "Update"
 msgstr "Update"

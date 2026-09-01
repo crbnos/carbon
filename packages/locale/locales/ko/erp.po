@@ -123,6 +123,11 @@ msgstr "{0}개 작업 · {totalQuantity}개 부품"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "이 프로세스에 나열되지 않은 {0}개 작업: {1}"
 
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} 작업 · {1} 개"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -142,6 +147,10 @@ msgstr "{0} 등록됨"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 폐기됨"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "제안된 배치 {0}개"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -377,6 +386,9 @@ msgstr "1개 부품이 건너뜀 — 만들 것이 없음"
 
 msgid "1 problem — not published"
 msgstr "1개의 문제 — 게시되지 않음"
+
+msgid "1 suggested batch"
+msgstr "제안된 배치 1개"
 
 msgid "1 unposted document"
 msgstr "1건의 미전기 문서"
@@ -5791,6 +5803,10 @@ msgstr "기한"
 msgid "Due (by due date)"
 msgstr "기한 (기한일 기준)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "{0} 예정"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -5824,6 +5840,15 @@ msgstr "기한 일수"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod} 이후 기한 일수"
+
+msgid "due in {days} days"
+msgstr "{days}일 후 예정"
+
+msgid "due in 1 day"
+msgstr "1일 후 예정"
+
+msgid "due now"
+msgstr "즉시"
 
 msgid "Due within"
 msgstr "다음 기간 이내"
@@ -7290,6 +7315,9 @@ msgstr "이 회사를 현실적인 산업 시나리오로 채워서 모든 화�
 
 msgid "Filled with a default"
 msgstr "기본값으로 채워짐"
+
+msgid "fills a run"
+msgstr "실행을 채움"
 
 msgid "Filter"
 msgstr "필터"
@@ -13977,7 +14005,6 @@ msgstr "토요일"
 msgid "Save"
 msgstr "저장"
 
-#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
 msgid "save {0}"
 msgstr "{0} 저장"
@@ -15475,9 +15502,6 @@ msgstr "AI로 매핑 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"
-
-msgid "Suggested"
-msgstr "제안됨"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."
@@ -17586,6 +17610,10 @@ msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "최대 {0} 절감"
 
 msgid "Update"
 msgstr "업데이트"
