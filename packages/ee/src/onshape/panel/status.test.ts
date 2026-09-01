@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildPartStatuses, externalIdForPart } from "./status";
+import {
+  buildAssemblyLineStatuses,
+  buildPartStatuses,
+  externalIdForAssembly,
+  externalIdForBomLine,
+  externalIdForPart
+} from "./status";
 
 const item = (id: string, readableId: string) => ({
   id,
@@ -94,5 +100,128 @@ describe("buildPartStatuses", () => {
 
     expect(statuses).toHaveLength(1);
     expect(statuses[0]?.state).toBe("missing");
+  });
+});
+
+const line = (
+  index: string,
+  partNumber: string | null,
+  itemSource: {
+    documentId?: string;
+    elementId?: string;
+    partId?: string;
+  } | null
+) => ({
+  index,
+  level: 1,
+  partNumber,
+  name: partNumber,
+  quantity: 1,
+  purchased: false,
+  itemSource
+});
+
+describe("buildAssemblyLineStatuses", () => {
+  it("links a line through its source part studio, not the assembly element", () => {
+    // The assembly being viewed is "asm-el"; the part lives in "ps-el".
+    const statuses = buildAssemblyLineStatuses({
+      lines: [
+        line("1", "WB-101", {
+          documentId: "d1",
+          elementId: "ps-el",
+          partId: "p1"
+        })
+      ],
+      mappings: [
+        {
+          entityId: "item-1",
+          externalId: externalIdForPart("d1", "ps-el", "p1"),
+          lastSyncedAt: "2026-08-28T00:00:00Z"
+        }
+      ],
+      items: [item("item-1", "WB-101")]
+    });
+
+    expect(statuses[0]?.state).toBe("linked");
+    expect(statuses[0]?.itemId).toBe("item-1");
+    expect(statuses[0]?.lastSyncedAt).toBe("2026-08-28T00:00:00Z");
+  });
+
+  it("links across documents when the part was inserted from another one", () => {
+    const statuses = buildAssemblyLineStatuses({
+      lines: [
+        line("1", "HDW-010", {
+          documentId: "d2",
+          elementId: "ps-el",
+          partId: "JHD"
+        })
+      ],
+      mappings: [
+        {
+          entityId: "item-1",
+          externalId: externalIdForPart("d2", "ps-el", "JHD"),
+          lastSyncedAt: null
+        }
+      ],
+      items: [item("item-1", "HDW-010")]
+    });
+
+    expect(statuses[0]?.state).toBe("linked");
+  });
+
+  it("falls back to the part-number match when the row names no source", () => {
+    const statuses = buildAssemblyLineStatuses({
+      lines: [line("1", "WB-101", null), line("2", "WB-999", null)],
+      mappings: [],
+      items: [item("item-1", "WB-101")]
+    });
+
+    expect(statuses.map((s) => s.state)).toEqual(["matched", "missing"]);
+    expect(statuses[0]?.itemId).toBe("item-1");
+  });
+
+  it("does not link through a mapping whose item is gone", () => {
+    const statuses = buildAssemblyLineStatuses({
+      lines: [
+        line("1", "WB-101", {
+          documentId: "d1",
+          elementId: "ps-el",
+          partId: "p1"
+        })
+      ],
+      mappings: [
+        {
+          entityId: "deleted-item",
+          externalId: externalIdForPart("d1", "ps-el", "p1"),
+          lastSyncedAt: "2026-08-28T00:00:00Z"
+        }
+      ],
+      items: [item("item-1", "WB-101")]
+    });
+
+    expect(statuses[0]?.state).toBe("matched");
+    expect(statuses[0]?.itemId).toBe("item-1");
+  });
+
+  it("ignores a partial itemSource", () => {
+    expect(externalIdForBomLine({ documentId: "d1" })).toBeNull();
+    expect(externalIdForBomLine(null)).toBeNull();
+    expect(
+      externalIdForBomLine({
+        documentId: "d1",
+        elementId: "e1",
+        partId: "p1"
+      })
+    ).toBe(externalIdForPart("d1", "e1", "p1"));
+  });
+});
+
+describe("externalIdForBomLine", () => {
+  it("keys a sub-assembly row the way that assembly's own push keys it", () => {
+    // No partId: the row is a sub-assembly, so one mapping serves both the
+    // parent's BOM line and the sub-assembly's own panel.
+    expect(
+      externalIdForBomLine({ documentId: "d1", elementId: "sub-el" })
+    ).toBe(externalIdForAssembly("d1", "sub-el"));
   });
 });
