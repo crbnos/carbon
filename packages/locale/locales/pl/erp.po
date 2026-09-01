@@ -50,11 +50,11 @@ msgstr "(wykluczone dla tego klienta)"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
-msgstr ""
+msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego nie można utworzyć kopii bezpieczeństwa bieżących danych.} other {# wierszy łączy się z danymi spoza tej firmy, dlatego nie można utworzyć kopii bezpieczeństwa bieżących danych.}}"
 
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
-msgstr ""
+msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego nie można go zabezpieczyć. Pominięcie go pozwala na zabezpieczenie wszystkiego innego.} other {# wierszy łączy się z danymi spoza tej firmy, dlatego nie można ich zabezpieczyć. Pominięcie ich pozwala na zabezpieczenie wszystkiego innego.}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -124,7 +124,7 @@ msgstr "{0} zarejestrowane"
 
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
-msgstr ""
+msgstr "{0} wierszy"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -208,7 +208,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} z {total} faz ukończonych"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
-msgstr ""
+msgstr "{excluded, plural, one {# wiersz wyłączony} other {# wierszy wyłączonych}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} z {count}"
@@ -243,7 +243,7 @@ msgid "{name} deleted"
 msgstr "{name} usunięty"
 
 msgid "{name} returns!"
-msgstr ""
+msgstr "{name} wraca!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} części pominięto — nic do zrobienia"
@@ -253,7 +253,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} zostanie ponownie otwarty do edycji jako rewizja {0}. Dokument już wysłany do dostawcy pozostaje niezmieniony, aż go sfinalizujesz i ponownie wyślesz zamówienie."
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
-msgstr ""
+msgstr "{purgeRowCount, plural, one {Trwale usuń # wiersz?} other {Trwale usuń # wierszy?}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
@@ -277,7 +277,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# niepoliczony wiersz} other {# niepoliczone wiersze}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr ""
+msgstr "{unschedulableCount} nie można dodać do harmonogramu"
 
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} zleceń produkcyjnych zaktualizowanych"
@@ -319,7 +319,7 @@ msgid "0-4 weeks"
 msgstr "0-4 tygodnie"
 
 msgid "1 can't be scheduled"
-msgstr ""
+msgstr "1 nie można dodać do harmonogramu"
 
 msgid "1 conflict"
 msgstr "1 konflikt"
@@ -1391,7 +1391,7 @@ msgid "After (calculation method)"
 msgstr "Po (metoda obliczenia)"
 
 msgid "Afternoon, {name}."
-msgstr ""
+msgstr "Popołudnie, {name}."
 
 msgid "Aging"
 msgstr "Wiekowanie"
@@ -2559,7 +2559,7 @@ msgid "Backflush"
 msgstr "Pobranie wsteczne"
 
 msgid "Backup failed"
-msgstr ""
+msgstr "Kopia bezpieczeństwa nie powiodła się"
 
 msgid "Backups"
 msgstr "Kopie zapasowe"
@@ -2921,7 +2921,7 @@ msgid "Can't be restored"
 msgstr "Nie można przywrócić"
 
 msgid "Can't be scheduled"
-msgstr ""
+msgstr "Nie można dodać do harmonogramu"
 
 msgid "Can't delete this period"
 msgstr "Nie można usunąć tego okresu"
@@ -3824,10 +3824,10 @@ msgid "Copied link to clipboard"
 msgstr "Skopiowano link do schowka"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr ""
+msgstr "Skopiowano instrukcję przezbrojenia do schowka"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr ""
+msgstr "Kopiuje instrukcję przezbrojenia dla twojego narzędzia kodowania AI"
 
 msgid "Copy"
 msgstr "Kopiuj"
@@ -4735,7 +4735,7 @@ msgid "Dates"
 msgstr "Daty"
 
 msgid "Dawn's breaking, {name}."
-msgstr ""
+msgstr "Świt się zbliża, {name}."
 
 msgid "Day"
 msgstr "Dzień"
@@ -4843,7 +4843,7 @@ msgid "Declining balance"
 msgstr "Metoda degresywna"
 
 msgid "Deep in the small hours, {name}."
-msgstr ""
+msgstr "Głęboka noc, {name}."
 
 msgid "Default"
 msgstr "Domyślnie"
@@ -4997,7 +4997,7 @@ msgid "Delete Action"
 msgstr "Usuń akcję"
 
 msgid "Delete and restore"
-msgstr ""
+msgstr "Usuń i przywróć"
 
 msgid "Delete API Key"
 msgstr "Usuń klucz API"
@@ -5349,7 +5349,7 @@ msgid "Departments"
 msgstr "Działy"
 
 msgid "depends on an excluded row"
-msgstr ""
+msgstr "zależy od wyłączonego wiersza"
 
 msgid "Depreciation"
 msgstr "Amortyzacja"
@@ -5578,7 +5578,7 @@ msgid "Don't Cancel"
 msgstr "Nie anuluj"
 
 msgid "Don't show this again"
-msgstr ""
+msgstr "Nie pokazuj tego ponownie"
 
 msgid "done"
 msgstr "gotowe"
@@ -5787,10 +5787,10 @@ msgid "Each cell is the people assigned against the people the day's work needs.
 msgstr "W każdej komórce znajdują się przydzieleni pracownicy w stosunku do pracowników potrzebnych do pracy tego dnia."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
-msgstr ""
+msgstr "Każdy wiersz to łącze z danych tej firmy do wiersza, którego nie jest właścicielem. Kopia bezpieczeństwa z tymi wierszami nigdy nie mogłaby być przywrócona."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
-msgstr ""
+msgstr "Każdy wiersz to łącze z danych tej firmy do wiersza, którego nie jest właścicielem. Usunięcie tych wierszy umożliwia uruchomienie przywracania."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Niewykorzystany materiał z każdej operacji powraca natychmiast po zakończeniu operacji."
@@ -6482,7 +6482,7 @@ msgid "Estimator"
 msgstr "Estymator"
 
 msgid "Evening, {name}."
-msgstr ""
+msgstr "Wieczór, {name}."
 
 msgid "Event"
 msgstr "Zdarzenie"
@@ -6696,7 +6696,7 @@ msgid "Expiry trace"
 msgstr "Śledzenie ważności"
 
 msgid "Explorer"
-msgstr ""
+msgstr "Eksplorator"
 
 msgid "Export"
 msgstr "Eksportuj"
@@ -6975,7 +6975,7 @@ msgid "Failed to move account: {0}"
 msgstr "Nie udało się przenieść konta: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr ""
+msgstr "Nie udało się ponownie wygenerować harmonogramu"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "Nie udało się ponownie wygenerować miniatury"
@@ -7226,7 +7226,7 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Kończenie jest odrzucane, dopóki każda linia nie będzie pobrana lub oznaczona jako Krótka."
 
 msgid "First light, {name}."
-msgstr ""
+msgstr "Pierwsze światło, {name}."
 
 msgid "First name"
 msgstr "Imię"
@@ -7623,7 +7623,7 @@ msgid "Go to implementation hub"
 msgstr "Przejdź do centrum wdrażania"
 
 msgid "Go to that week"
-msgstr ""
+msgstr "Przejdź do tego tygodnia"
 
 msgid "Go-Live"
 msgstr "Uruchomienie"
@@ -7644,13 +7644,13 @@ msgid "Going live on Carbon"
 msgstr "Uruchomienie na platformie Carbon"
 
 msgid "Good afternoon, {name}."
-msgstr ""
+msgstr "Dzień dobry, {name}."
 
 msgid "Good evening, {name}."
-msgstr ""
+msgstr "Dobry wieczór, {name}."
 
 msgid "Good morning, {name}."
-msgstr ""
+msgstr "Dzień dobry, {name}."
 
 msgid "Google Places API key not configured"
 msgstr "Klucz API Google Places nie jest skonfigurowany"
@@ -7719,7 +7719,7 @@ msgid "Has conflict"
 msgstr "Ma konflikt"
 
 msgid "Has operations that can't be scheduled"
-msgstr ""
+msgstr "Ma operacje, które nie można dodać do harmonogramu"
 
 msgid "Headers"
 msgstr "Nagłówki"
@@ -7776,7 +7776,7 @@ msgid "Hop {depth}"
 msgstr "Przeskok {depth}"
 
 msgid "Hope things are treating you well, {name}."
-msgstr ""
+msgstr "Mam nadzieję, że się masz dobrze, {name}."
 
 msgid "Host"
 msgstr "Host"
@@ -8841,7 +8841,7 @@ msgid "Last used"
 msgstr "Ostatnio używany"
 
 msgid "Late in the evening, {name}."
-msgstr ""
+msgstr "Późny wieczór, {name}."
 
 msgid "Latest operation end"
 msgstr "Koniec ostatniej operacji"
@@ -8916,7 +8916,7 @@ msgid "Let's build something"
 msgstr "Zbudujmy coś"
 
 msgid "Let's make it a good one, {name}."
-msgstr ""
+msgstr "Niech to będzie dobry dzień, {name}."
 
 msgid "Let's set up your new company"
 msgstr "Skonfigurujmy Twoją nową firmę"
@@ -9000,7 +9000,7 @@ msgid "Link Linear Issue"
 msgstr "Połącz problem Linear"
 
 msgid "link outside company"
-msgstr ""
+msgstr "link poza firmę"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Połącz tego klienta Carbon z jednym z nich, lub utwórz osobnego klienta Stripe."
@@ -9642,7 +9642,7 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "Konwencja połowy miesiąca / połowy kwartału / połowy roku, która określa potrącenie w pierwszym roku."
 
 msgid "Midnight on the clock, {name}."
-msgstr ""
+msgstr "Północ na zegarze, {name}."
 
 msgid "Migrate data"
 msgstr "Migruj dane"
@@ -9774,7 +9774,7 @@ msgid "More overtime"
 msgstr "Więcej nadgodzin"
 
 msgid "Morning, {name}."
-msgstr ""
+msgstr "Rano, {name}."
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Większość rzeczy zostaje tutaj wychwycona i rozwiązana. Nazwij to jasno."
@@ -9857,7 +9857,7 @@ msgid "Navigate"
 msgstr "Nawiguj"
 
 msgid "Navigation"
-msgstr ""
+msgstr "Nawigacja"
 
 msgid "NCRs by Type"
 msgstr "NCRy wg typu"
@@ -10244,7 +10244,7 @@ msgid "Next:"
 msgstr "Dalej:"
 
 msgid "Nice and quiet at this hour."
-msgstr ""
+msgstr "Spokojnie w tej godzinie."
 
 msgid "No"
 msgstr "Nie"
@@ -10446,7 +10446,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Brak aktywności magazynowej tutaj."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr ""
+msgstr "Żadne zlecenia produkcyjne nie są zaplanowane w tej lokalizacji — zwolnij zlecenie produkcyjne, aby zobaczyć obciążenie centrum pracy."
 
 msgid "No jobs were created"
 msgstr "Nie utworzono zleceń produkcyjnych"
@@ -10614,7 +10614,7 @@ msgid "No rules assigned"
 msgstr "Brak przypisanych reguł"
 
 msgid "No scheduled work in this window"
-msgstr ""
+msgstr "Brak zaplanowanej pracy w tym oknie"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Brak skonfigurowanych zmian — założenie pon–pt, dni po 8 godz."
@@ -10943,7 +10943,7 @@ msgid "On-time delivery"
 msgstr "Dostawa na czas"
 
 msgid "Onboard your agent to Carbon"
-msgstr ""
+msgstr "Podłącz swojego agenta do Carbon"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Jedno wykonanie przepływu pracy, zarejestrowane krok po kroku z wartościami, które każdy krok użył i wygenerował, działając z uprawnieniami właściciela przepływu pracy."
@@ -11051,7 +11051,7 @@ msgid "Open menu"
 msgstr "Otwórz menu"
 
 msgid "Open navigation"
-msgstr ""
+msgstr "Otwórz nawigację"
 
 msgid "Open payables by supplier and age"
 msgstr "Otwarte zobowiązania wg dostawcy i wieku"
@@ -11748,7 +11748,7 @@ msgid "Plan"
 msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr ""
+msgstr "Zaplanuj z wyprzedzeniem, prognozując zapotrzebowanie na artykuł i lokalizację, a następnie wprowadź je bezpośrednio do MRP i harmonogramowania."
 
 msgid "Plan the work"
 msgstr "Zaplanuj pracę"
@@ -12161,7 +12161,7 @@ msgid "Projected completion"
 msgstr "Przewidywane zakończenie"
 
 msgid "Projected completion at"
-msgstr ""
+msgstr "Prognozowane zakończenie o"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "Przewidywane zakończenie, gdyby to zadanie przeskoczyło na początek harmonogramu jego lokalizacji. Nic nie jest zapisywane."
@@ -12559,7 +12559,7 @@ msgid "Queued"
 msgstr "W kolejce"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr ""
+msgstr "Dzisiaj wieczorem na hali jest cicho, {name}."
 
 msgid "Quote"
 msgstr "Oferta"
@@ -12670,7 +12670,7 @@ msgid "Ready"
 msgstr "Gotowe"
 
 msgid "Ready at"
-msgstr ""
+msgstr "Gotowe o"
 
 msgid "Ready for Quote"
 msgstr "Gotowe do oferty"
@@ -12869,10 +12869,10 @@ msgid "Refresh exchange rate"
 msgstr "Odśwież kurs wymiany"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Wygeneruj ponownie"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr ""
+msgstr "Wygeneruj harmonogram dla tej lokalizacji teraz. Program uruchamia się również automatycznie około 30 sekund po ostatniej zmianie harmonogramu (zmiany są grupowane, więc kilka szybkich zmian wyzwala jedno wygenerowanie)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Ponownie wygeneruj miniaturę z modelu 3D"
@@ -12978,7 +12978,7 @@ msgid "Remove condition"
 msgstr "Usuń z listy warunek"
 
 msgid "Remove corrupted data and restore"
-msgstr ""
+msgstr "Usuń uszkodzone dane i przywróć"
 
 msgid "Remove Employee"
 msgstr "Usuń pracownika"
@@ -13150,7 +13150,7 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "Wymagaj drugiego czynnika podczas logowania członków do tej firmy."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
+msgstr "Wymagaj przypisanego operatora, zanim harmonogram umieści pracę w lokalizacji. Gdy ta opcja jest włączona, stanowiska robocze bez obsługi nie otrzymają pracy, a operacja bez przydzielonej obsługi pokazana będzie jako nieplanowalna. Stanowiska robocze bez nadzoru (24×7) są zwolnione."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Wymagaj aplikacji authenticator przed otwarciem tej firmy. Pozostałe firmy danej osoby nie są objęte. Odwiedź <0>stronę kont pracowników</0>, aby zobaczyć status każdej osoby."
@@ -13216,7 +13216,7 @@ msgid "Requires Repair"
 msgstr "Wymaga naprawy"
 
 msgid "Requires staffing"
-msgstr ""
+msgstr "Wymaga obsady"
 
 msgid "Reserve floor"
 msgstr "Poziom rezerwy"
@@ -13298,7 +13298,7 @@ msgid "Restoring files"
 msgstr "Przywracanie plików"
 
 msgid "restoring…"
-msgstr ""
+msgstr "przywracanie…"
 
 msgid "Result"
 msgstr "Wynik"
@@ -13382,7 +13382,7 @@ msgid "Reverting"
 msgstr "Przywracanie"
 
 msgid "reverting…"
-msgstr ""
+msgstr "cofanie…"
 
 msgid "Review"
 msgstr "Przegląd"
@@ -13510,7 +13510,7 @@ msgid "rows"
 msgstr "wiersze"
 
 msgid "Rows left out of this backup"
-msgstr ""
+msgstr "Wiersze pominięte w tej kopii zapasowej"
 
 msgid "Rule"
 msgstr "Reguła"
@@ -13841,13 +13841,13 @@ msgid "Schedule Name"
 msgstr "Nazwa harmonogramu"
 
 msgid "Schedule outdated at"
-msgstr ""
+msgstr "Harmonogram nieaktualny od"
 
 msgid "Schedule outdated reason"
-msgstr ""
+msgstr "Przyczyna nieaktualnego harmonogramu"
 
 msgid "Schedule regenerated"
-msgstr ""
+msgstr "Harmonogram wygenerowany ponownie"
 
 msgid "Scheduled"
 msgstr "Zaplanowano"
@@ -14012,7 +14012,7 @@ msgid "Section"
 msgstr "Sekcja"
 
 msgid "Sections"
-msgstr ""
+msgstr "Sekcje"
 
 msgid "Secure your account with 2FA"
 msgstr "Zabezpiecz swoje konto za pomocą 2FA"
@@ -14021,7 +14021,7 @@ msgid "Security"
 msgstr "Bezpieczeństwo"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr ""
+msgstr "Sprawdź prognozę pojemności na żywo dla każdego stanowiska roboczego — kiedy każde zlecenie produkcyjne ma być uruchomione i ukończone w całym Twoim warsztacie."
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmenty, które określają ceny i warunki dla klientów"
@@ -14730,7 +14730,7 @@ msgid "Skip"
 msgstr "Pomiń"
 
 msgid "Skip corrupted rows and retry"
-msgstr ""
+msgstr "Pomiń uszkodzone wiersze i spróbuj ponownie"
 
 msgid "Skip Existing"
 msgstr "Pomiń istniejące"
@@ -14892,10 +14892,10 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr ""
+msgstr "Obsada opcjonalna"
 
 msgid "Staffing required"
-msgstr ""
+msgstr "Obsada wymagana"
 
 msgid "Stand up hosting"
 msgstr "Skonfiguruj hosting"
@@ -15031,7 +15031,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "Kroki są dziedziczone z planu kontroli."
 
 msgid "Still dark out on the floor."
-msgstr ""
+msgstr "Na hali jest jeszcze ciemno."
 
 msgid "Stock movement corrected"
 msgstr "Ruch zapasów poprawiony"
@@ -15167,7 +15167,7 @@ msgid "Submitted By"
 msgstr "Przesłane przez"
 
 msgid "Submodules"
-msgstr ""
+msgstr "Moduły podrzędne"
 
 msgid "substance"
 msgstr "Substancja"
@@ -15600,7 +15600,7 @@ msgid "Team trained"
 msgstr "Zespół przeszkolony"
 
 msgid "Technical details"
-msgstr ""
+msgstr "Szczegóły techniczne"
 
 msgid "Technical support"
 msgstr "Pomoc techniczna"
@@ -15685,7 +15685,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
 
 msgid "The backup job reported this error."
-msgstr ""
+msgstr "Zadanie kopii zapasowej zgłosiło ten błąd."
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Księga wszystkich zaksięgowanych linii dowodu księgowego, zsumowanych na koncie — zapisywana tylko wtedy, gdy firma ma włączoną księgowość."
@@ -15838,7 +15838,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "Dział, pod którym ten się zlicza dla raportowania i hierarchii liczby pracowników; pozostaw puste dla departamentu najwyższego poziomu."
 
 msgid "The early hours, {name}."
-msgstr ""
+msgstr "Wczesne godziny, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Metoda jakości ośmiu dyscyplin, modelowana z zadaniami przepływu pracy niezgodności zamiast hardkodowanymi."
@@ -15856,7 +15856,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "Rysunek techniczny, do którego powiązany jest ten plan inspekcji; kontrole zarejestrowane dla tej części odnoszą się do tego rysunku."
 
 msgid "The evening hours, {name}."
-msgstr ""
+msgstr "Wieczorowe godziny, {name}."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Oczekiwany procent wyniku tego artykułu utraconego podczas produkcji; planowanie mnoży zapotrzebowanie przez 1 / (1 − braki) w celu wyrównania."
@@ -16055,7 +16055,7 @@ msgstr "Najewidentnie tryb awarii, który podejrzewa żądający; technik potwie
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr ""
+msgstr "Ostatnia zaplanowana praca w tej lokalizacji była {0}."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Wynegocjowana cena za sztukę na tej pozycji; ikona śledzenia wbudowana pokazuje, która reguła cenowa lub nadpisanie ją wygenerowało."
@@ -16071,13 +16071,13 @@ msgstr "Nowy numer wersji procedury"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr ""
+msgstr "Następna zaplanowana praca w tej lokalizacji rozpoczyna się {0}."
 
 msgid "The night shift suits you, {name}."
-msgstr ""
+msgstr "Zmiana nocna Ci się podoba, {name}."
 
 msgid "The night's still young, {name}."
-msgstr ""
+msgstr "Noc dopiero się robi, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Liczba dni między złożeniem zamówienia u preferowanego dostawcy a przybyciem towaru; planowanie przesusza zapotrzebowanie wstecz o tę wielkość."
@@ -16219,7 +16219,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "W odpowiedzi z Onshape brakowało wymaganych parametrów. Spróbuj połączyć się ponownie."
 
 msgid "The restore job reported this error."
-msgstr ""
+msgstr "Zadanie przywrócenia zgłosiło ten błąd."
 
 msgid "The result will not appear on the Runs page."
 msgstr "Wynik nie pojawi się na stronie Uruchomienia."
@@ -16459,16 +16459,16 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Te dowody księgowe są wciąż w wersji roboczej, dlatego ich wpisy Winien i Ma nie znajdują się w księdze dla tego okresu. Zaksięguj każdy z nich lub przesyć go do późniejszego otwartego okresu."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
-msgstr ""
+msgstr "Te wiersze są połączone z danymi spoza tej firmy, więc nie można wykonać kopii bezpieczeństwa aktualnych danych. Usunięcie ich nie może być cofnięte. Przywracanie rozpocznie się zaraz potem."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
-msgstr ""
+msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie mogły być przywrócone. Wszystko inne miało kopię zapasową."
 
 msgid "this ability"
 msgstr "ta zdolność"
 
 msgid "This backup could not be completed."
-msgstr ""
+msgstr "Nie można było ukończyć tej kopii zapasowej."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Ta kopia zapasowa nie została jeszcze sprawdzona. Wszelkie różnice są znaleziane po uruchomieniu przywracania."
@@ -16565,10 +16565,10 @@ msgid "This job's own required quantity for the material."
 msgstr "Własna wymagana ilość materiału dla tego zadania."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr ""
+msgstr "Ta lokalizacja planuje tylko obsadzone stanowiska robocze, ale to stanowisko bez nadzoru (24×7) — jest zwolnione i pracuje bez operatora."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr ""
+msgstr "Ta lokalizacja planuje pracę tylko tam, gdzie operator jest przypisany na tablicy obsady. Bez nikogo przypisanego tutaj, praca nie jest planowana i pokazana jest jako nieplanowalna."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
@@ -16583,7 +16583,7 @@ msgid "This Month"
 msgstr "Ten miesiąc"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr ""
+msgstr "Ta operacja nie może być zaplanowana jeszcze — pasek oznacza, gdzie by była uruchomiona po rozwiązaniu konfliktu. Nie zajmuje pojemności."
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Ta strona twojego centrum wdrażania jest budowana. Zacznij od centrum dowodzenia, podczas gdy go dokańczamy."
@@ -16619,10 +16619,10 @@ msgid "This removes their authenticator app, so their next sign-in only needs a 
 msgstr "To usuwa ich aplikację uwierzytelniającą, więc ich następny login potrzebuje tylko magicznego linku. Użyj tego, gdy stracili dostęp do swojej aplikacji uwierzytelniającej. To wpływa na ich logowanie dla każdej firmy, do której należą."
 
 msgid "This restore could not be completed."
-msgstr ""
+msgstr "Nie można było ukończyć tego przywrócenia."
 
 msgid "This revert could not be completed."
-msgstr ""
+msgstr "Nie można było ukończyć tego cofnięcia."
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Ta rewizja jest zwolniona (Produkcja). Zmiany powinny normalnie przechodzić przez zawiadomienie o zmianie."
@@ -16643,10 +16643,10 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "To zamówienie sprzedaży ma pozycje, które wymagają utworzenia zleceń produkcyjnych"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "Ta stacja uruchamia pracę wymagającą umiejętności — działa tylko wtedy, gdy na zmianie pracuje uprawniony operator; operatorzy przydzieleni na planszy obsady wpływają na dostępną robociznę."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr ""
+msgstr "Ta stacja uruchamia pracę bez wymagań umiejętności; operatorzy przydzieleni na planszy obsady wpływają na dostępną robociznę."
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17314,7 +17314,7 @@ msgid "Unsaved changes"
 msgstr "Niezapisane zmiany"
 
 msgid "Unschedulable"
-msgstr ""
+msgstr "Nieplanowalne"
 
 msgid "Unscheduled"
 msgstr "Nieplanowe"
@@ -18055,7 +18055,7 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "Średni ważony koszt z ostatniego roku obliczony podczas księgowania faktury"
 
 msgid "Welcome back, {name}."
-msgstr ""
+msgstr "Witaj z powrotem, {name}."
 
 msgid "Welcome to Carbon"
 msgstr "Witaj w Carbon"
@@ -18394,13 +18394,13 @@ msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set
 msgstr "Dlaczego zapas się zmienia — Pozytywnie (odnaleziono), Negatywnie (stracone/braki), lub Ustaw (zastąp ilość zmierzoną wartością)."
 
 msgid "Why this backup failed"
-msgstr ""
+msgstr "Dlaczego ta kopia zapasowa nie powiodła się"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Dlaczego ta linia jest odrzucana; wyświetlane na drukowanym cytacie i zarejestrowane do raportowania win-loss."
 
 msgid "Why this restore failed"
-msgstr ""
+msgstr "Dlaczego to przywrócenie nie powiodło się"
 
 msgid "Will remain as a comment line"
 msgstr "Pozostanie jako linia komentarza"
@@ -18635,7 +18635,7 @@ msgid "Your data is accessible and reasonably clean"
 msgstr "Twoje dane są dostępne i w rozsądnie czystej formie"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
-msgstr ""
+msgstr "Twoje dane nie zostały zmienione — przywrócenie zatrzymuje się przed zmianą czegokolwiek, jeśli nie będzie mogło zostać ukończone."
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Twój dostawca DNS może automatycznie dołączyć Twoją domenę do nazwy rekordu — jeśli tak się stanie, wpisz tylko część przed nią (np. _carbon-challenge plus dowolna poddomena)."

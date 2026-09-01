@@ -50,11 +50,11 @@ msgstr "(이 고객에게는 제외됨)"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
-msgstr ""
+msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.}}"
 
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
-msgstr ""
+msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -124,7 +124,7 @@ msgstr "{0} 등록됨"
 
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
-msgstr ""
+msgstr "{0} 행"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -208,7 +208,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
-msgstr ""
+msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
@@ -243,7 +243,7 @@ msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
 msgid "{name} returns!"
-msgstr ""
+msgstr "{name} 복귀!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
@@ -253,7 +253,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
-msgstr ""
+msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -277,7 +277,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr ""
+msgstr "{unschedulableCount}는 일정을 잡을 수 없습니다"
 
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount}개의 작업 지시 업데이트됨"
@@ -319,7 +319,7 @@ msgid "0-4 weeks"
 msgstr "0-4주"
 
 msgid "1 can't be scheduled"
-msgstr ""
+msgstr "1개는 일정을 잡을 수 없습니다"
 
 msgid "1 conflict"
 msgstr "1개 충돌"
@@ -1391,7 +1391,7 @@ msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
 
 msgid "Afternoon, {name}."
-msgstr ""
+msgstr "오후, {name}."
 
 msgid "Aging"
 msgstr "연령 분석"
@@ -2559,7 +2559,7 @@ msgid "Backflush"
 msgstr "백플러시"
 
 msgid "Backup failed"
-msgstr ""
+msgstr "백업 실패"
 
 msgid "Backups"
 msgstr "백업"
@@ -2921,7 +2921,7 @@ msgid "Can't be restored"
 msgstr "복원할 수 없습니다"
 
 msgid "Can't be scheduled"
-msgstr ""
+msgstr "일정을 잡을 수 없습니다"
 
 msgid "Can't delete this period"
 msgstr "이 기간은 삭제할 수 없습니다"
@@ -3824,10 +3824,10 @@ msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr ""
+msgstr "셋업 프롬프트를 클립보드에 복사했습니다"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr ""
+msgstr "AI 코딩 도구용 셋업 프롬프트를 복사합니다"
 
 msgid "Copy"
 msgstr "복사"
@@ -4735,7 +4735,7 @@ msgid "Dates"
 msgstr "날짜"
 
 msgid "Dawn's breaking, {name}."
-msgstr ""
+msgstr "새벽이 밝아오고 있습니다, {name}."
 
 msgid "Day"
 msgstr "요일"
@@ -4843,7 +4843,7 @@ msgid "Declining balance"
 msgstr "정률법"
 
 msgid "Deep in the small hours, {name}."
-msgstr ""
+msgstr "한밤중입니다, {name}."
 
 msgid "Default"
 msgstr "기본값"
@@ -4997,7 +4997,7 @@ msgid "Delete Action"
 msgstr "작업 삭제"
 
 msgid "Delete and restore"
-msgstr ""
+msgstr "삭제 및 복원"
 
 msgid "Delete API Key"
 msgstr "API 키 삭제"
@@ -5349,7 +5349,7 @@ msgid "Departments"
 msgstr "부서"
 
 msgid "depends on an excluded row"
-msgstr ""
+msgstr "제외된 행에 따라 달라집니다"
 
 msgid "Depreciation"
 msgstr "감가상각"
@@ -5578,7 +5578,7 @@ msgid "Don't Cancel"
 msgstr "취소하지 않음"
 
 msgid "Don't show this again"
-msgstr ""
+msgstr "다시 표시하지 않기"
 
 msgid "done"
 msgstr "완료"
@@ -5787,10 +5787,10 @@ msgid "Each cell is the people assigned against the people the day's work needs.
 msgstr "각 셀은 그 날짜에 필요한 인력과 배정된 인력을 비교합니다."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
-msgstr ""
+msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로의 링크입니다. 이 행들이 포함된 백업은 복원할 수 없습니다."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
-msgstr ""
+msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로의 링크입니다. 해당 행들을 제거하면 복원을 실행할 수 있습니다."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 반환됩니다."
@@ -6482,7 +6482,7 @@ msgid "Estimator"
 msgstr "견적 담당자"
 
 msgid "Evening, {name}."
-msgstr ""
+msgstr "저녁, {name}."
 
 msgid "Event"
 msgstr "이벤트"
@@ -6696,7 +6696,7 @@ msgid "Expiry trace"
 msgstr "유통기한 추적"
 
 msgid "Explorer"
-msgstr ""
+msgstr "탐색기"
 
 msgid "Export"
 msgstr "내보내기"
@@ -6975,7 +6975,7 @@ msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr ""
+msgstr "일정 재생성 실패"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "썸네일 재생성 실패"
@@ -7226,7 +7226,7 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
 
 msgid "First light, {name}."
-msgstr ""
+msgstr "첫 빛, {name}."
 
 msgid "First name"
 msgstr "이름"
@@ -7623,7 +7623,7 @@ msgid "Go to implementation hub"
 msgstr "실행 허브로 이동"
 
 msgid "Go to that week"
-msgstr ""
+msgstr "해당 주로 이동"
 
 msgid "Go-Live"
 msgstr "도입"
@@ -7644,13 +7644,13 @@ msgid "Going live on Carbon"
 msgstr "Carbon 도입"
 
 msgid "Good afternoon, {name}."
-msgstr ""
+msgstr "좋은 오후입니다, {name}."
 
 msgid "Good evening, {name}."
-msgstr ""
+msgstr "좋은 저녁입니다, {name}."
 
 msgid "Good morning, {name}."
-msgstr ""
+msgstr "좋은 아침입니다, {name}."
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API 키가 설정되지 않았습니다"
@@ -7719,7 +7719,7 @@ msgid "Has conflict"
 msgstr "충돌 있음"
 
 msgid "Has operations that can't be scheduled"
-msgstr ""
+msgstr "일정을 잡을 수 없는 공정이 있습니다"
 
 msgid "Headers"
 msgstr "헤더"
@@ -7776,7 +7776,7 @@ msgid "Hop {depth}"
 msgstr "홉 {depth}"
 
 msgid "Hope things are treating you well, {name}."
-msgstr ""
+msgstr "일이 잘 풀리기를 바랍니다, {name}."
 
 msgid "Host"
 msgstr "호스트"
@@ -8841,7 +8841,7 @@ msgid "Last used"
 msgstr "마지막 사용"
 
 msgid "Late in the evening, {name}."
-msgstr ""
+msgstr "저녁이 늦었습니다, {name}."
 
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
@@ -8916,7 +8916,7 @@ msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
 msgid "Let's make it a good one, {name}."
-msgstr ""
+msgstr "좋은 하루를 만들어봅시다, {name}."
 
 msgid "Let's set up your new company"
 msgstr "새 회사를 설정해봅시다"
@@ -9000,7 +9000,7 @@ msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
 
 msgid "link outside company"
-msgstr ""
+msgstr "회사 외부 링크"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "이 Carbon 고객을 그 중 하나에 연결하거나 별도의 Stripe 고객을 생성합니다."
@@ -9642,7 +9642,7 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "1차년도 공제액을 결정하는 월중/분기중/반기 컨벤션입니다."
 
 msgid "Midnight on the clock, {name}."
-msgstr ""
+msgstr "자정입니다, {name}."
 
 msgid "Migrate data"
 msgstr "데이터 마이그레이션"
@@ -9774,7 +9774,7 @@ msgid "More overtime"
 msgstr "초과 근무 증가"
 
 msgid "Morning, {name}."
-msgstr ""
+msgstr "아침, {name}."
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하게 이름을 붙이세요."
@@ -9857,7 +9857,7 @@ msgid "Navigate"
 msgstr "이동"
 
 msgid "Navigation"
-msgstr ""
+msgstr "네비게이션"
 
 msgid "NCRs by Type"
 msgstr "유형별 NCR"
@@ -10244,7 +10244,7 @@ msgid "Next:"
 msgstr "다음:"
 
 msgid "Nice and quiet at this hour."
-msgstr ""
+msgstr "이 시간에는 조용합니다."
 
 msgid "No"
 msgstr "아니요"
@@ -10446,7 +10446,7 @@ msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr ""
+msgstr "이 사업장에 아직 예약된 작업 지시가 없습니다. — 작업 지시를 릴리스하면 작업 센터 부하를 볼 수 있습니다."
 
 msgid "No jobs were created"
 msgstr "생성된 작업 지시가 없음"
@@ -10614,7 +10614,7 @@ msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
 
 msgid "No scheduled work in this window"
-msgstr ""
+msgstr "이 기간에 예약된 작업이 없습니다"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "교대근무 구성 없음 — 월–금, 8시간 근무일 가정"
@@ -10943,7 +10943,7 @@ msgid "On-time delivery"
 msgstr "정시 납품"
 
 msgid "Onboard your agent to Carbon"
-msgstr ""
+msgstr "에이전트를 Carbon에 온보드하기"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로의 한 번 실행으로, 각 단계가 사용하고 생성한 값을 단계별로 기록하며 워크플로 책임자의 권한으로 전체적으로 작동합니다."
@@ -11051,7 +11051,7 @@ msgid "Open menu"
 msgstr "메뉴 열기"
 
 msgid "Open navigation"
-msgstr ""
+msgstr "네비게이션 열기"
 
 msgid "Open payables by supplier and age"
 msgstr "공급업체 및 기간별 미결 매입채무"
@@ -11748,7 +11748,7 @@ msgid "Plan"
 msgstr "계획"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr ""
+msgstr "품목 및 사업장별 소요량을 예측하여 MRP 및 일정에 직접 반영하여 미리 계획하세요."
 
 msgid "Plan the work"
 msgstr "작업 계획 수립"
@@ -12161,7 +12161,7 @@ msgid "Projected completion"
 msgstr "예상 완료"
 
 msgid "Projected completion at"
-msgstr ""
+msgstr "완료 예상"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "이 작업이 해당 위치의 일정 맨 앞으로 이동한 경우의 예상 완료. 저장되지 않습니다."
@@ -12559,7 +12559,7 @@ msgid "Queued"
 msgstr "대기열"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr ""
+msgstr "오늘 밤 작업장이 조용하네요, {name}."
 
 msgid "Quote"
 msgstr "견적"
@@ -12670,7 +12670,7 @@ msgid "Ready"
 msgstr "준비됨"
 
 msgid "Ready at"
-msgstr ""
+msgstr "준비됨"
 
 msgid "Ready for Quote"
 msgstr "견적 준비 완료"
@@ -12869,10 +12869,10 @@ msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "재생성"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr ""
+msgstr "이 사업장의 일정을 지금 재생성하세요. 마지막 일정 변경 후 약 30초 후에 자동으로 실행됩니다(편집은 일괄 처리되므로 여러 빠른 변경이 단일 재생성을 트리거합니다)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
@@ -12978,7 +12978,7 @@ msgid "Remove condition"
 msgstr "조건 제거"
 
 msgid "Remove corrupted data and restore"
-msgstr ""
+msgstr "손상된 데이터 제거 및 복원"
 
 msgid "Remove Employee"
 msgstr "직원 제거"
@@ -13150,7 +13150,7 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "회사에 로그인할 때 구성원들이 두 번째 인증 요소를 사용하도록 요구"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
+msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작업자를 요구합니다. 활성화하면 인력이 없는 작업장에는 작업이 배치되지 않으며, 인력 배치가 없는 공정은 일정 불가로 표시됩니다. 무인(24×7) 작업장은 제외됩니다."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
@@ -13216,7 +13216,7 @@ msgid "Requires Repair"
 msgstr "수리 필요"
 
 msgid "Requires staffing"
-msgstr ""
+msgstr "인력 배치 필요"
 
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
@@ -13298,7 +13298,7 @@ msgid "Restoring files"
 msgstr "파일 복원 중"
 
 msgid "restoring…"
-msgstr ""
+msgstr "복원 중…"
 
 msgid "Result"
 msgstr "결과"
@@ -13382,7 +13382,7 @@ msgid "Reverting"
 msgstr "복원 중"
 
 msgid "reverting…"
-msgstr ""
+msgstr "되돌리는 중…"
 
 msgid "Review"
 msgstr "검토"
@@ -13510,7 +13510,7 @@ msgid "rows"
 msgstr "행"
 
 msgid "Rows left out of this backup"
-msgstr ""
+msgstr "이 백업에서 제외된 행"
 
 msgid "Rule"
 msgstr "규칙"
@@ -13841,13 +13841,13 @@ msgid "Schedule Name"
 msgstr "일정 이름"
 
 msgid "Schedule outdated at"
-msgstr ""
+msgstr "일정이 오래된 시간"
 
 msgid "Schedule outdated reason"
-msgstr ""
+msgstr "일정 오래됨 사유"
 
 msgid "Schedule regenerated"
-msgstr ""
+msgstr "일정 재생성됨"
 
 msgid "Scheduled"
 msgstr "예정됨"
@@ -14012,7 +14012,7 @@ msgid "Section"
 msgstr "섹션"
 
 msgid "Sections"
-msgstr ""
+msgstr "섹션"
 
 msgid "Secure your account with 2FA"
 msgstr "2FA로 계정 보호"
@@ -14021,7 +14021,7 @@ msgid "Security"
 msgstr "보안"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr ""
+msgstr "모든 작업장의 실시간 용량 예측을 보세요 — 각 작업 지시가 작업장 전체에서 언제 시작되고 완료될 예정인지 확인하세요."
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "고객 가격 책정과 계약 조건을 좌우하는 구분 항목"
@@ -14730,7 +14730,7 @@ msgid "Skip"
 msgstr "건너뛰기"
 
 msgid "Skip corrupted rows and retry"
-msgstr ""
+msgstr "손상된 행 건너뛰고 다시 시도"
 
 msgid "Skip Existing"
 msgstr "기존 항목 건너뛰기"
@@ -14892,10 +14892,10 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr ""
+msgstr "인력 배치 선택"
 
 msgid "Staffing required"
-msgstr ""
+msgstr "인력 배치 필요"
 
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
@@ -15031,7 +15031,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
 
 msgid "Still dark out on the floor."
-msgstr ""
+msgstr "작업장이 여전히 어둡네요."
 
 msgid "Stock movement corrected"
 msgstr "재고 이동 수정됨"
@@ -15167,7 +15167,7 @@ msgid "Submitted By"
 msgstr "제출자"
 
 msgid "Submodules"
-msgstr ""
+msgstr "하위 모듈"
 
 msgid "substance"
 msgstr "재질"
@@ -15600,7 +15600,7 @@ msgid "Team trained"
 msgstr "팀 교육 완료"
 
 msgid "Technical details"
-msgstr ""
+msgstr "기술 세부정보"
 
 msgid "Technical support"
 msgstr "기술 지원"
@@ -15685,7 +15685,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
 msgid "The backup job reported this error."
-msgstr ""
+msgstr "백업 작업이 이 오류를 보고했습니다."
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "모든 전기된 전표 라인의 기록으로 계정별로 집계되며 회사의 회계가 활성화되었을 때만 작성됩니다."
@@ -15838,7 +15838,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
 
 msgid "The early hours, {name}."
-msgstr ""
+msgstr "이른 시간이군요, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8D 품질 기법으로, 하드코딩되지 않고 부적합 워크플로의 작업으로 모델링됩니다."
@@ -15856,7 +15856,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "이 검사 계획이 연결된 엔지니어링 드로잉입니다. 이 부품에 대해 기록된 검사는 이 드로잉을 참조합니다."
 
 msgid "The evening hours, {name}."
-msgstr ""
+msgstr "저녁 시간이군요, {name}."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "생산 중 이 품목의 출력량 손실의 예상 비율로, 계획에서는 이를 보상하기 위해 소요량에 1 / (1 - 스크랩)을 곱합니다."
@@ -16055,7 +16055,7 @@ msgstr "요청자가 의심하는 가장 유력한 고장 모드입니다. 기�
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr ""
+msgstr "이 사업장의 가장 최근 일정 작업은 {0}이었습니다."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "이 라인에서 협상된 단가입니다. 인라인 추적 아이콘을 통해 어떤 가격 규칙 또는 재정의로 이 값이 산출되었는지 확인할 수 있습니다."
@@ -16071,13 +16071,13 @@ msgstr "절차서의 새로운 버전 번호"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr ""
+msgstr "이 사업장의 다음 일정 작업은 {0}에 시작됩니다."
 
 msgid "The night shift suits you, {name}."
-msgstr ""
+msgstr "야간 교대조가 어울리네요, {name}."
 
 msgid "The night's still young, {name}."
-msgstr ""
+msgstr "밤이 아직 멀었네요, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "우선 공급업체에 발주서를 발주한 후부터 물품이 도착할 때까지의 일수로, 계획이 수요를 이만큼 뒤로 오프셋합니다."
@@ -16219,7 +16219,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
 
 msgid "The restore job reported this error."
-msgstr ""
+msgstr "복원 작업이 이 오류를 보고했습니다."
 
 msgid "The result will not appear on the Runs page."
 msgstr "결과는 실행 페이지에 나타나지 않습니다."
@@ -16459,16 +16459,16 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 대변이 원장에 없습니다. 각 전표를 전기하거나 이후 미결 기간으로 다시 날짜를 지정하십시오."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
-msgstr ""
+msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 현재 데이터의 안전한 복사본을 만들 수 없습니다. 삭제하면 실행 취소할 수 없습니다. 복원이 바로 시작됩니다."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
-msgstr ""
+msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원할 수 없습니다. 그 외 모든 것은 백업되었습니다."
 
 msgid "this ability"
 msgstr "이 능력"
 
 msgid "This backup could not be completed."
-msgstr ""
+msgstr "이 백업을 완료할 수 없습니다."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
@@ -16565,10 +16565,10 @@ msgid "This job's own required quantity for the material."
 msgstr "이 작업 자체의 자재 소요 수량입니다."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr ""
+msgstr "이 사업장은 인력이 배치된 작업장만 일정을 배치하지만, 이는 무인(24×7) 작업장입니다 — 제외되며 무인으로 계속 운영됩니다."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr ""
+msgstr "이 사업장은 인력 배치 보드에 작업자가 할당된 작업만 일정을 배치합니다. 여기에 할당된 사람이 없으면 작업이 일정 배치되지 않으며 일정 불가로 표시됩니다."
 
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료됨이며 피킹할 수 없습니다."
@@ -16583,7 +16583,7 @@ msgid "This Month"
 msgstr "이번 달"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr ""
+msgstr "이 공정은 아직 일정 배치할 수 없습니다 — 막대는 충돌이 해결되면 실행될 위치를 표시합니다. 용량을 점유하지 않습니다."
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "실행 허브의 이 페이지는 준비 중입니다. 완성될 때까지 명령 센터에서 시작하세요."
@@ -16619,10 +16619,10 @@ msgid "This removes their authenticator app, so their next sign-in only needs a 
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
 
 msgid "This restore could not be completed."
-msgstr ""
+msgstr "이 복원을 완료할 수 없습니다."
 
 msgid "This revert could not be completed."
-msgstr ""
+msgstr "이 되돌리기를 완료할 수 없습니다."
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "이 리비전은 릴리스되었습니다 (생산). 변경 사항은 정상적으로 변경 통지를 통해 진행되어야 합니다."
@@ -16643,10 +16643,10 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "이 수주는 작업 지시가 생성되어야 하는 라인이 있습니다."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "이 스테이션은 역량 기반의 작업을 실행합니다 — 자격 있는 작업자가 교대조에서 근무하는 동안에만 실행되며, 인력배치표에서 할당된 작업자가 가용 노무를 추가로 형성합니다."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr ""
+msgstr "이 스테이션은 역량 요구사항이 없는 작업을 실행합니다. 인력배치표에서 할당된 작업자가 가용 노무를 형성합니다."
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17314,7 +17314,7 @@ msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
 
 msgid "Unschedulable"
-msgstr ""
+msgstr "예약 불가"
 
 msgid "Unscheduled"
 msgstr "미예약"
@@ -18055,7 +18055,7 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "송장이 전기될 때 계산되는 지난 1년 가중평균 원가"
 
 msgid "Welcome back, {name}."
-msgstr ""
+msgstr "다시 돌아오셨습니다, {name}님."
 
 msgid "Welcome to Carbon"
 msgstr "Carbon에 오신 것을 환영합니다"
@@ -18394,13 +18394,13 @@ msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set
 msgstr "재고가 변경되는 이유 — 긍정(발견), 부정(손실/스크랩) 또는 설정(측정된 값으로 수량 교체)."
 
 msgid "Why this backup failed"
-msgstr ""
+msgstr "이 백업이 실패한 이유"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "이 라인이 거절되는 이유로, 인쇄용 견적서에 표시되며 수주/실주 보고를 위해 기록됩니다."
 
 msgid "Why this restore failed"
-msgstr ""
+msgstr "이 복원이 실패한 이유"
 
 msgid "Will remain as a comment line"
 msgstr "댓글 라인으로 유지됩니다"
@@ -18635,7 +18635,7 @@ msgid "Your data is accessible and reasonably clean"
 msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
-msgstr ""
+msgstr "귀하의 데이터는 변경되지 않았습니다 — 복원이 완료될 수 없으면 아무것도 변경하기 전에 중단됩니다."
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS 공급자가 레코드 이름에 도메인을 자동으로 추가할 수 있습니다 — 그렇다면 그 앞 부분만 입력하세요 (예: _carbon-challenge 및 모든 하위 도메인)."

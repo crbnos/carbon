@@ -50,11 +50,11 @@ msgstr "(bu müşteri için hariç tutulmuş)"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
-msgstr ""
+msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle mevcut verilerinizin güvenli bir kopyası oluşturulamıyor.} other {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle mevcut verilerinizin güvenli bir kopyası oluşturulamıyor.}}"
 
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
-msgstr ""
+msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle yedeklenemez. Bunu atlayarak diğer her şeyi yedekleyebilirsiniz.} other {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle yedeklenemez. Bunları atlayarak diğer her şeyi yedekleyebilirsiniz.}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -124,7 +124,7 @@ msgstr "{0} kaydedildi"
 
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
-msgstr ""
+msgstr "{0} satır"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -208,7 +208,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
-msgstr ""
+msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
@@ -243,7 +243,7 @@ msgid "{name} deleted"
 msgstr "{name} silindi"
 
 msgid "{name} returns!"
-msgstr ""
+msgstr "{name} dönüyor!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
@@ -253,7 +253,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
-msgstr ""
+msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -277,7 +277,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr ""
+msgstr "{unschedulableCount} çizelgelenemiyor"
 
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} iş emri güncellendi"
@@ -319,7 +319,7 @@ msgid "0-4 weeks"
 msgstr "0-4 hafta"
 
 msgid "1 can't be scheduled"
-msgstr ""
+msgstr "1 çizelgelenemiyor"
 
 msgid "1 conflict"
 msgstr "1 çakışma"
@@ -1391,7 +1391,7 @@ msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
 
 msgid "Afternoon, {name}."
-msgstr ""
+msgstr "Öğleden sonra, {name}."
 
 msgid "Aging"
 msgstr "Yaşlandırma"
@@ -2559,7 +2559,7 @@ msgid "Backflush"
 msgstr "Geriye dönük tüketim"
 
 msgid "Backup failed"
-msgstr ""
+msgstr "Yedekleme başarısız oldu"
 
 msgid "Backups"
 msgstr "Yedeklemeler"
@@ -2921,7 +2921,7 @@ msgid "Can't be restored"
 msgstr "Geri yüklenemez"
 
 msgid "Can't be scheduled"
-msgstr ""
+msgstr "Çizelgelenemiyor"
 
 msgid "Can't delete this period"
 msgstr "Bu dönem silinemez"
@@ -3824,10 +3824,10 @@ msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr ""
+msgstr "Hazırlık istemi panosuna kopyalandı"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr ""
+msgstr "AI kodlama aracınız için bir hazırlık istemi kopyalar"
 
 msgid "Copy"
 msgstr "Kopyala"
@@ -4735,7 +4735,7 @@ msgid "Dates"
 msgstr "Tarihler"
 
 msgid "Dawn's breaking, {name}."
-msgstr ""
+msgstr "Gün ağarıyor, {name}."
 
 msgid "Day"
 msgstr "Gün"
@@ -4843,7 +4843,7 @@ msgid "Declining balance"
 msgstr "Azalan Bakiye"
 
 msgid "Deep in the small hours, {name}."
-msgstr ""
+msgstr "Gece yarısından sonra, {name}."
 
 msgid "Default"
 msgstr "Varsayılan"
@@ -4997,7 +4997,7 @@ msgid "Delete Action"
 msgstr "İşlemi Sil"
 
 msgid "Delete and restore"
-msgstr ""
+msgstr "Sil ve geri yükle"
 
 msgid "Delete API Key"
 msgstr "API Anahtarını Sil"
@@ -5349,7 +5349,7 @@ msgid "Departments"
 msgstr "Departmanlar"
 
 msgid "depends on an excluded row"
-msgstr ""
+msgstr "hariç tutulan bir satıra bağımlı"
 
 msgid "Depreciation"
 msgstr "Amortisman"
@@ -5578,7 +5578,7 @@ msgid "Don't Cancel"
 msgstr "İptal Etme"
 
 msgid "Don't show this again"
-msgstr ""
+msgstr "Bunu bir daha gösterme"
 
 msgid "done"
 msgstr "bitti"
@@ -5787,10 +5787,10 @@ msgid "Each cell is the people assigned against the people the day's work needs.
 msgstr "Her hücre, günün işinin ihtiyaç duyduğu insanlara karşı atanan insanları gösterir."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
-msgstr ""
+msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları içeren bir yedekleme asla geri yüklenemez."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
-msgstr ""
+msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları kaldırmak geri yüklemenin çalışmasını sağlar."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen sonra geri döner."
@@ -6482,7 +6482,7 @@ msgid "Estimator"
 msgstr "Tahminci"
 
 msgid "Evening, {name}."
-msgstr ""
+msgstr "Akşam, {name}."
 
 msgid "Event"
 msgstr "Etkinlik"
@@ -6696,7 +6696,7 @@ msgid "Expiry trace"
 msgstr "Son kullanma tarihi izi"
 
 msgid "Explorer"
-msgstr ""
+msgstr "Gezgin"
 
 msgid "Export"
 msgstr "Dışa Aktar"
@@ -6975,7 +6975,7 @@ msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr ""
+msgstr "Çizelgeyi yeniden oluşturmak başarısız oldu"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "Küçük resim yenileme başarısız"
@@ -7226,7 +7226,7 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar reddedilir."
 
 msgid "First light, {name}."
-msgstr ""
+msgstr "Gün doğarken, {name}."
 
 msgid "First name"
 msgstr "Adı"
@@ -7623,7 +7623,7 @@ msgid "Go to implementation hub"
 msgstr "Uygulama merkezine git"
 
 msgid "Go to that week"
-msgstr ""
+msgstr "O haftaya git"
 
 msgid "Go-Live"
 msgstr "Canlı Yayına Geç"
@@ -7644,13 +7644,13 @@ msgid "Going live on Carbon"
 msgstr "Carbon'da canlı yayına geçme"
 
 msgid "Good afternoon, {name}."
-msgstr ""
+msgstr "İyi öğleden sonralar, {name}."
 
 msgid "Good evening, {name}."
-msgstr ""
+msgstr "İyi akşamlar, {name}."
 
 msgid "Good morning, {name}."
-msgstr ""
+msgstr "Günaydın, {name}."
 
 msgid "Google Places API key not configured"
 msgstr "Google Yerler API anahtarı yapılandırılmamış"
@@ -7719,7 +7719,7 @@ msgid "Has conflict"
 msgstr "Çatışması var"
 
 msgid "Has operations that can't be scheduled"
-msgstr ""
+msgstr "Çizelgelenemeyen operasyonlara sahip"
 
 msgid "Headers"
 msgstr "Başlıklar"
@@ -7776,7 +7776,7 @@ msgid "Hop {depth}"
 msgstr "Atlama {depth}"
 
 msgid "Hope things are treating you well, {name}."
-msgstr ""
+msgstr "Umarım her şey iyi gidiyor, {name}."
 
 msgid "Host"
 msgstr "Ana bilgisayar"
@@ -8841,7 +8841,7 @@ msgid "Last used"
 msgstr "Son Kullanılan"
 
 msgid "Late in the evening, {name}."
-msgstr ""
+msgstr "Akşamın geç saatlerinde, {name}."
 
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
@@ -8916,7 +8916,7 @@ msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
 
 msgid "Let's make it a good one, {name}."
-msgstr ""
+msgstr "Güzel bir gün yapalım, {name}."
 
 msgid "Let's set up your new company"
 msgstr "Yeni şirketinizi kuralım"
@@ -9000,7 +9000,7 @@ msgid "Link Linear Issue"
 msgstr "Linear sorununu bağla"
 
 msgid "link outside company"
-msgstr ""
+msgstr "şirket dışı bağlantı"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Bu Carbon müşterisini bunlardan birine bağlayın veya ayrı bir Stripe müşterisi oluşturun."
@@ -9642,7 +9642,7 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini belirler."
 
 msgid "Midnight on the clock, {name}."
-msgstr ""
+msgstr "Gece yarısı, {name}."
 
 msgid "Migrate data"
 msgstr "Verileri Taşı"
@@ -9774,7 +9774,7 @@ msgid "More overtime"
 msgstr "Daha fazla fazla mesai"
 
 msgid "Morning, {name}."
-msgstr ""
+msgstr "Sabah, {name}."
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Çoğu şey burada yakalanır ve çözülür. Açıkça adlandırın."
@@ -9857,7 +9857,7 @@ msgid "Navigate"
 msgstr "Gözat"
 
 msgid "Navigation"
-msgstr ""
+msgstr "Navigasyon"
 
 msgid "NCRs by Type"
 msgstr "Tipe Göre NCR'ler"
@@ -10244,7 +10244,7 @@ msgid "Next:"
 msgstr "Sonraki:"
 
 msgid "Nice and quiet at this hour."
-msgstr ""
+msgstr "Bu saatte güzel ve sessiz."
 
 msgid "No"
 msgstr "Hayır"
@@ -10446,7 +10446,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr ""
+msgstr "Bu lokasyonda henüz hiçbir iş emri çizelgelenmiş değil — iş merkezi yükünü görmek için bir iş emri serbest bırakın."
 
 msgid "No jobs were created"
 msgstr "İş emri oluşturulmadı"
@@ -10614,7 +10614,7 @@ msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
 msgid "No scheduled work in this window"
-msgstr ""
+msgstr "Bu pencerede çizelgelenmemiş iş yok"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
@@ -10943,7 +10943,7 @@ msgid "On-time delivery"
 msgstr "Zamanında teslimat"
 
 msgid "Onboard your agent to Carbon"
-msgstr ""
+msgstr "Ajanınızı Carbon'a getir"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
@@ -11051,7 +11051,7 @@ msgid "Open menu"
 msgstr "Menüyü aç"
 
 msgid "Open navigation"
-msgstr ""
+msgstr "Navigasyonu aç"
 
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
@@ -11748,7 +11748,7 @@ msgid "Plan"
 msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr ""
+msgstr "Stok kartı ve lokasyon başına Talep tahmin ederek ileriye dönük planlama yapın, ardından doğrudan MRP'ye ve Çizelgeye aktarın."
 
 msgid "Plan the work"
 msgstr "Çalışmayı planlayın"
@@ -12161,7 +12161,7 @@ msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
 
 msgid "Projected completion at"
-msgstr ""
+msgstr "Tahmini Tamamlanma:"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "Bu iş konumunun planının başına geçerse öngörülen tamamlanma. Hiçbir şey kaydedilmez."
@@ -12559,7 +12559,7 @@ msgid "Queued"
 msgstr "Kuyrukta"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr ""
+msgstr "Bu gece fabrikada sessiz, {name}."
 
 msgid "Quote"
 msgstr "Teklif"
@@ -12670,7 +12670,7 @@ msgid "Ready"
 msgstr "Hazır"
 
 msgid "Ready at"
-msgstr ""
+msgstr "Hazır:"
 
 msgid "Ready for Quote"
 msgstr "Teklif İçin Hazır"
@@ -12869,10 +12869,10 @@ msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Yeniden Oluştur"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr ""
+msgstr "Bu lokasyon için çizelgeyi şimdi yeniden oluşturun. Son çizelgeleme değişikliğinden yaklaşık 30 saniye sonra otomatik olarak da çalışır (düzenlemeler toplu halinde yapılır, bu nedenle birden fazla hızlı değişiklik tek bir yeniden oluşturmayı tetikler)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D modelinden küçük resmi yeniden oluştur"
@@ -12978,7 +12978,7 @@ msgid "Remove condition"
 msgstr "Koşulu kaldır"
 
 msgid "Remove corrupted data and restore"
-msgstr ""
+msgstr "Bozuk verileri kaldır ve geri yükle"
 
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
@@ -13150,7 +13150,7 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "Bu şirkete giriş yaparken üyelerin ikinci bir faktör kullanmasını zorunlu tutun."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
+msgstr "Bir lokasyonda çalışma zamanlanmadan önce atanmış bir operatör gerekli. Etkinleştirildiğinde, personelsiz iş merkezleri iş almaz ve personel bulunmayan bir operasyon zamanlanamaz olarak gösterilir. Işıksız (24×7) iş merkezleri muaftır."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
@@ -13216,7 +13216,7 @@ msgid "Requires Repair"
 msgstr "Onarım Gerektirir"
 
 msgid "Requires staffing"
-msgstr ""
+msgstr "Personel Gerekli"
 
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
@@ -13298,7 +13298,7 @@ msgid "Restoring files"
 msgstr "Dosyalar geri yükleniyor"
 
 msgid "restoring…"
-msgstr ""
+msgstr "geri yükleniyor…"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -13382,7 +13382,7 @@ msgid "Reverting"
 msgstr "Geri alınıyor"
 
 msgid "reverting…"
-msgstr ""
+msgstr "geri alınıyor…"
 
 msgid "Review"
 msgstr "İncele"
@@ -13510,7 +13510,7 @@ msgid "rows"
 msgstr "satırlar"
 
 msgid "Rows left out of this backup"
-msgstr ""
+msgstr "Bu yedeklemeden hariç tutulan satırlar"
 
 msgid "Rule"
 msgstr "Kural"
@@ -13841,13 +13841,13 @@ msgid "Schedule Name"
 msgstr "Planlama Adı"
 
 msgid "Schedule outdated at"
-msgstr ""
+msgstr "Çizelge Eski Kaldı:"
 
 msgid "Schedule outdated reason"
-msgstr ""
+msgstr "Çizelge Eski Kalma Nedeni"
 
 msgid "Schedule regenerated"
-msgstr ""
+msgstr "Çizelge Yeniden Oluşturuldu"
 
 msgid "Scheduled"
 msgstr "Zamanlandı"
@@ -14012,7 +14012,7 @@ msgid "Section"
 msgstr "Bölüm"
 
 msgid "Sections"
-msgstr ""
+msgstr "Bölümler"
 
 msgid "Secure your account with 2FA"
 msgstr "Hesabınızı 2FA ile güvenli hale getirin"
@@ -14021,7 +14021,7 @@ msgid "Security"
 msgstr "Güvenlik"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr ""
+msgstr "Her iş merkezi için canlı kapasite tahmini görün — iş emrilerinizin üretiminizde ne zaman çalışacağı ve tamamlanacağı."
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
@@ -14730,7 +14730,7 @@ msgid "Skip"
 msgstr "Atla"
 
 msgid "Skip corrupted rows and retry"
-msgstr ""
+msgstr "Bozuk satırları atla ve yeniden dene"
 
 msgid "Skip Existing"
 msgstr "Mevcut Olanı Atla"
@@ -14892,10 +14892,10 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr ""
+msgstr "Personel İsteğe Bağlı"
 
 msgid "Staffing required"
-msgstr ""
+msgstr "Personel Gerekli"
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -15031,7 +15031,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "Adımlar kontrol planından devralınır."
 
 msgid "Still dark out on the floor."
-msgstr ""
+msgstr "Fabrikada hala karanlık."
 
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
@@ -15167,7 +15167,7 @@ msgid "Submitted By"
 msgstr "Gönderen"
 
 msgid "Submodules"
-msgstr ""
+msgstr "Alt Modüller"
 
 msgid "substance"
 msgstr "Madde"
@@ -15600,7 +15600,7 @@ msgid "Team trained"
 msgstr "Takım eğitildi"
 
 msgid "Technical details"
-msgstr ""
+msgstr "Teknik Ayrıntılar"
 
 msgid "Technical support"
 msgstr "Teknik destek"
@@ -15685,7 +15685,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
 
 msgid "The backup job reported this error."
-msgstr ""
+msgstr "Yedekleme işi bu hatayı bildirdi."
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm muhasebeleştirilmiş muhasebe fiş satırlarının hesaba göre toplandığı defter — yalnızca şirketin muhasebesi etkin olduğunda yazılır."
@@ -15838,7 +15838,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
 
 msgid "The early hours, {name}."
-msgstr ""
+msgstr "Erken saatler, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Sekiz disiplin kalite yöntemi, uygunsuzluk iş akışının görevleriyle modellenmiş olup sabit kodlanmamıştır."
@@ -15856,7 +15856,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya karşı kaydedilen muayeneler bu çizime geri referans verir."
 
 msgid "The evening hours, {name}."
-msgstr ""
+msgstr "Akşam saatleri, {name}."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Bu stok kartının üretim sırasında kaybettiği beklenen yüzde; planlama, talep tarafı 1 / (1 − Fire) ile çarpılarak telafi edilir."
@@ -16055,7 +16055,7 @@ msgstr "İstekçinin şüphelendiği en olası hata modu; teknisyen bunu kapatı
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr ""
+msgstr "Bu lokasyondaki en son planlanan çalışma {0} idi."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Bu satırda müzakere edilen birim fiyat; satır içi izleme simgesi, hangi fiyatlandırma kuralı veya geçersiz kılmanın onu ürettiğini gösterir."
@@ -16071,13 +16071,13 @@ msgstr "Prosedürün yeni sürüm numarası"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr ""
+msgstr "Bu lokasyonda bir sonraki planlanan çalışma {0} başlıyor."
 
 msgid "The night shift suits you, {name}."
-msgstr ""
+msgstr "Gece vardiyası sana uyuyor, {name}."
 
 msgid "The night's still young, {name}."
-msgstr ""
+msgstr "Gece henüz genç, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Tercih edilen tedarikçi ile Satın alma siparişi yerleştirme ile malların iskeleye ulaşması arasındaki gün sayısı; Planlama talebi bu kadar geriye doğru kaydırır."
@@ -16219,7 +16219,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
 
 msgid "The restore job reported this error."
-msgstr ""
+msgstr "Geri yükleme işi bu hatayı bildirdi."
 
 msgid "The result will not appear on the Runs page."
 msgstr "Sonuç Çalıştırmalar sayfasında görünmeyecektir."
@@ -16459,16 +16459,16 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
-msgstr ""
+msgstr "Bu satırlar bu şirket dışındaki verilere bağlı, bu nedenle mevcut verilerinizin güvenlik kopyası alınamaz. Bu satırları silmek geri alınamaz. Geri yükleme hemen sonra başlayacak."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
-msgstr ""
+msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
 
 msgid "this ability"
 msgstr "bu yetenek"
 
 msgid "This backup could not be completed."
-msgstr ""
+msgstr "Bu yedekleme tamamlanamadı."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Bu yedek henüz kontrol edilmedi. Herhangi bir fark, geri yükleme çalıştığında bulunur."
@@ -16565,10 +16565,10 @@ msgid "This job's own required quantity for the material."
 msgstr "Bu işin malzeme için kendi gerekli miktarı."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr ""
+msgstr "Bu lokasyon yalnızca personeli olan iş merkezlerini çizelgeler, ancak burası ışıksız bir (24×7) istasyondur — muaftır ve gözetimsiz olarak çalışmaya devam eder."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr ""
+msgstr "Bu lokasyon yalnızca personel panosunda operatör atanmış işleri çizelgeler. Buraya operatör atanmamışsa, iş çizelgelenmez ve zamanlanamaz olarak gösterilir."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot süresi doldu ve toplama yapılamaz."
@@ -16583,7 +16583,7 @@ msgid "This Month"
 msgstr "Bu Ay"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr ""
+msgstr "Bu operasyon henüz zamanlanamıyor — bar, çatışma çözüldükten sonra nerede çalışacağını işaretler. Kapasite tutmuyor."
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Uygulama Hub'ınızın bu sayfası oluşturuluyor. Bunu tamamlarken komuta merkezinden başlayın."
@@ -16619,10 +16619,10 @@ msgid "This removes their authenticator app, so their next sign-in only needs a 
 msgstr "Bu işlem onların kimlik doğrulayıcı uygulamasını kaldırır, bu nedenle sonraki oturum açışları yalnızca sihirli bir bağlantı gerektirir. Kimlik doğrulayıcılarına erişimini kaybettikleri zaman bunu kullanın. Ait oldukları her şirket için oturum açışlarını etkiler."
 
 msgid "This restore could not be completed."
-msgstr ""
+msgstr "Bu geri yükleme tamamlanamadı."
 
 msgid "This revert could not be completed."
-msgstr ""
+msgstr "Bu geri alma tamamlanamadı."
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir değişiklik bildirisi yoluyla akmalıdır."
@@ -16643,10 +16643,10 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişinde iş emri oluşturulması gereken satırlar var"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "Bu istasyon yetkinlik kontrollü çalışmalar gerçekleştirir — nitelikli bir operatör vardiyada iken çalışır; vardiya tahtasında atanan operatörler kullanılabilir işçiliği daha da şekillendiriyor."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr ""
+msgstr "Bu istasyon yetkinlik gereksinimi olmayan çalışmalar gerçekleştirir; vardiya tahtasında atanan operatörler kullanılabilir işçiliği şekillendiriyor."
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17314,7 +17314,7 @@ msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
 
 msgid "Unschedulable"
-msgstr ""
+msgstr "Planlanamayan"
 
 msgid "Unscheduled"
 msgstr "Planlanmamış"
@@ -18055,7 +18055,7 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "Faturanın işlendiği sırada hesaplanan ağırlıklı ortalama maliyet"
 
 msgid "Welcome back, {name}."
-msgstr ""
+msgstr "Tekrar hoş geldin, {name}."
 
 msgid "Welcome to Carbon"
 msgstr "Carbon'a Hoş Geldiniz"
@@ -18394,13 +18394,13 @@ msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set
 msgstr "Stok neden değişiyor — Pozitif (bulundu), Negatif (kayboldu/Fire), veya Ayarla (sayıyı ölçülen bir değerle değiştirin)."
 
 msgid "Why this backup failed"
-msgstr ""
+msgstr "Bu yedek neden başarısız oldu"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir ve kazanç-kayıp raporlaması için kaydedilir."
 
 msgid "Why this restore failed"
-msgstr ""
+msgstr "Bu geri yükleme neden başarısız oldu"
 
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
@@ -18635,7 +18635,7 @@ msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
-msgstr ""
+msgstr "Verileriniz değiştirilmedi — geri yükleme, tamamlayamayacak olursa hiçbir şeye dokunmadan durur."
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."

@@ -50,11 +50,11 @@ msgstr "(इस ग्राहक के लिए बाहर रखा ग�
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
-msgstr ""
+msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।}}"
 
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
-msgstr ""
+msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए इसे बैकअप नहीं किया जा सकता। इसे छोड़ने से सब कुछ और बैकअप हो जाता है।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए उन्हें बैकअप नहीं किया जा सकता। उन्हें छोड़ने से सब कुछ और बैकअप हो जाता है।}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -124,7 +124,7 @@ msgstr "{0} पंजीकृत"
 
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
-msgstr ""
+msgstr "{0} पंक्तियाँ"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -208,7 +208,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
-msgstr ""
+msgstr "{excluded, plural, one {# पंक्ति बाहर रखी गई} other {# पंक्तियाँ बाहर रखी गईं}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} में से {count}"
@@ -243,7 +243,7 @@ msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
 msgid "{name} returns!"
-msgstr ""
+msgstr "{name} लौट आया!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} पार्ट्स छोड़ दिए गए — निर्माण करने के लिए कुछ नहीं है"
@@ -253,7 +253,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
-msgstr ""
+msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -277,7 +277,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr ""
+msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
 
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} जॉब अपडेट किए गए"
@@ -319,7 +319,7 @@ msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
 
 msgid "1 can't be scheduled"
-msgstr ""
+msgstr "1 को शेड्यूल नहीं किया जा सकता"
 
 msgid "1 conflict"
 msgstr "1 विरोध"
@@ -1391,7 +1391,7 @@ msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
 
 msgid "Afternoon, {name}."
-msgstr ""
+msgstr "दोपहर, {name}।"
 
 msgid "Aging"
 msgstr "उम्र"
@@ -2559,7 +2559,7 @@ msgid "Backflush"
 msgstr "बैकफ्लश"
 
 msgid "Backup failed"
-msgstr ""
+msgstr "बैकअप विफल रहा"
 
 msgid "Backups"
 msgstr "बैकअप"
@@ -2921,7 +2921,7 @@ msgid "Can't be restored"
 msgstr "पुनः स्थापित नहीं किया जा सकता"
 
 msgid "Can't be scheduled"
-msgstr ""
+msgstr "शेड्यूल नहीं किया जा सकता"
 
 msgid "Can't delete this period"
 msgstr "इस अवधि को हटाया नहीं जा सकता"
@@ -3824,10 +3824,10 @@ msgid "Copied link to clipboard"
 msgstr "क्लिपबोर्ड में लिंक कॉपी किया गया"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr ""
+msgstr "सेटअप प्रॉम्प्ट को आपके क्लिपबोर्ड पर कॉपी किया गया"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr ""
+msgstr "आपके AI कोडिंग टूल के लिए सेटअप प्रॉम्प्ट की प्रति बनाता है"
 
 msgid "Copy"
 msgstr "कॉपी करें"
@@ -4735,7 +4735,7 @@ msgid "Dates"
 msgstr "तारीखें"
 
 msgid "Dawn's breaking, {name}."
-msgstr ""
+msgstr "भोर हो रही है, {name}।"
 
 msgid "Day"
 msgstr "दिन"
@@ -4843,7 +4843,7 @@ msgid "Declining balance"
 msgstr "ह्रासमान शेष"
 
 msgid "Deep in the small hours, {name}."
-msgstr ""
+msgstr "रात के गहरे पहर में, {name}।"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
@@ -4997,7 +4997,7 @@ msgid "Delete Action"
 msgstr "कार्रवाई हटाएं"
 
 msgid "Delete and restore"
-msgstr ""
+msgstr "हटाएँ और पुनः स्थापित करें"
 
 msgid "Delete API Key"
 msgstr "API कुंजी हटाएँ"
@@ -5349,7 +5349,7 @@ msgid "Departments"
 msgstr "विभाग"
 
 msgid "depends on an excluded row"
-msgstr ""
+msgstr "एक बाहर रखी गई पंक्ति पर निर्भर है"
 
 msgid "Depreciation"
 msgstr "मूल्यह्रास"
@@ -5578,7 +5578,7 @@ msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
 msgid "Don't show this again"
-msgstr ""
+msgstr "इसे फिर से न दिखाएँ"
 
 msgid "done"
 msgstr "हो गया"
@@ -5787,10 +5787,10 @@ msgid "Each cell is the people assigned against the people the day's work needs.
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
-msgstr ""
+msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक ऐसी पंक्ति के लिए एक लिंक है जिसका यह मालिक नहीं है। इन पंक्तियों के साथ एक बैकअप को कभी भी पुनः स्थापित नहीं किया जा सकता।"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
-msgstr ""
+msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक ऐसी पंक्ति के लिए एक लिंक है जिसका यह मालिक नहीं है। उन पंक्तियों को हटाने से पुनः स्थापन चल जाता है।"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "प्रत्येक ऑपरेशन की अप्रयुक्त सामग्री जैसे ही ऑपरेशन हो जाता है तुरंत वापस आती है।"
@@ -6482,7 +6482,7 @@ msgid "Estimator"
 msgstr "अनुमानकर्ता"
 
 msgid "Evening, {name}."
-msgstr ""
+msgstr "शाम, {name}।"
 
 msgid "Event"
 msgstr "घटना"
@@ -6696,7 +6696,7 @@ msgid "Expiry trace"
 msgstr "समाप्ति ट्रेस"
 
 msgid "Explorer"
-msgstr ""
+msgstr "खोजकर्ता"
 
 msgid "Export"
 msgstr "निर्यात करें"
@@ -6975,7 +6975,7 @@ msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr ""
+msgstr "शेड्यूल को पुनः जेनरेट करने में विफल"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "थंबनेल को पुनः उत्पन्न करने में विफल"
@@ -7226,7 +7226,7 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
 
 msgid "First light, {name}."
-msgstr ""
+msgstr "पहली रोशनी, {name}।"
 
 msgid "First name"
 msgstr "पहला नाम"
@@ -7623,7 +7623,7 @@ msgid "Go to implementation hub"
 msgstr "कार्यान्वयन हब पर जाएं"
 
 msgid "Go to that week"
-msgstr ""
+msgstr "उस सप्ताह पर जाएँ"
 
 msgid "Go-Live"
 msgstr "गो-लाइव"
@@ -7644,13 +7644,13 @@ msgid "Going live on Carbon"
 msgstr "कार्बन पर लाइव जाना"
 
 msgid "Good afternoon, {name}."
-msgstr ""
+msgstr "शुभ दोपहर, {name}।"
 
 msgid "Good evening, {name}."
-msgstr ""
+msgstr "शुभ संध्या, {name}।"
 
 msgid "Good morning, {name}."
-msgstr ""
+msgstr "शुभ प्रभात, {name}।"
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API कुंजी कॉन्फ़िगर नहीं की गई"
@@ -7719,7 +7719,7 @@ msgid "Has conflict"
 msgstr "संघर्ष है"
 
 msgid "Has operations that can't be scheduled"
-msgstr ""
+msgstr "ऐसे ऑपरेशन हैं जिन्हें शेड्यूल नहीं किया जा सकता"
 
 msgid "Headers"
 msgstr "हेडर"
@@ -7776,7 +7776,7 @@ msgid "Hop {depth}"
 msgstr "हॉप {depth}"
 
 msgid "Hope things are treating you well, {name}."
-msgstr ""
+msgstr "आशा है कि सब कुछ आपके साथ अच्छा चल रहा है, {name}।"
 
 msgid "Host"
 msgstr "होस्ट"
@@ -8841,7 +8841,7 @@ msgid "Last used"
 msgstr "अंतिम उपयोग"
 
 msgid "Late in the evening, {name}."
-msgstr ""
+msgstr "शाम के देर में, {name}।"
 
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
@@ -8916,7 +8916,7 @@ msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
 
 msgid "Let's make it a good one, {name}."
-msgstr ""
+msgstr "इसे एक अच्छा दिन बनाते हैं, {name}।"
 
 msgid "Let's set up your new company"
 msgstr "आइए अपनी नई कंपनी सेट अप करें"
@@ -9000,7 +9000,7 @@ msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
 
 msgid "link outside company"
-msgstr ""
+msgstr "कंपनी के बाहर का लिंक"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "इस Carbon ग्राहक को इनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएँ।"
@@ -9642,7 +9642,7 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "मध्य-महीना / मध्य-त्रैमासिक / आधा-वर्ष सम्मेलन जो पहले वर्ष की कटौती निर्धारित करता है।"
 
 msgid "Midnight on the clock, {name}."
-msgstr ""
+msgstr "घड़ी पर आधी रात, {name}।"
 
 msgid "Migrate data"
 msgstr "डेटा माइग्रेट करें"
@@ -9774,7 +9774,7 @@ msgid "More overtime"
 msgstr "अधिक ओवरटाइम"
 
 msgid "Morning, {name}."
-msgstr ""
+msgstr "सुबह, {name}।"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "अधिकांश चीजें यहां पकड़ी जाती हैं और हल की जाती हैं। इसे स्पष्ट रूप से नाम दें।"
@@ -9857,7 +9857,7 @@ msgid "Navigate"
 msgstr "नेविगेट करें"
 
 msgid "Navigation"
-msgstr ""
+msgstr "नेविगेशन"
 
 msgid "NCRs by Type"
 msgstr "प्रकार के अनुसार NCR"
@@ -10244,7 +10244,7 @@ msgid "Next:"
 msgstr "अगला:"
 
 msgid "Nice and quiet at this hour."
-msgstr ""
+msgstr "इस समय बहुत शांत है।"
 
 msgid "No"
 msgstr "नहीं"
@@ -10446,7 +10446,7 @@ msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr ""
+msgstr "इस स्थान पर अभी कोई जॉब शेड्यूल नहीं किया गया है — कार्य-केंद्र लोड देखने के लिए एक जॉब जारी करें।"
 
 msgid "No jobs were created"
 msgstr "कोई जॉब नहीं बनाया गया"
@@ -10614,7 +10614,7 @@ msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
 msgid "No scheduled work in this window"
-msgstr ""
+msgstr "इस विंडो में कोई शेड्यूल किया गया कार्य नहीं है"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "कोई पारियाँ कॉन्फ़िगर नहीं — सोमवार–शुक्रवार, 8 घंटे की दिन मानी जा रही है"
@@ -10943,7 +10943,7 @@ msgid "On-time delivery"
 msgstr "समय पर डिलीवरी"
 
 msgid "Onboard your agent to Carbon"
-msgstr ""
+msgstr "अपने एजेंट को Carbon पर ऑनबोर्ड करें"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "एक वर्कफ़्लो का एक निष्पादन, चरण दर चरण रिकॉर्ड किया गया जिसमें प्रत्येक चरण द्वारा उपयोग किए गए और उत्पादित मान शामिल हैं, वर्कफ़्लो के स्वामी की अनुमतियों के साथ पूरे समय कार्य करते हुए।"
@@ -11051,7 +11051,7 @@ msgid "Open menu"
 msgstr "मेनू खोलें"
 
 msgid "Open navigation"
-msgstr ""
+msgstr "नेविगेशन खोलें"
 
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु के अनुसार खुली देय राशि"
@@ -11748,7 +11748,7 @@ msgid "Plan"
 msgstr "योजना"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr ""
+msgstr "आइटम और स्थान के लिए मांग का पूर्वानुमान करके आगे की योजना बनाएं, फिर इसे सीधे MRP और शेड्यूलिंग में डालें।"
 
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
@@ -12161,7 +12161,7 @@ msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
 
 msgid "Projected completion at"
-msgstr ""
+msgstr "पर पूर्ण होने का अनुमान"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "अनुमानित पूर्णता यदि यह नौकरी अपने स्थान के अनुसूचन के सामने कूद गई। कुछ भी सहेजा नहीं जाता है।"
@@ -12559,7 +12559,7 @@ msgid "Queued"
 msgstr "कतार में"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr ""
+msgstr "आज रात फर्श पर शांत है, {name}।"
 
 msgid "Quote"
 msgstr "उद्धरण"
@@ -12670,7 +12670,7 @@ msgid "Ready"
 msgstr "तैयार"
 
 msgid "Ready at"
-msgstr ""
+msgstr "पर तैयार"
 
 msgid "Ready for Quote"
 msgstr "कोटेशन के लिए तैयार"
@@ -12869,10 +12869,10 @@ msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "पुनर्जनित करें"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr ""
+msgstr "इस स्थान के शेड्यूल को अभी पुनर्जनित करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एक एकल पुनर्जनन को ट्रिगर करते हैं)।"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
@@ -12978,7 +12978,7 @@ msgid "Remove condition"
 msgstr "शर्त निकालें"
 
 msgid "Remove corrupted data and restore"
-msgstr ""
+msgstr "भ्रष्ट डेटा निकालें और पुनर्स्थापित करें"
 
 msgid "Remove Employee"
 msgstr "कर्मचारी को हटाएँ"
@@ -13150,7 +13150,7 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "जब सदस्य इस कंपनी में साइन इन करते हैं तो एक दूसरे कारक की आवश्यकता है।"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
+msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले असाइन किए गए ऑपरेटर की आवश्यकता होती है। जब सक्षम हो, तो अप्रबंधित वर्क सेंटर को कोई काम नहीं मिलता और कोई ऑपरेशन जिसके पास कोई कर्मचारी कवरेज नहीं है, अनुसूचीबद्ध नहीं दिखता है। लाइट्स-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
@@ -13216,7 +13216,7 @@ msgid "Requires Repair"
 msgstr "मरम्मत की आवश्यकता है"
 
 msgid "Requires staffing"
-msgstr ""
+msgstr "कर्मचारी आवश्यक है"
 
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
@@ -13298,7 +13298,7 @@ msgid "Restoring files"
 msgstr "फ़ाइलें पुनः स्थापित कर रहे हैं"
 
 msgid "restoring…"
-msgstr ""
+msgstr "पुनर्स्थापित किया जा रहा है…"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -13382,7 +13382,7 @@ msgid "Reverting"
 msgstr "पूर्ववत् कर रहे हैं"
 
 msgid "reverting…"
-msgstr ""
+msgstr "वापस किया जा रहा है…"
 
 msgid "Review"
 msgstr "समीक्षा"
@@ -13510,7 +13510,7 @@ msgid "rows"
 msgstr "पंक्तियाँ"
 
 msgid "Rows left out of this backup"
-msgstr ""
+msgstr "इस बैकअप से छोड़ी गई पंक्तियां"
 
 msgid "Rule"
 msgstr "नियम"
@@ -13841,13 +13841,13 @@ msgid "Schedule Name"
 msgstr "शेड्यूल नाम"
 
 msgid "Schedule outdated at"
-msgstr ""
+msgstr "पर शेड्यूल पुरानी हुई"
 
 msgid "Schedule outdated reason"
-msgstr ""
+msgstr "शेड्यूल पुरानी होने का कारण"
 
 msgid "Schedule regenerated"
-msgstr ""
+msgstr "शेड्यूल पुनर्जनित किया गया"
 
 msgid "Scheduled"
 msgstr "अनुसूचित"
@@ -14012,7 +14012,7 @@ msgid "Section"
 msgstr "अनुभाग"
 
 msgid "Sections"
-msgstr ""
+msgstr "अनुभाग"
 
 msgid "Secure your account with 2FA"
 msgstr "2FA के साथ अपने खाते को सुरक्षित करें"
@@ -14021,7 +14021,7 @@ msgid "Security"
 msgstr "सुरक्षा"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr ""
+msgstr "प्रत्येक वर्क सेंटर की लाइव क्षमता पूर्वानुमान देखें — जब प्रत्येक जॉब आपकी दुकान में चलने और समाप्त होने का अनुमान लगाया जाता है।"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "ऐसे सेगमेंट जो ग्राहक मूल्य निर्धारण और शर्तों को चलाते हैं"
@@ -14730,7 +14730,7 @@ msgid "Skip"
 msgstr "छोड़ें"
 
 msgid "Skip corrupted rows and retry"
-msgstr ""
+msgstr "भ्रष्ट पंक्तियों को छोड़ें और पुनः प्रयास करें"
 
 msgid "Skip Existing"
 msgstr "मौजूदा को छोड़ें"
@@ -14892,10 +14892,10 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr ""
+msgstr "कर्मचारी वैकल्पिक है"
 
 msgid "Staffing required"
-msgstr ""
+msgstr "कर्मचारी आवश्यक है"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -15031,7 +15031,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "चरण निरीक्षण योजना से विरासत में मिले हैं।"
 
 msgid "Still dark out on the floor."
-msgstr ""
+msgstr "फर्श पर अभी भी अंधेरा है।"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
@@ -15167,7 +15167,7 @@ msgid "Submitted By"
 msgstr "द्वारा प्रस्तुत"
 
 msgid "Submodules"
-msgstr ""
+msgstr "सबमॉड्यूल"
 
 msgid "substance"
 msgstr "पदार्थ"
@@ -15600,7 +15600,7 @@ msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
 msgid "Technical details"
-msgstr ""
+msgstr "तकनीकी विवरण"
 
 msgid "Technical support"
 msgstr "तकनीकी समर्थन"
@@ -15685,7 +15685,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The backup job reported this error."
-msgstr ""
+msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
@@ -15838,7 +15838,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "विभाग जिसके अंतर्गत यह रिपोर्टिंग और हेडकाउंट पदानुक्रमों के लिए रोल अप करता है; शीर्ष स्तरीय विभाग के लिए खाली छोड़ें।"
 
 msgid "The early hours, {name}."
-msgstr ""
+msgstr "सुबह के शुरुआती घंटे, {name}।"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "आठ-अनुशासन गुणवत्ता विधि, गैर-अनुरूपता वर्कफ़्लो के कार्यों के साथ मॉडल किया गया, हार्ड-कोडेड नहीं।"
@@ -15856,7 +15856,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "इंजीनियरिंग ड्राइंग जिसे यह निरीक्षण योजना बंधी है; इस हिस्से के विरुद्ध दर्ज निरीक्षण इस ड्राइंग को वापस संदर्भित करते हैं।"
 
 msgid "The evening hours, {name}."
-msgstr ""
+msgstr "शाम के घंटे, {name}।"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "इस आइटम के आउटपुट का अपेक्षित प्रतिशत जो उत्पादन के दौरान खो जाता है; योजना मांग को 1 / (1 − स्क्रैप) से गुणा करती है मुआवजा देने के लिए।"
@@ -16055,7 +16055,7 @@ msgstr "सबसे संभावित विफलता मोड जि�
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr ""
+msgstr "इस स्थान पर सबसे हाल का अनुसूचित काम {0} था।"
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "इस लाइन पर प्रति यूनिट मूल्य; इनलाइन ट्रेस आइकन दिखाता है कि कौन सा मूल्य नियम या ओवरराइड इसे उत्पादित किया।"
@@ -16071,13 +16071,13 @@ msgstr "कार्यविधि की नई संस्करण सं�
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr ""
+msgstr "इस स्थान पर अगली अनुसूचित काम {0} से शुरू होती है।"
 
 msgid "The night shift suits you, {name}."
-msgstr ""
+msgstr "रात की शिफ्ट आपको सूट करती है, {name}।"
 
 msgid "The night's still young, {name}."
-msgstr ""
+msgstr "रात अभी जवान है, {name}।"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "पसंदीदा आपूर्तिकर्ता के साथ एक PO देने और सामान डॉक पर पहुंचने के बीच दिनों की संख्या; योजना इस राशि से मांग को पीछे की ओर ऑफसेट करता है।"
@@ -16219,7 +16219,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The restore job reported this error."
-msgstr ""
+msgstr "पुनर्स्थापन जॉब ने इस त्रुटि की रिपोर्ट की।"
 
 msgid "The result will not appear on the Runs page."
 msgstr "परिणाम Runs page पर प्रदर्शित नहीं होगा।"
@@ -16459,16 +16459,16 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
-msgstr ""
+msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रतिलिपि नहीं बनाई जा सकती। उन्हें हटाया नहीं जा सकता। पुनर्स्थापन तुरंत बाद में शुरू होगा।"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
-msgstr ""
+msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"
 
 msgid "this ability"
 msgstr "यह क्षमता"
 
 msgid "This backup could not be completed."
-msgstr ""
+msgstr "यह बैकअप पूर्ण नहीं किया जा सका।"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "इस बैकअप की अभी जांच नहीं की गई है। कोई भी अंतर पुनः स्थापित करने के समय पाया जाता है।"
@@ -16565,10 +16565,10 @@ msgid "This job's own required quantity for the material."
 msgstr "इस सामग्री के लिए इस कार्य की अपनी आवश्यक मात्रा।"
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr ""
+msgstr "यह स्थान केवल कर्मचारी वर्क सेंटर को शेड्यूल करता है, लेकिन यह एक लाइट्स-आउट (24×7) स्टेशन है — यह छूट प्राप्त है और बिना निगरानी के चलता रहता है।"
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr ""
+msgstr "यह स्थान केवल उस काम को शेड्यूल करता है जहां ऑपरेटर मैनिंग बोर्ड पर असाइन किया गया है। यहाँ किसी के असाइन न होने से, काम अनुसूचित नहीं है और अनुसूचीबद्ध नहीं दिखता है।"
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
@@ -16583,7 +16583,7 @@ msgid "This Month"
 msgstr "इस महीने"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr ""
+msgstr "यह ऑपरेशन अभी अनुसूचित नहीं किया जा सकता — बार यह चिह्नित करता है कि यह कहां चलेगा जब विरोध हल हो जाता है। यह क्षमता नहीं रखता है।"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "आपके कार्यान्वयन हब के इस पृष्ठ को बनाया जा रहा है। कमांड सेंटर से शुरू करें जबकि हम इसे पूरा करते हैं।"
@@ -16619,10 +16619,10 @@ msgid "This removes their authenticator app, so their next sign-in only needs a 
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
 
 msgid "This restore could not be completed."
-msgstr ""
+msgstr "यह पुनर्स्थापन पूर्ण नहीं किया जा सका।"
 
 msgid "This revert could not be completed."
-msgstr ""
+msgstr "यह वापसी पूर्ण नहीं की जा सकी।"
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "यह रिवीजन जारी है (उत्पादन)। परिवर्तन आमतौर पर एक परिवर्तन सूचना के माध्यम से प्रवाहित होने चाहिए।"
@@ -16643,10 +16643,10 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "इस विक्रय आदेश के पास पंक्तियां हैं जिनके लिए जॉब बनाने की आवश्यकता है"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "यह स्टेशन कौशल-आधारित कार्य चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आकार देते हैं।"
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr ""
+msgstr "यह स्टेशन बिना कौशल आवश्यकता के कार्य चलाता है; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आकार देते हैं।"
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17314,7 +17314,7 @@ msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
 
 msgid "Unschedulable"
-msgstr ""
+msgstr "शेड्यूल योग्य नहीं"
 
 msgid "Unscheduled"
 msgstr "अनुसूचित नहीं"
@@ -18055,7 +18055,7 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "पिछले साल की भारित औसत लागत जो चालान पोस्ट किए जाने पर गणना की जाती है"
 
 msgid "Welcome back, {name}."
-msgstr ""
+msgstr "फिर से स्वागत है, {name}।"
 
 msgid "Welcome to Carbon"
 msgstr "कार्बन में आपका स्वागत है"
@@ -18394,13 +18394,13 @@ msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set
 msgstr "स्टॉक क्यों बदल रहा है — सकारात्मक (पाया गया), नकारात्मक (खोया/स्क्रैप) या सेट करें (गिनती को मापा मूल्य से बदलें)।"
 
 msgid "Why this backup failed"
-msgstr ""
+msgstr "यह बैकअप क्यों विफल हुआ"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "यह पंक्ति क्यों अस्वीकार की जा रही है; मुद्रण योग्य उद्धरण पर प्रदर्शित और जीत-हानि रिपोर्टिंग के लिए दर्ज।"
 
 msgid "Why this restore failed"
-msgstr ""
+msgstr "यह पुनर्स्थापन क्यों विफल हुआ"
 
 msgid "Will remain as a comment line"
 msgstr "टिप्पणी पंक्ति के रूप में रहेगा"
@@ -18639,7 +18639,7 @@ msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
-msgstr ""
+msgstr "आपका डेटा परिवर्तित नहीं किया गया — पुनर्स्थापन पूरा न हो सके तो किसी भी चीज़ को छूने से पहले रुक जाता है।"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"
