@@ -243,7 +243,6 @@ msgid "{name} deleted"
 msgstr "{name} 已删除"
 
 msgid "{name} returns!"
-msgstr "{name} 回来了！"
 msgstr "{name}回来了！"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
@@ -278,7 +277,6 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr "{unschedulableCount} 无法排程"
 msgstr "{unschedulableCount}无法排程"
 
 msgid "{updatedJobCount} jobs updated"
@@ -321,7 +319,6 @@ msgid "0-4 weeks"
 msgstr "0-4 周"
 
 msgid "1 can't be scheduled"
-msgstr "1 无法排程"
 msgstr "1无法排程"
 
 msgid "1 conflict"
@@ -1397,7 +1394,6 @@ msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
 msgid "Afternoon, {name}."
-msgstr "下午好，{name}。"
 msgstr "下午，{name}。"
 
 msgid "Aging"
@@ -3837,10 +3833,6 @@ msgid "Copied setup prompt to your clipboard"
 msgstr "已将设置提示复制到剪贴板"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr "为您的 AI 编码工具复制设置提示"
-msgstr "已将换型提示复制到剪贴板"
-
-msgid "Copies a setup prompt for your AI coding tool"
 msgstr "复制换型提示给您的AI编码工具"
 
 msgid "Copy"
@@ -4749,7 +4741,6 @@ msgid "Dates"
 msgstr "日期"
 
 msgid "Dawn's breaking, {name}."
-msgstr "天亮了，{name}。"
 msgstr "黎明破晓，{name}。"
 
 msgid "Day"
@@ -6497,7 +6488,6 @@ msgid "Estimator"
 msgstr "估价员"
 
 msgid "Evening, {name}."
-msgstr "晚上好，{name}。"
 msgstr "傍晚，{name}。"
 
 msgid "Event"
@@ -6991,7 +6981,6 @@ msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr "无法重新生成排程"
 msgstr "排程再生成失败"
 
 msgid "Failed to regenerate thumbnail"
@@ -7243,7 +7232,6 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 
 msgid "First light, {name}."
-msgstr "天刚亮，{name}。"
 msgstr "天明时刻，{name}。"
 
 msgid "First name"
@@ -7641,7 +7629,6 @@ msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
 msgid "Go to that week"
-msgstr "转到该周"
 msgstr "跳转到该周"
 
 msgid "Go-Live"
@@ -7738,7 +7725,6 @@ msgid "Has conflict"
 msgstr "存在冲突"
 
 msgid "Has operations that can't be scheduled"
-msgstr "包含无法排程的工序"
 msgstr "有无法排程的工序"
 
 msgid "Headers"
@@ -8861,7 +8847,6 @@ msgid "Last used"
 msgstr "最后使用"
 
 msgid "Late in the evening, {name}."
-msgstr "夜晚晚些时候，{name}。"
 msgstr "傍晚晚些时候，{name}。"
 
 msgid "Latest operation end"
@@ -8937,7 +8922,6 @@ msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
 msgid "Let's make it a good one, {name}."
-msgstr "让我们创造美好的一天，{name}。"
 msgstr "让我们创造美好的一天吧，{name}。"
 
 msgid "Let's set up your new company"
@@ -9796,7 +9780,6 @@ msgid "More overtime"
 msgstr "更多加班"
 
 msgid "Morning, {name}."
-msgstr "早上好，{name}。"
 msgstr "早上，{name}。"
 
 msgid "Most things get caught and resolved here. Name it plainly."
@@ -10270,7 +10253,6 @@ msgid "Next:"
 msgstr "下一步："
 
 msgid "Nice and quiet at this hour."
-msgstr "这个时间很安静呢。"
 msgstr "这个时间很宁静。"
 
 msgid "No"
@@ -10473,7 +10455,6 @@ msgid "No items have inventory activity here yet."
 msgstr "此处尚无物料库存活动。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr "此地点还未有排程的工单 — 下达工单以查看加工中心负荷。"
 msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
 
 msgid "No jobs were created"
@@ -10971,7 +10952,6 @@ msgid "On-time delivery"
 msgstr "准时交付"
 
 msgid "Onboard your agent to Carbon"
-msgstr "将您的代理集成到 Carbon"
 msgstr "将您的代理接入Carbon"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
@@ -11777,7 +11757,6 @@ msgid "Plan"
 msgstr "计划"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr "通过按物料和地点预测需求，然后直接输入到MRP和排程中来提前规划。"
 msgstr "通过按物料和地点投影需求进行超前规划，然后将其直接送入MRP和排程。"
 
 msgid "Plan the work"
@@ -12589,7 +12568,6 @@ msgid "Queued"
 msgstr "排队中"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr "今晚厂房很安静，{name}。"
 msgstr "今晚车间很安静，{name}。"
 
 msgid "Quote"
@@ -12903,10 +12881,6 @@ msgid "Regenerate"
 msgstr "重新生成"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr "立即为此地点重新生成排程。它还会在最后一次排程更改后约30秒自动运行（编辑会分批处理，因此多次快速更改会触发单次重新生成）。"
-msgstr "再生成"
-
-msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
 
 msgid "Regenerate thumbnail from the 3D model"
@@ -13185,7 +13159,6 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "成员登录此公司时需要第二因素验证"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr "在调度程序在某地点分配工作之前需要指定一个已分配的操作员。打开时，没有人员配置的工作中心无法获得工作，没有配置人员覆盖的工序显示为无法排程。无人值守（24×7）工作中心除外。"
 msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
@@ -13252,7 +13225,6 @@ msgid "Requires Repair"
 msgstr "需要维修"
 
 msgid "Requires staffing"
-msgstr "需要人员配置"
 msgstr "需要人工配置"
 
 msgid "Reserve floor"
@@ -13878,7 +13850,6 @@ msgid "Schedule Name"
 msgstr "排程名称"
 
 msgid "Schedule outdated at"
-msgstr "排程已过时于"
 msgstr "排程过时于"
 
 msgid "Schedule outdated reason"
@@ -14059,7 +14030,6 @@ msgid "Security"
 msgstr "安全"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr "查看每个工作中心的实时容量预测——每个工单在您的车间中预计运行和完成的时间。"
 msgstr "查看每个工作中心的实时产能预测 — 每个工单预计在整个车间运行和完成的时间。"
 
 msgid "Segments that drive customer pricing and terms"
@@ -14934,10 +14904,6 @@ msgid "Staffing optional"
 msgstr "人员配置可选"
 
 msgid "Staffing required"
-msgstr "人员配置必需"
-msgstr "人工配置可选"
-
-msgid "Staffing required"
 msgstr "人工配置必需"
 
 msgid "Stand up hosting"
@@ -15074,7 +15040,6 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
 
 msgid "Still dark out on the floor."
-msgstr "厂房仍然一片黑暗。"
 msgstr "车间仍在黑暗中。"
 
 msgid "Stock movement corrected"
@@ -15730,6 +15695,7 @@ msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
 msgid "The backup job reported this error."
 msgstr "备份工作报告了此错误。"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
@@ -15884,7 +15850,6 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
 msgid "The early hours, {name}."
-msgstr "早上时分，{name}。"
 msgstr "早晨时刻，{name}。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
@@ -15903,7 +15868,6 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "此检验计划关联的工程图纸；针对此零件记录的检验将引用此图纸。"
 
 msgid "The evening hours, {name}."
-msgstr "傍晚时分，{name}。"
 msgstr "傍晚时刻，{name}。"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -16103,7 +16067,6 @@ msgstr "请求者怀疑的最可能的失败模式；技术人员在关闭时确
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr "此位置最近的已排程工作是{0}。"
 msgstr "该地点最近的排程工作是{0}。"
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
@@ -16121,13 +16084,6 @@ msgstr "程序文件的新版本号"
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
 msgstr "此位置的下一个已排程工作开始于{0}。"
-
-msgid "The night shift suits you, {name}."
-msgstr "夜班适合你，{name}。"
-
-msgid "The night's still young, {name}."
-msgstr "夜色未深，{name}。"
-msgstr "该地点的下一个排程工作开始于{0}。"
 
 msgid "The night shift suits you, {name}."
 msgstr "晚班适合你，{name}。"
@@ -16624,10 +16580,6 @@ msgid "This location only schedules staffed work centers, but this is a lights-o
 msgstr "此地点仅对配置人员的工作中心进行排程，但这是一个无人值守（24×7）工作站——它被豁免，可以无人值守运行。"
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr "此地点仅排程在人员配置看板上指定操作员的工作。如果此处未分配任何人，工作不会被排程并显示为无法排程。"
-msgstr "该地点仅排程有人工作的工作中心，但这是一个熄灯（24×7）站 — 它豁免并保持无人运行。"
-
-msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "该地点仅排程在人员配备板上已分配操作员的工作。此处未分配任何人员时，工作不会被排程并显示为无法排程。"
 
 msgid "This lot is expired and can't be picked."
@@ -16643,7 +16595,6 @@ msgid "This Month"
 msgstr "本月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr "此工序暂时无法排程——该栏标记了一旦冲突解决后它将运行的位置。它没有占用容量。"
 msgstr "该工序暂时无法排程 — 条形图标记一旦冲突解决后它将运行的位置。它不占用产能。"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
@@ -16705,10 +16656,6 @@ msgstr "这个销售订单有需要创建工单的行。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "该工作站运行受技能限制的工作——仅在班次内有具合格操作员在岗时运行;人员配置板上已分配的操作员进一步决定可用人工。"
-
-msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr "该工作站运行无技能要求的工作;人员配置板上已分配的操作员决定可用人工。"
-msgstr "该站运行技能门控工作 — 它仅在合格操作员轮班时运行；人员配备板上分配的操作员进一步塑造可用人工。"
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "该站运行无技能要求的工作；人员配备板上分配的操作员塑造可用人工。"
@@ -17379,7 +17326,6 @@ msgid "Unsaved changes"
 msgstr "未保存的更改"
 
 msgid "Unschedulable"
-msgstr "不可排期"
 msgstr "无法排程"
 
 msgid "Unscheduled"
@@ -18121,7 +18067,6 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "上年加权平均成本在发票过账时计算"
 
 msgid "Welcome back, {name}."
-msgstr "欢迎回来,{name}。"
 msgstr "欢迎回来，{name}。"
 
 msgid "Welcome to Carbon"

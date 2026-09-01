@@ -243,7 +243,6 @@ msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
 msgid "{name} returns!"
-msgstr "{name} が戻ってきた！"
 msgstr "{name}が戻ってきました！"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
@@ -278,7 +277,6 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr "{unschedulableCount} はスケジュールできません"
 msgstr "{unschedulableCount}はスケジュール化できません"
 
 msgid "{updatedJobCount} jobs updated"
@@ -321,7 +319,6 @@ msgid "0-4 weeks"
 msgstr "0～4週間"
 
 msgid "1 can't be scheduled"
-msgstr "1 はスケジュールできません"
 msgstr "1はスケジュール化できません"
 
 msgid "1 conflict"
@@ -1397,7 +1394,6 @@ msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
 msgid "Afternoon, {name}."
-msgstr "午後、{name}。"
 msgstr "午後、{name}さん。"
 
 msgid "Aging"
@@ -2928,7 +2924,6 @@ msgid "Can't be restored"
 msgstr "復元できません"
 
 msgid "Can't be scheduled"
-msgstr "スケジュールできません"
 msgstr "スケジュール化できません"
 
 msgid "Can't delete this period"
@@ -3836,10 +3831,6 @@ msgstr "クリップボードにリンクをコピーしました"
 
 msgid "Copied setup prompt to your clipboard"
 msgstr "セットアップのプロンプトをクリップボードにコピーしました"
-
-msgid "Copies a setup prompt for your AI coding tool"
-msgstr "AI コーディング ツール用のセットアップ プロンプトをコピーします"
-msgstr "段取りプロンプトをクリップボードにコピーしました"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AIコーディングツール用の段取りプロンプトをコピーします"
@@ -4750,7 +4741,6 @@ msgid "Dates"
 msgstr "日付"
 
 msgid "Dawn's breaking, {name}."
-msgstr "夜明けが近づいています、{name}。"
 msgstr "明け方ですね、{name}さん。"
 
 msgid "Day"
@@ -4859,7 +4849,6 @@ msgid "Declining balance"
 msgstr "定率法"
 
 msgid "Deep in the small hours, {name}."
-msgstr "深夜です、{name}。"
 msgstr "真夜中ですね、{name}さん。"
 
 msgid "Default"
@@ -5595,7 +5584,6 @@ msgid "Don't Cancel"
 msgstr "キャンセルしない"
 
 msgid "Don't show this again"
-msgstr "今後、表示しないでください"
 msgstr "今後表示しない"
 
 msgid "done"
@@ -6500,7 +6488,6 @@ msgid "Estimator"
 msgstr "見積者"
 
 msgid "Evening, {name}."
-msgstr "夜、{name}。"
 msgstr "夜間、{name}さん。"
 
 msgid "Event"
@@ -7245,7 +7232,6 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
 
 msgid "First light, {name}."
-msgstr "夜明け、{name}。"
 msgstr "夜明け、{name}さん。"
 
 msgid "First name"
@@ -7667,13 +7653,6 @@ msgid "Good afternoon, {name}."
 msgstr "こんにちは、{name}。"
 
 msgid "Good evening, {name}."
-msgstr "こんばんは、{name}。"
-
-msgid "Good morning, {name}."
-msgstr "おはよう、{name}。"
-msgstr "こんにちは、{name}さん。"
-
-msgid "Good evening, {name}."
 msgstr "こんばんは、{name}さん。"
 
 msgid "Good morning, {name}."
@@ -7746,7 +7725,6 @@ msgid "Has conflict"
 msgstr "競合がある"
 
 msgid "Has operations that can't be scheduled"
-msgstr "スケジュールできない工程があります"
 msgstr "スケジュール化できない工程があります"
 
 msgid "Headers"
@@ -7804,7 +7782,6 @@ msgid "Hop {depth}"
 msgstr "ホップ {depth}"
 
 msgid "Hope things are treating you well, {name}."
-msgstr "お疲れ様です、{name}。"
 msgstr "うまくいっていることを願っています、{name}さん。"
 
 msgid "Host"
@@ -8870,7 +8847,6 @@ msgid "Last used"
 msgstr "最後に使用"
 
 msgid "Late in the evening, {name}."
-msgstr "夜遅い時間です、{name}。"
 msgstr "夜遅く、{name}さん。"
 
 msgid "Latest operation end"
@@ -8946,7 +8922,6 @@ msgid "Let's build something"
 msgstr "何か作ってみましょう"
 
 msgid "Let's make it a good one, {name}."
-msgstr "良い一日にしましょう、{name}。"
 msgstr "いい一日にしましょう、{name}さん。"
 
 msgid "Let's set up your new company"
@@ -9673,7 +9648,6 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "初年度控除を決定する中月/四半期中/半年の慣例。"
 
 msgid "Midnight on the clock, {name}."
-msgstr "真夜中です、{name}。"
 msgstr "真夜中、{name}さん。"
 
 msgid "Migrate data"
@@ -9806,7 +9780,6 @@ msgid "More overtime"
 msgstr "残業を増やす"
 
 msgid "Morning, {name}."
-msgstr "朝、{name}。"
 msgstr "朝、{name}さん。"
 
 msgid "Most things get caught and resolved here. Name it plainly."
@@ -10280,7 +10253,6 @@ msgid "Next:"
 msgstr "次:"
 
 msgid "Nice and quiet at this hour."
-msgstr "この時間は静かですね。"
 msgstr "この時間帯は静かでいいですね。"
 
 msgid "No"
@@ -10483,7 +10455,6 @@ msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr "この拠点にはまだ製造指図がスケジュールされていません。製造指図をリリースして、作業センターの負荷を確認してください。"
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
 
 msgid "No jobs were created"
@@ -10652,7 +10623,6 @@ msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
 msgid "No scheduled work in this window"
-msgstr "このウィンドウにはスケジュール済みの仕事がありません"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
@@ -10982,7 +10952,6 @@ msgid "On-time delivery"
 msgstr "オンタイム配送"
 
 msgid "Onboard your agent to Carbon"
-msgstr "エージェントを Carbon にオンボードする"
 msgstr "エージェントを Carbon にオンボード"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
@@ -11788,7 +11757,6 @@ msgid "Plan"
 msgstr "計画"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr "品目と拠点ごとの所要量を予測してから、MRPとスケジュール作成に直接反映させることで先を見据えた計画を立ててください。"
 msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、MRP とスケジューリングに直接フィードします。"
 
 msgid "Plan the work"
@@ -12202,7 +12170,6 @@ msgid "Projected completion"
 msgstr "予測完了"
 
 msgid "Projected completion at"
-msgstr "予想完了日時"
 msgstr "予定完了"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
@@ -12601,7 +12568,6 @@ msgid "Queued"
 msgstr "キュー待ち"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr "今夜は作業場も静かですね、{name}。"
 msgstr "今夜のフロアは静かですね、{name}さん。"
 
 msgid "Quote"
@@ -12713,7 +12679,6 @@ msgid "Ready"
 msgstr "準備完了"
 
 msgid "Ready at"
-msgstr "準備完了時刻"
 msgstr "準備完了"
 
 msgid "Ready for Quote"
@@ -12916,7 +12881,6 @@ msgid "Regenerate"
 msgstr "再生成"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動実行されます（編集はバッチ処理されるため、複数の迅速な変更は1回の再生成をトリガーします）。"
 msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動的にも実行されます（編集はバッチ処理されるため、いくつかの迅速な変更により1つの再生成がトリガーされます）。"
 
 msgid "Regenerate thumbnail from the 3D model"
@@ -13195,7 +13159,6 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "メンバーがこの会社にサインインする際に、セカンドファクタを必須にする。"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr "スケジューラが拠点に仕事を配置する前に、割当済の作業者が必要です。有効な場合、人員が配置されていない作業区には仕事が割り当てられず、人員配置のない工程は予定不可として表示されます。無人（24×7）の作業区は除外されます。"
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
@@ -13262,7 +13225,6 @@ msgid "Requires Repair"
 msgstr "修理が必要"
 
 msgid "Requires staffing"
-msgstr "人員配置が必須"
 msgstr "スタッフが必要"
 
 msgid "Reserve floor"
@@ -13891,10 +13853,6 @@ msgid "Schedule outdated at"
 msgstr "スケジュール無効化時刻"
 
 msgid "Schedule outdated reason"
-msgstr "スケジュール無効化理由"
-msgstr "スケジュール古い状態"
-
-msgid "Schedule outdated reason"
 msgstr "スケジュール古くなった理由"
 
 msgid "Schedule regenerated"
@@ -14072,7 +14030,6 @@ msgid "Security"
 msgstr "セキュリティ"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr "すべての作業区の容量予測をリアルタイムで表示 — 各製造指図がどの時点で実行・完了するかを確認できます。"
 msgstr "ショップ全体の各作業区のリアルタイム キャパシティ予測を表示してください — 各製造指図がいつ実行および完了するかを確認します。"
 
 msgid "Segments that drive customer pricing and terms"
@@ -14947,10 +14904,6 @@ msgid "Staffing optional"
 msgstr "人員配置は任意"
 
 msgid "Staffing required"
-msgstr "人員配置が必須"
-msgstr "スタッフは任意"
-
-msgid "Staffing required"
 msgstr "スタッフが必要"
 
 msgid "Stand up hosting"
@@ -15087,7 +15040,6 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
 
 msgid "Still dark out on the floor."
-msgstr "作業場はまだ暗いですね。"
 msgstr "まだフロアは暗い。"
 
 msgid "Stock movement corrected"
@@ -15743,6 +15695,7 @@ msgstr "Onshape で認可が拒否されました。もう一度接続してく�
 
 msgid "The backup job reported this error."
 msgstr "バックアップジョブがこのエラーを報告しました。"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
@@ -15897,7 +15850,6 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
 msgid "The early hours, {name}."
-msgstr "早朝です、{name}。"
 msgstr "早朝の時間、{name}。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
@@ -15916,7 +15868,6 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
 
 msgid "The evening hours, {name}."
-msgstr "夕方です、{name}。"
 msgstr "夜間の時間、{name}。"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -16133,13 +16084,6 @@ msgstr "手順書の新しいバージョン番号"
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
 msgstr "この拠点での次のスケジュール作業は{0}に開始されます。"
-
-msgid "The night shift suits you, {name}."
-msgstr "夜シフトが似合っていますね、{name}。"
-
-msgid "The night's still young, {name}."
-msgstr "夜はまだ若いですね、{name}。"
-msgstr "この拠点での次のスケジュール作業は{0}に開始します。"
 
 msgid "The night shift suits you, {name}."
 msgstr "夜間シフトはあなたに合っています、{name}。"
@@ -16636,10 +16580,6 @@ msgid "This location only schedules staffed work centers, but this is a lights-o
 msgstr "この拠点は人員が配置された作業区のみをスケジュール管理しますが、ここは無人（24×7）ステーション — 除外され、無人で稼働を続けます。"
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr "この拠点は人員計画表に作業者が割当済である場合にのみ仕事をスケジュール管理します。ここに割当者がいない場合、仕事はスケジュール管理されず、予定不可として表示されます。"
-msgstr "この拠点はスタッフが配置された作業区のみをスケジュールしますが、これはライトアウト（24×7）ステーションです — これは除外であり、無人で実行され続けます。"
-
-msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "この拠点は、マニング ボード上に作業者が割り当てられている作業のみをスケジュールします。ここに誰も割り当てられていない場合、作業はスケジュールされず、スケジュール不可として表示されます。"
 
 msgid "This lot is expired and can't be picked."
@@ -16655,7 +16595,6 @@ msgid "This Month"
 msgstr "今月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr "この工程はまだスケジュール管理できません — バーは競合が解決されたら実行される場所を示します。容量を保持していません。"
 msgstr "この工程はまだスケジュールできません — バーは競合が解決されたら実行される場所をマークします。容量を保持していません。"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
@@ -16717,10 +16656,6 @@ msgstr "この受注には製造指図の作成が必要な明細があります
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル要求のある仕事を実行します — 適格な作業者がシフト中にのみ稼働し、人員配置ボード上に割当済の作業者がさらに利用可能な労務を形成します。"
-
-msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr "このステーションはスキル要求のない仕事を実行します; 人員配置ボード上に割当済の作業者が利用可能な労務を形成します。"
-msgstr "このステーションはスキルゲート作業を実行します — 適格な作業者がシフト中にのみ実行されます。マニング ボード上に割り当てられた作業者は、利用可能な労務をさらに形作ります。"
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "このステーションはスキル要求事項がない作業を実行します。マニング ボード上に割り当てられた作業者は、利用可能な労務を形作ります。"
@@ -18132,7 +18067,6 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "過去1年間の加重平均原価は請求書が転記されるときに計算されます"
 
 msgid "Welcome back, {name}."
-msgstr "おかえりなさい、{name}。"
 msgstr "お帰りなさい、{name}。"
 
 msgid "Welcome to Carbon"

@@ -277,7 +277,6 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non comptabilisées}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr "{unschedulableCount} ne peut pas être planifié"
 msgstr "{unschedulableCount} ne peuvent pas être planifiés"
 
 msgid "{updatedJobCount} jobs updated"
@@ -1395,7 +1394,6 @@ msgid "After (calculation method)"
 msgstr "Après (méthode de calcul)"
 
 msgid "Afternoon, {name}."
-msgstr "Après-midi, {name}."
 msgstr "Bon après-midi, {name}."
 
 msgid "Aging"
@@ -3835,10 +3833,6 @@ msgid "Copied setup prompt to your clipboard"
 msgstr "Invite de Réglage copiée dans votre presse-papiers"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr "Copie une invite de Réglage pour votre outil de codage IA"
-msgstr "Invite de réglage copiée dans le presse-papiers"
-
-msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copie une invite de réglage pour votre outil de codage IA"
 
 msgid "Copy"
@@ -4747,7 +4741,6 @@ msgid "Dates"
 msgstr "Dates"
 
 msgid "Dawn's breaking, {name}."
-msgstr "L'aube se lève, {name}."
 msgstr "L'aube point, {name}."
 
 msgid "Day"
@@ -4856,7 +4849,6 @@ msgid "Declining balance"
 msgstr "Amortissement dégressif"
 
 msgid "Deep in the small hours, {name}."
-msgstr "En pleine nuit, {name}."
 msgstr "Au cœur de la nuit, {name}."
 
 msgid "Default"
@@ -5592,7 +5584,6 @@ msgid "Don't Cancel"
 msgstr "Ne pas annuler"
 
 msgid "Don't show this again"
-msgstr "Ne plus afficher ceci"
 msgstr "Ne plus afficher"
 
 msgid "done"
@@ -6497,7 +6488,6 @@ msgid "Estimator"
 msgstr "Estimateur"
 
 msgid "Evening, {name}."
-msgstr "Soirée, {name}."
 msgstr "Bonsoir, {name}."
 
 msgid "Event"
@@ -6991,7 +6981,6 @@ msgid "Failed to move account: {0}"
 msgstr "Impossible de déplacer le compte : {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr "Impossible de régénérer le Planning"
 msgstr "Impossible de régénérer le planning"
 
 msgid "Failed to regenerate thumbnail"
@@ -7243,7 +7232,6 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "La fermeture est refusée jusqu'à ce que chaque ligne soit prélevée ou marquée comme Courte."
 
 msgid "First light, {name}."
-msgstr "Première lumière, {name}."
 msgstr "Aux premières lueurs, {name}."
 
 msgid "First name"
@@ -7665,7 +7653,6 @@ msgid "Good afternoon, {name}."
 msgstr "Bon après-midi, {name}."
 
 msgid "Good evening, {name}."
-msgstr "Bonne soirée, {name}."
 msgstr "Bonsoir, {name}."
 
 msgid "Good morning, {name}."
@@ -7738,7 +7725,6 @@ msgid "Has conflict"
 msgstr "Est en conflit"
 
 msgid "Has operations that can't be scheduled"
-msgstr "A des Opérations qui ne peuvent pas être planifiées"
 msgstr "Contient des opérations qui ne peuvent pas être planifiées"
 
 msgid "Headers"
@@ -8861,7 +8847,6 @@ msgid "Last used"
 msgstr "Dernière utilisation"
 
 msgid "Late in the evening, {name}."
-msgstr "Tard dans la soirée, {name}."
 msgstr "Tard en soirée, {name}."
 
 msgid "Latest operation end"
@@ -8937,7 +8922,6 @@ msgid "Let's build something"
 msgstr "Construisons quelque chose"
 
 msgid "Let's make it a good one, {name}."
-msgstr "Faisons une bonne journée, {name}."
 msgstr "Faisons-en une bonne, {name}."
 
 msgid "Let's set up your new company"
@@ -9664,7 +9648,6 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "Convention de mi-mois / mi-trimestre / mi-année qui détermine la déduction de première année."
 
 msgid "Midnight on the clock, {name}."
-msgstr "Minuit précis, {name}."
 msgstr "Minuit pile, {name}."
 
 msgid "Migrate data"
@@ -9797,7 +9780,6 @@ msgid "More overtime"
 msgstr "Plus d'heures supplémentaires"
 
 msgid "Morning, {name}."
-msgstr "Matin, {name}."
 msgstr "Bon matin, {name}."
 
 msgid "Most things get caught and resolved here. Name it plainly."
@@ -10271,7 +10253,6 @@ msgid "Next:"
 msgstr "Suivant :"
 
 msgid "Nice and quiet at this hour."
-msgstr "Agréable et calme à cette heure."
 msgstr "C'est calme et tranquille à cette heure."
 
 msgid "No"
@@ -10474,7 +10455,6 @@ msgid "No items have inventory activity here yet."
 msgstr "Aucun article n'a encore d'activité d'inventaire ici."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr "Aucun Ordre de fabrication n'est planifié à ce Site pour le moment — Lancez un Ordre de fabrication pour voir la charge du centre de travail."
 msgstr "Aucun ordre de fabrication n'est programmé sur ce site pour l'instant — lancez un ordre de fabrication pour voir la charge du poste de travail."
 
 msgid "No jobs were created"
@@ -10643,7 +10623,6 @@ msgid "No rules assigned"
 msgstr "Aucune règle assignée"
 
 msgid "No scheduled work in this window"
-msgstr "Aucun travail planifié dans cette fenêtre"
 msgstr "Aucun travail prévu dans cette fenêtre"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
@@ -11778,7 +11757,6 @@ msgid "Plan"
 msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr "Anticipez en projetant les besoins par article et par site, puis alimentez directement le MRP et la planification."
 msgstr "Planifiez à l'avance en projetant les besoins par article et par site, puis alimentez-les directement dans MRP et le planning."
 
 msgid "Plan the work"
@@ -12590,7 +12568,6 @@ msgid "Queued"
 msgstr "En file d'attente"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr "C'est calme sur l'atelier ce soir, {name}."
 msgstr "Calme à l'atelier ce soir, {name}."
 
 msgid "Quote"
@@ -12904,7 +12881,6 @@ msgid "Regenerate"
 msgstr "Régénérer"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr "Régénérez la planification pour ce site dès maintenant. Elle s'exécute également automatiquement environ 30 secondes après la dernière modification de planification (les modifications sont regroupées, afin que plusieurs modifications rapides déclenchent une seule régénération)."
 msgstr "Régénérez le planning pour ce site maintenant. Il s'exécute également automatiquement environ 30 secondes après le dernier changement de planning (les modifications sont regroupées, de sorte que plusieurs changements rapides déclenchent une seule régénération)."
 
 msgid "Regenerate thumbnail from the 3D model"
@@ -13183,7 +13159,6 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "Exiger un second facteur quand les membres se connectent à cette société."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr "Exigez un opérateur assigné avant que le planificateur n'attribue du travail à un site. Lorsqu'elle est activée, les postes de travail non dotés en personnel ne reçoivent pas de travail et une opération sans couverture de personnel s'affiche comme non planifiable. Les postes de travail sans surveillance (24×7) sont exempts."
 msgstr "Exiger un opérateur assigné avant que le planificateur ne place le travail sur un site. Lorsque c'est activé, les postes de travail non dotés en personnel ne reçoivent pas de travail et une opération sans couverture en main-d'œuvre s'affiche comme non planifiable. Les postes de travail sans interruption (24×7) sont exemptés."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
@@ -13878,13 +13853,6 @@ msgid "Schedule outdated at"
 msgstr "Planification obsolète à"
 
 msgid "Schedule outdated reason"
-msgstr "Raison d'obsolescence de la planification"
-
-msgid "Schedule regenerated"
-msgstr "Planification régénérée"
-msgstr "Planning obsolète à"
-
-msgid "Schedule outdated reason"
 msgstr "Raison de l'obsolescence du planning"
 
 msgid "Schedule regenerated"
@@ -14062,7 +14030,6 @@ msgid "Security"
 msgstr "Sécurité"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr "Consultez une prévision de capacité en direct de chaque poste de travail — quand chaque ordre de fabrication est prévu de s'exécuter et de se terminer dans votre atelier."
 msgstr "Consultez une prévision de capacité en direct pour chaque poste de travail — quand chaque ordre de fabrication devrait s'exécuter et se terminer dans votre atelier."
 
 msgid "Segments that drive customer pricing and terms"
@@ -14937,7 +14904,6 @@ msgid "Staffing optional"
 msgstr "Personnel optionnel"
 
 msgid "Staffing required"
-msgstr "Personnel obligatoire"
 msgstr "Personnel requis"
 
 msgid "Stand up hosting"
@@ -15074,7 +15040,6 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "Les étapes sont héritées du plan de contrôle."
 
 msgid "Still dark out on the floor."
-msgstr "C'est toujours sombre sur l'atelier."
 msgstr "Toujours sombre à l'atelier."
 
 msgid "Stock movement corrected"
@@ -15730,6 +15695,7 @@ msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connect
 
 msgid "The backup job reported this error."
 msgstr "Le travail de sauvegarde a signalé cette erreur."
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "La date calculée rétroactivement à laquelle une opération doit être terminée pour que son ordre de fabrication soit à l'heure, écrite à la date d'échéance de l'opération. Une cible stable pour mesurer la progression — jamais une contrainte de placement."
 
@@ -15884,7 +15850,6 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "Le département sous lequel celui-ci se cumule pour la déclaration et les hiérarchies de dénombrement; laisser vide pour un département au niveau supérieur."
 
 msgid "The early hours, {name}."
-msgstr "Les premières heures du jour, {name}."
 msgstr "Les premières heures, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
@@ -15903,7 +15868,6 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "Le dessin technique auquel ce plan de contrôle est lié; les contrôles enregistrés contre cette pièce font référence à ce dessin."
 
 msgid "The evening hours, {name}."
-msgstr "Les heures de soirée, {name}."
 msgstr "Les heures du soir, {name}."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -16103,7 +16067,6 @@ msgstr "Le mode de défaillance le plus probable que le demandeur soupçonne; le
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr "Le travail programmé le plus récent à ce site était {0}."
 msgstr "Le travail planifié le plus récent sur ce site était {0}."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
@@ -16120,7 +16083,6 @@ msgstr "Le nouveau numéro de version de la procédure"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr "Le prochain travail programmé à ce site commence {0}."
 msgstr "Le travail planifié suivant sur ce site commence {0}."
 
 msgid "The night shift suits you, {name}."
@@ -16618,10 +16580,6 @@ msgid "This location only schedules staffed work centers, but this is a lights-o
 msgstr "Ce site ne planifie que les postes de travail dotés en personnel, mais c'est une station sans surveillance (24×7) — elle est exempte et continue de fonctionner sans surveillance."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr "Ce site ne planifie le travail que lorsqu'un opérateur est affecté au tableau de personnel. Sans personne d'affectée ici, le travail n'est pas planifié et s'affiche comme non planifiable."
-msgstr "Ce site planifie uniquement les postes de travail dotés en personnel, mais celui-ci est une station sans interruption (24×7) — elle est exempte et continue de fonctionner sans surveillance."
-
-msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "Ce site planifie uniquement le travail où un opérateur est assigné sur le tableau d'affectation. Sans personne assignée ici, le travail n'est pas planifié et s'affiche comme non planifiable."
 
 msgid "This lot is expired and can't be picked."
@@ -16637,7 +16595,6 @@ msgid "This Month"
 msgstr "Ce mois"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr "Cette opération ne peut pas encore être planifiée — la barre indique où elle s'exécuterait une fois le conflit résolu. Elle ne bloque pas la capacité."
 msgstr "Cette opération ne peut pas être planifiée pour le moment — la barre marque le lieu où elle s'exécuterait une fois le conflit résolu. Elle ne retient pas la capacité."
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
@@ -16699,10 +16656,6 @@ msgstr "Cette commande client a des lignes qui nécessitent la création d'ordre
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Ce poste exécute du travail basé sur les compétences — il ne s'exécute que si un opérateur qualifié est en équipe ; les opérateurs assignés au tableau d'affectation façonnent davantage la main-d'œuvre disponible."
-
-msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr "Ce poste exécute du travail sans exigence de compétence ; les opérateurs assignés au tableau d'affectation façonnent la main-d'œuvre disponible."
-msgstr "Cette station exécute un travail contrôlé par compétence — il ne s'exécute que lorsqu'un opérateur qualifié est de service ; les opérateurs assignés sur le tableau d'affectation façonnent davantage la main-d'œuvre disponible."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "Cette station exécute un travail sans exigence de compétence ; les opérateurs assignés sur le tableau d'affectation façonnent la main-d'œuvre disponible."
@@ -18114,7 +18067,6 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "Coût moyen pondéré de l'année dernière calculé lors de la validation de la facture"
 
 msgid "Welcome back, {name}."
-msgstr "Bienvenue, {name}."
 msgstr "Bienvenue de retour, {name}."
 
 msgid "Welcome to Carbon"
