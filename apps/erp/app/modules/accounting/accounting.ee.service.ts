@@ -1973,7 +1973,14 @@ export async function resolveCurrencyAndRate(
     currencyCode
   );
   const exchangeRate = currency.data?.exchangeRate;
-  if (currency.error || !exchangeRate) {
+  // `!exchangeRate` alone would let a negative or Infinity through -- both are
+  // truthy, and both silently misprice every line they reach.
+  if (
+    currency.error ||
+    typeof exchangeRate !== "number" ||
+    !Number.isFinite(exchangeRate) ||
+    exchangeRate <= 0
+  ) {
     return {
       data: null,
       error: {
