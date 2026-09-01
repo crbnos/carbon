@@ -32,9 +32,15 @@ export const integrationExecutor: NodeExecutor<IntegrationNode> = {
     for (const [name, value] of Object.entries(node.data.inputs)) {
       const resolved = await resolveValue(value, ctx);
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
-      // In a batch the one list input stands for the item this turn is on.
+      // In a batch the one list input stands for the item this turn is on. Only a
+      // slot declared single-valued can be that input (`batchCandidates`); a slot
+      // declared as a list keeps its list, or a real list input on the same step
+      // would be replaced by the item on every turn.
+      const declared = step.inputs[name] ?? step.advancedInputs?.[name];
       inputs[name] =
-        ctx.item !== undefined && resolved.value.kind === "list"
+        ctx.item !== undefined &&
+        resolved.value.kind === "list" &&
+        declared?.type.kind !== "list"
           ? ctx.item
           : resolved.value;
       ctx.record?.(name, inputs[name]);

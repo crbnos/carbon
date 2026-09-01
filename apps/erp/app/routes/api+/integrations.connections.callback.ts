@@ -76,12 +76,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // The signature is what stops a token being planted into another company's
-  // connection; the session check on top stops a replay into a company the
-  // signer no longer sits in.
+  // connection; the session checks on top stop a replay into a company the
+  // signer no longer sits in, and stop one user's authorization code being
+  // completed inside another user's session (CSRF).
   const state = verifyConnectionState(parsed.data.state);
-  if (state === null || state.companyId !== companyId) {
+  if (
+    state === null ||
+    state.companyId !== companyId ||
+    state.userId !== userId
+  ) {
     logger.error("Integration callback state rejected", {
-      matched: state?.companyId === companyId
+      companyMatched: state?.companyId === companyId,
+      userMatched: state?.userId === userId
     });
     return connectionFailed(request, "invalid-state");
   }

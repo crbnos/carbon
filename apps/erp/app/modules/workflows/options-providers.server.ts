@@ -128,14 +128,22 @@ const connectionProvider: OptionsProvider = {
  */
 const propertyProvider: OptionsProvider = {
   permission: { update: "workflows" },
-  resolve: async ({ client, companyId, params, values, search }) => {
+  resolve: async ({ companyId, params, values, search }) => {
     const { piece, action: actionName, prop } = params;
     const connectionId = values.connectionId;
     if (!piece || !actionName || !prop || !connectionId) return { options: [] };
 
-    // Scope the connection to this company through the user's own client first;
-    // the vault RPCs below are service-role only and would skip that check.
-    const owned = await readConnection(client, companyId, connectionId);
+    // Scope the connection to this company before touching the vault RPCs below,
+    // which are service-role only and would skip that check. Read through the
+    // SERVICE role for the same reason `connectionProvider` does: the row's RLS
+    // demands `settings_view`, this provider is gated on `workflows_update`, and
+    // a workflow author without Settings access would otherwise see every
+    // dependent list come back empty. `companyId` came from `requirePermissions`.
+    const owned = await readConnection(
+      getCarbonServiceRole(),
+      companyId,
+      connectionId
+    );
     if (owned === null || owned.pieceName !== piece) return { options: [] };
 
     const action = await getPieceAction(piece, actionName);

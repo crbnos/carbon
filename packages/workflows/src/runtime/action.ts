@@ -27,9 +27,13 @@ export const actionExecutor: NodeExecutor<ActionNode> = {
           ? await renderTemplate(value, ctx, { linkFor: ctx.linkFor })
           : await resolveValue(value, ctx);
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
-      // In a batch the one list input stands for the item this turn is on.
+      // In a batch the one list input stands for the item this turn is on. Only a
+      // slot declared single-valued can be that input (`batchCandidates`); a slot
+      // declared as a list keeps its list.
       inputs[name] =
-        ctx.item !== undefined && resolved.value.kind === "list"
+        ctx.item !== undefined &&
+        resolved.value.kind === "list" &&
+        action.inputs[name]?.type.kind !== "list"
           ? ctx.item
           : resolved.value;
       ctx.record?.(name, inputs[name]);

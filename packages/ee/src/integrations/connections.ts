@@ -180,7 +180,11 @@ export async function readConnections(
     .select(SELECT_COLUMNS)
     .eq("companyId", companyId);
   if (pieceName !== undefined) query = query.eq("pieceName", pieceName);
-  const { data } = await query.order("createdAt", { ascending: true });
+  // A failed read must not look like "no connections": that would let an
+  // uninstall finish with every vault token still valid, or report a company
+  // Healthy when its rows could not be read at all.
+  const { data, error } = await query.order("createdAt", { ascending: true });
+  if (error) throw error;
   return (data ?? []) as unknown as IntegrationConnection[];
 }
 
@@ -189,12 +193,15 @@ export async function readConnection(
   companyId: string,
   connectionId: string
 ): Promise<IntegrationConnection | null> {
-  const { data } = await client
+  // `null` means "not this company's connection" — a transient failure must
+  // not be read as that, or it turns into a false "reconnect needed" prompt.
+  const { data, error } = await client
     .from("integrationConnection")
     .select(SELECT_COLUMNS)
     .eq("companyId", companyId)
     .eq("id", connectionId)
     .maybeSingle();
+  if (error) throw error;
   return (data ?? null) as unknown as IntegrationConnection | null;
 }
 

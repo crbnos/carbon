@@ -96,4 +96,64 @@ describe("integrationExecutor", () => {
       integrationExecutor.permission(node(), catalogWith(undefined))
     ).toBeUndefined();
   });
+  it("keeps an input declared as a list while batching over another", async () => {
+    const step: CatalogIntegration = {
+      ...STEP,
+      batchable: true,
+      inputs: {
+        ...STEP.inputs,
+        attendees: {
+          type: t.list({ kind: "primitive", of: "string" }),
+          required: false
+        }
+      }
+    };
+    const stringList = (values: string[]) => ({
+      kind: "list" as const,
+      of: { kind: "primitive" as const, of: "string" as const },
+      items: values.map((value) => ({
+        kind: "primitive" as const,
+        of: "string" as const,
+        value
+      }))
+    });
+    const runIntegration = vi.fn(async () => ({
+      ok: true as const,
+      outputs: {}
+    }));
+    const ctx = createRuntimeContext({
+      services: { runIntegration },
+      outputs: {
+        find: {
+          titles: stringList(["Kickoff", "Retro"]),
+          attendees: stringList(["a@example.com", "b@example.com"])
+        }
+      },
+      // The engine is on the first item of the list wired to `title`.
+      item: { kind: "primitive", of: "string", value: "Kickoff" }
+    });
+
+    await integrationExecutor.execute(
+      node({
+        inputs: {
+          connectionId: { kind: "literal", type: t.string, value: "icn_1" },
+          title: { kind: "ref", nodeId: "find", output: "titles", path: [] },
+          attendees: {
+            kind: "ref",
+            nodeId: "find",
+            output: "attendees",
+            path: []
+          }
+        }
+      }),
+      { ...ctx, catalog: catalogWith(step) }
+    );
+
+    expect(runIntegration).toHaveBeenCalledWith(step.piece, {
+      connectionId: { kind: "primitive", of: "string", value: "icn_1" },
+      // The single-valued slot took the item; the list slot kept its list.
+      title: { kind: "primitive", of: "string", value: "Kickoff" },
+      attendees: stringList(["a@example.com", "b@example.com"])
+    });
+  });
 });

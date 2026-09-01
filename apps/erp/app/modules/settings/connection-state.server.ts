@@ -68,6 +68,7 @@ export function verifyConnectionState(
   if (typeof state.issuedAt !== "number") return null;
   if (Date.now() - state.issuedAt > MAX_AGE_MS) return null;
   if (!state.companyId || !state.pieceName || !state.name) return null;
+  if (!state.userId) return null;
 
   return state;
 }
