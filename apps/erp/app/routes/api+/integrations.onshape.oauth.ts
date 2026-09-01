@@ -147,10 +147,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     const serviceRole = getCarbonServiceRole();
+
+    // `upsertCompanyIntegration` writes the whole metadata column, so a
+    // reconnect built from fresh credentials alone would drop everything else
+    // the integration keeps there — the Onshape property map, the asset-sync
+    // toggle, `onshapeCompanyId`. Read the row first and put the new keys on
+    // top of it: reconnecting is a credential refresh, not a reset.
+    const existing = await serviceRole
+      .from("companyIntegration")
+      .select("metadata")
+      .eq("id", Onshape.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (existing.error) {
+      logger.error("Failed to read the Onshape integration before saving", {
+        error: existing.error
+      });
+      return connectionFailed(request, "save-failed");
+    }
+    const existingMetadata = existing.data?.metadata;
+
     const createdIntegration = await upsertCompanyIntegration(serviceRole, {
       id: Onshape.id,
       active: true,
       metadata: {
+        ...(typeof existingMetadata === "object" &&
+        existingMetadata !== null &&
+        !Array.isArray(existingMetadata)
+          ? existingMetadata
+          : {}),
         credentials: {
           type: "oauth2",
           accessToken: tokenData.access_token,

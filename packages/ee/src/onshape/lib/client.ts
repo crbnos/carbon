@@ -533,6 +533,35 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * Element metadata with the element's parts nested (`depth=2`): for a Part
+   * Studio the response carries `parts.items[].properties`, so every part's
+   * standard and custom property values arrive in one read. Verified live
+   * before first use — Onshape's metadata depth semantics are documented
+   * loosely.
+   */
+  async getElementMetadataWithParts(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=2`
+    );
+  }
+
+  /** One part's metadata (standard + custom properties with values). */
+  async getPartMetadata(
+    document: OnshapeDocument,
+    elementId: string,
+    partId: string
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/p/${encodeURIComponent(partId)}?inferMetadataOwner=false`
+    );
+  }
+
   /** Parts of one element at a workspace, version or microversion. One call. */
   async getPartsInElement(
     document: OnshapeDocument,

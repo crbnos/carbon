@@ -64,6 +64,78 @@ export {
 } from "./onshape/panel/messages";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
+export type {
+  AssemblyPlan,
+  AssemblyPlanItem,
+  AssemblyPlanMethod,
+  AssemblyPlanMethodStatus,
+  AssemblyPlanRoot,
+  ChangeNoticeEdit,
+  ItemEdit,
+  ItemMethodType,
+  ItemReplenishmentSystem,
+  ItemTrackingType,
+  MergeResult,
+  PartPlan,
+  PartPlanAction,
+  PartPlanRow,
+  PlanItemRow,
+  PlanLine,
+  PlanMappingRow,
+  PlanMethodRow,
+  PlanOptions,
+  PlanUnitOfMeasure,
+  ProposedItem,
+  ReleasePlan,
+  ReleasePlanChild,
+  ReleasePlanItem,
+  ReleasePlanItemAction
+} from "./onshape/panel/plan";
+export {
+  BOM_LINE_ITEM_TYPES,
+  bomLineItemType,
+  buildAssemblyPlan,
+  buildPartPlan,
+  buildReleasePlan,
+  CHANGE_NOTICE_DESCRIPTION_MAX_LENGTH,
+  CHANGE_NOTICE_NAME_MAX_LENGTH,
+  changeNoticeDescriptionJson,
+  defaultUnitOfMeasureCode,
+  EDITABLE_ITEM_FIELDS,
+  flattenNodes,
+  ITEM_DESCRIPTION_MAX_LENGTH,
+  ITEM_METHOD_TYPES,
+  ITEM_NAME_MAX_LENGTH,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_TRACKING_TYPES,
+  mergeChangeNoticeEdit,
+  mergeEditsForCreates,
+  mergeItemEdits,
+  pickAdoptTarget,
+  pickLatestRow,
+  proposeItem,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT
+} from "./onshape/panel/plan";
+export type {
+  OnshapePropertyValue,
+  PlanCustomField,
+  PlanCustomFieldDefinition,
+  PropertyMapEntry,
+  UnmappedProperty
+} from "./onshape/panel/properties";
+export {
+  CUSTOM_FIELD_DATA_TYPES,
+  coerceOnshapeValue,
+  MAPPABLE_VALUE_TYPES,
+  mergeCustomFieldEdits,
+  mergeCustomFieldValues,
+  missingListOptions,
+  parseProperties,
+  parsePropertyMap,
+  partPropertiesFromElementMetadata,
+  propertyDisplayValue,
+  resolveMappedFields
+} from "./onshape/panel/properties";
 export type { PartPushPlan } from "./onshape/panel/push-plan";
 export { planPartPush } from "./onshape/panel/push-plan";
 export type {
@@ -79,13 +151,17 @@ export {
   resolveReleaseStates
 } from "./onshape/panel/releases";
 export type {
+  PanelAssemblyLineInput,
+  PanelAssemblyLineStatus,
   PanelItemRow,
   PanelMappingRow,
   PanelPartStatus
 } from "./onshape/panel/status";
 export {
+  buildAssemblyLineStatuses,
   buildPartStatuses,
   externalIdForAssembly,
+  externalIdForBomLine,
   externalIdForPart
 } from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
