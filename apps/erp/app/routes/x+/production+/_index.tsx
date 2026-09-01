@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { activeJobStatuses } from "@carbon/database";
 import {
   Badge,
   Button,
@@ -80,8 +81,6 @@ import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 
-const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
-
 const chartConfig = {
   value: {
     color: "hsl(var(--primary))"
@@ -106,7 +105,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .from("job")
       .select("id,status,assignee")
       .eq("companyId", companyId)
-      .in("status", OPEN_JOB_STATUSES),
+      .in("status", activeJobStatuses),
     client
       .from("job")
       .select("id,status,assignee")
@@ -311,16 +310,16 @@ export default function ProductionDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-muted dark:bg-card">
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
         <MetricCard
-          className="col-span-3"
+          className="col-span-1 lg:col-span-3"
           icon={<LuCirclePlay />}
           title={<Trans>Active Jobs</Trans>}
           value={activeJobs}
-          to={`${path.to.jobs}?filter=status:in:${OPEN_JOB_STATUSES.join(",")}`}
+          to={`${path.to.jobs}?filter=status:in:${activeJobStatuses.join(",")}`}
           linkLabel={t`View Active Jobs`}
         />
 
         <MetricCard
-          className="col-span-3"
+          className="col-span-1 lg:col-span-3"
           icon={<LuInbox />}
           title={<Trans>Jobs Assigned to Me</Trans>}
           value={assignedJobs}
@@ -328,8 +327,8 @@ export default function ProductionDashboard() {
           linkLabel={t`View Assigned Jobs`}
         />
 
-        <Card className="col-span-6">
-          <HStack className="justify-between items-center">
+        <Card className="col-span-1 lg:col-span-6">
+          <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center">
             <CardHeader>
               <div className="flex w-full justify-start items-center gap-2">
                 <DropdownMenu>
@@ -944,7 +943,7 @@ function WorkCenterCards({
                 )}
               </CardFooter>
             ) : (
-              <CardFooter className="h-[49px]" />
+              <CardFooter className="h-[var(--topbar-height)]" />
             )}
           </Card>
         );

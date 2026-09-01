@@ -8,6 +8,7 @@ import type {
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   upsertWorkCenter,
   WorkCenterForm,
@@ -53,6 +54,13 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
+  await notifyScheduleInputsChanged(
+    companyId,
+    "work-center",
+    "Work center hours changed",
+    createWorkCenter.data?.id
+  );
+
   return modal ? createWorkCenter : redirect(path.to.workCenters);
 }
 
@@ -70,6 +78,7 @@ export default function NewWorkCenterRoute() {
   const { defaults } = useUser();
 
   const initialValues = {
+    alwaysOn: false,
     defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
     departmentId: undefined as string | undefined,
     description: "",
@@ -78,7 +87,8 @@ export default function NewWorkCenterRoute() {
     machineRate: 0,
     name: "",
     overheadRate: 0,
-    processes: []
+    processes: [],
+    shifts: []
   };
 
   return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;

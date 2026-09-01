@@ -23,10 +23,22 @@ pnpm db:function:new <name>     # → supabase functions new (root script)
 
 Creates `packages/database/supabase/functions/<name>/index.ts`.
 
-## 2. Register in config.toml (required to deploy)
+## 2. Register in config.toml (settings, NOT a deploy gate)
 
-Add an entry to `packages/database/supabase/config.toml`. Without it the function
-is not deployed.
+Add an entry to `packages/database/supabase/config.toml`.
+
+**A missing entry does not stop the function from deploying.** `ci/src/migrations.ts`
+runs `supabase functions deploy` with **no function name**, and that deploys every
+directory under `supabase/functions/` regardless of `config.toml`. The entry only
+overrides per-function settings, `verify_jwt` above all.
+<!-- UNVERIFIED: verify_jwt default for an UNREGISTERED function (docs say true; not confirmed on a deployed Carbon fn) -->
+
+`schedule` and `trigger-rework` are both live today with no `config.toml` entry.
+That is the trap: an unregistered function looks unshipped in this file while being
+reachable in production, so its in-function authorization is the only gate it has —
+`trigger-rework` had none until
+`.ai/specs/2026-08-25-backup-durability.md` Part 3. Register the function anyway
+(it is where a future reader looks), but never treat absence as "not deployed".
 
 ```toml
 [functions.<name>]
@@ -152,8 +164,15 @@ const { data, error } = await client.functions.invoke("post-receipt", {
 
 Real call sites: `serviceRole.functions.invoke("create", { body: {...} })`,
 `...invoke("mrp", { body: { ...params } })`, `...invoke("schedule", { body })`,
-`...invoke("import-csv", { body })`. The **route's** `requirePermissions` is the
-real auth gate for these service-role invocations.
+`...invoke("import-csv", { body })`.
+
+The route's `requirePermissions` is **not** sufficient on its own, and believing it
+was is what produced the cross-tenant write in
+`.ai/specs/2026-08-25-backup-durability.md` Part 3. It proves the CALLER may act in
+`companyId`; it proves nothing about the RECORD IDS in the body, which usually come
+straight from the URL. When the invocation is service-role, RLS is not there to
+catch the mismatch either. So a function that takes a record id must re-read that
+record under `companyId` itself and 404 on a miss — `schedule` does this for `jobId`.
 
 ## 6. Local dev
 
@@ -168,15 +187,17 @@ that calls `client.functions.invoke("<name>", ...)`.
 Deployment is **all-at-once**, not per-function. On push to `main` touching
 `packages/database/supabase/**`, CI runs `supabase functions deploy`
 (`ci/src/migrations.ts`), which deploys every `[functions.*]` with `enabled = true`
-from `config.toml`. There is **no `npm run db:deploy` / `db:deploy` script** — that
-was stale. Self-hosted instances sync separately via a server-side script
-(`.github/workflows/functions.yml`). You don't run a deploy manually; merging to
-`main` with the `config.toml` entry present is what ships it.
+(`supabase functions deploy`, no arguments → every directory under
+`supabase/functions/`, `config.toml` entry or not). There is **no
+`npm run db:deploy` / `db:deploy` script** — that was stale. Self-hosted instances
+sync separately via a server-side script (`.github/workflows/functions.yml`). You
+don't run a deploy manually; merging to `main` is what ships it.
 
 ## Checklist
 
 - [ ] `pnpm db:function:new <name>` (file at `functions/<name>/index.ts`)
-- [ ] `[functions.<name>]` added to `config.toml` (`enabled`, `verify_jwt`)
+- [ ] `[functions.<name>]` added to `config.toml` (`enabled`, `verify_jwt`) — for
+      the settings and for discoverability, NOT because it gates the deploy
 - [ ] CORS `OPTIONS` short-circuit returning `corsHeaders`
 - [ ] zod `payloadValidator` (`companyId` + `userId` always; discriminated union for multi-op)
 - [ ] Auth via `requirePermissions(req, companyId, userId, { <action>: "<module>" })`

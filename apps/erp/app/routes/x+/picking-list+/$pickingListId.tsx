@@ -18,7 +18,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
     (data) => data?.pickingList?.pickingListId
-  )
+  ),
+  module: "inventory"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -73,9 +74,9 @@ export default function PickingListDetailRoute() {
   if (!pickingListId) throw new Error("Could not find pickingListId");
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
       <PickingListHeader />
-      <div className="flex h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
         <div className="h-full p-4 w-full max-w-5xl mx-auto flex flex-col gap-4 pb-16">
           <Outlet />
         </div>

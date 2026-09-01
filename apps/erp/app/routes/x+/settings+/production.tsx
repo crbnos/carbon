@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { Submit, ValidatedForm, validator } from "@carbon/form";
 import {
@@ -21,6 +22,7 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
+import { LuMapPin } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
@@ -43,7 +45,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, locations] = await Promise.all([
+    getCompanySettings(client, companyId),
+    client
+      .from("location")
+      .select("id, name, requiresStaffing")
+      .eq("companyId", companyId)
+      .order("name")
+  ]);
 
   if (!companySettings.data)
     throw redirect(
@@ -53,7 +62,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return { companySettings: companySettings.data };
+  return {
+    companySettings: companySettings.data,
+    locations: locations.data ?? []
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -144,14 +156,42 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
+  if (intent === "locationRequiresStaffing") {
+    const locationId = String(formData.get("locationId") ?? "");
+    const requiresStaffing = formData.get("enabled") === "true";
+    if (!locationId) {
+      return { success: false, message: "Missing location" };
+    }
+    // "Require staffing to schedule" is a scheduling policy owned by production
+    // settings, but it lives on the `location` row whose UPDATE RLS wants
+    // resources_update. Write it service-role (company-scoped) so a settings
+    // admin without resources_update can still set it.
+    const serviceRole = getCarbonServiceRole();
+    const update = await serviceRole
+      .from("location")
+      .update({ requiresStaffing })
+      .eq("id", locationId)
+      .eq("companyId", companyId);
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return {
+      success: true,
+      message: `Staffing requirement ${
+        requiresStaffing ? "enabled" : "disabled"
+      }`
+    };
+  }
+
   return { success: false, message: "Unknown intent" };
 }
 
 export default function ProductionSettingsRoute() {
   const { t } = useLingui();
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, locations } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const notificationsFetcher = useFetcher<typeof action>();
+  const staffingFetcher = useFetcher<typeof action>();
 
   const isToggling = fetcher.state !== "idle";
 
@@ -196,6 +236,35 @@ export default function ProductionSettingsRoute() {
     [fetcher]
   );
 
+  const handleStaffingToggle = useCallback(
+    (locationId: string, checked: boolean) => {
+      staffingFetcher.submit(
+        {
+          intent: "locationRequiresStaffing",
+          locationId,
+          enabled: String(checked)
+        },
+        { method: "POST" }
+      );
+    },
+    [staffingFetcher]
+  );
+
+  useEffect(() => {
+    if (
+      staffingFetcher.data?.success === true &&
+      staffingFetcher.data.message
+    ) {
+      toast.success(staffingFetcher.data.message);
+    }
+    if (
+      staffingFetcher.data?.success === false &&
+      staffingFetcher.data.message
+    ) {
+      toast.error(staffingFetcher.data.message);
+    }
+  }, [staffingFetcher.data?.message, staffingFetcher.data?.success]);
+
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
       toast.success(fetcher.data.message);
@@ -223,7 +292,7 @@ export default function ProductionSettingsRoute() {
   }, [notificationsFetcher.data?.message, notificationsFetcher.data?.success]);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
@@ -350,6 +419,63 @@ export default function ProductionSettingsRoute() {
                 />
               </HStack>
             </VStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Scheduling</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Require an assigned operator before the scheduler places work at
+                a location. When on, unstaffed work centers get no work and an
+                operation with no manned coverage shows as unschedulable.
+                Lights-out (24×7) work centers are exempt.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {locations.length > 0 ? (
+              <div className="flex flex-col">
+                {locations.map((location) => (
+                  <HStack
+                    key={location.id}
+                    className="justify-between items-center w-full py-2.5 border-t border-border/50 first:border-t-0"
+                  >
+                    <HStack spacing={2}>
+                      <div className="size-7 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                        <LuMapPin className="size-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-sm font-medium">
+                        {location.name}
+                      </span>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <span className="text-xs text-muted-foreground">
+                        {location.requiresStaffing ? (
+                          <Trans>Staffing required</Trans>
+                        ) : (
+                          <Trans>Staffing optional</Trans>
+                        )}
+                      </span>
+                      <Switch
+                        checked={location.requiresStaffing ?? false}
+                        onCheckedChange={(checked) =>
+                          handleStaffingToggle(location.id, checked)
+                        }
+                        disabled={staffingFetcher.state !== "idle"}
+                      />
+                    </HStack>
+                  </HStack>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                <Trans>No locations found.</Trans>
+              </p>
+            )}
           </CardContent>
         </Card>
 

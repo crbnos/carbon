@@ -5519,6 +5519,7 @@ serve(async (req: Request) => {
                   quoteOperationStep,
                   procedureId,
                 } = operation;
+                // abilities are not copied on this path (no quoteOperationAbility table)
 
                 if (
                   parts.tools &&

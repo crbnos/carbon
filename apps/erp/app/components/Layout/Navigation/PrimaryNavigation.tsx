@@ -90,7 +90,7 @@ const PrimaryNavigation = () => {
   const isOpen = navigationPanel.isOpen || editMode.isEditing;
 
   return (
-    <div className="w-14 h-full flex-col z-50 hidden sm:flex">
+    <div className="w-14 h-full flex-col z-50 hidden md:flex">
       <nav
         data-state={isOpen ? "expanded" : "collapsed"}
         className={cn(

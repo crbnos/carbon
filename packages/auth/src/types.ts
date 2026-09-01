@@ -17,6 +17,14 @@ export interface AuthSession {
    */
   mfaVerified?: boolean;
   /**
+   * Set when this session was minted from a SAML SSO login — the GoTrue SSO
+   * provider id the assertion came from. SSO sessions are minted
+   * `mfaVerified: true` unconditionally (the IdP owns MFA, including under
+   * CONTROLLED_ENVIRONMENT), and the org `requireMfa` gate exempts them.
+   * PRESERVED across token refresh, like `mfaVerified`.
+   */
+  ssoProviderId?: string;
+  /**
    * Session start (unix ms). Stamped once at mint; PRESERVED across token
    * refresh (never reset by refreshAuthSession). Basis of the 12h absolute cap
    * (SESSION_ABSOLUTE_MAX_MS). Optional for back-compat with sessions minted

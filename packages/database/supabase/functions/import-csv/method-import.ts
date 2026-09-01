@@ -561,6 +561,7 @@ async function writeGroup(
             readableId: g.readableId,
             revision: g.revision || "0",
             name: text(r.name) || g.readableId,
+            mpn: text(r.mpn) || undefined,
             type: "Part",
             companyId,
             active: text(r.active).toLowerCase() !== "false",

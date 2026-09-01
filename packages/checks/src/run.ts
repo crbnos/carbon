@@ -7,12 +7,14 @@ import type {
   Violation
 } from "./check";
 import { moduleShape } from "./conformance/module-shape";
+import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawRounding } from "./conformance/no-raw-rounding";
+import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
@@ -22,7 +24,8 @@ import { loadTypescriptFiles } from "./sources/typescript";
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
   noLegacyRls,
-  noDerivedPercentColumn
+  noDerivedPercentColumn,
+  noRequiredColumnWithoutDefault
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -31,10 +34,11 @@ export const SERVER_CHECKS: ConformanceCheck[] = [
   noZeroConcurrency
 ];
 
-/** Numeric-precision checks that run over ALL app TS (client and server). */
+/** Checks that run over ALL app + shared-package TS (client and server). */
 export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
-  noInlineFractionDigits
+  noInlineFractionDigits,
+  noDbClientInService
 ];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];

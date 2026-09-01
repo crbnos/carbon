@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { getDayOfWeek, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -432,15 +433,56 @@ export async function getShifts(
 
 export async function getShiftsList(
   client: SupabaseClient<Database>,
+  companyId: string,
   locationId: string | null
 ) {
-  let query = client.from("shift").select(`id, name`).eq("active", true);
+  let query = client
+    .from("shift")
+    .select(`id, name`)
+    .eq("companyId", companyId)
+    .eq("active", true);
 
   if (locationId) {
     query = query.eq("locationId", locationId);
   }
 
   return query.order("name");
+}
+
+export async function getEmployeeShifts(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("employeeShift")
+    .select("employeeId, shiftId")
+    .eq("companyId", companyId);
+}
+
+export async function getEmployeeDepartments(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("employeeJob")
+    .select("id, departmentId")
+    .eq("companyId", companyId);
+}
+
+export async function getShiftsWithTimes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("shift")
+    .select(
+      "id, name, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+    )
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .eq("active", true)
+    .order("name");
 }
 
 export async function insertAttribute(
@@ -556,7 +598,7 @@ export async function updateAttributeSortOrder(
 }
 
 export async function updateEmployeeJob(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   employeeId: string,
   employeeJob: z.infer<typeof employeeJobValidator> & {
     companyId: string;
@@ -564,11 +606,44 @@ export async function updateEmployeeJob(
     customFields?: Json;
   }
 ) {
-  return client
-    .from("employeeJob")
-    .update(sanitize(employeeJob))
-    .eq("id", employeeId)
-    .eq("companyId", employeeJob.companyId);
+  // One Kysely transaction: the employeeJob update and the employeeShift
+  // sync commit or roll back together. Kysely also bypasses RLS, so the
+  // sync no longer silently no-ops for users without people_create/
+  // people_delete — the route's people_update check is the auth gate.
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable("employeeJob")
+        .set(sanitize(employeeJob))
+        .where("id", "=", employeeId)
+        .where("companyId", "=", employeeJob.companyId)
+        .execute();
+
+      // The scheduler reads shift assignments from employeeShift (see
+      // getEmployeeShiftWindows in the schedule engine), NOT from
+      // employeeJob.shiftId — keep them in sync so assigning a shift here
+      // actually constrains ability-gated scheduling.
+      await trx
+        .deleteFrom("employeeShift")
+        .where("employeeId", "=", employeeId)
+        .where("companyId", "=", employeeJob.companyId)
+        .execute();
+
+      if (employeeJob.shiftId) {
+        await trx
+          .insertInto("employeeShift")
+          .values({
+            employeeId,
+            shiftId: employeeJob.shiftId,
+            companyId: employeeJob.companyId
+          })
+          .execute();
+      }
+    });
+    return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: err as Error };
+  }
 }
 
 export async function upsertDepartment(

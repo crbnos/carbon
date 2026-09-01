@@ -1867,6 +1867,7 @@ const methodPartSchema = {
   readableId: z.string().optional(),
   revision: z.string().optional(),
   name: z.string().optional(),
+  mpn: z.string().optional(),
   active: z.string().optional(),
   replenishmentSystem: z.string().optional(),
   defaultMethodType: z.string().optional(),
@@ -2079,6 +2080,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the part. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2123,6 +2130,12 @@ export const importSchemas: Record<
       .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the tool. Usually a number or set of alphanumeric characters."
+      ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the tool. Defaults to "0" when the column is absent.'
       ),
     name: z
       .string()
@@ -2172,6 +2185,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the fixture. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the fixture. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2220,6 +2239,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the consumable. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2264,6 +2289,12 @@ export const importSchemas: Record<
       .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the material. Usually a number or set of alphanumeric characters."
+      ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the material. Defaults to "0" when the column is absent.'
       ),
     name: z
       .string()

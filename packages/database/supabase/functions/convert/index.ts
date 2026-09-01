@@ -1084,8 +1084,14 @@ serve(async (req: Request) => {
           .from("currency")
           .select("*")
           .eq("code", currencyCode)
-          .eq("companyId", companyId)
+          .eq("companyGroupId", company.data.companyGroupId)
           .single();
+        // A missing rate must not fall through to 1 -- that quotes a
+        // foreign-currency customer at par. The base currency is the only
+        // case where 1 is correct by definition.
+        if (currency.error && currencyCode !== company.data.baseCurrencyCode) {
+          throw currency.error;
+        }
         const exchangeRate = currency.data?.exchangeRate ?? 1;
 
         const {

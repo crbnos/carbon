@@ -52,6 +52,7 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   convertDateStringToIsoString,
   convertKbToString,
+  formatDate,
   formatDurationMilliseconds,
   getItemReadableId,
   MODEL_RAW_KEEP_MAX_BYTES
@@ -59,6 +60,7 @@ import {
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -310,6 +312,17 @@ export const JobOperation = ({
       setParams({ trackedEntityId: entity.id });
     }
   });
+
+  const projectedCompletionDate = operation.projectedCompletionAt
+    ? operation.projectedCompletionAt.slice(0, 10)
+    : null;
+  const daysBehindTarget =
+    projectedCompletionDate && operation.operationDueDate
+      ? parseDate(projectedCompletionDate).compare(
+          parseDate(operation.operationDueDate.slice(0, 10))
+        )
+      : 0;
+  const isBehindTarget = daysBehindTarget > 0;
 
   const controlsHeight = useMemo(() => {
     let operations = 1;
@@ -754,6 +767,25 @@ export const JobOperation = ({
                           />
                         ) : null}
                       </span>
+                      {projectedCompletionDate &&
+                        (isBehindTarget ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="red">
+                                {t`Proj. ${formatDate(
+                                  projectedCompletionDate
+                                )}`}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t`Behind target by ${daysBehindTarget} day(s)`}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                          </span>
+                        ))}
                     </VStack>
                   </CardContent>
                 </Card>

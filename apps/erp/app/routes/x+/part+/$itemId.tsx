@@ -197,9 +197,9 @@ export default function PartRoute() {
   const [filterText, setFilterText] = useState("");
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
       <PartHeader />
-      <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
             explorer={
@@ -606,7 +606,7 @@ export default function PartRoute() {
               </div>
             }
             content={
-              <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
+              <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
                 <Outlet />
               </div>
             }
