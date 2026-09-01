@@ -37,10 +37,15 @@ COPY --from=build /repo/apps/${APP} ./apps/${APP}
 # only Trivy CRITICAL/HIGH left once the JS deps are patched, so removing them
 # clears the findings at the source and shrinks the image. The `sst` JS package
 # (import { Resource }) is kept — only its platform CLI binary is dropped.
+# `tar` is stripped for the same reason: its sole consumer is the supabase CLI
+# (removed just above), no app runtime imports it, and its GHSA-r292-9mhp-454m
+# DoS fix (tar@7.5.21) is not published to npm yet — so it cannot be pinned away
+# and is instead removed from the image where the scanner sees it.
 RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
         -name 'esbuild@*' -o -name '@esbuild+*' -o \
         -name 'supabase@*' -o \
+        -name 'tar@*' -o \
         -name '@typescript+native-preview-*' \
     \) -prune -exec rm -rf {} + ; \
     find node_modules -type d -name '@esbuild' -prune -exec rm -rf {} + 2>/dev/null || true
