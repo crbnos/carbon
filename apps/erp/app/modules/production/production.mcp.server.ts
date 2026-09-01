@@ -6,6 +6,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getDatabaseClient } from "~/services/database.server";
 import { recalculateJobOperationDependencies } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
@@ -167,7 +168,7 @@ export async function scheduleJob(
       "You do not have permission to schedule jobs (production update)."
     );
   }
-  return recalculateJobOperationDependencies(client, {
+  return recalculateJobOperationDependencies(client, getDatabaseClient(), {
     jobId: args.jobId,
     companyId,
     userId

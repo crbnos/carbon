@@ -7,6 +7,7 @@ import type {
   Violation
 } from "./check";
 import { moduleShape } from "./conformance/module-shape";
+import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -33,10 +34,11 @@ export const SERVER_CHECKS: ConformanceCheck[] = [
   noZeroConcurrency
 ];
 
-/** Numeric-precision checks that run over ALL app TS (client and server). */
+/** Checks that run over ALL app + shared-package TS (client and server). */
 export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
-  noInlineFractionDigits
+  noInlineFractionDigits,
+  noDbClientInService
 ];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];

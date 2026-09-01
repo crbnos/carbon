@@ -10,6 +10,7 @@ import {
   upsertJobMaterialMakeMethod,
   upsertJobMethod
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -63,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId: companyId,
         userId: userId
       }),
-      recalculateJobOperationDependencies(serviceRole, {
+      recalculateJobOperationDependencies(serviceRole, getDatabaseClient(), {
         jobId: validation.data.targetId,
         companyId: companyId,
         userId: userId

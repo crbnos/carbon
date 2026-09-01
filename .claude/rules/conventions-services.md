@@ -175,6 +175,16 @@ export async function updateQuoteLineOrder(
 
 A single write is already atomic — don't reach for a transaction.
 
+**Never construct the Kysely client (or a `pg` pool) inside the service.** The service
+takes `db: Kysely<KyselyDatabase>` as an argument and nothing more — importing
+`@carbon/database/client`'s `getPostgresConnectionPool`/`getPostgresClient` or `kysely`'s
+`PostgresDriver` here (even behind a dynamic `import()`) pulls server-only code into the
+browser bundle, because `{module}.service.ts` is re-exported through the module barrel that
+client components import. Build the handle once in a `.server` file — `getDatabaseClient()`
+from `~/services/database.server` — import it in the **route action**, and pass it in. This
+is enforced by the `no-db-client-in-service` conformance check (`@carbon/checks`); the
+route-wiring example is in [database-patterns.md](database-patterns.md#transactions-kysely).
+
 ## Calling out to other helpers
 
 - **Sequence numbers**: `getNextSequence(client, table, companyId)`
