@@ -146,7 +146,9 @@ postings simply has no `journalLine`/`costLedger` rows; that is data-absence, no
 coverage gap. With `includeStorage: "all"`, `buildCompanyBackup` records the
 in-scope asset paths in `manifest.storage` and returns them; the job then
 `copyAssetsToBackup` them server-side into the backup's `assets/` folder.
-- **Out-of-scope rows are FATAL, deliberately.** `findExportScopeViolations` counts
+- **Out-of-scope rows are FATAL, deliberately.** `findExportScopeViolations`
+  (`src/backups/scope.ts`, which also holds `buildScopeFilter` and the exclusion/purge
+  builders — pure kysely `sql`, re-exported by `schema.ts` and `company-backup.ts`) counts
   rows whose NOT-NULL FK points outside the company's scope, and a non-zero count
   throws before any table file is written, listing every offending edge.
 
@@ -156,8 +158,28 @@ in-scope asset paths in `manifest.storage` and returns them; the job then
   at all. An implementation that excluded those rows and finished the backup was
   built and REVERTED on 2026-08-26 for exactly that reason — it made the only
   detector we have go quiet, in exchange for a nicer error on a company whose data
-  was already wrong. Do not rebuild it. If the customer cost of a blocked export
-  needs addressing, address it by finding the write path, not by lowering the guard.
+  was already wrong.
+
+  The ONE sanctioned bypass (spec `.ai/specs/2026-09-01-skip-corrupted-rows-in-backups.md`):
+  after a VISIBLE failure the user may click **Skip corrupted rows and retry**, which
+  re-runs the export with `skipCorrupted: true` — `computeScopeExclusions`
+  (`src/backups/scope.ts`) excludes the violating rows *and their dependents*, the job
+  logs a `warn` with the list, and `manifest.excludedRows` records it (the Backups row
+  shows `N rows excluded`). A restore blocked by the same rows (its pre-restore snapshot
+  runs the same guard) offers **Remove corrupted data and restore**, which
+  `purgeScopeViolations` deletes in one transaction (children first) behind a destructive
+  confirm, then restarts the restore. Both jobs classify the failure with
+  `ExportScopeViolationError` → marker `reason: "scope-violations"`; the UI offers the
+  recovery ONLY for that reason. Never make either the default, and never skip silently.
+
+  That error is rethrown as a **`NonRetriableError`** in both jobs. The guard's verdict
+  is deterministic, so Inngest's `retries: 1` would only flip the marker back to
+  `running` and fail again ~10s later — resurrecting the failure banner underneath a
+  user who has already clicked Skip. Counts are reported from `rowsByTable` /
+  `perTable` (DISTINCT rows per table), never by summing `violations` /
+  `excludedRows`: those carry one entry per FK EDGE, so a row escaping scope through
+  three of its foreign keys would be counted three times — which once put "10 rows" on
+  the confirm button of a delete that removed 4.
 
   The other hard export failure is a company with no `companyGroupId`.
 - **No compatibility verdict is stored with the backup.** One was

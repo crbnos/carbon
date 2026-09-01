@@ -1240,3 +1240,49 @@ canvas hosting Radix popovers/selects.
 **Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## A "did my job finish?" baseline must include the rows a FAILED run left behind
+
+**Context:** The Backups page shows a spinner row while an export runs, and decides the
+run finished when a backup appears in the list that was not in a `baseline` snapshot
+taken when tracking began. The baseline recorded only backups with status `ready`.
+
+**Problem:** A failed export leaves a **pending** (manifest-less) folder in the list.
+When the user clicked "Skip corrupted rows and retry", that leftover folder later
+flipped to `ready` — it was not in the ready-only baseline, so it read as "this run
+completed" and the spinner vanished a second after the retry started, while the job was
+still running. The job was correct throughout; only the completion test was wrong. The
+same shape bit the failure banner: a marker cleared by the action could still arrive via
+a revalidation already in flight, so the banner reappeared under the running row.
+
+**Rule:** A baseline for "something NEW appeared" must snapshot **every** item already
+present, in every status — not just the ones in the terminal state you are waiting for.
+A prior failure's debris is exactly what will later transition into that state and fake
+a completion. And when a stale record can still arrive after you delete it, identify it
+by **identity** (the exact row you superseded), never by comparing a client timestamp
+against a server one — clock skew then decides your control flow.
+
+**Applies to:** `apps/erp/app/routes/x+/settings+/backups.tsx` (`runningExport`,
+`knownBackupNames`, `failedIsStale`), and any optimistic progress row driven by polling
+a list.
+
+## Per-edge findings are not a row count
+
+**Context:** `findExportScopeViolations` returns one entry per offending FK edge
+(`jobOperationDependency` violates `jobId`, `operationId` and `dependsOnId`), and the
+backup UI summed `violations[].rows` for the figure it showed the user.
+
+**Problem:** A row escaping scope through three foreign keys was counted three times.
+The failed-backup banner claimed "10 rows" where 4 rows existed, and the same sum sat on
+the confirm button of an irreversible delete that then removed 4 — the toast and the
+modal disagreed inside one flow.
+
+**Rule:** When a diagnostic groups by RELATIONSHIP (FK edge, constraint, rule), it
+cannot be summed into a count of ROWS. Compute the distinct count separately — one
+`count(*)` over the OR of the offending predicates — and keep the per-edge list purely
+as the breakdown. Name the two so they cannot be confused (`violations` vs
+`rowsByTable`) and say so in the type's doc comment.
+
+**Applies to:** `packages/jobs/src/backups/scope.ts`
+(`findExportScopeViolationsDetailed`, `computeScopeExclusions`, `totalExcludedRows`),
+`Manifest.excludedRowsByTable`, and any future "N things are wrong" surface.
