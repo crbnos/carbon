@@ -533,30 +533,54 @@ export async function action({ request }: ActionFunctionArgs) {
     // everything else (manual lines) untouched.
     const mappedRows = ownership.mappedRows.get(method.id) ?? [];
     if (mappedRows.length > 0) {
-      await client
+      // A failed delete here is the one that must stop the method: the
+      // inserts below would then sit ALONGSIDE the old lines rather than
+      // replacing them, and the duplicate is permanent — its mapping row is
+      // gone, so every later push reads it as a manual line and preserves it.
+      // Nothing has been written yet at this point, so skipping is safe.
+      const deletedLines = await client
         .from("methodMaterial")
         .delete()
         .in(
           "id",
           mappedRows.map((row) => row.lineId)
         );
-      await serviceRole
+      if (deletedLines.error) {
+        summary.errors.push(
+          `${parentLabel}: could not replace the lines a previous push wrote (${deletedLines.error.message}); left unchanged rather than duplicating them`
+        );
+        continue;
+      }
+      // Past this point the lines are gone, so a mapping-delete failure must
+      // NOT skip the inserts — that would lose the BOM. The stale rows point
+      // at deleted lines and the by-method delete below clears them.
+      const deletedMappings = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
         .in(
           "id",
           mappedRows.map((row) => row.mappingId)
         );
+      if (deletedMappings.error) {
+        summary.errors.push(
+          `${parentLabel}: could not clear the ownership records for the replaced lines (${deletedMappings.error.message})`
+        );
+      }
     }
     // Mapping rows whose line was since deleted in the ERP have no line to
     // join to above; clear them by method so they never count as "replaced".
-    await serviceRole
+    const clearedMappings = await serviceRole
       .from("externalIntegrationMapping")
       .delete()
       .eq("companyId", companyId)
       .eq("integration", "onshape")
       .eq("entityType", "methodMaterial")
       .eq("metadata->>makeMethodId", method.id);
+    if (clearedMappings.error) {
+      summary.errors.push(
+        `${parentLabel}: could not clear orphaned line ownership records (${clearedMappings.error.message})`
+      );
+    }
 
     summary.methodsTouched += 1;
 
@@ -606,71 +630,107 @@ export async function action({ request }: ActionFunctionArgs) {
       order += 1;
       summary.linesWritten += 1;
 
-      await client.from("externalIntegrationMapping").insert({
-        entityType: "methodMaterial",
-        entityId: inserted.data.id,
-        integration: "onshape",
-        metadata: {
-          makeMethodId: method.id,
-          documentId,
-          elementId,
-          partNumber: write.partNumber,
-          index: write.index
-        },
-        lastSyncedAt: datetime.timestamp(),
-        companyId,
-        createdBy: userId
-      });
+      // Without this row the line is indistinguishable from one a person
+      // added by hand: the next push will not replace it, and will insert a
+      // second copy beside it. Report it rather than leaving a line that
+      // silently compounds on every push.
+      const lineMapping = await client
+        .from("externalIntegrationMapping")
+        .insert({
+          entityType: "methodMaterial",
+          entityId: inserted.data.id,
+          integration: "onshape",
+          metadata: {
+            makeMethodId: method.id,
+            documentId,
+            elementId,
+            partNumber: write.partNumber,
+            index: write.index
+          },
+          lastSyncedAt: datetime.timestamp(),
+          companyId,
+          createdBy: userId
+        });
+      if (lineMapping.error) {
+        summary.errors.push(
+          `${parentLabel} → ${write.partNumber}: line written but not linked to Onshape (${lineMapping.error.message}); a later push will duplicate it`
+        );
+      }
     }
   }
 
   // ---- Assembly item mapping + child part links --------------------------
   const pushedAt = datetime.timestamp();
   const assemblyExternalId = externalIdForAssembly(documentId, elementId);
-  await serviceRole
+  // Both deletes clear the way for one canonical row: by item (an older link
+  // for this item, including one the legacy sync wrote with no externalId)
+  // and by externalId (this element pointing at some other item). Two rows
+  // would make the owned-field lock's `.maybeSingle()` error, silently
+  // unlocking name and description on the item page.
+  const clearedByItem = await serviceRole
     .from("externalIntegrationMapping")
     .delete()
     .eq("companyId", companyId)
     .eq("integration", "onshape")
     .eq("entityType", "item")
     .eq("entityId", rootItem.id);
-  await serviceRole
+  if (clearedByItem.error) {
+    summary.errors.push(
+      `${root.partNumber}: could not clear the previous Onshape link (${clearedByItem.error.message})`
+    );
+  }
+  const clearedByElement = await serviceRole
     .from("externalIntegrationMapping")
     .delete()
     .eq("companyId", companyId)
     .eq("integration", "onshape")
     .eq("entityType", "item")
     .eq("externalId", assemblyExternalId);
-  await client.from("externalIntegrationMapping").insert({
-    entityType: "item",
-    entityId: rootItem.id,
-    integration: "onshape",
-    externalId: assemblyExternalId,
-    metadata: {
-      documentId,
-      elementId,
-      wv,
-      wvId,
-      kind: "assembly",
-      partNumber: root.partNumber,
-      name: root.name,
-      pushedBy: userId,
-      pushedAt,
-      planId
-    },
-    lastSyncedAt: pushedAt,
-    companyId,
-    createdBy: userId
-  });
+  if (clearedByElement.error) {
+    summary.errors.push(
+      `${root.partNumber}: could not clear this element's previous link (${clearedByElement.error.message})`
+    );
+  }
+  const assemblyMapping = await client
+    .from("externalIntegrationMapping")
+    .insert({
+      entityType: "item",
+      entityId: rootItem.id,
+      integration: "onshape",
+      externalId: assemblyExternalId,
+      metadata: {
+        documentId,
+        elementId,
+        wv,
+        wvId,
+        kind: "assembly",
+        partNumber: root.partNumber,
+        name: root.name,
+        pushedBy: userId,
+        pushedAt,
+        planId
+      },
+      lastSyncedAt: pushedAt,
+      companyId,
+      createdBy: userId
+    });
+  if (assemblyMapping.error) {
+    summary.errors.push(
+      `${root.partNumber}: pushed, but not linked to Onshape (${assemblyMapping.error.message}); the next push will not recognise it`
+    );
+  }
 
   // Link child parts to their source part studios when the BOM names them,
   // without clobbering a link an explicit part push already made.
-  await linkChildParts(client, serviceRole, {
+  const childLinkError = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
     nodes: allNodes,
     itemByReadableId
   });
+  if (childLinkError) {
+    summary.errors.push(childLinkError);
+  }
 
   // One export per applied plan: a retried apply with the same plan and item
   // is the same event to Inngest.
@@ -734,7 +794,7 @@ async function linkChildParts(
       source
     });
   }
-  if (candidates.length === 0) return;
+  if (candidates.length === 0) return null;
 
   const [byEntity, byExternal] = await Promise.all([
     serviceRole
@@ -758,6 +818,14 @@ async function linkChildParts(
         candidates.map((candidate) => candidate.externalId)
       )
   ]);
+  // These two reads are the guards, not a lookup: a failed read degrading to
+  // an empty set would mean "nothing is linked", and the insert below would
+  // then claim links an explicit part push already owns. Refuse instead.
+  if (byEntity.error || byExternal.error) {
+    return `could not link child parts to their part studios: ${
+      (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+    }`;
+  }
   const linkedItemIds = new Set(
     (byEntity.data ?? []).map((row) => row.entityId)
   );
@@ -792,6 +860,10 @@ async function linkChildParts(
       createdBy: input.userId
     }));
   if (rows.length > 0) {
-    await client.from("externalIntegrationMapping").insert(rows);
+    const linked = await client.from("externalIntegrationMapping").insert(rows);
+    if (linked.error) {
+      return `child parts were not linked to their part studios (${linked.error.message}); pushing one of those studios will create a duplicate item`;
+    }
   }
+  return null;
 }
