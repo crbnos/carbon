@@ -16,6 +16,12 @@ vi.mock("./update", () => ({
 vi.mock("./webhook", () => ({
   runWebhookAction: vi.fn(async () => ({ ok: true, outputs: {} }))
 }));
+// `./integration` reaches `@carbon/auth`, whose module load demands the server env
+// (INNGEST_SIGNING_KEY, SUPABASE_SERVICE_ROLE_KEY, …) — the one sibling this file
+// did not mock, and the reason the suite failed at import in CI.
+vi.mock("./integration", () => ({
+  runIntegrationAction: vi.fn(async () => ({ ok: true, outputs: {} }))
+}));
 vi.mock("./operations", () => ({
   runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
   runOperation: vi.fn(async () => ({ ok: true, value: null }))
