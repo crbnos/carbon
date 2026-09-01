@@ -1,31 +1,69 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { PanelReleaseItem } from "@carbon/ee";
-import {
-  groupRevisionsIntoReleases,
-  isModelReleaseItem,
-  parseBomTree
+import type { Json } from "@carbon/database";
+import type {
+  ItemEdit,
+  OnshapeBomNode,
+  ProposedItem,
+  ReleasePlanItem
 } from "@carbon/ee";
-import { getOnshapeClient, OnshapeWVMType } from "@carbon/ee/onshape";
+import {
+  bomLineItemType,
+  changeNoticeDescriptionJson,
+  isModelReleaseItem,
+  mergeChangeNoticeEdit,
+  mergeEditsForCreates,
+  pickLatestRow,
+  proposeItem
+} from "@carbon/ee";
+import type { StoredReleasePlan } from "@carbon/ee/onshape";
+import {
+  loadActiveMakeMethods,
+  peekPanelPlan,
+  takePanelPlan
+} from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
   createRevision,
-  getItem,
+  type getItem,
   insertChangeNotice,
   updateDefaultRevision,
   upsertPart
 } from "~/modules/items";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 
 export const config = {
   runtime: "nodejs"
 };
 
+// Edits arrive as free strings. `mergeItemEdits` is the validator — an
+// unknown enum value, a unit the company lacks or an empty name comes back
+// as a 422 naming the row, not a blanket 400 — so the schema pins only the
+// shape and the cast to ItemEdit below is safe.
+const itemEditSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().nullable().optional(),
+  replenishmentSystem: z.string().optional(),
+  defaultMethodType: z.string().optional(),
+  itemTrackingType: z.string().optional(),
+  unitOfMeasureCode: z.string().optional()
+});
+
 const payloadSchema = z.object({
-  documentId: z.string().min(1),
-  releaseId: z.string().min(1)
+  planId: z.string().min(1),
+  edits: z.record(z.string(), itemEditSchema).default({}),
+  changeNotice: z
+    .object({
+      name: z.string().optional(),
+      description: z.string().nullable().optional()
+    })
+    .nullable()
+    .optional(),
+  makeDefault: z.boolean().optional()
 });
 
 type PushSummary = {
@@ -46,23 +84,61 @@ type ItemRow = {
   id: string;
   readableId: string;
   revision: string;
+  name: string;
+  type: string | null;
   defaultMethodType: string | null;
   unitOfMeasureCode: string | null;
 };
 
+type CreatedEntry = {
+  partNumber: string;
+  revision: string;
+  itemId: string;
+  baseItemId: string | null;
+};
+
+/** The `upsertPart` create payload for a reviewed proposal. */
+function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
+  return {
+    id: proposed.readableId,
+    name: proposed.name,
+    description: proposed.description ?? undefined,
+    revision: proposed.revision,
+    replenishmentSystem: proposed.replenishmentSystem,
+    defaultMethodType: proposed.defaultMethodType,
+    itemTrackingType: proposed.itemTrackingType,
+    unitOfMeasureCode: proposed.unitOfMeasureCode,
+    companyId,
+    createdBy: userId
+  } as any;
+}
+
 /**
- * Push one Onshape release into Carbon.
+ * Apply a reviewed release plan to Carbon.
  *
- * Per released part/assembly: ensure a Carbon item exists AT the released
- * revision letter — `createRevision` from the existing item (active, and made
- * the default so consumers cut over), or a fresh item when the part number was
- * never in Carbon. Released assemblies then get their BOM (read at the
- * released version) applied to the new revision's Draft make method — the
- * revision copy's Onshape-origin lines are replaced, manual lines survive.
- * One Draft change notice records the affected items; asset exports
- * (models + thumbnails, released drawings as PDF) run as background jobs.
- * Re-pushing the same release re-applies BOMs and assets but creates nothing
- * twice (idempotent on the release's part number + letter pairs).
+ * The plan (`plan-release`) holds every Onshape read the push needs — the
+ * release's items and each released assembly's BOM at its version — so this
+ * route reads nothing from Onshape: it takes the plan (once; the store hands
+ * it out with GETDEL), merges the user's edits for the items it will create,
+ * and writes. Carbon's state at apply time outranks the plan's pins: a letter
+ * that appeared since the review is reused, a base that vanished falls back
+ * to the first remaining revision, a part number that gained a row is
+ * revised rather than created twice.
+ *
+ * Per released part/assembly: ensure a Carbon item AT the released letter —
+ * `createRevision` from the base item (active; made the default when the
+ * review asked for it, so consuming lines cut over) or a fresh item with the
+ * reviewed values when the part number was never in Carbon. Released
+ * assemblies then get the plan's BOM lines applied to the new revision's
+ * Draft make method: the revision copy's Onshape-origin lines (found through
+ * the base method's mapping rows) and any lines a previous release push
+ * wrote are replaced, manual lines survive. One Draft change notice, named
+ * and described from the review, records what was created; asset exports
+ * (models + thumbnails, released drawings as PDF) run as background jobs
+ * keyed by plan + item + element so a retried apply cannot queue them twice.
+ * Re-applying a release that is already in Carbon re-applies BOMs and assets
+ * and creates nothing (idempotent on the release's part number + letter
+ * pairs).
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -76,51 +152,92 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!parsed.success) {
     return data({ error: "Invalid push payload" }, { status: 400 });
   }
-  const { documentId, releaseId } = parsed.data;
+  const { planId, changeNotice: changeNoticeEdit } = parsed.data;
+  const edits = parsed.data.edits as Record<string, ItemEdit>;
 
-  const onshape = await getOnshapeClient(client, companyId, userId);
-  if (onshape.error || !onshape.client) {
+  // Peek first: a 422 on the edits must leave the plan in place so the user
+  // can fix a field and apply again; the plan is taken only once the writes
+  // are about to start.
+  const stored = await peekPanelPlan(planId, { companyId, userId });
+  if (!stored) {
     return data(
-      { error: "Onshape is not connected for this company" },
-      { status: 422 }
+      { error: "This review has expired — review again" },
+      { status: 410 }
     );
   }
+  if (stored.plan.kind !== "release") {
+    return data(
+      { error: "This review is not a release push" },
+      { status: 400 }
+    );
+  }
+  const plan = stored.plan as StoredReleasePlan;
+  const makeDefault = parsed.data.makeDefault ?? plan.makeDefault;
 
-  let revisions: Awaited<
-    ReturnType<typeof onshape.client.getDocumentRevisions>
-  >;
-  try {
-    revisions = await onshape.client.getDocumentRevisions(documentId);
-  } catch (error) {
+  // ---- Merge the review's edits before any write --------------------------
+  // Items and children are keyed by part number; the two sets are disjoint
+  // by construction (a child is a BOM row that is not a release item).
+  const merged = mergeEditsForCreates(
+    [
+      ...plan.items
+        .filter((item) => item.action === "create" && item.proposed)
+        .map((item) => ({
+          key: item.partNumber,
+          proposed: item.proposed as ProposedItem
+        })),
+      ...plan.children
+        .filter((child) => child.action === "create" && child.proposed)
+        .map((child) => ({
+          key: child.partNumber,
+          proposed: child.proposed as ProposedItem
+        }))
+    ],
+    edits,
+    plan.options
+  );
+  // A re-push plan carries no change notice; merge against the default name
+  // anyway, because a row that vanished since the review turns into a create
+  // and the notice is then needed.
+  const changeNoticeMerge = mergeChangeNoticeEdit(
+    plan.changeNotice ?? {
+      name: plan.releaseName ?? `Onshape release ${plan.releaseId}`,
+      description: null
+    },
+    changeNoticeEdit
+  );
+  if (!changeNoticeMerge.ok) {
     return data(
       {
-        error: error instanceof Error ? error.message : "Onshape request failed"
+        error: "Some edits are not valid",
+        fieldErrors: [
+          ...merged.errors,
+          { key: "changeNotice", errors: changeNoticeMerge.errors }
+        ]
       },
-      { status: 502 }
-    );
-  }
-
-  const release = groupRevisionsIntoReleases(revisions.items ?? []).find(
-    (candidate) => candidate.releaseId === releaseId
-  );
-  if (!release) {
-    return data(
-      { error: "Release not found in this document" },
-      { status: 404 }
-    );
-  }
-
-  const modelItems = release.items.filter(isModelReleaseItem);
-  const drawingItems = release.items.filter((item) => item.elementType === 2);
-  if (modelItems.length === 0) {
-    return data(
-      { error: "The release contains no parts or assemblies" },
       { status: 422 }
     );
   }
+  if (merged.errors.length > 0) {
+    return data(
+      { error: "Some edits are not valid", fieldErrors: merged.errors },
+      { status: 422 }
+    );
+  }
+  const changeNoticeValues = changeNoticeMerge.changeNotice;
+
+  // One-shot from here: a concurrent apply of the same review finds nothing.
+  if (!(await takePanelPlan(planId, { companyId, userId }))) {
+    return data(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+
+  const modelItems = plan.items.filter(isModelReleaseItem);
+  const drawingItems = plan.items.filter((item) => !isModelReleaseItem(item));
 
   const summary: PushSummary = {
-    releaseName: release.releaseName,
+    releaseName: plan.releaseName,
     revisionsCreated: 0,
     itemsCreated: 0,
     reused: 0,
@@ -133,54 +250,132 @@ export async function action({ request }: ActionFunctionArgs) {
     errors: []
   };
 
-  // ---- Carbon rows for every involved part number (all revisions) ---------
-  const partNumbers = [...new Set(modelItems.map((item) => item.partNumber))];
+  // ---- Re-resolve Carbon rows for every part number (all revisions) -------
+  // The plan may be minutes old. Every release part number and every level-1
+  // BOM child is read again in one query so the decisions below rest on what
+  // Carbon holds now, not on what it held at review time.
+  const partNumbers = [
+    ...new Set([
+      ...modelItems.map((item) => item.partNumber),
+      ...Object.values(plan.bomLinesByElementId)
+        .flatMap((lines) => (lines ?? []).map((line) => line.partNumber))
+        .filter((partNumber): partNumber is string => !!partNumber)
+    ])
+  ];
   const existing = await client
     .from("item")
-    .select("id, readableId, revision, defaultMethodType, unitOfMeasureCode")
+    .select(
+      "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
+    )
     .eq("companyId", companyId)
-    .in("readableId", partNumbers);
+    .in("readableId", partNumbers)
+    .order("revision");
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
   const byReadable = new Map<string, ItemRow[]>();
-  for (const row of (existing.data ?? []) as ItemRow[]) {
+  const rememberRow = (row: ItemRow) => {
     const list = byReadable.get(row.readableId) ?? [];
     list.push(row);
     byReadable.set(row.readableId, list);
-  }
+  };
+  for (const row of (existing.data ?? []) as ItemRow[]) rememberRow(row);
   const letterRowFor = (partNumber: string, revision: string) =>
     (byReadable.get(partNumber) ?? []).find((row) => row.revision === revision);
 
   // ---- Pass 1: ensure an item at every released revision letter -----------
-  type CreatedEntry = {
-    partNumber: string;
-    revision: string;
-    itemId: string;
-    baseItemId: string | null;
-  };
   const created: CreatedEntry[] = [];
   const revisionItemByPartNumber = new Map<string, ItemRow>();
 
-  for (const item of modelItems) {
+  // Decide first, then read every base in one query, then write. The plan
+  // pinned the base it showed ("Rev B from Rev A"); it is honoured while the
+  // row exists, else the first remaining revision stands in, as before plans.
+  type Decision =
+    | { item: ReleasePlanItem; kind: "reuse"; row: ItemRow }
+    | { item: ReleasePlanItem; kind: "revision"; base: ItemRow }
+    | { item: ReleasePlanItem; kind: "create"; proposed: ProposedItem };
+  const decisions: Decision[] = modelItems.map((item): Decision => {
     const existingLetter = letterRowFor(item.partNumber, item.revision);
-    if (existingLetter) {
+    if (existingLetter) return { item, kind: "reuse", row: existingLetter };
+    const bases = byReadable.get(item.partNumber) ?? [];
+    const base =
+      bases.find((row) => row.id === item.baseItemId) ?? pickLatestRow(bases);
+    if (base) return { item, kind: "revision", base };
+    return {
+      item,
+      kind: "create",
+      // The reviewed values, or — when the review expected a base that is
+      // gone — the same bare defaults a create always started from.
+      proposed:
+        merged.items.get(item.partNumber) ??
+        proposeItem(
+          { partNumber: item.partNumber, name: null, revision: item.revision },
+          plan.options
+        )
+    };
+  });
+
+  // An assembly whose BOM the review could not read is not minted at all: a
+  // revision copied from the base would carry the base's Onshape lines with
+  // no mapping rows, and a fresh item would have no BOM — both are wrong in
+  // ways a later push cannot repair. Reuse is unaffected (nothing is written).
+  for (const decision of decisions) {
+    if (
+      decision.kind !== "reuse" &&
+      decision.item.elementType === 1 &&
+      plan.bomLinesByElementId[decision.item.elementId] === null
+    ) {
+      summary.errors.push(
+        `${decision.item.partNumber} Rev ${decision.item.revision}: the BOM was not read at review — review and push again`
+      );
+    }
+  }
+  const applicable = decisions.filter(
+    (decision) =>
+      decision.kind === "reuse" ||
+      decision.item.elementType !== 1 ||
+      plan.bomLinesByElementId[decision.item.elementId] !== null
+  );
+  decisions.length = 0;
+  decisions.push(...applicable);
+
+  const baseIds = [
+    ...new Set(
+      decisions.flatMap((decision) =>
+        decision.kind === "revision" ? [decision.base.id] : []
+      )
+    )
+  ];
+  type FullItem = NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+  const fullBaseById = new Map<string, FullItem>();
+  if (baseIds.length > 0) {
+    const bases = await client
+      .from("item")
+      .select("*")
+      .eq("companyId", companyId)
+      .in("id", baseIds);
+    for (const row of (bases.data ?? []) as FullItem[]) {
+      fullBaseById.set(row.id, row);
+    }
+  }
+
+  for (const decision of decisions) {
+    const { item } = decision;
+    if (decision.kind === "reuse") {
       summary.reused += 1;
-      revisionItemByPartNumber.set(item.partNumber, existingLetter);
+      revisionItemByPartNumber.set(item.partNumber, decision.row);
       continue;
     }
 
-    const bases = byReadable.get(item.partNumber) ?? [];
     let row: ItemRow | null = null;
-    if (bases.length > 0) {
-      const base = bases[0] as ItemRow;
-      const full = await getItem(client, base.id);
-      if (full.error || !full.data) {
+    if (decision.kind === "revision") {
+      const full = fullBaseById.get(decision.base.id);
+      if (!full) {
         summary.errors.push(`${item.partNumber}: failed to read the base item`);
         continue;
       }
       const inserted = await createRevision(client, {
-        item: full.data,
+        item: full,
         revision: item.revision,
         createdBy: userId,
         active: true
@@ -197,32 +392,27 @@ export async function action({ request }: ActionFunctionArgs) {
         id: inserted.data.id,
         readableId: item.partNumber,
         revision: item.revision,
-        defaultMethodType: full.data.defaultMethodType ?? "Make to Order",
-        unitOfMeasureCode: full.data.unitOfMeasureCode ?? "EA"
+        name: full.name,
+        type: full.type,
+        defaultMethodType: full.defaultMethodType ?? "Make to Order",
+        unitOfMeasureCode: full.unitOfMeasureCode ?? "EA"
       };
       created.push({
         partNumber: item.partNumber,
         revision: item.revision,
         itemId: row.id,
-        baseItemId: base.id
+        baseItemId: decision.base.id
       });
       summary.revisionsCreated += 1;
     } else {
-      // Never in Carbon: create the item directly at the released letter.
-      // Released items are designed in-house: Make. The item name is refined
-      // by later element pushes; the release list only carries part numbers.
-      const insertedItem = await upsertPart(client, {
-        id: item.partNumber,
-        name: item.partNumber,
-        revision: item.revision,
-        replenishmentSystem: "Make",
-        defaultMethodType: "Make to Order",
-        itemTrackingType: "Inventory",
-        unitOfMeasureCode: "EA",
-        companyId,
-        createdBy: userId
-        // biome-ignore lint/suspicious/noExplicitAny: partValidator carries many optional form-only fields
-      } as any);
+      // Never in Carbon: create the item directly at the released letter with
+      // the values the user reviewed. `upsertPart` reads the new id back by
+      // readableId, which is only right because no other revision exists.
+      const { proposed } = decision;
+      const insertedItem = await upsertPart(
+        client,
+        partInsert(proposed, companyId, userId)
+      );
       if (insertedItem.error || !insertedItem.data) {
         summary.errors.push(
           `${item.partNumber}: ${
@@ -235,8 +425,10 @@ export async function action({ request }: ActionFunctionArgs) {
         id: insertedItem.data.id as string,
         readableId: item.partNumber,
         revision: item.revision,
-        defaultMethodType: "Make to Order",
-        unitOfMeasureCode: "EA"
+        name: proposed.name,
+        type: "Part",
+        defaultMethodType: proposed.defaultMethodType,
+        unitOfMeasureCode: proposed.unitOfMeasureCode
       };
       created.push({
         partNumber: item.partNumber,
@@ -248,9 +440,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     revisionItemByPartNumber.set(item.partNumber, row);
-    const list = byReadable.get(item.partNumber) ?? [];
-    list.push(row);
-    byReadable.set(item.partNumber, list);
+    rememberRow(row);
   }
 
   summary.alreadyPushed = created.length === 0;
@@ -258,20 +448,25 @@ export async function action({ request }: ActionFunctionArgs) {
   // ---- Pass 2: BOMs for released assemblies -------------------------------
   const serviceRole = getCarbonServiceRole();
 
-  const activeMakeMethodFor = async (itemId: string) => {
-    const method = await client
-      .from("activeMakeMethods")
-      .select("id, status, version")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    return method.data as {
-      id: string;
-      status: string;
-      version: number;
-    } | null;
-  };
+  // Active make methods for every target and every base in one query. The
+  // map is reused by the change notice below: nothing this route writes
+  // changes which method is active.
+  const methodByItemId = await loadActiveMakeMethods(client, companyId, [
+    ...[...revisionItemByPartNumber.values()].map((row) => row.id),
+    ...created.flatMap((entry) => (entry.baseItemId ? [entry.baseItemId] : []))
+  ]);
 
+  // 2a — which assemblies take their BOM. Status is re-checked here: a method
+  // released between review and apply is refused, as it always was.
+  type BomTarget = {
+    item: ReleasePlanItem;
+    label: string;
+    methodId: string;
+    lines: OnshapeBomNode[];
+    /** The base method whose Onshape-origin lines the revision copy carries. */
+    baseMethodId: string | null;
+  };
+  const bomTargets: BomTarget[] = [];
   for (const item of modelItems.filter(
     (candidate) => candidate.elementType === 1
   )) {
@@ -279,7 +474,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!target) continue; // creation failed above; error already recorded
     const label = `${item.partNumber} Rev ${item.revision}`;
 
-    const method = await activeMakeMethodFor(target.id);
+    const method = methodByItemId.get(target.id);
     if (!method) {
       summary.errors.push(`${label}: no make method found`);
       continue;
@@ -291,109 +486,192 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    let bom: unknown;
-    try {
-      bom = await onshape.client.getBillOfMaterialsIn(
-        {
-          documentId,
-          wvm: OnshapeWVMType.VERSION,
-          wvmId: item.versionId
-        },
-        item.elementId
-      );
-    } catch (error) {
-      summary.errors.push(
-        `${label}: ${
-          error instanceof Error ? error.message : "Onshape BOM request failed"
-        }`
+    // A BOM the review could not read is stored as null and leaves the
+    // method alone — deleting its Onshape-origin lines on the strength of a
+    // failed read would turn a transient Onshape error into an erased BOM. A
+    // genuinely empty BOM is an empty array and is applied like any other.
+    const lines = plan.bomLinesByElementId[item.elementId];
+    if (!lines) {
+      summary.skipped.push(
+        `${label}: the BOM was not read at review — review and push again`
       );
       continue;
     }
-    const { lines } = parseBomTree(bom);
 
-    // BOM children that aren't release items can still exist in Carbon (e.g.
-    // purchased hardware created by an element push) — fetch the unknowns in
-    // one query so they're reused instead of re-minted.
-    const unknownChildren = [
-      ...new Set(
-        lines
-          .map((child) => child.partNumber)
-          .filter((pn): pn is string => !!pn && !byReadable.has(pn))
-      )
-    ];
-    if (unknownChildren.length > 0) {
-      const rows = await client
-        .from("item")
-        .select(
-          "id, readableId, revision, defaultMethodType, unitOfMeasureCode"
-        )
-        .eq("companyId", companyId)
-        .in("readableId", unknownChildren);
-      for (const row of (rows.data ?? []) as ItemRow[]) {
-        const list = byReadable.get(row.readableId) ?? [];
-        list.push(row);
-        byReadable.set(row.readableId, list);
-      }
-    }
-
-    // The revision copy carried the base method's lines over. Drop the copies
-    // of lines a panel push wrote to the BASE method (found through the base
-    // method's mapping rows, matched here by item + order + quantity) so they
-    // don't duplicate the released BOM below; manual lines stay.
     const createdEntry = created.find(
       (candidate) =>
         candidate.partNumber === item.partNumber &&
         candidate.revision === item.revision
     );
-    if (createdEntry?.baseItemId) {
-      const baseMethod = await activeMakeMethodFor(createdEntry.baseItemId);
-      if (baseMethod) {
-        const baseMapped = await serviceRole
-          .from("externalIntegrationMapping")
-          .select("entityId")
-          .eq("companyId", companyId)
-          .eq("integration", "onshape")
-          .eq("entityType", "methodMaterial")
-          .eq("metadata->>makeMethodId", baseMethod.id);
-        const baseLineIds = (baseMapped.data ?? []).map(
-          (mapping) => mapping.entityId
+    bomTargets.push({
+      item,
+      label,
+      methodId: method.id,
+      lines,
+      baseMethodId: createdEntry?.baseItemId
+        ? (methodByItemId.get(createdEntry.baseItemId)?.id ?? null)
+        : null
+    });
+  }
+
+  // 2b — resolve every line's item once: the same release's letter item,
+  // else any existing revision (purchased hardware is reused, never
+  // re-minted), else a create with the reviewed values. A child the review
+  // expected to reuse but which vanished since gets the bare defaults.
+  const childItemByPartNumber = new Map<string, ItemRow>();
+  const childFailed = new Set<string>();
+  for (const target of bomTargets) {
+    for (const child of target.lines) {
+      if (!child.partNumber) continue;
+      if (
+        childItemByPartNumber.has(child.partNumber) ||
+        childFailed.has(child.partNumber)
+      ) {
+        continue;
+      }
+      const existingChild =
+        revisionItemByPartNumber.get(child.partNumber) ??
+        pickLatestRow(byReadable.get(child.partNumber) ?? []);
+      if (existingChild) {
+        childItemByPartNumber.set(child.partNumber, existingChild);
+        continue;
+      }
+      const proposed =
+        merged.items.get(child.partNumber) ??
+        proposeItem(
+          {
+            partNumber: child.partNumber,
+            name: child.name,
+            description: child.description,
+            revision: child.revision,
+            purchased: child.purchased
+          },
+          plan.options
         );
-        if (baseLineIds.length > 0) {
-          const baseLines = await client
-            .from("methodMaterial")
-            .select("itemId, order, quantity")
-            .in("id", baseLineIds);
-          const copiedKeys = new Set(
-            (baseLines.data ?? []).map(
-              (line) => `${line.itemId}:${line.order}:${line.quantity}`
-            )
+      const createdChild = await upsertPart(
+        client,
+        partInsert(proposed, companyId, userId)
+      );
+      if (createdChild.error || !createdChild.data) {
+        summary.errors.push(
+          `${target.label} → ${child.partNumber}: ${
+            createdChild.error?.message ?? "failed to create the item"
+          }`
+        );
+        childFailed.add(child.partNumber);
+        continue;
+      }
+      const childRow: ItemRow = {
+        id: createdChild.data.id as string,
+        readableId: child.partNumber,
+        revision: proposed.revision,
+        name: proposed.name,
+        type: "Part",
+        defaultMethodType: proposed.defaultMethodType,
+        unitOfMeasureCode: proposed.unitOfMeasureCode
+      };
+      childItemByPartNumber.set(child.partNumber, childRow);
+      rememberRow(childRow);
+      summary.itemsCreated += 1;
+    }
+  }
+
+  // Methods of children that are themselves made (sub-assemblies): a line
+  // points at the child's method. One query over the ones not already known.
+  const madeChildItemIds = [
+    ...new Set(
+      bomTargets.flatMap((target) =>
+        target.lines.flatMap((child) => {
+          if (!child.partNumber || child.children.length === 0) return [];
+          const row = childItemByPartNumber.get(child.partNumber);
+          return row && !methodByItemId.has(row.id) ? [row.id] : [];
+        })
+      )
+    )
+  ];
+  for (const [itemId, method] of await loadActiveMakeMethods(
+    client,
+    companyId,
+    madeChildItemIds
+  )) {
+    methodByItemId.set(itemId, method);
+  }
+
+  // 2c — clear what the release replaces, in bulk across every target.
+  // First the revision copies: `createRevision` carried the base method's
+  // lines over, and the ones a panel push wrote to the BASE method (found
+  // through the base method's mapping rows, matched by item + order +
+  // quantity) would duplicate the released BOM below; manual lines stay.
+  const baseMethodIdByTargetMethodId = new Map<string, string>(
+    bomTargets.flatMap(
+      (target): Array<[string, string]> =>
+        target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
+    )
+  );
+  const baseMethodIds = [...new Set(baseMethodIdByTargetMethodId.values())];
+  if (baseMethodIds.length > 0) {
+    const baseMapped = await serviceRole
+      .from("externalIntegrationMapping")
+      .select("entityId")
+      .eq("companyId", companyId)
+      .eq("integration", "onshape")
+      .eq("entityType", "methodMaterial")
+      .in("metadata->>makeMethodId", baseMethodIds);
+    const baseLineIds = (baseMapped.data ?? []).map(
+      (mapping) => mapping.entityId
+    );
+    if (baseLineIds.length > 0) {
+      const lineKey = (line: {
+        itemId: string;
+        order: number;
+        quantity: number;
+      }) => `${line.itemId}:${line.order}:${line.quantity}`;
+      const [baseLines, copies] = await Promise.all([
+        client
+          .from("methodMaterial")
+          .select("makeMethodId, itemId, order, quantity")
+          .eq("companyId", companyId)
+          .in("id", baseLineIds),
+        client
+          .from("methodMaterial")
+          .select("id, makeMethodId, itemId, order, quantity")
+          .eq("companyId", companyId)
+          .in("makeMethodId", [...baseMethodIdByTargetMethodId.keys()])
+      ]);
+      const copiedKeysByBaseMethodId = new Map<string, Set<string>>();
+      for (const line of baseLines.data ?? []) {
+        const keys =
+          copiedKeysByBaseMethodId.get(line.makeMethodId) ?? new Set<string>();
+        keys.add(lineKey(line));
+        copiedKeysByBaseMethodId.set(line.makeMethodId, keys);
+      }
+      const toDelete = (copies.data ?? [])
+        .filter((line) => {
+          const baseMethodId = baseMethodIdByTargetMethodId.get(
+            line.makeMethodId
           );
-          if (copiedKeys.size > 0) {
-            const newLines = await client
-              .from("methodMaterial")
-              .select("id, itemId, order, quantity")
-              .eq("makeMethodId", method.id);
-            const toDelete = (newLines.data ?? [])
-              .filter((line) =>
-                copiedKeys.has(`${line.itemId}:${line.order}:${line.quantity}`)
-              )
-              .map((line) => line.id);
-            if (toDelete.length > 0) {
-              await client.from("methodMaterial").delete().in("id", toDelete);
-            }
-          }
-        }
+          return (
+            !!baseMethodId &&
+            copiedKeysByBaseMethodId.get(baseMethodId)?.has(lineKey(line))
+          );
+        })
+        .map((line) => line.id);
+      if (toDelete.length > 0) {
+        await client.from("methodMaterial").delete().in("id", toDelete);
       }
     }
+  }
 
-    // Replace lines a previous release push wrote to this method.
+  // Then the lines a previous release push wrote to the target methods.
+  const targetMethodIds = bomTargets.map((target) => target.methodId);
+  if (targetMethodIds.length > 0) {
     const mapped = await serviceRole
       .from("externalIntegrationMapping")
       .select("id, entityId")
       .eq("companyId", companyId)
       .eq("integration", "onshape")
       .eq("entityType", "methodMaterial")
-      .eq("metadata->>makeMethodId", method.id);
+      .in("metadata->>makeMethodId", targetMethodIds);
     if ((mapped.data ?? []).length > 0) {
       await client
         .from("methodMaterial")
@@ -410,82 +688,54 @@ export async function action({ request }: ActionFunctionArgs) {
           (mapped.data ?? []).map((mapping) => mapping.id)
         );
     }
+  }
+  summary.methodsTouched += bomTargets.length;
 
-    summary.methodsTouched += 1;
-
-    // Level-1 lines only: deeper levels belong to the released subassemblies'
-    // own methods, which this release populates through their own entries.
+  // 2d — write the released lines. Level-1 only: deeper levels belong to the
+  // released subassemblies' own methods, which this release populates
+  // through their own entries.
+  for (const target of bomTargets) {
+    const { item, label, methodId } = target;
     let order = 0;
-    for (const child of lines) {
+    for (const child of target.lines) {
       if (!child.partNumber) {
         summary.skipped.push(
           `${label} → ${child.name ?? child.index}: no part number in Onshape`
         );
         continue;
       }
-      let childItem: ItemRow | undefined =
-        revisionItemByPartNumber.get(child.partNumber) ??
-        (byReadable.get(child.partNumber) ?? [])[0];
-      if (!childItem) {
-        // A BOM child that was neither released nor ever pushed: create it at
-        // the BOM's revision so the line has a target.
-        const createdChild = await upsertPart(client, {
-          id: child.partNumber,
-          name: child.name ?? child.partNumber,
-          description: child.description ?? undefined,
-          revision: child.revision ?? "0",
-          replenishmentSystem: child.purchased ? "Buy" : "Make",
-          defaultMethodType: child.purchased
-            ? "Pull from Inventory"
-            : "Make to Order",
-          itemTrackingType: "Inventory",
-          unitOfMeasureCode: "EA",
-          companyId,
-          createdBy: userId
-          // biome-ignore lint/suspicious/noExplicitAny: partValidator carries many optional form-only fields
-        } as any);
-        if (createdChild.error || !createdChild.data) {
-          summary.errors.push(
-            `${label} → ${child.partNumber}: ${
-              createdChild.error?.message ?? "failed to create the item"
-            }`
-          );
-          continue;
-        }
-        childItem = {
-          id: createdChild.data.id as string,
-          readableId: child.partNumber,
-          revision: child.revision ?? "0",
-          defaultMethodType: child.purchased
-            ? "Pull from Inventory"
-            : "Make to Order",
-          unitOfMeasureCode: "EA"
-        };
-        byReadable.set(child.partNumber, [childItem]);
-        summary.itemsCreated += 1;
+      const childItem = childItemByPartNumber.get(child.partNumber);
+      if (!childItem) continue; // creation failed above; error already recorded
+
+      // A reused Material is a Material line; a Tool cannot be a line at all.
+      const itemType = bomLineItemType(childItem);
+      if (!itemType) {
+        summary.errors.push(
+          `${label} → ${child.partNumber}: a ${
+            childItem.type ?? "Part"
+          } item cannot be a BOM line`
+        );
+        continue;
       }
 
-      const childMade = child.children.length > 0;
-      const childMethod = childMade
-        ? await activeMakeMethodFor(childItem.id)
-        : null;
+      const childMethod =
+        child.children.length > 0 ? methodByItemId.get(childItem.id) : null;
 
       const inserted = await client
         .from("methodMaterial")
         .insert({
           itemId: childItem.id,
           quantity: child.quantity,
-          makeMethodId: method.id,
+          makeMethodId: methodId,
           materialMakeMethodId: childMethod?.id ?? null,
           methodType:
             (childItem.defaultMethodType as "Make to Order" | null) ??
             (child.purchased ? "Pull from Inventory" : "Make to Order"),
           order,
-          itemType: "Part",
+          itemType,
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA",
           companyId,
           createdBy: userId
-          // biome-ignore lint/suspicious/noExplicitAny: enum unions narrowed above
         } as any)
         .select("id")
         .single();
@@ -505,14 +755,14 @@ export async function action({ request }: ActionFunctionArgs) {
         entityId: inserted.data.id,
         integration: "onshape",
         metadata: {
-          makeMethodId: method.id,
-          documentId,
+          makeMethodId: methodId,
+          documentId: plan.documentId,
           elementId: item.elementId,
           partNumber: child.partNumber,
           index: child.index,
-          releaseId: release.releaseId
+          releaseId: plan.releaseId
         },
-        lastSyncedAt: new Date().toISOString(),
+        lastSyncedAt: datetime.timestamp(),
         companyId,
         createdBy: userId
       });
@@ -523,14 +773,24 @@ export async function action({ request }: ActionFunctionArgs) {
   for (const item of modelItems) {
     const row = revisionItemByPartNumber.get(item.partNumber);
     if (!row) continue;
-    const externalId = `release:${release.releaseId}:${item.partNumber}`;
+    const externalId = `release:${plan.releaseId}:${item.partNumber}`;
+    const pushedAt = datetime.timestamp();
+    // One row per item, one per external id: both uniqueness constraints
+    // depend on this delete running before the insert.
     await serviceRole
       .from("externalIntegrationMapping")
       .delete()
       .eq("companyId", companyId)
       .eq("integration", "onshape")
       .eq("entityType", "item")
-      .or(`entityId.eq.${row.id},externalId.eq.${externalId}`);
+      .eq("entityId", row.id);
+    await serviceRole
+      .from("externalIntegrationMapping")
+      .delete()
+      .eq("companyId", companyId)
+      .eq("integration", "onshape")
+      .eq("entityType", "item")
+      .eq("externalId", externalId);
     await client.from("externalIntegrationMapping").insert({
       entityType: "item",
       entityId: row.id,
@@ -538,48 +798,60 @@ export async function action({ request }: ActionFunctionArgs) {
       externalId,
       metadata: {
         kind: "release",
-        releaseId: release.releaseId,
-        releaseName: release.releaseName,
-        documentId,
+        releaseId: plan.releaseId,
+        releaseName: plan.releaseName,
+        documentId: plan.documentId,
         elementId: item.elementId,
         wv: "v",
         wvId: item.versionId,
         partNumber: item.partNumber,
         revision: item.revision,
         pushedBy: userId,
-        pushedAt: new Date().toISOString()
+        pushedAt,
+        planId
       },
-      lastSyncedAt: new Date().toISOString(),
+      lastSyncedAt: pushedAt,
       companyId,
       createdBy: userId
     });
   }
 
-  // New revisions become the default their consumers resolve to (§ the
+  // New revisions become the default their consumers resolve to (the
   // product's own Make Default semantics: methodMaterial lines of sibling
-  // revisions are repointed here).
-  for (const entry of created) {
-    if (!entry.baseItemId) continue; // brand-new item: it is the only revision
-    const updated = await updateDefaultRevision(client, {
-      id: entry.itemId,
-      updatedBy: userId
-    });
-    if (updated.error) {
-      summary.errors.push(
-        `${entry.partNumber}: failed to make Rev ${entry.revision} the default`
-      );
-    } else {
-      summary.defaultsUpdated += 1;
+  // revisions are repointed here) — only when the review asked for it.
+  if (makeDefault) {
+    for (const entry of created) {
+      if (!entry.baseItemId) continue; // brand-new item: it is the only revision
+      const updated = await updateDefaultRevision(client, {
+        id: entry.itemId,
+        updatedBy: userId
+      });
+      if (updated.error) {
+        summary.errors.push(
+          `${entry.partNumber}: failed to make Rev ${entry.revision} the default`
+        );
+      } else {
+        summary.defaultsUpdated += 1;
+      }
     }
   }
 
   // ---- Pass 4: one Draft change notice for what this push created ---------
   if (created.length > 0) {
+    const description = changeNoticeDescriptionJson(
+      changeNoticeValues.description
+    );
     const changeNotice = await insertChangeNotice(client, {
       companyId,
       createdBy: userId,
-      name: `Onshape release ${release.releaseName ?? release.releaseId}`,
-      openDate: new Date().toISOString().slice(0, 10)
+      name: changeNoticeValues.name,
+      // The description column is tiptap JSON; the key is omitted, not
+      // nulled, when the review left it empty.
+      ...(description ? { description: description as Json } : {}),
+      // A business date on the company's calendar, never the server's day.
+      openDate: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString()
     });
     if (changeNotice.error || !changeNotice.data) {
       summary.errors.push(
@@ -589,9 +861,9 @@ export async function action({ request }: ActionFunctionArgs) {
       summary.changeNotice = changeNotice.data.changeNoticeId;
       let sortOrder = 0;
       for (const entry of created) {
-        const draftMethod = await activeMakeMethodFor(entry.itemId);
+        const draftMethod = methodByItemId.get(entry.itemId);
         const baseMethod = entry.baseItemId
-          ? await activeMakeMethodFor(entry.baseItemId)
+          ? methodByItemId.get(entry.baseItemId)
           : null;
         const affected = await client.from("changeOrderAffectedItem").insert({
           changeOrderId: changeNotice.data.id,
@@ -604,7 +876,6 @@ export async function action({ request }: ActionFunctionArgs) {
           newItemId: entry.baseItemId ? entry.itemId : null,
           companyId,
           createdBy: userId
-          // biome-ignore lint/suspicious/noExplicitAny: enum unions narrowed above
         } as any);
         if (affected.error) {
           summary.errors.push(
@@ -618,7 +889,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // ---- Pass 5: asset exports at the released versions ---------------------
   const assetTargets: Array<{
-    item: PanelReleaseItem;
+    item: ReleasePlanItem;
     itemId: string;
     kind: "partstudio" | "assembly" | "drawing";
   }> = [];
@@ -644,17 +915,23 @@ export async function action({ request }: ActionFunctionArgs) {
     assetTargets.push({ item: drawing, itemId: target.id, kind: "drawing" });
   }
   for (const target of assetTargets) {
-    await trigger("onshape-panel-sync", {
-      companyId,
-      userId,
-      itemId: target.itemId,
-      documentId,
-      wvm: "v",
-      wvmId: target.item.versionId,
-      elementId: target.item.elementId,
-      elementKind: target.kind,
-      assetBaseName: `${target.item.partNumber}-${target.item.revision}`
-    });
+    // The event id makes a retried apply idempotent per item + element: the
+    // job spends live quota on every execution.
+    await trigger(
+      "onshape-panel-sync",
+      {
+        companyId,
+        userId,
+        itemId: target.itemId,
+        documentId: plan.documentId,
+        wvm: "v",
+        wvmId: target.item.versionId,
+        elementId: target.item.elementId,
+        elementKind: target.kind,
+        assetBaseName: `${target.item.partNumber}-${target.item.revision}`
+      },
+      { id: `${planId}:${target.itemId}:${target.item.elementId}` }
+    );
   }
 
   return data({ summary }, { headers: { "Cache-Control": "no-store" } });
