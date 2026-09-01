@@ -136,6 +136,10 @@ describe("pinnedValues", () => {
     ).toEqual({ singleEvents: true });
   });
 
+  it("pins gmail's draft flag off even though the prop is omitted from the form", () => {
+    expect(pinnedValues("gmail", "gmail_send_email")).toEqual({ draft: false });
+  });
+
   it("is empty for an action or piece with no overrides", () => {
     expect(
       pinnedValues("google-calendar", "create_google_calendar_event")

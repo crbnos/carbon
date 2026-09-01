@@ -117,6 +117,25 @@ describe("buildConsentUrl", () => {
     expect(scopes).toContain("incoming-webhook");
     expect(scopes).toContain("channels:read");
   });
+
+  it("asks Google for send-only Gmail scopes, offline, with forced consent", async () => {
+    const url = new URL(
+      buildConsentUrl({
+        entry: PIECE_ALLOWLIST.gmail!,
+        auth: await getPieceOAuth2Auth("gmail"),
+        app,
+        state: "s"
+      })
+    );
+    expect(url.origin + url.pathname).toBe(
+      "https://accounts.google.com/o/oauth2/auth"
+    );
+    expect(url.searchParams.get("scope")).toBe(
+      "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email"
+    );
+    expect(url.searchParams.get("access_type")).toBe("offline");
+    expect(url.searchParams.get("prompt")).toBe("consent");
+  });
 });
 
 describe("connection metadata", () => {
@@ -180,13 +199,38 @@ describe("requiredScopesFor", () => {
     expect(scopes).toContain("channels:read");
   });
 
-  it("falls back to the piece's own scope list", async () => {
-    expect(await requiredScopesFor("google-calendar")).toEqual(
-      (await getPieceOAuth2Auth("google-calendar")).scope
+  // Google's pieces end their lists in the alias `email`; Google grants it as
+  // `…/auth/userinfo.email`. The row spells it canonically so granted-vs-required
+  // matches; the SET of permissions asked for is unchanged.
+  it("spells Calendar's scopes canonically, asking for nothing the piece does not", async () => {
+    const canonical = (scope: string) =>
+      scope === "email"
+        ? "https://www.googleapis.com/auth/userinfo.email"
+        : scope;
+    expect([...(await requiredScopesFor("google-calendar"))].sort()).toEqual(
+      (await getPieceOAuth2Auth("google-calendar")).scope.map(canonical).sort()
     );
+  });
+
+  // Pitfall 2 in allowlist.ts: a short alias never matches what Google reports as
+  // granted, so the account would read "Reconnect needed" from its first second.
+  it("never lists a Google scope alias on any row", async () => {
+    for (const piece of Object.keys(PIECE_ALLOWLIST)) {
+      for (const scope of await requiredScopesFor(piece)) {
+        expect(["email", "profile", "openid"]).not.toContain(scope);
+      }
+    }
   });
 
   it("is empty for a piece that is not allowlisted", async () => {
     expect(await requiredScopesFor("nope")).toEqual([]);
+  });
+
+  it("is send-only for gmail, never the piece's restricted scopes", async () => {
+    const scopes = await requiredScopesFor("gmail");
+    expect(scopes).toEqual([
+      "https://www.googleapis.com/auth/gmail.send",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]);
   });
 });

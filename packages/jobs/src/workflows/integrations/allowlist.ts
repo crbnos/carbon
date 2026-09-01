@@ -30,6 +30,9 @@ export interface AllowlistPropOverride {
   /** Sent at RUN time when the node supplies nothing, never stored on the node —
    * so changing our mind here fixes every existing workflow at once. */
   value?: unknown;
+  /** Prose the vendor declared as a ShortText (Gmail's email `body`): render the
+   * multiline editor with inline variables, as a LongText gets automatically. */
+  template?: boolean;
 }
 
 export interface AllowlistEntry {
@@ -82,6 +85,57 @@ export interface AllowlistEntry {
   sortItemsBy?: Record<string, string>;
 }
 
+/**
+ * WHAT BIT US adding the first three pieces (Google Calendar, Slack, Gmail) — none of
+ * them connected on the first try. Read this before adding a fourth; the rule's
+ * "Adding a piece" checklist has the steps, this is the why behind each one.
+ *
+ *  1. `companyIntegration.id` is an FK to `integration.id`, so a card with no
+ *     `integration` row FAILS the consent callback on its "installed" write — after
+ *     the token is already in the vault. Every piece needs the one-row migration
+ *     (the `INSERT INTO "integration"` at the end of
+ *     `20260901173000_workflow-integration-connections.sql`). Gmail, 2026-09-01.
+ *  2. Google canonicalises scopes: request `email` and the token response's `scope`
+ *     says `https://www.googleapis.com/auth/userinfo.email` (plus an unrequested
+ *     `openid`). `missingScopes(granted, required)` then never matches, and the
+ *     account reads "Reconnect needed" the moment it connects. Only ever list the
+ *     full `https://www.googleapis.com/auth/…` URLs here; never a short alias, even
+ *     when the piece's own list uses one. Calendar escaped only because its first
+ *     rows predate scope recording (`metadata: {}` → grants unknown → never flagged).
+ *  3. Slack's piece bakes `user_scope=` into its `authUrl` (a personal user token we
+ *     never use) and asks for 30 bot scopes: override BOTH `authUrl` and `scope`.
+ *  4. A required prop WITH a vendor default is hidden from the form but must still be
+ *     SENT — the piece reads `propsValue.x` unguarded (`event_types.length` crashed).
+ *     `visibility.ts` does this for you; an `omit` on a required prop needs a `value`.
+ *  5. Google issues a refresh token only with `access_type=offline` AND
+ *     `prompt=consent`, and omits it from refresh responses: `buildConsentUrl` sets
+ *     both, `resolveConnectionAuth` carries the stored one forward. Do not "simplify".
+ *  6. A PostgREST failure is a plain object: `err instanceof Error` is false and
+ *     `err.message` reads as "" — the callback once logged `name=object detail=` for
+ *     pitfall 1. Log the JSON of a non-Error, always.
+ *  7. The card's "Coming soon" is decided client-side from `window.env`: a new
+ *     client id must be in `getBrowserEnv()` AND the root loader's hand-built `env`
+ *     object (`.ai/lessons.md` "A browser-safe env flag isn't live until…").
+ *  8. `pnpm-workspace.yaml` `minimumReleaseAge` (3 days) refuses a piece version
+ *     published this week; pin the previous one and compare the action you expose.
+ *  9. A token has ONE reader (`resolveConnectionAuth` / `readConnectionAccessToken`).
+ *     Reading it off a column or `metadata` returns `undefined` silently — Slack DMs
+ *     went dark for weeks that way (`.ai/lessons.md` "Secret material is read
+ *     through ONE reader").
+ * 10. `markIntegrationInstalled` inserts-or-reactivates and NEVER rewrites an
+ *     existing row's `metadata`; a second account on an installed card must not
+ *     reset settings that are not the callback's to touch.
+ * 11. Any vitest file whose import chain reaches `@carbon/auth` needs the server env
+ *     (`.env.local` sourced) or it fails at IMPORT with "INNGEST_SIGNING_KEY is not
+ *     set" — mock the sibling module instead (`actions/integration.test.ts` does).
+ * 12. A vendor's `ARRAY` prop (To, CC, attendees) is `list<string>`, and the builder
+ *     used to treat EVERY list as "wire it from an earlier step" — so the To field
+ *     of an email offered a variable picker and no way to type an address. Lists
+ *     of plain text are a chip field now — one chip per address (`fields/control.ts`).
+ * 13. Vendors declare prose as `ShortText` (Gmail's `body`) and the builder rendered
+ *     a one-line box. `LongText` maps to `template: true` automatically; a
+ *     `ShortText` that is really prose needs `template: true` in `props` here.
+ */
 export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
   "google-calendar": {
     package: "@activepieces/piece-google-calendar",
@@ -91,7 +145,16 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
     oauth: {
       clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
       clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
-      redirectUrlEnv: "GOOGLE_OAUTH_REDIRECT_URL"
+      redirectUrlEnv: "GOOGLE_OAUTH_REDIRECT_URL",
+      // The piece's own list ends in the alias `email`. Google grants it as
+      // `…/auth/userinfo.email`, so a connection made with the alias in the
+      // required list reads as "Reconnect needed" forever (pitfall 2 above).
+      // Same three scopes, canonical spelling.
+      scope: [
+        "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
     },
     accountLabel: {
       url: "https://www.googleapis.com/oauth2/v2/userinfo",
@@ -178,6 +241,49 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
       send_direct_message: {
         mentionOriginFlow: { omit: true },
         blocks: { omit: true }
+      }
+    }
+  },
+  // Same Google OAuth app as Google Calendar; its own card, consent and connections.
+  gmail: {
+    package: "@activepieces/piece-gmail",
+    version: "0.13.0",
+    label: "Gmail",
+    actions: ["gmail_send_email"],
+    oauth: {
+      clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
+      clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+      redirectUrlEnv: "GOOGLE_OAUTH_REDIRECT_URL",
+      // SEND-ONLY, deliberately. The piece also asks for gmail.readonly and
+      // gmail.compose, which Google classes as RESTRICTED: an app holding them must
+      // pass an annual third-party CASA security assessment before anyone outside
+      // its test users can consent. gmail.send is merely "sensitive" — the same
+      // verification tier the Calendar scopes already need. Adding a read or reply
+      // action is therefore a compliance decision, not a one-line edit.
+      // Canonical URL, not the alias `email` — see pitfall 2 above.
+      scope: [
+        "https://www.googleapis.com/auth/gmail.send",
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
+    accountLabel: {
+      url: "https://www.googleapis.com/oauth2/v2/userinfo",
+      field: "email"
+    },
+    metadata: { scopes: "scope" },
+    props: {
+      gmail_send_email: {
+        // The piece declares the email body a ShortText. It is the one field an
+        // author writes paragraphs into.
+        body: { template: true },
+        // An array of {data,name} FILE objects; Carbon would send list<string>.
+        // Deferred with the rest of attachments (needs a file value type).
+        attachments: { omit: true },
+        // Resolves the thread through messages.list, which needs gmail.readonly.
+        in_reply_to: { omit: true },
+        // Required-with-default would land it under Advanced, where switching it
+        // on calls drafts.create → gmail.compose → 403. Pinned off and out.
+        draft: { omit: true, value: false }
       }
     }
   }

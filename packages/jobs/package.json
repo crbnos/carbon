@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@activepieces/piece-gmail": "0.13.0",
     "@activepieces/piece-google-calendar": "0.10.3",
     "@activepieces/piece-slack": "0.17.9",
     "@ai-sdk/openai": "catalog:",

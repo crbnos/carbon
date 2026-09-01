@@ -319,6 +319,77 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
 };
 
 export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
+  "integration.gmail.gmail_send_email": {
+    inputs: {
+      connectionId: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        options: {
+          provider: "integration.connection",
+          params: { piece: "gmail" }
+        }
+      },
+      receiver: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: true
+      },
+      cc: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: false
+      },
+      bcc: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: false
+      },
+      subject: { type: { kind: "primitive", of: "string" }, required: true },
+      body: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        description: "Body for the email you want to send",
+        template: true
+      },
+      reply_to: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: false,
+        description: 'Email address to set as the "Reply-To" header'
+      },
+      sender_name: {
+        type: { kind: "primitive", of: "string" },
+        required: false
+      },
+      from: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        description:
+          "The address must be listed in your GMail account's settings"
+      }
+    },
+    advancedInputs: {
+      body_type: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        choices: ["plain_text", "html"],
+        defaultValue: "plain_text"
+      }
+    },
+    outputs: {
+      data: {
+        kind: "record",
+        fields: {
+          id: { kind: "primitive", of: "string" },
+          threadId: { kind: "primitive", of: "string" },
+          labelIds: { kind: "primitive", of: "string" }
+        }
+      },
+      status: { kind: "primitive", of: "number" },
+      statusText: { kind: "primitive", of: "string" },
+      count: { kind: "primitive", of: "number" },
+      result: { kind: "primitive", of: "string" }
+    },
+    batchable: false,
+    permission: { module: "workflows", action: "update" },
+    piece: { name: "gmail", action: "gmail_send_email" }
+  },
   "integration.google-calendar.create_google_calendar_event": {
     inputs: {
       connectionId: {
@@ -356,7 +427,8 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       description: {
         type: { kind: "primitive", of: "string" },
         required: false,
-        description: "Description of the event. You can use HTML tags here."
+        description: "Description of the event. You can use HTML tags here.",
+        template: true
       },
       colorId: {
         type: { kind: "primitive", of: "string" },
@@ -550,7 +622,8 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
         type: { kind: "primitive", of: "string" },
         required: false,
         description:
-          "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+          "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications.",
+        template: true
       },
       threadTs: {
         type: { kind: "primitive", of: "string" },
@@ -654,7 +727,11 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
           dependsOn: ["connectionId"]
         }
       },
-      text: { type: { kind: "primitive", of: "string" }, required: true },
+      text: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        template: true
+      },
       username: {
         type: { kind: "primitive", of: "string" },
         required: false,

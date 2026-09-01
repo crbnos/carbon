@@ -46,10 +46,8 @@ export async function buildPieceActionDeclarations(): Promise<
       const advancedInputs: IntegrationDeclarationLike["inputs"] = {};
 
       for (const [propName, property] of Object.entries(action.props)) {
-        const visibility = visibilityOf(
-          property,
-          entry.props?.[actionName]?.[propName]
-        );
+        const override = entry.props?.[actionName]?.[propName];
+        const visibility = visibilityOf(property, override);
         assertHiddenPropIsSatisfied(
           pieceName,
           actionName,
@@ -79,7 +77,11 @@ export async function buildPieceActionDeclarations(): Promise<
               }),
           ...(mapped.description === undefined
             ? {}
-            : { description: mapped.description })
+            : { description: mapped.description }),
+          // Prose: the vendor's LongText, or a ShortText the allowlist knows better about.
+          ...(mapped.template === true || override?.template === true
+            ? { template: true }
+            : {})
         };
 
         if (visibility.show) inputs[propName] = declared;

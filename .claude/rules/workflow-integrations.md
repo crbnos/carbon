@@ -42,7 +42,7 @@ does not (`custom_api_call` is real and deliberately unreachable).
 
 The ceiling is not engineering time. Every usable OAuth integration needs an app *we*
 register and get verified with that vendor, so breadth is bounded by that. ~400 pieces
-exist; the allowlist has two (Google Calendar, Slack).
+exist; the allowlist has three (Google Calendar, Slack, Gmail).
 
 Versions are pinned exactly (`"0.10.3"`, no `^`) — an upstream release must never silently
 change code we execute against a customer's account.
@@ -104,11 +104,12 @@ import.
 
 | Piece `type` | Carbon |
 |---|---|
-| `SHORT_TEXT`, `LONG_TEXT` | `t.string` |
+| `SHORT_TEXT` | `t.string` |
+| `LONG_TEXT` | `t.string` + `template: true` — the multiline editor with inline variables, as Carbon's own message bodies get |
 | `NUMBER` | `t.number` |
 | `CHECKBOX` | `t.boolean` |
 | `DATE_TIME` | `t.date` |
-| `ARRAY` | `t.list(t.string)` |
+| `ARRAY` | `t.list(t.string)` — in the builder a chip field — type an entry, Enter, repeat — so "several recipients" is visible; STORED as a list (`fields/control.ts` `isWritableList`); a whole list from an earlier step is still `{` |
 | `STATIC_DROPDOWN` | `t.string` + `choices` |
 | `STATIC_MULTI_SELECT_DROPDOWN` | `t.list(t.string)` + `choices` |
 | `DROPDOWN` | `t.string` + an `options` source |
@@ -127,7 +128,7 @@ as `null` — pieces branch on `undefined`.
 company. A company may connect several Google accounts, so integration connections get
 their own table.
 
-`integrationConnection` (`20260827044707_workflow-integration-connections.sql`) —
+`integrationConnection` (`20260901173000_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
 `(companyId, pieceName, name)`. RLS is the `companyIntegration` shape: `settings_view` to
@@ -160,6 +161,14 @@ listing an under-scoped account, and `IntegrationNodeForm` shows a reconnect ban
 checked in erp because ee cannot see the allowlist), and the step runner (fails before the
 vendor call with copy naming Settings → Integrations → App → Accounts → Reconnect, and maps a
 vendor `missing_scope` to the same words).
+
+Gmail is deliberately **send-only** (`gmail.send` + `email`, an allowlist `oauth.scope`
+override). The piece's own list adds `gmail.readonly` and `gmail.compose`, which Google
+classes as *restricted*: an app holding them must pass an annual third-party CASA security
+assessment before non-test users can consent. So the row omits `in_reply_to` (needs
+`messages.list`), pins `draft` off (needs `drafts.create`) and omits `attachments` (file
+objects — no Carbon input type yet). Widening to read/reply is a compliance decision first.
+Spec: `.ai/specs/2026-09-01-gmail-workflow-piece.md`.
 
 ### The refresh claim
 
@@ -289,7 +298,7 @@ the SAME string as the piece name, so nothing has to map between the two.
   `SLACK_STATE_SECRET` are gone. `SLACK_OAUTH_REDIRECT_URL` keeps its name and may keep its
   deployed value: `api+/integrations.slack.oauth.ts` is now a 302 forwarder onto the
   connections callback, so no environment or Slack-app redirect change is needed to ship. Migration
-  `20260901044047_slack-connections-single-source.sql` backfilled existing installs. The
+  `20260901173100_slack-connections-single-source.sql` backfilled existing installs. The
   builder's "Connect …" link deep-links to `?tab=connections`.
 - `ui/Integrations/ConnectionsTab.tsx` is an `IntegrationFormTab` ("Accounts") on that card,
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
@@ -350,7 +359,9 @@ in this path.
    compares it to package.json from the catalog check), `label` (the app's own name, which
    the generator emits as the `integration.<piece>` label — do NOT expect it to be derived
    from the slug), action names, the three `oauth` env var names, and `accountLabel` if the
-   vendor has such an endpoint.
+   vendor has such an endpoint. Spell every scope the way the vendor REPORTS it granted —
+   for Google that is the full `https://www.googleapis.com/auth/…` URL, never the `email`
+   alias the pieces use — or the account reads "Reconnect needed" from its first second.
 3. Register the OAuth app with the vendor and set those env vars (add them to
    `.env.example` too).
 4. If the card is new: add the client id to `getBrowserEnv()` and the `Window.env`
@@ -363,13 +374,25 @@ in this path.
    `integrations` array. Its `hooks.server.ts` entry is one line —
    `onUninstall: (companyId) => revokeConnectionsForPiece(getCarbonServiceRole(), "<piece>", companyId)`
    — never a per-vendor hooks file; there is nothing vendor-specific in that behaviour.
+   **And a migration inserting the `integration` row** (`INSERT INTO "integration" ("id",
+   "jsonschema") VALUES ('<piece>', '{"type": "object", "properties": {}}'::json) ON CONFLICT DO
+   NOTHING`): `companyIntegration.id` is an FK to `integration.id`, so without it
+   `markIntegrationInstalled` fails the callback with a bare PostgREST error after the token
+   is already in the vault. The `INSERT INTO "integration"` at the end of
+   `20260901173000_workflow-integration-connections.sql` is the shape (one row per piece).
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
    that does not, and coverage is all-or-nothing per piece. Then run the generator and read
    its refusals: each unmappable prop is a decision — `omit` it (optional, or required with
    a `value`) or drop the action.
 7. `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog`.
 
-Step 3 is the real work and the real gate. The rest takes minutes.
+Step 3 is the real work and the real gate. The rest takes minutes — but none of the first
+three pieces connected on the first try. The numbered **WHAT BIT US** block above
+`PIECE_ALLOWLIST` in `allowlist.ts` is the list of exactly how each one failed (missing
+`integration` row, Google scope aliases, Slack's `user_scope=`, unsent required defaults,
+refresh-token conditions, PostgREST errors that log as empty, `window.env` gating, the
+release-age policy, single-reader tokens, `markIntegrationInstalled`, test env). Read it
+before step 1.
 
 ## Outputs come from the piece's own `outputSchema`
 
@@ -411,6 +434,10 @@ date, so "events tomorrow" silently misses every recurring meeting.
 A pinned `value` is merged in by `toPropsValue` **at run time**, never stored on the node,
 so changing a pin fixes every existing workflow at once. A node value always wins over a
 pin — otherwise the Advanced section would be a lie.
+
+`template: true` is the third override: prose the vendor declared a `ShortText` (Gmail's email
+`body`) gets the multiline editor a `LongText` gets automatically. Without it the body of an
+email is a one-line box.
 
 `omit: true` is the stronger override: the prop is in **neither** map. It is for a prop
 whose non-default value needs a host capability the shim refuses (`mentionOriginFlow` reads

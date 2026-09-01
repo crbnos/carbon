@@ -1,5 +1,6 @@
 import { Email } from "./email/config";
 import { ExchangeRates } from "./exchange-rates/config";
+import { Gmail } from "./gmail/config";
 import { GoogleCalendar } from "./google-calendar/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
@@ -34,6 +35,7 @@ export const integrations = [
   // Radan,
   Email,
   ExchangeRates,
+  Gmail,
   GoogleCalendar,
   Jira,
   Linear,
@@ -49,6 +51,7 @@ export const integrations = [
 
 export type IntegrationID = (typeof integrations)[number]["id"];
 
+export { Gmail, Logo as GmailLogo } from "./gmail/config";
 export {
   GoogleCalendar,
   Logo as GoogleCalendarLogo

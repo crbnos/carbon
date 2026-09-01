@@ -76,6 +76,10 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
         companyId
       )
   },
+  gmail: {
+    onUninstall: (companyId) =>
+      revokeConnectionsForPiece(getCarbonServiceRole(), "gmail", companyId)
+  },
   onshape: {
     onUninstall: onshapeOnUninstall
   },

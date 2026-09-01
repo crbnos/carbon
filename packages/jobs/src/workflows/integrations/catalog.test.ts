@@ -40,6 +40,8 @@ describe("buildPieceActionDeclarations (slack)", () => {
       expect(send.inputs).not.toHaveProperty(gone);
     }
     expect(send.inputs.channel!.options?.provider).toBe("integration.property");
+    // Slack's "Message" is a LongText: the multiline editor.
+    expect(send.inputs.text!.template).toBe(true);
     expect(send.outputs).toHaveProperty("count");
     expect(send.outputs).toHaveProperty("result");
 
@@ -55,5 +57,45 @@ describe("buildPieceActionDeclarations (slack)", () => {
     expect(() =>
       toValueType("p", "a", "blocks", { type: "JSON", required: false })
     ).toThrow(UnmappablePropertyError);
+  });
+});
+
+describe("buildPieceActionDeclarations (gmail)", () => {
+  it("emits the one send step with the send-only prop set", async () => {
+    const all = await buildPieceActionDeclarations();
+    const ids = Object.keys(all).filter((id) =>
+      id.startsWith("integration.gmail.")
+    );
+    expect(ids).toEqual(["integration.gmail.gmail_send_email"]);
+
+    const send = all["integration.gmail.gmail_send_email"]!;
+    expect(Object.keys(send.inputs).sort()).toEqual(
+      [
+        "connectionId",
+        "receiver",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "reply_to",
+        "sender_name",
+        "from"
+      ].sort()
+    );
+    // Required with a vendor default: hidden, still reachable, sent as plain_text.
+    expect(Object.keys(send.advancedInputs ?? {})).toEqual(["body_type"]);
+    for (const gone of ["attachments", "in_reply_to", "draft"]) {
+      expect(send.inputs).not.toHaveProperty(gone);
+      expect(send.advancedInputs ?? {}).not.toHaveProperty(gone);
+    }
+    expect(send.inputs.receiver!.type).toEqual({
+      kind: "list",
+      of: { kind: "primitive", of: "string" }
+    });
+    // The body is a ShortText upstream; the allowlist says it is prose.
+    expect(send.inputs.body!.template).toBe(true);
+    expect(send.inputs.subject!.template).toBeUndefined();
+    expect(send.outputs).toHaveProperty("count");
+    expect(send.outputs).toHaveProperty("result");
   });
 });

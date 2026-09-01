@@ -38,6 +38,9 @@ describe("toValueType", () => {
       kind: "primitive",
       of: "string"
     });
+    // A LongText is prose: the multiline editor, not a one-line box.
+    expect(map({ type: "LONG_TEXT" }).template).toBe(true);
+    expect(map({ type: "SHORT_TEXT" }).template).toBeUndefined();
     expect(map({ type: "NUMBER" }).type).toEqual({
       kind: "primitive",
       of: "number"

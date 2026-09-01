@@ -80,3 +80,34 @@ describe("slack", () => {
     expect(auth.authUrl).toContain("user_scope=");
   });
 });
+
+describe("gmail", () => {
+  it("loads the piece", async () => {
+    const piece = await loadPiece("gmail");
+    expect(Object.keys(piece.actions())).toContain("gmail_send_email");
+  });
+
+  it("exposes exactly the one allowlisted action", async () => {
+    const actions = await getPieceActions("gmail");
+    expect(Object.keys(actions)).toEqual(["gmail_send_email"]);
+  });
+
+  it("refuses the read and reply actions the piece has but the allowlist does not", async () => {
+    await expect(
+      getPieceAction("gmail", "gmail_search_email")
+    ).rejects.toThrow();
+    await expect(
+      getPieceAction("gmail", "gmail_reply_to_thread")
+    ).rejects.toThrow();
+    await expect(getPieceAction("gmail", "send_email")).rejects.toThrow();
+  });
+
+  // The piece offers OAuth2 and a service-account CustomAuth; only the former is ours.
+  it("finds the OAuth2 auth, whose scope list includes restricted scopes we do not request", async () => {
+    const auth = await getPieceOAuth2Auth("gmail");
+    expect(auth.tokenUrl).toBe("https://oauth2.googleapis.com/token");
+    expect(auth.scope).toContain(
+      "https://www.googleapis.com/auth/gmail.readonly"
+    );
+  });
+});

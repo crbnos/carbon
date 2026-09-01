@@ -36,6 +36,9 @@ export interface MappedProperty {
   choices?: readonly string[];
   /** Values come from the vendor while editing; the builder fetches them. */
   options?: OptionsSource;
+  /** Prose — a message body, a description. The builder renders the multiline
+   * editor that takes line breaks and inline variables, not a one-line box. */
+  template?: boolean;
 }
 
 function staticChoices(property: PieceProperty): readonly string[] | undefined {
@@ -76,8 +79,12 @@ export function toValueType(
 
   switch (property.type) {
     case "SHORT_TEXT":
-    case "LONG_TEXT":
       return { ...base, type: STRING };
+    // A vendor's LongText is a message body or a description: rendered as the
+    // multiline editor Carbon's own prose inputs use, or Slack's "Message" and a
+    // calendar description arrive as one-line boxes.
+    case "LONG_TEXT":
+      return { ...base, type: STRING, template: true };
     case "NUMBER":
       return { ...base, type: NUMBER };
     case "CHECKBOX":
