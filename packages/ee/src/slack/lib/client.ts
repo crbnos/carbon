@@ -1,58 +1,9 @@
 import { createHmac } from "node:crypto";
-import {
-  SLACK_CLIENT_ID,
-  SLACK_CLIENT_SECRET,
-  SLACK_OAUTH_REDIRECT_URL,
-  SLACK_SIGNING_SECRET,
-  SLACK_STATE_SECRET
-} from "@carbon/auth";
+import { SLACK_SIGNING_SECRET } from "@carbon/auth";
 import Bolt from "@slack/bolt";
-import { InstallProvider } from "@slack/oauth";
 import { WebClient } from "@slack/web-api";
-import { z } from "zod";
 
 const { App } = Bolt;
-
-export const slackOAuthCallbackSchema = z.object({
-  code: z.string(),
-  state: z.string()
-});
-
-export const slackOAuthTokenResponseSchema = z.object({
-  ok: z.literal(true),
-  app_id: z.string(),
-  authed_user: z.object({
-    id: z.string()
-  }),
-  scope: z.string(),
-  token_type: z.literal("bot"),
-  access_token: z.string(),
-  bot_user_id: z.string(),
-  team: z.object({
-    id: z.string(),
-    name: z.string()
-  }),
-
-  // incoming_webhook is only present when the app has incoming-webhook scope
-  incoming_webhook: z
-    .object({
-      channel: z.string(),
-      channel_id: z.string(),
-      configuration_url: z.string().url(),
-      url: z.string().url()
-    })
-    .optional(),
-  // Enterprise field can be an object, null, or missing
-  enterprise: z
-    .object({
-      name: z.string(),
-      id: z.string()
-    })
-    .nullable()
-    .optional()
-});
-
-let slackInstaller: InstallProvider | null = null;
 
 export const createSlackApp = ({
   token,
@@ -70,48 +21,6 @@ export const createSlackApp = ({
 
 export const createSlackWebClient = ({ token }: { token: string }) => {
   return new WebClient(token);
-};
-
-export const getSlackInstaller = (): InstallProvider => {
-  if (!slackInstaller) {
-    if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET) {
-      throw new Error("Slack client credentials are required but not provided");
-    }
-
-    slackInstaller = new InstallProvider({
-      clientId: SLACK_CLIENT_ID,
-      clientSecret: SLACK_CLIENT_SECRET,
-      stateSecret: SLACK_STATE_SECRET,
-      logLevel:
-        process.env.NODE_ENV === "development" ? Bolt.LogLevel.DEBUG : undefined
-    });
-  }
-  return slackInstaller;
-};
-
-export const getSlackInstallUrl = ({
-  companyId,
-  userId
-}: {
-  companyId: string;
-  userId: string;
-}) => {
-  return getSlackInstaller().generateInstallUrl({
-    scopes: [
-      "assistant:write",
-      "chat:write.public",
-      "chat:write",
-      "commands",
-      "files:read",
-      "im:history",
-      "incoming-webhook",
-      "team:read",
-      "users:read",
-      "users:read.email"
-    ],
-    redirectUri: SLACK_OAUTH_REDIRECT_URL,
-    metadata: JSON.stringify({ companyId, userId })
-  });
 };
 
 export async function verifySlackWebhook(req: Request) {

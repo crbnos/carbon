@@ -7,6 +7,8 @@ import {
 } from "@carbon/ee/integrations/connections";
 import type { AllowlistEntry } from "@carbon/jobs/integrations";
 import {
+  accountLabelFromBody,
+  connectionMetadataFrom,
   getPieceOAuth2Auth,
   PIECE_ALLOWLIST,
   resolveOAuthApp
@@ -19,7 +21,7 @@ import type { IntegrationErrorCode } from "~/modules/settings/integration-errors
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import {
   invalidateIntegrationHealthCache,
-  upsertCompanyIntegration
+  markIntegrationInstalled
 } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -113,7 +115,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       pieceName: state.pieceName,
       name: state.name,
       authType: "OAUTH2",
-      accountLabel: await accountLabelFor(entry, tokens.accessToken),
+      accountLabel:
+        accountLabelFromBody(entry, tokens.body) ??
+        (await accountLabelFor(entry, tokens.accessToken)),
+      // Workspace facts the row asked for (Slack: team, bot user, webhook channel).
+      metadata: connectionMetadataFrom(entry, tokens.body),
       tokens: {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken
@@ -124,14 +130,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // The piece is an ordinary integration card, so a connected account is what
     // "installed" means for it. Without this row the grid would keep offering
-    // Install for an account that is already connected.
-    await upsertCompanyIntegration(client, {
+    // Install for an account that is already connected. Never overwrite an
+    // existing row — it may hold settings that are not this callback's to touch.
+    const installed = await markIntegrationInstalled(client, {
       id: state.pieceName,
-      active: true,
-      metadata: {},
       companyId,
       updatedBy: userId
     });
+    if (installed.error) throw installed.error;
     await invalidateIntegrationHealthCache(state.pieceName, companyId);
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
@@ -157,15 +163,17 @@ async function accountLabelFor(
   entry: AllowlistEntry,
   accessToken: string
 ): Promise<string | null> {
-  // A vendor with no such endpoint shows the connection's own name instead.
-  if (entry.accountLabel === undefined) return null;
+  // A vendor with no such endpoint shows the connection's own name instead; one
+  // that puts the label in the token response was already read by the caller.
+  const label = entry.accountLabel;
+  if (label === undefined || !("url" in label)) return null;
   try {
-    const response = await fetch(entry.accountLabel.url, {
+    const response = await fetch(label.url, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) return null;
     const body = (await response.json()) as Record<string, unknown>;
-    const value = body[entry.accountLabel.field];
+    const value = body[label.field];
     return typeof value === "string" && value.length > 0 ? value : null;
   } catch {
     return null;

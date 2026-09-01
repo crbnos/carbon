@@ -25,14 +25,21 @@ const ENV: Record<string, string> = {
   GOOGLE_OAUTH_CLIENT_ID: "client-id",
   GOOGLE_OAUTH_CLIENT_SECRET: "client-secret",
   GOOGLE_OAUTH_REDIRECT_URL:
-    "https://erp.test/api/integrations/connections/callback"
+    "https://erp.test/api/integrations/connections/callback",
+  SLACK_CLIENT_ID: "slack-client-id",
+  SLACK_CLIENT_SECRET: "slack-client-secret",
+  SLACK_OAUTH_REDIRECT_URL: "https://erp.test/api/integrations/slack/oauth"
 };
 
 vi.mock("@carbon/env", () => ({
   getEnv: (name: string) => ENV[name]
 }));
 
-vi.mock("@carbon/ee/integrations/connections", () => ({
+// The real `missingScopes` runs — it is part of what this module does.
+vi.mock("@carbon/ee/integrations/connections", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@carbon/ee/integrations/connections")
+  >()),
   ConnectionRevokedError: FakeRevoked,
   ConnectionSecretUnavailableError: FakeSecretUnavailable,
   ConnectionRefreshTimeoutError: FakeRefreshTimeout,
@@ -84,7 +91,8 @@ describe("runIntegrationAction", () => {
   beforeEach(() => {
     readConnection.mockResolvedValue({
       id: CONNECTION,
-      pieceName: "google-calendar"
+      pieceName: "google-calendar",
+      metadata: {}
     });
     resolveConnectionAuth.mockResolvedValue({ accessToken: "at-1" });
     getPieceAction.mockResolvedValue({
@@ -138,8 +146,85 @@ describe("runIntegrationAction", () => {
     });
   });
 
+  // A Slack workspace connected for the Assistant before the piece existed holds
+  // 10 scopes, not 16. Fail before the vendor call, with words that name the fix.
+  it("refuses before calling the vendor when the account lacks a required scope", async () => {
+    readConnection.mockResolvedValue({
+      id: CONNECTION,
+      pieceName: "slack",
+      metadata: { scopes: "chat:write,commands" }
+    });
+    const piece = vi.fn(async () => ({ ok: true }));
+    getPieceAction.mockResolvedValue({
+      name: "send_channel_message",
+      displayName: "Send Message To A Channel",
+      props: {},
+      run: piece
+    });
+    const outcome = await run({
+      pieceName: "slack",
+      actionName: "send_channel_message"
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.ok ? "" : outcome.error).toMatch(
+      /reconnected .*Accounts → Reconnect/
+    );
+    expect(piece).not.toHaveBeenCalled();
+    expect(resolveConnectionAuth).not.toHaveBeenCalled();
+  });
+
+  // The omit exists to keep the user-token path unreachable; a node saved before
+  // the omit landed (or posted by hand) must not reopen it.
+  it("never sends an omitted prop, even when the node carries a value", async () => {
+    readConnection.mockResolvedValue({
+      id: CONNECTION,
+      pieceName: "slack",
+      metadata: {}
+    });
+    const piece = vi.fn(async (_ctx: unknown) => ({ ok: true }));
+    getPieceAction.mockResolvedValue({
+      name: "send_channel_message",
+      displayName: "Send Message To A Channel",
+      props: {
+        text: { type: "LONG_TEXT", required: false },
+        sendAsBot: { type: "CHECKBOX", required: true, defaultValue: true }
+      },
+      run: piece
+    });
+    await run({
+      pieceName: "slack",
+      actionName: "send_channel_message",
+      inputs: inputs({
+        sendAsBot: { kind: "primitive", of: "boolean", value: false }
+      })
+    });
+    expect(piece).toHaveBeenCalledTimes(1);
+    const ctx = piece.mock.calls[0]?.[0] as {
+      propsValue: Record<string, unknown>;
+    };
+    expect(ctx.propsValue.sendAsBot).toBe(true);
+  });
+
+  it("maps a vendor scope error to the reconnect copy", async () => {
+    getPieceAction.mockResolvedValue({
+      name: "create_google_calendar_event",
+      displayName: "Create Event",
+      props: { title: { type: "SHORT_TEXT", required: true } },
+      run: async () => {
+        throw new Error("An API error occurred: missing_scope");
+      }
+    });
+    const outcome = await run();
+    expect(outcome.ok).toBe(false);
+    expect(outcome.ok ? "" : outcome.error).toMatch(/needs to be reconnected/);
+  });
+
   it("refuses a connection belonging to another piece", async () => {
-    readConnection.mockResolvedValue({ id: CONNECTION, pieceName: "slack" });
+    readConnection.mockResolvedValue({
+      id: CONNECTION,
+      pieceName: "slack",
+      metadata: {}
+    });
     const outcome = await run();
     expect(outcome).toEqual({
       ok: false,

@@ -2,7 +2,8 @@ import type { ConnectRouteResponse } from "@carbon/ee/integrations/connect";
 import { openConsentPopup } from "@carbon/ee/integrations/connect";
 import {
   connectionUsable,
-  type IntegrationConnection
+  type IntegrationConnection,
+  needsReconnect
 } from "@carbon/ee/integrations/connections";
 import {
   Badge,
@@ -25,7 +26,13 @@ import { suggestConnectionName } from "./connectionName";
  * that changes type upstream fails here rather than rendering something else. */
 export type ConnectionRow = Pick<
   IntegrationConnection,
-  "id" | "pieceName" | "name" | "accountLabel" | "status" | "lastError"
+  | "id"
+  | "pieceName"
+  | "name"
+  | "accountLabel"
+  | "status"
+  | "lastError"
+  | "metadata"
 >;
 
 // Keyed by the SAME status the shared predicate reads, so the badge cannot say
@@ -47,13 +54,16 @@ export function ConnectionsTab({
   tabs,
   pieceName,
   defaultName,
-  connections
+  connections,
+  requiredScopes
 }: {
   tabs?: ReactNode;
   pieceName: string;
   /** Seeds the name field, so the common case is one click. */
   defaultName: string;
   connections: ConnectionRow[];
+  /** What a connection must hold for this piece's steps (`requiredScopesFor`). */
+  requiredScopes: readonly string[];
 }) {
   const { t } = useLingui();
   const [name, setName] = useState("");
@@ -77,6 +87,15 @@ export function ConnectionsTab({
 
   // The consent screen opens from the URL the connect loader builds, so the signed
   // `state` never has to round-trip through the browser's own code.
+  // One entry point for Add account AND Reconnect: reconnecting is the same
+  // consent under the same name, which revives the row with a fresh grant.
+  const startConnect = (connectionName: string) =>
+    connect.load(
+      `${path.to.api.integrationConnect(
+        pieceName
+      )}?name=${encodeURIComponent(connectionName)}`
+    );
+
   useEffect(() => {
     if (connect.state !== "idle" || connect.data === undefined) return;
     if (connect.data.error) {
@@ -104,7 +123,13 @@ export function ConnectionsTab({
         ) : (
           <VStack spacing={2} className="w-full">
             {connections.map((connection) => (
-              <ConnectionItem key={connection.id} connection={connection} />
+              <ConnectionItem
+                key={connection.id}
+                connection={connection}
+                requiredScopes={requiredScopes}
+                reconnecting={connect.state !== "idle"}
+                onReconnect={() => startConnect(connection.name)}
+              />
             ))}
           </VStack>
         )}
@@ -123,13 +148,7 @@ export function ConnectionsTab({
             leftIcon={<LuPlug />}
             isDisabled={duplicate}
             isLoading={connect.state !== "idle"}
-            onClick={() =>
-              connect.load(
-                `${path.to.api.integrationConnect(
-                  pieceName
-                )}?name=${encodeURIComponent(proposed)}`
-              )
-            }
+            onClick={() => startConnect(proposed)}
           >
             <Trans>Add account</Trans>
           </Button>
@@ -146,10 +165,24 @@ export function ConnectionsTab({
   );
 }
 
-function ConnectionItem({ connection }: { connection: ConnectionRow }) {
+function ConnectionItem({
+  connection,
+  requiredScopes,
+  reconnecting,
+  onReconnect
+}: {
+  connection: ConnectionRow;
+  requiredScopes: readonly string[];
+  reconnecting: boolean;
+  onReconnect: () => void;
+}) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ success?: boolean }>();
   const [name, setName] = useState(connection.name);
+  const usable = connectionUsable(connection);
+  // Connected before this piece needed a scope (a Slack workspace installed for the
+  // Assistant, say). Everything it already did keeps working; workflow steps do not.
+  const needsScopes = needsReconnect(connection, requiredScopes);
 
   return (
     <HStack className="w-full items-start justify-between gap-3 border rounded-md p-3">
@@ -178,50 +211,74 @@ function ConnectionItem({ connection }: { connection: ConnectionRow }) {
           >
             {connection.status}
           </Badge>
+          {needsScopes && (
+            <Badge variant="yellow" className="shrink-0">
+              <Trans>Reconnect needed</Trans>
+            </Badge>
+          )}
         </HStack>
         {connection.accountLabel && (
           <span className="text-xs text-muted-foreground">
             {connection.accountLabel}
           </span>
         )}
-        {!connectionUsable(connection) && (
+        {needsScopes ? (
           <span className="text-xs text-muted-foreground">
             <Trans>
-              This account has stopped working. Add it again to reconnect —
-              workflow steps using it will fail until you do.
+              Connected before workflows needed extra permissions. Reconnect to
+              grant them — everything else keeps working meanwhile.
             </Trans>
           </span>
-        )}
+        ) : !usable ? (
+          <span className="text-xs text-muted-foreground">
+            <Trans>
+              This account has stopped working. Reconnect it — workflow steps
+              using it will fail until you do.
+            </Trans>
+          </span>
+        ) : null}
         {connection.lastError && (
           <span className="break-words text-xs text-destructive">
             {connection.lastError}
           </span>
         )}
       </VStack>
-      <fetcher.Form
-        method="post"
-        action={path.to.integrationConnections}
-        className="shrink-0"
-      >
-        <input type="hidden" name="intent" value="disconnect" />
-        <input type="hidden" name="id" value={connection.id} />
-        {/* The card's health badge is cached per piece; disconnecting has to drop
+      <VStack spacing={2} className="w-auto shrink-0 items-end">
+        {(needsScopes || !usable) && (
+          <Button
+            size="sm"
+            leftIcon={<LuPlug />}
+            isLoading={reconnecting}
+            onClick={onReconnect}
+          >
+            <Trans>Reconnect</Trans>
+          </Button>
+        )}
+        <fetcher.Form
+          method="post"
+          action={path.to.integrationConnections}
+          className="shrink-0"
+        >
+          <input type="hidden" name="intent" value="disconnect" />
+          <input type="hidden" name="id" value={connection.id} />
+          {/* The card's health badge is cached per piece; disconnecting has to drop
             that entry or Settings keeps reporting "Healthy" for an app the builder
             already treats as disconnected. */}
-        <input type="hidden" name="pieceName" value={connection.pieceName} />
-        <Button
-          type="submit"
-          size="sm"
-          variant="secondary"
-          leftIcon={<LuUnplug />}
-          isDisabled={
-            connection.status === "Revoked" || fetcher.state !== "idle"
-          }
-          isLoading={fetcher.state !== "idle"}
-        >
-          <Trans>Disconnect</Trans>
-        </Button>
-      </fetcher.Form>
+          <input type="hidden" name="pieceName" value={connection.pieceName} />
+          <Button
+            type="submit"
+            size="sm"
+            variant="secondary"
+            leftIcon={<LuUnplug />}
+            isDisabled={
+              connection.status === "Revoked" || fetcher.state !== "idle"
+            }
+            isLoading={fetcher.state !== "idle"}
+          >
+            <Trans>Disconnect</Trans>
+          </Button>
+        </fetcher.Form>
+      </VStack>
     </HStack>
   );
 }

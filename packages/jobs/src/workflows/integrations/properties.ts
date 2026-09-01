@@ -61,7 +61,7 @@ export function toValueType(
   name: string,
   property: PieceProperty
 ): MappedProperty {
-  const label = property.displayName ?? name;
+  const label = vendorText(property.displayName ?? name);
   const required = property.required === true;
   const base = {
     required,
@@ -71,7 +71,7 @@ export function toValueType(
       : { defaultValue: property.defaultValue }),
     ...(property.description === undefined
       ? {}
-      : { description: property.description })
+      : { description: vendorText(property.description) })
   };
 
   switch (property.type) {
@@ -109,6 +109,12 @@ export function toValueType(
   }
 }
 
+/** Vendor prose is spliced into a `msg` template literal by the generator, which
+ * refuses a backtick or `${`. Slack writes "`1710304378.475129`" in a description. */
+function vendorText(text: string): string {
+  return text.replaceAll("`", "'").replaceAll("${", "$ {");
+}
+
 function toPlain(value: RuntimeValue): unknown {
   switch (value.kind) {
     case "primitive":
@@ -144,6 +150,8 @@ export function toPropsValue(
   const propsValue: Record<string, unknown> = {};
 
   for (const name of Object.keys(props)) {
+    // Display-only help text, never a value.
+    if (props[name]?.type === "MARKDOWN") continue;
     const input = inputs[name];
     if (input === undefined) {
       // A node value always wins: an author who opened Advanced and set this

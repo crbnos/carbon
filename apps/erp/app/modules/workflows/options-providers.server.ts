@@ -5,6 +5,7 @@ import {
   ConnectionRefreshTimeoutError,
   ConnectionRevokedError,
   ConnectionSecretUnavailableError,
+  needsReconnect,
   readConnection,
   readConnections,
   resolveConnectionAuth,
@@ -14,7 +15,8 @@ import {
   buildRefreshConfig,
   CONNECTION_PROVIDER,
   getPieceAction,
-  PROPERTY_PROVIDER
+  PROPERTY_PROVIDER,
+  requiredScopesFor
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -58,6 +60,10 @@ export type OptionsProviderResult = {
   errorCode?: OptionsErrorCode;
   /** Where to go and do it. */
   errorHref?: string;
+  /** Something worth saying beside a list that DID load — an account that was
+   * left out because it needs reconnecting. Same code vocabulary as errors. */
+  noticeCode?: OptionsErrorCode;
+  noticeHref?: string;
 };
 
 export type OptionsProvider = {
@@ -87,16 +93,30 @@ const connectionProvider: OptionsProvider = {
     const piece = params.piece;
     if (!piece) return { options: [] };
 
-    const rows = usableConnections(
+    const usable = usableConnections(
       await readConnections(getCarbonServiceRole(), companyId, piece)
     );
+    const required = await requiredScopesFor(piece);
+    const ready = usable.filter((row) => !needsReconnect(row, required));
+    const accountsHref = `${path.to.integration(piece)}?tab=connections`;
+
+    // Connected, but every account predates a scope this piece now needs: the fix
+    // is a re-consent, not a new account — say so instead of offering nothing.
+    if (ready.length === 0 && usable.length > 0) {
+      return { options: [], errorCode: "reconnect", errorHref: accountsHref };
+    }
 
     return {
-      options: rows.map((row) => ({
+      options: ready.map((row) => ({
         value: row.id,
         label: row.accountLabel ? `${row.name} · ${row.accountLabel}` : row.name
       })),
-      emptyHref: path.to.integrations
+      emptyHref: accountsHref,
+      // Some accounts are ready and some are not: offer the ready ones, but say
+      // that one is missing rather than letting it vanish from the list.
+      ...(ready.length < usable.length
+        ? { noticeCode: "reconnect" as const, noticeHref: accountsHref }
+        : {})
     };
   }
 };

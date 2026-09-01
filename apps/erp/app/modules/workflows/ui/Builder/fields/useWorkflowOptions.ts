@@ -10,6 +10,8 @@ export type WorkflowOptions = {
   errorCode?: OptionsErrorCode;
   /** Where the author can go to fix what the error describes. */
   errorHref?: string;
+  noticeCode?: OptionsErrorCode;
+  noticeHref?: string;
 };
 
 /**
@@ -96,6 +98,8 @@ export function useWorkflowOptions(
     emptyHref: fetcher.data?.emptyHref,
     errorCode: fetcher.data?.errorCode,
     errorHref: fetcher.data?.errorHref,
+    noticeCode: fetcher.data?.noticeCode,
+    noticeHref: fetcher.data?.noticeHref,
     retry
   };
 }

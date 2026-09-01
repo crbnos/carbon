@@ -6,6 +6,10 @@ import {
   connectionsHealthy,
   connectionUsable,
   createConnection,
+  exchangeAuthorizationCode,
+  grantedScopes,
+  missingScopes,
+  readConnectionAccessToken,
   resolveConnectionAuth,
   usableConnections
 } from "./connections";
@@ -368,6 +372,29 @@ describe("resolveConnectionAuth", () => {
     expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
   });
 
+  // Slack answers a bad refresh with HTTP 200 and `{ ok: false, error }`. That is not
+  // a 4xx, so it is not a definitive rejection — but the error name must reach the log.
+  it("names the vendor's in-body error when a 200 carries no token", async () => {
+    const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
+    await client.rpc("upsert_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION,
+      p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
+    });
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: false, error: "invalid_code" })
+    } as Response);
+
+    await expect(
+      resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
+    ).rejects.toThrow("invalid_code");
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
+    expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
+  });
+
   // A connection that has gone bad is exactly the one a customer wants to re-add —
   // and `disconnectConnection` keeps the row (a saved workflow node references its
   // id), while the name is unique per piece. So re-consenting under the same name
@@ -520,5 +547,94 @@ describe("connectionUsable is the one definition of a usable account", () => {
       const rows = statuses.map(at);
       expect(usableConnections(rows).length > 0).toBe(connectionsHealthy(rows));
     }
+  });
+});
+
+describe("readConnectionAccessToken", () => {
+  const seed = async (client: ReturnType<typeof makeClient>["client"]) =>
+    client.rpc("upsert_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION,
+      p_secret: { accessToken: "at-1" } as never
+    });
+
+  // Slack bot tokens never expire, so the Assistant reads them without a refresh.
+  it("returns the stored token for an Active connection with no expiry", async () => {
+    const { client } = makeClient({ expiresAt: null });
+    await seed(client);
+    await expect(
+      readConnectionAccessToken(client, COMPANY, CONNECTION)
+    ).resolves.toBe("at-1");
+  });
+
+  it("refuses a connection that is not Active", async () => {
+    const { client } = makeClient({ status: "Revoked" });
+    await seed(client);
+    await expect(
+      readConnectionAccessToken(client, COMPANY, CONNECTION)
+    ).rejects.toBeInstanceOf(ConnectionRevokedError);
+  });
+
+  // A refreshable vendor must go through the refresh claim, never around it.
+  it("refuses an expiring token instead of handing out a stale one", async () => {
+    const { client } = makeClient({ expiresAt: inMinutes(1) });
+    await seed(client);
+    await expect(
+      readConnectionAccessToken(client, COMPANY, CONNECTION)
+    ).rejects.toThrow(/resolveConnectionAuth/);
+  });
+});
+
+describe("exchangeAuthorizationCode", () => {
+  it("exposes the parsed token response so a row can pick workspace facts", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ access_token: "a", team: { name: "Acme" } })
+      } as Response)
+    );
+    const tokens = await exchangeAuthorizationCode(
+      { ...OAUTH, redirectUri: "https://erp.test/cb" },
+      "code"
+    );
+    expect(tokens.accessToken).toBe("a");
+    expect((tokens.body.team as { name: string }).name).toBe("Acme");
+  });
+});
+
+describe("scopes", () => {
+  // Slack's token response separates with commas; the v2 backfill wrote spaces.
+  it("parses either separator and treats nothing recorded as unknown", () => {
+    expect(grantedScopes({ metadata: { scopes: "a,b" } })).toEqual(["a", "b"]);
+    expect(grantedScopes({ metadata: { scopes: "a b" } })).toEqual(["a", "b"]);
+    expect(grantedScopes({ metadata: {} })).toBeNull();
+    expect(grantedScopes({ metadata: { scopes: "" } })).toBeNull();
+  });
+
+  it("names what is missing, and nothing when grants are unknown", () => {
+    expect(missingScopes({ metadata: { scopes: "a" } }, ["a", "c"])).toEqual([
+      "c"
+    ]);
+    expect(missingScopes({ metadata: {} }, ["a", "c"])).toEqual([]);
+  });
+
+  // Reconnecting an account is how "reconnect needed" clears: the fresh consent's
+  // grant must replace the recorded one, not sit behind it.
+  it("refreshes metadata when an existing account is reconnected", async () => {
+    const { client, rows } = makeClient({ status: "Revoked" });
+    rows.get(CONNECTION)!.metadata = { scopes: "old" };
+    await createConnection(client, {
+      companyId: COMPANY,
+      pieceName: "google-calendar",
+      name: rows.get(CONNECTION)!.name,
+      tokens: { accessToken: "at-new" },
+      metadata: { scopes: "new" },
+      expiresAt: null,
+      createdBy: "u1"
+    });
+    expect(rows.get(CONNECTION)!.metadata).toEqual({ scopes: "new" });
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
   });
 });

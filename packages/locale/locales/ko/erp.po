@@ -154,6 +154,9 @@ msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작�
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
 
+msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName}이(가) 아직 연결되지 않았습니다. 이 단계를 진행하기 전에 계정을 연결하세요."
 
@@ -1446,6 +1449,9 @@ msgstr "금액 유형"
 msgid "An account is already called that — pick a different name."
 msgstr ""
 
+msgid "An account is missing from this list until it is reconnected."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계정뿐 아니라 그룹별로도 지출을 보고할 수 있게 하는 회계 버킷입니다."
 
@@ -2650,6 +2656,9 @@ msgstr "이동 경로"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "Carbon의 가져오기 도구, CSV, 또는 LLM의 도움으로 품목, BOM, 공정(BOP), 원가 정보를 가져오세요."
 
+msgid "Broadcast reply to channel"
+msgstr ""
+
 msgid "Browse library"
 msgstr "라이브러리 둘러보기"
 
@@ -3058,6 +3067,12 @@ msgstr "이를 변경하면 품목 ID가 업데이트됩니다"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
+
+msgid "Channel"
+msgstr ""
+
+msgid "Channel Name"
+msgstr ""
 
 msgid "Chart of accounts"
 msgstr "계정과목표"
@@ -3531,6 +3546,9 @@ msgstr "조건이 일치하지 않을 때 실행할 노드에 Otherwise 핸들�
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "귀사가 이미 사용 중인 외부 도구와 연동하세요"
+
+msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
+msgstr ""
 
 msgid "Connected to"
 msgstr "연결 대상"
@@ -6023,6 +6041,9 @@ msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발
 msgid "Enable in Settings"
 msgstr "설정에서 활성화"
 
+msgid "Enable link unfurling for this message"
+msgstr ""
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."
 
@@ -7685,6 +7706,9 @@ msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 �
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
 
+msgid "Icon Emoji"
+msgstr ""
+
 msgid "Id"
 msgstr "Id"
 
@@ -8177,6 +8201,9 @@ msgstr "직원 유형 그룹인가"
 
 msgid "Is identity group"
 msgstr "신원 그룹인가"
+
+msgid "Is Private?"
+msgstr ""
 
 msgid "Is supplier org group"
 msgstr "공급자 조직 그룹인가"
@@ -10509,6 +10536,9 @@ msgstr "정시 납품"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로우의 한 번의 실행이 기록되며, 각 단계에서 사용하고 생성한 값과 함께 단계별로 기록되고, 워크플로우 소유자의 권한으로 전체적으로 작동합니다."
 
+msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon이 개별적으로 추적하는 하나의 일련번호 유닛 또는 배치로, 유효기한과 같은 자체 상태와 속성을 가집니다."
 
@@ -10553,6 +10583,9 @@ msgstr "이런! 접근하려는 링크가 유효하지 않습니다."
 
 msgid "Open"
 msgstr "열림"
+
+msgid "Open {appName} accounts"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "변경 공지 열기"
@@ -11650,6 +11683,9 @@ msgstr "생산: 현장 앱 및 스케줄링"
 msgid "Profile"
 msgstr "프로필"
 
+msgid "Profile Picture"
+msgstr ""
+
 msgid "Progress"
 msgstr "진행 상황"
 
@@ -11720,6 +11756,9 @@ msgstr "회사 데이터 보호"
 
 msgid "Provide process knowledge and inputs"
 msgstr "공정 지식과 의견을 제공하세요"
+
+msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
+msgstr ""
 
 msgid "Provider"
 msgstr "공급자"
@@ -12283,6 +12322,18 @@ msgstr "조정 중에 공급자와의 불일치를 발견했습니다"
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "구매주문을 실제 입고 및 청구 내역과 대조하는 작업 — Carbon에서는 라인 수량과 GR/IR 잔액을 통해 암묵적으로 처리됩니다."
 
+msgid "Reconnect"
+msgstr ""
+
+msgid "Reconnect {appName}"
+msgstr ""
+
+msgid "Reconnect it"
+msgstr ""
+
+msgid "Reconnect needed"
+msgstr ""
+
 msgid "Record"
 msgstr "기록"
 
@@ -12563,6 +12614,9 @@ msgstr "보충 시스템"
 
 msgid "Replenishment System"
 msgstr "보충 시스템"
+
+msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
 
 msgid "Report"
 msgstr "보고서"
@@ -14102,6 +14156,18 @@ msgstr "건너뜀"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Slack: Create Channel"
+msgstr ""
+
+msgid "Slack: Find User by Email"
+msgstr ""
+
+msgid "Slack: Send Message To A Channel"
+msgstr ""
+
+msgid "Slack: Send Message To A User"
+msgstr ""
+
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "위치, 품목 또는 모든 차원별 자산 활동 분석"
 
@@ -14988,6 +15054,9 @@ msgstr "\"{0}\" 단계가 완료되었습니다 — \"{1}\" 체크포인트를 �
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "도입까지 {0}단계이며, 각 단계는 체크포인트로 마무리됩니다. 완료한 작업은 체크 표시하세요."
 
+msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+msgstr ""
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "보고 및 분석을 위해 항목을 분류하는 회계 차원입니다."
 
@@ -15258,6 +15327,9 @@ msgstr "워크플로우의 웹훅 단계가 게시하는 https 주소입니다. 
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "순서에서 생성되고 기록에 저장되는 사람이 읽을 수 있는 문서 번호(J000001 또는 ECO-000001 같은)로, 내부 ID와는 구별됨."
 
+msgid "The icon emoji of the bot"
+msgstr ""
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "고객이 자사 PO에서 이 품목에 사용하는 식별자입니다. Carbon은 주문을 가져올 때 이를 내부 품목 ID로 변환합니다."
 
@@ -15477,6 +15549,9 @@ msgstr "이 유지보수를 수행할 때 기술자가 따르는 절차입니다
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "이 작업장에서 수행할 수 있는 공정입니다. 공정작업을 예약할 때 공정 선택 목록에 표시되며, 이 작업장을 경유할 수 있는 작업을 제한합니다."
 
+msgid "The profile picture of the bot"
+msgstr ""
+
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공자에서 기능을 활성화하세요(예: 추적 카테고리, 클래스 추적 또는 필드)."
 
@@ -15640,6 +15715,9 @@ msgstr "자재에 적용 가능한 표면처리"
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "설정된 시스템에서 귀사 데이터로 범위 내 모든 인수 테스트를 통과하고, 데이터가 검증되며, 귀사가 최종 승인합니다. 그다음 실제 가동을 시작합니다."
 
+msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "판매 RFQ, 해당 견적, 결과로 나온 판매주문을 연결하는 스레드입니다 — 자체 상태를 가진 문서가 아니라 연결 고리입니다."
 
@@ -15687,6 +15765,9 @@ msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "IRS 자산 분류표를 사용하는 미국 세무 감가상각 제도로, 장부 상각 스케줄과 별도로 세무 스케줄로 운영됩니다."
+
+msgid "The username of the bot"
+msgstr ""
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "이 그룹에 속한 사용자입니다. 그룹 범위의 권한과 알림이 각 구성원에게 적용되며, 사용자는 여러 그룹에 속할 수 있습니다(유효 권한은 합집합입니다)."
@@ -15757,7 +15838,7 @@ msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
 
-msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
 msgstr ""
 
 msgid "This account needs to be reconnected."
@@ -16441,6 +16522,9 @@ msgstr "최대 수량 정책에서는 재주문점에 도달할 때 이 보유 �
 msgid "Undo"
 msgstr "실행 취소"
 
+msgid "Unfurl Links"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "제거"
 
@@ -16797,6 +16881,9 @@ msgstr "사용자"
 
 msgid "User roles"
 msgstr "사용자 역할"
+
+msgid "Username"
+msgstr ""
 
 msgid "users"
 msgstr "사용자"
@@ -17401,6 +17488,9 @@ msgstr "켜면 이 가격 재정의가 일치하는 주문에 적용됩니다. �
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "켜면 이 규칙이 해당 유형의 모든 대상에 대해 적용됩니다. 배정 행은 무시되지만 보존됩니다."
 
+msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+msgstr ""
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
 
@@ -17748,6 +17838,9 @@ msgstr "둘 이상의 회사에 속해 있습니다. 작업할 회사를 선택�
 
 msgid "You can change the UI style any time through the theme setting"
 msgstr "테마 설정을 통해 언제든지 UI 스타일을 변경할 수 있습니다"
+
+msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
+msgstr ""
 
 msgid "You can only see this key once. Store it safely."
 msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하세요."

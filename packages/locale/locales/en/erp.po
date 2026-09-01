@@ -154,6 +154,9 @@ msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% of payables"
 
+msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+msgstr "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} isn't connected yet. Connect an account before this step can do anything."
 
@@ -1446,6 +1449,9 @@ msgstr "Amount Type"
 msgid "An account is already called that — pick a different name."
 msgstr "An account is already called that — pick a different name."
 
+msgid "An account is missing from this list until it is reconnected."
+msgstr "An account is missing from this list until it is reconnected."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 
@@ -2650,6 +2656,9 @@ msgstr "Breadcrumb"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 
+msgid "Broadcast reply to channel"
+msgstr "Broadcast reply to channel"
+
 msgid "Browse library"
 msgstr "Browse library"
 
@@ -3058,6 +3067,12 @@ msgstr "Changing this will update the part ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
+
+msgid "Channel"
+msgstr "Channel"
+
+msgid "Channel Name"
+msgstr "Channel Name"
 
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
@@ -3531,6 +3546,9 @@ msgstr "Connect the Otherwise handle to a node to run when no condition matches.
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Connect the outside tools your company already runs on"
+
+msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
+msgstr "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 
 msgid "Connected to"
 msgstr "Connected to"
@@ -6023,6 +6041,9 @@ msgstr "Enable full accrual accounting with journal entries, financial reports, 
 msgid "Enable in Settings"
 msgstr "Enable in Settings"
 
+msgid "Enable link unfurling for this message"
+msgstr "Enable link unfurling for this message"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Enable notifications when an RFQ is marked as ready for quote."
 
@@ -7685,6 +7706,9 @@ msgstr "I have a reasonable basis to believe this individual is a U.S. person as
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
 
+msgid "Icon Emoji"
+msgstr "Icon Emoji"
+
 msgid "Id"
 msgstr "Id"
 
@@ -8177,6 +8201,9 @@ msgstr "Is employee type group"
 
 msgid "Is identity group"
 msgstr "Is identity group"
+
+msgid "Is Private?"
+msgstr "Is Private?"
 
 msgid "Is supplier org group"
 msgstr "Is supplier org group"
@@ -10509,6 +10536,9 @@ msgstr "On-time delivery"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 
+msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+msgstr "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 
@@ -10553,6 +10583,9 @@ msgstr "Oops! The link you're trying to access is not valid."
 
 msgid "Open"
 msgstr "Open"
+
+msgid "Open {appName} accounts"
+msgstr "Open {appName} accounts"
 
 msgid "Open a change notice"
 msgstr "Open a change notice"
@@ -11650,6 +11683,9 @@ msgstr "Production: shop-floor app and scheduling"
 msgid "Profile"
 msgstr "Profile"
 
+msgid "Profile Picture"
+msgstr "Profile Picture"
+
 msgid "Progress"
 msgstr "Progress"
 
@@ -11720,6 +11756,9 @@ msgstr "Protects your company's data"
 
 msgid "Provide process knowledge and inputs"
 msgstr "Provide process knowledge and inputs"
+
+msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
+msgstr "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
 
 msgid "Provider"
 msgstr "Provider"
@@ -12283,6 +12322,18 @@ msgstr "Reconciliation found discrepancies with the provider"
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 
+msgid "Reconnect"
+msgstr "Reconnect"
+
+msgid "Reconnect {appName}"
+msgstr "Reconnect {appName}"
+
+msgid "Reconnect it"
+msgstr "Reconnect it"
+
+msgid "Reconnect needed"
+msgstr "Reconnect needed"
+
 msgid "Record"
 msgstr "Record"
 
@@ -12563,6 +12614,9 @@ msgstr "Replenishment system"
 
 msgid "Replenishment System"
 msgstr "Replenishment System"
+
+msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr "Reply to Thread (Thread Message Link/Timestamp)"
 
 msgid "Report"
 msgstr "Report"
@@ -14102,6 +14156,18 @@ msgstr "Skipped"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Slack: Create Channel"
+msgstr "Slack: Create Channel"
+
+msgid "Slack: Find User by Email"
+msgstr "Slack: Find User by Email"
+
+msgid "Slack: Send Message To A Channel"
+msgstr "Slack: Send Message To A Channel"
+
+msgid "Slack: Send Message To A User"
+msgstr "Slack: Send Message To A User"
+
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Slice asset activity by location, item, or any dimension"
 
@@ -14988,6 +15054,9 @@ msgstr "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 
+msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+msgstr "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "The accounting dimension that categorizes items for reporting and analysis."
 
@@ -15258,6 +15327,9 @@ msgstr "The https address a workflow's webhook step posts to — plain http, red
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 
+msgid "The icon emoji of the bot"
+msgstr "The icon emoji of the bot"
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 
@@ -15477,6 +15549,9 @@ msgstr "The procedure technicians follow when this maintenance is performed; rep
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 
+msgid "The profile picture of the bot"
+msgstr "The profile picture of the bot"
+
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 
@@ -15640,6 +15715,9 @@ msgstr "The surface finishes available on your materials"
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 
+msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+msgstr "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 
@@ -15687,6 +15765,9 @@ msgstr "The units of measure you buy, stock, and sell in"
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
+
+msgid "The username of the bot"
+msgstr "The username of the bot"
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
@@ -15757,8 +15838,8 @@ msgstr "These jobs have operations assigned to this work center:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 
-msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
-msgstr "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
+msgstr "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
 
 msgid "This account needs to be reconnected."
 msgstr "This account needs to be reconnected."
@@ -16441,6 +16522,9 @@ msgstr "Under Maximum Quantity policy, planning orders up to this on-hand level 
 msgid "Undo"
 msgstr "Undo"
 
+msgid "Unfurl Links"
+msgstr "Unfurl Links"
+
 msgid "Uninstall"
 msgstr "Uninstall"
 
@@ -16797,6 +16881,9 @@ msgstr "User"
 
 msgid "User roles"
 msgstr "User roles"
+
+msgid "Username"
+msgstr "Username"
 
 msgid "users"
 msgstr "users"
@@ -17401,6 +17488,9 @@ msgstr "When on, this price override applies to matching orders; turning off wit
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 
+msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+msgstr "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 
@@ -17748,6 +17838,9 @@ msgstr "You belong to more than one company. Pick where to work."
 
 msgid "You can change the UI style any time through the theme setting"
 msgstr "You can change the UI style any time through the theme setting"
+
+msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
+msgstr "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "You can only see this key once. Store it safely."

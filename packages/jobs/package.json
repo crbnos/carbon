@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@activepieces/piece-google-calendar": "0.10.3",
+    "@activepieces/piece-slack": "0.17.9",
     "@ai-sdk/openai": "catalog:",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",

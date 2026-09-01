@@ -66,7 +66,6 @@ declare global {
       SLACK_CLIENT_SECRET: string;
       SLACK_OAUTH_REDIRECT_URL: string;
       SLACK_SIGNING_SECRET: string;
-      SLACK_STATE_SECRET: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
       STRIPE_CONNECT_WEBHOOK_SECRET: string;
@@ -326,14 +325,14 @@ export const SLACK_CLIENT_SECRET = getEnv("SLACK_CLIENT_SECRET", {
   isRequired: false,
   isSecret: true
 });
+/** Where Slack sends the browser back after consent. One consent serves both the
+ * Carbon Assistant and workflow steps. The value may still point at the legacy
+ * `/api/integrations/slack/oauth` path — that route forwards to
+ * `/api/integrations/connections/callback` — so a deployed value keeps working. */
 export const SLACK_OAUTH_REDIRECT_URL = getEnv("SLACK_OAUTH_REDIRECT_URL", {
   isRequired: false
 });
 export const SLACK_SIGNING_SECRET = getEnv("SLACK_SIGNING_SECRET", {
-  isRequired: false,
-  isSecret: true
-});
-export const SLACK_STATE_SECRET = getEnv("SLACK_STATE_SECRET", {
   isRequired: false,
   isSecret: true
 });

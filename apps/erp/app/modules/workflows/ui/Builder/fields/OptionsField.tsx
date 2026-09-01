@@ -65,6 +65,8 @@ export function OptionsField({
     emptyHref,
     errorCode,
     errorHref,
+    noticeCode,
+    noticeHref,
     retry
   } = useWorkflowOptions(source, values);
 
@@ -170,6 +172,23 @@ export function OptionsField({
           placeholder={placeholder}
           onChange={(next) => onChange(literal(next || undefined))}
         />
+      )}
+      {loaded && noticeCode === "reconnect" && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          <Trans>
+            An account is missing from this list until it is reconnected.
+          </Trans>{" "}
+          {noticeHref ? (
+            <Link
+              className="underline underline-offset-2"
+              to={noticeHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Trans>Reconnect it</Trans>
+            </Link>
+          ) : null}
+        </p>
       )}
     </Field>
   );

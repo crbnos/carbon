@@ -50,7 +50,7 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
-import { PIECE_ALLOWLIST } from "@carbon/jobs/integrations";
+import { PIECE_ALLOWLIST, requiredScopesFor } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
 import {
@@ -914,7 +914,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? {
         pieceName: integrationId,
         defaultName: piece.label,
-        rows: await readConnections(client, companyId, integrationId)
+        // Only what the tab renders. `metadata` can carry workspace facts that
+        // are not for the browser; `scopes` is the one key the tab compares.
+        rows: (await readConnections(client, companyId, integrationId)).map(
+          ({
+            id,
+            pieceName,
+            name,
+            accountLabel,
+            status,
+            lastError,
+            metadata
+          }) => ({
+            id,
+            pieceName,
+            name,
+            accountLabel,
+            status,
+            lastError,
+            metadata: { scopes: metadata.scopes }
+          })
+        ),
+        // What a connection must hold for this piece's steps; an account that
+        // predates a scope shows "Reconnect needed".
+        requiredScopes: [...(await requiredScopesFor(integrationId))]
       }
     : null;
 
@@ -1698,6 +1721,7 @@ export default function IntegrationRoute() {
           pieceName={connections.pieceName}
           defaultName={connections.defaultName}
           connections={connections.rows}
+          requiredScopes={connections.requiredScopes}
         />
       )
     });

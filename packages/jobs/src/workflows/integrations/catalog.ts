@@ -46,6 +46,21 @@ export async function buildPieceActionDeclarations(): Promise<
       const advancedInputs: IntegrationDeclarationLike["inputs"] = {};
 
       for (const [propName, property] of Object.entries(action.props)) {
+        const visibility = visibilityOf(
+          property,
+          entry.props?.[actionName]?.[propName]
+        );
+        assertHiddenPropIsSatisfied(
+          pieceName,
+          actionName,
+          propName,
+          property,
+          visibility
+        );
+        // Omitted props are not part of the step: nothing to render, so nothing to
+        // map — an unmappable type is only ever an error for a prop a person would see.
+        if (!visibility.show && visibility.omit === true) continue;
+
         const mapped = toValueType(pieceName, actionName, propName, property);
         const declared = {
           type: mapped.type,
@@ -66,18 +81,6 @@ export async function buildPieceActionDeclarations(): Promise<
             ? {}
             : { description: mapped.description })
         };
-
-        const visibility = visibilityOf(
-          property,
-          entry.props?.[actionName]?.[propName]
-        );
-        assertHiddenPropIsSatisfied(
-          pieceName,
-          actionName,
-          propName,
-          property,
-          visibility
-        );
 
         if (visibility.show) inputs[propName] = declared;
         // A hidden input is never REQUIRED of the author — it is satisfied by a

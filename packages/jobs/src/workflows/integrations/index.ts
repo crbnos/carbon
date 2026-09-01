@@ -5,7 +5,14 @@ export { assertPinnedVersions, PIECE_ALLOWLIST } from "./allowlist";
 export { buildPieceActionDeclarations } from "./catalog";
 export { buildPieceContext } from "./context";
 export type { PieceOAuthApp } from "./oauth";
-export { buildRefreshConfig, resolveOAuthApp } from "./oauth";
+export {
+  accountLabelFromBody,
+  buildConsentUrl,
+  buildRefreshConfig,
+  connectionMetadataFrom,
+  requiredScopesFor,
+  resolveOAuthApp
+} from "./oauth";
 export {
   CONNECTION_INPUT,
   CONNECTION_PROVIDER,

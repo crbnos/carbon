@@ -22,6 +22,11 @@
 export interface AllowlistPropOverride {
   /** Keep it out of the ordinary form; it still appears under Advanced. */
   hidden?: boolean;
+  /** Drop the prop from the step entirely — neither the form nor Advanced offers it.
+   * For props whose non-default value needs a host capability Carbon refuses (send as
+   * user, mention the origin flow) or a type Carbon cannot render. A `value` is still
+   * sent at run time; a required prop needs one. */
+  omit?: boolean;
   /** Sent at RUN time when the node supplies nothing, never stored on the node —
    * so changing our mind here fixes every existing workflow at once. */
   value?: unknown;
@@ -44,18 +49,27 @@ export interface AllowlistEntry {
     clientIdEnv: string;
     clientSecretEnv: string;
     redirectUrlEnv: string;
+    /** Consent endpoint to use instead of the piece's `authUrl` — for a piece that bakes
+     * extra requests (Slack's `user_scope=`) into its URL. */
+    authUrl?: string;
+    /** Scopes to request instead of the piece's full list. Must cover every allowlisted
+     * action and the `options()` its dropdowns call. */
+    scope?: readonly string[];
   };
   /**
    * How to read back which account authorized, so a company with two connections
-   * can tell them apart. Optional: a vendor with no such endpoint just shows the
-   * connection's own name.
+   * can tell them apart. Either a field of a GET on the vendor's identity endpoint,
+   * or a dot path into the token response itself (Slack returns `team.name`).
+   * Optional: a vendor with neither just shows the connection's own name.
    */
-  accountLabel?: {
-    /** Called once, with the fresh access token as a bearer. */
-    url: string;
-    /** Which top-level field of the JSON response to display. */
-    field: string;
-  };
+  accountLabel?: { url: string; field: string } | { path: string };
+  /**
+   * Workspace facts to keep on the connection, as `{ metadataKey: tokenResponsePath }`.
+   * Slack's token response carries the team, the bot user and the incoming-webhook
+   * channel the person picked; the Assistant reads those off the connection. Only the
+   * listed paths are copied — a token is never among them.
+   */
+  metadata?: Record<string, string>;
   /** Per-action prop overrides, keyed by action then prop. Only for a vendor
    * default that is WRONG for us — the generic rules in `visibility.ts` handle
    * merely-uninteresting fields with no per-action data. */
@@ -83,6 +97,9 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
       url: "https://www.googleapis.com/oauth2/v2/userinfo",
       field: "email"
     },
+    // Google reports the granted scopes too; recorded so a future scope change
+    // can be detected the same way as Slack's.
+    metadata: { scopes: "scope" },
     // events.list without `orderBy` groups a series' expanded instances into one
     // block; chronological is the only order a calendar question means.
     sortItemsBy: { google_calendar_get_events: "startDateTime" },
@@ -93,6 +110,74 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
         // "events tomorrow" silently misses every recurring meeting. Nearly every
         // workflow wants it on, and the vendor's default is simply wrong for us.
         singleEvents: { hidden: true, value: true }
+      }
+    }
+  },
+  // One Slack card and one consent serve both the Carbon Assistant and workflow
+  // steps; the Assistant reads the oldest Active connection (`getSlackWorkspace`).
+  slack: {
+    package: "@activepieces/piece-slack",
+    version: "0.17.9",
+    label: "Slack",
+    actions: [
+      "send_channel_message",
+      "send_direct_message",
+      "slack-find-user-by-email",
+      "slack-create-channel"
+    ],
+    oauth: {
+      clientIdEnv: "SLACK_CLIENT_ID",
+      clientSecretEnv: "SLACK_CLIENT_SECRET",
+      redirectUrlEnv: "SLACK_OAUTH_REDIRECT_URL",
+      // The piece's own authUrl carries `user_scope=` — a personal user token we never use.
+      authUrl: "https://slack.com/oauth/v2/authorize",
+      scope: [
+        // Assistant: slash commands, issue threads, DMs
+        "assistant:write",
+        "chat:write.public",
+        "commands",
+        "files:read",
+        "im:history",
+        "incoming-webhook", // Slack's channel picker → the Assistant's channel
+        "team:read",
+        // shared
+        "chat:write",
+        "users:read", // user dropdown
+        "users:read.email", // lookupByEmail
+        // workflow steps + dropdowns
+        "channels:read", // channel dropdown (conversations.list)
+        "groups:read",
+        "chat:write.customize", // username / icon props
+        "im:write", // DM (conversations.open)
+        "channels:manage", // create public channel
+        "groups:write" // create private channel
+      ]
+    },
+    accountLabel: { path: "team.name" },
+    metadata: {
+      team_id: "team.id",
+      team_name: "team.name",
+      bot_user_id: "bot_user_id",
+      channel: "incoming_webhook.channel",
+      channel_id: "incoming_webhook.channel_id",
+      // NOT `incoming_webhook.url`: a webhook URL is a bearer capability, and
+      // metadata is readable by every settings admin.
+      scopes: "scope" // the granted bot scopes, one comma-separated string
+    },
+    props: {
+      send_channel_message: {
+        // `false` sends as the user, which needs `auth.data.authed_user` — a user token
+        // we do not request.
+        sendAsBot: { omit: true, value: true },
+        // Reads the host flow context, which Carbon's shim refuses.
+        mentionOriginFlow: { omit: true },
+        // FILE / JSON have no Carbon input.
+        file: { omit: true },
+        blocks: { omit: true }
+      },
+      send_direct_message: {
+        mentionOriginFlow: { omit: true },
+        blocks: { omit: true }
       }
     }
   }

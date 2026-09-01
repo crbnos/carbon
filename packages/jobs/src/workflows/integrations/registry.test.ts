@@ -40,7 +40,7 @@ describe("piece registry", () => {
   });
 
   it("refuses an unknown piece", async () => {
-    await expect(getPieceAction("slack", "post")).rejects.toBeInstanceOf(
+    await expect(getPieceAction("notion", "post")).rejects.toBeInstanceOf(
       UnknownPieceError
     );
   });
@@ -52,5 +52,31 @@ describe("piece registry", () => {
     expect(auth.scope).toContain(
       "https://www.googleapis.com/auth/calendar.events"
     );
+  });
+});
+
+describe("slack", () => {
+  it("loads the piece", async () => {
+    const piece = await loadPiece("slack");
+    expect(Object.keys(piece.actions())).toContain("send_channel_message");
+  });
+
+  it("exposes exactly the allowlisted actions", async () => {
+    const actions = await getPieceActions("slack");
+    expect(Object.keys(actions).sort()).toEqual(
+      [...PIECE_ALLOWLIST.slack!.actions].sort()
+    );
+  });
+
+  it("refuses an action the piece has but the allowlist does not", async () => {
+    await expect(getPieceAction("slack", "custom_api_call")).rejects.toThrow();
+  });
+
+  // The piece's own consent URL asks for a personal user token as well — the reason
+  // the allowlist row overrides `authUrl` and `scope`.
+  it("finds the OAuth2 auth, whose authUrl bakes in user scopes", async () => {
+    const auth = await getPieceOAuth2Auth("slack");
+    expect(auth.tokenUrl).toBe("https://slack.com/api/oauth.v2.access");
+    expect(auth.authUrl).toContain("user_scope=");
   });
 });

@@ -154,6 +154,9 @@ msgstr "{alreadyPlannedItemCount} деталей пропущено — у ни�
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% кредиторской задолженности"
 
+msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} еще не подключена. Подключите учетную запись перед тем, как этот шаг сможет что-то сделать."
 
@@ -1446,6 +1449,9 @@ msgstr "Тип суммы"
 msgid "An account is already called that — pick a different name."
 msgstr ""
 
+msgid "An account is missing from this list until it is reconnected."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Учетный контейнер, который группирует расходы по отделам или функциям, чтобы GL мог отчитываться о расходах по группам, а не только по счетам."
 
@@ -2650,6 +2656,9 @@ msgstr "Навигационная цепочка"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "Импортируйте ваши детали, спецификации материалов, технологические процессы и расчеты стоимости — с помощью инструментов импорта Carbon, CSV или помощи LLM."
 
+msgid "Broadcast reply to channel"
+msgstr ""
+
 msgid "Browse library"
 msgstr "Обзор библиотеки"
 
@@ -3058,6 +3067,12 @@ msgstr "Изменение этого обновит ID детали"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
+
+msgid "Channel"
+msgstr ""
+
+msgid "Channel Name"
+msgstr ""
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -3531,6 +3546,9 @@ msgstr "Подключите обработчик Otherwise к узлу для �
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Подключите внешние инструменты, которые уже использует ваша компания"
+
+msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
+msgstr ""
 
 msgid "Connected to"
 msgstr "Подключено к"
@@ -6023,6 +6041,9 @@ msgstr "Включите полный учет по методу начисле�
 msgid "Enable in Settings"
 msgstr "Включить в параметрах"
 
+msgid "Enable link unfurling for this message"
+msgstr ""
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."
 
@@ -7685,6 +7706,9 @@ msgstr "У меня есть разумные основания полагат�
 msgid "I'm Still Working"
 msgstr "Я всё ещё работаю"
 
+msgid "Icon Emoji"
+msgstr ""
+
 msgid "Id"
 msgstr "ID"
 
@@ -8177,6 +8201,9 @@ msgstr "Является группой типов сотрудников"
 
 msgid "Is identity group"
 msgstr "Является группой идентификации"
+
+msgid "Is Private?"
+msgstr ""
 
 msgid "Is supplier org group"
 msgstr "Является группой организаций поставщиков"
@@ -10509,6 +10536,9 @@ msgstr "Своевременная доставка"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Один запуск рабочего процесса, записанный пошагово с значениями, которые каждый шаг использовал и создал, действуя с разрешениями владельца рабочего процесса."
 
+msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Одна серийная единица или одна партия, которую Carbon отслеживает индивидуально, имея собственный статус и атрибуты, такие как дата истечения."
 
@@ -10553,6 +10583,9 @@ msgstr "Упс! Ссылка, которую вы пытаетесь откры�
 
 msgid "Open"
 msgstr "Открыть"
+
+msgid "Open {appName} accounts"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Открыть уведомление об изменении"
@@ -11650,6 +11683,9 @@ msgstr "Производство: приложение для цеха и пла
 msgid "Profile"
 msgstr "Профиль"
 
+msgid "Profile Picture"
+msgstr ""
+
 msgid "Progress"
 msgstr "Прогресс"
 
@@ -11720,6 +11756,9 @@ msgstr "Защищает данные вашей компании"
 
 msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
+
+msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
+msgstr ""
 
 msgid "Provider"
 msgstr "Система"
@@ -12283,6 +12322,18 @@ msgstr "Сверка обнаружила расхождения с постав
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Период восстановления"
 
+msgid "Reconnect"
+msgstr ""
+
+msgid "Reconnect {appName}"
+msgstr ""
+
+msgid "Reconnect it"
+msgstr ""
+
+msgid "Reconnect needed"
+msgstr ""
+
 msgid "Record"
 msgstr "Записать"
 
@@ -12563,6 +12614,9 @@ msgstr "Система пополнения"
 
 msgid "Replenishment System"
 msgstr "Система пополнения"
+
+msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
 
 msgid "Report"
 msgstr "Отчет"
@@ -14102,6 +14156,18 @@ msgstr "Пропущено"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Slack: Create Channel"
+msgstr ""
+
+msgid "Slack: Find User by Email"
+msgstr ""
+
+msgid "Slack: Send Message To A Channel"
+msgstr ""
+
+msgid "Slack: Send Message To A User"
+msgstr ""
+
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Разбить активность активов по местоположению, товару или любому измерению"
 
@@ -14988,6 +15054,9 @@ msgstr "Фаза \"{0}\" завершена — её контрольная то
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "Фазы {0} до запуска, каждая заканчивается контрольной точкой. Отмечайте каждую задачу по мере её выполнения."
 
+msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+msgstr ""
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Учетное измерение, которое классифицирует элементы для отчетности и анализа."
 
@@ -15258,6 +15327,9 @@ msgstr "HTTPS-адрес, на который шаг вебхука рабоче
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "Понятный номер документа (например J000001 или ECO-000001), сгенерированный из последовательности и сохранённый в записи, отличный от его внутреннего ID."
 
+msgid "The icon emoji of the bot"
+msgstr ""
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "Идентификатор, который клиент использует для этой детали на их заказах; Carbon разрешает его на наш внутренний идентификатор детали при импорте заказа."
 
@@ -15477,6 +15549,9 @@ msgstr "Процедура, которой следуют техники при 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Процессы, которые может выполнять этот рабочий центр; отображается в селекторах процессов при планировании операций и ограничивает, какие задания могут маршрутизироваться через этот рабочий центр."
 
+msgid "The profile picture of the bot"
+msgstr ""
+
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Провайдер не предлагает цели размерности. Сначала включите функцию в провайдере (например, категории отслеживания, отслеживание класса или поля)."
 
@@ -15640,6 +15715,9 @@ msgstr "Доступные поверхностные покрытия ваши�
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Система проходит все тесты приемки в области охвата в вашей настроенной системе с вашими данными; данные проверяются; и вы подписываете акт. Затем переход в боевую эксплуатацию."
 
+msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепочка, которая связывает RFQ продаж, его предложение и результирующий заказ на продажу — соединение, а не документ со своим статусом."
 
@@ -15687,6 +15765,9 @@ msgstr "Единицы измерения, в которых вы покупае
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Американская система налоговой амортизации с таблицами категорий имущества IRS, работающая как отдельный налоговый график вместе с графиком книг."
+
+msgid "The username of the bot"
+msgstr ""
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Пользователи в этой группе; разрешения и уведомления, определяемые группой, применяются к каждому члену, и пользователи могут принадлежать к нескольким группам (эффективные разрешения — это объединение)."
@@ -15757,7 +15838,7 @@ msgstr "Эти задания имеют операции, назначенны�
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Эти записи в журнале всё ещё находятся в статусе «Черновик», поэтому их дебеты и кредиты не находятся в главной книге за этот период. Опубликуйте каждую или переделируйте её на более поздний открытый период."
 
-msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
 msgstr ""
 
 msgid "This account needs to be reconnected."
@@ -16441,6 +16522,9 @@ msgstr "При политике максимального количества 
 msgid "Undo"
 msgstr "Отменить"
 
+msgid "Unfurl Links"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "Удалить"
 
@@ -16797,6 +16881,9 @@ msgstr "Пользователь"
 
 msgid "User roles"
 msgstr "Роли пользователей"
+
+msgid "Username"
+msgstr ""
 
 msgid "users"
 msgstr "пользователи"
@@ -17401,6 +17488,9 @@ msgstr "Если включено, это переопределение цен�
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
 
+msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+msgstr ""
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
@@ -17748,6 +17838,9 @@ msgstr "Вы принадлежите более чем одной компан�
 
 msgid "You can change the UI style any time through the theme setting"
 msgstr "Вы можете изменить стиль интерфейса в любое время через настройку темы"
+
+msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
+msgstr ""
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Вы можете увидеть этот ключ только один раз. Сохраните его в безопасном месте."

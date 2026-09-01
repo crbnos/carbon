@@ -17,7 +17,9 @@ import type { PieceProperty } from "./types";
 export type Visibility =
   | { show: true }
   /** Hidden, and this value is merged in at run time. */
-  | { show: false; value?: unknown };
+  | { show: false; omit?: false; value?: unknown }
+  /** Not part of the step at all — neither the form nor Advanced. */
+  | { show: false; omit: true; value?: unknown };
 
 /** A dropdown with exactly one possible answer is not a choice. */
 /** The one value a single-option dropdown can hold, or undefined when it has more
@@ -39,6 +41,14 @@ export function visibilityOf(
   override: AllowlistPropOverride | undefined
 ): Visibility {
   // Tier 2 — a reviewed decision for this exact action.
+  // Display-only: Activepieces `Property.MarkDown` renders text and never collects a
+  // value, so there is no input to offer.
+  if (property.type === "MARKDOWN") return { show: false, omit: true };
+  if (override?.omit === true) {
+    return override.value === undefined
+      ? { show: false, omit: true }
+      : { show: false, omit: true, value: override.value };
+  }
   if (override?.hidden === true) {
     return override.value === undefined
       ? { show: false }
@@ -86,7 +96,7 @@ export function assertHiddenPropIsSatisfied(
   // has one still passes here, by actually sending it.
   if (visibility.value !== undefined) return;
   throw new Error(
-    `${piece}.${action}.${name} is required but hidden with no value to send.`
+    `${piece}.${action}.${name} is required but hidden or omitted with no value to send.`
   );
 }
 
@@ -130,4 +140,25 @@ export function pinnedValues(
   }
 
   return pinned;
+}
+
+/**
+ * Props the step must never send from a node value — omitted by the allowlist or
+ * display-only. The catalog leaves them out of both input maps, but a node saved
+ * before the omit (or a definition posted by hand) can still carry a value for
+ * them, and `toPropsValue` lets a node value win. Strip those first; the pin, if
+ * any, is still applied.
+ */
+export function omittedProps(
+  piece: string,
+  action: string,
+  props: Record<string, PieceProperty> = {}
+): Set<string> {
+  const overrides = PIECE_ALLOWLIST[piece]?.props?.[action] ?? {};
+  const omitted = new Set<string>();
+  for (const [name, property] of Object.entries(props)) {
+    const visibility = visibilityOf(property, overrides[name]);
+    if (!visibility.show && visibility.omit === true) omitted.add(name);
+  }
+  return omitted;
 }

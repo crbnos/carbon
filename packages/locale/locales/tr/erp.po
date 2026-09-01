@@ -154,6 +154,9 @@ msgstr "{alreadyPlannedItemCount} parça atlandı — zaten açık işleri var"
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% borç"
 
+msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} henüz bağlanmadı. Bu adımın bir şey yapabilmesi için önce bir hesabı bağlayın."
 
@@ -1446,6 +1449,9 @@ msgstr "Tutar Türü"
 msgid "An account is already called that — pick a different name."
 msgstr ""
 
+msgid "An account is missing from this list until it is reconnected."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Departman veya işlev tarafından harcamaları gruplandıran bir muhasebe kovası, böylece GL harcamaları hesap tarafından değil grup tarafından raporlayabilir."
 
@@ -2650,6 +2656,9 @@ msgstr "Sayfa Yolu"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "Parçalarınızı, BOM'larınızı, İşlem Faturasını ve maliyetlendirmeyi getirin — Carbon'ın içe aktarma araçları, CSV veya LLM yardımı ile."
 
+msgid "Broadcast reply to channel"
+msgstr ""
+
 msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
@@ -3058,6 +3067,12 @@ msgstr "Bunu değiştirmek parça kimliğini güncelleyecektir"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
+
+msgid "Channel"
+msgstr ""
+
+msgid "Channel Name"
+msgstr ""
 
 msgid "Chart of accounts"
 msgstr "Muhasebe planı"
@@ -3531,6 +3546,9 @@ msgstr "Hiçbir koşul eşleşmediğinde çalıştırılacak bir düğüme Aksi 
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Şirketinizin zaten kullandığı dış araçları bağlayın"
+
+msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
+msgstr ""
 
 msgid "Connected to"
 msgstr "Bağlı"
@@ -6023,6 +6041,9 @@ msgstr "Yevmiye kayıtları, finansal raporlar ve genel defter kaydı ile tam ta
 msgid "Enable in Settings"
 msgstr "Ayarlarda Etkinleştir"
 
+msgid "Enable link unfurling for this message"
+msgstr ""
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde bildirimleri etkinleştir."
 
@@ -7685,6 +7706,9 @@ msgstr "Bu kişinin 22 CFR 120.62'de tanımlanan şekilde ABD vatandaşı olduğ
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
 
+msgid "Icon Emoji"
+msgstr ""
+
 msgid "Id"
 msgstr "Id"
 
@@ -8177,6 +8201,9 @@ msgstr "Çalışan türü grubu mu"
 
 msgid "Is identity group"
 msgstr "Kimlik grubu mu"
+
+msgid "Is Private?"
+msgstr ""
 
 msgid "Is supplier org group"
 msgstr "Tedarikçi kuruluş grubu mu"
@@ -10509,6 +10536,9 @@ msgstr "Zamanında teslimat"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
 
+msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon'un bireysel olarak takip ettiği bir seri birim veya bir batch, sona erme tarihi gibi kendi durumu ve öznitelikleri taşıyan."
 
@@ -10553,6 +10583,9 @@ msgstr "Üzgünüz! Erişim sağlamaya çalıştığınız bağlantı geçerli d
 
 msgid "Open"
 msgstr "Aç"
+
+msgid "Open {appName} accounts"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Bir değişiklik bildirisi aç"
@@ -11650,6 +11683,9 @@ msgstr "Üretim: atölye uygulaması ve planlama"
 msgid "Profile"
 msgstr "Profil"
 
+msgid "Profile Picture"
+msgstr ""
+
 msgid "Progress"
 msgstr "İlerleme"
 
@@ -11720,6 +11756,9 @@ msgstr "Şirketinizin verilerini korur"
 
 msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
+
+msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
+msgstr ""
 
 msgid "Provider"
 msgstr "Sağlayıcı"
@@ -12283,6 +12322,18 @@ msgstr "Mutabakat sağlayıcıyla tutarsızlıklar buldu"
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Geri Kazanım Süresi"
 
+msgid "Reconnect"
+msgstr ""
+
+msgid "Reconnect {appName}"
+msgstr ""
+
+msgid "Reconnect it"
+msgstr ""
+
+msgid "Reconnect needed"
+msgstr ""
+
 msgid "Record"
 msgstr "Kayıt"
 
@@ -12563,6 +12614,9 @@ msgstr "Yenileme sistemi"
 
 msgid "Replenishment System"
 msgstr "Yenileştirme Sistemi"
+
+msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
 
 msgid "Report"
 msgstr "Rapor"
@@ -14102,6 +14156,18 @@ msgstr "Atlanmış"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Slack: Create Channel"
+msgstr ""
+
+msgid "Slack: Find User by Email"
+msgstr ""
+
+msgid "Slack: Send Message To A Channel"
+msgstr ""
+
+msgid "Slack: Send Message To A User"
+msgstr ""
+
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Konum, ürün veya herhangi bir boyuta göre varlık aktivitesini böl"
 
@@ -14988,6 +15054,9 @@ msgstr "\"{0}\" aşaması tamamlandı — \"{1}\" kontrol noktası geçildi."
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "{0} aşamayı canlı yayına almak için, her biri bir kontrol noktasında sona eriyor. Her görevi tamamladıkça işaretleyin."
 
+msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+msgstr ""
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Raporlama ve analiz için öğeleri kategorize eden muhasebe boyutu."
 
@@ -15258,6 +15327,9 @@ msgstr "İş akışının webhook adımının gönderdiği https adresi — düz
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "Bir diziden oluşturulan ve kayıtta saklanan, dahili kimlğinden farklı, insan tarafından okunabilir belge numarası (J000001 veya ECO-000001 gibi)."
 
+msgid "The icon emoji of the bot"
+msgstr ""
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "Müşterinin bu parça için PO'larında kullandığı tanımlayıcı; Carbon bunu sipariş alımında dahili Parça Kimliğimize çözümler."
 
@@ -15477,6 +15549,9 @@ msgstr "Teknikerin bu bakım gerçekleştirildiğinde izlediği prosedür; krono
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Bu iş merkezinin çalıştırabileceği süreçler; işlem planlanırken işlem seçicilerinde görünür ve hangi işlerin bu iş merkezi aracılığıyla yönlendirilebileceğini sınırlar."
 
+msgid "The profile picture of the bot"
+msgstr ""
+
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etkinleştirin (örneğin, izleme kategorileri, sınıf izleme veya alanlar)."
 
@@ -15640,6 +15715,9 @@ msgstr "Malzemelerinizde mevcut olan yüzey işlemleri"
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Sistem, yapılandırılmış sisteminizde kapsamdaki her kabul testini geçer, verilerinizle; veriler doğrulanır; ve siz onay verirsiniz. Ardından canlı yayına geçin."
 
+msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Satış RFQ'sunu, kendi alıntısını ve ortaya çıkan satış siparişini bağlayan iş parçacığı - bir birleştirme, kendi durumu olan bir belge değildir."
 
@@ -15687,6 +15765,9 @@ msgstr "Satın aldığınız, stokladığınız ve sattığınız ölçü biriml
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "IRS mülkiyet sınıfı tabloları ile ABD vergi amortisman sistemi, kitap çizelgesi ile birlikte ayrı bir vergi planı olarak çalıştırılır."
+
+msgid "The username of the bot"
+msgstr ""
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Bu gruptaki kullanıcılar; grup kapsamlı izinler ve bildirimler her üyeye uygulanır ve kullanıcılar birden çok gruba ait olabilir (etkili izinler birleşimdir)."
@@ -15757,7 +15838,7 @@ msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe kayıtları hâlâ Taslak durumundadır, bu nedenle borç ve alacakları bu dönem için defteri kebir'de değildir. Her birini deftere geçirin veya daha sonraki bir açık döneme yeniden tarihlendiriniz."
 
-msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
 msgstr ""
 
 msgid "This account needs to be reconnected."
@@ -16441,6 +16522,9 @@ msgstr "Maksimum Miktar politikası altında, yeniden sipariş noktası tetiklen
 msgid "Undo"
 msgstr "Geri Al"
 
+msgid "Unfurl Links"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "Kaldır"
 
@@ -16797,6 +16881,9 @@ msgstr "Kullanıcı"
 
 msgid "User roles"
 msgstr "Kullanıcı rolleri"
+
+msgid "Username"
+msgstr ""
 
 msgid "users"
 msgstr "kullanıcılar"
@@ -17401,6 +17488,9 @@ msgstr "Etkinleştirildiğinde, bu fiyat geçersiz kılması eşleşen siparişl
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Açıkken bu kural, türündeki her hedef için tetiklenir. Atama satırları yok sayılır ancak korunur."
 
+msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+msgstr ""
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
@@ -17748,6 +17838,9 @@ msgstr "Birden fazla şirkete bağlısınız. Nerede çalışmak istediğinizi s
 
 msgid "You can change the UI style any time through the theme setting"
 msgstr "Kullanıcı arayüzü stilini tema ayarları aracılığıyla istediğiniz zaman değiştirebilirsiniz"
+
+msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
+msgstr ""
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde saklayın."

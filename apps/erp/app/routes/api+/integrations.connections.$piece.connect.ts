@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  buildConsentUrl,
   getPieceOAuth2Auth,
   PIECE_ALLOWLIST,
   resolveOAuthApp
@@ -12,8 +13,9 @@ export const config = {
 };
 
 /**
- * Builds the vendor's consent URL: the piece supplies `authUrl` and `scope`, the
- * allowlist row supplies which env vars hold our OAuth app. Returns `{ url }` like
+ * Builds the vendor's consent URL: the piece supplies `authUrl` and `scope` (an
+ * allowlist row may override either), the allowlist row supplies which env vars hold
+ * our OAuth app. Returns `{ url }` like
  * the Slack install route, so the client opens it in a popup.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -42,18 +44,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const auth = await getPieceOAuth2Auth(pieceName);
 
-  const url = new URL(auth.authUrl);
-  url.searchParams.set("client_id", app.clientId);
-  url.searchParams.set("redirect_uri", app.redirectUrl);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", auth.scope.join(" "));
-  // Without both of these Google returns no refresh token on a re-authorization.
-  url.searchParams.set("access_type", "offline");
-  url.searchParams.set("prompt", "consent");
-  url.searchParams.set(
-    "state",
-    signConnectionState({ companyId, pieceName, name, userId })
-  );
-
-  return { url: url.toString() };
+  return {
+    url: buildConsentUrl({
+      entry,
+      auth,
+      app,
+      state: signConnectionState({ companyId, pieceName, name, userId })
+    })
+  };
 }

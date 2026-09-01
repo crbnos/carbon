@@ -3,6 +3,7 @@ import { toPropsValue } from "./properties";
 import type { PieceProperty } from "./types";
 import {
   assertHiddenPropIsSatisfied,
+  omittedProps,
   pinnedValues,
   visibilityOf
 } from "./visibility";
@@ -236,5 +237,90 @@ describe("toPropsValue with pinned values", () => {
         eventTypes: ["default"]
       })
     ).toEqual({ eventTypes: ["default"] });
+  });
+});
+
+describe("omit", () => {
+  it("omits a prop the allowlist says to, carrying any pin", () => {
+    expect(visibilityOf(prop(), { omit: true })).toEqual({
+      show: false,
+      omit: true
+    });
+    expect(
+      visibilityOf(
+        prop({ type: "CHECKBOX", required: true, defaultValue: true }),
+        { omit: true, value: true }
+      )
+    ).toEqual({ show: false, omit: true, value: true });
+  });
+
+  // Activepieces `Property.MarkDown` is a paragraph of help text, not a field.
+  it("omits a MARKDOWN prop with no override at all", () => {
+    expect(visibilityOf(prop({ type: "MARKDOWN" }), undefined)).toEqual({
+      show: false,
+      omit: true
+    });
+  });
+
+  it("still refuses a required prop omitted with nothing to send", () => {
+    const required = prop({ type: "CHECKBOX", required: true });
+    expect(() =>
+      assertHiddenPropIsSatisfied("p", "a", "sendAsBot", required, {
+        show: false,
+        omit: true
+      })
+    ).toThrow("omitted with no value");
+    expect(() =>
+      assertHiddenPropIsSatisfied("p", "a", "sendAsBot", required, {
+        show: false,
+        omit: true,
+        value: true
+      })
+    ).not.toThrow();
+  });
+
+  it("pins an omitted prop's value from the real slack row", () => {
+    expect(pinnedValues("slack", "send_channel_message")).toEqual({
+      sendAsBot: true
+    });
+    expect(pinnedValues("slack", "send_direct_message")).toEqual({});
+  });
+});
+
+describe("omittedProps", () => {
+  // The omit exists to make the user-token path unreachable; a stale node value
+  // for `sendAsBot` must not reopen it.
+  it("names the real slack row's omitted props, including MARKDOWN", () => {
+    const props = {
+      info: prop({ type: "MARKDOWN" }),
+      channel: prop({ type: "DROPDOWN", required: true }),
+      sendAsBot: prop({ type: "CHECKBOX", required: true, defaultValue: true }),
+      blocks: prop({ type: "JSON" }),
+      text: prop({ type: "LONG_TEXT" })
+    };
+    expect(
+      [...omittedProps("slack", "send_channel_message", props)].sort()
+    ).toEqual(["blocks", "info", "sendAsBot"]);
+  });
+
+  it("strips a stale node value but still sends the pin", () => {
+    const props = {
+      sendAsBot: prop({ type: "CHECKBOX", required: true, defaultValue: true }),
+      text: prop({ type: "LONG_TEXT" })
+    };
+    const omitted = omittedProps("slack", "send_channel_message", props);
+    const inputs = Object.fromEntries(
+      Object.entries({
+        sendAsBot: { kind: "primitive", of: "boolean", value: false },
+        text: { kind: "primitive", of: "string", value: "hi" }
+      }).filter(([name]) => !omitted.has(name))
+    );
+    expect(
+      toPropsValue(
+        props,
+        inputs as never,
+        pinnedValues("slack", "send_channel_message", props)
+      )
+    ).toEqual({ sendAsBot: true, text: "hi" });
   });
 });

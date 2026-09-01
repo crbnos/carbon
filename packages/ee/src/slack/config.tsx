@@ -1,6 +1,7 @@
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { startIntegrationConnect } from "../integrations/connect";
 
 export const Slack = defineIntegration({
   name: "Slack",
@@ -8,45 +9,14 @@ export const Slack = defineIntegration({
   category: "Assistant",
   active: CONTROLLED_ENVIRONMENT === false,
   logo: Logo,
-  shortDescription: "Use the Carbon Assistant in your Slack workspace.",
+  shortDescription: "Slack for the Carbon Assistant and your workflows.",
   description:
-    "Integrating Carbon with Slack allows you to use the Carbon Assistant to complete tasks from your Slack workspace.",
+    "One install connects your workspace for both: the Carbon Assistant (slash commands, issue threads) and workflow steps that send messages, find users and create channels. Add more accounts under Accounts if different workflows should post as different workspaces.",
   images: [],
   settings: [],
   schema: z.object({}),
-  onClientInstall: async () => {
-    const response = await fetch("/api/integrations/slack/install").then(
-      (res) => res.json()
-    );
-
-    const { url } = response;
-
-    const width = 600;
-    const height = 800;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2.5;
-
-    const popup = window.open(
-      url,
-      "",
-      `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
-    );
-
-    if (!popup) {
-      window.location.href = url;
-      return;
-    }
-
-    const listener = (e: MessageEvent) => {
-      if (e.data === "app_oauth_completed") {
-        window.location.reload();
-        window.removeEventListener("message", listener);
-        popup.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-  }
+  onClientInstall: () =>
+    startIntegrationConnect("/api/integrations/connections/slack/connect")
 });
 
 function Logo() {

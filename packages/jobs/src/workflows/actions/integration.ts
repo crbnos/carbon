@@ -6,6 +6,7 @@ import {
   ConnectionRefreshTimeoutError,
   ConnectionRevokedError,
   ConnectionSecretUnavailableError,
+  missingScopes,
   readConnection,
   resolveConnectionAuth
 } from "@carbon/ee/integrations/connections";
@@ -13,13 +14,19 @@ import type { ActionOutcome, RuntimeValue } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PIECE_ALLOWLIST } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";
-import { buildRefreshConfig } from "../integrations/oauth";
+import { buildRefreshConfig, requiredScopesFor } from "../integrations/oauth";
 import { projectOutputs } from "../integrations/project";
 import { toPropsValue } from "../integrations/properties";
 import { getPieceAction } from "../integrations/registry";
-import { pinnedValues } from "../integrations/visibility";
+import { omittedProps, pinnedValues } from "../integrations/visibility";
 
 const NO_CONNECTION = "This step needs a connection.";
+/** A workspace connected before this piece needed a scope. The fix is one click,
+ * so the words name it — a bare `missing_scope` reads as a bug report. */
+const reconnectCopy = (label: string) =>
+  `The ${label} connection needs to be reconnected to grant the permissions this step uses — Settings → Integrations → ${label} → Accounts → Reconnect.`;
+const SCOPE_ERROR =
+  /missing_scope|insufficient_scope|insufficient.?permission/i;
 /** A vendor message is theirs, not ours — keep it short enough to read in a step row. */
 const MAX_VENDOR_MESSAGE = 300;
 
@@ -59,6 +66,12 @@ export async function runIntegrationAction(args: {
     return { ok: false, error: NO_CONNECTION };
   }
 
+  // Deterministic first: an under-scoped account fails here, without a vendor
+  // call and without partial side effects.
+  if (missingScopes(owned, await requiredScopesFor(pieceName)).length > 0) {
+    return { ok: false, error: reconnectCopy(label) };
+  }
+
   let accessToken: string;
   try {
     const oauth = await buildRefreshConfig(pieceName);
@@ -95,9 +108,15 @@ export async function runIntegrationAction(args: {
 
   try {
     const action = await getPieceAction(pieceName, actionName);
+    // An omitted prop is not part of the step, whatever a saved node says: the
+    // catalog never offered it, so a value for it is stale or hand-posted.
+    const omitted = omittedProps(pieceName, actionName, action.props);
+    const offered = Object.fromEntries(
+      Object.entries(inputs).filter(([name]) => !omitted.has(name))
+    );
     const propsValue = toPropsValue(
       action.props,
-      inputs,
+      offered,
       pinnedValues(pieceName, actionName, action.props)
     );
     const result = await action.run(
@@ -121,6 +140,10 @@ export async function runIntegrationAction(args: {
   } catch (cause) {
     const message =
       cause instanceof Error ? cause.message : "The step did not complete.";
+    // A vendor scope error still reads as "reconnect", not as a bug.
+    if (SCOPE_ERROR.test(message)) {
+      return { ok: false, error: reconnectCopy(label) };
+    }
     return { ok: false, error: `${label} rejected this: ${truncate(message)}` };
   }
 }

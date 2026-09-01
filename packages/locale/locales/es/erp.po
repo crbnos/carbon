@@ -154,6 +154,9 @@ msgstr "{alreadyPlannedItemCount} piezas omitidas — ya tienen trabajos abierto
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% de cuentas por pagar"
 
+msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} aún no está conectado. Conecta una cuenta antes de que este paso pueda hacer algo."
 
@@ -1446,6 +1449,9 @@ msgstr "Tipo de Cantidad"
 msgid "An account is already called that — pick a different name."
 msgstr ""
 
+msgid "An account is missing from this list until it is reconnected."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Un área contable que agrupa gastos por departamento o función para que la GL pueda reportar gastos por grupo, no solo por cuenta."
 
@@ -2650,6 +2656,9 @@ msgstr "Migas de pan"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "Importa tus piezas, BOMs, Bill of Process y costos — con las herramientas de importación de Carbon, CSV o ayuda de LLM."
 
+msgid "Broadcast reply to channel"
+msgstr ""
+
 msgid "Browse library"
 msgstr "Examinar biblioteca"
 
@@ -3058,6 +3067,12 @@ msgstr "Cambiar esto actualizará el ID de la pieza"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiar el tipo restablece los borradores editados de este elemento."
+
+msgid "Channel"
+msgstr ""
+
+msgid "Channel Name"
+msgstr ""
 
 msgid "Chart of accounts"
 msgstr "Plan de cuentas"
@@ -3531,6 +3546,9 @@ msgstr "Conecta el manejador Otherwise a un nodo para ejecutarlo cuando ninguna 
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Conecta las herramientas externas que tu empresa ya utiliza"
+
+msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
+msgstr ""
 
 msgid "Connected to"
 msgstr "Conectado a"
@@ -6023,6 +6041,9 @@ msgstr "Habilitar contabilidad de acumulación completa con asientos de diario, 
 msgid "Enable in Settings"
 msgstr "Habilitar en Configuración"
 
+msgid "Enable link unfurling for this message"
+msgstr ""
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Habilitar notificaciones cuando una RFQ está marcada como lista para cotizar."
 
@@ -7685,6 +7706,9 @@ msgstr "Tengo una base razonable para creer que este individuo es una persona es
 msgid "I'm Still Working"
 msgstr "Todavía estoy trabajando"
 
+msgid "Icon Emoji"
+msgstr ""
+
 msgid "Id"
 msgstr "Id"
 
@@ -8177,6 +8201,9 @@ msgstr "Es grupo de tipo de empleado"
 
 msgid "Is identity group"
 msgstr "Es grupo de identidad"
+
+msgid "Is Private?"
+msgstr ""
 
 msgid "Is supplier org group"
 msgstr "Es grupo de organización de proveedor"
@@ -10509,6 +10536,9 @@ msgstr "Entrega a tiempo"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Una ejecución de un flujo de trabajo, registrada paso a paso con los valores que cada paso usó y produjo, actuando en todo momento con los permisos del propietario del flujo de trabajo."
 
+msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+msgstr ""
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Una unidad de serie o un lote que Carbon rastrea individualmente, llevando su propio estado y atributos como una fecha de vencimiento."
 
@@ -10553,6 +10583,9 @@ msgstr "¡Oops! El enlace que intentas acceder no es válido."
 
 msgid "Open"
 msgstr "Abrir"
+
+msgid "Open {appName} accounts"
+msgstr ""
 
 msgid "Open a change notice"
 msgstr "Abrir un aviso de cambio"
@@ -11650,6 +11683,9 @@ msgstr "Producción: aplicación de planta y programación"
 msgid "Profile"
 msgstr "Perfil"
 
+msgid "Profile Picture"
+msgstr ""
+
 msgid "Progress"
 msgstr "Progreso"
 
@@ -11720,6 +11756,9 @@ msgstr "Protege los datos de tu empresa"
 
 msgid "Provide process knowledge and inputs"
 msgstr "Proporcionar conocimiento del proceso e información"
+
+msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
+msgstr ""
 
 msgid "Provider"
 msgstr "Proveedor"
@@ -12283,6 +12322,18 @@ msgstr "La reconciliación encontró discrepancias con el proveedor"
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Período de Recuperación"
 
+msgid "Reconnect"
+msgstr ""
+
+msgid "Reconnect {appName}"
+msgstr ""
+
+msgid "Reconnect it"
+msgstr ""
+
+msgid "Reconnect needed"
+msgstr ""
+
 msgid "Record"
 msgstr "Registro"
 
@@ -12563,6 +12614,9 @@ msgstr "Sistema de reabastecimiento"
 
 msgid "Replenishment System"
 msgstr "Sistema de Reabastecimiento"
+
+msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
 
 msgid "Report"
 msgstr "Informe"
@@ -14102,6 +14156,18 @@ msgstr "Omitido"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Slack: Create Channel"
+msgstr ""
+
+msgid "Slack: Find User by Email"
+msgstr ""
+
+msgid "Slack: Send Message To A Channel"
+msgstr ""
+
+msgid "Slack: Send Message To A User"
+msgstr ""
+
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Dividir actividad de activos por ubicación, artículo o cualquier dimensión"
 
@@ -14988,6 +15054,9 @@ msgstr "La fase \"{0}\" está completa — su punto de control \"{1}\" ha sido s
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "Los {0} fases para lanzamiento, cada una terminando en un punto de control. Marca cada tarea conforme la completes."
 
+msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+msgstr ""
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "La dimensión contable que categoriza artículos para informes y análisis."
 
@@ -15258,6 +15327,9 @@ msgstr "La dirección https a la que publica un paso de webhook de flujo de trab
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "El número de documento legible por humanos (como J000001 o ECO-000001) generado a partir de una secuencia y almacenado en el registro, distinto de su id interno."
 
+msgid "The icon emoji of the bot"
+msgstr ""
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "El identificador que el cliente usa para esta parte en sus POs; Carbon lo resuelve a nuestro ID de parte interno en la importación de pedidos."
 
@@ -15477,6 +15549,9 @@ msgstr "El procedimiento que siguen los técnicos cuando se realiza este manteni
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Los procesos que este centro de trabajo puede ejecutar; aparece en selectores de proceso al programar operaciones, y limita qué trabajos pueden fluir a través de este centro de trabajo."
 
+msgid "The profile picture of the bot"
+msgstr ""
+
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "El proveedor no ofrece destinos de dimensión. Habilita la función en el proveedor primero (p. ej. categorías de seguimiento, seguimiento de clases o campos)."
 
@@ -15640,6 +15715,9 @@ msgstr "Los acabados de superficie disponibles en tus materiales"
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "El sistema pasa todas las pruebas de aceptación dentro del alcance en tu sistema configurado, con tus datos; los datos se validan; y das tu aprobación. Luego, lanzamiento."
 
+msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "El hilo que vincula una RFQ de ventas, su cotización y la orden de venta resultante - una unión, no un documento con su propio estado."
 
@@ -15687,6 +15765,9 @@ msgstr "Las unidades de medida en las que compras, almacenas y vendes"
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "El sistema de depreciación fiscal estadounidense con tablas de clase de propiedad del IRS, ejecutado como un cronograma fiscal separado junto al cronograma de libros."
+
+msgid "The username of the bot"
+msgstr ""
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Los usuarios en este grupo; los permisos y notificaciones con alcance de grupo se aplican a cada miembro, y los usuarios pueden pertenecer a varios grupos (los permisos efectivos son la unión)."
@@ -15757,7 +15838,7 @@ msgstr "Estos trabajos tienen operaciones asignadas a este centro de trabajo:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Estos asientos de diario aún están en Borrador, por lo que sus débitos y créditos no están en el libro mayor para este período. Contabilice cada uno, o reescalone a un período abierto posterior."
 
-msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
 msgstr ""
 
 msgid "This account needs to be reconnected."
@@ -16441,6 +16522,9 @@ msgstr "Bajo la política de Cantidad Máxima, el sistema planifica hasta este n
 msgid "Undo"
 msgstr "Deshacer"
 
+msgid "Unfurl Links"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "Desinstalar"
 
@@ -16797,6 +16881,9 @@ msgstr "Usuario"
 
 msgid "User roles"
 msgstr "Roles de usuario"
+
+msgid "Username"
+msgstr ""
 
 msgid "users"
 msgstr "usuarios"
@@ -17401,6 +17488,9 @@ msgstr "Cuando está activado, esta invalidación de precio se aplica a pedidos 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Cuando está activado, esta regla se dispara para cada objetivo de su tipo. Las filas de asignación se ignoran pero se conservan."
 
+msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+msgstr ""
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Cuándo se espera que respondan los proveedores; los proveedores ven esta fecha en el portal RFQ y Carbon deja de aceptar respuestas tardías después de ella (configurable)."
 
@@ -17748,6 +17838,9 @@ msgstr "Perteneces a más de una empresa. Elige dónde trabajar."
 
 msgid "You can change the UI style any time through the theme setting"
 msgstr "Puedes cambiar el estilo de la interfaz en cualquier momento a través la configuración de tema"
+
+msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
+msgstr ""
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Solo puedes ver esta clave una vez. Guárdala de forma segura."

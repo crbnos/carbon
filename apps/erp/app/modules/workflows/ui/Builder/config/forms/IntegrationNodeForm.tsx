@@ -76,16 +76,37 @@ export function IntegrationNodeForm({
 
   // Asked through the same resolver the connection input itself uses, with a fetcher
   // key per app so switching apps asks again instead of reusing the last answer.
-  const { loaded: checked, options: connections } = useWorkflowOptions(
+  const {
+    loaded: checked,
+    options: connections,
+    errorCode: connectionsError,
+    errorHref: connectionsFixHref,
+    noticeCode: connectionsNotice,
+    noticeHref: connectionsNoticeHref
+  } = useWorkflowOptions(
     connectionSource,
     {},
     `integration-connections:${piece}`
   );
   const connected = connections.length > 0;
+  const storedConnection = inputs[INTEGRATION_CONNECTION_INPUT];
+  const storedConnectionId =
+    storedConnection?.kind === "literal" &&
+    typeof storedConnection.value === "string"
+      ? storedConnection.value
+      : undefined;
+  // The node points at an account the list no longer offers (revoked, or left out
+  // until it is reconnected). Never hide the field then — the author must see it.
+  const storedNotOffered =
+    checked &&
+    storedConnectionId !== undefined &&
+    !connections.some((option) => option.value === storedConnectionId);
   // One connection is not a choice — hide the field, but still STORE the id: a
   // second account added later must not silently repoint existing workflows.
   const onlyConnection =
-    connections.length === 1 ? connections[0]?.value : undefined;
+    connections.length === 1 && !storedNotOffered
+      ? connections[0]?.value
+      : undefined;
 
   const appLabel = (name: string) => label(integrationAppLabelKey(name));
   const appName = piece ? appLabel(piece) : "";
@@ -213,7 +234,68 @@ export function IntegrationNodeForm({
         </Select>
       </div>
 
-      {piece && checked && !connected && (
+      {/* Connected, but every account predates a scope this app now needs: the
+          fix is a re-consent, and "Connect" would send the author to add a
+          duplicate account instead. */}
+      {piece && checked && !connected && connectionsError === "reconnect" && (
+        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              {appName} is connected, but needs to be reconnected before
+              workflow steps can use it.
+            </Trans>
+          </p>
+          <Button asChild variant="secondary" isDisabled={isReadOnly}>
+            <Link
+              to={
+                connectionsFixHref ??
+                `${path.to.integration(piece)}?tab=connections`
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Trans>Reconnect {appName}</Trans>
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Some accounts are ready, one is not — or this node's stored account is the
+          one left out. A non-blocking banner; the field below still works. */}
+      {piece &&
+        checked &&
+        connected &&
+        (connectionsNotice === "reconnect" || storedNotOffered) && (
+          <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
+            <p className="text-sm text-muted-foreground">
+              {storedNotOffered ? (
+                <Trans>
+                  The {appName} account this step uses is not available — it was
+                  disconnected or needs to be reconnected.
+                </Trans>
+              ) : (
+                <Trans>
+                  One of your {appName} accounts needs to be reconnected before
+                  workflow steps can use it.
+                </Trans>
+              )}
+            </p>
+            <Button asChild variant="secondary" isDisabled={isReadOnly}>
+              <Link
+                to={
+                  connectionsNoticeHref ??
+                  `${path.to.integration(piece)}?tab=connections`
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Trans>Open {appName} accounts</Trans>
+              </Link>
+            </Button>
+          </div>
+        )}
+
+      {piece && checked && !connected && connectionsError !== "reconnect" && (
         <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
           <p className="text-sm text-muted-foreground">
             <Trans>
@@ -222,8 +304,9 @@ export function IntegrationNodeForm({
             </Trans>
           </p>
           <Button asChild variant="secondary" isDisabled={isReadOnly}>
+            {/* Land on the Accounts tab — where an account is added or reconnected. */}
             <Link
-              to={path.to.integration(piece)}
+              to={`${path.to.integration(piece)}?tab=connections`}
               target="_blank"
               rel="noreferrer"
             >

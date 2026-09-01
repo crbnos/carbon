@@ -17,6 +17,18 @@ const map = (property: PieceProperty, name = "field") =>
   );
 
 describe("toValueType", () => {
+  // The generator splices these into msg`` literals and refuses a backtick or `${`.
+  it("straightens backticks and template markers in vendor prose", () => {
+    const mapped = toValueType("p", "a", "threadTs", {
+      type: "SHORT_TEXT",
+      required: false,
+      displayName: "Thread `ts`",
+      description: ["use `ts` or $", "{x}"].join("")
+    });
+    expect(mapped.label).toBe("Thread 'ts'");
+    expect(mapped.description).toBe("use 'ts' or $ {x}");
+  });
+
   it("maps the text, number, boolean, date and list kinds", () => {
     expect(map({ type: "SHORT_TEXT", required: true }).type).toEqual({
       kind: "primitive",
@@ -106,6 +118,18 @@ describe("toValueType", () => {
 });
 
 describe("toPropsValue", () => {
+  it("never sends a MARKDOWN prop — it is help text, not a field", () => {
+    const props = {
+      info: { type: "MARKDOWN", required: false },
+      text: { type: "LONG_TEXT", required: false }
+    } as const;
+    const value = toPropsValue(props as never, {
+      info: { kind: "primitive", of: "string", value: "x" } as never,
+      text: { kind: "primitive", of: "string", value: "hi" } as never
+    });
+    expect(value).toEqual({ text: "hi" });
+  });
+
   it("round-trips the create-event inputs and omits what is absent", async () => {
     const action = await getPieceAction(
       "google-calendar",

@@ -130,6 +130,46 @@ export function connectionsHealthy(
   return connections.some(connectionUsable);
 }
 
+/**
+ * Scopes the vendor said it granted, recorded by the callback from the token
+ * response (`metadata.scopes`; Slack separates with commas, the migration backfill
+ * with spaces). `null` when the connection predates recording or the vendor does not
+ * report them — a caller must never flag what it cannot see.
+ */
+export function grantedScopes(
+  connection: Pick<IntegrationConnection, "metadata">
+): string[] | null {
+  const raw = connection.metadata.scopes;
+  if (typeof raw !== "string") return null;
+  const scopes = raw.split(/[\s,]+/).filter((s) => s.length > 0);
+  return scopes.length === 0 ? null : scopes;
+}
+
+/**
+ * Usable, but predates a scope the piece now needs — the one condition every
+ * surface (Accounts tab, builder, card, step runner) must read the same way.
+ */
+export function needsReconnect(
+  connection: Pick<IntegrationConnection, "status" | "metadata">,
+  required: readonly string[]
+): boolean {
+  return (
+    connectionUsable(connection) &&
+    missingScopes(connection, required).length > 0
+  );
+}
+
+/** Required scopes the connection does not hold. Empty when grants are unknown. */
+export function missingScopes(
+  connection: Pick<IntegrationConnection, "metadata">,
+  required: readonly string[]
+): string[] {
+  const granted = grantedScopes(connection);
+  if (granted === null) return [];
+  const have = new Set(granted);
+  return required.filter((scope) => !have.has(scope));
+}
+
 export async function readConnections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -193,6 +233,11 @@ export async function createConnection(
       .update({
         authType: args.authType ?? "OAUTH2",
         accountLabel: args.accountLabel ?? null,
+        // A re-consent's token response is authoritative — its `scopes` is how a
+        // "reconnect needed" account clears.
+        ...(args.metadata === undefined
+          ? {}
+          : { metadata: args.metadata as never }),
         expiresAt: args.expiresAt ?? null,
         refreshingAt: null,
         status: "Active",
@@ -494,6 +539,34 @@ export async function resolveConnectionAuth(
   };
 }
 
+/**
+ * The stored access token for a vendor whose tokens do not expire (Slack bot tokens),
+ * for callers outside a workflow step — the Assistant's slash commands and thread
+ * sync. Refuses anything it cannot vouch for: a non-Active connection, or one that
+ * carries an expiry inside the refresh window (a refreshable vendor must go through
+ * `resolveConnectionAuth`, which owns the refresh claim).
+ */
+export async function readConnectionAccessToken(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  connectionId: string
+): Promise<string> {
+  const connection = await readConnection(
+    serviceClient,
+    companyId,
+    connectionId
+  );
+  if (connection === null || connection.status !== "Active") {
+    throw new ConnectionRevokedError(connectionId);
+  }
+  if (expiringSoon(connection.expiresAt)) {
+    throw new Error(
+      `Connection ${connectionId} carries an expiring token; use resolveConnectionAuth.`
+    );
+  }
+  return (await readTokens(serviceClient, companyId, connectionId)).accessToken;
+}
+
 async function awaitRefreshedToken(
   serviceClient: SupabaseClient<Database>,
   companyId: string,
@@ -548,6 +621,9 @@ export interface ExchangedTokens {
   accessToken: string;
   refreshToken?: string;
   expiresAt: string | null;
+  /** The parsed token response, in memory only — never persisted whole. A piece's
+   * allowlist row may pick workspace facts (Slack's team and webhook channel) off it. */
+  body: Record<string, unknown>;
 }
 
 /**
@@ -607,9 +683,16 @@ function readTokenResponse(payload: unknown): ExchangedTokens {
     access_token?: string;
     refresh_token?: string;
     expires_in?: number;
+    error?: string;
   };
   if (typeof body.access_token !== "string") {
-    throw new Error("The connection returned no access token.");
+    // Slack rejects with HTTP 200 and `{ ok: false, error }`; name it for the server
+    // log. The callback maps this message to a code — the browser never sees it.
+    throw new Error(
+      typeof body.error === "string"
+        ? `The connection returned no access token (${body.error}).`
+        : "The connection returned no access token."
+    );
   }
   return {
     accessToken: body.access_token,
@@ -617,6 +700,7 @@ function readTokenResponse(payload: unknown): ExchangedTokens {
     expiresAt:
       typeof body.expires_in === "number"
         ? new Date(Date.now() + body.expires_in * 1000).toISOString()
-        : null
+        : null,
+    body: (payload ?? {}) as Record<string, unknown>
   };
 }

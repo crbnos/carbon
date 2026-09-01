@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getSlackWorkspace } from "@carbon/ee/slack.server";
 import { getSlackClient } from "@carbon/lib/slack.server";
 import { inngest } from "../../client";
 
@@ -11,24 +12,22 @@ export const sendSlackFunction = inngest.createFunction(
   async ({ event, step }) => {
     const { channel, text, blocks, companyId } = event.data;
 
-    const accessToken = await step.run("resolve-slack-token", async () => {
-      const client = getCarbonServiceRole();
-      const { data, error } = await client
-        .from("companyIntegration")
-        .select("active, metadata")
-        .eq("companyId", companyId)
-        .eq("id", "slack")
-        .maybeSingle();
-      if (error || !data?.active) return null;
-      const metadata = data.metadata as { access_token?: string } | null;
-      return metadata?.access_token ?? null;
-    });
-
+    // One step, so the token never becomes a step OUTPUT that Inngest would
+    // persist in its run state — it lives only in this closure.
     await step.run("post-message", async () => {
-      // Per-company token if the company has Slack linked, else fall back to
-      // the env token (legacy single-workspace setups). Client is a no-op on
-      // localhost — see slack.server.ts.
-      const slack = getSlackClient(accessToken ?? undefined);
+      // Per-company token if the company has a usable Slack connection, else
+      // fall back to the env token (legacy single-workspace setups). A
+      // workspace that cannot be read falls back too rather than failing the
+      // send. Client is a no-op on localhost — see slack.server.ts.
+      let accessToken: string | undefined;
+      try {
+        accessToken = (
+          await getSlackWorkspace(getCarbonServiceRole(), companyId)
+        )?.token;
+      } catch {
+        accessToken = undefined;
+      }
+      const slack = getSlackClient(accessToken);
       await slack.sendMessage({ blocks, channel, text });
     });
 

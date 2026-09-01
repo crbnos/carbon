@@ -50,7 +50,6 @@
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
     "@slack/bolt": "4.4.0",
-    "@slack/oauth": "3.0.5",
     "@slack/types": "2.20.1",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",

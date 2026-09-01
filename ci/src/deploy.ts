@@ -67,7 +67,6 @@ export type Workspace = {
   slack_client_secret: string | null;
   slack_oauth_redirect_url: string | null;
   slack_signing_secret: string | null;
-  slack_state_secret: string | null;
   stripe_bypass_company_ids: string | null;
   stripe_secret_key: string | null;
   stripe_webhook_secret: string | null;
@@ -150,7 +149,6 @@ async function deploy(): Promise<void> {
         slack_client_secret,
         slack_oauth_redirect_url,
         slack_signing_secret,
-        slack_state_secret,
         slug,
         stripe_bypass_company_ids,
         stripe_secret_key,
@@ -308,7 +306,6 @@ async function deploy(): Promise<void> {
           SLACK_CLIENT_SECRET: slack_client_secret ?? undefined,
           SLACK_OAUTH_REDIRECT_URL: slack_oauth_redirect_url ?? undefined,
           SLACK_SIGNING_SECRET: slack_signing_secret ?? undefined,
-          SLACK_STATE_SECRET: slack_state_secret ?? undefined,
           STRIPE_BYPASS_COMPANY_IDS: stripe_bypass_company_ids ?? undefined,
           STRIPE_SECRET_KEY: stripe_secret_key ?? undefined,
           STRIPE_WEBHOOK_SECRET: stripe_webhook_secret ?? undefined,
