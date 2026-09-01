@@ -34,6 +34,17 @@ export default defineConfig(({ isSsrBuild, mode }) => {
         "react-phone-number-input",
         "tailwind-merge",
         /**
+         * react-csv@2.2.2 ships a broken manifest: it `require('react')` and
+         * `require('prop-types')` at runtime but declares neither as a
+         * dependency or peer. Externalized, the SSR server bundle keeps the bare
+         * `require('react')`, which resolves locally via pnpm's hoisted store
+         * but is NOT traced into the Vercel serverless function — so the Lambda
+         * crashes on cold start with "Cannot find module 'react'". Bundling it
+         * inline resolves react/prop-types against the app's copies at build
+         * time, the same reason the react-* packages above are inlined.
+         */
+        "react-csv",
+        /**
          * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
          * its nested zustand v3, while the app uses zustand v5 (no default
          * export). Externalizing zustand merges both into one bare import that
