@@ -151,12 +151,23 @@ export async function completeOnshapeAuthorization({
       return connectionFailed("token-exchange");
     }
 
+    // `upsertCompanyIntegration` writes the whole metadata column, so a
+    // reconnect built from fresh credentials alone would drop everything else
+    // the integration keeps there. A failed read must not be mistaken for an
+    // empty row.
     const existing = await serviceRole
       .from("companyIntegration")
       .select("metadata")
       .eq("id", integrationId)
       .eq("companyId", companyId)
       .maybeSingle();
+    if (existing.error) {
+      logger.error("Failed to read the Onshape integration before saving", {
+        integrationId,
+        error: existing.error
+      });
+      return connectionFailed("save-failed");
+    }
     const existingMetadata = (existing.data?.metadata ?? {}) as Record<
       string,
       unknown

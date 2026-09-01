@@ -107,3 +107,104 @@ export function buildPartStatuses({
       };
     });
 }
+
+/**
+ * What the panel shows per line of the current assembly's BOM. Same vocabulary
+ * as {@link PanelPartStatus}: `linked` is the mapping join, `matched` is the
+ * part-number join, `missing` is neither.
+ *
+ * A BOM line's mapping is keyed by the line's *source* part studio
+ * (`itemSource`), not by the assembly element being viewed — that is the key an
+ * assembly push writes for each child. A line whose BOM row carries no
+ * `itemSource` can only ever reach `matched`; there is no part to key on.
+ */
+export type PanelAssemblyLineStatus = {
+  index: string;
+  level: number;
+  partNumber: string | null;
+  name: string | null;
+  quantity: number;
+  purchased: boolean;
+  state: "linked" | "matched" | "missing";
+  itemId: string | null;
+  lastSyncedAt: string | null;
+};
+
+export type PanelAssemblyLineInput = {
+  index: string;
+  level: number;
+  partNumber: string | null;
+  name: string | null;
+  quantity: number;
+  purchased: boolean;
+  itemSource: {
+    documentId?: string;
+    elementId?: string;
+    partId?: string;
+  } | null;
+};
+
+/**
+ * The mapping key for a BOM line, or null when the row names no usable source.
+ *
+ * A part row names a part studio and a partId, and keys like any pushed part.
+ * A sub-assembly row names an assembly element and no partId, so it keys the
+ * way a pushed assembly does — which is what makes one key work from both the
+ * parent's BOM and the sub-assembly's own panel.
+ */
+export function externalIdForBomLine(
+  itemSource: PanelAssemblyLineInput["itemSource"]
+): string | null {
+  if (!itemSource?.documentId || !itemSource.elementId) return null;
+  return itemSource.partId
+    ? externalIdForPart(
+        itemSource.documentId,
+        itemSource.elementId,
+        itemSource.partId
+      )
+    : externalIdForAssembly(itemSource.documentId, itemSource.elementId);
+}
+
+export function buildAssemblyLineStatuses({
+  lines,
+  mappings,
+  items
+}: {
+  lines: PanelAssemblyLineInput[];
+  mappings: PanelMappingRow[];
+  items: PanelItemRow[];
+}): PanelAssemblyLineStatus[] {
+  const mappingByExternalId = new Map(
+    mappings.filter((m) => m.externalId).map((m) => [m.externalId as string, m])
+  );
+  const itemById = new Map(items.map((i) => [i.id, i]));
+  const itemByReadableId = new Map(items.map((i) => [i.readableId, i]));
+
+  return lines.map(({ itemSource, ...line }) => {
+    const externalId = externalIdForBomLine(itemSource);
+    const mapping = externalId
+      ? mappingByExternalId.get(externalId)
+      : undefined;
+    // A mapping whose item is gone is not a link: entityId is polymorphic and
+    // carries no foreign key, so rows outlive the items they point at.
+    const linkedItem = mapping ? itemById.get(mapping.entityId) : undefined;
+    if (mapping && linkedItem) {
+      return {
+        ...line,
+        state: "linked" as const,
+        itemId: linkedItem.id,
+        lastSyncedAt: mapping.lastSyncedAt
+      };
+    }
+
+    const matched = line.partNumber
+      ? itemByReadableId.get(line.partNumber)
+      : undefined;
+    return {
+      ...line,
+      state: matched ? ("matched" as const) : ("missing" as const),
+      itemId: matched?.id ?? null,
+      lastSyncedAt: null
+    };
+  });
+}
