@@ -170,6 +170,11 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         groups.set(company.companyGroupId, bucket);
       }
 
+      // Collected so one misconfigured group cannot stop the others from being
+      // updated, while the step still ends in a visible failure.
+      const conflictingGroups: { companyGroupId: string; bases: string[] }[] =
+        [];
+
       for (const [companyGroupId, members] of groups) {
         const bases = [...new Set(members.map((m) => m.code))];
 
@@ -181,6 +186,7 @@ export const updateExchangeRatesFunction = inngest.createFunction(
             "Company group has members with different base currencies; refusing to rebase shared rates",
             { companyGroupId, baseCurrencyCodes: bases }
           );
+          conflictingGroups.push({ companyGroupId, bases });
           continue;
         }
 
@@ -224,11 +230,14 @@ export const updateExchangeRatesFunction = inngest.createFunction(
             .filter((currency) => !rates[currency.code as CurrencyCode])
             .map((currency) => currency.code);
           if (missing.length > 0) {
-            logger.warn("No rate returned for these currencies; leaving them stale", {
-              companyGroupId,
-              baseCurrencyCode,
-              currencyCodes: missing
-            });
+            logger.warn(
+              "No rate returned for these currencies; leaving them stale",
+              {
+                companyGroupId,
+                baseCurrencyCode,
+                currencyCodes: missing
+              }
+            );
           }
 
           const updates = data
@@ -276,6 +285,19 @@ export const updateExchangeRatesFunction = inngest.createFunction(
       }
 
       logger.info("Exchange rates task completed");
+
+      // Throw AFTER every healthy group has been updated. Returning normally
+      // would let Inngest record a success, so a group whose members disagree
+      // on base currency would sit un-rebased indefinitely with nothing but a
+      // log line to show for it.
+      if (conflictingGroups.length > 0) {
+        throw new Error(
+          `Refused to rebase ${conflictingGroups.length} company group(s) whose members disagree on base currency: ` +
+            conflictingGroups
+              .map((g) => `${g.companyGroupId} (${g.bases.join(", ")})`)
+              .join("; ")
+        );
+      }
     });
   }
 );
