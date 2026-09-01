@@ -1,4 +1,5 @@
 import {
+  CreatableMultiSelect,
   DatePicker,
   Input,
   NumberDecrementStepper,
@@ -19,6 +20,7 @@ import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { KeyboardEvent, ReactNode } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { isWritableList } from "./control";
 import { RECORD_PICKERS } from "./recordPickers";
 
 /** Stored dates are the `YYYY-MM-DD` the picker itself writes. Anything else is a
@@ -35,7 +37,7 @@ function asCalendarDate(value: unknown) {
 type LiteralControlProps = {
   type: ValueType;
   choices?: readonly string[];
-  value: string | number | boolean | null | undefined;
+  value: string | number | boolean | string[] | null | undefined;
   /** The catalog's default, shown when nothing is stored yet. A boolean control
    * especially must display what the run will actually send — an untouched
    * toggle rendered OFF while the effective default was ON lied twice over. */
@@ -108,7 +110,39 @@ export function LiteralControl({
     );
   }
 
-  // 2. Primitive kinds
+  // 2. A list of plain text — recipients, attendees — typed one entry at a time,
+  //    each becoming a chip. The vendor's field is an ARRAY, and the chips make
+  //    "this goes to several people" visible where a text box would not; the
+  //    stored value is a literal list. A list from an earlier step is still `{`.
+  if (isWritableList(type)) {
+    const entries = Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === "string")
+      : [];
+    const emitList = (next: readonly string[]) => {
+      const cleaned = [
+        ...new Set(next.map((entry) => entry.trim()).filter(Boolean))
+      ];
+      onChange(
+        cleaned.length === 0
+          ? undefined
+          : { kind: "literal", type, value: cleaned }
+      );
+    };
+    return shell(
+      <CreatableMultiSelect
+        size="md"
+        value={entries}
+        options={entries.map((entry) => ({ label: entry, value: entry }))}
+        onChange={emitList}
+        onCreateOption={(input) => emitList([...entries, input])}
+        placeholder={t`Type a value and press Enter…`}
+        isReadOnly={isReadOnly}
+        className="w-full"
+      />
+    );
+  }
+
+  // 3. Primitive kinds
   if (type.kind === "primitive") {
     switch (type.of) {
       // Unreachable via pickControl; kept so LiteralControl stays total over ValueType.
@@ -194,7 +228,7 @@ export function LiteralControl({
     }
   }
 
-  // 3. Entity → the Carbon selector for that record
+  // 4. Entity → the Carbon selector for that record
   if (type.kind === "entity") {
     const Picker = RECORD_PICKERS[type.of];
     if (Picker) {

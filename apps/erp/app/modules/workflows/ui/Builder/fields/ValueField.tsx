@@ -123,6 +123,7 @@ export function ValueField({
                       | string
                       | number
                       | boolean
+                      | string[]
                       | null
                       | undefined)
                   : undefined
