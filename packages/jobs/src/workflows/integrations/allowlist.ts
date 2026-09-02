@@ -50,6 +50,10 @@ export interface AllowlistEntry {
    * execute against a customer's account. */
   version: string;
   label: string;
+  /** Which of the piece's actions we expose — names only. An action's INPUTS are
+   * read from the piece's own `props` (`properties.ts`) and its OUTPUTS from its
+   * `outputSchema` (`outputs.ts`) at catalog generation; neither is declared here.
+   * The `props` block below only OVERRIDES what the piece declares. */
   actions: readonly string[];
   /**
    * The NAMES of the env vars holding Carbon's OAuth app for this vendor — never
@@ -77,8 +81,10 @@ export interface AllowlistEntry {
   /**
    * Workspace facts to keep on the connection, as `{ metadataKey: tokenResponsePath }`.
    * Slack's token response carries the team, the bot user and the incoming-webhook
-   * channel the person picked; the Assistant reads those off the connection. Only the
-   * listed paths are copied — a token is never among them.
+   * channel the person picked; the Assistant reads those off the connection. Google
+   * records the granted `scope` string, which is what lets `missingScopes` turn a
+   * later scope change into "Reconnect needed". Only the listed paths are copied —
+   * a token is never among them.
    */
   metadata?: Record<string, string>;
   /** Per-action prop overrides, keyed by action then prop. Only for a vendor
