@@ -86,6 +86,12 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      importCSV={[
+        {
+          table: "storageType" as const,
+          label: t`Storage Types`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "parts") && (
           <New

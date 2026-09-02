@@ -9,6 +9,7 @@ import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 import { classifyImportRow } from "./classify-import-row.ts";
+import { importConfigLookups } from "./config-lookup-import.ts";
 import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
 
@@ -26,12 +27,18 @@ const importCsvValidator = z.object({
     "operations",
     "partWithMethod",
     "part",
+    "service",
     "supplier",
     "supplierContact",
     "tool",
     "workCenter",
     "process",
     "storageUnit",
+    "unitOfMeasure",
+    "itemPostingGroup",
+    "storageType",
+    "scrapReason",
+    "department",
     "materialSubstance",
     "materialForm",
     "materialFinish",
@@ -1438,10 +1445,28 @@ serve(async (req: Request) => {
       case "consumable":
       case "tool":
       case "fixture":
+      case "service":
       case "part": {
         const getExternalId = (id: string) => {
           return `${table}:${id}`;
         };
+
+        // A service can never be shipped, received or stocked. The wizard
+        // therefore offers neither a Tracking Type nor a Default Method column
+        // for one: the validator below requires a tracking type, and the method
+        // is fully determined by the replenishment system — "Pull from
+        // Inventory" is not valid for a Non-Inventory item, and an independent
+        // column could contradict the replenishment system on the same row.
+        // `ServiceForm` derives both the same way and hides the method field.
+        if (table === "service") {
+          for (const record of mappedRecords) {
+            record.itemTrackingType = "Non-Inventory";
+            record.defaultMethodType =
+              record.replenishmentSystem === "Make"
+                ? "Make to Order"
+                : "Purchase to Order";
+          }
+        }
 
         const externalIdMap = await getCsvExternalIdMap("item", companyId);
         const readableIds = new Set();
@@ -1669,9 +1694,17 @@ serve(async (req: Request) => {
             }
 
             const { id, ...rest } = item.data;
+            // A blank Revision cell arrives as "" — not undefined — so the
+            // `??` this replaced let it through and the item landed with an
+            // empty revision instead of the "0" the wizard advertises as the
+            // default. (Unreachable until the route stopped stripping the
+            // field, which made `rest.revision` genuinely present-but-empty.)
+            // Normalize once, before the dedup key is built from it, so the
+            // key and the stored value cannot disagree.
+            const revision = rest.revision || "0";
             const readableIdWithRevision = getReadableIdWithRevision(
               item.data.readableId,
-              item.data.revision
+              revision
             );
 
             if (
@@ -1685,7 +1718,7 @@ serve(async (req: Request) => {
                 id: existingEntityId,
                 data: {
                   ...rest,
-                  revision: rest.revision ?? "0",
+                  revision,
                   active: rest.active?.toLowerCase() !== "false" ?? true,
                   unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
                   description: rest.description || undefined,
@@ -1784,7 +1817,7 @@ serve(async (req: Request) => {
                   | "Fixture"
                   | "Consumable",
                 companyId,
-                revision: rest.revision ?? "0",
+                revision,
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
               };
@@ -1869,10 +1902,19 @@ serve(async (req: Request) => {
               userId
             );
 
-            if (["part", "fixture", "tool", "consumable"].includes(table)) {
+            if (
+              ["part", "fixture", "tool", "consumable", "service"].includes(
+                table
+              )
+            ) {
               const specificInserts = insertedItems.map((item) => ({
                 id: item.readableId,
-                approved: true,
+                // `service` has its own `approved` default and a legacy
+                // NOT NULL `serviceType` the UI no longer surfaces —
+                // `upsertService` writes "External" for the same reason.
+                ...(table === "service"
+                  ? { serviceType: "External" }
+                  : { approved: true }),
                 companyId,
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
@@ -2880,6 +2922,20 @@ serve(async (req: Request) => {
       case "operations":
       case "partWithMethod": {
         await importMethods(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
+      case "unitOfMeasure":
+      case "itemPostingGroup":
+      case "storageType":
+      case "scrapReason":
+      case "department": {
+        await importConfigLookups(db, {
           table,
           mappedRecords,
           companyId,
