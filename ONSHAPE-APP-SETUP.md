@@ -8,7 +8,8 @@ are that person, open Claude Code in this repository and say:
 The agent runs the machine side and verifies each phase. You do the Onshape dev-portal
 clicks and the two in-browser sign-ins, because nothing else can.
 
-Expect about an hour, most of it Onshape-side.
+Expect about an hour to reach a first push, most of it Onshape-side, plus however long
+phase 7 takes — that depends entirely on the assembly.
 
 ---
 
@@ -21,6 +22,28 @@ pushes: a part, an assembly with its bill of materials, and a release.
 Every push writes to **Carbon only**. Nothing in this setup modifies the user's CAD data.
 The one exception is asset sync, which registers a webhook subscription on their Onshape
 account — it is off by default, and out of scope here.
+
+### What this branch adds over the panel as first built
+
+Worth knowing before debugging, because a symptom here is likely to be new:
+
+- **Large assemblies.** A PostgREST `.in()` filter travels in the URL, and Supabase's
+  gateway rejects a request line over 4 KB. Because the limit is bytes rather than values,
+  it bit first at roughly **56 parts**, on the read that links child parts to their part
+  studios — and it bit *silently*, landing in the push summary while the push reported
+  success. Every panel query sized by CAD data now batches on encoded bytes
+  (`packages/ee/src/onshape/lib/batched-filter.ts`). A count-based batch is not a fix and
+  should not be reintroduced.
+- **A depth choice on the assembly push** — whole tree, or this level only. See phase 7.
+- **Bulk BOM writes**, and unchanged lines skipped, so an untouched re-push writes nothing
+  and stamps no `updatedBy`.
+- **A refusal over 1500 distinct parts**, in place of a request that would run long and
+  could be cut off mid-write.
+- **A stale Onshape token no longer surfaces as a 401** in the assembly section after an
+  idle spell. The token now refreshes ahead of expiry and retries once on a real 401.
+
+None of the large-assembly work has been exercised against a real large assembly. Phase 7
+is where that happens.
 
 ## Rules for the agent
 
@@ -49,6 +72,7 @@ account — it is off by default, and out of scope here.
 | 4. Get Carbon running locally | **agent** |
 | 5. Connect the integration | user clicks consent, agent verifies |
 | 6. First push | user clicks in Onshape, agent watches |
+| 7. A large assembly | user clicks in Onshape, agent records the numbers |
 
 If the agent has Chrome browser automation available and the user prefers it, phases 1–3
 can be driven in their browser instead — ask first. Phase 6's sign-in click is inside a
@@ -70,6 +94,11 @@ work around:
   with three or more parts, two with **Part number** and **Revision** set and one
   without; an assembly of those parts including one subassembly; and a drawing of one
   part.
+- **For phase 7 only**, a second, genuinely large assembly — a few hundred distinct part
+  numbers, nested two or more levels deep. A small document cannot exercise the large
+  assembly work at all, and that work is the reason this branch exists. Real customer
+  geometry is the point; a synthetic tree of identical parts proves much less, because
+  the limits below are driven by how many *distinct* part numbers there are.
 - Their license position on `packages/ee`. The panel is implemented there, the repository
   LICENSE places it behind a commercial license, and it renders only when
   `CARBON_EDITION` is `enterprise`. This is the user's call to confirm, not the agent's
@@ -152,6 +181,10 @@ having done it — an OAuth grant is not a subscription.
 ---
 
 ## Phase 4 — get Carbon running (agent)
+
+`onshape-staging-app` is the branch under test. It is ahead of `main`: the panel is not
+on `main` at all, and this branch additionally carries the large-assembly work described
+in phase 7. Do not substitute `main` — the panel will not be there.
 
 ```bash
 git clone https://github.com/crbnos/carbon.git
@@ -248,6 +281,65 @@ is not a license problem.
 
 ---
 
+## Phase 7 — a large assembly (user drives, agent watches)
+
+Skip this only if the user has no large assembly. Everything before it is the app as it
+was; this phase is what this branch adds, and it is unproven — **no large assembly has
+ever been pushed through it.** Say that plainly before starting. The user is the first
+person to run it, and a surprise here is a finding, not a failure of the setup.
+
+### Push into a throwaway company
+
+Make a Carbon company for this, and do not use one holding real data. A push writes items
+and BOM lines for real, a large one is a single request with no rollback, and if it is cut
+off part way the BOM it leaves behind is partly written. There is no undo button.
+
+### The choice that matters
+
+The assembly section has an **Include sub-assemblies** checkbox, on by default.
+
+| Setting | What it does |
+| --- | --- |
+| On (default) | Pushes the whole tree in one request. Every sub-assembly gets its own make method and lines. |
+| Off | Pushes this assembly's own bill of materials only. Each sub-assembly becomes a single line pointing at its own make method. |
+
+With it **off**, a multi-level structure is assembled from separate pushes: open each
+sub-assembly in its own Onshape tab and push it, deepest first, then push the top level
+last. Carbon links each level to the one below because a BOM line already points at its
+child's make method — so the finished tree is the union of the pushes, and each push is
+bounded by one level instead of by the whole tree. The review names the sub-assemblies a
+level-only push is leaving out.
+
+Have the user try the whole tree first, so we learn where it actually breaks. Fall back
+to level-by-level when it is slow, refused, or fails.
+
+### What to expect
+
+- Over **1500 distinct part numbers** the review is refused before anything is read from
+  Carbon, with a message naming the count and telling them to push sub-assemblies first.
+  This is a deliberate refusal, not a bug — a push that large is a long request with no
+  rollback.
+- A re-push of an unchanged assembly should report lines as **already up to date** and
+  write nothing. If it reports lines written when nothing changed in Onshape, that is a
+  finding worth capturing.
+- The first push of a few hundred parts is the slow one; re-pushes are much cheaper,
+  because existing items are resolved in bulk and unchanged lines are skipped.
+
+### What to record either way
+
+Ask for the numbers, not an impression — "it worked" is not a result:
+
+- distinct part numbers, nesting depth, and how many sub-assemblies
+- wall-clock time of the review, and of the push
+- the summary line the panel printed (items created/reused, lines written, unchanged)
+- anything in the summary's problem list, verbatim
+- whether the pushed BOM in Carbon matches the Onshape tree, level by level
+
+**Gate:** the assembly's tree in Carbon matches Onshape — every level present, each
+sub-assembly's lines hanging off its own make method rather than flattened onto the top.
+
+---
+
 ## When it doesn't work
 
 | What you see | What it is |
@@ -261,8 +353,12 @@ is not a license problem.
 | "Review expired", or a push rejected after a pause | A review is held 15 minutes, then has to be opened again |
 | A push refused, naming a part | That part's make method is released. Released methods are never written |
 | A release just made in Onshape not listed | `ONSHAPE_DEV_CACHE=1` caches reads for 10 minutes. Unset it |
+| "This assembly has N distinct parts, and one push handles up to 1500" | Working as intended. Uncheck **Include sub-assemblies** and push level by level |
+| A push says "42 BOM lines already up to date" | Also working as intended — nothing changed in Onshape, so nothing was written |
+| Summary says lines were "written but not linked to Onshape" | Report it. A later push would duplicate those lines. This is the failure the batching work exists to prevent, so a sighting matters |
+| A 401 under the assembly section after a pause, cleared by **Refresh** | Should be fixed on this branch. If it still happens, capture how long the panel sat idle first |
 
-## Tell the user these three things before they test in earnest
+## Tell the user these before they test in earnest
 
 - **API quota is theirs.** A private application debits its owner's annual Onshape quota
   on every read. Building the whole panel spent roughly 115 live calls; a determined
@@ -276,3 +372,6 @@ is not a license problem.
 - **`ONSHAPE_DEV_CACHE=1`** saves quota by serving repeated reads from a 10-minute cache,
   at the cost of showing stale data. Leave it off when testing what the app actually
   does.
+- **A push is not reversible.** Items and BOM lines are written for real, and a large push
+  cut off part way leaves a partly written BOM. Use a throwaway company until this branch
+  has been through a few real assemblies.
