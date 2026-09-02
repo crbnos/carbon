@@ -181,11 +181,28 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
-      onShapeBom: (documentId: string, versionId: string, elementId: string) =>
+      onShapeBom: (
+        documentId: string,
+        versionId: string,
+        elementId: string,
+        configuration?: Record<string, string | number | boolean>
+      ) =>
         generatePath(
-          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
+          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom${
+            configuration && Object.keys(configuration).length > 0
+              ? `?configuration=${encodeURIComponent(JSON.stringify(configuration))}`
+              : ""
+          }`
         ),
       onShapeDocuments: `${api}/integrations/onshape/documents`,
+      onShapeElementConfiguration: (
+        documentId: string,
+        versionId: string,
+        elementId: string
+      ) =>
+        generatePath(
+          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/configuration`
+        ),
       onShapeElements: (documentId: string, versionId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
