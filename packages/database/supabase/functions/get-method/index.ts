@@ -4178,7 +4178,7 @@ serve(async (req: Request) => {
         ] = await Promise.all([
           client
             .from("job")
-            .select("locationId, quantity, startDate, dueDate")
+            .select("itemId, locationId, quantity, startDate, dueDate")
             .eq("id", targetJobId)
             .eq("companyId", companyId)
             .single(),
@@ -4258,6 +4258,25 @@ serve(async (req: Request) => {
           companyId,
           targetJob.data
         );
+
+        let selfConsumedItem: string | null = null;
+        traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+          for (const child of node.children) {
+            const resolvedItemId =
+              child.data.methodType !== "Make to Order"
+                ? (supersessionRedirect.get(child.data.itemId)?.to ??
+                  child.data.itemId)
+                : child.data.itemId;
+            if (resolvedItemId === targetJob.data.itemId) {
+              selfConsumedItem = child.data.itemReadableId ?? resolvedItemId;
+            }
+          }
+        });
+        if (selfConsumedItem) {
+          throw new Error(
+            `The source job's method consumes ${selfConsumedItem}, which is the item this job produces — a job cannot consume its own output`
+          );
+        }
 
         // The embeds defeat the generated response types (as elsewhere in this
         // file), so the rows are re-asserted to their real shape.

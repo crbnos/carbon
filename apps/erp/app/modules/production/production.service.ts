@@ -28,6 +28,7 @@ import type { ExpressionBuilder } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -3994,7 +3995,15 @@ export async function upsertJobMethod(
     body
   });
   if (getMethodResult.error) {
-    return getMethodResult;
+    return {
+      data: null,
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          getMethodResult.error,
+          "Failed to get job method"
+        )
+      } as PostgrestError
+    };
   }
   return recalculateJobRequirements(client, {
     id: jobMethod.targetId,
@@ -4068,7 +4077,12 @@ export async function upsertJobMaterialMakeMethod(
   if (error) {
     return {
       data: null,
-      error: { message: "Failed to pull method" } as PostgrestError
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          error,
+          "Failed to pull method"
+        )
+      } as PostgrestError
     };
   }
 

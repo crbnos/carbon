@@ -88,7 +88,9 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     return {
-      error: jobMethod.error ? "Failed to get job method" : null
+      error: jobMethod.error
+        ? (jobMethod.error.message ?? "Failed to get job method")
+        : null
     };
   }
 
@@ -120,7 +122,8 @@ export async function action({ request }: ActionFunctionArgs) {
     if (makeMethod.error) {
       return {
         error: makeMethod.error
-          ? "Failed to update method from job method"
+          ? (makeMethod.error.message ??
+            "Failed to update method from job method")
           : null
       };
     }
