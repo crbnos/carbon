@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="blackFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blackBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="288" cy="662" rx="200" ry="44" fill="url(#shadow)"/>
+  <ellipse cx="655" cy="662" rx="200" ry="44" fill="url(#shadow)"/>
+  <ellipse cx="508" cy="806" rx="290" ry="64" fill="url(#shadow)"/>
+
+  <!-- ============ LEFT JAW ============ -->
+  <!-- top face with the V groove notch in its contact edge -->
+  <path d="M150 252 L275 252 L289.4 241.6 L297 226 L332.6 210.4 L347 200 L222 200 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M150 252 L275 252 L289.4 241.6 L297 226 L332.6 210.4 L347 200 L222 200 Z" fill="#ffffff" opacity="0.12"/>
+  <g stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" fill="none">
+    <path d="M166 244 L281 244"/><path d="M178 236 L293 236"/><path d="M190 228 L305 228"/>
+    <path d="M202 220 L317 220"/><path d="M214 212 L329 212"/>
+  </g>
+
+  <!-- step face between column and foot -->
+  <path d="M275 510 L355 510 L427 458 L347 458 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M275 510 L355 510 L427 458 L347 458 Z" fill="#ffffff" opacity="0.09"/>
+
+  <!-- contact face (right-facing) -->
+  <path d="M275 252 L347 200 L347 458 L275 510 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M275 252 L347 200 L347 458 L275 510 Z" fill="#000000" opacity="0.14"/>
+  <!-- stepped V groove: wide upper vee -->
+  <path d="M289.4 241.6 L297 226 L297 386 L289.4 401.6 Z" fill="#0f1214" opacity="0.85"/>
+  <path d="M297 226 L332.6 210.4 L332.6 370.4 L297 386 Z" fill="url(#blackBarrel)" stroke="#101315" stroke-width="1.6"/>
+  <path d="M297 226 L297 386" fill="none" stroke="#000000" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M332.6 210.4 L332.6 370.4" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+  <!-- step ledges -->
+  <path d="M289.4 401.6 L298 395.4 L298 403.4 L289.4 409.6 Z" fill="#5e666c"/>
+  <path d="M324 376.6 L332.6 370.4 L332.6 378.4 L324 384.6 Z" fill="#5e666c"/>
+  <!-- narrow lower vee -->
+  <path d="M298 403.4 L302 394 L302 484 L298 493.4 Z" fill="#0f1214" opacity="0.85"/>
+  <path d="M302 394 L324 384.6 L324 474.6 L302 484 Z" fill="url(#blackBarrel)" stroke="#101315" stroke-width="1.6"/>
+  <path d="M324 384.6 L324 474.6" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+
+  <!-- lower gripping face of the foot -->
+  <path d="M355 510 L427 458 L427 608 L355 660 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M355 510 L427 458 L427 608 L355 660 Z" fill="#000000" opacity="0.18"/>
+  <g stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" fill="none">
+    <path d="M363 528 L419 487"/><path d="M363 556 L419 515"/>
+    <path d="M363 584 L419 543"/><path d="M363 612 L419 571"/>
+  </g>
+
+  <!-- front face -->
+  <path d="M150 252 L275 252 L275 510 L355 510 L355 660 L150 660 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="3"/>
+  <!-- chamfer break -->
+  <path d="M159 261 L266 261 L266 519 L346 519 L346 651 L159 651 Z" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+  <!-- tool marks -->
+  <g stroke="#ffffff" stroke-opacity="0.07" stroke-width="2" fill="none">
+    <path d="M162 300 L263 300"/><path d="M162 316 L263 316"/><path d="M162 332 L263 332"/>
+    <path d="M162 570 L343 570"/><path d="M162 586 L343 586"/><path d="M162 602 L343 602"/>
+    <path d="M162 618 L343 618"/>
+  </g>
+  <!-- four counterbored M5 holes -->
+  <g>
+    <ellipse cx="184" cy="372" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="184" cy="372" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M165 372 A19 19 0 0 1 203 372" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+    <ellipse cx="245" cy="372" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="245" cy="372" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M226 372 A19 19 0 0 1 264 372" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+    <ellipse cx="184" cy="452" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="184" cy="452" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M165 452 A19 19 0 0 1 203 452" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+    <ellipse cx="245" cy="452" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="245" cy="452" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M226 452 A19 19 0 0 1 264 452" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+  </g>
+  <!-- two precision dowel holes -->
+  <g>
+    <ellipse cx="184" cy="530" rx="11" ry="11" fill="#14181a" stroke="#0a0c0d" stroke-width="2"/>
+    <path d="M173 530 A11 11 0 0 1 195 530" fill="none" stroke="#aab1b7" stroke-opacity="0.45" stroke-width="2.5"/>
+    <ellipse cx="245" cy="530" rx="11" ry="11" fill="#14181a" stroke="#0a0c0d" stroke-width="2"/>
+    <path d="M234 530 A11 11 0 0 1 256 530" fill="none" stroke="#aab1b7" stroke-opacity="0.45" stroke-width="2.5"/>
+  </g>
+
+  <!-- ============ RIGHT JAW (mirrored profile, same camera) ============ -->
+  <path d="M597 252 L611.4 241.6 L647 226 L654.6 210.4 L669 200 L794 200 L722 252 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M597 252 L611.4 241.6 L647 226 L654.6 210.4 L669 200 L794 200 L722 252 Z" fill="#ffffff" opacity="0.12"/>
+  <g stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" fill="none">
+    <path d="M660 244 L728 244"/><path d="M672 236 L740 236"/><path d="M684 228 L752 228"/>
+    <path d="M696 220 L764 220"/><path d="M708 212 L776 212"/>
+  </g>
+  <!-- groove shadow inside the notch -->
+  <path d="M611.4 241.6 L647 226 L654.6 210.4 Z" fill="#0d0f11" opacity="0.7"/>
+
+  <!-- foot top face -->
+  <path d="M517 510 L597 510 L669 458 L589 458 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M517 510 L597 510 L669 458 L589 458 Z" fill="#ffffff" opacity="0.09"/>
+
+  <!-- outer right face -->
+  <path d="M722 252 L794 200 L794 608 L722 660 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M722 252 L794 200 L794 608 L722 660 Z" fill="#000000" opacity="0.22"/>
+  <g stroke="#ffffff" stroke-opacity="0.10" stroke-width="2" fill="none">
+    <path d="M730 300 L786 259"/><path d="M730 340 L786 299"/><path d="M730 380 L786 339"/>
+    <path d="M730 420 L786 379"/><path d="M730 460 L786 419"/><path d="M730 500 L786 459"/>
+    <path d="M730 540 L786 499"/><path d="M730 580 L786 539"/>
+  </g>
+
+  <!-- front face -->
+  <path d="M597 252 L722 252 L722 660 L517 660 L517 510 L597 510 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="3"/>
+  <path d="M606 261 L713 261 L713 651 L526 651 L526 519 L606 519 Z" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+  <g stroke="#ffffff" stroke-opacity="0.07" stroke-width="2" fill="none">
+    <path d="M609 300 L710 300"/><path d="M609 316 L710 316"/><path d="M609 332 L710 332"/>
+    <path d="M529 570 L710 570"/><path d="M529 586 L710 586"/><path d="M529 602 L710 602"/>
+    <path d="M529 618 L710 618"/>
+  </g>
+  <g>
+    <ellipse cx="629" cy="372" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="629" cy="372" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M610 372 A19 19 0 0 1 648 372" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+    <ellipse cx="690" cy="372" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="690" cy="372" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M671 372 A19 19 0 0 1 709 372" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+    <ellipse cx="629" cy="452" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="629" cy="452" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M610 452 A19 19 0 0 1 648 452" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+    <ellipse cx="690" cy="452" rx="27" ry="27" fill="#ffffff" opacity="0.13"/>
+    <ellipse cx="690" cy="452" rx="19" ry="19" fill="#1a1e21" stroke="#0c0e10" stroke-width="2"/>
+    <path d="M671 452 A19 19 0 0 1 709 452" fill="none" stroke="#8b9298" stroke-opacity="0.35" stroke-width="3"/>
+  </g>
+  <g>
+    <ellipse cx="629" cy="530" rx="11" ry="11" fill="#14181a" stroke="#0a0c0d" stroke-width="2"/>
+    <path d="M618 530 A11 11 0 0 1 640 530" fill="none" stroke="#aab1b7" stroke-opacity="0.45" stroke-width="2.5"/>
+    <ellipse cx="690" cy="530" rx="11" ry="11" fill="#14181a" stroke="#0a0c0d" stroke-width="2"/>
+    <path d="M679 530 A11 11 0 0 1 701 530" fill="none" stroke="#aab1b7" stroke-opacity="0.45" stroke-width="2.5"/>
+  </g>
+
+  <!-- ============ FOUR STAINLESS CAP SCREWS, LAID IN A ROW ============ -->
+  <g>
+    <path d="M288 782 L374 782 Q382 790 374 798 L288 798 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <g stroke="#7b8288" stroke-width="3" opacity="0.75" fill="none">
+      <path d="M296 798 L302 782"/><path d="M312 798 L318 782"/><path d="M328 798 L334 782"/>
+      <path d="M344 798 L350 782"/><path d="M360 798 L366 782"/>
+    </g>
+    <path d="M262 773 L288 773 L288 807 L262 807 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <path d="M262 773 Q254 790 262 807 L262 773 Z" fill="url(#steelFace)" stroke="#4a5054" stroke-width="2"/>
+    <ellipse cx="261" cy="790" rx="5" ry="13" fill="#3a4045" stroke="#2b3135" stroke-width="1.5"/>
+    <path d="M264 777 L288 777" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5"/>
+  </g>
+  <g>
+    <path d="M412 782 L498 782 Q506 790 498 798 L412 798 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <g stroke="#7b8288" stroke-width="3" opacity="0.75" fill="none">
+      <path d="M420 798 L426 782"/><path d="M436 798 L442 782"/><path d="M452 798 L458 782"/>
+      <path d="M468 798 L474 782"/><path d="M484 798 L490 782"/>
+    </g>
+    <path d="M386 773 L412 773 L412 807 L386 807 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <path d="M386 773 Q378 790 386 807 L386 773 Z" fill="url(#steelFace)" stroke="#4a5054" stroke-width="2"/>
+    <ellipse cx="385" cy="790" rx="5" ry="13" fill="#3a4045" stroke="#2b3135" stroke-width="1.5"/>
+    <path d="M388 777 L412 777" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5"/>
+  </g>
+  <g>
+    <path d="M536 782 L622 782 Q630 790 622 798 L536 798 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <g stroke="#7b8288" stroke-width="3" opacity="0.75" fill="none">
+      <path d="M544 798 L550 782"/><path d="M560 798 L566 782"/><path d="M576 798 L582 782"/>
+      <path d="M592 798 L598 782"/><path d="M608 798 L614 782"/>
+    </g>
+    <path d="M510 773 L536 773 L536 807 L510 807 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <path d="M510 773 Q502 790 510 807 L510 773 Z" fill="url(#steelFace)" stroke="#4a5054" stroke-width="2"/>
+    <ellipse cx="509" cy="790" rx="5" ry="13" fill="#3a4045" stroke="#2b3135" stroke-width="1.5"/>
+    <path d="M512 777 L536 777" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5"/>
+  </g>
+  <g>
+    <path d="M660 782 L746 782 Q754 790 746 798 L660 798 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <g stroke="#7b8288" stroke-width="3" opacity="0.75" fill="none">
+      <path d="M668 798 L674 782"/><path d="M684 798 L690 782"/><path d="M700 798 L706 782"/>
+      <path d="M716 798 L722 782"/><path d="M732 798 L738 782"/>
+    </g>
+    <path d="M634 773 L660 773 L660 807 L634 807 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2"/>
+    <path d="M634 773 Q626 790 634 807 L634 773 Z" fill="url(#steelFace)" stroke="#4a5054" stroke-width="2"/>
+    <ellipse cx="633" cy="790" rx="5" ry="13" fill="#3a4045" stroke="#2b3135" stroke-width="1.5"/>
+    <path d="M636 777 L660 777" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5"/>
+  </g>
+</svg>

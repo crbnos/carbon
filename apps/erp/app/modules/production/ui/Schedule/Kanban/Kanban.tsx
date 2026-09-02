@@ -524,7 +524,7 @@ const Kanban = ({
           },
           {
             method: "post",
-            action: path.to.scheduleOperationUpdate,
+            action: path.to.priorityOperationUpdate,
             navigate: false,
             flushSync: true,
             fetcherKey: `item:${origin.item.id}`
@@ -570,7 +570,7 @@ function usePendingItems() {
   };
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.scheduleOperationUpdate;
+      return fetcher.formAction === path.to.priorityOperationUpdate;
     })
     .map((fetcher) => {
       let columnId = String(fetcher.formData.get("columnId"));

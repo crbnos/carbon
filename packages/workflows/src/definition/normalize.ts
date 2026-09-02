@@ -90,6 +90,26 @@ function migrateDefinition(raw: RawDefinition, from: number): RawDefinition {
       })
     };
   }
+  // v3 → v4: the `entity` node became `compute`. It never wrote a record — it runs
+  // one catalog operation and returns the value. Only the discriminant moves; the
+  // node's `name` is left as stored (`entity_0` and friends stay), which is why this
+  // block sits after the v2 → v3 backfill that derives names from the type.
+  if (from < 4 && Array.isArray(current.nodes)) {
+    current = {
+      ...current,
+      formatVersion: 4,
+      nodes: current.nodes.map((node) => {
+        if (
+          typeof node !== "object" ||
+          node === null ||
+          (node as { type?: unknown }).type !== "entity"
+        ) {
+          return node;
+        }
+        return { ...(node as Record<string, unknown>), type: "compute" };
+      })
+    };
+  }
   return current;
 }
 

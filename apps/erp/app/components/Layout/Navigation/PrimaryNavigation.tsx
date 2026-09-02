@@ -57,6 +57,22 @@ const PrimaryNavigation = () => {
 
   const editMode = useNavigationEditMode();
 
+  // The rail expands on hover. The search modal (a Radix dialog) toggles
+  // document.body pointer-events, and restoring them on close fires a phantom
+  // `mouseenter` on the rail with no paired `mouseleave` — leaving it stuck
+  // expanded. Ignore hover while the modal is open, and collapse on the next
+  // frame after it closes (after any phantom event has fired).
+  const isSearchModalOpen = useUIStore((s) => s.isSearchModalOpen);
+  const closePanel = navigationPanel.onClose;
+  useEffect(() => {
+    if (isSearchModalOpen) {
+      closePanel();
+      return;
+    }
+    const raf = requestAnimationFrame(() => closePanel());
+    return () => cancelAnimationFrame(raf);
+  }, [isSearchModalOpen, closePanel]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor)
@@ -74,7 +90,7 @@ const PrimaryNavigation = () => {
   const isOpen = navigationPanel.isOpen || editMode.isEditing;
 
   return (
-    <div className="w-14 h-full flex-col z-50 hidden sm:flex">
+    <div className="w-14 h-full flex-col z-50 hidden md:flex">
       <nav
         data-state={isOpen ? "expanded" : "collapsed"}
         className={cn(
@@ -83,7 +99,11 @@ const PrimaryNavigation = () => {
           "transition-width duration-200",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
-        onMouseEnter={editMode.isEditing ? undefined : navigationPanel.onOpen}
+        onMouseEnter={
+          editMode.isEditing || isSearchModalOpen
+            ? undefined
+            : navigationPanel.onOpen
+        }
         onMouseLeave={editMode.isEditing ? undefined : navigationPanel.onClose}
       >
         <VStack

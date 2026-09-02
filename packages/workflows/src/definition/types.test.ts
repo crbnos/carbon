@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canAssign,
   expectedClauseRightType,
+  rendersAsText,
   t,
   valueOrRefSchema,
   WORKFLOW_OPERATORS
@@ -83,5 +84,32 @@ describe("pairs", () => {
         entries: [{ name: "X-A", value: { kind: "pairs", entries: [] } }]
       }).success
     ).toBe(false);
+  });
+});
+
+describe("rendersAsText", () => {
+  it("accepts every primitive", () => {
+    for (const type of [t.string, t.number, t.boolean, t.date]) {
+      expect(rendersAsText(type)).toBe(true);
+    }
+  });
+
+  // A record prints as its readable id, which is what "…for SO000123" means, and is
+  // what a notification body turns into a link.
+  it("accepts a record", () => {
+    expect(rendersAsText(t.entity("salesOrder"))).toBe(true);
+  });
+
+  it("accepts a list of primitives", () => {
+    expect(rendersAsText(t.list({ kind: "primitive", of: "string" }))).toBe(
+      true
+    );
+  });
+
+  // A run of ids in a sentence has no good reading.
+  it("refuses a list of records", () => {
+    expect(rendersAsText(t.list({ kind: "entity", of: "salesOrder" }))).toBe(
+      false
+    );
   });
 });

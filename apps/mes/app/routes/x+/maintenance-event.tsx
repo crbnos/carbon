@@ -10,6 +10,7 @@ import {
   startMaintenanceEvent,
   updateMaintenanceDispatchStatus
 } from "~/services/maintenance.service";
+import { notifyScheduleInputsChanged } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -28,6 +29,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
   const currentTime = datetime.timestamp();
+
+  // A dispatch that takes its work center offline moves the schedule's downtime
+  // window when it starts (down begins) or completes (down ends) — stamp the
+  // work center so the wave regenerates its location.
+  const stampScheduleIfOffline = async () => {
+    const { data: dispatch } = await serviceRole
+      .from("maintenanceDispatch")
+      .select("takesWorkCenterOffline, workCenterId")
+      .eq("id", dispatchId)
+      .single();
+    if (dispatch?.takesWorkCenterOffline && dispatch.workCenterId) {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "work-center",
+        "Machine downtime changed",
+        dispatch.workCenterId
+      );
+    }
+  };
 
   if (action === "Start") {
     // Start a new maintenance event
@@ -57,6 +77,8 @@ export async function action({ request }: ActionFunctionArgs) {
       actualStartTime: currentTime,
       updatedBy: userId
     });
+
+    await stampScheduleIfOffline();
 
     return data(
       { eventId: startEvent.data?.id },
@@ -119,6 +141,8 @@ export async function action({ request }: ActionFunctionArgs) {
         )
       );
     }
+
+    await stampScheduleIfOffline();
 
     throw redirect(
       path.to.maintenance,

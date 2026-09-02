@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -213,7 +214,7 @@ export async function action(args: ActionFunctionArgs) {
         if (pdf.headers.get("content-type") === "application/pdf") {
           const file = await pdf.arrayBuffer();
           fileName = stripSpecialCharacters(
-            `${purchaseOrder.data.purchaseOrderId} - ${new Date()
+            `${getPurchaseOrderDisplayId(purchaseOrder.data)} - ${new Date()
               .toISOString()
               .slice(0, -5)}.pdf`
           );
@@ -325,7 +326,7 @@ export async function action(args: ActionFunctionArgs) {
               to: [buyer.data.email, supplierEmail],
               cc: ccSelections?.length ? ccSelections : undefined,
               from: buyer.data.email,
-              subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+              subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
               html,
               text,
               attachments: signedUrlData?.signedUrl
@@ -550,15 +551,15 @@ export default function PurchaseOrderRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
         <PurchaseOrderHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<PurchaseOrderExplorer />}
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <VStack spacing={2} className="p-2">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>
                 </div>

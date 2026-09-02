@@ -22,6 +22,7 @@ export const WORKFLOW_FIELD_HELP: Record<string, TermId> = {
   "action.nonConformance.update.input.nonConformanceTypeId": "issue-issue-type",
   "action.notify.input.aboutId": "workflow-notify-about-record",
   "action.notify.input.aboutType": "workflow-notify-about-record",
+  "action.notify.input.channels": "workflow-notify-channels",
   "action.purchaseOrder.create.input.supplierReference":
     "purchase-order-supplier-order-number",
   "action.purchaseOrder.update.input.assignee": "assignee",

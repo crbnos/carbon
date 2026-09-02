@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Heading,
@@ -12,6 +11,7 @@ import {
   Tbody,
   Td,
   Tr,
+  TruncatedTooltipText,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -82,6 +82,12 @@ const LineItems = ({
           : isFixedAsset
             ? line.assetReadableId || "Fixed Asset"
             : getItemReadableId(items, line.itemId);
+        const lineDescription = isGlAccount
+          ? (accounts.find((a) => a.id === line.accountId)?.name ??
+            "Indirect Expense")
+          : isFixedAsset
+            ? line.description || "Fixed Asset"
+            : line.description;
         const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
         const supplierLineTotal =
           (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0);
@@ -104,29 +110,28 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={itemReadableId ?? ""}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0} className="w-full">
+              <VStack spacing={0} className="flex-1 min-w-0">
                 <div
                   className="flex flex-col cursor-pointer w-full"
                   onClick={() => toggleOpen(line.id!)}
                 >
+                  {/* The text column must shrink (flex-1 min-w-0) or a long
+                      description shoves the totals out of the card, and its
+                      children need w-full because VStack is items-start, which
+                      sizes each child to its own content and leaves truncate
+                      inert no matter how narrow the column gets. */}
                   <div className="flex items-center justify-between w-full">
-                    <VStack
-                      spacing={0}
-                      className="flex-shrink-0 min-w-0 w-auto"
-                    >
-                      <HStack
-                        spacing={2}
-                        className="flex min-w-0 flex-shrink-0"
-                      >
+                    <VStack spacing={0} className="flex-1 min-w-0">
+                      <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">{itemReadableId}</Heading>
                         <Button
                           asChild
@@ -144,14 +149,12 @@ const LineItems = ({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-sm truncate">
-                        {isGlAccount
-                          ? (accounts.find((a) => a.id === line.accountId)
-                              ?.name ?? "Indirect Expense")
-                          : isFixedAsset
-                            ? line.description || "Fixed Asset"
-                            : line.description}
-                      </span>
+                      <TruncatedTooltipText
+                        className="text-muted-foreground text-sm truncate w-full"
+                        tooltip={lineDescription}
+                      >
+                        {lineDescription}
+                      </TruncatedTooltipText>
                     </VStack>
                     <VStack
                       spacing={2}
@@ -429,9 +432,6 @@ const PurchaseInvoiceSummary = ({
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
             <CardTitle>{routeData?.purchaseInvoice.invoiceId}</CardTitle>
-            <CardDescription>
-              <Trans>Purchase Invoice</Trans>
-            </CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
             <SupplierAvatar

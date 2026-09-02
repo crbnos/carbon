@@ -9,6 +9,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Modal,
   ModalBody,
   ModalContent,
@@ -27,7 +30,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuArrowRight, LuLink, LuSparkles } from "react-icons/lu";
+import { LuArrowRight, LuLink, LuSearch, LuSparkles } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import { accountMappingUpsertValidator } from "~/modules/settings/settings.models";
@@ -73,6 +76,15 @@ export type AccountMatchProposalRow = {
   externalName: string | null;
 };
 
+/** A leaf account in the full chart-of-accounts "All accounts" view. */
+export type AllAccountRow = {
+  id: string;
+  number: string | null;
+  name: string;
+  class: string | null;
+  accountType: string | null;
+};
+
 type AccountMappingProps = {
   /** Shared tab bar, rendered at the top of this tab's body card. */
   tabs?: ReactNode;
@@ -80,19 +92,78 @@ type AccountMappingProps = {
   unmapped: UnmappedAccountRow[];
   chart: AccountMappingChartAccount[];
   proposals: AccountMatchProposalRow[];
+  /** accountDefault account ids — the "required" mapping baseline. */
+  requiredAccountIds: string[];
+  /** Every postable leaf account, for the searchable "All accounts" view. */
+  allAccounts: AllAccountRow[];
+  /** Accounts named by parked UNMAPPED_ACCOUNTS journals (blocking a sync). */
+  blocking: UnmappedAccountRow[];
+  /** Account ids to scroll to and briefly highlight (Sync Activity deep-link). */
+  focusAccountIds?: string[];
 };
+
+const ACCOUNT_CLASS_ORDER = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Revenue",
+  "Expense"
+];
+const OTHER_CLASS = "Other";
+
+/**
+ * Small status pill for an account row — a Vercel-style dot + label. Neutral
+ * (monochrome) marks a required posting-default account; warning (amber) marks
+ * an account currently blocking a sync.
+ */
+function AccountRowBadge({
+  tone,
+  children
+}: {
+  tone: "neutral" | "warning";
+  children: ReactNode;
+}) {
+  const warning = tone === "warning";
+  return (
+    <span
+      className={
+        warning
+          ? "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/5 py-0.5 pr-2 pl-1.5 text-[0.6875rem] font-medium text-amber-700 dark:text-amber-400"
+          : "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border py-0.5 pr-2 pl-1.5 text-[0.6875rem] font-medium text-muted-foreground"
+      }
+    >
+      <span
+        aria-hidden
+        className={
+          warning
+            ? "size-1.5 rounded-full bg-amber-500"
+            : "size-1.5 rounded-full bg-muted-foreground/40"
+        }
+      />
+      {children}
+    </span>
+  );
+}
 
 export function AccountMapping({
   tabs,
   mappings,
   unmapped,
   chart,
-  proposals
+  proposals,
+  requiredAccountIds,
+  allAccounts,
+  blocking,
+  focusAccountIds
 }: AccountMappingProps) {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLDivElement>());
 
   const chartById = useMemo(
     () => new Map(chart.map((account) => [account.id, account])),
@@ -107,6 +178,117 @@ export function AccountMapping({
     [chart]
   );
 
+  const requiredSet = useMemo(
+    () => new Set(requiredAccountIds),
+    [requiredAccountIds]
+  );
+  const blockingSet = useMemo(
+    () => new Set(blocking.map((account) => account.id)),
+    [blocking]
+  );
+  const mappedById = useMemo(
+    () => new Map(mappings.map((mapping) => [mapping.accountId, mapping])),
+    [mappings]
+  );
+
+  // One list: every account in the chart, plus any account blocking a sync
+  // that isn't an active leaf (so a block is never hidden).
+  const displayAccounts = useMemo(() => {
+    const byId = new Map<string, AllAccountRow>();
+    for (const account of allAccounts) byId.set(account.id, account);
+    for (const account of blocking) {
+      if (byId.has(account.id)) continue;
+      byId.set(account.id, {
+        id: account.id,
+        number: account.number,
+        name: account.name,
+        class: null,
+        accountType: null
+      });
+    }
+    return [...byId.values()];
+  }, [allAccounts, blocking]);
+
+  const grouped = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const filtered = term
+      ? displayAccounts.filter(
+          (account) =>
+            (account.number ?? "").toLowerCase().includes(term) ||
+            account.name.toLowerCase().includes(term)
+        )
+      : displayAccounts;
+    const groups = new Map<string, AllAccountRow[]>();
+    for (const account of filtered) {
+      const key =
+        account.class && ACCOUNT_CLASS_ORDER.includes(account.class)
+          ? account.class
+          : OTHER_CLASS;
+      const bucket = groups.get(key);
+      if (bucket) bucket.push(account);
+      else groups.set(key, [account]);
+    }
+    return [...ACCOUNT_CLASS_ORDER, OTHER_CLASS]
+      .filter((key) => groups.has(key))
+      .map((key) => ({ class: key, accounts: groups.get(key) ?? [] }));
+  }, [displayAccounts, search]);
+
+  // Unmapped required accounts (posting defaults + expense) — the AI-suggest
+  // input and the gate for the Suggest button.
+  const unmappedRequired = useMemo(() => {
+    const infoById = new Map<string, { number: string | null; name: string }>();
+    for (const account of displayAccounts) {
+      infoById.set(account.id, { number: account.number, name: account.name });
+    }
+    for (const account of unmapped) {
+      if (!infoById.has(account.id)) {
+        infoById.set(account.id, {
+          number: account.number,
+          name: account.name
+        });
+      }
+    }
+    const rows: UnmappedAccountRow[] = [];
+    for (const id of requiredAccountIds) {
+      if (mappedById.has(id)) continue;
+      const info = infoById.get(id);
+      if (info) rows.push({ id, number: info.number, name: info.name });
+    }
+    return rows;
+  }, [displayAccounts, unmapped, requiredAccountIds, mappedById]);
+
+  const setRowRef = (id: string) => (el: HTMLDivElement | null) => {
+    if (el) rowRefs.current.set(id, el);
+    else rowRefs.current.delete(id);
+  };
+
+  // Sync Activity deep-links here with ?focusAccount=<id>: scroll to the row
+  // and highlight it briefly. The whole list is always shown, so no expansion.
+  const focusKey = (focusAccountIds ?? []).join(",");
+  useEffect(() => {
+    if (!focusKey) return;
+    setHighlightedId(focusKey.split(",")[0] ?? null);
+    const timer = setTimeout(() => setHighlightedId(null), 2500);
+    return () => clearTimeout(timer);
+  }, [focusKey]);
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const el = rowRefs.current.get(highlightedId);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlightedId]);
+
+  const rowBadge = (id: string) =>
+    blockingSet.has(id) ? (
+      <AccountRowBadge tone="warning">
+        <Trans>Blocking sync</Trans>
+      </AccountRowBadge>
+    ) : requiredSet.has(id) ? (
+      <AccountRowBadge tone="neutral">
+        <Trans>Required</Trans>
+      </AccountRowBadge>
+    ) : undefined;
+
   return (
     <>
       <DrawerBody className="gap-6">
@@ -114,13 +296,14 @@ export function AccountMapping({
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
             <Trans>
-              Map Carbon accounts to the provider's chart of accounts. Posted
-              journals push using the mapped provider account code.
+              Map your chart of accounts to the provider's. Posting-default and
+              expense accounts are marked Required; posted journals push using
+              the mapped provider account code.
             </Trans>
           </p>
           {chart.length > 0 && (
             <HStack spacing={2}>
-              {unmapped.length > 0 && (
+              {unmappedRequired.length > 0 && (
                 <Button
                   size="sm"
                   variant="secondary"
@@ -143,58 +326,56 @@ export function AccountMapping({
           )}
         </div>
 
-        <MappingSection
-          title={<Trans>Unmapped accounts</Trans>}
-          description={
-            <Trans>
-              Accounts referenced by posting defaults or journal history that
-              have no provider mapping yet.
-            </Trans>
-          }
-          count={unmapped.length}
-          emptyMessage={<Trans>All posting accounts are mapped</Trans>}
-        >
-          {unmapped.map((account) => (
-            <AccountMappingRowForm
-              key={account.id}
-              accountId={account.id}
-              accountNumber={account.number}
-              accountName={account.name}
-              currentExternalId={null}
-              currentExternalCode={null}
-              currentExternalName={null}
-              chartById={chartById}
-              chartOptions={chartOptions}
-              canUpdate={canUpdate}
+        <div className="w-full max-w-[280px]">
+          <InputGroup size="sm">
+            <InputLeftElement>
+              <LuSearch className="size-4 text-muted-foreground" />
+            </InputLeftElement>
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t`Search accounts`}
             />
-          ))}
-        </MappingSection>
+          </InputGroup>
+        </div>
 
-        <MappingSection
-          title={<Trans>Mapped accounts</Trans>}
-          description={
-            <Trans>
-              Existing mappings. Pick a different provider account to re-map.
-            </Trans>
-          }
-          count={mappings.length}
-          emptyMessage={<Trans>No accounts mapped yet</Trans>}
-        >
-          {mappings.map((mapping) => (
-            <AccountMappingRowForm
-              key={mapping.id}
-              accountId={mapping.accountId}
-              accountNumber={mapping.accountNumber}
-              accountName={mapping.accountName}
-              currentExternalId={mapping.externalId}
-              currentExternalCode={mapping.externalCode}
-              currentExternalName={mapping.externalName}
-              chartById={chartById}
-              chartOptions={chartOptions}
-              canUpdate={canUpdate}
-            />
-          ))}
-        </MappingSection>
+        {grouped.length === 0 ? (
+          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground">
+            <Trans>No accounts match your search</Trans>
+          </div>
+        ) : (
+          grouped.map((group) => (
+            <div key={group.class} className="flex w-full flex-col gap-1">
+              <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.class}
+              </span>
+              <div className="w-full rounded-lg border border-border">
+                <div className="flex w-full flex-col divide-y divide-border">
+                  {group.accounts.map((account) => {
+                    const mapping = mappedById.get(account.id);
+                    return (
+                      <AccountMappingRowForm
+                        key={account.id}
+                        accountId={account.id}
+                        accountNumber={account.number}
+                        accountName={account.name}
+                        currentExternalId={mapping?.externalId ?? null}
+                        currentExternalCode={mapping?.externalCode ?? null}
+                        currentExternalName={mapping?.externalName ?? null}
+                        chartById={chartById}
+                        chartOptions={chartOptions}
+                        canUpdate={canUpdate}
+                        badge={rowBadge(account.id)}
+                        rowRef={setRowRef(account.id)}
+                        highlighted={highlightedId === account.id}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </DrawerBody>
 
       {showMatchDrawer && (
@@ -207,54 +388,13 @@ export function AccountMapping({
 
       {showAiModal && (
         <AiSuggestModal
-          unmapped={unmapped}
+          unmapped={unmappedRequired}
           chart={chart}
           canUpdate={canUpdate}
           onClose={() => setShowAiModal(false)}
         />
       )}
     </>
-  );
-}
-
-function MappingSection({
-  title,
-  description,
-  count,
-  emptyMessage,
-  children
-}: {
-  title: ReactNode;
-  description: ReactNode;
-  count: number;
-  emptyMessage: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section className="flex w-full flex-col gap-2">
-      <div className="flex flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-            {title}
-          </span>
-          <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
-            {count}
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <div className="w-full rounded-lg border border-border">
-        {count === 0 ? (
-          <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
-            {emptyMessage}
-          </div>
-        ) : (
-          <div className="flex w-full flex-col divide-y divide-border">
-            {children}
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
 
@@ -273,7 +413,10 @@ function AccountMappingRowForm({
   currentExternalName,
   chartById,
   chartOptions,
-  canUpdate
+  canUpdate,
+  badge,
+  rowRef,
+  highlighted
 }: {
   accountId: string;
   accountNumber: string | null;
@@ -284,16 +427,26 @@ function AccountMappingRowForm({
   chartById: Map<string, AccountMappingChartAccount>;
   chartOptions: { value: string; label: string }[];
   canUpdate: boolean;
+  badge?: ReactNode;
+  rowRef?: (el: HTMLDivElement | null) => void;
+  highlighted?: boolean;
 }) {
   const { t } = useLingui();
+  // `selected` holds the user's explicit pick this session; `touched` marks
+  // whether they have edited this row. The row stays mounted (key=account.id)
+  // across parent revalidations, so until the user edits we must derive the
+  // hidden provider metadata from the CURRENT mapping props (not a value frozen
+  // at mount) — otherwise a save after the mapping changed elsewhere (match-by-
+  // code, AI suggest, revalidation) would overwrite the stored code/name with
+  // stale or empty values. Once touched, the user's selection wins, and an
+  // explicit clear submits empty to unmap.
   const [selected, setSelected] = useState<{
     code: string | null;
     name: string | null;
-  } | null>(
-    currentExternalId
-      ? { code: currentExternalCode, name: currentExternalName }
-      : null
-  );
+  } | null>(null);
+  const [touched, setTouched] = useState(false);
+  const externalCode = touched ? selected?.code : currentExternalCode;
+  const externalName = touched ? selected?.name : currentExternalName;
 
   // A mapped provider account can be missing from the chart (archived or
   // the chart failed to load): keep it selectable/visible via a fallback
@@ -318,62 +471,75 @@ function AccountMappingRowForm({
   ]);
 
   return (
-    <ValidatedForm
-      validator={accountMappingUpsertValidator}
-      method="post"
-      defaultValues={{
-        intent: "upsert-account-mapping",
-        accountId,
-        externalId: currentExternalId ?? undefined
-      }}
-      className="flex w-full items-center gap-3 p-3"
+    <div
+      ref={rowRef}
+      className={
+        highlighted
+          ? "w-full rounded-md ring-2 ring-inset ring-primary"
+          : "w-full"
+      }
     >
-      <input type="hidden" name="intent" value="upsert-account-mapping" />
-      <input type="hidden" name="accountId" value={accountId} />
-      <input type="hidden" name="externalCode" value={selected?.code ?? ""} />
-      <input type="hidden" name="externalName" value={selected?.name ?? ""} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-medium">
-          {accountName ?? accountId}
-        </span>
-        {accountNumber && (
-          <span className="font-mono text-xs text-muted-foreground">
-            {accountNumber}
-          </span>
-        )}
-      </div>
-      <LuArrowRight className="size-4 shrink-0 text-muted-foreground" />
-      <div className="w-[260px] shrink-0">
-        <Combobox
-          name="externalId"
-          options={options}
-          placeholder={t`Select provider account`}
-          onChange={(option) => {
-            if (!option) {
-              setSelected(null);
-              return;
-            }
-            const chartAccount = chartById.get(option.value);
-            if (chartAccount) {
-              setSelected({
-                code: chartAccount.code,
-                name: chartAccount.name
-              });
-            } else if (option.value === currentExternalId) {
-              setSelected({
-                code: currentExternalCode,
-                name: currentExternalName
-              });
-            } else {
-              setSelected(null);
-            }
-          }}
-        />
-      </div>
-      <Submit size="sm" variant="secondary" isDisabled={!canUpdate}>
-        <Trans>Save</Trans>
-      </Submit>
-    </ValidatedForm>
+      <ValidatedForm
+        validator={accountMappingUpsertValidator}
+        method="post"
+        defaultValues={{
+          intent: "upsert-account-mapping",
+          accountId,
+          externalId: currentExternalId ?? undefined
+        }}
+        className="flex w-full items-center gap-3 p-3"
+      >
+        <input type="hidden" name="intent" value="upsert-account-mapping" />
+        <input type="hidden" name="accountId" value={accountId} />
+        <input type="hidden" name="externalCode" value={externalCode ?? ""} />
+        <input type="hidden" name="externalName" value={externalName ?? ""} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-medium">
+              {accountName ?? accountId}
+            </span>
+            {badge}
+          </div>
+          {accountNumber && (
+            <span className="font-mono text-xs text-muted-foreground">
+              {accountNumber}
+            </span>
+          )}
+        </div>
+        <LuArrowRight className="size-4 shrink-0 text-muted-foreground" />
+        <div className="w-[260px] shrink-0">
+          <Combobox
+            name="externalId"
+            options={options}
+            placeholder={t`Select provider account`}
+            onChange={(option) => {
+              setTouched(true);
+              if (!option) {
+                setSelected(null);
+                return;
+              }
+              const chartAccount = chartById.get(option.value);
+              if (chartAccount) {
+                setSelected({
+                  code: chartAccount.code,
+                  name: chartAccount.name
+                });
+              } else if (option.value === currentExternalId) {
+                setSelected({
+                  code: currentExternalCode,
+                  name: currentExternalName
+                });
+              } else {
+                setSelected(null);
+              }
+            }}
+          />
+        </div>
+        <Submit size="sm" variant="secondary" isDisabled={!canUpdate}>
+          <Trans>Save</Trans>
+        </Submit>
+      </ValidatedForm>
+    </div>
   );
 }
 

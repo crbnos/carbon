@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="zincBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="zincFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.42" stop-color="#c3c9cd"/>
+      <stop offset="0.75" stop-color="#9aa1a7"/>
+      <stop offset="1" stop-color="#6e747a"/>
+    </linearGradient>
+    <linearGradient id="zincRim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5d6368"/>
+      <stop offset="0.2" stop-color="#d3d9dd"/>
+      <stop offset="0.45" stop-color="#f4f7f8"/>
+      <stop offset="0.72" stop-color="#a4abb1"/>
+      <stop offset="1" stop-color="#565c61"/>
+    </linearGradient>
+    <linearGradient id="varnish" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#d99b33"/>
+      <stop offset="0.28" stop-color="#a86e18"/>
+      <stop offset="0.62" stop-color="#7a4c0e"/>
+      <stop offset="1" stop-color="#4a2a06"/>
+    </linearGradient>
+    <linearGradient id="varnishRun" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b3d0a"/>
+      <stop offset="0.35" stop-color="#c98a26"/>
+      <stop offset="0.6" stop-color="#e0ad55"/>
+      <stop offset="1" stop-color="#5a3207"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="canBody">
+      <path d="M244 352 L290 768 Q512 936 734 768 L780 352 Z"/>
+    </clipPath>
+    <clipPath id="varnishClip">
+      <ellipse cx="512" cy="384" rx="234" ry="89"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="518" cy="846" rx="292" ry="62" fill="url(#shadow)"/>
+
+  <!-- pail body: tapered, bright zinc -->
+  <path d="M244 352 L290 768 Q512 936 734 768 L780 352 Z" fill="url(#zincBarrel)"/>
+  <g clip-path="url(#canBody)">
+    <!-- fine concentric pressed ribs -->
+    <g fill="none">
+      <path d="M258 480 Q512 673 766 480" stroke="#5a6065" stroke-width="5" stroke-opacity="0.55"/>
+      <path d="M258 490 Q512 683 766 490" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.45"/>
+      <path d="M268 570 Q512 755 756 570" stroke="#5a6065" stroke-width="5" stroke-opacity="0.55"/>
+      <path d="M268 580 Q512 765 756 580" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.45"/>
+      <path d="M278 660 Q512 838 746 660" stroke="#5a6065" stroke-width="5" stroke-opacity="0.55"/>
+      <path d="M278 670 Q512 848 746 670" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.45"/>
+    </g>
+    <!-- spun zinc streaking -->
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="4" fill="none">
+      <path d="M330 356 L364 792"/>
+      <path d="M398 356 L420 812"/>
+      <path d="M596 356 L586 806"/>
+    </g>
+    <g stroke="#4d5257" stroke-opacity="0.24" stroke-width="4" fill="none">
+      <path d="M300 356 L340 780"/>
+      <path d="M672 356 L652 782"/>
+      <path d="M724 356 L692 760"/>
+    </g>
+    <!-- rolled bottom seam -->
+    <path d="M284 722 Q512 890 740 722" fill="none" stroke="#4d5257" stroke-width="6" stroke-opacity="0.6"/>
+    <path d="M284 734 Q512 902 740 734" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.35"/>
+  </g>
+  <path d="M244 352 L290 768 Q512 936 734 768 L780 352 Z" fill="none" stroke="#494e53" stroke-width="3"/>
+
+  <!-- rolled rim and open mouth -->
+  <ellipse cx="512" cy="352" rx="268" ry="102" fill="url(#zincRim)" stroke="#494e53" stroke-width="3"/>
+  <ellipse cx="512" cy="349" rx="258" ry="98" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="4"/>
+  <ellipse cx="512" cy="356" rx="246" ry="94" fill="#1b1e20" stroke="#3d4245" stroke-width="2.5"/>
+  <path d="M266 356 Q512 544 758 356" fill="none" stroke="#7d848a" stroke-width="5" stroke-opacity="0.5"/>
+
+  <!-- deep amber varnish, glossy and viscous -->
+  <ellipse cx="512" cy="384" rx="234" ry="89" fill="url(#varnish)"/>
+  <g clip-path="url(#varnishClip)">
+    <ellipse cx="418" cy="356" rx="118" ry="34" fill="#f0c26a" opacity="0.45"/>
+    <ellipse cx="398" cy="350" rx="70" ry="18" fill="#ffe3a8" opacity="0.5"/>
+    <ellipse cx="628" cy="422" rx="130" ry="38" fill="#3a2005" opacity="0.5"/>
+    <path d="M290 396 Q512 470 734 396" fill="none" stroke="#e8b95e" stroke-width="4" stroke-opacity="0.3"/>
+  </g>
+  <ellipse cx="512" cy="384" rx="234" ry="89" fill="none" stroke="#4a2a06" stroke-width="2.5"/>
+
+  <!-- press-on lid, resting askew so a wedge of contents shows -->
+  <g transform="rotate(-8 566 372)">
+    <path d="M332 372 L332 394 Q566 572 800 394 L800 372 Q566 550 332 372 Z" fill="url(#zincRim)" stroke="#494e53" stroke-width="3"/>
+    <ellipse cx="566" cy="372" rx="234" ry="89" fill="url(#zincFace)" stroke="#494e53" stroke-width="3"/>
+    <ellipse cx="566" cy="372" rx="216" ry="82" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="4"/>
+    <ellipse cx="566" cy="372" rx="176" ry="67" fill="none" stroke="#5a6065" stroke-opacity="0.55" stroke-width="5"/>
+    <ellipse cx="566" cy="372" rx="166" ry="63" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+    <ellipse cx="566" cy="372" rx="96" ry="36" fill="none" stroke="#5a6065" stroke-opacity="0.45" stroke-width="4"/>
+    <ellipse cx="566" cy="372" rx="88" ry="33" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="3"/>
+    <path d="M348 396 Q566 566 786 396" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="4"/>
+  </g>
+
+  <!-- one slow run down the outside, pooling at the foot -->
+  <path d="M690 424 C700 522 676 612 686 702 C692 768 672 802 668 830"
+        fill="none" stroke="#5a3207" stroke-width="22" stroke-linecap="round"/>
+  <path d="M690 424 C700 522 676 612 686 702 C692 768 672 802 668 830"
+        fill="none" stroke="url(#varnishRun)" stroke-width="16" stroke-linecap="round"/>
+  <path d="M688 452 C696 530 676 610 684 690" fill="none" stroke="#f0c26a" stroke-width="3.5" stroke-opacity="0.6"/>
+  <ellipse cx="662" cy="842" rx="88" ry="25" fill="#5a3207"/>
+  <ellipse cx="662" cy="840" rx="80" ry="21" fill="url(#varnishRun)"/>
+  <ellipse cx="640" cy="834" rx="34" ry="8" fill="#f0c26a" opacity="0.45"/>
+
+  <!-- pressed lugs and wire bail -->
+  <path d="M240 414 L268 404 L272 452 L246 458 Z" fill="url(#zincFace)" stroke="#494e53" stroke-width="2.5"/>
+  <path d="M784 414 L756 404 L752 452 L778 458 Z" fill="url(#zincFace)" stroke="#494e53" stroke-width="2.5"/>
+  <ellipse cx="256" cy="430" rx="9" ry="9" fill="#2b2f32"/>
+  <ellipse cx="768" cy="430" rx="9" ry="9" fill="#2b2f32"/>
+  <path d="M256 430 C300 166 724 166 768 430" fill="none" stroke="#4a4f54" stroke-width="17" stroke-linecap="round"/>
+  <path d="M256 430 C300 166 724 166 768 430" fill="none" stroke="#a9b0b6" stroke-width="11" stroke-linecap="round"/>
+  <path d="M262 420 C304 178 720 178 762 420" fill="none" stroke="#eef1f3" stroke-width="4" stroke-opacity="0.75"/>
+  <path d="M320 262 C400 214 624 214 704 262" fill="none" stroke="#5d6368" stroke-width="3" stroke-opacity="0.5"/>
+</svg>

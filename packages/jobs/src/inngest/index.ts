@@ -43,6 +43,7 @@ import {
   slackDocumentCreatedFunction,
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
+  stripeConnectPullSweepFunction,
   syncExternalAccountingFunction,
   timeCardAutoCloseFunction
 } from "./functions/integrations";
@@ -57,9 +58,12 @@ import {
   cleanupFunction,
   dispatchFunction,
   generateMaintenanceForScheduleFunction,
+  markScheduleStaleFunction,
   mrpFunction,
+  nightlyReplanFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
+  scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
   workflowRunRetentionFunction
@@ -72,6 +76,9 @@ import {
   companyRestoreFinalizeFunction,
   companyRestoreFunction,
   companyRestoreRevertFunction,
+  companyTemplateFinalizeFunction,
+  companyTemplateFunction,
+  companyTemplateRevertFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -80,7 +87,6 @@ import {
   printJobDeliverFunction,
   printJobFunction,
   recalculateFunction,
-  rescheduleJobFunction,
   updatePermissionsFunction,
   userAdminFunction
 } from "./functions/tasks";
@@ -118,6 +124,9 @@ export const functions = [
   companyRestoreFunction,
   companyRestoreFinalizeFunction,
   companyRestoreRevertFunction,
+  companyTemplateFinalizeFunction,
+  companyTemplateFunction,
+  companyTemplateRevertFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -125,7 +134,6 @@ export const functions = [
   recalculateFunction,
   userAdminFunction,
   postTransactionFunction,
-  rescheduleJobFunction,
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
@@ -135,6 +143,9 @@ export const functions = [
   generateMaintenanceForScheduleFunction,
   auditArchiveFunction,
   mrpFunction,
+  markScheduleStaleFunction,
+  nightlyReplanFunction,
+  scheduleReplanWaveFunction,
   weeklyFunction,
   updateExchangeRatesFunction,
   notificationDigestFunction,
@@ -156,6 +167,7 @@ export const functions = [
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
   slackDocumentAssignmentUpdateFunction,
+  stripeConnectPullSweepFunction,
   timeCardAutoCloseFunction,
   // Document extraction
   extractDocumentFunction

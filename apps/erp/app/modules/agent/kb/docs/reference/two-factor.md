@@ -14,6 +14,8 @@ Press **"Add Authenticator App"**. Carbon shows a QR code and, beneath it, the s
 
 Nothing is active until that code checks out. Until then the factor is `unverified` and Carbon ignores it entirely, which is why abandoning the dialog halfway leaves nothing behind.
 
+The moment it does check out, Carbon emails you a receipt — "Two-factor authentication is on". It isn't a notification you can turn off, because its whole purpose is to be the one signal you'd get if somebody else enrolled an authenticator against your account. If one arrives that you didn't cause, remove the factor and tell an admin.
+
 The entry is labelled with the company you were in when you enrolled, over your email — `Carbon (Acme Manufacturing)` above `you@acme.com`. That's deliberate. If you use Carbon at more than one organization, two entries both reading "Carbon" would be indistinguishable at the moment you need to tell them apart.
 
 The label is written into the QR when you enrol. Renaming the company later doesn't rewrite anyone's existing entry.
@@ -26,6 +28,8 @@ Once you have a verified authenticator, every sign-in asks for a code — magic 
 
 Passkeys are challenged too, which surprises people. A passkey is strong, but in Carbon it resolves into an ordinary session like any other sign-in method, so exempting it would leave a way around the requirement. If you'd rather not be asked twice, that's an argument for using a passkey *instead of* two-factor, not alongside it.
 
+`docs/platform/single-sign-on` is the one method that isn't challenged. An SSO session arrives with your identity provider's MFA policy already enforced at sign-in, so Carbon skips its own code screen and the company-wide requirement for those sessions — in every environment, including controlled (ITAR) deployments. Sign in with a magic link instead and the challenge applies as usual.
+
 A code is valid for its thirty-second window plus one window either side, to absorb small drift. If codes are consistently rejected on a phone whose time is set manually, switch it to network time. It's the single most common cause of "the code is right but Carbon says no".
 
 Repeated attempts are rate-limited on the same budget as sign-in itself, so guessing your way through isn't practical — and neither is retrying twenty times because you mistyped.
@@ -36,13 +40,17 @@ Sessions that already existed before you enrolled don't get a free pass. Carbon 
 
 Open **Settings → System → Security** and find the **Two-Factor Authentication Enforcement** card. Turning the switch on means anyone opening that company has to have an authenticator set up. There's no grace period; it takes effect on their next page load.
 
+Flipping the switch on also emails every active employee of the company, so nobody's first warning is a locked screen. The message names the company, links straight to **Account → Security**, and tells people who already have an authenticator that nothing changes for them.
+
+It goes out on each off → on transition. Turning enforcement *off* sends nothing, and re-saving a setting that is already on sends nothing either. But if you disable enforcement and later switch it back on, everyone is emailed again — by that point they've been told the requirement was lifted, so they need telling that it's back.
+
 Someone without one sees a full-screen prompt instead of the app, with a **"Set up authenticator app"** button that runs the same QR-and-code flow as the account page. They can complete it right there. The only other thing on that screen is **"Sign out"** — there is no way past it.
 
 This is the part worth reading twice. If you belong to two companies and only one requires two-factor, you're prompted to set one up **only while you're in that company**. Switch to the other and the prompt is gone.
 
 But once you've set one up, you're asked for a code at **every** sign-in, to either company. There's no such thing as being half-enrolled — the authenticator is attached to your account, not to a membership. Turning the requirement on in one company therefore does change how its people sign in everywhere else, which is worth saying out loud before you flip it.
 
-Controlled environments are the exception to all of the above. When Carbon is deployed for ITAR or CMMC work, two-factor is mandatory and the switch is locked on, because NIST 800-171 requires it for network access to non-privileged accounts. Admins can see the setting but not turn it off, and the enrollment screen offers no way around it.
+Controlled environments are the exception to all of the above. When Carbon is deployed for ITAR or CMMC work, two-factor is mandatory and the switch is locked on, because NIST 800-171 requires it for network access to non-privileged accounts. Admins can see the setting but not turn it off, and the enrollment screen offers no way around it. SSO sessions remain exempt even here — the identity provider owns their MFA.
 
 ## Seeing who has set it up
 
@@ -92,7 +100,11 @@ The column only renders while the company requires two-factor. Turn the setting 
 
 ### Turning enforcement on didn't prompt anyone
 
-It applies on each person's next page load, not retroactively to sessions sitting idle. Anyone already looking at a stale tab sees it when they next navigate.
+It applies on each person's next page load, not retroactively to sessions sitting idle. Anyone already looking at a stale tab sees it when they next navigate. The announcement email is what reaches them in the meantime.
+
+### Nobody got the announcement email
+
+It's sent only when the setting actually changes from off to on. If it was already on — someone else flipped it, or the deployment is a controlled environment where it's locked on — there's no transition to announce. It also goes only to **active** employees, so anyone deactivated isn't included.
 
 ### An admin can't turn enforcement off
 

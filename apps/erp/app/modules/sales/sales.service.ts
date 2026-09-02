@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
@@ -25,7 +26,9 @@ import type {
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
 import {
+  getModelByItemId,
   lookupBuyPriceFromMap,
+  resolveBuyUnitCost,
   upsertExternalLink
 } from "../shared/shared.service";
 import type {
@@ -59,7 +62,12 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
-import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
+import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
+import {
+  decideRecalcPricing,
+  getEffectiveDefaultMarkups,
+  resolvePreservedQuoteLinePriceFields
+} from "./sales.utils";
 import type {
   MatchedRule,
   OverrideEntry,
@@ -229,6 +237,17 @@ export async function convertQuoteToOrder(
       // A digital acceptance is the customer acting; `userId` is only the
       // employee who created the quote.
       actorId: payload.digitalQuoteAcceptedBy ? null : payload.userId
+    });
+
+    trackWorkEvent("quote_accepted", {
+      companyId: payload.companyId,
+      // Same reasoning as the moment above: on a digital acceptance there is
+      // no Carbon user, so the event is anonymous rather than attributed to
+      // whoever happened to write the quote.
+      userId: payload.digitalQuoteAcceptedBy ? null : payload.userId,
+      quoteId: payload.id,
+      salesOrderId: result.data.convertedId,
+      acceptedBy: payload.digitalQuoteAcceptedBy ? "portal" : "internal"
     });
   }
 
@@ -558,34 +577,42 @@ export async function getConfigurationParametersByQuoteLineId(
 
 export async function getCustomer(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client.from("customers").select("*").eq("id", customerId).single();
+  let query = client.from("customers").select("*").eq("id", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerContact(
   client: SupabaseClient<Database>,
-  customerContactId: string
+  customerContactId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerContact")
     .select(
       "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
     )
-    .eq("id", customerContactId)
-    .single();
+    .eq("id", customerContactId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerContacts(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerContact")
     .select(
       "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
     )
     .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query;
 }
 
 export async function getCustomerItemPriceOverride(
@@ -613,60 +640,71 @@ export async function getCustomerItemPriceOverride(
 
 export async function getCustomerLocation(
   client: SupabaseClient<Database>,
-  customerLocationId: string
+  customerLocationId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerLocation")
     .select(
       "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
     )
-    .eq("id", customerLocationId)
-    .single();
+    .eq("id", customerLocationId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerLocations(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerLocation")
     .select(
       "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query;
 }
 
 export async function getCustomerPayment(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerPayment")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerShipping(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerShipping")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerTax(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerTax")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerTypeItemPriceOverride(
@@ -946,39 +984,7 @@ export async function getModelByQuoteLineId(
 
   if (!quoteLine.data) return null;
 
-  const item = await client
-    .from("item")
-    .select("id, type, modelUploadId")
-    .eq("id", quoteLine.data.itemId)
-    .single();
-
-  if (!item.data || !item.data.modelUploadId) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelPath: null
-    };
-  }
-
-  const model = await client
-    .from("modelUpload")
-    .select("*")
-    .eq("id", item.data.modelUploadId)
-    .maybeSingle();
-
-  if (!model.data) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelSize: null
-    };
-  }
-
-  return {
-    itemId: item.data!.id,
-    type: item.data!.type,
-    ...model.data
-  };
+  return getModelByItemId(client, quoteLine.data.itemId);
 }
 
 export async function getNoQuoteReasonsList(
@@ -2042,6 +2048,10 @@ export async function finalizeQuote(
     companyId,
     actorId: userId
   });
+
+  // finalizeQuote is the only writer of status 'Sent', and it is also the MCP
+  // write path, so this one capture covers API callers too.
+  trackWorkEvent("quote_sent", { companyId, userId, quoteId });
 
   return lineUpdate;
 }
@@ -3914,10 +3924,13 @@ export async function upsertQuoteLineAdditionalCharges(
 type QuoteLinePriceInput = {
   quoteLineId: string;
   unitPrice: number;
-  leadTime: number;
-  discountPercent: number;
   quantity: number;
   createdBy: string;
+  // Optional: an explicit value wins, an omitted one preserves the stored value
+  // for that quantity (so a cost recalc can leave user-entered fields alone).
+  leadTime?: number;
+  discountPercent?: number;
+  shippingCost?: number;
   categoryMarkups?: Record<string, number>;
   priceSource?: "system" | "manual";
 };
@@ -3930,10 +3943,11 @@ export async function upsertQuoteLinePrices(
   quoteLinePrices: {
     quoteLineId: string;
     unitPrice: number;
-    leadTime: number;
-    discountPercent: number;
     quantity: number;
     createdBy: string;
+    leadTime?: number;
+    discountPercent?: number;
+    shippingCost?: number;
     categoryMarkups?: Record<string, number>;
     priceSource?: "system" | "manual";
   }[]
@@ -4014,16 +4028,40 @@ async function rewriteQuoteLinePrices(
           companyId,
           quoteId,
           unitPrice: round(p.unitPrice, quoteLine.unitPricePrecision),
-          discountPercent: existing?.discountPercent ?? p.discountPercent,
-          leadTime: existing?.leadTime ?? p.leadTime,
-          shippingCost: existing?.shippingCost ?? 0,
-          categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
-          priceSource: p.priceSource ?? existing?.priceSource ?? "system",
+          // Explicit value wins, omitted value is preserved from the stored row.
+          ...resolvePreservedQuoteLinePriceFields(p, {
+            leadTime: existing ? Number(existing.leadTime) : undefined,
+            discountPercent: existing
+              ? Number(existing.discountPercent)
+              : undefined,
+            shippingCost: existing ? Number(existing.shippingCost) : undefined,
+            categoryMarkups:
+              (existing?.categoryMarkups as CategoryMarkups | null) ??
+              undefined,
+            priceSource:
+              (existing?.priceSource as QuoteLinePriceSource | null) ??
+              undefined
+          }),
           exchangeRate: quote.exchangeRate ?? 1
         };
       })
     )
     .execute();
+
+  // Keep quoteLine.quantity in step with the rows that now exist, but only when
+  // the caller supplied an explicit price set — the precision rebuild
+  // (quoteLinePrices omitted) must not touch the line's quantity breaks.
+  if (quoteLinePrices) {
+    const quantities = [
+      ...new Set(replacements.map((p) => Number(p.quantity)))
+    ].sort((a, b) => a - b);
+    await trx
+      .updateTable("quoteLine")
+      .set({ quantity: quantities })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
 }
 
 async function buildCostEffects(
@@ -4037,10 +4075,11 @@ async function buildCostEffects(
 
   const operations = operationsResult.data ?? [];
 
-  // Fix Buy material costs
+  // Refresh Buy material costs from supplier price breaks; resolveBuyUnitCost
+  // leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
-    .select("id, itemId, unitCost")
+    .select("id, itemId, unitCost, unitCostSource")
     .eq("quoteLineId", quoteLineId)
     .eq("methodType", "Purchase to Order");
 
@@ -4050,7 +4089,8 @@ async function buildCostEffects(
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
   for (const mat of buyMaterials.data ?? []) {
-    const price = lookupBuyPriceFromMap(mat.itemId, 1, priceMap, mat.unitCost);
+    if (mat.unitCostSource === "manual") continue;
+    const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
       await client
         .from("quoteMaterial")
@@ -4166,13 +4206,17 @@ async function buildCostEffects(
     itemId: string,
     itemType: string,
     quantity: number,
-    unitCost: number
+    unitCost: number,
+    unitCostSource: string | null
   ) {
     const costFn = (outerQty: number) => {
       const requestedQty = quantity * outerQty;
       return (
-        lookupBuyPriceFromMap(itemId, requestedQty, priceMap, unitCost) *
-        requestedQty
+        resolveBuyUnitCost(
+          { itemId, unitCost, unitCostSource },
+          requestedQty,
+          priceMap
+        ) * requestedQty
       );
     };
     const key =
@@ -4195,7 +4239,13 @@ async function buildCostEffects(
     const qty = d.quantity * parentQuantity;
 
     if (d.methodType === "Purchase to Order") {
-      pushBuyCostEffect(d.itemId, d.itemType, qty, d.unitCost);
+      pushBuyCostEffect(
+        d.itemId,
+        d.itemType,
+        qty,
+        d.unitCost,
+        d.unitCostSource
+      );
     } else if (d.methodType === "Pull from Inventory") {
       const costFn = (outerQty: number) => d.unitCost * qty * outerQty;
       const key =

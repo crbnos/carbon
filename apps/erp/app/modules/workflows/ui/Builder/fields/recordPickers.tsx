@@ -1,4 +1,4 @@
-import { CreatableCombobox } from "@carbon/react";
+import { Combobox } from "@carbon/react";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
 import { Enumerable } from "~/components/Enumerable";
@@ -8,6 +8,8 @@ import { UserSelect } from "~/components/Selectors";
 import type { IndividualOrGroup } from "~/components/Selectors/UserSelect/types";
 import { useCustomers, useItems, useSuppliers } from "~/stores";
 
+// Plain Combobox, never CreatableCombobox: a workflow picks an existing record,
+// so a "Create <whatever you typed>" row would be an offer we cannot honor.
 export type RecordPickerProps = {
   value: string | undefined;
   onChange: (id: string | undefined) => void;
@@ -23,7 +25,7 @@ const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
     [customers]
   );
   return (
-    <CreatableCombobox
+    <Combobox
       options={options}
       value={value}
       isClearable
@@ -43,7 +45,7 @@ const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
     [suppliers]
   );
   return (
-    <CreatableCombobox
+    <Combobox
       options={options}
       value={value}
       isClearable
@@ -70,7 +72,7 @@ const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
     [items]
   );
   return (
-    <CreatableCombobox
+    <Combobox
       options={options}
       value={value}
       isClearable
@@ -86,7 +88,7 @@ const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 const LocationPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   const locations = useLocations();
   return (
-    <CreatableCombobox
+    <Combobox
       options={locations}
       value={value}
       isClearable
@@ -106,7 +108,7 @@ const IssueTypePicker = ({
 }: RecordPickerProps) => {
   const options = useIssueTypes();
   return (
-    <CreatableCombobox
+    <Combobox
       options={options.map((o) => ({
         value: o.value,
         label: <Enumerable value={o.label} />
@@ -133,6 +135,9 @@ const UserPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
   <UserSelect
     value={value}
     usersOnly
+    // "employee" is defined negatively by get_user_select_groups: not customer- and
+    // not supplier-flagged. Ad-hoc company groups stay listed.
+    type="employee"
     isMulti={false}
     insideCanvas
     disabled={isDisabled}
@@ -145,6 +150,7 @@ const UserPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
 const GroupPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
   <UserSelect
     value={value}
+    type="employee"
     isMulti={false}
     insideCanvas
     disabled={isDisabled}

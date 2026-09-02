@@ -99,7 +99,11 @@ export function AppSidebar({
   }> | null;
 }) {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar
+      collapsible="icon"
+      className="[&_[data-sidebar=sidebar]]:bg-background group-data-[side=left]:border-r-0"
+      {...props}
+    >
       <SidebarHeader>
         <TeamSwitcher company={company} />
       </SidebarHeader>

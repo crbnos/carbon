@@ -9,7 +9,9 @@ import {
   buildXeroTrackingTarget,
   getAccountingIntegration,
   getAccountMappings,
+  getAccountsBlockingSync,
   getDimensionValueMappings,
+  getFullChartMappableAccounts,
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
@@ -44,11 +46,17 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
+import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
+import {
+  getConnectAccountStatus,
+  isConnectAccountStillLinked
+} from "@carbon/stripe/connect.server";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -175,13 +183,21 @@ function unfoldRilletCredentials(
  * already passed requirePermissions and every query is companyId-scoped.
  */
 async function getAccountMappingTabData(
+  client: SupabaseClient<Database>,
   companyId: string,
   integrationId: string,
   chart: Array<{ id: string; code: string; name: string }>
 ) {
   const db = getDatabaseClient();
 
-  const [mappings, unmapped, proposals, accountDefaultIds] = await Promise.all([
+  const [
+    mappings,
+    unmapped,
+    proposals,
+    accountDefaultIds,
+    allAccounts,
+    blocking
+  ] = await Promise.all([
     getAccountMappings(db, { companyId, integration: integrationId }),
     getUnmappedPostingAccounts(db, { companyId, integration: integrationId }),
     chart.length > 0
@@ -191,33 +207,41 @@ async function getAccountMappingTabData(
           providerAccounts: chart
         })
       : Promise.resolve({ data: [], error: null }),
-    loadAccountDefaultAccountIds(db, companyId)
+    loadAccountDefaultAccountIds(db, companyId),
+    getFullChartMappableAccounts(db, { companyId }),
+    getAccountsBlockingSync(client, { companyId, integration: integrationId })
   ]);
 
   // Don't block the settings drawer on a mapping load failure — render
   // what loaded and log the cause.
-  for (const result of [mappings, unmapped, proposals]) {
+  for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
       console.error("Failed to load account mapping data:", result.error);
     }
   }
 
-  // The tab manages only accountDefault accounts (the mappable set — every
-  // automated posting runs through one), so hide any legacy mapping for an
-  // account outside that set: it never syncs and would only inflate the list.
-  // getAccountMappings itself is left untouched so the journal/bill/invoice
-  // syncers' account resolution keeps seeing every mapping. Unmapped and
-  // proposals are already accountDefault-scoped in @carbon/ee.
-  const mappableIds = new Set(accountDefaultIds);
-  const scopedMappings = (mappings.data ?? []).filter((mapping) =>
-    mappableIds.has(mapping.accountId)
-  );
+  // The tab spans the FULL chart of accounts (getAccountMappings is unscoped and
+  // the syncers already see every mapping). The "required" set — badged and
+  // surfaced as needing mapping — is the accountDefault posting accounts PLUS
+  // every Expense account: any Expense account can be charged directly on a PO
+  // G/L-account line, so it should be mapped up front rather than parking a
+  // journal later.
+  const fullChart = allAccounts.data ?? [];
+  const expenseAccountIds = fullChart
+    .filter((account) => account.class === "Expense")
+    .map((account) => account.id);
+  const requiredAccountIds = [
+    ...new Set([...accountDefaultIds, ...expenseAccountIds])
+  ];
 
   return {
-    mappings: scopedMappings,
+    mappings: mappings.data ?? [],
     unmapped: unmapped.data ?? [],
     chart,
-    proposals: proposals.data ?? []
+    proposals: proposals.data ?? [],
+    requiredAccountIds,
+    allAccounts: fullChart,
+    blocking: blocking.data ?? []
   };
 }
 
@@ -703,8 +727,93 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       logger.error("Failed to fetch Xero accounts for settings", {
         error: error
       });
-      // Continue without chart accounts — the Account Mapping tab renders
-      // with Carbon accounts only
+      // Continue without dynamic options - form will show empty selects
+    }
+  } else if (integrationId === "stripe-connect") {
+    // Whether the platform even has a Stripe secret key configured — cheap,
+    // synchronous, known without ever calling Stripe. Display-only: never
+    // part of the submitted form/schema, so merging it into metadata here
+    // doesn't risk it being written back to the DB on save.
+    flattenedMetadata.platformConfigured = !!STRIPE_SECRET_KEY;
+
+    // Refresh Stripe Connect's status from Stripe so the drawer shows live
+    // onboarding progress rather than a possibly-stale stored snapshot.
+    if (flattenedMetadata.stripeAccountId) {
+      const stripeAccountId = flattenedMetadata.stripeAccountId as string;
+      try {
+        if (await isConnectAccountStillLinked(stripeAccountId)) {
+          const freshStatus = await getConnectAccountStatus(stripeAccountId);
+          if (freshStatus) {
+            Object.assign(flattenedMetadata, freshStatus);
+          }
+        } else {
+          logger.warn(
+            "Stripe Connect account is no longer linked; hiding stale connection state",
+            { companyId, stripeAccountId }
+          );
+          delete flattenedMetadata.stripeAccountId;
+          delete flattenedMetadata.chargesEnabled;
+          delete flattenedMetadata.payoutsEnabled;
+          delete flattenedMetadata.detailsSubmitted;
+          delete flattenedMetadata.requirementErrors;
+          delete flattenedMetadata.email;
+          delete flattenedMetadata.displayName;
+          delete flattenedMetadata.onboardingStarted;
+        }
+      } catch (err) {
+        logger.error("Failed to fetch Stripe Connect status for settings", {
+          error: err
+        });
+      }
+    }
+
+    const accountDefaults = await client
+      .from("accountDefault")
+      .select(
+        `bankCashAccount, receivablesAccount, customerPaymentDiscountAccount, customerWriteOffAccount, realizedExchangeGainAccount, realizedExchangeLossAccount, serviceChargeAccount, roundingAccount`
+      )
+      .eq("companyId", companyId)
+      .single();
+
+    if (accountDefaults.data) {
+      const accountIds = [
+        accountDefaults.data.bankCashAccount,
+        accountDefaults.data.receivablesAccount,
+        accountDefaults.data.customerPaymentDiscountAccount,
+        accountDefaults.data.customerWriteOffAccount,
+        accountDefaults.data.realizedExchangeGainAccount,
+        accountDefaults.data.realizedExchangeLossAccount,
+        accountDefaults.data.serviceChargeAccount,
+        accountDefaults.data.roundingAccount
+      ].filter(Boolean);
+
+      if (accountIds.length > 0) {
+        const { data: accounts } = await client
+          .from("account")
+          .select("id, number, name")
+          .in("id", accountIds);
+
+        const byId = new Map((accounts ?? []).map((a) => [a.id, a]));
+
+        const fmt = (id: string | null) => {
+          if (!id) return null;
+          const a = byId.get(id);
+          return a ? (a.number ? `${a.number} — ${a.name}` : a.name) : null;
+        };
+
+        flattenedMetadata.accountingAccounts = {
+          bankCash: fmt(accountDefaults.data.bankCashAccount),
+          receivables: fmt(accountDefaults.data.receivablesAccount),
+          customerPaymentDiscount: fmt(
+            accountDefaults.data.customerPaymentDiscountAccount
+          ),
+          customerWriteOff: fmt(accountDefaults.data.customerWriteOffAccount),
+          fxGain: fmt(accountDefaults.data.realizedExchangeGainAccount),
+          fxLoss: fmt(accountDefaults.data.realizedExchangeLossAccount),
+          serviceCharge: fmt(accountDefaults.data.serviceChargeAccount),
+          rounding: fmt(accountDefaults.data.roundingAccount)
+        };
+      }
     }
   }
 
@@ -766,7 +875,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const accountMapping = isAccountingInstalled
-    ? await getAccountMappingTabData(companyId, integrationId, chartAccounts)
+    ? await getAccountMappingTabData(
+        client,
+        companyId,
+        integrationId,
+        chartAccounts
+      )
     : null;
 
   const resolvedPostingSettings = isAccountingInstalled
@@ -1412,6 +1526,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const wasInstalled = existing.data?.active === true;
 
+  // Install-time secret presence. The config schemas now let an empty secret
+  // field mean "keep the existing vaulted value" (it loads masked, never sent to
+  // the browser). A FRESH install with no secret at all would leave the
+  // integration active but non-functional, so require one here. Scoped to
+  // form-entered secrets — OAuth providers get their credentials via the
+  // callback, so they are never blocked here.
+  const FORM_SECRET_INTEGRATIONS = new Set([
+    "linear",
+    "paperless-parts",
+    "email",
+    "rillet"
+  ]);
+  if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
+    const alreadyVaulted = existing.data?.secretRef != null;
+    const providedSecret = (SECRET_KEYS[integrationId] ?? []).some((p) => {
+      const v = getPath(metadata, p);
+      return typeof v === "string" && v.trim().length > 0;
+    });
+    if (!alreadyVaulted && !providedSecret) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            null,
+            `A credential is required to connect ${integration.name}.`
+          )
+        )
+      );
+    }
+  }
+
   const update = await upsertCompanyIntegration(client, {
     id: integrationId,
     active: true,
@@ -1559,6 +1705,10 @@ export default function IntegrationRoute() {
           unmapped={accountMapping.unmapped}
           chart={accountMapping.chart}
           proposals={accountMapping.proposals}
+          requiredAccountIds={accountMapping.requiredAccountIds}
+          allAccounts={accountMapping.allAccounts}
+          blocking={accountMapping.blocking}
+          focusAccountIds={searchParams.getAll("focusAccount")}
         />
       )
     });

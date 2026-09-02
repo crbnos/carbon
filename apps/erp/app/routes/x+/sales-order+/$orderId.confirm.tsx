@@ -2,6 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { datetime, getSalesOrderStatus } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
@@ -17,6 +18,7 @@ import {
 } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -168,11 +170,22 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
       type: "salesOrder",
       id: orderId,
       companyId: companyId,
       userId: userId
+    });
+
+    // Below every early return above, so a failed email or a failed status
+    // write never counts as a confirmed order.
+    trackWorkEvent("sales_order_confirmed", {
+      companyId,
+      userId,
+      salesOrderId: orderId,
+      lineCount: orderLines.data?.length ?? 0,
+      derivedStatus: status,
+      emailed: notification === "Email"
     });
 
     return {

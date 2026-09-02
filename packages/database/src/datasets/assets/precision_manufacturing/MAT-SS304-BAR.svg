@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="barClip">
+      <path d="M446 190 L446 830 Q512 880.2 578 830 L578 190 Z"/>
+    </clipPath>
+    <clipPath id="faceClip">
+      <ellipse cx="512" cy="190" rx="66" ry="25.1"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="534" cy="866" rx="168" ry="37" fill="url(#shadow)"/>
+
+  <g transform="rotate(-4 512 510)">
+    <!-- barrel -->
+    <path d="M446 190 L446 830 Q512 880.2 578 830 L578 190 Z" fill="url(#ssBarrel)" stroke="#4d5257" stroke-width="2.5"/>
+    <g clip-path="url(#barClip)">
+      <!-- cool bluish cast of 304 -->
+      <rect x="440" y="180" width="146" height="710" fill="#7fb0d8" opacity="0.13"/>
+      <!-- crisp specular bands running the length -->
+      <rect x="466" y="180" width="20" height="710" fill="#ffffff" opacity="0.38"/>
+      <rect x="458" y="180" width="7" height="710" fill="#ffffff" opacity="0.55"/>
+      <rect x="490" y="180" width="6" height="710" fill="#dfeaf3" opacity="0.30"/>
+      <rect x="540" y="180" width="16" height="710" fill="#eaf2f8" opacity="0.18"/>
+      <!-- fine cold-drawn directional lines -->
+      <g stroke="#ffffff" stroke-opacity="0.14" stroke-width="1.6" fill="none">
+        <path d="M452 180 L452 890"/><path d="M474 180 L474 890"/>
+        <path d="M500 180 L500 890"/><path d="M516 180 L516 890"/>
+        <path d="M532 180 L532 890"/><path d="M560 180 L560 890"/>
+      </g>
+      <g stroke="#41474c" stroke-opacity="0.16" stroke-width="1.3" fill="none">
+        <path d="M456 180 L456 890"/><path d="M481 180 L481 890"/>
+        <path d="M506 180 L506 890"/><path d="M524 180 L524 890"/>
+        <path d="M547 180 L547 890"/><path d="M566 180 L566 890"/>
+      </g>
+      <!-- darkening toward the rolled-under bottom -->
+      <path d="M446 800 L578 800 L578 890 L446 890 Z" fill="#2f3438" opacity="0.22"/>
+    </g>
+    <!-- bottom edge break -->
+    <path d="M446 820 Q512 870.2 578 820" fill="none" stroke="#3f4449" stroke-width="2.5" opacity="0.55"/>
+
+    <!-- sawn top face -->
+    <ellipse cx="512" cy="190" rx="66" ry="25.1" fill="url(#ssFace)" stroke="#6b7378" stroke-width="2.5"/>
+    <g clip-path="url(#faceClip)">
+      <!-- matte, non-mirrored sawn finish -->
+      <ellipse cx="512" cy="190" rx="66" ry="25.1" fill="#a3abb1" opacity="0.42"/>
+      <!-- saw tooth swirl -->
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.8">
+        <ellipse cx="524" cy="187" rx="12" ry="4.6"/>
+        <ellipse cx="524" cy="187" rx="22" ry="8.4"/>
+        <ellipse cx="524" cy="187" rx="32" ry="12.2"/>
+        <ellipse cx="524" cy="187" rx="42" ry="16"/>
+        <ellipse cx="524" cy="187" rx="52" ry="19.8"/>
+        <ellipse cx="524" cy="187" rx="62" ry="23.6"/>
+      </g>
+      <g fill="none" stroke="#5a6166" stroke-opacity="0.28" stroke-width="1.4">
+        <ellipse cx="524" cy="187" rx="17" ry="6.5"/>
+        <ellipse cx="524" cy="187" rx="27" ry="10.3"/>
+        <ellipse cx="524" cy="187" rx="37" ry="14.1"/>
+        <ellipse cx="524" cy="187" rx="47" ry="17.9"/>
+        <ellipse cx="524" cy="187" rx="57" ry="21.7"/>
+      </g>
+      <g stroke="#4e555a" stroke-opacity="0.30" stroke-width="1.6" fill="none">
+        <path d="M470 178 L486 172"/><path d="M492 202 L510 208"/>
+        <path d="M540 176 L556 172"/><path d="M552 200 L566 196"/>
+      </g>
+    </g>
+    <!-- rim chamfer -->
+    <ellipse cx="512" cy="190" rx="57" ry="21.7" fill="none" stroke="#dbe3e8" stroke-width="2.2" opacity="0.85"/>
+    <ellipse cx="512" cy="190" rx="61.5" ry="23.4" fill="none" stroke="#6f777d" stroke-width="1.6" opacity="0.7"/>
+  </g>
+</svg>

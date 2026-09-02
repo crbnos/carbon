@@ -29,7 +29,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: "Payments", to: path.to.payments },
     (data) => data?.payment?.paymentId
-  )
+  ),
+  module: "invoicing"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

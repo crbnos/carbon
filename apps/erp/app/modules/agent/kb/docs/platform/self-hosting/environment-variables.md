@@ -13,7 +13,7 @@ Platform-wide behavior and edition.
 
 One of `community`, `cloud`, `enterprise`, or `test`. Gates edition-specific features.
 Enables ITAR / controlled-environment restrictions: the US-Person certification gate, ITAR hostnames and branding, Slack and analytics disabled, and mandatory `docs/reference/two-factor` that a company admin cannot turn off.
-Allowed sign-in methods: `email`, `google`, `azure`, `passkey`.
+Allowed sign-in methods: `email`, `google`, `azure`, `passkey`, `sso` (`docs/platform/single-sign-on`, Enterprise edition only).
 Base domain the apps are served from.
 Public URL of the ERP app.
 Public URL of the MES app.
@@ -39,6 +39,11 @@ Azure OAuth client id, when `azure` is enabled.
 Azure OAuth client secret.
 Local only. Sign in as this email without a magic link.
 
+Enterprise `docs/platform/single-sign-on` adds two more:
+
+Turns on the SAML engine in the auth service.
+SAML signing key — base64-encoded PKCS#1 DER RSA, minimum 2048-bit; the generation command is in `.env.example`.
+
 Sign-in bot protection uses Cloudflare Turnstile: `CLOUDFLARE_TURNSTILE_SITE_KEY` and
 `CLOUDFLARE_TURNSTILE_SECRET_KEY`.
 
@@ -57,6 +62,7 @@ Resend API key for transactional email.
 Verified sending domain.
 Stripe secret key, Cloud / Enterprise billing.
 Verifies inbound Stripe webhooks.
+Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).
 
 ## AI & analytics
 

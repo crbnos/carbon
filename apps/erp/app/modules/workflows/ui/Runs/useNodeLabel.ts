@@ -8,7 +8,7 @@ export type NodeLabel = {
   title: string;
   /** What the step does, shown under the title. Empty when it repeats the title. */
   subtitle: string;
-  /** The kind chip: Trigger / Record / Condition / Action / Find / Filter. */
+  /** The kind chip: Trigger / Compute / Condition / Action / Find / Filter. */
   kind: string;
 };
 

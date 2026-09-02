@@ -1,0 +1,290 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="blkBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blkFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.45" stop-color="#3a4045"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blkDark" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#33383d"/>
+      <stop offset="0.5" stop-color="#22262a"/>
+      <stop offset="1" stop-color="#111315"/>
+    </linearGradient>
+    <linearGradient id="tiBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="tiFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.5" stop-color="#c6ced4"/>
+      <stop offset="1" stop-color="#8a9298"/>
+    </linearGradient>
+    <linearGradient id="tiTube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.5" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="steelBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#83898f"/>
+    </linearGradient>
+    <linearGradient id="nbBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="heatTint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a3a72" stop-opacity="0.9"/>
+      <stop offset="0.16" stop-color="#3f4f86" stop-opacity="0.72"/>
+      <stop offset="0.36" stop-color="#4c5f7e" stop-opacity="0.42"/>
+      <stop offset="0.62" stop-color="#8a6a2a" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#e0b45e" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bellBore" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5b4a2a"/>
+      <stop offset="0.4" stop-color="#2b2417"/>
+      <stop offset="1" stop-color="#131018"/>
+    </linearGradient>
+    <radialGradient id="sphereLight" cx="0.34" cy="0.28" r="0.78">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.4" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="0.72" stop-color="#000000" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.42"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="tankClip">
+      <circle cx="512" cy="392" r="166"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="792" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- ===== rear frame rail and rear posts (black anodised) ===== -->
+  <path d="M324 300 L360 300 L360 636 L324 636 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="2.5"/>
+  <path d="M828 300 L864 300 L864 636 L828 636 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="2.5"/>
+  <path d="M324 300 L864 300 L864 336 L324 336 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="2.5"/>
+  <path d="M324 600 L864 600 L864 636 L324 636 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="2.5"/>
+
+  <!-- ===== plumbing that passes behind the tank ===== -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M512 236 C512 190 560 168 640 176 L760 176 C806 176 820 206 820 250" stroke="#5d6368" stroke-width="22"/>
+    <path d="M512 236 C512 190 560 168 640 176 L760 176 C806 176 820 206 820 250" stroke="url(#tiTube)" stroke-width="16"/>
+    <path d="M508 232 C508 194 556 174 638 182" stroke="#ffffff" stroke-opacity="0.4" stroke-width="4"/>
+  </g>
+  <!-- fill/drain valve on the top run -->
+  <g>
+    <path d="M796 240 L844 240 L844 300 L796 300 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="820" cy="240" rx="24" ry="9" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="820" cy="240" rx="15" ry="5.7" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+    <path d="M796 264 L844 264 M796 278 L844 278" stroke="#5d6368" stroke-width="2" opacity="0.6"/>
+  </g>
+
+  <!-- ===== spherical titanium propellant tank ===== -->
+  <g>
+    <circle cx="512" cy="392" r="166" fill="url(#tiBarrel)" stroke="#6b7278" stroke-width="3"/>
+    <g clip-path="url(#tankClip)">
+      <!-- girth weld seam -->
+      <ellipse cx="512" cy="392" rx="166" ry="63" fill="none" stroke="#6b7278" stroke-width="5" opacity="0.55"/>
+      <ellipse cx="512" cy="384" rx="166" ry="63" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="3"/>
+      <!-- satin spun texture following the hemisphere -->
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="3">
+        <ellipse cx="512" cy="392" rx="166" ry="122"/>
+        <ellipse cx="512" cy="392" rx="166" ry="24"/>
+        <ellipse cx="512" cy="300" rx="140" ry="52"/>
+        <ellipse cx="512" cy="482" rx="140" ry="52"/>
+      </g>
+      <g fill="none" stroke="#5f666c" stroke-opacity="0.2" stroke-width="3">
+        <ellipse cx="512" cy="392" rx="166" ry="90"/>
+        <ellipse cx="512" cy="322" rx="152" ry="60"/>
+        <ellipse cx="512" cy="462" rx="152" ry="60"/>
+      </g>
+      <circle cx="512" cy="392" r="166" fill="url(#sphereLight)"/>
+    </g>
+    <!-- key-light glance -->
+    <path d="M392 306 A166 166 0 0 1 486 240" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="7" stroke-linecap="round"/>
+    <!-- top boss / outlet fitting -->
+    <path d="M482 214 L482 250 L542 250 L542 214 Z" fill="url(#tiBarrel)" stroke="#6b7278" stroke-width="2.5"/>
+    <ellipse cx="512" cy="214" rx="30" ry="11.4" fill="url(#tiFace)" stroke="#6b7278" stroke-width="2.5"/>
+    <ellipse cx="512" cy="214" rx="19" ry="7.2" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+  </g>
+
+  <!-- ===== ring cradle around the tank ===== -->
+  <g>
+    <!-- back half of the ring, above the tank equator -->
+    <path d="M348 470 A164 62 0 0 1 676 470" fill="none" stroke="#0e1012" stroke-width="34"/>
+    <path d="M348 470 A164 62 0 0 1 676 470" fill="none" stroke="#3f454a" stroke-width="27"/>
+    <path d="M348 470 A164 62 0 0 1 676 470" fill="none" stroke="#5a6167" stroke-width="10" opacity="0.55"/>
+    <!-- front half, in front of the tank -->
+    <path d="M348 470 A164 62 0 0 0 676 470" fill="none" stroke="#0e1012" stroke-width="38"/>
+    <path d="M348 470 A164 62 0 0 0 676 470" fill="none" stroke="url(#blkBarrel)" stroke-width="30"/>
+    <path d="M356 484 A160 60 0 0 0 668 484" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="4"/>
+    <!-- cradle clamp lugs -->
+    <g>
+      <path d="M336 452 L336 512 L372 512 L372 452 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="2.5"/>
+      <ellipse cx="354" cy="480" rx="9" ry="9" fill="#8f979d"/>
+      <ellipse cx="354" cy="478" rx="5" ry="5" fill="#2a2e32"/>
+      <path d="M652 452 L652 512 L688 512 L688 452 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="2.5"/>
+      <ellipse cx="670" cy="480" rx="9" ry="9" fill="#8f979d"/>
+      <ellipse cx="670" cy="478" rx="5" ry="5" fill="#2a2e32"/>
+    </g>
+    <!-- cradle struts down to the deck -->
+    <path d="M372 500 L390 500 L426 640 L404 640 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="2.5"/>
+    <path d="M652 500 L634 500 L598 640 L620 640 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="2.5"/>
+  </g>
+
+  <!-- ===== feed line down from the tank to the manifold ===== -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M512 550 L512 590 C512 622 490 636 456 636 L300 636" stroke="#5d6368" stroke-width="20"/>
+    <path d="M512 550 L512 590 C512 622 490 636 456 636 L300 636" stroke="url(#tiTube)" stroke-width="14"/>
+    <path d="M512 556 L512 588 C512 616 492 630 456 630 L300 630" stroke="#ffffff" stroke-opacity="0.38" stroke-width="4"/>
+    <path d="M512 590 C512 622 534 636 568 636 L724 636" stroke="#5d6368" stroke-width="20"/>
+    <path d="M512 590 C512 622 534 636 568 636 L724 636" stroke="url(#tiTube)" stroke-width="14"/>
+    <path d="M512 588 C512 616 532 630 568 630 L724 630" stroke="#ffffff" stroke-opacity="0.32" stroke-width="4"/>
+  </g>
+
+  <!-- ===== front deck rail (black anodised) ===== -->
+  <path d="M240 700 L784 700 L868 640 L324 640 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M264 692 L776 692 L840 646 L328 646 Z" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2.5"/>
+  <path d="M240 700 L784 700 L784 760 L240 760 Z" fill="url(#blkBarrel)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M784 700 L868 640 L868 700 L784 760 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M240 712 L784 712" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+  <path d="M240 750 L784 750" fill="none" stroke="#000000" stroke-opacity="0.4" stroke-width="3"/>
+
+  <!-- ===== front corner posts ===== -->
+  <path d="M240 380 L288 380 L288 700 L240 700 Z" fill="url(#blkBarrel)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M288 380 L324 344 L324 664 L288 700 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M240 380 L288 380 L324 344 L276 344 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M252 392 L252 690" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+
+  <path d="M736 380 L784 380 L784 700 L736 700 Z" fill="url(#blkBarrel)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M784 380 L820 344 L820 664 L784 700 Z" fill="url(#blkDark)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M736 380 L784 380 L820 344 L772 344 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="3"/>
+  <path d="M748 392 L748 690" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+
+  <!-- ===== rows of steel hex bolts at the frame joints ===== -->
+  <g>
+    <g fill="#8f979d" stroke="#5d6368" stroke-width="2">
+      <polygon points="264,398 276,391 288,398 288,412 276,419 264,412"/>
+      <polygon points="264,660 276,653 288,660 288,674 276,681 264,674"/>
+      <polygon points="748,398 760,391 772,398 772,412 760,419 748,412"/>
+      <polygon points="748,660 760,653 772,660 772,674 760,681 748,674"/>
+      <polygon points="336,720 348,713 360,720 360,734 348,741 336,734"/>
+      <polygon points="424,720 436,713 448,720 448,734 436,741 424,734"/>
+      <polygon points="576,720 588,713 600,720 600,734 588,741 576,734"/>
+      <polygon points="664,720 676,713 688,720 688,734 676,741 664,734"/>
+      <polygon points="380,656 392,649 404,656 404,670 392,677 380,670"/>
+      <polygon points="620,656 632,649 644,656 644,670 632,677 620,670"/>
+    </g>
+    <g fill="#eef1f3" opacity="0.45">
+      <circle cx="276" cy="401" r="3.5"/><circle cx="276" cy="663" r="3.5"/>
+      <circle cx="760" cy="401" r="3.5"/><circle cx="760" cy="663" r="3.5"/>
+      <circle cx="348" cy="723" r="3.5"/><circle cx="436" cy="723" r="3.5"/>
+      <circle cx="588" cy="723" r="3.5"/><circle cx="676" cy="723" r="3.5"/>
+      <circle cx="392" cy="659" r="3.5"/><circle cx="632" cy="659" r="3.5"/>
+    </g>
+  </g>
+
+  <!-- ===== four polished stainless solenoid valves on the deck ===== -->
+  <g>
+    <!-- valve 1 -->
+    <path d="M312 542 L364 542 L364 636 L312 636 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="338" cy="542" rx="26" ry="10" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2.5"/>
+    <ellipse cx="338" cy="542" rx="16" ry="6" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+    <path d="M312 570 L364 570 M312 584 L364 584 M312 598 L364 598" stroke="#5d6368" stroke-width="2.5" opacity="0.55"/>
+    <path d="M320 556 L320 630" stroke="#ffffff" stroke-opacity="0.35" stroke-width="4"/>
+    <path d="M304 606 L372 606 L372 630 L304 630 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2"/>
+    <!-- valve 2 -->
+    <path d="M416 556 L468 556 L468 636 L416 636 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="442" cy="556" rx="26" ry="10" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2.5"/>
+    <ellipse cx="442" cy="556" rx="16" ry="6" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+    <path d="M416 582 L468 582 M416 596 L468 596" stroke="#5d6368" stroke-width="2.5" opacity="0.55"/>
+    <path d="M424 570 L424 630" stroke="#ffffff" stroke-opacity="0.35" stroke-width="4"/>
+    <path d="M408 610 L476 610 L476 630 L408 630 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2"/>
+    <!-- valve 3 -->
+    <path d="M556 556 L608 556 L608 636 L556 636 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="582" cy="556" rx="26" ry="10" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2.5"/>
+    <ellipse cx="582" cy="556" rx="16" ry="6" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+    <path d="M556 582 L608 582 M556 596 L608 596" stroke="#5d6368" stroke-width="2.5" opacity="0.55"/>
+    <path d="M564 570 L564 630" stroke="#ffffff" stroke-opacity="0.35" stroke-width="4"/>
+    <path d="M548 610 L616 610 L616 630 L548 630 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2"/>
+    <!-- valve 4 -->
+    <path d="M660 542 L712 542 L712 636 L660 636 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="686" cy="542" rx="26" ry="10" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2.5"/>
+    <ellipse cx="686" cy="542" rx="16" ry="6" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2"/>
+    <path d="M660 570 L712 570 M660 584 L712 584 M660 598 L712 598" stroke="#5d6368" stroke-width="2.5" opacity="0.55"/>
+    <path d="M668 556 L668 630" stroke="#ffffff" stroke-opacity="0.35" stroke-width="4"/>
+    <path d="M652 606 L720 606 L720 630 L652 630 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2"/>
+  </g>
+
+  <!-- ===== swept tube runs out to the thrusters ===== -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M300 636 C250 636 222 656 210 686" stroke="#5d6368" stroke-width="18"/>
+    <path d="M300 636 C250 636 222 656 210 686" stroke="url(#tiTube)" stroke-width="12"/>
+    <path d="M300 630 C254 630 228 650 216 682" stroke="#ffffff" stroke-opacity="0.34" stroke-width="3.5"/>
+    <path d="M724 636 C774 636 802 656 814 686" stroke="#5d6368" stroke-width="18"/>
+    <path d="M724 636 C774 636 802 656 814 686" stroke="url(#tiTube)" stroke-width="12"/>
+    <path d="M724 630 C770 630 796 650 808 682" stroke="#ffffff" stroke-opacity="0.34" stroke-width="3.5"/>
+  </g>
+
+  <!-- ===== two small thrusters, heat-tinted flared nozzles pointing outward ===== -->
+  <!-- left thruster -->
+  <g transform="translate(0 -70) rotate(-24 216 760)">
+    <path d="M190 720 L242 720 L242 776 L190 776 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="216" cy="720" rx="26" ry="10" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2"/>
+    <g stroke="#5d6368" stroke-width="2.5" opacity="0.6">
+      <path d="M190 736 L242 732"/><path d="M190 750 L242 746"/><path d="M190 764 L242 760"/>
+    </g>
+    <path d="M190 776 L204 792 L228 792 L242 776 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <path d="M204 792 C198 820 172 838 146 860 A70 27 0 0 0 286 860 C260 838 234 820 228 792 Z"
+          fill="url(#nbBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M204 792 C198 820 172 838 146 860 A70 27 0 0 0 286 860 C260 838 234 820 228 792 Z"
+          fill="url(#heatTint)"/>
+    <path d="M186 826 Q216 844 246 826" fill="none" stroke="#4a3a12" stroke-width="3" opacity="0.5"/>
+    <ellipse cx="216" cy="860" rx="70" ry="27" fill="url(#bellBore)"/>
+    <ellipse cx="216" cy="860" rx="70" ry="27" fill="none" stroke="#e8cd7c" stroke-width="3.5" opacity="0.8"/>
+    <path d="M156 850 A62 24 0 0 1 276 850" fill="none" stroke="#8a6a2a" stroke-width="10" opacity="0.5"/>
+    <ellipse cx="216" cy="852" rx="30" ry="11" fill="#191420"/>
+  </g>
+  <!-- right thruster -->
+  <g transform="translate(0 -70) rotate(24 808 760)">
+    <path d="M782 720 L834 720 L834 776 L782 776 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="808" cy="720" rx="26" ry="10" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2"/>
+    <g stroke="#5d6368" stroke-width="2.5" opacity="0.6">
+      <path d="M782 736 L834 732"/><path d="M782 750 L834 746"/><path d="M782 764 L834 760"/>
+    </g>
+    <path d="M782 776 L796 792 L820 792 L834 776 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <path d="M796 792 C790 820 764 838 738 860 A70 27 0 0 0 878 860 C852 838 826 820 820 792 Z"
+          fill="url(#nbBarrel)" stroke="#4a3a12" stroke-width="2.5"/>
+    <path d="M796 792 C790 820 764 838 738 860 A70 27 0 0 0 878 860 C852 838 826 820 820 792 Z"
+          fill="url(#heatTint)"/>
+    <path d="M778 826 Q808 844 838 826" fill="none" stroke="#4a3a12" stroke-width="3" opacity="0.5"/>
+    <ellipse cx="808" cy="860" rx="70" ry="27" fill="url(#bellBore)"/>
+    <ellipse cx="808" cy="860" rx="70" ry="27" fill="none" stroke="#e8cd7c" stroke-width="3.5" opacity="0.8"/>
+    <path d="M748 850 A62 24 0 0 1 868 850" fill="none" stroke="#8a6a2a" stroke-width="10" opacity="0.5"/>
+    <ellipse cx="808" cy="852" rx="30" ry="11" fill="#191420"/>
+  </g>
+</svg>

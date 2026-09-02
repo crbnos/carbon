@@ -1,4 +1,5 @@
 import {
+  Button,
   Copy,
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +19,7 @@ import {
   LuPanelRight,
   LuTrash
 } from "react-icons/lu";
-import { useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -39,8 +40,24 @@ const TrainingHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
   const deleteDisclosure = useDisclosure();
 
+  const publishFetcher = useFetcher<{}>();
+  const status = routeData?.training?.status;
+  const isDraft = status === "Draft";
+  const isPublishing = publishFetcher.state !== "idle";
+
+  const onPublish = () => {
+    const formData = new FormData();
+    formData.append("ids", id);
+    formData.append("field", "status");
+    formData.append("value", "Active");
+    publishFetcher.submit(formData, {
+      method: "post",
+      action: path.to.bulkUpdateTraining
+    });
+  };
+
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
+    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <IconButton
@@ -80,7 +97,16 @@ const TrainingHeader = () => {
           </DropdownMenu>
         </HStack>
       </VStack>
-      <div className="flex flex-shrink-0 gap-1 items-center justify-end">
+      <div className="flex flex-shrink-0 gap-2 items-center justify-end">
+        {isDraft && (
+          <Button
+            isDisabled={!permissions.can("update", "people") || isPublishing}
+            isLoading={isPublishing}
+            onClick={onPublish}
+          >
+            <Trans>Publish</Trans>
+          </Button>
+        )}
         <IconButton
           aria-label={t`Toggle Properties`}
           icon={<LuPanelRight />}

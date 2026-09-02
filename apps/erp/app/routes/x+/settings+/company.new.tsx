@@ -1,8 +1,9 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
+import { enableAuditLog } from "@carbon/database/audit";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -48,6 +49,14 @@ export async function action({ request }: ActionFunctionArgs) {
   if (seed.error) {
     logger.error("Failed to seed company", { error: seed.error });
     throw new Error("Fatal: failed to seed company");
+  }
+
+  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
+  // day one — enable it at company creation, not just when settings are opened.
+  if (CONTROLLED_ENVIRONMENT) {
+    await enableAuditLog(client, companyId).catch((err) =>
+      logger.error("Failed to enable audit log for new company", { error: err })
+    );
   }
 
   // TODO: move all of this to transaction

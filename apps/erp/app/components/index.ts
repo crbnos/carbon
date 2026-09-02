@@ -36,12 +36,19 @@ import MetricCard from "./MetricCard";
 import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
 import MotionMoney from "./MotionMoney";
 import New from "./New";
+import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "./OnboardingCard";
 import PeriodSelector from "./PeriodSelector";
 import RealtimeDataProvider from "./RealtimeDataProvider";
+import { RevisionSuffix } from "./RevisionSuffix";
 import SearchFilter from "./SearchFilter";
 import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
+import SupplierAvatarGroup from "./SupplierAvatarGroup";
 import Table, { exportOnlyColumn } from "./Table";
 import { VersionMenu } from "./VersionMenu";
 
@@ -78,16 +85,21 @@ export {
   MotionMoney,
   ModuleIcon,
   New,
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName,
   OperationStatusIcon,
   OperationTypeIcon,
   PeriodSelector,
   PrintButton,
   RealtimeDataProvider,
+  RevisionSuffix,
   SearchFilter,
   SearchLandingPage,
   Select,
   SourcingTypeIcon,
   SupplierAvatar,
+  SupplierAvatarGroup,
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,

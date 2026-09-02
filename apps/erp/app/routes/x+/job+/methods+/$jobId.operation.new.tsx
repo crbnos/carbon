@@ -11,6 +11,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobOperation
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -32,8 +33,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const operationData = validation.data;
+
   const insertJobOperation = await upsertJobOperation(serviceRole, {
-    ...validation.data,
+    ...operationData,
     jobId,
     companyId,
     createdBy: userId,
@@ -70,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       userId
     }),
-    recalculateJobOperationDependencies(serviceRole, {
+    recalculateJobOperationDependencies(serviceRole, getDatabaseClient(), {
       jobId,
       companyId,
       userId

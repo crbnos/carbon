@@ -138,13 +138,41 @@
     {
       "slug": "docs/platform/backups",
       "title": "Backups",
-      "description": "Snapshot a company's data and files, restore it in place with one-click revert, or stand up a new company from a demo template.",
+      "description": "Snapshot a company's data and files, see at a glance whether each backup can still be restored, and restore in place with one-click revert.",
       "keywords": ["backups", "docs", "platform"],
       "headings": [
         "What a backup contains",
         "Create a backup",
+        "If the backup fails",
+        "Is it still restorable?",
         "Restore in place",
-        "Start a company from a template"
+        "If the restore is blocked by corrupted data",
+        "Start a company from a backup",
+        "Troubleshooting",
+        "The Backups page isn't in my Settings menu",
+        "A backup shows \"Not restorable\" or \"Restorable with changes\"",
+        "A backup shows \"Incomplete\"",
+        "\"Backup failed\" banner with rows that \"link to data outside this company\"",
+        "Can't start a restore — told to finish the current one first",
+        "Restore finished but integrations are disconnected"
+      ]
+    },
+    {
+      "slug": "docs/platform/demo-data",
+      "title": "Demo data",
+      "description": "Fill a company with a realistic industry story, so every screen has something in it, and put back exactly what was there before with one click.",
+      "keywords": ["demo", "data", "docs", "platform"],
+      "headings": [
+        "The templates",
+        "Apply a template",
+        "Demo data at sign-up",
+        "Troubleshooting",
+        "The Demo Data page isn't in my Settings menu",
+        "I applied a template and want my old data back",
+        "The apply or revert looks stuck",
+        "Can't apply a second template",
+        "Applying failed with an error",
+        "The demo dates look recent — is that real activity?"
       ]
     },
     {
@@ -230,6 +258,21 @@
       "headings": ["Recipes"]
     },
     {
+      "slug": "docs/platform/single-sign-on",
+      "title": "Single sign-on",
+      "description": "Route sign-in for your company's email domains through your own identity provider with enterprise SAML SSO.",
+      "keywords": ["single", "sign-on", "docs", "platform", "sign"],
+      "headings": [
+        "Requirements",
+        "Connect your identity provider",
+        "Verifying a domain",
+        "How sign-in works",
+        "Existing accounts",
+        "Requiring SSO",
+        "Two-factor authentication"
+      ]
+    },
+    {
       "slug": "docs/reference/account",
       "title": "Your account",
       "description": "Personal, self-service settings for profile, passkeys and two-factor, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.",
@@ -293,7 +336,7 @@
     {
       "slug": "docs/reference/api-keys",
       "title": "API keys",
-      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.",
+      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.",
       "keywords": ["api", "keys", "docs", "reference"],
       "headings": [
         "Creating a key",
@@ -1323,22 +1366,24 @@
     {
       "slug": "docs/reference/scheduling",
       "title": "Scheduling",
-      "description": "The board where jobs get dates and operations get a dispatch order, and the engine that computes both.",
+      "description": "Finite-capacity scheduling — how jobs are placed onto real work-center and operator calendars, and the boards that show and steer the result.",
       "keywords": ["scheduling", "docs", "reference"],
       "headings": [
-        "The two views drag differently",
-        "The MES board is display only",
-        "What triggers a (re)schedule",
-        "Dates: backward from the due date",
-        "Dispatch priority and work-center load",
-        "Conflicts and pinned dates",
+        "Where scheduling lives",
+        "Placement against real capacity",
+        "People are part of capacity",
+        "Two dates on every operation",
+        "The Forecast explains the schedule",
+        "When the schedule recomputes",
         "Troubleshooting",
-        "\"Invalid form data\"",
-        "An operation shows a conflict flag",
-        "Nothing reschedules when I move a card on the Work Centers / MES board",
-        "A pinned operation's due date didn't move after a reschedule",
-        "The new dates didn't appear right after I saved",
-        "I can't edit dates on the board",
+        "An operation shows a red conflict flag",
+        "An operation shows an amber \"Projected\" date",
+        "The Forecast says \"can't be scheduled\"",
+        "New dates didn't appear right after my edit",
+        "Nothing rescheduled when I reordered cards on the Work Centers view",
+        "A pinned operation's dates still moved",
+        "Flipping \"Staffing required\" didn't change the schedule",
+        "I can't edit the boards",
         "Related"
       ]
     },
@@ -1551,6 +1596,7 @@
         "Someone is stuck on the setup screen and can't get in",
         "The Two-Factor column isn't in the employee list",
         "Turning enforcement on didn't prompt anyone",
+        "Nobody got the announcement email",
         "An admin can't turn enforcement off"
       ]
     },
@@ -1563,7 +1609,7 @@
         "Fields",
         "Processes",
         "Rates: estimate vs actual",
-        "Capacity",
+        "Capacity and operating hours",
         "Related"
       ]
     },

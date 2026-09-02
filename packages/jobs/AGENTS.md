@@ -21,7 +21,7 @@ Background job system built on Inngest. Handles event system processing (webhook
 
 ## Never
 
-- Import Inngest internals or server-only job code in app bundles — use only the public exports from `@carbon/jobs` (`.` subpath: `trigger`, `batchTrigger`, schemas).
+- Import Inngest internals or server-only job code in app bundles — use only the public exports from `@carbon/jobs` (`.` subpath: `trigger`, `batchTrigger`, schemas; `./backups`: the pure catalog/compatibility layer, server-side only).
 - Use the event system for real-time / data-integrity needs — it is async (typically ~3–5s, up to ~1 min if a push wake is lost). Use sync interceptors instead.
 - Bypass the PGMQ queue by writing directly to handler tables — always go through `dispatch_event_batch()` triggers.
 - Give a workflow action anything but the owner-scoped client it was handed. A privileged or
@@ -34,13 +34,32 @@ Background job system built on Inngest. Handles event system processing (webhook
 pnpm --filter @carbon/jobs test
 pnpm --filter @carbon/jobs typecheck
 pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
+pnpm db:check:backups                 # Would existing customer backups still restore?
 ```
+
+`db:check:backups` (`src/scripts/check-backups.ts`) runs from `.husky/pre-commit` when a staged
+file is under `packages/database/supabase/migrations/`. It compares `manifests/schema.json` **as
+it stands on `main`** (fetched from raw.githubusercontent.com, slug from your `origin` remote,
+falling back with a staleness warning to `git show origin/main:…`) against your live schema, and
+skips rather than passes when your database is behind. Nobody maintains that file: the hook passes
+`--stage`, which regenerates and `git add`s it on success. A bare `pnpm db:check:backups` is
+read-only. See `manifests/README.md` and `.claude/rules/company-backup-restore.md`.
+
+Scripts under `src/scripts/` run through bare `tsx`, which does NOT paper over CJS/ESM interop the
+way Vite and vitest do. A **named** import of a workspace package that lacks `"type": "module"`
+(`@carbon/database`, `@carbon/utils`, `@carbon/logger`) throws `does not provide an export named …`
+at run time even though it typechecks. The fix is to keep a script's runtime import chain free of
+those packages (type-only imports are fine — they erase) — never to flip a shared package's `type`
+field for one script. That is exactly why the catalog/compatibility logic lives in
+`src/backups/schema.ts` with no runtime `@carbon/*` imports, instead of in `company-backup.ts`
+(whose module-scope `getLogger` would drag `@carbon/logger` into the script).
 
 ## Key Exports
 
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | `trigger()`, `batchTrigger()`, `Events` type, Jira/Linear webhook schemas |
+| `./backups` | `src/backups/schema.ts` — catalog introspection + backup-compatibility diff (`getCompanyTableCatalog`, `reportBackupCompatibility`, `compatibilityStatus`, types), plus the re-exported `src/backups/scope.ts` — scope predicates, the export closure guard (`findExportScopeViolations`, `ExportScopeViolationError`) and the opt-in exclusion/purge (`computeScopeExclusions`, `purgeScopeViolations`). No Inngest, no logger; the ERP Backups loader computes the live restore verdict through it and the purge action deletes through it. Server-side only (runs `information_schema` SQL) |
 | `./events` | `Events` type (re-export from `@carbon/lib`) |
 | `./inngest` | Inngest client + function registrations, plus `setWorkflowDispatch` and its `WorkflowDispatch` / `DispatchContext` / `DispatchResult` types (server-only) |
 | `./worker` | Worker entry point for Inngest serve |
@@ -127,7 +146,7 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 | `services.ts` | `createWorkflowServices` — routes an action id to `notify`, `webhook`, the update path or the create path; the only export the engine uses |
 | `dispatcher.ts` | The `setWorkflowDispatch` seam (below) |
 | `create.ts` | `runCreateAction` — creates through the ERP's own `upsert*` service function via the dispatcher, so sequence numbers, defaults and required-field logic are the app's; digs the new row's id out of the returned envelope |
-| `update.ts` | `runUpdateAction` — writes the catalog's allowlisted columns on one record. Checks the target and **every entity-typed value** exists in this company before writing, and rejects a value outside a column's enum. Also exports `toPlainValue` |
+| `update.ts` | `runUpdateAction` — writes the catalog's allowlisted columns on one record. Checks the target and **every entity-typed value** exists in this company before writing, and rejects a value outside a column's enum. A custom field is written separately, through the `workflow_merge_custom_fields` RPC, so setting one cannot erase the others |
 | `notify.ts` | `runNotifyAction` — one `trigger("notify", …)` with `NotificationEvent.Workflow`. A role IS a group and every user has an identity group whose id is their user id, so both recipient inputs collapse to `groupIds` |
 | `search.ts` | `runSearch` — one Lookup node's search, translated to PostgREST filters that mean exactly what `runtime/compare.ts` says (`contains`/`startsWith`/`endsWith` → `ilike`). Reads `MAX_LIST_ITEMS + 1` so an over-cap list is detectable |
 | `operations.ts` | `runOperation` — the 15 read-only computations, one `COMPUTATIONS` entry per catalog operation id. An id with no implementation refuses rather than falls through; a throw becomes a failed node, never a thrown walk |

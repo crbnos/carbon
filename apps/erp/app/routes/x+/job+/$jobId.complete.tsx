@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -58,6 +59,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(rpc.error, "Failed to complete job"))
     );
   }
+
+  // complete_job_to_inventory explicitly supports re-completion, so this route
+  // can fire twice for one job. The idempotency key is the job id, so the
+  // repeat collapses rather than counting a second completion.
+  trackWorkEvent("job_completed", {
+    companyId,
+    userId,
+    jobId,
+    path: "manual"
+  });
 
   // Note: for Non-Inventory (Service) jobs, complete_job_to_inventory itself
   // fulfills the linked sales-order line — completion is also reachable via

@@ -8,6 +8,8 @@ import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
+import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
+import { AccountLockout, redis } from "@carbon/kv";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -105,6 +107,19 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    // Require-SSO gate: a covered + enforced domain may only authenticate via
+    // SSO — refuse the passkey before any session is minted. The login page
+    // surfaces this message via its existing error toast.
+    if (await isSsoRequiredForEmail(serviceRole, authUser.user.email)) {
+      return data(
+        error(
+          null,
+          "Your organization requires single sign-on. Sign in with your work email to continue."
+        ),
+        { status: 403 }
+      );
+    }
+
     const authSession = await signInWithPasskey(
       credRow.userId,
       authUser.user.email
@@ -114,6 +129,10 @@ export async function action({ request }: ActionFunctionArgs) {
         status: 500
       });
     }
+
+    // Genuine passkey login verified — clear any per-account lockout state
+    // (NIST 3.1.8 reset-on-success), before the TOTP gate below.
+    await new AccountLockout({ redis }).reset(authUser.user.email);
 
     const employeeCompanies = await getEmployeeCompanies(
       serviceRole,

@@ -1,5 +1,7 @@
 import type { Database } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import type { WorkSource } from "@carbon/lib/telemetry";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -26,6 +28,17 @@ import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
 
+// The jobMaterialStep `quantity` column ships with a migration that only runs
+// on main — previews (and the prod window between app deploy and migration) run
+// this code against the pre-migration schema. PostgREST fails the whole select
+// on an unknown column, so callers fall back to the quantity-less query.
+// 42703 = Postgres undefined_column; PGRST204 = PostgREST schema-cache miss.
+function isMissingQuantityColumn(
+  error: { code?: string; message?: string } | null
+) {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
 export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
@@ -37,7 +50,7 @@ export async function getOpenJobs(
     )
     .eq("companyId", args.companyId)
     .eq("locationId", args.locationId)
-    .in("status", ["Ready", "In Progress", "Paused"])
+    .in("status", [...activeJobStatuses])
     .order("jobId", { ascending: true });
 }
 
@@ -206,6 +219,40 @@ export async function finishJobOperation(
         companyId: args.companyId,
         actorId: args.userId
       });
+
+      // The status write above has no prior-status guard, so finishing an
+      // already-Done operation writes again. The idempotency key is the
+      // operation id, so the repeat collapses instead of counting twice.
+      trackWorkEvent("job_operation_finished", {
+        companyId: args.companyId,
+        userId: args.userId,
+        jobOperationId: args.jobOperationId,
+        jobId
+      });
+
+      // The only way to observe the automatic completion. When this was the
+      // last operation, sync_finish_job_operation has already flipped the job
+      // to Completed inside the same transaction as the status write above —
+      // in Postgres, with no application call site in any runtime. Reading the
+      // row back here is what closes the last link of the benchmark chain
+      // (created → released → started → reported → finished → completed).
+      // Keyed on jobId, so it collapses with the manual complete route rather
+      // than counting a second completion.
+      const completed = await client
+        .from("job")
+        .select("status")
+        .eq("id", jobId)
+        .eq("companyId", args.companyId)
+        .maybeSingle();
+
+      if (completed.data?.status === "Completed") {
+        trackWorkEvent("job_completed", {
+          companyId: args.companyId,
+          userId: args.userId,
+          jobId,
+          path: "auto"
+        });
+      }
     }
   }
 
@@ -421,7 +468,9 @@ export async function getModelUploadsByIds(
 ) {
   return client
     .from("modelUpload")
-    .select("id, name, modelPath, thumbnailPath, glbPath, processingStatus")
+    .select(
+      "id, name, modelPath, thumbnailPath, glbPath, processingStatus, optimizedModelPath"
+    )
     .in("id", ids);
 }
 
@@ -635,24 +684,45 @@ export async function getJobMaterialsByOperationId(
   // Step assignment (Phase 2: part ↔ step, many-to-many). The make-method view doesn't carry
   // the join rows, so look them up from jobMaterialStep and attach an array. No rows = the
   // material applies to the whole operation (shown on every step); 1+ rows scope it to those
-  // steps so the MES shows only the parts involved in the current step.
-  const stepLinks = await client
+  // steps so the MES shows only the parts involved in the current step. Each link may carry
+  // a per-step quantity (NULL = the full BOM line quantity), so a line split across steps
+  // shows the split share on each step. The quantity column ships with this branch's
+  // migration (main-only), so fall back to the bare links against a pre-migration schema.
+  let stepLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId, jobOperationStepId")
+    .select("jobMaterialId, jobOperationStepId, quantity")
     .in(
       "jobMaterialId",
       (materials.data ?? []).map((m) => m.id ?? "")
     );
+  if (isMissingQuantityColumn(stepLinks.error)) {
+    stepLinks = (await client
+      .from("jobMaterialStep")
+      .select("jobMaterialId, jobOperationStepId")
+      .in(
+        "jobMaterialId",
+        (materials.data ?? []).map((m) => m.id ?? "")
+      )) as unknown as typeof stepLinks;
+  }
   const stepIdsByMaterialId = new Map<string, string[]>();
+  const stepQuantitiesByMaterialId = new Map<
+    string,
+    Record<string, number | null>
+  >();
   for (const r of stepLinks.data ?? []) {
     const list = stepIdsByMaterialId.get(r.jobMaterialId) ?? [];
     list.push(r.jobOperationStepId);
     stepIdsByMaterialId.set(r.jobMaterialId, list);
+    const quantities = stepQuantitiesByMaterialId.get(r.jobMaterialId) ?? {};
+    quantities[r.jobOperationStepId] = r.quantity;
+    stepQuantitiesByMaterialId.set(r.jobMaterialId, quantities);
   }
   if (materials.data) {
     materials.data = materials.data.map((m) => ({
       ...m,
-      jobOperationStepIds: stepIdsByMaterialId.get(m.id ?? "") ?? []
+      jobOperationStepIds: stepIdsByMaterialId.get(m.id ?? "") ?? [],
+      jobOperationStepQuantities:
+        stepQuantitiesByMaterialId.get(m.id ?? "") ?? {}
     }));
   }
 
@@ -883,20 +953,37 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     return { error: materials.error };
   }
 
-  // Step ownership: materialId → the step ids it's assigned to (empty = loose).
-  const stepLinks = await client
+  // Step ownership: materialId → the step ids it's assigned to (empty = loose),
+  // plus each link's per-step quantity (NULL = the full BOM line quantity).
+  // Falls back to the bare links against a pre-migration schema.
+  let stepLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId, jobOperationStepId")
+    .select("jobMaterialId, jobOperationStepId, quantity")
     .in(
       "jobMaterialId",
       materials.data.map((m) => m.id)
     );
+  if (isMissingQuantityColumn(stepLinks.error)) {
+    stepLinks = (await client
+      .from("jobMaterialStep")
+      .select("jobMaterialId, jobOperationStepId")
+      .in(
+        "jobMaterialId",
+        materials.data.map((m) => m.id)
+      )) as unknown as typeof stepLinks;
+  }
   if (stepLinks.error) return { error: stepLinks.error };
   const ownedSteps = new Map<string, Set<string>>();
+  const linkQuantities = new Map<string, Map<string, number | null>>();
   for (const link of stepLinks.data ?? []) {
     const set = ownedSteps.get(link.jobMaterialId) ?? new Set<string>();
     set.add(link.jobOperationStepId);
     ownedSteps.set(link.jobMaterialId, set);
+    const quantities =
+      linkQuantities.get(link.jobMaterialId) ??
+      new Map<string, number | null>();
+    quantities.set(link.jobOperationStepId, link.quantity);
+    linkQuantities.set(link.jobMaterialId, quantities);
   }
 
   // Units (index) that have recorded each of the operation's steps, so we can
@@ -924,13 +1011,40 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       owning && owning.size > 0
         ? stepIds.filter((id) => owning.has(id))
         : [firstStepId];
-    // Distinct units that recorded at least one owning step — a unit that
-    // recorded several owning steps of the same material still counts once.
+    const quantities = linkQuantities.get(material.id);
+    const hasSplitQuantities = triggerStepIds.some(
+      (id) => (quantities?.get(id) ?? null) !== null
+    );
+    // Distinct units that recorded at least one owning step — the line-level
+    // requirement bound: a material can never owe more than units × per-unit.
     const units = new Set<number>();
     for (const id of triggerStepIds) {
       for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
     }
-    const delta = units.size * perUnit - (material.quantityIssued ?? 0);
+    let target: number;
+    if (hasSplitQuantities) {
+      // The line is SPLIT across steps (5 screws at step 1, 5 at step 2): each
+      // owning step consumes its own share as it is recorded, so the target is
+      // the per-step sum. A link left without an explicit quantity falls back
+      // to the full per-unit quantity for its step. The sum is capped at the
+      // line-level bound — the BOM line is the source of truth, so shares that
+      // over-allocate the line (2 + 10 on a 5-quantity line) must not issue
+      // more stock than the line requires.
+      target = Math.min(
+        triggerStepIds.reduce(
+          (sum, id) =>
+            sum +
+            (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
+          0
+        ),
+        units.size * perUnit
+      );
+    } else {
+      // Unsplit: distinct units counted once, so the requirement never
+      // multiplies across a material's several owning steps.
+      target = units.size * perUnit;
+    }
+    const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
     const issue = await client.functions.invoke("issue", {
       body: {
@@ -1036,6 +1150,120 @@ export async function getNonConformanceActions(
     nonConformanceId: string;
     notes: JSONContent;
   }[];
+}
+
+export async function getOperationEligibility(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; employeeId: string; companyId: string }
+): Promise<{ eligible: boolean; reason: string | null }> {
+  const { operationId, employeeId, companyId } = args;
+
+  // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
+  // error must not brick the shop floor — the scheduler is the primary
+  // enforcement of ability requirements; this gate is a best-effort backstop.
+  // The requirement comes from the operation's PROCESS: process.requiresAbility
+  // gates, and the ability linked 1:1 to the process (ability.processId) is
+  // what the employee must be qualified for.
+  const operation = await client
+    .from("jobOperation")
+    .select("processId")
+    .eq("id", operationId)
+    .maybeSingle();
+
+  if (operation.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch jobOperation",
+      operation.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!operation.data?.processId) {
+    return { eligible: true, reason: null };
+  }
+
+  const process = await client
+    .from("process")
+    .select("name, requiresAbility")
+    .eq("id", operation.data.processId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (process.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch process",
+      process.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!process.data?.requiresAbility) {
+    return { eligible: true, reason: null };
+  }
+
+  const ability = await client
+    .from("ability")
+    .select("id, name")
+    .eq("processId", operation.data.processId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (ability.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch ability",
+      ability.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!ability.data) {
+    // requiresAbility is on but no linked ability exists — data anomaly,
+    // don't block the floor
+    return { eligible: true, reason: null };
+  }
+
+  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+
+  const employeeAbility = await client
+    .from("employeeAbility")
+    .select("expiresAt")
+    .eq("employeeId", employeeId)
+    .eq("abilityId", ability.data.id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (employeeAbility.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch employeeAbility",
+      employeeAbility.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  // Qualification is presence-based: the row existing means qualified, subject
+  // only to expiry below.
+  if (!employeeAbility.data) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — not qualified`
+    };
+  }
+
+  const todayDate = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+  if (
+    employeeAbility.data.expiresAt !== null &&
+    employeeAbility.data.expiresAt <= todayDate
+  ) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
+    };
+  }
+
+  return { eligible: true, reason: null };
 }
 
 export async function getProcessesList(
@@ -1416,15 +1644,65 @@ export async function getWorkCentersByLocation(
   return { data: mergedData, error: null };
 }
 
+/**
+ * The operator's people assignment (manning-board station) for a date. Multiple
+ * rows are possible at multi-shift locations; callers take the first.
+ */
+export async function getMyPeopleAssignment(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string; date: string }
+) {
+  return client
+    .from("peopleAssignment")
+    .select("id, workCenterId, shiftId")
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("date", args.date);
+}
+
 export async function getWorkCentersByCompany(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("workCenter")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("name", { ascending: true });
+  // Query both views and merge - workCenters has processes, workCentersWithBlockingStatus has blocking info
+  const [workCentersResult, blockingStatusResult] = await Promise.all([
+    client
+      .from("workCenters")
+      .select("*")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    client
+      .from("workCentersWithBlockingStatus")
+      .select("id, isBlocked, blockingDispatchId, blockingDispatchReadableId")
+      .eq("companyId", companyId)
+      .eq("active", true)
+  ]);
+
+  if (workCentersResult.error) {
+    return workCentersResult;
+  }
+
+  if (blockingStatusResult.error) {
+    return { data: null, error: blockingStatusResult.error };
+  }
+
+  const blockingStatusMap = new Map(
+    blockingStatusResult.data?.map((wc) => [wc.id, wc]) ?? []
+  );
+
+  const mergedData = workCentersResult.data?.map((wc) => {
+    const blockingStatus = blockingStatusMap.get(wc.id);
+    return {
+      ...wc,
+      isBlocked: blockingStatus?.isBlocked ?? false,
+      blockingDispatchId: blockingStatus?.blockingDispatchId ?? null,
+      blockingDispatchReadableId:
+        blockingStatus?.blockingDispatchReadableId ?? null
+    };
+  });
+
+  return { data: mergedData, error: null };
 }
 
 export async function insertAttributeRecord(
@@ -1537,9 +1815,11 @@ export async function insertProductionQuantity(
     // index on inspectionSampleId is the double-count guard).
     inspectionId?: string;
     inspectionSampleId?: string;
-  }
+  },
+  /** Which surface posted it. Telemetry only — the row cannot tell. */
+  source: WorkSource = "mes"
 ) {
-  return client
+  const result = await client
     .from("productionQuantity")
     .insert(
       sanitize({
@@ -1548,6 +1828,20 @@ export async function insertProductionQuantity(
       })
     )
     .select("*");
+
+  const inserted = result.data?.[0];
+  if (inserted) {
+    trackWorkEvent("production_quantity_reported", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionQuantityId: inserted.id,
+      jobOperationId: data.jobOperationId,
+      quantity: data.quantity,
+      source
+    });
+  }
+
+  return result;
 }
 
 export async function insertScrapQuantity(
@@ -1679,7 +1973,9 @@ export async function startProductionEvent(
     createdBy: string;
   },
   trackedEntityId: string | undefined,
-  unitIndex?: number
+  unitIndex?: number,
+  /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
+  source: WorkSource = "mes"
 ) {
   if (trackedEntityId) {
     const activityId = nanoid();
@@ -1748,6 +2044,15 @@ export async function startProductionEvent(
       userId: data.createdBy
     });
 
+    trackWorkEvent("job_operation_started", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionEventId: eventInsert.data.id,
+      jobOperationId: data.jobOperationId,
+      eventType: data.type,
+      source
+    });
+
     return eventInsert;
   }
 
@@ -1761,6 +2066,18 @@ export async function startProductionEvent(
       jobOperationId: data.jobOperationId,
       userId: data.createdBy
     });
+
+    const inserted = eventInsert.data?.[0];
+    if (inserted) {
+      trackWorkEvent("job_operation_started", {
+        companyId: data.companyId,
+        userId: data.createdBy,
+        productionEventId: inserted.id,
+        jobOperationId: data.jobOperationId,
+        eventType: data.type,
+        source
+      });
+    }
   }
 
   return eventInsert;
@@ -1839,4 +2156,31 @@ export async function getJobMethodBomIdMap(
   });
 
   return bomIdMap;
+}
+
+/**
+ * Stamp the schedule as outdated so the debounced replan wave regenerates the
+ * affected location. Mirrors production.service.ts's helper (ERP) — used here
+ * when a MES maintenance dispatch changes a work center's downtime window.
+ */
+export async function notifyScheduleInputsChanged(
+  companyId: string,
+  kind:
+    | "ability"
+    | "shift"
+    | "employee-shift"
+    | "work-center"
+    | "location"
+    | "reorder"
+    | "people",
+  reason: string,
+  entityId?: string
+) {
+  const { trigger } = await import("@carbon/jobs");
+  await trigger("schedule-inputs-changed", {
+    companyId,
+    kind,
+    reason,
+    entityId
+  });
 }

@@ -1,4 +1,7 @@
-import { buildSeedWorkflows } from "@carbon/database/seed-workflows";
+import {
+  buildSeedWorkflows,
+  SEED_WORKFLOW_BUILDERS
+} from "@carbon/database/seed-workflows";
 import { describe, expect, it } from "vitest";
 import { createWorkflowCatalog } from "./catalog";
 import { readWorkflowVersion } from "./definition/normalize";
@@ -8,15 +11,17 @@ import { validateDefinition } from "./definition/validate";
 // workflow in someone's local company. The check lives here because @carbon/database cannot
 // import this package, but this package already dev-depends on it.
 
+const refs = { ownerId: "usr_seed_owner", issueTypeId: "nct_seed_type" };
 const catalog = createWorkflowCatalog();
-const workflows = buildSeedWorkflows({
-  ownerId: "usr_seed_owner",
-  issueTypeId: "nct_seed_type"
-});
+const workflows = buildSeedWorkflows(refs);
+
+const everyDataset = Object.entries(SEED_WORKFLOW_BUILDERS).flatMap(
+  ([key, build]) => build(refs).map((w) => [`${key}: ${w.name}`, w] as const)
+);
 
 describe("dev seed workflows", () => {
-  it("ships exactly one active workflow", () => {
-    expect(workflows.filter((w) => w.active).map((w) => w.name)).toEqual([
+  it("ships exactly one published workflow", () => {
+    expect(workflows.filter((w) => w.published).map((w) => w.name)).toEqual([
       "Assign new sales orders"
     ]);
   });
@@ -25,19 +30,17 @@ describe("dev seed workflows", () => {
     const types = new Set(workflows.flatMap((w) => w.nodes.map((n) => n.type)));
     expect([...types].sort()).toEqual([
       "action",
+      "compute",
       "condition",
-      "entity",
       "filter",
       "lookup",
       "trigger"
     ]);
   });
 
-  it.each(
-    workflows.map((w) => [w.name, w] as const)
-  )("%s is a valid definition", (_name, workflow) => {
+  it.each(everyDataset)("%s is a valid definition", (_name, workflow) => {
     const read = readWorkflowVersion({
-      formatVersion: 3,
+      formatVersion: 4,
       nodes: workflow.nodes,
       edges: workflow.edges
     });

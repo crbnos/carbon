@@ -27,9 +27,11 @@ function permissions(
 }
 
 describe("hasPermission", () => {
-  it("grants when the action holds the all-companies wildcard", () => {
+  it("no longer grants on the retired all-companies wildcard (NIST 3.1.5)", () => {
+    // "0" was the global-company wildcard; it was removed. It is now just a
+    // literal company id that never matches a real one.
     const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(true);
+    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(false);
   });
 
   it("grants when the action names the company exactly", () => {

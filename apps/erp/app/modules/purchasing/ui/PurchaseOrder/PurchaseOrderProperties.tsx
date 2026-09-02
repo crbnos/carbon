@@ -1,4 +1,5 @@
 import type { Json } from "@carbon/database";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -128,7 +129,7 @@ const PurchaseOrderProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className="w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
     >
       <VStack spacing={4}>
         <HStack className="w-full justify-between">
@@ -166,7 +167,7 @@ const PurchaseOrderProperties = () => {
                   className="p-1"
                   onClick={() =>
                     copyToClipboard(
-                      routeData?.purchaseOrder?.purchaseOrderId ?? ""
+                      getPurchaseOrderDisplayId(routeData?.purchaseOrder)
                     )
                   }
                 >
@@ -180,7 +181,7 @@ const PurchaseOrderProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">
-          {routeData?.purchaseOrder?.purchaseOrderId}
+          {getPurchaseOrderDisplayId(routeData?.purchaseOrder)}
         </span>
       </VStack>
 

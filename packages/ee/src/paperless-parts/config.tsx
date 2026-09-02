@@ -2,7 +2,6 @@ import { Copy, cn, Input, InputGroup, InputRightElement } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
 import type { SVGProps } from "react";
 import { z } from "zod";
-import { zfd } from "zod-form-data";
 import { defineIntegration } from "../fns";
 
 export const PaperlessParts = defineIntegration({
@@ -21,14 +20,14 @@ export const PaperlessParts = defineIntegration({
     {
       name: "apiKey",
       label: "API Key",
-      type: "text",
+      type: "secret",
       required: true,
       value: ""
     },
     {
       name: "secretKey",
       label: "Webhook Signing Secret",
-      type: "text",
+      type: "secret",
       required: true,
       value: ""
     },
@@ -64,14 +63,25 @@ export const PaperlessParts = defineIntegration({
     }
   ],
   schema: z.object({
-    apiKey: z.string().min(1, { message: "API Key is required" }),
-    secretKey: z
-      .string()
-      .min(1, { message: "Webhook Signing Secret is required" }),
+    // Empty means "keep the existing vaulted secret"; presence is enforced at
+    // install-time in the settings action.
+    apiKey: z.string(),
+    secretKey: z.string(),
     methodType: z.enum(["Purchase to Order", "Pull from Inventory"]),
     trackingType: z.enum(["Inventory", "Non-Inventory", "Batch"]),
     billOfProcessBlackList: z.array(z.string()).optional(),
-    usePaperlessOrderNumber: zfd.checkbox()
+    // `SwitchField` in the integration form always posts a literal
+    // "true"/"false" string, which `zfd.checkbox()` (expects "on") rejects —
+    // that rejection blocked every save. Preprocess the string into a boolean
+    // the same way the email/onshape/xero configs do.
+    usePaperlessOrderNumber: z
+      .preprocess((v) => {
+        if (typeof v === "boolean") return v;
+        if (v === "true") return true;
+        if (v === "false") return false;
+        return v;
+      }, z.boolean())
+      .default(false)
   })
 });
 

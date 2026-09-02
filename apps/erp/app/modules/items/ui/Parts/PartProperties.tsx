@@ -34,7 +34,7 @@ import {
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -46,6 +46,7 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
+import type { UnreleasedChangeOrderItem } from "../../items.server";
 import type {
   ItemFile,
   MakeMethod,
@@ -53,6 +54,7 @@ import type {
   PickMethod,
   SupplierPart
 } from "../../types";
+import { ItemChangeNoticeLock } from "../ChangeNotice/ItemChangeNoticeLock";
 import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
 
 export type PartPropertiesData = {
@@ -64,6 +66,10 @@ export type PartPropertiesData = {
   pickMethods: PickMethod[];
   makeMethods: Promise<PostgrestResponse<MakeMethod>>;
   tags: { name: string }[];
+  // Set while the change notice that minted this item is still open. Optional
+  // because the change-order card builds this object itself and never renders
+  // the Active toggle.
+  unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
 };
 
 type PartPropertiesProps = {
@@ -104,6 +110,8 @@ const PartProperties = ({
   const lockPartNumber = changeType === "Revision";
   const { t } = useLingui();
   const params = useParams();
+  const companySettings = useCompanySettings();
+  const allowLowercaseItemIds = companySettings?.allowLowercaseItemIds === true;
   const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
@@ -135,6 +143,8 @@ const PartProperties = ({
         name: string;
       } | null;
     }>;
+    // Set while the change notice that minted this item is still open.
+    unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   }>(path.to.part(itemId));
   const routeData = data ?? routeDataFromRoute;
 
@@ -228,6 +238,14 @@ const PartProperties = ({
     [routeData?.partSummary?.readableId]
   );
 
+  // The change notice that minted this part activates it at release. Until then
+  // the toggle is locked: an unreleased revision switched Active by hand reaches
+  // the item pickers, MRP and job creation carrying the notice's draft BOM.
+  // An already-active part is left alone so it can still be switched off.
+  const activationLockId = routeData?.partSummary?.active
+    ? undefined
+    : routeData?.unreleasedChangeOrder?.changeOrderReadableId;
+
   const [suppliers] = useSuppliers();
 
   // Image + files, factored so they can render inline ("all") or as the sole
@@ -303,6 +321,7 @@ const PartProperties = ({
           label={formLayout ? t`Part Number` : ""}
           name="partId"
           inline={inlineLayout}
+          isUppercase={!allowLowercaseItemIds}
           value={routeData?.partSummary?.readableId ?? ""}
           onBlur={(e) => {
             onUpdate("partId", e.target.value ?? null);
@@ -320,7 +339,7 @@ const PartProperties = ({
       validator={z.object({
         name: z.string()
       })}
-      className={cn("w-full", !formLayout && "-mt-2")}
+      className="w-full"
       isReadOnly={isReadOnly}
     >
       <span className="text-xs text-muted-foreground">
@@ -348,7 +367,7 @@ const PartProperties = ({
           : "flex flex-col items-start space-y-4",
         embedded
           ? "px-1 py-2"
-          : "w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
+          : "w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
       )}
     >
       {formLayout ? (
@@ -726,25 +745,40 @@ const PartProperties = ({
       {/* Active is a lifecycle flag the change notice controls at release — not a
           user-editable attribute in the CO card. Keep it on the part page only. */}
       {!embedded && (
-        <ValidatedForm
-          defaultValues={{
-            active: routeData?.partSummary?.active ?? undefined
-          }}
-          validator={z.object({
-            active: zfd.checkbox()
-          })}
+        <ItemChangeNoticeLock
+          changeNotices={[]}
+          isLocked={!!activationLockId}
           className="w-full"
-          isReadOnly={isReadOnly}
+          reason={
+            activationLockId ? (
+              <Trans>
+                This part is activated when change notice {activationLockId} is
+                released.
+              </Trans>
+            ) : undefined
+          }
         >
-          <Boolean
-            label={t`Active`}
-            name="active"
-            variant="small"
-            onChange={(value) => {
-              onUpdate("active", value ? "on" : "off");
+          <ValidatedForm
+            defaultValues={{
+              active: routeData?.partSummary?.active ?? undefined
             }}
-          />
-        </ValidatedForm>
+            validator={z.object({
+              active: zfd.checkbox()
+            })}
+            className="w-full"
+            isReadOnly={isReadOnly}
+          >
+            <Boolean
+              label={t`Active`}
+              name="active"
+              variant="small"
+              isDisabled={!!activationLockId}
+              onChange={(value) => {
+                onUpdate("active", value ? "on" : "off");
+              }}
+            />
+          </ValidatedForm>
+        </ItemChangeNoticeLock>
       )}
       {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
           affected-item card; it stays editable on the part page (non-embedded),

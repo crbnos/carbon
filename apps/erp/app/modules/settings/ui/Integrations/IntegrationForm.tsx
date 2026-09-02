@@ -19,7 +19,6 @@ import {
 import {
   Badge,
   Button,
-  Copy,
   cn,
   Drawer,
   DrawerBody,
@@ -64,15 +63,23 @@ function IntegrationActionButton({
     setStatus("running");
 
     try {
-      const response = await fetch(action.endpoint, { method: "POST" });
+      const response = await fetch(action.endpoint, {
+        method: "POST"
+      });
+
       const data = await response.json();
 
-      if (data.success) {
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+        return;
+      }
+
+      if (data?.success) {
         toast.success(`${action.label} started`);
         setStatus("completed");
       } else {
         setStatus("idle");
-        toast.error(data.error || `Failed to start ${action.label}`);
+        toast.error(data?.error || `Failed to start ${action.label}`);
       }
     } catch {
       setStatus("idle");
@@ -220,8 +227,21 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
         </div>
       );
 
+    // A vault-backed credential. The stored secret is never sent to the
+    // browser, so the field loads empty: leaving it empty keeps the vaulted
+    // value, typing a new one replaces it. Rendered as a plain `Password`
+    // (which has its own show/hide toggle) — no separate "Reveal" affordance.
     case "secret":
-      return <SecretField setting={setting} />;
+      return (
+        <div className="w-full">
+          <Password name={setting.name} label={setting.label} />
+          {setting.description && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {setting.description}
+            </p>
+          )}
+        </div>
+      );
 
     case "cards":
       return <CardSelector setting={setting} />;
@@ -304,35 +324,6 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
     default:
       return null;
   }
-}
-
-/**
- * A masked-but-recoverable credential field. Reuses the `Password` field
- * (form binding + reveal toggle) and adds a copy button that reads the live
- * form value via `useControlField`, so a stored secret prefilled by the
- * loader can be revealed and copied without being re-typed. The value stays
- * editable — pasting a new secret overwrites it. The copy button only shows
- * once the field has a value.
- */
-function SecretField({ setting }: { setting: IntegrationSetting }) {
-  const [value] = useControlField<string>(setting.name);
-  const current = typeof value === "string" ? value : "";
-
-  return (
-    <div className="w-full">
-      <div className="flex items-end gap-2">
-        <div className="min-w-0 flex-1">
-          <Password name={setting.name} label={setting.label} />
-        </div>
-        {current.length > 0 && <Copy text={current} className="shrink-0" />}
-      </div>
-      {setting.description && (
-        <p className="text-xs text-muted-foreground mt-1.5">
-          {setting.description}
-        </p>
-      )}
-    </div>
-  );
 }
 
 /**
@@ -783,7 +774,11 @@ export function IntegrationForm({
                   <Trans>Setup instructions</Trans>
                 </div>
                 {/* @ts-expect-error TS2339 */}
-                <integration.setupInstructions companyId={companyId} />
+                <integration.setupInstructions
+                  companyId={companyId}
+                  metadata={metadata}
+                  installed={installed}
+                />
               </div>
             )}
 

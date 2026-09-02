@@ -1,7 +1,7 @@
 import type { WorkflowNode, WorkflowNodeType } from "../definition/schema";
 import { actionExecutor } from "./action";
+import { computeExecutor } from "./compute";
 import { conditionExecutor } from "./condition";
-import { entityExecutor } from "./entity";
 import { filterExecutor } from "./filter";
 import { lookupExecutor } from "./lookup";
 import type { NodeExecutor } from "./types";
@@ -12,8 +12,8 @@ const EXECUTORS: {
   [K in WorkflowNodeType]?: NodeExecutor<Extract<WorkflowNode, { type: K }>>;
 } = {
   action: actionExecutor,
+  compute: computeExecutor,
   condition: conditionExecutor,
-  entity: entityExecutor,
   filter: filterExecutor,
   lookup: lookupExecutor
 };

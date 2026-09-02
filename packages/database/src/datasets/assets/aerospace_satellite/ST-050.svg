@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="blkBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blkFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.5" stop-color="#3b4045"/>
+      <stop offset="1" stop-color="#1c1f22"/>
+    </linearGradient>
+    <linearGradient id="blkSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3d4247"/>
+      <stop offset="0.6" stop-color="#25292c"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="tiBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="tiFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.5" stop-color="#c6ced4"/>
+      <stop offset="1" stop-color="#8a9298"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8cd7c"/>
+      <stop offset="0.45" stop-color="#c9a445"/>
+      <stop offset="1" stop-color="#7a5d19"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="842" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- ===== titanium mounting bracket with slotted feet ===== -->
+  <g>
+    <path d="M238 802 L782 802 L822 773 L278 773 Z" fill="url(#tiFace)" stroke="#6f767c" stroke-width="2.5"/>
+    <path d="M238 802 L782 802 L782 830 L238 830 Z" fill="url(#tiBarrel)" stroke="#6f767c" stroke-width="2.5"/>
+    <path d="M782 802 L822 773 L822 801 L782 830 Z" fill="url(#tiBarrel)" stroke="#6f767c" stroke-width="2"/>
+    <!-- slots -->
+    <g fill="#3a4045">
+      <path d="M266 796 L306 767 L322 767 L282 796 Z"/>
+      <path d="M316 796 L356 767 L372 767 L332 796 Z"/>
+      <path d="M690 796 L730 767 L746 767 L706 796 Z"/>
+      <path d="M740 796 L780 767 L796 767 L756 796 Z"/>
+    </g>
+    <g stroke="#ffffff" stroke-opacity="0.2" stroke-width="2" fill="none">
+      <path d="M260 792 L800 792"/>
+      <path d="M250 812 L770 812"/>
+    </g>
+  </g>
+
+  <!-- ===== optical head, black anodised ===== -->
+  <g>
+    <path d="M350 690 L660 690 L700 661 L390 661 Z" fill="url(#blkFace)" stroke="#0f1213" stroke-width="2.5"/>
+    <path d="M660 690 L700 661 L700 776 L660 805 Z" fill="url(#blkSide)" stroke="#0f1213" stroke-width="2.5"/>
+    <path d="M350 690 L660 690 L660 805 L350 805 Z" fill="url(#blkBarrel)" stroke="#0f1213" stroke-width="2.5"/>
+    <!-- machined chamfer inset -->
+    <path d="M362 700 L648 700 L648 795 L362 795 Z" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="2"/>
+    <path d="M398 668 L688 668" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" fill="none"/>
+    <!-- bead-blasted speckle -->
+    <g fill="#ffffff" opacity="0.07">
+      <circle cx="400" cy="718" r="3"/><circle cx="452" cy="745" r="3"/><circle cx="512" cy="712" r="3"/>
+      <circle cx="565" cy="762" r="3"/><circle cx="610" cy="725" r="3"/><circle cx="432" cy="782" r="3"/>
+      <circle cx="592" cy="700" r="3"/><circle cx="500" cy="785" r="3"/><circle cx="546" cy="730" r="3"/>
+      <circle cx="378" cy="756" r="3"/><circle cx="628" cy="770" r="3"/><circle cx="470" cy="702" r="3"/>
+    </g>
+    <!-- corner fasteners -->
+    <g>
+      <circle cx="372" cy="710" r="10" fill="#2b2f33"/><circle cx="372" cy="708" r="5" fill="#5a6167"/>
+      <circle cx="638" cy="710" r="10" fill="#2b2f33"/><circle cx="638" cy="708" r="5" fill="#5a6167"/>
+      <circle cx="372" cy="786" r="10" fill="#2b2f33"/><circle cx="372" cy="784" r="5" fill="#5a6167"/>
+      <circle cx="638" cy="786" r="10" fill="#2b2f33"/><circle cx="638" cy="784" r="5" fill="#5a6167"/>
+    </g>
+    <!-- micro-D connector on the visible side face -->
+    <path d="M666 706 L694 686 L694 726 L666 748 Z" fill="url(#gold)" stroke="#6a4f16" stroke-width="2"/>
+    <path d="M672 712 L689 700 L689 722 L672 736 Z" fill="#2a2418" opacity="0.85"/>
+  </g>
+
+  <!-- ===== conical light baffle ===== -->
+  <g transform="rotate(13 510 676)">
+    <!-- cone body -->
+    <path d="M338 226 A172 65 0 0 0 682 226 L588 676 Q510 706 432 676 Z"
+          fill="url(#blkBarrel)" stroke="#0f1213" stroke-width="3"/>
+    <!-- external step rings -->
+    <path d="M370 380 Q510 486 650 380" fill="none" stroke="#0f1213" stroke-width="4" opacity="0.9"/>
+    <path d="M370 392 Q510 498 650 392" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.16"/>
+    <path d="M399 520 Q510 604 621 520" fill="none" stroke="#0f1213" stroke-width="4" opacity="0.9"/>
+    <path d="M399 532 Q510 616 621 532" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.16"/>
+    <!-- aperture rim -->
+    <ellipse cx="510" cy="226" rx="172" ry="65" fill="#0b0d0e" stroke="#0f1213" stroke-width="3"/>
+    <ellipse cx="510" cy="226" rx="172" ry="65" fill="none" stroke="#6f767c" stroke-width="3" opacity="0.55"/>
+    <!-- stepped internal light-trap rings -->
+    <ellipse cx="510" cy="234" rx="146" ry="55" fill="#161a1c"/>
+    <path d="M364 234 A146 55 0 0 1 656 234" fill="none" stroke="#7b8288" stroke-width="2.5" opacity="0.45"/>
+    <ellipse cx="510" cy="243" rx="120" ry="45" fill="#0d1011"/>
+    <path d="M390 243 A120 45 0 0 1 630 243" fill="none" stroke="#6f767c" stroke-width="2.5" opacity="0.4"/>
+    <ellipse cx="510" cy="252" rx="94" ry="36" fill="#08090a"/>
+    <path d="M416 252 A94 36 0 0 1 604 252" fill="none" stroke="#5f666b" stroke-width="2.5" opacity="0.35"/>
+    <ellipse cx="510" cy="261" rx="66" ry="25" fill="#040505"/>
+    <path d="M444 261 A66 25 0 0 1 576 261" fill="none" stroke="#4a5055" stroke-width="2" opacity="0.35"/>
+    <!-- key-light glance on the outer rim -->
+    <path d="M352 210 A172 65 0 0 1 470 168" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.22"/>
+  </g>
+</svg>

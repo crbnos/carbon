@@ -27,7 +27,8 @@ import {
   LuClipboardCheck,
   LuSquareUser,
   LuTimer,
-  LuTrash
+  LuTrash,
+  LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Link } from "react-router";
@@ -114,6 +115,7 @@ export function ItemCard({
       <Card
         className={cn(
           "max-w-[330px]",
+          item.hasConflict && "border-red-500 border-2",
           cardVariants({
             status: status
           })
@@ -131,9 +133,21 @@ export function ItemCard({
                 {item.itemDescription || item.itemReadableId}
               </span>
             </div>
-            <Heading size="h4" className="text-foreground">
-              {item.targetQuantity}
-            </Heading>
+            <HStack spacing={2} className="flex-shrink-0">
+              {item.hasConflict && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {item.conflictReason ?? t`Scheduling conflict`}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              <Heading size="h4" className="text-foreground">
+                {item.targetQuantity}
+              </Heading>
+            </HStack>
           </div>
 
           {showProgress &&

@@ -77,7 +77,8 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewTrainingRoute() {
   const navigate = useNavigate();
   const initialValues = {
-    name: ""
+    name: "",
+    grantsAbilityId: ""
   };
 
   return (
