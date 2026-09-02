@@ -4168,13 +4168,53 @@ serve(async (req: Request) => {
           assemblyInstructionId: string;
         }> = [];
 
+        // The embeds defeat the generated response types (as elsewhere in this
+        // file), so the paged rows are typed explicitly.
+        type SourceJobMaterialRow =
+          Database["public"]["Tables"]["jobMaterial"]["Row"] & {
+            jobMaterialStep: {
+              jobOperationStepId: string | null;
+              quantity: number | null;
+            }[];
+          };
+        type SourceJobOperationRow =
+          Database["public"]["Tables"]["jobOperation"]["Row"] & {
+            jobOperationTool: (Database["public"]["Tables"]["jobOperationTool"]["Row"] & {
+              jobOperationToolStep: { jobOperationStepId: string | null }[];
+            })[];
+            jobOperationParameter: Database["public"]["Tables"]["jobOperationParameter"]["Row"][];
+            jobOperationStep: Database["public"]["Tables"]["jobOperationStep"]["Row"][];
+          };
+
+        // Paged: a bare select stops at PostgREST's 1000-row cap and would
+        // silently copy a subset of a large job. The secondary `.order("id")`
+        // makes paging stable across batches. Started here (not awaited) so the
+        // reads below run concurrently with them.
+        const sourceMaterialsPromise = fetchAll<SourceJobMaterialRow>(() =>
+          client
+            .from("jobMaterial")
+            .select("*, jobMaterialStep(jobOperationStepId, quantity)")
+            .eq("jobId", sourceJobId)
+            .eq("companyId", companyId)
+            .order("id")
+        );
+        const sourceOperationsPromise = fetchAll<SourceJobOperationRow>(() =>
+          client
+            .from("jobOperation")
+            .select(
+              "*, jobOperationTool(*, jobOperationToolStep(*)), jobOperationParameter(*), jobOperationStep(*)"
+            )
+            .eq("jobId", sourceJobId)
+            .eq("companyId", companyId)
+            .order("order", { ascending: true })
+            .order("id")
+        );
+
         const [
           targetJob,
           sourceJob,
           targetJobMakeMethod,
           sourceJobMakeMethod,
-          sourceMaterials,
-          sourceOperations,
         ] = await Promise.all([
           client
             .from("job")
@@ -4205,19 +4245,10 @@ serve(async (req: Request) => {
             .is("parentMaterialId", null)
             .eq("companyId", companyId)
             .single(),
-          client
-            .from("jobMaterial")
-            .select("*, jobMaterialStep(jobOperationStepId, quantity)")
-            .eq("jobId", sourceJobId)
-            .eq("companyId", companyId),
-          client
-            .from("jobOperation")
-            .select(
-              "*, jobOperationTool(*, jobOperationToolStep(*)), jobOperationParameter(*), jobOperationStep(*)"
-            )
-            .eq("jobId", sourceJobId)
-            .eq("companyId", companyId)
-            .order("order", { ascending: true }),
+        ]);
+        const [sourceMaterials, sourceOperations] = await Promise.all([
+          sourceMaterialsPromise,
+          sourceOperationsPromise,
         ]);
 
         if (targetJob.error) {
@@ -4249,6 +4280,27 @@ serve(async (req: Request) => {
         const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
         if (!jobMethodTree) throw new Error("Method tree not found");
 
+        // A process-only copy of a multi-level job cannot work: the sub-assembly
+        // make methods only come into existence on the bill-of-material path, so
+        // their operations would reference make methods that were never created
+        // (jobOperation_jobMakeMethodId_fkey). Refuse with an authored message
+        // instead of rolling back on the FK.
+        if (!parts.billOfMaterial && parts.billOfProcess) {
+          let hasSubAssemblies = false;
+          traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+            for (const child of node.children) {
+              if (child.data.jobMaterialMakeMethodId) {
+                hasSubAssemblies = true;
+              }
+            }
+          });
+          if (hasSubAssemblies) {
+            throw new Error(
+              "Copying only the bill of process from a job with sub-assemblies is not supported — include the bill of material as well"
+            );
+          }
+        }
+
         // Loaded ONCE per request, before the transaction — as every *-ToJob
         // path does. The source job's rows were swapped live at ITS creation;
         // this re-resolves as-of the TARGET job's build date, so a supersession
@@ -4278,27 +4330,8 @@ serve(async (req: Request) => {
           );
         }
 
-        // The embeds defeat the generated response types (as elsewhere in this
-        // file), so the rows are re-asserted to their real shape.
-        type SourceJobMaterialRow =
-          Database["public"]["Tables"]["jobMaterial"]["Row"] & {
-            jobMaterialStep: {
-              jobOperationStepId: string | null;
-              quantity: number | null;
-            }[];
-          };
-        type SourceJobOperationRow =
-          Database["public"]["Tables"]["jobOperation"]["Row"] & {
-            jobOperationTool: (Database["public"]["Tables"]["jobOperationTool"]["Row"] & {
-              jobOperationToolStep: { jobOperationStepId: string | null }[];
-            })[];
-            jobOperationParameter: Database["public"]["Tables"]["jobOperationParameter"]["Row"][];
-            jobOperationStep: Database["public"]["Tables"]["jobOperationStep"]["Row"][];
-          };
-        const sourceMaterialRows = (sourceMaterials.data ??
-          []) as unknown as SourceJobMaterialRow[];
-        const sourceOperationRows = (sourceOperations.data ??
-          []) as unknown as SourceJobOperationRow[];
+        const sourceMaterialRows = sourceMaterials.data ?? [];
+        const sourceOperationRows = sourceOperations.data ?? [];
 
         const sourceMaterialById = new Map(
           sourceMaterialRows.map((m) => [m.id, m])
@@ -4801,7 +4834,9 @@ serve(async (req: Request) => {
           if (parts.billOfMaterial && parts.billOfProcess) {
             // Material ↔ operation links (jobMaterial.jobOperationId): the
             // materials were inserted during the traversal, before the
-            // operations existed, so the link is applied as a second pass.
+            // operations existed, so the link is applied as a second pass —
+            // batched as one UPDATE per operation rather than one per material.
+            const materialIdsByOperationId = new Map<string, string[]>();
             for (const sourceMaterial of sourceMaterialRows) {
               const newMaterialId =
                 sourceMaterialIdToJobMaterialId[sourceMaterial.id];
@@ -4809,12 +4844,17 @@ serve(async (req: Request) => {
                 ? sourceOperationIdToJobOperationId[sourceMaterial.jobOperationId]
                 : undefined;
               if (newMaterialId && newOperationId) {
-                await trx
-                  .updateTable("jobMaterial")
-                  .set({ jobOperationId: newOperationId })
-                  .where("id", "=", newMaterialId)
-                  .execute();
+                const ids = materialIdsByOperationId.get(newOperationId) ?? [];
+                ids.push(newMaterialId);
+                materialIdsByOperationId.set(newOperationId, ids);
               }
+            }
+            for (const [operationId, materialIds] of materialIdsByOperationId) {
+              await trx
+                .updateTable("jobMaterial")
+                .set({ jobOperationId: operationId })
+                .where("id", "in", materialIds)
+                .execute();
             }
 
             // Material ↔ step links (jobMaterialStep), remapped onto the new

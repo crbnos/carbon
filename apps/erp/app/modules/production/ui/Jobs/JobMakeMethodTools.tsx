@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { Combobox, SelectControlled, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -45,7 +45,14 @@ import { RiProgress4Line } from "react-icons/ri";
 import { Link, useFetcher, useLocation, useParams } from "react-router";
 import { PrintButton } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
-import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
+import {
+  Combobox,
+  Hidden,
+  Item,
+  SelectControlled,
+  Submit,
+  useConfigurableItems
+} from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import {
