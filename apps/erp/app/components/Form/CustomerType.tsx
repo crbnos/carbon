@@ -64,12 +64,12 @@ CustomerType.displayName = "CustomerType";
 
 export default CustomerType;
 
-export const useCustomerTypes = () => {
+export const useCustomerTypes = (enabled = true) => {
   const customerTypeFetcher =
     useFetcher<Awaited<ReturnType<typeof getCustomerTypesList>>>();
 
   useMount(() => {
-    customerTypeFetcher.load(path.to.api.customerTypes);
+    if (enabled) customerTypeFetcher.load(path.to.api.customerTypes);
   });
 
   const options = useMemo(() => {

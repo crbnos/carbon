@@ -1,5 +1,5 @@
 import { EPSILON, round } from "./precision";
-import type { Violation } from "./storage-rules";
+import type { Violation } from "./rules";
 
 export type OverReceiptReceiptLine = {
   lineId: string | null;

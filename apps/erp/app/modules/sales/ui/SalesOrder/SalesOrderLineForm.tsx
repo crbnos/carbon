@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
@@ -104,6 +105,19 @@ const SalesOrderLineForm = ({
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("orderId not found");
+
+  // Sales-rule enforcement: submissions run through the violation hook's
+  // fetcher so a blocked response opens <rules.ViolationModal /> with an
+  // acknowledge-and-resubmit path for warns. Modal close happens on success
+  // (not on submit) so violations can surface first.
+  const rules = useRuleViolations({
+    action: initialValues.id
+      ? path.to.salesOrderLine(orderId, initialValues.id)
+      : path.to.newSalesOrderLine(orderId),
+    onSuccess: () => {
+      if (type === "modal") onClose?.();
+    }
+  });
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
@@ -433,6 +447,7 @@ const SalesOrderLineForm = ({
           >
             <ModalCardContent size="xxlarge">
               <ValidatedForm
+                fetcher={rules.fetcher}
                 defaultValues={initialValues}
                 validator={salesOrderLineValidator}
                 method="post"
@@ -443,9 +458,6 @@ const SalesOrderLineForm = ({
                 }
                 className="w-full"
                 isDisabled={isEditing && isLocked}
-                onSubmit={() => {
-                  if (type === "modal") onClose?.();
-                }}
               >
                 <HStack
                   className={cn(
@@ -1052,6 +1064,7 @@ const SalesOrderLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
+      <rules.ViolationModal />
     </>
   );
 };

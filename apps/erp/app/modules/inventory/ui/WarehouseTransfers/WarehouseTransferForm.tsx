@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -68,10 +68,10 @@ const WarehouseTransferForm = ({
 }: WarehouseTransferFormProps) => {
   const { company } = useUser();
   const permissions = usePermissions();
-  // Item rules eval at every "go" status transition (Confirm/Ship/Receive/
+  // Storage rules eval at every "go" status transition (Confirm/Ship/Receive/
   // Complete). Surface violations through the hook's modal rather than the
   // plain navigation path.
-  const statusRules = useStorageRuleViolations<typeof statusAction>({
+  const statusRules = useRuleViolations<typeof statusAction>({
     action: warehouseTransfer?.id
       ? path.to.warehouseTransferStatus(warehouseTransfer.id)
       : ""

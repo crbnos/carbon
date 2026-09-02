@@ -752,6 +752,9 @@ msgstr "수주가 삭제됨"
 msgid "A sales order line contains order details for a particular item"
 msgstr "수주 라인은 특정 품목에 대한 주문 세부 정보를 포함합니다"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "주문 고객의 헤더 주소와 다른 고객 및 위치로 직접 배송되는 판매 주문입니다. 배송 목적지가 헤더 주소를 무시합니다."
+
 msgid "A sales order's assignee changes"
 msgstr "수주의 담당자가 변경됨"
 
@@ -1453,6 +1456,9 @@ msgstr "모든 문서"
 
 msgid "All item types"
 msgstr "모든 품목 유형"
+
+msgid "All items"
+msgstr "모든 항목"
 
 msgid "All Items"
 msgstr "모든 품목"
@@ -5662,6 +5668,9 @@ msgstr "도면 번호"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
 
+msgid "Drop shipment"
+msgstr "직배송"
+
 msgid "Drop Shipment"
 msgstr "직송 출하"
 
@@ -6116,6 +6125,9 @@ msgstr "공급업체 유형 편집"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "규칙을 편집하여 「모든 항목에 적용」 플래그를 제거하세요"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "규칙의 항목 필터를 편집하여 제거합니다"
+
 msgid "Edit Timecard"
 msgstr "타임카드 편집"
 
@@ -6224,6 +6236,9 @@ msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발
 msgid "Enable in Settings"
 msgstr "설정에서 활성화"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "견적서 또는 판매 주문 라인에서 판매 규칙 위반이 차단되거나 승인될 때 알림을 활성화합니다."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."
 
@@ -6290,6 +6305,12 @@ msgstr "끝남"
 
 msgid "Enforce — edits are blocked"
 msgstr "강제 — 편집이 차단되었습니다."
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "이 항목에 대해 견적, 판매 주문, 판매 송장 라인에 점검을 강제합니다."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "견적, 판매 주문 및 판매 송장에 항목이 추가될 때 고객 및 항목 검사를 적용합니다."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "입고, 출하, 이동, 조정 전반에 걸쳐 품목별 검증 및 지침을 적용합니다."
@@ -11697,6 +11718,9 @@ msgstr "이전 단계에서 값 선택"
 msgid "Pick a variable…"
 msgstr "변수 선택…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "라이브러리에서 기존 규칙을 선택하거나 새 규칙을 만들어 이 항목에 대한 검사를 시작합니다."
+
 msgid "Pick List"
 msgstr "피킹 목록"
 
@@ -13723,6 +13747,15 @@ msgstr "영업 담당자"
 msgid "Sales Revenue"
 msgstr "매출"
 
+msgid "Sales Rule Violations"
+msgstr "판매 규칙 위반"
+
+msgid "Sales rules"
+msgstr "판매 규칙"
+
+msgid "Sales Rules"
+msgstr "판매 규칙"
+
 msgid "Sales Tax Payable"
 msgstr "매출 세금 납부"
 
@@ -15134,7 +15167,7 @@ msgid "Stripe Due Date"
 msgstr "Stripe 만기일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe가 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 담당자 정보에 저장됩니다."
+msgstr "Stripe가 고객에게 송장을 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 연락처에 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0}에 가입하라는 초대가 만료되었습니다. 이메일로 새 초대를 보내도록 요청할 수 있습니다."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "이 청구서에는 사용할 수 있는 만기일이 없습니다 — Stripe를 위해 하나를 선택하세요."
+msgstr "이 송장에는 사용 가능한 만기일이 없습니다 — Stripe용으로 선택하세요."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
@@ -17314,7 +17347,7 @@ msgid "Unposted Documents"
 msgstr "미전기 문서"
 
 msgid "Unpublish"
-msgstr "게시 해제"
+msgstr "게시 취소"
 
 msgid "Unpublish {name}?"
 msgstr "게시 취소 {name}?"
@@ -17457,6 +17490,9 @@ msgstr "{0}개의 규칙을 사용하려면 업그레이드하세요"
 
 msgid "Upgrade to unlock audit history"
 msgstr "업그레이드하여 감사 이력 잠금 해제"
+
+msgid "Upgrade to unlock sales rules"
+msgstr "판매 규칙을 잠금 해제하려면 업그레이드하십시오"
 
 msgid "Upload"
 msgstr "업로드"
@@ -18377,6 +18413,9 @@ msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 누가 받아야 
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "판매 작업 지시가 완료될 때 알림을 받아야 하는 사람은 누구입니까?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "판매 규칙 위반이 차단되거나 승인될 때 누가 알림을 받아야 합니까?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "공급업체 견적이 제출될 때 알림을 누가 받아야 합니까?"

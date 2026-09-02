@@ -82,7 +82,7 @@ several `invoice.*` events are forwarded to GTM.
 ## Plan gating (`packages/ee/src/plan.ts` + `plan.server.ts`)
 
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:
-`API_KEYS, WEBHOOKS, INTEGRATIONS, ITEM_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
+`API_KEYS, WEBHOOKS, INTEGRATIONS, SALES_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
 CUSTOMER_PORTALS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST`
 (`email`, `exchange-rates-v1`) bypasses the `INTEGRATIONS` gate.
 

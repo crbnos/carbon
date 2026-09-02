@@ -752,6 +752,9 @@ msgstr "Bir satış siparişi silindi"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Bir satış siparişi satırı belirli bir ürünün sipariş ayrıntılarını içerir"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Sipariş veren müşterinin başlık adresinden farklı bir müşteriye ve konuma doğrudan gönderilen bir satış siparişi; sevkiyatın hedefi başlığı geçersiz kılar."
+
 msgid "A sales order's assignee changes"
 msgstr "Satış siparişinin atanmış kişisi değişti"
 
@@ -1453,6 +1456,9 @@ msgstr "Tüm Belgeler"
 
 msgid "All item types"
 msgstr "Tüm stok kartı türleri"
+
+msgid "All items"
+msgstr "Tüm öğeler"
 
 msgid "All Items"
 msgstr "Tüm Öğeler"
@@ -5662,6 +5668,9 @@ msgstr "Resim numarası"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "Drop shipment"
+msgstr "Doğrudan Sevkiyat"
+
 msgid "Drop Shipment"
 msgstr "Sevkiyatı Başka Bir Yere Gönderme"
 
@@ -6116,6 +6125,9 @@ msgstr "Tedarikçi Türünü Düzenle"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Kuralı düzenleyerek \"Tümüne uygulanır\" işaretini kaldırın"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Kuralı kaldırmak için kuralın öğe filtrelerini düzenleyin"
+
 msgid "Edit Timecard"
 msgstr "Çalışma Saatini Düzenle"
 
@@ -6224,6 +6236,9 @@ msgstr "Muhasebe fişleri, finansal raporlar ve büyük defter muhasebeleştirme
 msgid "Enable in Settings"
 msgstr "Ayarlarda Etkinleştir"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Bir teklif veya satış siparişi satırında bir satış kuralı ihlali engellendiğinde veya onaylandığında bildirimleri etkinleştirin."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde bildirimleri etkinleştir."
 
@@ -6290,6 +6305,12 @@ msgstr "Bitiş"
 
 msgid "Enforce — edits are blocked"
 msgstr "Zorunlu — düzenlemeler engellendi"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Bu ürün için teklif, satış siparişi ve satış faturası satırlarında kontrolleri zorla."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Öğeler tekliflere, satış siparişlerine ve satış faturalarına eklendiğinde müşteri ve öğe kontrolleri uygulayın."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Mal kabul, sevkiyat, transfer ve düzeltmelerde madde başına doğrulama ve yönergeleri zorunlu kıl."
@@ -11697,6 +11718,9 @@ msgstr "Önceki bir adımdan bir değer seçin"
 msgid "Pick a variable…"
 msgstr "Bir değişken seçin…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Bu öğe üzerinde kontroller uygulamaya başlamak için kitaplıktan mevcut bir kural seçin veya yeni bir kural oluşturun."
+
 msgid "Pick List"
 msgstr "Seçim Listesi"
 
@@ -13723,6 +13747,15 @@ msgstr "Satış Temsilcisi"
 msgid "Sales Revenue"
 msgstr "Satış Hasılat"
 
+msgid "Sales Rule Violations"
+msgstr "Satış Kuralı İhlalleri"
+
+msgid "Sales rules"
+msgstr "Satış kuralları"
+
+msgid "Sales Rules"
+msgstr "Satış Kuralları"
+
 msgid "Sales Tax Payable"
 msgstr "Ödenmesi gereken satış vergisi"
 
@@ -15128,7 +15161,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe'ın zaten bu e-posta ile bir müşterisi var"
+msgstr "Stripe zaten bu e-posta adresine sahip bir müşteriye sahip"
 
 msgid "Stripe Due Date"
 msgstr "Stripe Son Tarihi"
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0} grubuna katılma davetinizin süresi doldu. Yeni bir davet talebinde bulunabilirsiniz ve bu e-postanıza gönderilir."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Bu faturanın kullanılabilir bir vade tarihi yok — Stripe için birini seçin."
+msgstr "Bu fatura kullanılabilir bir son tarih yok — Stripe için birini seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
@@ -17314,7 +17347,7 @@ msgid "Unposted Documents"
 msgstr "Deftere Geçmemiş Belgeler"
 
 msgid "Unpublish"
-msgstr "Yayını kaldır"
+msgstr "Yayınlamayı kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "{name} yayınlaması kaldırılsın mı?"
@@ -17457,6 +17490,9 @@ msgstr "Üniforma kurallarını açmak için yükseltin"
 
 msgid "Upgrade to unlock audit history"
 msgstr "Denetim geçmişini açmak için yükseltin"
+
+msgid "Upgrade to unlock sales rules"
+msgstr "Satış kurallarının kilidini açmak için yükseltin"
 
 msgid "Upload"
 msgstr "Yükle"
@@ -18377,6 +18413,9 @@ msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde kim bildirim almal
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Satış işi tamamlandığında kimler bildirim almalı?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Bir satış kuralı ihlali engellendiğinde veya onaylandığında kim bildirimler almalıdır?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Bir tedarikçi teklifi gönderildiğinde kimler bildirim almalı?"

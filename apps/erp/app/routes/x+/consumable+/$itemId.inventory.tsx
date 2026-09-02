@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
+import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { pluckUnique } from "@carbon/utils";
@@ -13,6 +13,7 @@ import {
   getTrackedEntityExpirations,
   InventoryDetails
 } from "~/modules/inventory";
+import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getBomHasShelfLifeManagedInput,
@@ -27,7 +28,6 @@ import {
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
-import RuleAssignmentsList from "~/modules/storage-rules/ui/RuleAssignmentsList";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores/items";

@@ -752,6 +752,9 @@ msgstr "Une commande client est supprimée"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Une ligne de commande client contient les détails de la commande pour un article particulier"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Une commande client expédiée directement à un client et un lieu différents de l'adresse d'en-tête du client commandant; la destination de l'expédition remplace celle de l'en-tête."
+
 msgid "A sales order's assignee changes"
 msgstr "L'assigné d'une commande client change"
 
@@ -1453,6 +1456,9 @@ msgstr "Tous les documents"
 
 msgid "All item types"
 msgstr "Tous les types d'articles"
+
+msgid "All items"
+msgstr "Tous les articles"
 
 msgid "All Items"
 msgstr "Tous les articles"
@@ -5662,6 +5668,9 @@ msgstr "Numéro de plan"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Le dessin a été remplacé. Les placements de bulles ont été supprimés ; les lignes de fonctionnalités restent inchangées."
 
+msgid "Drop shipment"
+msgstr "Expédition directe"
+
 msgid "Drop Shipment"
 msgstr "Expédition directe"
 
@@ -6116,6 +6125,9 @@ msgstr "Modifier le type de fournisseur"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Modifier la règle pour supprimer l'indicateur « S'applique à tous »"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Modifiez les filtres d'articles de la règle pour le supprimer"
+
 msgid "Edit Timecard"
 msgstr "Modifier la feuille de temps"
 
@@ -6224,6 +6236,9 @@ msgstr "Activez la comptabilité d'exercice complète avec les écritures de jou
 msgid "Enable in Settings"
 msgstr "Activer dans les paramètres"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Activez les notifications lorsqu'une violation de règle de vente est bloquée ou reconnue sur une ligne de devis ou de commande client."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Activer les notifications lorsqu'une demande de devis est marquée comme prête pour la cotation."
 
@@ -6290,6 +6305,12 @@ msgstr "Se termine"
 
 msgid "Enforce — edits are blocked"
 msgstr "Appliquer — les modifications sont bloquées"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Appliquer les vérifications sur les lignes de devis, de commande client et de facture de vente pour cet article."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Appliquer les contrôles de client et d'article lors de l'ajout d'articles aux devis, commandes de vente et factures de vente."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Appliquer la validation et les directives par article dans les reçus, les expéditions, les transferts et les ajustements."
@@ -11697,6 +11718,9 @@ msgstr "Choisir une valeur d'une étape antérieure"
 msgid "Pick a variable…"
 msgstr "Choisir une variable…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Choisissez une règle existante de la bibliothèque ou créez-en une nouvelle pour commencer à appliquer des vérifications sur cet article."
+
 msgid "Pick List"
 msgstr "Liste de prélèvement"
 
@@ -13723,6 +13747,15 @@ msgstr "Vendeur"
 msgid "Sales Revenue"
 msgstr "Revenus des ventes"
 
+msgid "Sales Rule Violations"
+msgstr "Violations de règles de vente"
+
+msgid "Sales rules"
+msgstr "Règles de vente"
+
+msgid "Sales Rules"
+msgstr "Règles de vente"
+
 msgid "Sales Tax Payable"
 msgstr "Taxes de vente à payer"
 
@@ -15134,7 +15167,7 @@ msgid "Stripe Due Date"
 msgstr "Date d'échéance Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe envoie la facture par e-mail au client, une adresse est donc requise. Ceci sera également enregistré dans le contact dans Carbon."
+msgstr "Stripe envoie la facture par email au client, donc une adresse est requise. Cela sera également enregistré dans le contact dans Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
@@ -16693,7 +16726,7 @@ msgid "This version cannot be opened"
 msgstr "Cette version ne peut pas être ouverte"
 
 msgid "This version is published"
-msgstr "Cette version est publiée."
+msgstr "Cette version est publiée"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Cette version est publiée. Créez une nouvelle version à modifier."
@@ -17457,6 +17490,9 @@ msgstr "Passer à la version supérieure pour déverrouiller les règles {0}"
 
 msgid "Upgrade to unlock audit history"
 msgstr "Passez à la version supérieure pour déverrouiller l'historique d'audit"
+
+msgid "Upgrade to unlock sales rules"
+msgstr "Mettez à niveau pour déverrouiller les règles de vente"
 
 msgid "Upload"
 msgstr "Téléverser"
@@ -18377,6 +18413,9 @@ msgstr "Qui devrait recevoir des notifications quand une RFQ est marquée comme 
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Qui devrait recevoir des notifications lorsqu'une tâche de vente est terminée ?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Qui devrait recevoir des notifications lorsqu'une violation de règle de vente est bloquée ou reconnue?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Qui devrait recevoir des notifications lorsqu'un devis fournisseur est soumis ?"

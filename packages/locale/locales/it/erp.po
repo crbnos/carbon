@@ -752,6 +752,9 @@ msgstr "Un ordine di vendita è eliminato"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Una riga dell'ordine di vendita contiene i dettagli dell'ordine per un articolo particolare"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Un ordine di vendita spedito direttamente a un cliente e una ubicazione diversi da quelli della testata del cliente ordinante; la destinazione della spedizione sostituisce la testata."
+
 msgid "A sales order's assignee changes"
 msgstr "L'assegnatario di un ordine di vendita cambia"
 
@@ -1453,6 +1456,9 @@ msgstr "Tutti i documenti"
 
 msgid "All item types"
 msgstr "Tutti i tipi di articolo"
+
+msgid "All items"
+msgstr "Tutti gli articoli"
 
 msgid "All Items"
 msgstr "Tutti gli articoli"
@@ -5662,6 +5668,9 @@ msgstr "Numero di Disegno"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Disegno sostituito. I posizionamenti dei palloncini sono stati rimossi; le righe delle funzioni rimangono invariate."
 
+msgid "Drop shipment"
+msgstr "Spedizione diretta"
+
 msgid "Drop Shipment"
 msgstr "Spedizione Diretta"
 
@@ -6116,6 +6125,9 @@ msgstr "Modifica Tipo Fornitore"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Modifica la regola per rimuovere il flag \"Applies to all\""
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Modifica i filtri degli articoli della regola per rimuoverla"
+
 msgid "Edit Timecard"
 msgstr "Modifica Scheda Orario"
 
@@ -6224,6 +6236,9 @@ msgstr "Abilita la contabilità per competenza completa con righe di registrazio
 msgid "Enable in Settings"
 msgstr "Abilita nelle Impostazioni"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Abilita le notifiche quando una violazione della regola di vendita viene bloccata o riconosciuta su una riga di preventivo o ordine di vendita."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Abilita Notifiche quando una RdO è contrassegnata come Pronto per offerta."
 
@@ -6290,6 +6305,12 @@ msgstr "Termina"
 
 msgid "Enforce — edits are blocked"
 msgstr "Applica — le modifiche sono bloccate"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Applica verifiche sulle righe preventivo, ordine di vendita e fattura di vendita per questo articolo."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Applica controlli cliente e articolo quando gli articoli vengono aggiunti a preventivi, ordini di vendita e fatture di vendita."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Applica la convalida per articolo e le linee guida su ricevute, spedizioni, trasferimenti e rettifiche."
@@ -11697,6 +11718,9 @@ msgstr "Scegli un valore da un passaggio precedente"
 msgid "Pick a variable…"
 msgstr "Scegli una variabile…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Seleziona una regola esistente dalla libreria o crea una nuova per iniziare a applicare i controlli su questo articolo."
+
 msgid "Pick List"
 msgstr "Elenco di prelievo"
 
@@ -13722,6 +13746,15 @@ msgstr "Addetto alle vendite"
 
 msgid "Sales Revenue"
 msgstr "Ricavi di vendita"
+
+msgid "Sales Rule Violations"
+msgstr "Violazioni delle Regole di Vendita"
+
+msgid "Sales rules"
+msgstr "Regole di vendita"
+
+msgid "Sales Rules"
+msgstr "Regole di Vendita"
 
 msgid "Sales Tax Payable"
 msgstr "Imposta di vendita dovuta"
@@ -17458,6 +17491,9 @@ msgstr "Esegui l'upgrade per sbloccare le regole {0}"
 msgid "Upgrade to unlock audit history"
 msgstr "Aggiorna per sbloccare la cronologia di audit"
 
+msgid "Upgrade to unlock sales rules"
+msgstr "Aggiorna per sbloccare le regole di vendita"
+
 msgid "Upload"
 msgstr "Carica"
 
@@ -18377,6 +18413,9 @@ msgstr "Chi dovrebbe ricevere notifiche quando un RdO è contrassegnato come pro
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Chi dovrebbe ricevere notifiche quando un lavoro di vendita è completato?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Chi dovrebbe ricevere notifiche quando una violazione della regola di vendita viene bloccata o riconosciuta?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Chi dovrebbe ricevere notifiche quando un'offerta del fornitore viene presentata?"

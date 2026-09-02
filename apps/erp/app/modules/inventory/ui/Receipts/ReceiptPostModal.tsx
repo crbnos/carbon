@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Alert,
   AlertDescription,
@@ -156,7 +156,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     validateReceiptTracking();
   });
 
-  const ruleViolations = useStorageRuleViolations({
+  const ruleViolations = useRuleViolations({
     action: path.to.receiptPost(receiptId),
     onSuccess: onClose
   });

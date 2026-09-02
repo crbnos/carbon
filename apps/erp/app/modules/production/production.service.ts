@@ -9069,7 +9069,7 @@ export async function saveInspectionDocumentAtomic(
 // scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
 
 // `issueMaterial`, `completeJob`, and `scheduleJob` moved to `production.mcp.server.ts`: they
-// depend on server-only modules (`@carbon/ee/storage-rules.server`, `@carbon/auth/users.server`)
+// depend on server-only modules (`@carbon/ee/rules.server`, `@carbon/auth/users.server`)
 // that cannot be referenced from this file, which is client-reachable via the module barrel.
 
 /**

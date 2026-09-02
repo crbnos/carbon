@@ -752,6 +752,9 @@ msgstr "एक विक्रय आदेश हटाया गया है"
 msgid "A sales order line contains order details for a particular item"
 msgstr "एक विक्रय आदेश पंक्ति एक विशेष आइटम के लिए आदेश विवरण शामिल करती है"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "एक बिक्रय आदेश सीधे एक अलग ग्राहक और स्थान पर भेजा गया है, जो आदेश देने वाले ग्राहक के हेडर पते से अलग है; शिपमेंट का गंतव्य हेडर को ओवरराइड करता है।"
+
 msgid "A sales order's assignee changes"
 msgstr "विक्रय आदेश के असाइनी में परिवर्तन"
 
@@ -1453,6 +1456,9 @@ msgstr "सभी दस्तावेज़"
 
 msgid "All item types"
 msgstr "सभी आइटम प्रकार"
+
+msgid "All items"
+msgstr "सभी आइटम"
 
 msgid "All Items"
 msgstr "सभी आइटम"
@@ -5662,6 +5668,9 @@ msgstr "ड्राइंग नंबर"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
 
+msgid "Drop shipment"
+msgstr "ड्रॉप शिपमेंट"
+
 msgid "Drop Shipment"
 msgstr "ड्रॉप शिपमेंट"
 
@@ -6116,6 +6125,9 @@ msgstr "आपूर्तिकर्ता प्रकार संपाद�
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "\"सभी पर लागू\" फ़्लैग को निकालने के लिए नियम संपादित करें"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "इसे निकालने के लिए नियम के आइटम फिल्टर को संपादित करें"
+
 msgid "Edit Timecard"
 msgstr "टाइमकार्ड संपादित करें"
 
@@ -6224,6 +6236,9 @@ msgstr "पूर्ण प्रोद्भवन लेखांकन को
 msgid "Enable in Settings"
 msgstr "सेटिंग्स में सक्षम करें"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "जब किसी उद्धरण या बिक्रय आदेश लाइन पर एक बिक्री नियम उल्लंघन अवरुद्ध या स्वीकार किया जाता है तो सूचनाएं सक्षम करें।"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "जब RFQ को कोटेशन के लिए तैयार के रूप में चिह्नित किया जाए तो सूचनाएँ सक्षम करें।"
 
@@ -6290,6 +6305,12 @@ msgstr "समाप्त होता है"
 
 msgid "Enforce — edits are blocked"
 msgstr "लागू करें — संपादन अवरुद्ध हैं"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "इस आइटम के लिए उद्धरण, बिक्रय आदेश और बिक्रय चालान पंक्तियों पर जांच लागू करें।"
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "जब आइटम उद्धरण, बिक्रय आदेश और बिक्रय चालान में जोड़े जाते हैं, तब ग्राहक और आइटम जांच लागू करें।"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "रसीदों, शिपमेंट, ट्रांसफर और समायोजन में प्रति-आइटम सत्यापन और दिशानिर्देश लागू करें।"
@@ -11697,6 +11718,9 @@ msgstr "पहले के एक चरण से मान चुनें"
 msgid "Pick a variable…"
 msgstr "एक वेरिएबल चुनें…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "इस आइटम पर जांच लागू करना शुरू करने के लिए लाइब्रेरी से एक मौजूदा नियम चुनें या एक नया नियम बनाएं।"
+
 msgid "Pick List"
 msgstr "पिक लिस्ट"
 
@@ -13722,6 +13746,15 @@ msgstr "विक्रय प्रतिनिधि"
 
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
+
+msgid "Sales Rule Violations"
+msgstr "बिक्री नियम उल्लंघन"
+
+msgid "Sales rules"
+msgstr "बिक्री नियम"
+
+msgid "Sales Rules"
+msgstr "बिक्री नियम"
 
 msgid "Sales Tax Payable"
 msgstr "देय बिक्रय कर"
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "इस चालान के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
+msgstr "इस चालान की कोई उपयोग योग्य देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
@@ -17458,6 +17491,9 @@ msgstr "{0} नियमों को अनलॉक करने के लि
 msgid "Upgrade to unlock audit history"
 msgstr "ऑडिट इतिहास को अनलॉक करने के लिए अपग्रेड करें"
 
+msgid "Upgrade to unlock sales rules"
+msgstr "बिक्री नियमों को अनलॉक करने के लिए अपग्रेड करें"
+
 msgid "Upload"
 msgstr "अपलोड करें"
 
@@ -18377,6 +18413,9 @@ msgstr "जब कोई RFQ कोटेशन के लिए तैयार
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "बिक्रय कार्य पूर्ण होने पर कौन सूचनाएं प्राप्त करनी चाहिए?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "जब किसी बिक्री नियम उल्लंघन को अवरुद्ध या स्वीकार किया जाता है तो किसे सूचनाएं प्राप्त करनी चाहिए?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "जब कोई आपूर्तिकर्ता कोटेशन प्रस्तुत किया जाता है तो सूचना कौन प्राप्त करे?"

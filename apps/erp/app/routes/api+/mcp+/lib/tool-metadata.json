@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-01T10:00:04.633Z",
-  "totalTools": 1488,
+  "generated": "2026-09-01T18:58:26.692Z",
+  "totalTools": 1493,
   "modules": 15,
   "tools": [
     {
@@ -40781,34 +40781,6 @@
       }
     },
     {
-      "name": "sales_insertSalesOrderLines",
-      "module": "sales",
-      "classification": "WRITE",
-      "description": "insert sales order lines",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "salesOrderLines"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "salesOrderLines": {
-            "type": "array",
-            "items": {}
-          }
-        },
-        "required": [
-          "salesOrderLines"
-        ]
-      }
-    },
-    {
       "name": "sales_finalizeQuote",
       "module": "sales",
       "classification": "WRITE",
@@ -46049,6 +46021,36 @@
       }
     },
     {
+      "name": "settings_updateSalesRuleNotificationSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update sales rule notification setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "salesRuleNotificationGroup"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesRuleNotificationGroup": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "salesRuleNotificationGroup"
+        ]
+      }
+    },
+    {
       "name": "settings_updateQuoteLineCategoryMarkups",
       "module": "settings",
       "classification": "WRITE",
@@ -46198,7 +46200,7 @@
       "module": "settings",
       "classification": "WRITE",
       "description": "upsert api key",
-      "paramCount": 50,
+      "paramCount": 51,
       "serviceParams": [
         "client",
         "apiKey"
@@ -46272,6 +46274,9 @@
             "type": "string"
           },
           "rfqReadyNotificationGroup": {
+            "type": "string"
+          },
+          "salesRuleNotificationGroup": {
             "type": "string"
           },
           "suggestionNotificationGroup": {
@@ -48183,6 +48188,175 @@
           "quantity",
           "fallbackUnitPrice",
           "exchangeRate"
+        ]
+      }
+    },
+    {
+      "name": "shared_getEnforcementRules",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforcement rules",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "targetType": {}
+            }
+          }
+        },
+        "required": [
+          "family"
+        ]
+      }
+    },
+    {
+      "name": "shared_getEnforcementRule",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforcement rule",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "family",
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "shared_upsertEnforcementRule",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "upsert enforcement rule",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "companyId",
+        "rule"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "rule": {},
+          "_operation": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
+          }
+        },
+        "required": [
+          "family",
+          "rule",
+          "_operation"
+        ]
+      }
+    },
+    {
+      "name": "shared_deleteEnforcementRule",
+      "module": "shared",
+      "classification": "DESTRUCTIVE",
+      "description": "delete enforcement rule",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "family",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "family": {},
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "family",
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "shared_getEnforcementRuleAssignmentCounts",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforcement rule assignment counts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "ruleIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ruleIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ruleIds"
         ]
       }
     },

@@ -2,28 +2,27 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import type { ConditionAst } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
-import {
-  getStorageRule,
-  storageRuleValidator,
-  upsertStorageRule
-} from "~/modules/storage-rules";
-import StorageRuleForm from "~/modules/storage-rules/ui/StorageRuleForm";
+import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { storageRuleValidator } from "~/modules/inventory";
+import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
+import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { view: "inventory" });
+  const { client, companyId } = await requirePermissions(request, {
+    view: "inventory"
+  });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getStorageRule(client, id);
+  const rule = await getEnforcementRule(client, "storage", id, companyId);
   if (rule.error || !rule.data) throw notFound("Rule not found");
   return { rule: rule.data };
 }
@@ -47,9 +46,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(storageRuleValidator).validate(formData);
-  if (validation.error) return validation.error;
+  if (validation.error) return validationError(validation.error);
 
-  const update = await upsertStorageRule(client, {
+  const update = await upsertEnforcementRule(client, "storage", companyId, {
     ...validation.data,
     id,
     description: validation.data.description ?? null,
@@ -57,10 +56,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (update.error) {
-    return await flash(
-      request,
-      error(update.error, "Failed to update rule")
-    ).then(() => null);
+    return data(
+      {},
+      await flash(request, error(update.error, "Failed to update rule"))
+    );
   }
 
   throw redirect(`${path.to.storageRules}?${getParams(request)}`);

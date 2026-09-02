@@ -1,3 +1,4 @@
+import { useRuleViolations } from "@carbon/ee/rules";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -57,7 +58,6 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import type { Job } from "~/modules/production/types";
-import type { action as confirmAction } from "~/routes/x+/sales-order+/$orderId.confirm";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
@@ -68,12 +68,10 @@ import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
 const SalesOrderConfirmModal = ({
-  fetcher,
   salesOrder,
   onClose,
   defaultCc = []
 }: {
-  fetcher: FetcherWithComponents<{ success: boolean; message: string }>;
   salesOrder?: SalesOrder;
   onClose: () => void;
   defaultCc?: string[];
@@ -89,11 +87,25 @@ const SalesOrderConfirmModal = ({
     canEmail ? "Email" : "None"
   );
 
+  // Confirming re-evaluates sales rules across every line (the terminal gate in
+  // the action). Route the submission through the violations hook so a blocked
+  // confirm opens the shared modal rather than only flashing a toast, and close
+  // this modal only once the action actually succeeds.
+  const ruleViolations = useRuleViolations({
+    action: path.to.salesOrderConfirm(orderId),
+    onSuccess: onClose
+  });
+  const fetcher = ruleViolations.fetcher as FetcherWithComponents<{
+    success?: boolean;
+    message?: string;
+    violations?: unknown[];
+  }>;
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    } else if (fetcher.data?.success === false && fetcher.data?.message) {
+    // Violations render in the ViolationModal; don't also toast their message.
+    if ((fetcher.data?.violations ?? []).length > 0) return;
+    if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.success]);
@@ -112,7 +124,6 @@ const SalesOrderConfirmModal = ({
           method="post"
           action={path.to.salesOrderConfirm(orderId)}
           validator={salesConfirmValidator}
-          onSubmit={onClose}
           defaultValues={{
             notification: notificationType,
             customerContact: salesOrder?.customerContactId ?? undefined,
@@ -173,6 +184,7 @@ const SalesOrderConfirmModal = ({
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
+      <ruleViolations.ViolationModal />
     </Modal>
   );
 };
@@ -203,7 +215,6 @@ const SalesOrderHeader = () => {
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
 
   const statusFetcher = useFetcher<typeof statusAction>();
-  const confirmFetcher = useFetcher<typeof confirmAction>();
   const { ship, invoice } = useSalesOrder();
 
   const linesRequireJobs = hasLinesRequiringJobs({
@@ -396,10 +407,8 @@ const SalesOrderHeader = () => {
                   ? "primary"
                   : "secondary"
               }
-              isLoading={confirmFetcher.state !== "idle"}
               onClick={confirmDisclosure.onOpen}
               isDisabled={
-                confirmFetcher.state !== "idle" ||
                 !["Draft", "Needs Approval"].includes(
                   routeData?.salesOrder?.status ?? ""
                 ) ||
@@ -619,7 +628,6 @@ const SalesOrderHeader = () => {
       )}
       {confirmDisclosure.isOpen && (
         <SalesOrderConfirmModal
-          fetcher={confirmFetcher}
           salesOrder={routeData?.salesOrder}
           onClose={confirmDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}

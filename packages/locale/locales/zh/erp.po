@@ -752,6 +752,9 @@ msgstr "销售订单已删除"
 msgid "A sales order line contains order details for a particular item"
 msgstr "销售订单行包含特定项目的订单详情"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "销售订单直接运送给与订购客户的抬头地址不同的客户和地点；货运目的地优先于抬头地址。"
+
 msgid "A sales order's assignee changes"
 msgstr "销售订单的经办人变更"
 
@@ -1453,6 +1456,9 @@ msgstr "所有文档"
 
 msgid "All item types"
 msgstr "所有物料类型"
+
+msgid "All items"
+msgstr "所有项目"
 
 msgid "All Items"
 msgstr "所有物料"
@@ -5662,6 +5668,9 @@ msgstr "图号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
+msgid "Drop shipment"
+msgstr "直发"
+
 msgid "Drop Shipment"
 msgstr "直运"
 
@@ -6116,6 +6125,9 @@ msgstr "编辑供应商类型"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "编辑规则以移除\"应用于全部\"标志"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "编辑规则的项目过滤器以将其删除"
+
 msgid "Edit Timecard"
 msgstr "编辑时间卡"
 
@@ -6224,6 +6236,9 @@ msgstr "启用完整权责发生制会计，包括凭证、财务报告和总账
 msgid "Enable in Settings"
 msgstr "在设置中启用"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "当报价单或销售订单行上的销售规则违规被阻止或确认时启用通知。"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "当询价单标记为可报价时启用通知。"
 
@@ -6290,6 +6305,12 @@ msgstr "结束"
 
 msgid "Enforce — edits are blocked"
 msgstr "强制执行—编辑被阻止"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "对本项目的报价单、销售订单和销售发票行执行检查。"
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "当项目添加到报价、销售订单和销售发票时，强制执行客户和项目检查。"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "在收据、发货、转移和调整中强制执行按项目验证和指南。"
@@ -11697,6 +11718,9 @@ msgstr "从早期步骤选择一个值"
 msgid "Pick a variable…"
 msgstr "选择变量…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "从库中选择现有规则或创建新规则以开始对此项目强制执行检查。"
+
 msgid "Pick List"
 msgstr "拣货单"
 
@@ -13723,6 +13747,15 @@ msgstr "销售人员"
 msgid "Sales Revenue"
 msgstr "销售收入"
 
+msgid "Sales Rule Violations"
+msgstr "销售规则违规"
+
+msgid "Sales rules"
+msgstr "销售规则"
+
+msgid "Sales Rules"
+msgstr "销售规则"
+
 msgid "Sales Tax Payable"
 msgstr "应付销售税"
 
@@ -15128,7 +15161,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe 已经有一个具有此电子邮件的客户"
+msgstr "Stripe已经有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "此发票没有可用的截止日期 — 为 Stripe 选择一个。"
+msgstr "此发票没有可用的截止日期——为Stripe选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
@@ -16693,7 +16726,7 @@ msgid "This version cannot be opened"
 msgstr "无法打开此版本"
 
 msgid "This version is published"
-msgstr "这个版本已发布"
+msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "此版本已发布。创建新版本进行编辑。"
@@ -17457,6 +17490,9 @@ msgstr "升级以解锁 {0} 规则"
 
 msgid "Upgrade to unlock audit history"
 msgstr "升级以解锁审计历史记录"
+
+msgid "Upgrade to unlock sales rules"
+msgstr "升级以解锁销售规则"
 
 msgid "Upload"
 msgstr "上传"
@@ -18377,6 +18413,9 @@ msgstr "当询价单标记为可报价时,谁应该接收通知?"
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "销售工作完成时，谁应该收到通知？"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "当销售规则违规被阻止或确认时，谁应该收到通知？"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "供应商报价提交时，谁应该收到通知？"

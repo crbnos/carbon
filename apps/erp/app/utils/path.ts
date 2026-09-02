@@ -814,6 +814,8 @@ export const path = {
     deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}/delete`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
+    deleteSalesRule: (id: string) =>
+      generatePath(`${x}/sales/sales-rules/${id}/delete`),
     deleteSavedView: (id: string) =>
       generatePath(`${x}/shared/views/delete/${id}`),
     deleteScrapReason: (id: string) =>
@@ -1592,6 +1594,7 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/${lineId}/shipment`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
+    newSalesRule: `${x}/sales/sales-rules/new`,
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
@@ -1984,6 +1987,12 @@ export const path = {
     salesRfqRoot: `${x}/sales-rfq`,
     salesRfqStatus: (id: string) => generatePath(`${x}/sales-rfq/${id}/status`),
     salesRfqs: `${x}/sales/rfqs`,
+    salesRule: (id: string) => generatePath(`${x}/sales/sales-rules/${id}`),
+    salesRuleAssign: (itemId: string) =>
+      generatePath(`${x}/sales/sales-rules/assign/${itemId}`),
+    salesRules: `${x}/sales/sales-rules`,
+    salesRuleUnassign: (itemId: string, ruleId: string) =>
+      generatePath(`${x}/sales/sales-rules/unassign/${itemId}/${ruleId}`),
     salesSettings: `${x}/settings/sales`,
     saveInspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/save`),

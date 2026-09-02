@@ -2,19 +2,17 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import type { TargetType } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
-import {
-  storageRuleValidator,
-  upsertStorageRule
-} from "~/modules/storage-rules";
-import StorageRuleForm from "~/modules/storage-rules/ui/StorageRuleForm";
+import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { storageRuleValidator } from "~/modules/inventory";
+import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
+import { upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
@@ -44,9 +42,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(storageRuleValidator).validate(formData);
-  if (validation.error) return validation.error;
+  if (validation.error) return validationError(validation.error);
 
-  const insert = await upsertStorageRule(client, {
+  const insert = await upsertEnforcementRule(client, "storage", companyId, {
     ...validation.data,
     description: validation.data.description ?? null,
     companyId,
@@ -54,10 +52,10 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (insert.error) {
-    return await flash(
-      request,
-      error(insert.error, "Failed to create rule")
-    ).then(() => null);
+    return data(
+      {},
+      await flash(request, error(insert.error, "Failed to create rule"))
+    );
   }
 
   throw redirect(`${path.to.storageRules}?${getParams(request)}`);

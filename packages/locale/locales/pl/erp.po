@@ -752,6 +752,9 @@ msgstr "Zamówienie sprzedaży jest usuwane"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Pozycja zamówienia sprzedaży zawiera szczegóły zamówienia dla konkretnego artykułu"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Zamówienie sprzedaży wysłane bezpośrednio do innego klienta i lokalizacji niż adres główny klienta zamawiającego; miejsce docelowe przesyłki zastępuje główne."
+
 msgid "A sales order's assignee changes"
 msgstr "Zmiana osoby przypisanej do zamówienia sprzedaży"
 
@@ -1453,6 +1456,9 @@ msgstr "Wszystkie dokumenty"
 
 msgid "All item types"
 msgstr "Wszystkie typy artykułów"
+
+msgid "All items"
+msgstr "Wszystkie elementy"
 
 msgid "All Items"
 msgstr "Wszystkie elementy"
@@ -5662,6 +5668,9 @@ msgstr "Numer rysunku"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze funkcji pozostają niezmienione."
 
+msgid "Drop shipment"
+msgstr "Przesyłka bezpośrednia"
+
 msgid "Drop Shipment"
 msgstr "Wysyłka bezpośrednia"
 
@@ -6116,6 +6125,9 @@ msgstr "Edytuj typ dostawcy"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Edytuj regułę, aby usunąć flagę „Dotyczy wszystkich\""
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Edytuj filtry elementów reguły, aby go usunąć"
+
 msgid "Edit Timecard"
 msgstr "Edytuj Kartę Czasu Pracy"
 
@@ -6224,6 +6236,9 @@ msgstr "Włącz pełną księgowość memoriałową z wpisami dowodów księgowy
 msgid "Enable in Settings"
 msgstr "Włącz w Ustawieniach"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Włącz powiadomienia, gdy naruszenie reguły sprzedaży jest zablokowane lub potwierdzone w linii oferty lub zamówienia sprzedaży."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Włącz powiadomienia, gdy RFQ jest oznaczony jako gotowy do oferty."
 
@@ -6290,6 +6305,12 @@ msgstr "Kończy się"
 
 msgid "Enforce — edits are blocked"
 msgstr "Wymuś — edycje są zablokowane"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Wymusić kontrole na wierszach oferty, zamówienia sprzedaży i faktury sprzedaży dla tego artykułu."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Wymuszaj sprawdzenia klientów i artykułów, gdy artykuły są dodawane do ofert, zamówień sprzedaży i faktur sprzedaży."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Wymuszaj walidację i wytyczne dla każdej pozycji w paragonach, wysyłkach, transferach i korektach."
@@ -11697,6 +11718,9 @@ msgstr "Wybierz wartość z wcześniejszego kroku"
 msgid "Pick a variable…"
 msgstr "Wybierz zmienną…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Wybierz istniejącą regułę z biblioteki lub utwórz nową, aby rozpocząć wymuszanie kontroli na tym elemencie."
+
 msgid "Pick List"
 msgstr "Lista pobrania"
 
@@ -13723,6 +13747,15 @@ msgstr "Pracownik sprzedaży"
 msgid "Sales Revenue"
 msgstr "Przychód ze sprzedaży"
 
+msgid "Sales Rule Violations"
+msgstr "Naruszenia reguł sprzedaży"
+
+msgid "Sales rules"
+msgstr "Reguły sprzedaży"
+
+msgid "Sales Rules"
+msgstr "Reguły sprzedaży"
+
 msgid "Sales Tax Payable"
 msgstr "Podatek od sprzedaży do zapłaty"
 
@@ -15131,7 +15164,7 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe już ma klienta z tym adresem e-mail"
 
 msgid "Stripe Due Date"
-msgstr "Data wymagalności Stripe"
+msgstr "Termin płatności Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe wysyła fakturę do klienta pocztą e-mail, więc wymagany jest adres. Zostanie również zapisany w kontakcie w Carbon."
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "To zaproszenie do dołączenia do {0} wygasło. Możesz poprosić o wysłanie nowego zaproszenia na Twoją wiadomość e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Ta faktura nie ma używalnej daty wymagalności — wybierz jedną dla Stripe."
+msgstr "Ta faktura nie ma użytecznego terminu płatności — wybierz jeden dla Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Ta faktura będzie naliczona klientowi Stripe już połączonemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w pulpicie Stripe."
@@ -17458,6 +17491,9 @@ msgstr "Uaktualnij, aby odblokować reguły {0}"
 msgid "Upgrade to unlock audit history"
 msgstr "Uaktualnij, aby odblokować historię audytu"
 
+msgid "Upgrade to unlock sales rules"
+msgstr "Uaktualnij, aby odblokować reguły sprzedaży"
+
 msgid "Upload"
 msgstr "Prześlij plik"
 
@@ -18377,6 +18413,9 @@ msgstr "Kto powinien otrzymywać powiadomienia, gdy RFQ zostanie oznaczony jako 
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Kto powinien otrzymywać powiadomienia po zakończeniu zadania sprzedaży?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Kto powinien otrzymać powiadomienia, gdy naruszenie reguły sprzedaży jest zablokowane lub potwierdzone?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Kto powinien otrzymywać powiadomienia, gdy dostawca przesyła ofertę?"

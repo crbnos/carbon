@@ -16,7 +16,13 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // no permission check of its own (every ERP route gates on `production` update
   // before calling it). `production_scheduleJob` is the intended MCP entry point —
   // it re-applies that gate — so the raw trigger must not be reachable via MCP.
-  "production_triggerJobSchedule"
+  "production_triggerJobSchedule",
+  // Bulk sales-order line insert. It has no in-app caller — it is reachable
+  // only through this executor, which exposes every named export of
+  // sales.service.ts. It writes lines without the sales-rule evaluation the
+  // route action performs, and unlike `upsertSalesOrderLine` there is no
+  // single-line path to gate.
+  "sales_insertSalesOrderLines"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {

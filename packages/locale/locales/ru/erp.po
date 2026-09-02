@@ -752,6 +752,9 @@ msgstr "Заказ покупателя удален"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Строка заказа покупателя содержит детали заказа для конкретной номенклатуры"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Заказ на продажу, отправленный напрямую другому клиенту и в другое место, чем адрес клиента в заголовке заказа; пункт назначения отправки переопределяет адрес в заголовке."
+
 msgid "A sales order's assignee changes"
 msgstr "Исполнитель заказа покупателя изменился"
 
@@ -1453,6 +1456,9 @@ msgstr "Все документы"
 
 msgid "All item types"
 msgstr "Все типы номенклатуры"
+
+msgid "All items"
+msgstr "Все товары"
 
 msgid "All Items"
 msgstr "Все элементы"
@@ -5662,6 +5668,9 @@ msgstr "Номер чертежа"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
 
+msgid "Drop shipment"
+msgstr "Прямая отправка"
+
 msgid "Drop Shipment"
 msgstr "Прямая отгрузка"
 
@@ -6116,6 +6125,9 @@ msgstr "Изменить Тип поставщика"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Измените правило, чтобы удалить флаг «Применяется ко всем»"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Отредактируйте фильтры товаров правила, чтобы удалить его"
+
 msgid "Edit Timecard"
 msgstr "Изменить табель"
 
@@ -6224,6 +6236,9 @@ msgstr "Включить полный учет по методу начисле�
 msgid "Enable in Settings"
 msgstr "Включить в настройках"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Включить уведомления, когда нарушение правила продаж заблокировано или подтверждено в строке предложения или заказа продажи."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."
 
@@ -6290,6 +6305,12 @@ msgstr "Заканчивается"
 
 msgid "Enforce — edits are blocked"
 msgstr "Применять — правки заблокированы"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Применять проверки к строкам предложения, заказа на продажу и счета-фактуры продажи для этого товара."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Применять проверки клиента и товара при добавлении товаров к предложениям, заказам продаж и счетам-фактурам продаж."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Применить обязательную проверку и указания для каждого элемента в поступлениях, отгрузках, перемещениях и корректировках."
@@ -11697,6 +11718,9 @@ msgstr "Выберите значение из предыдущего шага"
 msgid "Pick a variable…"
 msgstr "Выберите переменную…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Выберите существующее правило из библиотеки или создайте новое, чтобы начать применять проверки для этого товара."
+
 msgid "Pick List"
 msgstr "Список подбора"
 
@@ -13723,6 +13747,15 @@ msgstr "Менеджер по продажам"
 msgid "Sales Revenue"
 msgstr "Выручка от продаж"
 
+msgid "Sales Rule Violations"
+msgstr "Нарушения правил продаж"
+
+msgid "Sales rules"
+msgstr "Правила продаж"
+
+msgid "Sales Rules"
+msgstr "Правила продаж"
+
 msgid "Sales Tax Payable"
 msgstr "Налог на продажи к уплате"
 
@@ -15128,7 +15161,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "В Stripe уже есть клиент с этим адресом электронной почты"
+msgstr "Stripe уже имеет клиента с этим адресом электронной почты"
 
 msgid "Stripe Due Date"
 msgstr "Срок выполнения Stripe"
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить отправку нового приглашения на вашу электронную почту."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Этот счет не имеет пригодной даты платежа — выберите одну для Stripe."
+msgstr "У этого счета нет полезной даты выполнения — выберите один для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
@@ -17458,6 +17491,9 @@ msgstr "Обновитесь, чтобы разблокировать прави
 msgid "Upgrade to unlock audit history"
 msgstr "Обновитесь, чтобы разблокировать историю аудита"
 
+msgid "Upgrade to unlock sales rules"
+msgstr "Обновите, чтобы разблокировать правила продаж"
+
 msgid "Upload"
 msgstr "Загрузить"
 
@@ -18377,6 +18413,9 @@ msgstr "Кто должен получать уведомления, когда 
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Кто должен получать уведомления при завершении заказа продаж?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Кто должен получать уведомления, когда нарушение правила продаж заблокировано или подтверждено?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Кто должен получать уведомления при отправке предложения поставщика?"

@@ -752,6 +752,9 @@ msgstr "A sales order is deleted"
 msgid "A sales order line contains order details for a particular item"
 msgstr "A sales order line contains order details for a particular item"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+
 msgid "A sales order's assignee changes"
 msgstr "A sales order's assignee changes"
 
@@ -1453,6 +1456,9 @@ msgstr "All Documents"
 
 msgid "All item types"
 msgstr "All item types"
+
+msgid "All items"
+msgstr "All items"
 
 msgid "All Items"
 msgstr "All Items"
@@ -5662,6 +5668,9 @@ msgstr "Drawing Number"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 
+msgid "Drop shipment"
+msgstr "Drop shipment"
+
 msgid "Drop Shipment"
 msgstr "Drop Shipment"
 
@@ -6116,6 +6125,9 @@ msgstr "Edit Supplier Type"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Edit the rule to remove the \"Applies to all\" flag"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "Edit the rule's item filters to remove it"
+
 msgid "Edit Timecard"
 msgstr "Edit Timecard"
 
@@ -6224,6 +6236,9 @@ msgstr "Enable full accrual accounting with journal entries, financial reports, 
 msgid "Enable in Settings"
 msgstr "Enable in Settings"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Enable notifications when an RFQ is marked as ready for quote."
 
@@ -6290,6 +6305,12 @@ msgstr "Ends"
 
 msgid "Enforce — edits are blocked"
 msgstr "Enforce — edits are blocked"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Enforce checks on quote, sales order, and sales invoice lines for this item."
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
@@ -11697,6 +11718,9 @@ msgstr "Pick a value from an earlier step"
 msgid "Pick a variable…"
 msgstr "Pick a variable…"
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+
 msgid "Pick List"
 msgstr "Pick List"
 
@@ -13722,6 +13746,15 @@ msgstr "Sales Person"
 
 msgid "Sales Revenue"
 msgstr "Sales Revenue"
+
+msgid "Sales Rule Violations"
+msgstr "Sales Rule Violations"
+
+msgid "Sales rules"
+msgstr "Sales rules"
+
+msgid "Sales Rules"
+msgstr "Sales Rules"
 
 msgid "Sales Tax Payable"
 msgstr "Sales Tax Payable"
@@ -17458,6 +17491,9 @@ msgstr "Upgrade to unlock {0} rules"
 msgid "Upgrade to unlock audit history"
 msgstr "Upgrade to unlock audit history"
 
+msgid "Upgrade to unlock sales rules"
+msgstr "Upgrade to unlock sales rules"
+
 msgid "Upload"
 msgstr "Upload"
 
@@ -18377,6 +18413,9 @@ msgstr "Who should receive notifications when a RFQ is marked ready for quote?"
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "Who should receive notifications when a sales job is completed?"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "Who should receive notifications when a supplier quote is submitted?"

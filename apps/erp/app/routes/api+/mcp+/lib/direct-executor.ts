@@ -1,6 +1,14 @@
 // Direct executor for ERP functions without MCP protocol wrapper
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  evaluateSalesRulesForSalesDocument,
+  resolveSalesOrderShipTo,
+  type SalesDocumentType
+} from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as accountFunctions from "~/modules/account/account.service";
@@ -15,6 +23,7 @@ import * as productionFunctions from "~/modules/production/production.service";
 import * as purchasingFunctions from "~/modules/purchasing/purchasing.service";
 import * as qualityFunctions from "~/modules/quality/quality.service";
 import * as resourcesFunctions from "~/modules/resources/resources.service";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import * as salesFunctions from "~/modules/sales/sales.service";
 import * as settingsFunctions from "~/modules/settings/settings.service";
 import * as sharedFunctions from "~/modules/shared/shared.service";
@@ -105,6 +114,283 @@ function enrichWithAuthContext(
   return enriched;
 }
 
+/**
+ * Sales-rule backstop for sales line writes reached through MCP.
+ *
+ * The route actions that add quote / sales-order / sales-invoice lines
+ * evaluate sales rules before writing. This executor calls the same service
+ * functions by name, so those checks never run — an agent holding an OAuth
+ * token or API key could otherwise put a restricted item on a sales document.
+ *
+ * The check lives here rather than inside `upsertQuoteLine` /
+ * `upsertSalesOrderLine` / `upsertSalesInvoiceLine` deliberately: the service
+ * files are re-exported from module barrels that UI components import, so they
+ * must stay free of server-only imports. This module is server-only by
+ * construction.
+ *
+ * Only `error`-severity violations block. A `warn` needs a human to acknowledge
+ * it, and there is no human on this path — warns are allowed through so the
+ * agent isn't wedged on a rule a person could have waved past.
+ */
+async function checkSalesRulesForSalesLineWrite(
+  functionName: string,
+  context: ExecutorContext,
+  args?: Record<string, any>
+): Promise<{ success: false; error: string } | null> {
+  const surface =
+    functionName === "sales_upsertQuoteLine"
+      ? ("quoteLine" as const)
+      : functionName === "sales_upsertSalesOrderLine"
+        ? ("salesOrderLine" as const)
+        : functionName === "invoicing_upsertSalesInvoiceLine"
+          ? ("salesInvoiceLine" as const)
+          : null;
+  if (!surface || !args) return null;
+
+  // Resolve the payload the SERVICE will actually receive, mirroring the
+  // positional-argument fallbacks in `executeFunction` below: the named
+  // parameter key first (`quotationLine` / `salesOrderLine` /
+  // `salesInvoiceLine`), then the single-key wrapper unwrap (`{ args: {...} }`
+  // or any guessed key), then the flat args themselves. Reading only the flat
+  // shape here would let a nested request skip evaluation and still reach the
+  // service.
+  const paramName =
+    surface === "quoteLine"
+      ? "quotationLine"
+      : surface === "salesOrderLine"
+        ? "salesOrderLine"
+        : "salesInvoiceLine";
+  const payload: Record<string, any> = (() => {
+    const named = args[paramName];
+    if (named && typeof named === "object" && !Array.isArray(named)) {
+      return named;
+    }
+    const values = Object.values(args);
+    if (
+      Object.keys(args).length === 1 &&
+      values[0] !== null &&
+      typeof values[0] === "object" &&
+      !Array.isArray(values[0])
+    ) {
+      return values[0] as Record<string, any>;
+    }
+    return args;
+  })();
+
+  const itemId = typeof payload.itemId === "string" ? payload.itemId : null;
+  if (!itemId) return null;
+
+  const documentId =
+    surface === "quoteLine"
+      ? typeof payload.quoteId === "string"
+        ? payload.quoteId
+        : null
+      : surface === "salesOrderLine"
+        ? typeof payload.salesOrderId === "string"
+          ? payload.salesOrderId
+          : null
+        : typeof payload.invoiceId === "string"
+          ? payload.invoiceId
+          : null;
+  if (!documentId) return null;
+
+  const serviceRole = getCarbonServiceRole();
+  const lineId = typeof payload.id === "string" ? payload.id : "new";
+  const shipTo =
+    surface === "salesOrderLine"
+      ? await resolveSalesOrderShipTo(
+          serviceRole,
+          documentId,
+          context.companyId
+        )
+      : surface === "salesInvoiceLine"
+        ? await (async () => {
+            // An invoice line converted from a sales order resolves its
+            // ship-to through that order; a standalone line has none and
+            // none may be invented (the bill-to is a different address), so
+            // a null location lets a destination rule fail closed via the
+            // engine's required-field semantics.
+            if (lineId !== "new") {
+              const existing = await serviceRole
+                .from("salesInvoiceLine")
+                .select("salesOrderId")
+                .eq("id", lineId)
+                .eq("companyId", context.companyId)
+                .maybeSingle();
+              if (existing.data?.salesOrderId) {
+                return resolveSalesOrderShipTo(
+                  serviceRole,
+                  existing.data.salesOrderId,
+                  context.companyId
+                );
+              }
+            }
+            const { data } = await serviceRole
+              .from("salesInvoice")
+              .select("customerId")
+              .eq("id", documentId)
+              .eq("companyId", context.companyId)
+              .maybeSingle();
+            return {
+              customerId: data?.customerId ?? null,
+              customerLocationId: null
+            };
+          })()
+        : await (async () => {
+            const { data } = await serviceRole
+              .from("quote")
+              .select("customerId, customerLocationId")
+              .eq("id", documentId)
+              .eq("companyId", context.companyId)
+              .maybeSingle();
+            return {
+              customerId: data?.customerId ?? null,
+              customerLocationId: data?.customerLocationId ?? null
+            };
+          })();
+
+  const quantity =
+    typeof payload.saleQuantity === "number"
+      ? payload.saleQuantity
+      : Array.isArray(payload.quantity)
+        ? Math.max(1, ...(payload.quantity as number[]))
+        : typeof payload.quantity === "number"
+          ? payload.quantity
+          : 1;
+
+  const { violations, ruleNames } = await evaluateSalesRuleLines({
+    client: serviceRole,
+    companyId: context.companyId,
+    userId: context.userId,
+    surface,
+    lines: [
+      {
+        lineId,
+        itemId,
+        quantity
+      }
+    ],
+    customerId: shipTo.customerId,
+    customerLocationId: shipTo.customerLocationId
+  });
+
+  const errors = dedupeViolations(violations).filter(
+    (v) => v.severity === "error"
+  );
+  if (errors.length === 0) return null;
+
+  // Blocked evidence, same as the human line routes. Warns that passed leave
+  // no row on purpose: "acknowledged" means a person waved them past, and no
+  // person did here.
+  await recordSalesRuleOutcome(serviceRole, {
+    companyId: context.companyId,
+    userId: context.userId,
+    documentType:
+      surface === "quoteLine"
+        ? "quote"
+        : surface === "salesOrderLine"
+          ? "salesOrder"
+          : "salesInvoice",
+    documentId,
+    documentLineId: lineId === "new" ? null : lineId,
+    itemId,
+    outcome: "blocked",
+    violations: errors,
+    ruleNames
+  });
+
+  return {
+    success: false,
+    error: `Blocked by sales rules: ${errors.map((v) => v.message).join("; ")}`
+  };
+}
+
+/**
+ * Sales-rule backstop for the terminal sales-document transitions reached
+ * through MCP. The route actions run `evaluateSalesRulesForSalesDocument`
+ * before finalizing a quote, converting a quote to an order, or converting an
+ * RFQ to a quote — but this executor calls the same service functions by name,
+ * so without this gate an agent could finalize or convert a document carrying
+ * error-severity violations that every human path blocks.
+ *
+ * Same block semantics as the line-write backstop above: only `error`
+ * violations block; there is no human on this path to acknowledge a `warn`.
+ */
+async function checkSalesRulesForSalesDocumentTransition(
+  functionName: string,
+  context: ExecutorContext,
+  args?: Record<string, any>
+): Promise<{ success: false; error: string } | null> {
+  const documentType: SalesDocumentType | null =
+    functionName === "sales_finalizeQuote" ||
+    functionName === "sales_convertQuoteToOrder"
+      ? "quote"
+      : functionName === "sales_convertSalesRfqToQuote"
+        ? "salesRfq"
+        : null;
+  if (!documentType || !args) return null;
+
+  // `finalizeQuote` takes flat args (`quoteId`); the two convert functions
+  // take a nested `payload` (`serviceParams: ["client", "payload"]`) whose
+  // document id is `id`. Mirror `executeFunction`'s fallbacks — named key,
+  // then single-key wrapper unwrap (`{ args: {...} }`), then flat — so a
+  // nested request cannot skip the gate.
+  const payload: Record<string, any> = (() => {
+    if (args.payload && typeof args.payload === "object") return args.payload;
+    const values = Object.values(args);
+    if (
+      Object.keys(args).length === 1 &&
+      values[0] !== null &&
+      typeof values[0] === "object" &&
+      !Array.isArray(values[0])
+    ) {
+      return values[0] as Record<string, any>;
+    }
+    return args;
+  })();
+  const documentId =
+    typeof payload.quoteId === "string"
+      ? payload.quoteId
+      : typeof payload.id === "string"
+        ? payload.id
+        : null;
+  if (!documentId) return null;
+
+  const serviceRole = getCarbonServiceRole();
+  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+    client: serviceRole,
+    companyId: context.companyId,
+    userId: context.userId,
+    documentType,
+    documentId
+  });
+
+  const errors = dedupeViolations(violations).filter(
+    (v) => v.severity === "error"
+  );
+  if (errors.length === 0) return null;
+
+  // Blocked evidence, same as the route gates. An RFQ has no evidence row
+  // (the acknowledgment table's documentType CHECK covers quote / salesOrder /
+  // salesInvoice only); its lines are re-gated at the quote stage.
+  if (documentType === "quote") {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId: context.companyId,
+      userId: context.userId,
+      documentType: "quote",
+      documentId,
+      outcome: "blocked",
+      violations: errors,
+      ruleNames
+    });
+  }
+
+  return {
+    success: false,
+    error: `Blocked by sales rules: ${errors.map((v) => v.message).join("; ")}`
+  };
+}
+
 // Pulls the MCP-only `_operation` flag out of the args, top level or nested.
 // Returns every value it found so the caller can reject contradictory ones.
 function extractOperation(args: Record<string, any> | undefined): {
@@ -161,6 +447,20 @@ export async function executeFunction(
       error: `Tool disabled: ${functionName} is not available via MCP.`
     };
   }
+
+  const salesRuleBlock = await checkSalesRulesForSalesLineWrite(
+    functionName,
+    context,
+    normalizedArgs
+  );
+  if (salesRuleBlock) return salesRuleBlock;
+
+  const salesDocumentBlock = await checkSalesRulesForSalesDocumentTransition(
+    functionName,
+    context,
+    normalizedArgs
+  );
+  if (salesDocumentBlock) return salesDocumentBlock;
 
   // Parse the function name to get module and function
   const parts = functionName.split("_");

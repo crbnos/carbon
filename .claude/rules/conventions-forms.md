@@ -20,8 +20,9 @@ Real reference examples (current code):
   `payment-terms.$paymentTermId.tsx` (edit).
 - `apps/erp/app/modules/resources/ui/WorkCenters/WorkCenterForm.tsx` +
   `apps/erp/app/routes/x+/resources+/work-centers.new.tsx`.
-- `apps/erp/app/modules/storage-rules/ui/StorageRuleForm.tsx` (uses `.superRefine`,
-  `zfd.checkbox`, `zfd.repeatableOfType`).
+- `apps/erp/app/modules/inventory/ui/StorageRules/StorageRuleForm.tsx` (uses
+  `.superRefine`, `zfd.checkbox`, `zfd.repeatableOfType`; its validator lives in
+  the module's one `inventory.models.ts`).
 
 ## File Locations
 

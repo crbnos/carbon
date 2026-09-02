@@ -752,6 +752,9 @@ msgstr "受注が削除される"
 msgid "A sales order line contains order details for a particular item"
 msgstr "受注明細には特定の品目の注文詳細が含まれています"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "注文顧客のヘッダーアドレスとは異なる顧客および場所に直接出荷される販売注文。出荷先がヘッダーのアドレスを上書きします。"
+
 msgid "A sales order's assignee changes"
 msgstr "受注の担当者が変更される"
 
@@ -1453,6 +1456,9 @@ msgstr "すべてのドキュメント"
 
 msgid "All item types"
 msgstr "すべての品目タイプ"
+
+msgid "All items"
+msgstr "すべてのアイテム"
 
 msgid "All Items"
 msgstr "すべてのアイテム"
@@ -5662,6 +5668,9 @@ msgstr "図面番号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
 
+msgid "Drop shipment"
+msgstr "ドロップシップメント"
+
 msgid "Drop Shipment"
 msgstr "直送"
 
@@ -6116,6 +6125,9 @@ msgstr "仕入先タイプを編集"
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "ルールを編集して、\"すべてに適用\" フラグを削除します"
 
+msgid "Edit the rule's item filters to remove it"
+msgstr "ルールのアイテムフィルターを編集して削除します"
+
 msgid "Edit Timecard"
 msgstr "タイムカードを編集"
 
@@ -6224,6 +6236,9 @@ msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財
 msgid "Enable in Settings"
 msgstr "設定で有効にする"
 
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgstr "見積書または販売注文行で販売ルール違反がブロックまたは確認されたときに通知を有効にします。"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "見積依頼が見積準備完了の状態になったときに通知を有効にします。"
 
@@ -6290,6 +6305,12 @@ msgstr "終了"
 
 msgid "Enforce — edits are blocked"
 msgstr "強制 - 編集はブロックされます"
+
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "この品目の見積、販売注文、および販売請求書の行に対するチェックを適用します。"
+
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "見積書、受注、売上請求書に品目を追加する際に、顧客と品目のチェックを実施します。"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "領収書、出荷、転送、および調整全体にわたって、品目ごとの検証とガイドラインを実施します。"
@@ -11697,6 +11718,9 @@ msgstr "前のステップの値を選択"
 msgid "Pick a variable…"
 msgstr "変数を選択..."
 
+msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
+msgstr "ライブラリから既存のルールを選択するか、新しいルールを作成してこのアイテムのチェックを実行し始めます。"
+
 msgid "Pick List"
 msgstr "ピッキングリスト"
 
@@ -13723,6 +13747,15 @@ msgstr "営業担当者"
 msgid "Sales Revenue"
 msgstr "販売売上高"
 
+msgid "Sales Rule Violations"
+msgstr "販売ルール違反"
+
+msgid "Sales rules"
+msgstr "販売ルール"
+
+msgid "Sales Rules"
+msgstr "販売ルール"
+
 msgid "Sales Tax Payable"
 msgstr "支払い売上税"
 
@@ -15128,7 +15161,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripeには既にこのメールアドレスの得意先があります"
+msgstr "Stripe にはこのメールアドレスの顧客が既に存在します"
 
 msgid "Stripe Due Date"
 msgstr "Stripe支払期日"
@@ -16529,7 +16562,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "この請求書には使用可能な支払期日がありません— Stripeのものを選択してください。"
+msgstr "この請求書は使用可能な支払期日がありません。Stripe 用に 1 つ選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
@@ -16693,7 +16726,7 @@ msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
 msgid "This version is published"
-msgstr "このバージョンは公開済です"
+msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
@@ -17314,7 +17347,7 @@ msgid "Unposted Documents"
 msgstr "転記されていない文書"
 
 msgid "Unpublish"
-msgstr "非公開にする"
+msgstr "公開を取り消す"
 
 msgid "Unpublish {name}?"
 msgstr "{name}の公開を取り消しますか?"
@@ -17457,6 +17490,9 @@ msgstr "{0}ルールのロックを解除するにはアップグレード"
 
 msgid "Upgrade to unlock audit history"
 msgstr "監査履歴のロックを解除するにはアップグレードしてください"
+
+msgid "Upgrade to unlock sales rules"
+msgstr "販売ルールのロックを解除するにはアップグレードしてください"
 
 msgid "Upload"
 msgstr "アップロード"
@@ -18377,6 +18413,9 @@ msgstr "見積依頼が見積準備完了としてマークされたときに通
 
 msgid "Who should receive notifications when a sales job is completed?"
 msgstr "販売製造指図が完了したときに通知を受け取る必要があるのは誰ですか？"
+
+msgid "Who should receive notifications when a sales rule violation is blocked or acknowledged?"
+msgstr "販売ルール違反がブロックまたは確認されたときに、誰が通知を受け取るべきですか？"
 
 msgid "Who should receive notifications when a supplier quote is submitted?"
 msgstr "仕入先見積が提出されたときに通知を受け取る必要があるのは誰ですか？"

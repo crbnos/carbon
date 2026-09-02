@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { TextArea, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -28,7 +29,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
@@ -81,7 +82,6 @@ const QuoteLineForm = ({
   onClose
 }: QuoteLineFormProps) => {
   const { t, i18n } = useLingui();
-  const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { company } = useUser();
   const { carbon } = useCarbon();
@@ -89,6 +89,20 @@ const QuoteLineForm = ({
   const { quoteId } = useParams();
 
   if (!quoteId) throw new Error("quoteId not found");
+
+  // Sales-rule enforcement: submissions run through the violation hook's
+  // fetcher so a blocked response opens <rules.ViolationModal /> with an
+  // acknowledge-and-resubmit path for warns. Modal close happens on success
+  // (not on submit) so violations can surface first.
+  const rules = useRuleViolations<typeof action>({
+    action: initialValues.id
+      ? path.to.quoteLine(quoteId, initialValues.id)
+      : path.to.newQuoteLine(quoteId),
+    onSuccess: () => {
+      if (type === "modal") onClose?.();
+    }
+  });
+  const fetcher = rules.fetcher;
 
   const [items] = useItems();
   const routeData = useRouteData<{
@@ -302,9 +316,6 @@ const QuoteLineForm = ({
               }
               className="w-full"
               isDisabled={isEditing && isLocked}
-              onSubmit={() => {
-                if (type === "modal") onClose?.();
-              }}
             >
               <HStack className="w-full justify-between items-start">
                 <ModalCardHeader>
@@ -563,6 +574,7 @@ const QuoteLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
+      <rules.ViolationModal />
       {isEditing && deleteDisclosure.isOpen && (
         <DeleteQuoteLine
           line={initialValues as QuotationLine}

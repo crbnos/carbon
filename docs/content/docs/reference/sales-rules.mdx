@@ -1,0 +1,151 @@
+---
+title: Sales rules
+plan: Business
+description: "Predicate guards on sales documents: block a restricted item with an error, or warn and let the user acknowledge and continue."
+---
+
+A **sales rule** is a guard that runs when an item is put on a sales document. It checks the line against a
+condition you define and, if the condition fails, either **blocks** the write or **warns** and lets the user
+acknowledge and continue. Rules fire on **quote lines**, **<Term>sales order</Term> lines**, and **sales
+invoice lines**.
+
+For example, to keep an export-controlled part away from a restricted destination: scope the rule to the
+item's group, fire on all three surfaces, and require `customer.location.countryCode` `notIn` your restricted
+list. Severity **error**, message `` `{item.id}` cannot ship to this destination``. Add that item to a quote
+for a customer in a listed country and the line is stopped with exactly that message.
+
+<Callout type="note">
+Sales rules are a **compliance** layer, not a hint. They re-run at every commitment point — finalizing a
+quote, converting it to an order, confirming the order, posting the shipment, posting the invoice — so a line
+that slipped in through a conversion, an import, or the API is still caught before it matters. A blocked
+document writes nothing.
+</Callout>
+
+## What a rule checks
+
+Each rule holds a small **condition tree**, a match kind over one or more field/operator/value rows:
+
+- **Match kind**: `all` (every condition must hold), `any` (at least one), or `none` (none may hold).
+- **Field**: chosen from a fixed registry: item facts (`item.type`, `item.replenishmentSystem`,
+  `item.itemTrackingType`, item custom fields), customer facts (`customer.customerTypeId`,
+  `customer.customerStatusId`, customer custom fields), the document's ship-to country
+  (`customer.location.countryCode`), and the line's `transaction.quantity`.
+- **Operator**: `eq`, `neq`, `in`, `notIn`, `isSet`, `isNotSet`, `gt`, `lt`.
+
+The **message** shown on a violation supports tokens like `` `{item.id}` `` and
+`` `{customer.location.countryCode}` ``, so the text can name the offending line. The rule "passes" when its
+conditions hold; a violation fires when they don't.
+
+<Callout type="info">
+Aside from the `isSet` / `isNotSet` checks, a condition pointing at a field that has **no value** fails as a
+*"…is required"* violation. A country rule on an order with no ship-to location fails closed as *"Customer
+location is required"* rather than waving the line through. The same applies to a standalone invoice line
+with no source order: it has no ship-to, and the bill-to address is never substituted for it.
+</Callout>
+
+## Where rules fire
+
+A rule lists the **surfaces** (sales-document line types) it applies to: `quoteLine`, `salesOrderLine`, and
+`salesInvoiceLine`. Two kinds of checkpoint run them:
+
+- **Line checks** as a line is created or edited on a quote, sales order, or sales invoice.
+- **Document gates** at each commitment point: finalizing a quote, converting a quote (or RFQ) to an order,
+  confirming a sales order, posting its shipment, and posting a sales invoice. The gate re-reads **every**
+  line on the document, so it also catches staleness — a rule authored after the line was written, or a
+  ship-to that changed.
+
+The ship-to that country rules evaluate is where the goods actually go: a <Term>drop shipment</Term>
+overrides the order header's address, and an invoice line converted from a sales order resolves its
+destination through that order.
+
+<Callout type="info">
+On the customer-facing digital quote page, `error` violations refuse acceptance with a neutral message and
+your internal rule text never reaches the customer. `warn` violations are logged for the seller and the
+acceptance proceeds — there is no employee present to acknowledge them.
+</Callout>
+
+## Block or warn
+
+| Severity | Behavior |
+| --- | --- |
+| `error` | Blocks the line or document until the condition is satisfied. Cannot be acknowledged past. |
+| `warn` | Surfaces the message but lets the user **acknowledge and continue**. |
+
+Both outcomes leave a trail: a blocked write and an acknowledged warning are each recorded as evidence
+(rule, document, line, item, who, when), and the people in the **sales rule notification group**
+(Settings → Sales) are notified by email.
+
+## Scope and assignment
+
+A rule reaches the lines it applies to in one of two ways:
+
+- **By filter**: scope to **item types** and/or **item groups**, combined with OR or AND. An empty filter
+  matches **every** item.
+- **By assignment**: pin a rule to a specific item from the **Sales rules** card on that item's Inventory
+  page.
+
+Unlike [storage rules](/docs/reference/storage-rules), sales rules always target items — there is no
+work-center target.
+
+## Rule fields
+
+<FieldTable>
+  <Field name="Name">A unique name for the rule.</Field>
+  <Field name="Severity">`error` (block) or `warn` (acknowledge and continue).</Field>
+  <Field name="Conditions">The match kind plus the field / operator / value rows.</Field>
+  <Field name="Message">Shown on a violation; supports `{token}` interpolation.</Field>
+  <Field name="Surfaces">Which sales-document lines the rule fires on.</Field>
+  <Field name="Item filters">Item types and/or groups to scope a rule (empty = all items).</Field>
+  <Field name="Active">Whether the rule is currently evaluated.</Field>
+</FieldTable>
+
+## Where to manage them
+
+Sales rules live in the **Sales** area, under **Sales Rules**. Create, edit, and toggle them there. To attach
+an existing rule to a single item, use the **Sales rules** card on the item's Inventory page.
+
+<Callout type="warn">
+Sales rules are an **Enterprise** capability, gated to the **Business** plan. On other plans the screen shows
+an upgrade prompt and no rules are evaluated.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Storage rules" href="/docs/reference/storage-rules">
+    The sibling rule family: the same condition builder, applied to inventory transactions instead of sales
+    documents.
+  </Card>
+  <Card title="Quotes" href="/docs/reference/quotes">
+    The first surface: rules run as quote lines are written and again at finalize and convert.
+  </Card>
+  <Card title="Sales orders" href="/docs/reference/sales-orders">
+    Rules gate order confirmation and the shipment that fulfills it.
+  </Card>
+  <Card title="Invoices" href="/docs/reference/invoices">
+    The last checkpoint: an invoice raised with no upstream order is still checked at post.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Sales-rule violations carry **custom, company-authored messages** — there is no fixed error string to match.
+If a user pastes an unfamiliar error from saving a quote, sales order, or sales invoice line, or from
+finalizing, converting, confirming, or posting one of those documents, and it reads like a business rule
+("cannot ship to this destination", "customer status", a country or item named in the text), it is very
+likely a sales rule firing.
+
+How to resolve one:
+1. Find the rule: **Sales → Sales Rules** — the rule's *Message* column will match the pasted text (token
+   values like the item id filled in).
+2. If the document is wrong, fix the data the rule checks: the customer's ship-to location, the customer
+   type or status, the item on the line.
+3. If the rule is wrong or too strict, edit its conditions, change its severity from `error` to `warn`, or
+   toggle it off (*Active*).
+4. A `warn`-severity violation isn't an error — the user can acknowledge the dialog and resubmit; it goes
+   through. Acknowledgments are recorded and the sales rule notification group is emailed.
+
+A violation ending in "…is required" means the rule checked a field that has no value on the line — most
+often a missing ship-to location on the document. Supply the value rather than changing the rule.
+</AgentContext>

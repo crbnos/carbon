@@ -617,6 +617,92 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.SalesRuleViolation: {
+      // Compound documentId (same pattern as JobOperation*):
+      // "<quote|salesOrder|salesInvoice>:<documentId>:<blocked|acknowledged>"
+      const [docType, docId, outcome] = documentId.split(":");
+      if (!docId) return null;
+      // Service-role lookups below — scope by companyId so a stale or
+      // mangled compound id can never surface another company's document.
+      const companyId = opts?.companyId;
+      if (!companyId) return null;
+
+      const phrase =
+        outcome === "blocked"
+          ? "blocked by sales rules"
+          : "flagged by sales rules and acknowledged";
+      const outcomeLabel = outcome === "blocked" ? "Blocked" : "Acknowledged";
+
+      if (docType === "salesInvoice") {
+        // salesInvoice has two FKs to customer (customerId and
+        // invoiceCustomerId), so the embed must name the one it means.
+        const salesInvoice = await client
+          .from("salesInvoice")
+          .select("invoiceId, customer!salesInvoice_customerId_fkey(name)")
+          .eq("id", docId)
+          .eq("companyId", companyId)
+          .single();
+
+        if (salesInvoice.error) {
+          console.error("Failed to get salesInvoice", salesInvoice.error);
+          throw salesInvoice.error;
+        }
+
+        return {
+          description: `A line on Sales Invoice ${salesInvoice.data?.invoiceId} was ${phrase}`,
+          reference: salesInvoice.data?.invoiceId ?? undefined,
+          details: buildDetails([
+            { label: "Customer", value: salesInvoice.data?.customer?.name },
+            { label: "Outcome", value: outcomeLabel }
+          ])
+        };
+      }
+
+      if (docType === "salesOrder") {
+        const salesOrder = await client
+          .from("salesOrder")
+          .select("salesOrderId, customer(name)")
+          .eq("id", docId)
+          .eq("companyId", companyId)
+          .single();
+
+        if (salesOrder.error) {
+          console.error("Failed to get salesOrder", salesOrder.error);
+          throw salesOrder.error;
+        }
+
+        return {
+          description: `A line on Sales Order ${salesOrder.data?.salesOrderId} was ${phrase}`,
+          reference: salesOrder.data?.salesOrderId ?? undefined,
+          details: buildDetails([
+            { label: "Customer", value: salesOrder.data?.customer?.name },
+            { label: "Outcome", value: outcomeLabel }
+          ])
+        };
+      }
+
+      const quote = await client
+        .from("quote")
+        .select("quoteId, customer(name)")
+        .eq("id", docId)
+        .eq("companyId", companyId)
+        .single();
+
+      if (quote.error) {
+        console.error("Failed to get quote", quote.error);
+        throw quote.error;
+      }
+
+      return {
+        description: `A line on Quote ${quote.data?.quoteId} was ${phrase}`,
+        reference: quote.data?.quoteId ?? undefined,
+        details: buildDetails([
+          { label: "Customer", value: quote.data?.customer?.name },
+          { label: "Outcome", value: outcomeLabel }
+        ])
+      };
+    }
+
     case NotificationEvent.StockTransferAssignment: {
       const stockTransfer = await client
         .from("stockTransfer")
@@ -1274,6 +1360,8 @@ export function getActorLabel(type: NotificationEvent): string | null {
       return "Rejected by";
     case NotificationEvent.MaintenanceDispatchCreated:
       return "Created by";
+    case NotificationEvent.SalesRuleViolation:
+      return "Submitted by";
     default:
       return null;
   }
