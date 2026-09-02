@@ -51,11 +51,8 @@ export const integrations = [
 
 export type IntegrationID = (typeof integrations)[number]["id"];
 
-export { Gmail, Logo as GmailLogo } from "./gmail/config";
-export {
-  GoogleCalendar,
-  Logo as GoogleCalendarLogo
-} from "./google-calendar/config";
+export { Gmail } from "./gmail/config";
+export { GoogleCalendar } from "./google-calendar/config";
 export { Jira } from "./jira/config";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
 // TODO: export as @carbon/ee/paperless

@@ -167,8 +167,9 @@ export type IntegrationConfig = {
   active?: boolean;
   /** Category for grouping in the UI (e.g., "Accounting", "CAD", "Email") */
   category: string;
-  /** Logo component for the integration */
-  logo: React.FC<React.ComponentProps<"svg">>;
+  /** Logo component for the integration. Consumers pass only `className`, so an
+   * SVG component and a piece's CDN `<img>` (`pieceLogo`) both satisfy it. */
+  logo: React.FC<{ className?: string }>;
   /** Brief one-liner description */
   shortDescription: string;
   /** Full description explaining the integration */
