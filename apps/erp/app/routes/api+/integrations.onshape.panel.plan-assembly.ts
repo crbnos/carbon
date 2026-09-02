@@ -18,9 +18,9 @@ import {
   loadMethodLineOwnership,
   loadPartCustomFieldDefinitions,
   loadPlanOptions,
-  OnshapeWVMType
+  OnshapeWVMType,
+  selectInBatches
 } from "@carbon/ee/onshape";
-import { selectInBatches } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";

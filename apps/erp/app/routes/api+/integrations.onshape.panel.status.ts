@@ -9,8 +9,11 @@ import {
   parseBomTree
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
-import { getOnshapeClient, OnshapeWVMType } from "@carbon/ee/onshape";
-import { selectInBatches } from "@carbon/utils";
+import {
+  getOnshapeClient,
+  OnshapeWVMType,
+  selectInBatches
+} from "@carbon/ee/onshape";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 

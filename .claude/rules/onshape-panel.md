@@ -185,8 +185,12 @@ broke QUIETLY: the failure lands in `summary.errors` on a push that otherwise
 reports success, leaving created items unlinked from their part studios.
 
 Every panel `.in()` sized by a BOM, a part studio or a release now goes through
-`selectInBatches` / `chunkFilterValues` (`@carbon/utils`), which split on
-encoded bytes. **A fixed count is not a fix** — it is exactly how a list of long
+`selectInBatches` / `chunkFilterValues` (`onshape/lib/batched-filter.ts`, exported
+from `@carbon/ee/onshape`), which split on encoded bytes. They live under
+`onshape/` rather than in shared code deliberately: the limit is platform-wide,
+but the panel is the only feature that turns an arbitrary customer assembly into
+an unbounded filter list, and the integration should not be changing the shape of
+calls the rest of Carbon makes. **A fixed count is not a fix** — it is exactly how a list of long
 ids slips past a limit tuned for short ones. Two consequences to keep in mind:
 a batched read's rows arrive in batch order, so anything that relied on
 `.order("revision")` re-sorts afterwards; and the orphan-mapping cleanup reads

@@ -1,3 +1,4 @@
+export * from "./batched-filter";
 export * from "./client";
 export * from "./connection";
 export * from "./data";
