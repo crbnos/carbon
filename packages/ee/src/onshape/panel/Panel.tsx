@@ -25,6 +25,7 @@ import {
 } from "./messages";
 import type {
   AssemblyPlan,
+  AssemblyPlanDepth,
   ItemEdit,
   PartPlan,
   PartPlanRow,
@@ -237,6 +238,8 @@ type AssemblyPushSummary = {
   itemsCreated: number;
   itemsReused: number;
   linesWritten: number;
+  /** Lines already correct; absent on a response from before they were counted. */
+  linesUnchanged?: number;
   methodsTouched: number;
   skipped: string[];
   errors: string[];
@@ -273,9 +276,17 @@ function partOutcome(result: PartApplyResult): string {
 
 function assemblyOutcomeText(s: AssemblyPushSummary): string {
   const problems = [...s.errors, ...s.skipped];
+  const unchanged = s.linesUnchanged ?? 0;
+  // A push that changed nothing should say so. "0 BOM lines" reads as a
+  // failure; "42 already up to date" reads as the no-op it was.
+  const lines =
+    s.linesWritten === 0 && unchanged > 0
+      ? `${unchanged} BOM lines already up to date`
+      : `${s.linesWritten} BOM lines` +
+        (unchanged > 0 ? ` (${unchanged} unchanged)` : "");
   return (
     `${s.itemsCreated} items created, ${s.itemsReused} reused, ` +
-    `${s.linesWritten} BOM lines across ${s.methodsTouched} methods — model syncing` +
+    `${lines} across ${s.methodsTouched} methods — model syncing` +
     (problems.length > 0 ? ` · ${problems.join(" · ")}` : "")
   );
 }
@@ -646,7 +657,7 @@ export function OnshapePanel({
 
   const [assemblyOutcome, setAssemblyOutcome] = useState<string | null>(null);
   const planAssembly = useCallback(
-    async (token: string) => {
+    async (token: string, depth: AssemblyPlanDepth) => {
       if (!canPush) return;
       setPushing(new Set(["__assembly__"]));
       setAssemblyOutcome(null);
@@ -658,7 +669,8 @@ export function OnshapePanel({
             documentId: context.documentId,
             wv: context.wv,
             wvId: context.wvId,
-            elementId: context.elementId
+            elementId: context.elementId,
+            depth
           })
         });
         const body = (await response.json()) as
@@ -852,7 +864,7 @@ export function OnshapePanel({
         review.plan.rows.map((row) => row.partId)
       );
     } else if (review.kind === "assembly") {
-      void planAssembly(token);
+      void planAssembly(token, "all");
     } else {
       void planRelease(token, review.plan.releaseId);
     }
@@ -1254,7 +1266,7 @@ export function OnshapePanel({
                 canPush={canPush}
                 busy={!!pushing}
                 outcome={assemblyOutcome}
-                onPush={() => planAssembly(session.token)}
+                onPush={(depth) => planAssembly(session.token, depth)}
                 onRefresh={() => loadParts(session.token)}
               />
             )
@@ -1350,9 +1362,14 @@ function AssemblySection({
   /** A review is open elsewhere: a second push would replace it unseen. */
   locked: boolean;
   outcome: string | null;
-  onPush: () => void;
+  onPush: (depth: AssemblyPlanDepth) => void;
   onRefresh: () => void;
 }) {
+  // Whole tree by default — the behaviour every existing user has. Turning it
+  // off writes only this assembly's own BOM and treats each sub-assembly as a
+  // single line pointing at its own make method, which is how a large tree is
+  // pushed a level at a time.
+  const [includeSubAssemblies, setIncludeSubAssemblies] = useState(true);
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
@@ -1366,7 +1383,7 @@ function AssemblySection({
           {canPush ? (
             <Button
               size="sm"
-              onClick={onPush}
+              onClick={() => onPush(includeSubAssemblies ? "all" : "top")}
               isDisabled={busy || locked}
               isLoading={busy}
             >
@@ -1385,6 +1402,30 @@ function AssemblySection({
           </Button>
         </HStack>
       </HStack>
+
+      {canPush ? (
+        <HStack spacing={2} className="w-full items-start">
+          <Checkbox
+            id="onshape-include-sub-assemblies"
+            checked={includeSubAssemblies}
+            onCheckedChange={(checked) =>
+              setIncludeSubAssemblies(checked === true)
+            }
+            disabled={busy || locked}
+          />
+          <label
+            htmlFor="onshape-include-sub-assemblies"
+            className="text-xs text-muted-foreground leading-tight"
+          >
+            Include sub-assemblies
+            <span className="block">
+              {includeSubAssemblies
+                ? "Pushes the whole tree in one go."
+                : "Pushes this assembly's own BOM only. Push each sub-assembly from its own tab; Carbon links the levels together."}
+            </span>
+          </label>
+        </HStack>
+      ) : null}
 
       {!assembly.root.partNumber ? (
         <Alert variant="destructive">
@@ -2865,6 +2906,20 @@ function AssemblyReviewSection({
           </RowDisclosure>
         </div>
       </VStack>
+
+      {plan.depth === "top" && plan.deeper ? (
+        <Alert>
+          <AlertTitle>This level only</AlertTitle>
+          <AlertDescription>
+            {plan.deeper.partCount > 0
+              ? `${plan.deeper.partCount} parts below this level are not in this push.`
+              : "Only this assembly's own BOM is in this push."}
+            {plan.deeper.subAssemblies.length > 0
+              ? ` Push ${plan.deeper.subAssemblies.join(", ")} from their own tabs — Carbon links each to its line here.`
+              : ""}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {plan.items.length > 0 ? (
         <>

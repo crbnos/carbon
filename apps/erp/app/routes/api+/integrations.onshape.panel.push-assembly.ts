@@ -15,6 +15,7 @@ import {
   pickLatestRow,
   proposeItem
 } from "@carbon/ee";
+import type { MappedLineRow } from "@carbon/ee/onshape";
 import {
   loadActiveMakeMethods,
   loadMethodLineOwnership,
@@ -23,7 +24,7 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { chunkFilterValues, datetime, selectInBatches } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -60,6 +61,8 @@ type PushSummary = {
   itemsCreated: number;
   itemsReused: number;
   linesWritten: number;
+  /** Lines already correct, left untouched — reported so a no-op push says so. */
+  linesUnchanged: number;
   methodsTouched: number;
   skipped: string[];
   errors: string[];
@@ -221,6 +224,7 @@ export async function action({ request }: ActionFunctionArgs) {
     itemsCreated: 0,
     itemsReused: 0,
     linesWritten: 0,
+    linesUnchanged: 0,
     methodsTouched: 0,
     skipped: [...plan.skipped],
     errors: []
@@ -238,17 +242,24 @@ export async function action({ request }: ActionFunctionArgs) {
   const partNumbers = [
     ...new Set([root.partNumber, ...includedItems.map((i) => i.partNumber)])
   ];
-  const existing = await client
-    .from("item")
-    .select(
-      "id, readableId, revision, type, defaultMethodType, unitOfMeasureCode"
-    )
-    .eq("companyId", companyId)
-    .in("readableId", partNumbers)
-    .order("revision");
+  const existing = await selectInBatches(partNumbers, (batch) =>
+    client
+      .from("item")
+      .select(
+        "id, readableId, revision, type, defaultMethodType, unitOfMeasureCode"
+      )
+      .eq("companyId", companyId)
+      .in("readableId", batch)
+      .order("revision")
+  );
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
+  // Each batch came back sorted within itself; the pick below wants one
+  // ordering over all of them, so re-sort rather than trusting batch order.
+  existing.data.sort((a, b) =>
+    (a.revision ?? "").localeCompare(b.revision ?? "")
+  );
   const rowsByReadableId = new Map<string, ItemRow[]>();
   for (const row of (existing.data ?? []) as ItemRow[]) {
     const list = rowsByReadableId.get(row.readableId) ?? [];
@@ -477,11 +488,22 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Parents whose items exist now (created above or reused). Their methods
   // were created with the item, so the status read has to happen here.
+  //
+  // Sub-assemblies are included even when this push writes no lines for them.
+  // A BOM line points at its child's own make method, and that pointer is what
+  // makes a multi-level structure compose from levels pushed separately — a
+  // `top` push that could not resolve the child's method would write the line
+  // with a null pointer and quietly flatten the tree.
   const parentItemIds = [
     ...new Set(
-      plan.methods
-        .map((method) => itemByReadableId.get(method.parentPartNumber)?.id)
-        .filter((id): id is string => !!id)
+      [
+        ...plan.methods.map(
+          (method) => itemByReadableId.get(method.parentPartNumber)?.id
+        ),
+        ...plan.items
+          .filter((item) => item.isAssembly)
+          .map((item) => itemByReadableId.get(item.partNumber)?.id)
+      ].filter((id): id is string => !!id)
     )
   ];
   const methodByItemId = await loadActiveMakeMethods(
@@ -544,10 +566,7 @@ export async function action({ request }: ActionFunctionArgs) {
     //
     // Components pair by item id, FIFO, so a BOM that lists the same component
     // on two rows keeps both lines and their Carbon-owned data.
-    const reusableByItemId = new Map<
-      string,
-      Array<{ mappingId: string; lineId: string; itemId: string }>
-    >();
+    const reusableByItemId = new Map<string, MappedLineRow[]>();
     for (const row of ownership.mappedRows.get(method.id) ?? []) {
       const queue = reusableByItemId.get(row.itemId) ?? [];
       queue.push(row);
@@ -556,6 +575,17 @@ export async function action({ request }: ActionFunctionArgs) {
     // Every mapping row this method should still own when the loop is done —
     // anything else under this method is an orphan and is cleared at the end.
     const liveMappingIds: string[] = [];
+    // New lines are collected and written together at the end of the method:
+    // per-line INSERTs cost two round-trips each (the line, then its mapping
+    // row), which is the difference between a large assembly taking seconds
+    // and taking minutes. Updates stay per-line — each carries different
+    // values — but only the ones that actually changed are sent.
+    const pendingInserts: Array<{
+      row: Record<string, unknown>;
+      metadata: Record<string, unknown>;
+      syncedAt: string;
+      label: string;
+    }> = [];
 
     summary.methodsTouched += 1;
 
@@ -593,6 +623,20 @@ export async function action({ request }: ActionFunctionArgs) {
       // on the row belongs to Carbon and is never touched.
       const reuse = reusableByItemId.get(childItem.id)?.shift();
       if (reuse) {
+        // An unchanged line is left alone. Re-pushing an assembly nobody has
+        // touched is the common case, and writing every line back would cost
+        // a round-trip each and stamp `updatedBy`/`updatedAt` on rows that
+        // did not change — which reads, in the audit trail, as an edit.
+        const unchanged =
+          reuse.quantity === write.quantity &&
+          reuse.order === order &&
+          reuse.materialMakeMethodId === (childMethod?.id ?? null);
+        if (unchanged) {
+          liveMappingIds.push(reuse.mappingId);
+          order += 1;
+          summary.linesUnchanged += 1;
+          continue;
+        }
         const updated = await client
           .from("methodMaterial")
           .update({
@@ -630,9 +674,10 @@ export async function action({ request }: ActionFunctionArgs) {
         continue;
       }
 
-      const inserted = await client
-        .from("methodMaterial")
-        .insert({
+      // Queued rather than written: see `pendingInserts`. `order` still
+      // advances here so the BOM keeps the order the plan promised.
+      pendingInserts.push({
+        row: {
           itemId: childItem.id,
           quantity: write.quantity,
           makeMethodId: method.id,
@@ -645,82 +690,126 @@ export async function action({ request }: ActionFunctionArgs) {
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? fallbackUnit,
           companyId,
           createdBy: userId
-          // enum unions narrowed above
-        } as any)
-        .select("id")
-        .single();
+        },
+        metadata: lineMetadata,
+        syncedAt: lineSyncedAt,
+        label: `${parentLabel} → ${write.partNumber}`
+      });
+      order += 1;
+    }
+
+    // The queued inserts, in two statements instead of two per line. Ids come
+    // back in insertion order, which is what pairs each new line with its own
+    // mapping row.
+    if (pendingInserts.length > 0) {
+      const inserted = await client
+        .from("methodMaterial")
+        // enum unions narrowed above
+        .insert(pendingInserts.map((pending) => pending.row) as any)
+        .select("id");
       if (inserted.error || !inserted.data) {
         summary.errors.push(
-          `${parentLabel} → ${write.partNumber}: ${inserted.error?.message ?? "line insert failed"}`
+          `${parentLabel}: ${inserted.error?.message ?? "line insert failed"}`
         );
-        continue;
-      }
-      order += 1;
-      summary.linesWritten += 1;
-
-      // Without this row the line is indistinguishable from one a person
-      // added by hand: the next push will not replace it, and will insert a
-      // second copy beside it. Report it rather than leaving a line that
-      // silently compounds on every push.
-      const lineMapping = await client
-        .from("externalIntegrationMapping")
-        .insert({
-          entityType: "methodMaterial",
-          entityId: inserted.data.id,
-          integration: "onshape",
-          metadata: lineMetadata,
-          lastSyncedAt: lineSyncedAt,
-          companyId,
-          createdBy: userId
-        })
-        .select("id")
-        .single();
-      if (lineMapping.error || !lineMapping.data) {
+      } else if (inserted.data.length !== pendingInserts.length) {
+        // Never observed, but pairing by index is only sound while the counts
+        // match — a short result would link mapping rows to the wrong lines.
         summary.errors.push(
-          `${parentLabel} → ${write.partNumber}: line written but not linked to Onshape (${lineMapping.error?.message ?? "link failed"}); a later push will duplicate it`
+          `${parentLabel}: wrote ${inserted.data.length} of ${pendingInserts.length} lines; the rest are not linked to Onshape and a later push will duplicate them`
         );
+        summary.linesWritten += inserted.data.length;
       } else {
-        liveMappingIds.push(lineMapping.data.id);
+        summary.linesWritten += inserted.data.length;
+        // Without these rows the lines are indistinguishable from ones a
+        // person added by hand: the next push will not replace them, and will
+        // insert a second copy beside each. Report rather than leave lines
+        // that silently compound on every push.
+        const lineMappings = await client
+          .from("externalIntegrationMapping")
+          .insert(
+            pendingInserts.map((pending, index) => ({
+              entityType: "methodMaterial",
+              entityId: inserted.data[index].id,
+              integration: "onshape",
+              metadata: pending.metadata as Json,
+              lastSyncedAt: pending.syncedAt,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .select("id");
+        if (lineMappings.error || !lineMappings.data) {
+          summary.errors.push(
+            `${parentLabel}: ${pendingInserts.length} lines written but not linked to Onshape (${lineMappings.error?.message ?? "link failed"}); a later push will duplicate them`
+          );
+        } else {
+          for (const mapping of lineMappings.data) {
+            liveMappingIds.push(mapping.id);
+          }
+        }
       }
     }
 
     // Anything still queued is a component the Onshape BOM no longer has.
     const removed = [...reusableByItemId.values()].flat();
     if (removed.length > 0) {
-      const removedLines = await client
-        .from("methodMaterial")
-        .delete()
-        .in(
-          "id",
-          removed.map((row) => row.lineId)
-        );
-      if (removedLines.error) {
-        summary.errors.push(
-          `${parentLabel}: could not remove the lines Onshape no longer lists (${removedLines.error.message})`
-        );
-        // Their mapping rows must stay, or the leftover lines become
-        // indistinguishable from manual ones and are preserved forever.
-        for (const row of removed) liveMappingIds.push(row.mappingId);
+      // Per batch, not per method: a method whose Onshape lines were all
+      // removed at once can carry more ids than one request line holds.
+      for (const batch of chunkFilterValues(removed.map((row) => row.lineId))) {
+        const removedLines = await client
+          .from("methodMaterial")
+          .delete()
+          .in("id", batch);
+        if (removedLines.error) {
+          summary.errors.push(
+            `${parentLabel}: could not remove the lines Onshape no longer lists (${removedLines.error.message})`
+          );
+          // Their mapping rows must stay, or the leftover lines become
+          // indistinguishable from manual ones and are preserved forever.
+          const failed = new Set(batch);
+          for (const row of removed) {
+            if (failed.has(row.lineId)) liveMappingIds.push(row.mappingId);
+          }
+        }
       }
     }
 
     // Clear this method's Onshape mapping rows that no line answers for any
     // more: the ones just deleted, plus any whose line was removed in the ERP
     // between pushes.
-    const orphanCleanup = serviceRole
+    // Which rows are orphaned is decided here rather than by a `not in`
+    // filter: that filter carries every line just written, in the URL, and a
+    // method with a few hundred lines outgrows the request line — silently,
+    // because the failure lands in `summary.errors` on a push that otherwise
+    // reports success.
+    const methodMappings = await serviceRole
       .from("externalIntegrationMapping")
-      .delete()
+      .select("id")
       .eq("companyId", companyId)
       .eq("integration", "onshape")
       .eq("entityType", "methodMaterial")
       .eq("metadata->>makeMethodId", method.id);
-    const clearedMappings = await (liveMappingIds.length > 0
-      ? orphanCleanup.not("id", "in", `("${liveMappingIds.join('","')}")`)
-      : orphanCleanup);
-    if (clearedMappings.error) {
+    if (methodMappings.error) {
       summary.errors.push(
-        `${parentLabel}: could not clear orphaned line ownership records (${clearedMappings.error.message})`
+        `${parentLabel}: could not read the existing line ownership records (${methodMappings.error.message})`
       );
+    } else {
+      const live = new Set(liveMappingIds);
+      const orphaned = (methodMappings.data ?? [])
+        .map((row) => row.id)
+        .filter((id) => !live.has(id));
+      for (const batch of chunkFilterValues(orphaned)) {
+        const clearedMappings = await serviceRole
+          .from("externalIntegrationMapping")
+          .delete()
+          .eq("companyId", companyId)
+          .in("id", batch);
+        if (clearedMappings.error) {
+          summary.errors.push(
+            `${parentLabel}: could not clear orphaned line ownership records (${clearedMappings.error.message})`
+          );
+        }
+      }
     }
   }
 
@@ -861,27 +950,32 @@ async function linkChildParts(
   }
   if (candidates.length === 0) return null;
 
+  // `externalId` is `documentId:elementId:partId` — 53 to 58 characters, the
+  // longest value the panel ever filters on, so this pair is the first thing
+  // an assembly of any size breaks. Batched on encoded bytes, not on a count.
   const [byEntity, byExternal] = await Promise.all([
-    serviceRole
-      .from("externalIntegrationMapping")
-      .select("entityId")
-      .eq("companyId", input.companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "item")
-      .in(
-        "entityId",
-        candidates.map((candidate) => candidate.itemId)
-      ),
-    serviceRole
-      .from("externalIntegrationMapping")
-      .select("externalId")
-      .eq("companyId", input.companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "item")
-      .in(
-        "externalId",
-        candidates.map((candidate) => candidate.externalId)
-      )
+    selectInBatches(
+      candidates.map((candidate) => candidate.itemId),
+      (batch) =>
+        serviceRole
+          .from("externalIntegrationMapping")
+          .select("entityId")
+          .eq("companyId", input.companyId)
+          .eq("integration", "onshape")
+          .eq("entityType", "item")
+          .in("entityId", batch)
+    ),
+    selectInBatches(
+      candidates.map((candidate) => candidate.externalId),
+      (batch) =>
+        serviceRole
+          .from("externalIntegrationMapping")
+          .select("externalId")
+          .eq("companyId", input.companyId)
+          .eq("integration", "onshape")
+          .eq("entityType", "item")
+          .in("externalId", batch)
+    )
   ]);
   // These two reads are the guards, not a lookup: a failed read degrading to
   // an empty set would mean "nothing is linked", and the insert below would
