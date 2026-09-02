@@ -5,8 +5,7 @@ import {
   isModelReleaseItem,
   resolveReleaseStates
 } from "@carbon/ee";
-import { getOnshapeClient } from "@carbon/ee/onshape";
-import { selectInBatches } from "@carbon/utils";
+import { getOnshapeClient, selectInBatches } from "@carbon/ee/onshape";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
