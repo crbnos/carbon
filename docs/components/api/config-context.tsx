@@ -91,17 +91,24 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Both params are read independently: the ERP emits each only when its own
+      // env var is set, and `CARBON_API_URL` is optional while the app origin
+      // always resolves — so an `?app=`-only link is the ordinary shape for a
+      // deployment that never configured a REST origin.
       const params = new URLSearchParams(window.location.search);
-      const fromParam = params.get(HOST_PARAM);
-      if (!fromParam) return;
-      const result = parseBaseUrl(fromParam);
-      if (!("url" in result)) return;
 
       // Display-only: NOT persisted and never credential-trusted. Persisting would
       // make one crafted link permanently redirect this reader's samples, and the
       // dialog is where a host becomes the reader's own choice.
-      setBaseState(result.url);
-      setBaseFromLink(true);
+      const hostParam = params.get(HOST_PARAM);
+      if (hostParam) {
+        const result = parseBaseUrl(hostParam);
+        if ("url" in result) {
+          setBaseState(result.url);
+          setBaseFromLink(true);
+        }
+      }
+
       const appParam = params.get(APP_PARAM);
       if (appParam) {
         const appResult = parseBaseUrl(appParam);
