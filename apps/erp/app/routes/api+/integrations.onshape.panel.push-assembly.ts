@@ -529,58 +529,33 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // Lines a previous push wrote to this method — replace them; leave
-    // everything else (manual lines) untouched.
-    const mappedRows = ownership.mappedRows.get(method.id) ?? [];
-    if (mappedRows.length > 0) {
-      // A failed delete here is the one that must stop the method: the
-      // inserts below would then sit ALONGSIDE the old lines rather than
-      // replacing them, and the duplicate is permanent — its mapping row is
-      // gone, so every later push reads it as a manual line and preserves it.
-      // Nothing has been written yet at this point, so skipping is safe.
-      const deletedLines = await client
-        .from("methodMaterial")
-        .delete()
-        .in(
-          "id",
-          mappedRows.map((row) => row.lineId)
-        );
-      if (deletedLines.error) {
-        summary.errors.push(
-          `${parentLabel}: could not replace the lines a previous push wrote (${deletedLines.error.message}); left unchanged rather than duplicating them`
-        );
-        continue;
-      }
-      // Past this point the lines are gone, so a mapping-delete failure must
-      // NOT skip the inserts — that would lose the BOM. The stale rows point
-      // at deleted lines and the by-method delete below clears them.
-      const deletedMappings = await serviceRole
-        .from("externalIntegrationMapping")
-        .delete()
-        .in(
-          "id",
-          mappedRows.map((row) => row.mappingId)
-        );
-      if (deletedMappings.error) {
-        summary.errors.push(
-          `${parentLabel}: could not clear the ownership records for the replaced lines (${deletedMappings.error.message})`
-        );
-      }
+    // Lines a previous push wrote to this method are RECONCILED, not rebuilt:
+    // one still in the BOM is updated in place, one no longer in it is
+    // deleted, a new component is inserted. Manual lines are untouched
+    // throughout.
+    //
+    // The in-place update is the point. `methodMaterial` has 22 columns and a
+    // push is authoritative for four of them; delete-and-reinsert dropped the
+    // rest on EVERY push, including one where nothing had changed in Onshape.
+    // Measured on an unchanged re-push: the operation a material is consumed
+    // at (`methodOperationId`) went to null, leaving the routing intact but
+    // disconnected from its materials, and `scrapQuantity`, `tags`, `kit` and
+    // the line's own `customFields` were all reset.
+    //
+    // Components pair by item id, FIFO, so a BOM that lists the same component
+    // on two rows keeps both lines and their Carbon-owned data.
+    const reusableByItemId = new Map<
+      string,
+      Array<{ mappingId: string; lineId: string; itemId: string }>
+    >();
+    for (const row of ownership.mappedRows.get(method.id) ?? []) {
+      const queue = reusableByItemId.get(row.itemId) ?? [];
+      queue.push(row);
+      reusableByItemId.set(row.itemId, queue);
     }
-    // Mapping rows whose line was since deleted in the ERP have no line to
-    // join to above; clear them by method so they never count as "replaced".
-    const clearedMappings = await serviceRole
-      .from("externalIntegrationMapping")
-      .delete()
-      .eq("companyId", companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "methodMaterial")
-      .eq("metadata->>makeMethodId", method.id);
-    if (clearedMappings.error) {
-      summary.errors.push(
-        `${parentLabel}: could not clear orphaned line ownership records (${clearedMappings.error.message})`
-      );
-    }
+    // Every mapping row this method should still own when the loop is done —
+    // anything else under this method is an orphan and is cleared at the end.
+    const liveMappingIds: string[] = [];
 
     summary.methodsTouched += 1;
 
@@ -601,6 +576,59 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const childMade = isAssemblyByPartNumber.get(write.partNumber) === true;
       const childMethod = childMade ? methodByItemId.get(childItem.id) : null;
+      const lineSyncedAt = datetime.timestamp();
+      const lineMetadata = {
+        makeMethodId: method.id,
+        documentId,
+        elementId,
+        partNumber: write.partNumber,
+        index: write.index
+      };
+
+      // Reuse a line already carrying this component. Only the four facts
+      // Onshape is authoritative for are written — quantity, BOM order, and
+      // the pointer to the child's own method. `methodType` and
+      // `unitOfMeasureCode` are derived from the Carbon item, not from CAD,
+      // so they are set at create and left alone afterwards; everything else
+      // on the row belongs to Carbon and is never touched.
+      const reuse = reusableByItemId.get(childItem.id)?.shift();
+      if (reuse) {
+        const updated = await client
+          .from("methodMaterial")
+          .update({
+            quantity: write.quantity,
+            materialMakeMethodId: childMethod?.id ?? null,
+            order,
+            updatedBy: userId,
+            updatedAt: lineSyncedAt
+          })
+          .eq("id", reuse.lineId)
+          .eq("companyId", companyId);
+        if (updated.error) {
+          summary.errors.push(
+            `${parentLabel} → ${write.partNumber}: ${updated.error.message}`
+          );
+          continue;
+        }
+        const remapped = await serviceRole
+          .from("externalIntegrationMapping")
+          .update({
+            metadata: lineMetadata,
+            lastSyncedAt: lineSyncedAt,
+            updatedBy: userId,
+            updatedAt: lineSyncedAt
+          })
+          .eq("id", reuse.mappingId);
+        if (remapped.error) {
+          summary.errors.push(
+            `${parentLabel} → ${write.partNumber}: line updated but its Onshape link was not refreshed (${remapped.error.message})`
+          );
+        }
+        liveMappingIds.push(reuse.mappingId);
+        order += 1;
+        summary.linesWritten += 1;
+        continue;
+      }
 
       const inserted = await client
         .from("methodMaterial")
@@ -640,22 +668,59 @@ export async function action({ request }: ActionFunctionArgs) {
           entityType: "methodMaterial",
           entityId: inserted.data.id,
           integration: "onshape",
-          metadata: {
-            makeMethodId: method.id,
-            documentId,
-            elementId,
-            partNumber: write.partNumber,
-            index: write.index
-          },
-          lastSyncedAt: datetime.timestamp(),
+          metadata: lineMetadata,
+          lastSyncedAt: lineSyncedAt,
           companyId,
           createdBy: userId
-        });
-      if (lineMapping.error) {
+        })
+        .select("id")
+        .single();
+      if (lineMapping.error || !lineMapping.data) {
         summary.errors.push(
-          `${parentLabel} → ${write.partNumber}: line written but not linked to Onshape (${lineMapping.error.message}); a later push will duplicate it`
+          `${parentLabel} → ${write.partNumber}: line written but not linked to Onshape (${lineMapping.error?.message ?? "link failed"}); a later push will duplicate it`
         );
+      } else {
+        liveMappingIds.push(lineMapping.data.id);
       }
+    }
+
+    // Anything still queued is a component the Onshape BOM no longer has.
+    const removed = [...reusableByItemId.values()].flat();
+    if (removed.length > 0) {
+      const removedLines = await client
+        .from("methodMaterial")
+        .delete()
+        .in(
+          "id",
+          removed.map((row) => row.lineId)
+        );
+      if (removedLines.error) {
+        summary.errors.push(
+          `${parentLabel}: could not remove the lines Onshape no longer lists (${removedLines.error.message})`
+        );
+        // Their mapping rows must stay, or the leftover lines become
+        // indistinguishable from manual ones and are preserved forever.
+        for (const row of removed) liveMappingIds.push(row.mappingId);
+      }
+    }
+
+    // Clear this method's Onshape mapping rows that no line answers for any
+    // more: the ones just deleted, plus any whose line was removed in the ERP
+    // between pushes.
+    const orphanCleanup = serviceRole
+      .from("externalIntegrationMapping")
+      .delete()
+      .eq("companyId", companyId)
+      .eq("integration", "onshape")
+      .eq("entityType", "methodMaterial")
+      .eq("metadata->>makeMethodId", method.id);
+    const clearedMappings = await (liveMappingIds.length > 0
+      ? orphanCleanup.not("id", "in", `("${liveMappingIds.join('","')}")`)
+      : orphanCleanup);
+    if (clearedMappings.error) {
+      summary.errors.push(
+        `${parentLabel}: could not clear orphaned line ownership records (${clearedMappings.error.message})`
+      );
     }
   }
 
