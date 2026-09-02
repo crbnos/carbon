@@ -14,6 +14,7 @@ import {
   OnshapeWVMType,
   readPartProperties
 } from "@carbon/ee/onshape";
+import { selectInBatches } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -111,14 +112,14 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("integration", "onshape")
       .eq("entityType", "item")
       .like("externalId", `${documentId}:${elementId}:%`),
-    partNumbers.length > 0
-      ? client
-          .from("item")
-          .select(ITEM_COLUMNS)
-          .eq("companyId", companyId)
-          .in("readableId", partNumbers)
-          .order("revision")
-      : Promise.resolve({ data: [], error: null }),
+    selectInBatches(partNumbers, (batch) =>
+      client
+        .from("item")
+        .select(ITEM_COLUMNS)
+        .eq("companyId", companyId)
+        .in("readableId", batch)
+        .order("revision")
+    ),
     loadPlanOptions(client, companyId),
     // The property map lives on the integration's plain metadata;
     // getOnshapeClient reads that row but does not expose it, so this is the
@@ -164,18 +165,17 @@ export async function action({ request }: ActionFunctionArgs) {
         .filter((id) => !matchedItems.some((item) => item.id === id))
     )
   ];
-  let mappedItems: PlanItemRow[] = [];
-  if (mappedItemIds.length > 0) {
-    const result = await client
+  const mappedResult = await selectInBatches(mappedItemIds, (batch) =>
+    client
       .from("item")
       .select(ITEM_COLUMNS)
       .eq("companyId", companyId)
-      .in("id", mappedItemIds);
-    if (result.error) {
-      return data({ error: "Failed to read Carbon items" }, { status: 500 });
-    }
-    mappedItems = (result.data ?? []) as PlanItemRow[];
+      .in("id", batch)
+  );
+  if (mappedResult.error) {
+    return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
+  const mappedItems = mappedResult.data as PlanItemRow[];
 
   const rows = buildPartPlan({
     documentId,

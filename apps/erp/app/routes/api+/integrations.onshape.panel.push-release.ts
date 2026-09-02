@@ -23,7 +23,7 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { chunkFilterValues, datetime, selectInBatches } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -262,17 +262,24 @@ export async function action({ request }: ActionFunctionArgs) {
         .filter((partNumber): partNumber is string => !!partNumber)
     ])
   ];
-  const existing = await client
-    .from("item")
-    .select(
-      "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
-    )
-    .eq("companyId", companyId)
-    .in("readableId", partNumbers)
-    .order("revision");
+  const existing = await selectInBatches(partNumbers, (batch) =>
+    client
+      .from("item")
+      .select(
+        "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
+      )
+      .eq("companyId", companyId)
+      .in("readableId", batch)
+      .order("revision")
+  );
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
+  // Batch order is not revision order, and `letterRowFor` reads these in the
+  // order they were remembered.
+  existing.data.sort((a, b) =>
+    (a.revision ?? "").localeCompare(b.revision ?? "")
+  );
   const byReadable = new Map<string, ItemRow[]>();
   const rememberRow = (row: ItemRow) => {
     const list = byReadable.get(row.readableId) ?? [];
@@ -348,15 +355,11 @@ export async function action({ request }: ActionFunctionArgs) {
   ];
   type FullItem = NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
   const fullBaseById = new Map<string, FullItem>();
-  if (baseIds.length > 0) {
-    const bases = await client
-      .from("item")
-      .select("*")
-      .eq("companyId", companyId)
-      .in("id", baseIds);
-    for (const row of (bases.data ?? []) as FullItem[]) {
-      fullBaseById.set(row.id, row);
-    }
+  const bases = await selectInBatches(baseIds, (batch) =>
+    client.from("item").select("*").eq("companyId", companyId).in("id", batch)
+  );
+  for (const row of bases.data as FullItem[]) {
+    fullBaseById.set(row.id, row);
   }
 
   for (const decision of decisions) {
@@ -610,13 +613,15 @@ export async function action({ request }: ActionFunctionArgs) {
   );
   const baseMethodIds = [...new Set(baseMethodIdByTargetMethodId.values())];
   if (baseMethodIds.length > 0) {
-    const baseMapped = await serviceRole
-      .from("externalIntegrationMapping")
-      .select("entityId")
-      .eq("companyId", companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "methodMaterial")
-      .in("metadata->>makeMethodId", baseMethodIds);
+    const baseMapped = await selectInBatches(baseMethodIds, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("entityId")
+        .eq("companyId", companyId)
+        .eq("integration", "onshape")
+        .eq("entityType", "methodMaterial")
+        .in("metadata->>makeMethodId", batch)
+    );
     // This whole block exists to stop the released BOM being written on top
     // of the lines the revision copy already carried over. A failed read
     // degrades to "nothing to dedupe", which is precisely the case that
@@ -636,16 +641,20 @@ export async function action({ request }: ActionFunctionArgs) {
         quantity: number;
       }) => `${line.itemId}:${line.order}:${line.quantity}`;
       const [baseLines, copies] = await Promise.all([
-        client
-          .from("methodMaterial")
-          .select("makeMethodId, itemId, order, quantity")
-          .eq("companyId", companyId)
-          .in("id", baseLineIds),
-        client
-          .from("methodMaterial")
-          .select("id, makeMethodId, itemId, order, quantity")
-          .eq("companyId", companyId)
-          .in("makeMethodId", [...baseMethodIdByTargetMethodId.keys()])
+        selectInBatches(baseLineIds, (batch) =>
+          client
+            .from("methodMaterial")
+            .select("makeMethodId, itemId, order, quantity")
+            .eq("companyId", companyId)
+            .in("id", batch)
+        ),
+        selectInBatches([...baseMethodIdByTargetMethodId.keys()], (batch) =>
+          client
+            .from("methodMaterial")
+            .select("id, makeMethodId, itemId, order, quantity")
+            .eq("companyId", companyId)
+            .in("makeMethodId", batch)
+        )
       ]);
       if (baseLines.error || copies.error) {
         summary.errors.push(
@@ -672,11 +681,11 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         })
         .map((line) => line.id);
-      if (toDelete.length > 0) {
+      for (const batch of chunkFilterValues(toDelete)) {
         const deduped = await client
           .from("methodMaterial")
           .delete()
-          .in("id", toDelete);
+          .in("id", batch);
         if (deduped.error) {
           summary.errors.push(
             `Could not remove the lines copied from the base revisions (${deduped.error.message}); released BOMs may contain duplicates`
@@ -689,38 +698,40 @@ export async function action({ request }: ActionFunctionArgs) {
   // Then the lines a previous release push wrote to the target methods.
   const targetMethodIds = bomTargets.map((target) => target.methodId);
   if (targetMethodIds.length > 0) {
-    const mapped = await serviceRole
-      .from("externalIntegrationMapping")
-      .select("id, entityId")
-      .eq("companyId", companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "methodMaterial")
-      .in("metadata->>makeMethodId", targetMethodIds);
+    const mapped = await selectInBatches(targetMethodIds, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("id, entityId")
+        .eq("companyId", companyId)
+        .eq("integration", "onshape")
+        .eq("entityType", "methodMaterial")
+        .in("metadata->>makeMethodId", batch)
+    );
     if (mapped.error) {
       summary.errors.push(
         `Could not find the lines a previous release push wrote (${mapped.error.message}); this push may add a second copy of them`
       );
     }
-    if ((mapped.data ?? []).length > 0) {
+    for (const batch of chunkFilterValues(
+      mapped.data.map((mapping) => mapping.entityId)
+    )) {
       const removedLines = await client
         .from("methodMaterial")
         .delete()
-        .in(
-          "id",
-          (mapped.data ?? []).map((mapping) => mapping.entityId)
-        );
+        .in("id", batch);
       if (removedLines.error) {
         summary.errors.push(
           `Could not replace the lines a previous release push wrote (${removedLines.error.message}); this push may add a second copy of them`
         );
       }
+    }
+    for (const batch of chunkFilterValues(
+      mapped.data.map((mapping) => mapping.id)
+    )) {
       const removedMappings = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
-        .in(
-          "id",
-          (mapped.data ?? []).map((mapping) => mapping.id)
-        );
+        .in("id", batch);
       if (removedMappings.error) {
         summary.errors.push(
           `Could not clear the ownership records for the replaced released lines (${removedMappings.error.message})`

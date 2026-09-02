@@ -45,6 +45,13 @@ previous push wrote (matched by `metadata->>makeMethodId`), insert fresh ones,
 leave manual lines untouched. Released (Active) make methods are refused with an
 error naming the part.
 
+A line already carrying the right component is UPDATED in place, and one whose
+push-owned columns (`quantity`, `order`, `materialMakeMethodId`) already match
+is skipped entirely — an untouched re-push costs no writes and stamps no
+`updatedBy`. New lines are collected per method and written as ONE bulk insert
+plus ONE bulk mapping insert, paired by index; the counts are compared before
+pairing, since a short result would link mapping rows to the wrong lines.
+
 Onshape-owned item fields — `readableId`, `name`, `description`, `revision`,
 thumbnail, model — are dropped by `upsertPart`'s update path for mapped items.
 The item page's ONLY integration footprint is the self-loading
@@ -87,6 +94,20 @@ assemblies whose method is not released).
 - Assembly apply is FLAT over `plan.methods`: each level stands alone, so a
   Draft sub-assembly under a released parent is still applied (the old
   recursive push skipped it). Line `itemType` comes from `bomLineItemType`.
+- Assembly plans carry a `depth`: `all` (default, the whole tree) or `top`
+  (the root's method only, each sub-assembly a single line pointing at its own
+  make method). `top` exists because `methodMaterial.materialMakeMethodId`
+  already nests levels, so a big tree composes from pushes made a level at a
+  time — and each push is then bounded by one level's line count. A `top` plan
+  still classifies an unexploded sub-assembly as an assembly (`madePartNumbers`
+  is computed over the WHOLE tree); classifying it from its now-empty child
+  list would create it as a Buy part. Apply loads make methods for every
+  `isAssembly` item, not just the ones in `plan.methods`, or a `top` push would
+  write its lines with a null child-method pointer and flatten the tree.
+- `plan-assembly` refuses over `MAX_PLAN_PARTS` (1500) distinct part numbers
+  with a message naming the count and the level-by-level route out. Not a
+  technical limit — a push is one request with no rollback, so a very large one
+  can be cut off mid-write.
 - Release plan reads each released assembly's BOM at its version (immutable,
   stored in the plan); the change notice number is only minted at apply
   (`get_next_sequence` burns a number — never call it from a plan).
@@ -147,6 +168,30 @@ Fields section.
   already in Carbon must be reused, not re-created).
 - One **Draft** change notice records the push; releasing methods stays with
   the user. Idempotent on partNumber+letter; re-push re-applies BOMs + assets.
+
+## Batch every `.in()` sized by CAD data
+
+Supabase's gateway rejects a REST request whose **encoded request line exceeds
+4,096 bytes**, and a PostgREST `.in()` list rides in the URL. Measured: 3,821
+bytes succeeds, 4,001 fails; past ~6 KB Kong answers 414, and between the two it
+forwards and PostgREST rejects it, which Kong reports as a **502 "invalid
+response from upstream"** — a confusing way to be told a list was too long.
+
+The limit is BYTES, so the part count a call survives depends on the value
+length — ~215 nine-character part numbers, but only **~56** of the 53-58
+character `documentId:elementId:partId` external ids. That pair of reads in
+`linkChildParts` was therefore the first thing a real assembly broke, and it
+broke QUIETLY: the failure lands in `summary.errors` on a push that otherwise
+reports success, leaving created items unlinked from their part studios.
+
+Every panel `.in()` sized by a BOM, a part studio or a release now goes through
+`selectInBatches` / `chunkFilterValues` (`@carbon/utils`), which split on
+encoded bytes. **A fixed count is not a fix** — it is exactly how a list of long
+ids slips past a limit tuned for short ones. Two consequences to keep in mind:
+a batched read's rows arrive in batch order, so anything that relied on
+`.order("revision")` re-sorts afterwards; and the orphan-mapping cleanup reads
+the method's rows and diffs in memory rather than sending a `not in` list of
+every line it just wrote.
 
 ## Onshape API quirks (verified live)
 
