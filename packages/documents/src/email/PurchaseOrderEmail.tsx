@@ -280,7 +280,10 @@ const PurchaseOrderEmail = ({
                         // purchaseOrderLine.unitPrice is the GENERATED BASE
                         // column -- supplierUnitPrice is what the supplier
                         // quoted, and it is what getLineTotal already sums.
-                        line.supplierUnitPrice
+                        // A zero unit price is a real price (a no-charge
+                        // line), not a missing one, and getLineTotal already
+                        // sums it as 0 -- so test for absence, not falsiness.
+                        line.supplierUnitPrice != null
                         ? rateFormatter.format(line.supplierUnitPrice)
                         : "-"}
                   </Text>
