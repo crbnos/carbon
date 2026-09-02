@@ -1,5 +1,5 @@
 import { CodeBlock } from "@/components/api/code-block";
-import { DEFAULT_MCP_ENDPOINT } from "@/components/api/config-context";
+import { DEFAULT_MCP_ENDPOINT } from "@/components/api/config-constants";
 import { McpEndpoint } from "@/components/api/config-inline";
 import {
   DocEyebrow,
