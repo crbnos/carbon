@@ -694,12 +694,11 @@ export const salesOrderStatusType = [
 export const OPEN_SALES_ORDER_STATUSES = [
   "Draft",
   "Needs Approval",
-  "Confirmed",
   "In Progress",
   "To Ship and Invoice",
   "To Ship",
   "To Invoice"
-] as const;
+] as const satisfies readonly (typeof salesOrderStatusType)[number][];
 
 /**
  * True for terminal statuses (Completed, Invoiced, Cancelled, Closed) — and for

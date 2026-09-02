@@ -853,13 +853,37 @@ serve(async (req: Request) => {
           return acc;
         }, []);
 
+        // Flat header/line amounts (shipping, add-on costs) must not be
+        // duplicated when a sales order is invoiced in multiple partial
+        // invoices: the header shipping goes on the first (non-voided)
+        // invoice only, and flat line amounts are prorated by the fraction
+        // being invoiced.
+        const priorInvoiceLines = await client
+          .from("salesInvoiceLine")
+          .select("id, salesInvoice!inner(status)")
+          .eq("salesOrderId", salesOrderId)
+          .eq("companyId", companyId)
+          .neq("salesInvoice.status", "Voided")
+          .limit(1);
+        const hasPriorInvoice = (priorInvoiceLines.data?.length ?? 0) > 0;
+
+        const uninvoicedFraction = (line: {
+          saleQuantity: number | null;
+          quantityToInvoice: number | null;
+        }) => {
+          const ordered = line.saleQuantity ?? 0;
+          if (ordered <= 0) return 1;
+          return Math.min((line.quantityToInvoice ?? 0) / ordered, 1);
+        };
+
         const uninvoicedSubtotal = uninvoicedLines?.reduce((acc, line) => {
-          if (
-            line?.quantityToInvoice &&
-            line.unitPrice &&
-            line.quantityToInvoice > 0
-          ) {
-            acc += line.quantityToInvoice * line.unitPrice;
+          if (line?.quantityToInvoice && line.quantityToInvoice > 0) {
+            acc +=
+              line.quantityToInvoice * (line.unitPrice ?? 0) +
+              uninvoicedFraction(line) *
+                ((line.addOnCost ?? 0) +
+                  (line.nonTaxableAddOnCost ?? 0) +
+                  (line.shippingCost ?? 0));
           }
 
           return acc;
@@ -910,7 +934,9 @@ serve(async (req: Request) => {
             .values({
               id: salesInvoiceId,
               locationId: salesOrderShipment.data.locationId,
-              shippingCost: salesOrderShipment.data.shippingCost ?? 0,
+              shippingCost: hasPriorInvoice
+                ? 0
+                : salesOrderShipment.data.shippingCost ?? 0,
               shippingMethodId: salesOrderShipment.data.shippingMethodId,
               shippingTermId: salesOrderShipment.data.shippingTermId,
               incoterm: salesOrderShipment.data.incoterm,
@@ -942,9 +968,11 @@ serve(async (req: Request) => {
                 description: line.description,
                 quantity: line.quantityToInvoice,
                 unitPrice: line.unitPrice ?? 0,
-                addOnCost: line.addOnCost ?? 0,
-                nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-                shippingCost: line.shippingCost ?? 0,
+                addOnCost: (line.addOnCost ?? 0) * uninvoicedFraction(line),
+                nonTaxableAddOnCost:
+                  (line.nonTaxableAddOnCost ?? 0) * uninvoicedFraction(line),
+                shippingCost:
+                  (line.shippingCost ?? 0) * uninvoicedFraction(line),
                 taxPercent: line.taxPercent ?? 0,
                 unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
                 exchangeRate: line.exchangeRate ?? 1,
@@ -1448,13 +1476,37 @@ serve(async (req: Request) => {
           return acc;
         }, []);
 
+        // Flat header/line amounts (shipping, add-on costs) must not be
+        // duplicated when a sales order is invoiced in multiple partial
+        // invoices (one per shipment): the header shipping goes on the first
+        // (non-voided) invoice only, and flat line amounts are prorated by
+        // the fraction being invoiced.
+        const priorInvoiceLines = await client
+          .from("salesInvoiceLine")
+          .select("id, salesInvoice!inner(status)")
+          .eq("salesOrderId", shipment.data.sourceDocumentId)
+          .eq("companyId", companyId)
+          .neq("salesInvoice.status", "Voided")
+          .limit(1);
+        const hasPriorInvoice = (priorInvoiceLines.data?.length ?? 0) > 0;
+
+        const uninvoicedFraction = (line: {
+          saleQuantity: number | null;
+          quantityToInvoice: number | null;
+        }) => {
+          const ordered = line.saleQuantity ?? 0;
+          if (ordered <= 0) return 1;
+          return Math.min((line.quantityToInvoice ?? 0) / ordered, 1);
+        };
+
         const uninvoicedSubtotal = uninvoicedLines?.reduce((acc, line) => {
-          if (
-            line?.quantityToInvoice &&
-            line.unitPrice &&
-            line.quantityToInvoice > 0
-          ) {
-            acc += line.quantityToInvoice * line.unitPrice;
+          if (line?.quantityToInvoice && line.quantityToInvoice > 0) {
+            acc +=
+              line.quantityToInvoice * (line.unitPrice ?? 0) +
+              uninvoicedFraction(line) *
+                ((line.addOnCost ?? 0) +
+                  (line.nonTaxableAddOnCost ?? 0) +
+                  (line.shippingCost ?? 0));
           }
 
           return acc;
@@ -1506,7 +1558,9 @@ serve(async (req: Request) => {
             .values({
               id: salesInvoiceId,
               locationId: salesOrderShipment.data.locationId,
-              shippingCost: salesOrderShipment.data.shippingCost ?? 0,
+              shippingCost: hasPriorInvoice
+                ? 0
+                : salesOrderShipment.data.shippingCost ?? 0,
               shippingMethodId: salesOrderShipment.data.shippingMethodId,
               shippingTermId: salesOrderShipment.data.shippingTermId,
               incoterm: salesOrderShipment.data.incoterm,
@@ -1538,9 +1592,11 @@ serve(async (req: Request) => {
                 description: line.description,
                 quantity: line.quantityToInvoice,
                 unitPrice: line.unitPrice ?? 0,
-                addOnCost: line.addOnCost ?? 0,
-                nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-                shippingCost: line.shippingCost ?? 0,
+                addOnCost: (line.addOnCost ?? 0) * uninvoicedFraction(line),
+                nonTaxableAddOnCost:
+                  (line.nonTaxableAddOnCost ?? 0) * uninvoicedFraction(line),
+                shippingCost:
+                  (line.shippingCost ?? 0) * uninvoicedFraction(line),
                 taxPercent: line.taxPercent ?? 0,
                 unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
                 exchangeRate: line.exchangeRate ?? 1,
