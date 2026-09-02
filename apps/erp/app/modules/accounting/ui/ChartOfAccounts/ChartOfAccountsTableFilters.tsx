@@ -1,24 +1,12 @@
 import {
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   HStack,
-  IconButton,
   Input,
   InputGroup,
   InputLeftElement
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-  LuCheckCheck,
-  LuEllipsisVertical,
-  LuSearch,
-  LuWallet,
-  LuX
-} from "react-icons/lu";
+import { LuCheckCheck, LuSearch, LuWallet, LuX } from "react-icons/lu";
 import { New, PeriodSelector } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 
@@ -104,21 +92,13 @@ const ChartOfAccountsTableFilters = ({
               </>
             )}
             {canEnterOpeningBalances && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    aria-label={t`More options`}
-                    variant="secondary"
-                    icon={<LuEllipsisVertical />}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={onEnterOpeningBalances}>
-                    <DropdownMenuIcon icon={<LuWallet />} />
-                    <Trans>Opening Balances</Trans>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="secondary"
+                leftIcon={<LuWallet />}
+                onClick={onEnterOpeningBalances}
+              >
+                <Trans>Opening Balances</Trans>
+              </Button>
             )}
           </>
         )}
