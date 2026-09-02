@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Envisagez de pointer cette pièce directement vers le succ
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflits"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr ""
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# cours} other {# cours}}"
 
@@ -829,6 +832,9 @@ msgstr "Le statut d'une expédition change"
 
 msgid "A shipment's tracking number changes"
 msgstr "Le numéro de suivi d'une expédition change"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr ""
 
 msgid "A step needs a name."
 msgstr "Une étape doit avoir un nom."
@@ -2287,6 +2293,9 @@ msgstr "Au"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "Au {0}"
+
+msgid "As of date"
+msgstr ""
 
 msgid "As of:"
 msgstr "Au :"
@@ -11116,8 +11125,18 @@ msgstr "Ouverture"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Ouvrir une opération démarre son chronomètre, donc le temps est suivi à partir du moment où le travail commence."
 
+msgid "Opening Balance"
+msgstr ""
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr ""
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Solde d'ouverture de l'amortissement déjà comptabilisé avant l'ajout de cet actif à Carbon (utilisez 0 pour les nouvelles acquisitions)."
+
+msgid "Opening Balances"
+msgstr ""
 
 msgid "Operating Expenses"
 msgstr "Charges d'exploitation"
@@ -11869,6 +11888,9 @@ msgstr "Valider la facture"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Enregistrer les écritures de journal avec les codes de compte et de description appropriés"
+
+msgid "Post opening balances"
+msgstr ""
 
 msgid "Post Receipt"
 msgstr "Valider le reçu"

@@ -104493,7 +104493,8 @@ export default {
             "Credit Memo",
             "Debit Memo",
             "Non-Conformance",
-            "Inbound Inspection"
+            "Inbound Inspection",
+            "Opening Balance"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -116085,7 +116086,8 @@ export default {
             "Credit Memo",
             "Debit Memo",
             "Non-Conformance",
-            "Inbound Inspection"
+            "Inbound Inspection",
+            "Opening Balance"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -128653,7 +128655,8 @@ export default {
             "Credit Memo",
             "Debit Memo",
             "Non-Conformance",
-            "Inbound Inspection"
+            "Inbound Inspection",
+            "Opening Balance"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"

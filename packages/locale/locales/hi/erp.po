@@ -201,6 +201,9 @@ msgstr "{chainLabel}. इस भाग को सीधे अंतिम उ�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} विरोध"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr ""
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
@@ -829,6 +832,9 @@ msgstr "किसी शिपमेंट की स्थिति में �
 
 msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr ""
 
 msgid "A step needs a name."
 msgstr "एक चरण को एक नाम की आवश्यकता है।"
@@ -2287,6 +2293,9 @@ msgstr "के अनुसार"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0} के अनुसार"
+
+msgid "As of date"
+msgstr ""
 
 msgid "As of:"
 msgstr "इसके अनुसार:"
@@ -11116,8 +11125,18 @@ msgstr "शुरुआती"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "किसी ऑपरेशन को खोलने से इसका टाइमर शुरू हो जाता है, इसलिए काम शुरू होने के समय से समय ट्रैक किया जाता है।"
 
+msgid "Opening Balance"
+msgstr ""
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr ""
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "इस संपत्ति को Carbon में जोड़े जाने से पहले दर्ज मूल्यह्रास का प्रारंभिक शेष (नई खरीद के लिए 0 का उपयोग करें)।"
+
+msgid "Opening Balances"
+msgstr ""
 
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
@@ -11869,6 +11888,9 @@ msgstr "चालान पोस्ट करें"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "उचित खाता और विवरण कोड के साथ जर्नल प्रविष्टियां पोस्ट करें"
+
+msgid "Post opening balances"
+msgstr ""
 
 msgid "Post Receipt"
 msgstr "रसीद पोस्ट करें"

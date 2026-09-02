@@ -678,8 +678,42 @@ export const intercompanyTransactionValidator = z
     }
   );
 
+export const openingBalanceValidator = z.object({
+  postingDate: z.string().min(1, { message: "Posting date is required" }),
+  // JSON-encoded array of { accountId, amount } produced by the form's hidden
+  // input. `amount` is the signed base-currency figure the user typed against
+  // the account, positive = the account's natural balance side (debit for
+  // Asset/Expense, credit for Liability/Equity/Revenue). The service converts
+  // each amount → {debit, credit} per class and appends the Retained Earnings
+  // plug before posting. Zero-amount rows are dropped.
+  lines: z
+    .string()
+    .min(1, { message: "At least one balance is required" })
+    .transform((val, ctx) => {
+      try {
+        const parsed = JSON.parse(val) as Array<{
+          accountId: string;
+          amount: number;
+        }>;
+        return parsed.filter(
+          (l) => l.accountId && typeof l.amount === "number" && l.amount !== 0
+        );
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid lines"
+        });
+        return z.NEVER;
+      }
+    })
+    .refine((lines) => lines.length > 0, {
+      message: "At least one balance is required"
+    })
+});
+
 export const journalEntrySourceTypes = [
   "Manual",
+  "Opening Balance",
   "Purchase Receipt",
   "Purchase Invoice",
   "Purchase Return",
