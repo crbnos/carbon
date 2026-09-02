@@ -350,6 +350,8 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  internalNotes: z.any().optional(),
+  externalNotes: z.any().optional(),
   configuration: z.any().optional()
 });
 

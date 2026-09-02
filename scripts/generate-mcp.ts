@@ -61,6 +61,8 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a quote with just customerId.",
   sales_updateQuote:
     "Update an existing quote - handles exchange rate updates when currency changes, syncs customer to opportunity",
+  sales_upsertQuoteLine:
+    "Create or update a quote line. Keep description to a short one-line label - it is truncated on the digital quote. Long specifications belong in externalNotes (TipTap doc JSON, rendered in full under the line on the digital quote and PDF); internalNotes takes the same shape and is never shown to the customer.",
   sales_insertSalesOrder:
     "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
   sales_updateSalesOrder:

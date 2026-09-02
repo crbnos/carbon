@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-01T10:00:04.633Z",
+  "generated": "2026-09-02T04:10:03.514Z",
   "totalTools": 1488,
   "modules": 15,
   "tools": [
@@ -37807,6 +37807,12 @@
           "taxPercent": {
             "type": "number"
           },
+          "internalNotes": {
+            "type": "string"
+          },
+          "externalNotes": {
+            "type": "string"
+          },
           "configuration": {},
           "invoiceCustomerId": {
             "type": "string"
@@ -37851,12 +37857,6 @@
             "type": "string"
           },
           "rfqId": {
-            "type": "string"
-          },
-          "externalNotes": {
-            "type": "string"
-          },
-          "internalNotes": {
             "type": "string"
           },
           "rfqDate": {
@@ -42241,8 +42241,8 @@
       "name": "sales_upsertQuoteLine",
       "module": "sales",
       "classification": "WRITE",
-      "description": "upsert quote line",
-      "paramCount": 16,
+      "description": "Create or update a quote line. Keep description to a short one-line label - it is truncated on the digital quote. Long specifications belong in externalNotes (TipTap doc JSON, rendered in full under the line on the digital quote and PDF); internalNotes takes the same shape and is never shown to the customer.",
+      "paramCount": 18,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -42303,6 +42303,8 @@
           "taxPercent": {
             "type": "number"
           },
+          "internalNotes": {},
+          "externalNotes": {},
           "configuration": {}
         },
         "required": [
