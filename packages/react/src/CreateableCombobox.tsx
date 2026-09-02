@@ -119,7 +119,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           </span>
         )}
 
-        <Popover open={open} onOpenChange={setOpen}>
+        {/* In inline mode the trigger is a non-button HStack, so its `disabled`
+            is inert — guard onOpenChange so no surface can open while read-only. */}
+        <Popover
+          open={open}
+          onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
+        >
           <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
               <HStack>
