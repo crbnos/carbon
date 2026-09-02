@@ -654,3 +654,128 @@ export function buildDepreciationLines(
 
   return lines;
 }
+
+// ---------------------------------------------------------------------------
+// Intercompany netting (workbench math — spec §4, issue #1058)
+//
+// Pure, DB-independent kernel for the netting workbench, pulled forward ahead
+// of type regen (same split as the schema foundation). Consumed by the deferred
+// `createNettingStatement` snapshot precompute (per-invoice `appliedAmount` on
+// `intercompanyNettingStatementLine`) and by the settlement path that stages the
+// paired Receipt/Disbursement payments through the existing `invoiceSettlement`
+// machinery. No RLS, no queries — the RPC/edge fn composes these against the
+// open items it reads.
+// ---------------------------------------------------------------------------
+
+/**
+ * Round a monetary value to cents, decimal-safe. The naive
+ * `Math.round(value * 100) / 100` mis-rounds half-cent values whose scaled
+ * product lands just below the .5 boundary in binary floating point — e.g.
+ * `1.005 * 100` is `100.49999…`, so `Math.round` yields `1.00` instead of
+ * `1.01`. Re-parsing the value's own decimal string with a shifted exponent
+ * (`"1.005e2"` → `100.5` exactly) sidesteps that error before rounding.
+ *
+ * The exponent is shifted numerically off the value's own decimal string rather
+ * than by appending `"e2"` — a naive `` `${value}e2` `` breaks on
+ * scientific-notation inputs (`1e-7` → the malformed string `"1e-7e2"` → `NaN`).
+ * Non-finite inputs (`Infinity`, `-Infinity`, `NaN`) floor to `0` so the netting
+ * kernel's statement-row APIs can never receive or return `NaN`. A finite input
+ * so large that scaling by 100 overflows to `Infinity` (e.g. `Number.MAX_VALUE`,
+ * `1e307`) would round-trip back to `NaN`, so the scaled result is re-checked and
+ * floored to `0` as well. Used so `nettedAmount`/`residualAmount`/`appliedAmount`
+ * tie out.
+ */
+export function roundToCents(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const shift = (n: number, places: number): number => {
+    const [mantissa, exponent] = String(n).split("e");
+    return Number(`${mantissa}e${(exponent ? Number(exponent) : 0) + places}`);
+  };
+  const rounded = shift(Math.round(shift(value, 2)), -2);
+  return Number.isFinite(rounded) ? rounded : 0;
+}
+
+export type NettingPosition = {
+  /** min(gross A→B, gross B→A) — the overlap both directions clear at once. */
+  nettedAmount: number;
+  /** |gross A→B − gross B→A| — the surplus the net debtor still owes in cash. */
+  residualAmount: number;
+  /** The net debtor after netting (owes the residual), or null when balanced. */
+  residualPayerCompanyId: string | null;
+};
+
+/**
+ * Net a company pair's mutual open IC balances. `grossReceivableAtoB` is what
+ * company B owes company A (A's open AR to the IC customer B); `grossReceivableBtoA`
+ * is what A owes B. The netted amount is the smaller of the two — the overlap both
+ * sides can clear at once — and the residual is the surplus the net debtor still
+ * owes and settles in real cash outside the statement. Equal balances net fully
+ * (no residual, no payer). Negative inputs are floored to zero and both figures
+ * round to cents so the statement's `nettedAmount`/`residualAmount` tie out.
+ */
+export function computeNettingPosition(args: {
+  companyAId: string;
+  companyBId: string;
+  grossReceivableAtoB: number;
+  grossReceivableBtoA: number;
+}): NettingPosition {
+  const { companyAId, companyBId, grossReceivableAtoB, grossReceivableBtoA } =
+    args;
+  const bOwesA = roundToCents(Math.max(0, grossReceivableAtoB));
+  const aOwesB = roundToCents(Math.max(0, grossReceivableBtoA));
+
+  const nettedAmount = roundToCents(Math.min(bOwesA, aOwesB));
+  const residualAmount = roundToCents(Math.abs(bOwesA - aOwesB));
+  const residualPayerCompanyId =
+    bOwesA > aOwesB ? companyBId : aOwesB > bOwesA ? companyAId : null;
+
+  return { nettedAmount, residualAmount, residualPayerCompanyId };
+}
+
+export type NettingOpenItem = {
+  id: string;
+  openAmount: number;
+};
+
+export type NettingApplication = {
+  id: string;
+  openAmount: number;
+  appliedAmount: number;
+};
+
+/**
+ * Allocate a settlement `targetAmount` across one direction's open IC invoices,
+ * oldest-first (the caller pre-sorts). Each invoice absorbs up to its own
+ * `openAmount`; earlier invoices close fully and the last touched invoice takes
+ * the remainder as a partial settlement — the standard oldest-first application
+ * order the `invoiceSettlement` trail uses. Zero/negative open items are skipped.
+ *
+ * Returns one application row per invoice that receives a nonzero apply (in
+ * input order), `totalApplied` (= min(targetAmount, sum of open amounts)), and
+ * `unapplied` (the target the open items could not absorb — the net debtor's
+ * shortfall). Amounts round to cents so the applied rows tie out to the total.
+ */
+export function allocateNettingApplications(
+  targetAmount: number,
+  openItems: NettingOpenItem[]
+): {
+  applications: NettingApplication[];
+  totalApplied: number;
+  unapplied: number;
+} {
+  const target = roundToCents(Math.max(0, targetAmount));
+  const applications: NettingApplication[] = [];
+  let remaining = target;
+
+  for (const item of openItems) {
+    if (remaining <= 0) break;
+    const open = roundToCents(item.openAmount);
+    if (open <= 0) continue;
+    const appliedAmount = roundToCents(Math.min(remaining, open));
+    applications.push({ id: item.id, openAmount: open, appliedAmount });
+    remaining = roundToCents(remaining - appliedAmount);
+  }
+
+  const totalApplied = roundToCents(target - remaining);
+  return { applications, totalApplied, unapplied: roundToCents(remaining) };
+}
