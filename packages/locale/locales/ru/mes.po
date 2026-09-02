@@ -67,7 +67,7 @@ msgid "About"
 msgstr "О системе"
 
 msgid "About this field"
-msgstr ""
+msgstr "О данном поле"
 
 msgid "Accept"
 msgstr "Принять"

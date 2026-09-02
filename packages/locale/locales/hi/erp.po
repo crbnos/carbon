@@ -197,7 +197,7 @@ msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% देय राशि का"
 
 msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
-msgstr ""
+msgstr "{appName} जुड़ा हुआ है, लेकिन वर्कफ़्लो चरणों द्वारा इसका उपयोग करने से पहले इसे फिर से जोड़ा जाना चाहिए।"
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} अभी कनेक्ट नहीं किया गया है। इस चरण से पहले एक खाता कनेक्ट करें कुछ भी कर सकता है।"
@@ -907,7 +907,7 @@ msgid "About (notification)"
 msgstr "के बारे में (सूचना)"
 
 msgid "About this field"
-msgstr ""
+msgstr "इस फ़ील्ड के बारे में"
 
 msgid "Absent"
 msgstr "अनुपस्थित"
@@ -1253,7 +1253,7 @@ msgid "Add Note"
 msgstr "नोट जोड़ें"
 
 msgid "Add operation"
-msgstr ""
+msgstr "ऑपरेशन जोड़ें"
 
 msgid "Add Operation"
 msgstr "ऑपरेशन जोड़ें"
@@ -1407,7 +1407,7 @@ msgid "Advanced"
 msgstr "उन्नत"
 
 msgid "Advanced properties"
-msgstr ""
+msgstr "उन्नत गुण"
 
 msgid "Affected item not found."
 msgstr "प्रभावित आइटम नहीं मिला।"
@@ -1556,10 +1556,10 @@ msgid "Amount Type"
 msgstr "राशि प्रकार"
 
 msgid "An account is already called that — pick a different name."
-msgstr ""
+msgstr "एक खाता पहले से ही उसी नाम से जाना जाता है — एक अलग नाम चुनें।"
 
 msgid "An account is missing from this list until it is reconnected."
-msgstr ""
+msgstr "एक खाता इस सूची से तब तक अनुपलब्ध है जब तक इसे फिर से नहीं जोड़ा जाता।"
 
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "एक लेखांकन बकेट जो विभाग या कार्य द्वारा व्यय को समूहित करता है ताकि सामान्य खाता बही समूह द्वारा व्यय की रिपोर्ट कर सकें, केवल खाता द्वारा नहीं।"
@@ -2562,7 +2562,7 @@ msgid "Automatic, prorated consumption of a job's untracked materials when outpu
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
 
 msgid "Automatically create a Google Meet video conference link for this event"
-msgstr ""
+msgstr "इस ईवेंट के लिए स्वचालित रूप से Google Meet वीडियो कॉन्फ़्रेंस लिंक बनाएँ"
 
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "कानबान स्कैन किए जाने पर जॉब को स्वचालित रूप से जारी करें"
@@ -2701,7 +2701,7 @@ msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
 msgid "BCC Email"
-msgstr ""
+msgstr "बीसीसी ईमेल"
 
 msgid "Beginning"
 msgstr "आरंभ"
@@ -2793,7 +2793,7 @@ msgid "Body"
 msgstr "निकाय"
 
 msgid "Body for the email you want to send"
-msgstr ""
+msgstr "आप जो ईमेल भेजना चाहते हैं उसका निकाय"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2838,7 +2838,7 @@ msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's
 msgstr "अपने पार्ट्स, BOMs, प्रक्रिया सूची और लागत निर्धारण को लाएँ — Carbon के आयात उपकरण, CSV या LLM सहायता के साथ।"
 
 msgid "Broadcast reply to channel"
-msgstr ""
+msgstr "चैनल को प्रसारित प्रतिक्रिया"
 
 msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
@@ -2907,7 +2907,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
 msgid "By default it'll be 30 min post start time"
-msgstr ""
+msgstr "डिफ़ॉल्ट रूप से यह शुरुआत के समय के 30 मिनट बाद होगा"
 
 msgid "By dimension"
 msgstr "आयाम द्वारा"
@@ -3184,7 +3184,7 @@ msgid "CC"
 msgstr "CC"
 
 msgid "CC Email"
-msgstr ""
+msgstr "सीसी ईमेल"
 
 msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
@@ -3271,10 +3271,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "प्रकार बदलने से इस आइटम के ड्राफ्ट संपादन रीसेट हो जाते हैं।"
 
 msgid "Channel"
-msgstr ""
+msgstr "चैनल"
 
 msgid "Channel Name"
-msgstr ""
+msgstr "चैनल नाम"
 
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
@@ -3647,7 +3647,7 @@ msgid "Configure the start months for your fiscal and tax years"
 msgstr "अपने वित्तीय और कर वर्षों के लिए शुरुआती महीनों को कॉन्फ़िगर करें"
 
 msgid "Configure the steps above first."
-msgstr ""
+msgstr "पहले उपरोक्त चरणों को कॉन्फ़िगर करें।"
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "खरीदी गई वस्तु की लागत को आपूर्तिकर्ता लेनदेन से कब अपडेट किया जाना चाहिए, इसे कॉन्फ़िगर करें।"
@@ -3759,7 +3759,7 @@ msgid "Connect your identity provider by pasting either its metadata URL or its 
 msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — इन दोनों में से केवल एक।"
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
-msgstr ""
+msgstr "वर्कफ़्लो से पहले जुड़ने के लिए अतिरिक्त अनुमतियों की आवश्यकता थी। उन्हें प्रदान करने के लिए फिर से जोड़ें — इस बीच सब कुछ काम करता रहेगा।"
 
 msgid "Connected to"
 msgstr "को जोड़ा गया"
@@ -4190,7 +4190,7 @@ msgid "Couldn't load related documents. Refresh before creating a new one to avo
 msgstr "संबंधित दस्तावेज़ लोड नहीं किए जा सके। डुप्लिकेट से बचने के लिए एक नया बनाने से पहले रीफ़्रेश करें।"
 
 msgid "Couldn't load the choices for this field."
-msgstr ""
+msgstr "इस फ़ील्ड के लिए विकल्प लोड नहीं किए जा सके।"
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
@@ -4214,7 +4214,7 @@ msgid "Count ID"
 msgstr "गणना आईडी"
 
 msgid "Count items"
-msgstr ""
+msgstr "आइटम गिनें"
 
 msgid "Counted Qty"
 msgstr "गिनी गई मात्रा"
@@ -5512,7 +5512,7 @@ msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
 msgid "Description of the event. You can use HTML tags here."
-msgstr ""
+msgstr "ईवेंट का विवरण। आप यहाँ HTML टैग का उपयोग कर सकते हैं।"
 
 msgid "Detail"
 msgstr "विवरण"
@@ -6280,7 +6280,7 @@ msgid "Email Address"
 msgstr "ईमेल पता"
 
 msgid "Email address to set as the \"Reply-To\" header"
-msgstr ""
+msgstr "\"प्रतिक्रिया देने के लिए\" हेडर के रूप में सेट करने के लिए ईमेल पता"
 
 msgid "Email Domains"
 msgstr "ईमेल डोमेन"
@@ -6295,7 +6295,7 @@ msgid "Emails"
 msgstr "ईमेल"
 
 msgid "Emails of the attendees (guests)"
-msgstr ""
+msgstr "प्रतिभागियों (मेहमानों) के ईमेल"
 
 msgid "Emoji"
 msgstr "इमोजी"
@@ -6346,7 +6346,7 @@ msgid "Enable in Settings"
 msgstr "सेटिंग्स में सक्षम करें"
 
 msgid "Enable link unfurling for this message"
-msgstr ""
+msgstr "इस संदेश के लिए लिंक अनफर्लिंग सक्षम करें"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "जब RFQ को कोटेशन के लिए तैयार के रूप में चिह्नित किया जाए तो सूचनाएँ सक्षम करें।"
@@ -7395,7 +7395,7 @@ msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
 
 msgid "Fix this"
-msgstr ""
+msgstr "इसे ठीक करें"
 
 msgid "Fixed"
 msgstr "निश्चित"
@@ -7749,10 +7749,10 @@ msgid "GL Tie-Out"
 msgstr "सामान्य खाता बही समन्वय"
 
 msgid "Gmail"
-msgstr ""
+msgstr "Gmail"
 
 msgid "Gmail: Send Email"
-msgstr ""
+msgstr "Gmail: ईमेल भेजें"
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "पहली बार ही सही तरीके से लाइव जाएं — हमारी टीम आपके साथ है"
@@ -7795,7 +7795,7 @@ msgid "Good morning, {name}."
 msgstr "सुबह की शुभकामनाएं, {name}।"
 
 msgid "Google Calendar"
-msgstr ""
+msgstr "Google Calendar"
 
 msgid "Google Calendar: Create Event"
 msgstr "Google Calendar: इवेंट बनाएं"
@@ -8107,7 +8107,7 @@ msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
 msgid "Icon Emoji"
-msgstr ""
+msgstr "आइकन इमोजी"
 
 msgid "Id"
 msgstr "आईडी"
@@ -8624,7 +8624,7 @@ msgid "Is identity group"
 msgstr "पहचान समूह है"
 
 msgid "Is Private?"
-msgstr ""
+msgstr "क्या यह निजी है?"
 
 msgid "Is supplier org group"
 msgstr "आपूर्तिकर्ता संगठन समूह है"
@@ -8835,7 +8835,7 @@ msgid "Join {0}"
 msgstr "{0} में शामिल हों"
 
 msgid "Join into text"
-msgstr ""
+msgstr "पाठ में शामिल हों"
 
 msgid "Journal"
 msgstr "जर्नल"
@@ -8880,7 +8880,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "मौजूदा मूल्य निर्धारण रखें, केवल नई वस्तुएं जोड़ें"
 
 msgid "Keep matching items"
-msgstr ""
+msgstr "मेल खाने वाले आइटम रखें"
 
 msgid "Keep only items where…"
 msgstr "केवल आइटम रखें जहां…"
@@ -10979,7 +10979,7 @@ msgid "Nothing at this location matches \"{0}\"."
 msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता।"
 
 msgid "Nothing can work on this result."
-msgstr ""
+msgstr "इस परिणाम पर कुछ नहीं कर सकता।"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
@@ -11136,7 +11136,7 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "एक वर्कफ़्लो का एक निष्पादन, चरण दर चरण रिकॉर्ड किया गया जिसमें प्रत्येक चरण द्वारा उपयोग किए गए और उत्पादित मान शामिल हैं, वर्कफ़्लो के स्वामी की अनुमतियों के साथ पूरे समय कार्य करते हुए।"
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
-msgstr ""
+msgstr "आपके {appName} खातों में से एक को वर्कफ़्लो चरणों द्वारा इसका उपयोग करने से पहले फिर से जोड़ा जाना चाहिए।"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "एक सीरीज यूनिट या एक बैच जो Carbon व्यक्तिगत रूप से अनुसरण करता है, अपनी स्वयं की स्थिति और विशेषताएं जैसे समाप्ति तिथि ले जाता है।"
@@ -11187,7 +11187,7 @@ msgid "Open"
 msgstr "खोलें"
 
 msgid "Open {appName} accounts"
-msgstr ""
+msgstr "{appName} खाते खोलें"
 
 msgid "Open a change notice"
 msgstr "एक परिवर्तन सूचना खोलें"
@@ -11864,7 +11864,7 @@ msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"
 
 msgid "Pick a field…"
-msgstr ""
+msgstr "एक फ़ील्ड चुनें…"
 
 msgid "Pick a list variable…"
 msgstr "एक लिस्ट वेरिएबल चुनें…"
@@ -12331,7 +12331,7 @@ msgid "Profile"
 msgstr "प्रोफ़ाइल"
 
 msgid "Profile Picture"
-msgstr ""
+msgstr "प्रोफ़ाइल चित्र"
 
 msgid "Progress"
 msgstr "प्रगति"
@@ -12428,7 +12428,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
 
 msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
-msgstr ""
+msgstr "इस संदेश को एक प्रतिक्रिया बनाने के लिए **मूल** संदेश का ts (टाइमस्टैम्प) या लिंक मान प्रदान करें। प्रतिक्रिया के ts मान का उपयोग न करें; इसके बजाय इसके मूल का उपयोग करें। उदाहरण के लिए '1710304378.475129'। वैकल्पिक रूप से, आप मूल संदेश के आगे तीन बिंदुओं पर क्लिक करके और 'लिंक कॉपी करें' विकल्प का चयन करके आसानी से संदेश लिंक प्राप्त कर सकते हैं।"
 
 msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
 msgstr "Carbon को SAML एप्लिकेशन के रूप में पंजीकृत करते समय इन URLs को अपने आइडेंटिटी प्रदाता (Okta, Entra ID, Google Workspace, आदि) को प्रदान करें।"
@@ -12996,7 +12996,7 @@ msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
 
 msgid "Receiver Email (To)"
-msgstr ""
+msgstr "प्राप्तकर्ता ईमेल (को)"
 
 msgid "Receiving Location"
 msgstr "प्राप्ति स्थान"
@@ -13023,16 +13023,16 @@ msgid "Reconciling a purchase order against what was received and invoiced — i
 msgstr "एक क्रय आदेश को प्राप्त और चालान किए गए के विरुद्ध समन्वय करना — Carbon में अंतर्निहित, पंक्ति मात्रा और GR/IR शेष राशि के माध्यम से।"
 
 msgid "Reconnect"
-msgstr ""
+msgstr "फिर से जोड़ें"
 
 msgid "Reconnect {appName}"
-msgstr ""
+msgstr "{appName} को फिर से जोड़ें"
 
 msgid "Reconnect it"
-msgstr ""
+msgstr "इसे फिर से जोड़ें"
 
 msgid "Reconnect needed"
-msgstr ""
+msgstr "पुनः कनेक्ट करने की आवश्यकता है"
 
 msgid "Record"
 msgstr "रिकॉर्ड करें"
@@ -13065,11 +13065,11 @@ msgid "Records"
 msgstr "रिकॉर्ड"
 
 msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
-msgstr ""
+msgstr "{appLabel} इस फ़ील्ड में लिंक्स का समर्थन नहीं करता है — यहां के रिकॉर्ड सादे पाठ के रूप में दिखाई देंगे।"
 
 #. placeholder {0}: notice.params.equals
 msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
-msgstr ""
+msgstr "रिकॉर्ड सादे पाठ होंगे। उन्हें लिंक्स में बदलने के लिए {siblingLabel} को {0} पर सेट करें (Advanced के अंतर्गत)।"
 
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
@@ -13250,7 +13250,7 @@ msgid "Remove station"
 msgstr "स्टेशन हटाएं"
 
 msgid "Remove this operation"
-msgstr ""
+msgstr "इस ऑपरेशन को निकालें"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "इस भंडारण प्रकार को सभी संदर्भित भंडारण इकाइयों से निकालें और इसे हटाएँ। इसे पूर्ववत नहीं किया जा सकता।"
@@ -13344,10 +13344,10 @@ msgid "Replenishment System"
 msgstr "पुनःपूर्ति प्रणाली"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
-msgstr ""
+msgstr "थ्रेड का जवाब दें (थ्रेड संदेश लिंक/टाइमस्टैम्प)"
 
 msgid "Reply-To Email"
-msgstr ""
+msgstr "जवाब-प्रेषक ईमेल"
 
 msgid "Report"
 msgstr "रिपोर्ट"
@@ -14511,10 +14511,10 @@ msgid "Send Via"
 msgstr "के माध्यम से भेजें"
 
 msgid "Sender Email"
-msgstr ""
+msgstr "भेजने वाले का ईमेल"
 
 msgid "Sender Name"
-msgstr ""
+msgstr "भेजने वाले का नाम"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"
@@ -15005,16 +15005,16 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slack: Create Channel"
-msgstr ""
+msgstr "Slack: चैनल बनाएँ"
 
 msgid "Slack: Find User by Email"
-msgstr ""
+msgstr "Slack: ईमेल से उपयोगकर्ता खोजें"
 
 msgid "Slack: Send Message To A Channel"
-msgstr ""
+msgstr "Slack: किसी चैनल को संदेश भेजें"
 
 msgid "Slack: Send Message To A User"
-msgstr ""
+msgstr "Slack: किसी उपयोगकर्ता को संदेश भेजें"
 
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "स्थान, आइटम, या किसी भी आयाम द्वारा संपत्ति गतिविधि को स्लाइस करें"
@@ -15728,13 +15728,13 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "इस हब को ग्राहक के लिए अनुकूलित करें। परिवर्तन सभी के लिए लाइव लागू होते हैं जो इसे देख रहे हैं। ग्राहक को यहां कभी नहीं दिखाया जाता है।"
 
 msgid "Take one field from every item"
-msgstr ""
+msgstr "हर आइटम से एक फ़ील्ड लें"
 
 msgid "Take the first item"
-msgstr ""
+msgstr "पहला आइटम लें"
 
 msgid "Take the last item"
-msgstr ""
+msgstr "अंतिम आइटम लें"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
@@ -15917,13 +15917,13 @@ msgid "Text size"
 msgstr "पाठ आकार"
 
 msgid "That account is still being reconnected. Try again in a moment."
-msgstr ""
+msgstr "वह खाता अभी भी पुनः कनेक्ट किया जा रहा है। एक पल में फिर से कोशिश करें।"
 
 msgid "That connection name is already used"
 msgstr "वह कनेक्शन नाम पहले से उपयोग किया जा रहा है"
 
 msgid "That field holds several values, so they are combined into one list."
-msgstr ""
+msgstr "उस फ़ील्ड में कई मान हैं, इसलिए उन्हें एक सूची में मिलाया जाता है।"
 
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
@@ -15942,7 +15942,7 @@ msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each tas
 msgstr "{0} चरणों को लाइव करने के लिए, प्रत्येक एक चेकपॉइंट पर समाप्त होता है। जैसे ही आप प्रत्येक कार्य को पूरा करते हैं, उसे टिक करें।"
 
 msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
-msgstr ""
+msgstr "यह चरण जिस {appName} खाते का उपयोग करता है वह उपलब्ध नहीं है — यह डिस्कनेक्ट किया गया था या पुनः कनेक्ट किए जाने की आवश्यकता है।"
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "लेखांकन आयाम जो रिपोर्टिंग और विश्लेषण के लिए आइटम को वर्गीकृत करता है।"
@@ -15954,7 +15954,7 @@ msgid "The action that copies a saved method (its materials, operations, and wor
 msgstr "किसी सहेजी गई विधि (इसकी सामग्री, ऑपरेशन और कार्य निर्देश) को किसी जॉब या कोटेशन पंक्ति पर प्रतिलिपि करने की कार्रवाई।"
 
 msgid "The address must be listed in your GMail account's settings"
-msgstr ""
+msgstr "पता आपके GMail खाते की सेटिंग्स में सूचीबद्ध होना चाहिए"
 
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "एक सूची-प्रकार की विशेषता के लिए अनुमत मान; उपयोगकर्ता स्वतंत्र रूप से टाइप करने के बजाय इन में से चुनते हैं।"
@@ -16236,7 +16236,7 @@ msgid "The human-readable document number (like J000001 or ECO-000001) minted fr
 msgstr "मानव-पठनीय दस्तावेज़ संख्या (जैसे J000001 या ECO-000001) जो एक अनुक्रम से बनाई गई है और रिकॉर्ड पर संग्रहीत है, इसके आंतरिक id से अलग।"
 
 msgid "The icon emoji of the bot"
-msgstr ""
+msgstr "बॉट का आइकन इमोजी"
 
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "वह पहचानकर्ता जिसका ग्राहक अपने PO पर इस पार्ट के लिए उपयोग करता है; Carbon इसे ऑर्डर इंपोर्ट पर हमारे आंतरिक पार्ट ID में रिज़ॉल्व करता है।"
@@ -16269,7 +16269,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
 
 msgid "The items in that list have no fields to take."
-msgstr ""
+msgstr "उस सूची में आइटम्स के पास लेने के लिए कोई फ़ील्ड नहीं हैं।"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
@@ -16475,7 +16475,7 @@ msgid "The processes this work center can run; appears in process-pickers when s
 msgstr "प्रक्रियाएँ जो यह वर्क सेंटर चला सकता है; ऑपरेशन शेड्यूल करते समय प्रक्रिया-पिकर में दिखाई देता है, और यह सीमित करता है कि कौन से जॉब इस वर्क सेंटर के माध्यम से रूट हो सकते हैं।"
 
 msgid "The profile picture of the bot"
-msgstr ""
+msgstr "बॉट की प्रोफ़ाइल चित्र"
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"
@@ -16659,7 +16659,7 @@ msgid "The system passes every in-scope acceptance test in your configured syste
 msgstr "सिस्टम आपके कॉन्फ़िगर किए गए सिस्टम में हर इन-स्कोप स्वीकृति परीक्षा पास करता है, आपके डेटा के साथ; डेटा सत्यापित है; और आप साइन ऑफ करते हैं। फिर लाइव जाएं।"
 
 msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
-msgstr ""
+msgstr "आपके संदेश का पाठ। Block Kit ब्लॉक्स का उपयोग करते समय, इसका उपयोग सूचनाओं के लिए फॉलबैक के रूप में किया जाता है।"
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "बिक्री RFQ, इसके कोटेशन, और परिणामी विक्रय आदेश को जोड़ने वाली श्रृंखला — एक संबंध, अपनी स्थिति के साथ एक दस्तावेज़ नहीं।"
@@ -16710,7 +16710,7 @@ msgid "The US tax depreciation system with IRS property-class tables, run as a s
 msgstr "अमेरिकी कर मूल्यह्रास प्रणाली IRS संपत्ति-वर्ग तालिकाओं के साथ, पुस्तक अनुसूची के साथ एक अलग कर अनुसूची के रूप में चलाई जाती है।"
 
 msgid "The username of the bot"
-msgstr ""
+msgstr "बॉट का उपयोगकर्ता नाम"
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "इस समूह में उपयोगकर्ता; समूह-scoped अनुमतियां और सूचनाएं प्रत्येक सदस्य पर लागू होती हैं, और उपयोगकर्ता कई समूहों से संबंधित हो सकते हैं (प्रभावी अनुमतियां संघ हैं)।"
@@ -16785,7 +16785,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से लिंक करती हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा किए जाते हैं, तो कुछ भी हटाया नहीं जाता है और पुनरुद्धार शुरू नहीं होता।"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"
@@ -16794,10 +16794,10 @@ msgid "this ability"
 msgstr "यह क्षमता"
 
 msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
-msgstr ""
+msgstr "यह खाता काम करना बंद कर गया है। इसे पुनः कनेक्ट करें — इसका उपयोग करने वाले वर्कफ़्लो चरण तब तक विफल होंगे।"
 
 msgid "This account needs to be reconnected."
-msgstr ""
+msgstr "इस खाते को पुनः कनेक्ट किए जाने की आवश्यकता है।"
 
 msgid "This backup could not be completed."
 msgstr "यह बैकअप पूर्ण नहीं किया जा सका।"
@@ -17445,7 +17445,7 @@ msgid "Triggers"
 msgstr "ट्रिगर"
 
 msgid "Try again"
-msgstr ""
+msgstr "फिर से कोशिश करें"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
@@ -17487,7 +17487,7 @@ msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
 
 msgid "Type a value and press Enter…"
-msgstr ""
+msgstr "एक मान दर्ज करें और Enter दबाएँ…"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "एक ईमेल टाइप करें और बाहरी प्राप्तकर्ता जोड़ने के लिए Enter दबाएँ"
@@ -17544,7 +17544,7 @@ msgid "Undo"
 msgstr "पूर्ववत करें"
 
 msgid "Unfurl Links"
-msgstr ""
+msgstr "लिंक्स को विस्तृत करें"
 
 msgid "Uninstall"
 msgstr "अनइंस्टॉल करें"
@@ -17907,7 +17907,7 @@ msgid "User roles"
 msgstr "उपयोगकर्ता भूमिकाएं"
 
 msgid "Username"
-msgstr ""
+msgstr "उपयोगकर्ता नाम"
 
 msgid "users"
 msgstr "उपयोगकर्ता"
@@ -18540,7 +18540,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
 
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
-msgstr ""
+msgstr "किसी थ्रेड का जवाब देते समय, संदेश को चैनल में सभी के लिए दृश्यमान भी बनाएँ (केवल तब लागू होता है जब थ्रेड टाइमस्टैम्प प्रदान किया जाता है)"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"
@@ -18912,7 +18912,7 @@ msgid "You can change the UI style any time through the theme setting"
 msgstr "आप किसी भी समय थीम सेटिंग के माध्यम से UI शैली को बदल सकते हैं"
 
 msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
-msgstr ""
+msgstr "आप चैनल पर राइट-क्लिक करके और 'चैनल विवरण देखें' का चयन करके चैनल ID प्राप्त कर सकते हैं।"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "आप इस कुंजी को केवल एक बार देख सकते हैं। इसे सुरक्षित रूप से संग्रहीत करें।"

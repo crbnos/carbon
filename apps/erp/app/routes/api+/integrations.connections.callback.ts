@@ -156,10 +156,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     // A PostgREST failure is a plain object, not an Error: its `message`, `code`
     // and `details` are the only clue to a constraint the write hit.
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(err) ?? String(err);
+    } catch {
+      serialized = String(err);
+    }
     const detail =
       err instanceof Error
         ? `name=${err.name} detail=${message.slice(0, 400)}`
-        : `name=${typeof err} detail=${JSON.stringify(err).slice(0, 400)}`;
+        : `name=${typeof err} detail=${serialized.slice(0, 400)}`;
     logger.error(`Integration connection save failed: ${detail}`);
     return connectionFailed(request, "save-failed");
   }

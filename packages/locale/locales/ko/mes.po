@@ -67,7 +67,7 @@ msgid "About"
 msgstr "정보"
 
 msgid "About this field"
-msgstr ""
+msgstr "이 필드에 대해"
 
 msgid "Accept"
 msgstr "수락"

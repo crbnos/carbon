@@ -93,7 +93,7 @@ gmail: {
     // Send-only. The piece also asks for gmail.readonly + gmail.compose, which are
     // Google "restricted" scopes: verifying an app that holds them requires an annual
     // third-party CASA security assessment. gmail.send is "sensitive" only.
-    scope: ["https://www.googleapis.com/auth/gmail.send", "email"]
+    scope: ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/userinfo.email"]
   },
   accountLabel: { url: "https://www.googleapis.com/oauth2/v2/userinfo", field: "email" },
   metadata: { scopes: "scope" },

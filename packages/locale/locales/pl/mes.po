@@ -67,7 +67,7 @@ msgid "About"
 msgstr "O programie"
 
 msgid "About this field"
-msgstr ""
+msgstr "O tym polu"
 
 msgid "Accept"
 msgstr "Zaakceptuj"

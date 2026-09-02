@@ -89,7 +89,17 @@ BEGIN
     END IF;
   END IF;
 
-  -- Strip: the row is the installed flag from here on.
+  -- Strip: the row is the installed flag from here on. Only once a connection row
+  -- exists (just inserted, or from an earlier run) — a row with a token but no
+  -- team_id creates no connection above, and deleting its secret then would discard
+  -- the one credential nothing can recreate.
+  IF NOT EXISTS (
+    SELECT 1 FROM "integrationConnection"
+      WHERE "companyId" = p_company_id AND "pieceName" = 'slack'
+  ) THEN
+    RAISE NOTICE 'slack backfill: company % has no connection to carry the credential; left untouched', p_company_id;
+    RETURN;
+  END IF;
   IF v_row."secretRef" IS NOT NULL THEN
     PERFORM delete_integration_secret(p_company_id, 'slack');
   END IF;

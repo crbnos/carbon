@@ -67,7 +67,7 @@ msgid "About"
 msgstr "バージョン情報"
 
 msgid "About this field"
-msgstr ""
+msgstr "このフィールドについて"
 
 msgid "Accept"
 msgstr "承諾"

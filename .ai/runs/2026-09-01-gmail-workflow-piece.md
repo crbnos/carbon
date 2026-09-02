@@ -51,7 +51,7 @@
 | ee typecheck | `pnpm --filter @carbon/ee typecheck` | PASS |
 | erp typecheck | `pnpm --filter erp typecheck` (after catalog regen) | PASS |
 | workflows typecheck | `pnpm --filter @carbon/workflows typecheck` | PASS |
-| jobs tests | `pnpm --filter @carbon/jobs test` — 45 files / 677 tests with `.env.local` sourced | PASS (7 new: registry ×4, oauth ×2, visibility ×1, catalog ×1 … see below) |
+| jobs tests | `pnpm --filter @carbon/jobs test` — 45 files / 677 tests with `.env.local` sourced | PASS (8 new: registry ×4, oauth ×2, visibility ×1, catalog ×1 … see below) |
 | ↳ note | `src/workflows/actions/services.test.ts` fails to IMPORT without the server env (`INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`, `SUPABASE_SERVICE_ROLE_KEY` via `@carbon/auth`) — pre-existing on this branch, unrelated to Gmail; passes once `.env.local` is sourced | env-only |
 | ee tests | `pnpm --filter @carbon/ee test` — 59 files / 810 tests | PASS |
 | workflows tests | `pnpm --filter @carbon/workflows test` — 31 files / 558 tests | PASS |

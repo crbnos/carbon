@@ -197,7 +197,7 @@ msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% кредиторской задолженности"
 
 msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
-msgstr ""
+msgstr "{appName} подключен, но требует переподключения перед тем, как этапы рабочего процесса смогут его использовать."
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} еще не подключена. Подключите учетную запись перед тем, как этот шаг сможет что-то сделать."
@@ -907,7 +907,7 @@ msgid "About (notification)"
 msgstr "О (уведомление)"
 
 msgid "About this field"
-msgstr ""
+msgstr "Об этом поле"
 
 msgid "Absent"
 msgstr "Отсутствует"
@@ -1253,7 +1253,7 @@ msgid "Add Note"
 msgstr "Добавить примечание"
 
 msgid "Add operation"
-msgstr ""
+msgstr "Добавить операцию"
 
 msgid "Add Operation"
 msgstr "Добавить операцию"
@@ -1407,7 +1407,7 @@ msgid "Advanced"
 msgstr "Дополнительно"
 
 msgid "Advanced properties"
-msgstr ""
+msgstr "Дополнительные свойства"
 
 msgid "Affected item not found."
 msgstr "Затронутый элемент не найден."
@@ -1556,10 +1556,10 @@ msgid "Amount Type"
 msgstr "Тип суммы"
 
 msgid "An account is already called that — pick a different name."
-msgstr ""
+msgstr "Учетная запись уже имеет такое имя — выберите другое имя."
 
 msgid "An account is missing from this list until it is reconnected."
-msgstr ""
+msgstr "Учетная запись отсутствует в этом списке до переподключения."
 
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Группировка расходов по отделам или функциям, чтобы главная книга могла отчитываться по группам, а не только по счетам."
@@ -2562,7 +2562,7 @@ msgid "Automatic, prorated consumption of a job's untracked materials when outpu
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
 
 msgid "Automatically create a Google Meet video conference link for this event"
-msgstr ""
+msgstr "Автоматически создать видеоконференцию Google Meet для этого события"
 
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Автоматически запустить в работу производственный заказ при сканировании канбана"
@@ -2701,7 +2701,7 @@ msgid "Batch Tracking"
 msgstr "Отслеживание партий"
 
 msgid "BCC Email"
-msgstr ""
+msgstr "Скрытая копия"
 
 msgid "Beginning"
 msgstr "Начало"
@@ -2793,7 +2793,7 @@ msgid "Body"
 msgstr "Тело"
 
 msgid "Body for the email you want to send"
-msgstr ""
+msgstr "Текст письма, которое вы хотите отправить"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2838,7 +2838,7 @@ msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's
 msgstr "Импортируйте ваши детали, BOM, перечень операций и калькуляцию — используя инструменты импорта Carbon, CSV или помощь LLM."
 
 msgid "Broadcast reply to channel"
-msgstr ""
+msgstr "Отправить ответ в канал"
 
 msgid "Browse library"
 msgstr "Обзор библиотеки"
@@ -2907,7 +2907,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
 
 msgid "By default it'll be 30 min post start time"
-msgstr ""
+msgstr "По умолчанию это будет через 30 минут после начала"
 
 msgid "By dimension"
 msgstr "По измерению"
@@ -3184,7 +3184,7 @@ msgid "CC"
 msgstr "CC"
 
 msgid "CC Email"
-msgstr ""
+msgstr "Копия"
 
 msgid "Centralized Billing Address"
 msgstr "Централизованный адрес выставления счетов"
@@ -3271,10 +3271,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
 
 msgid "Channel"
-msgstr ""
+msgstr "Канал"
 
 msgid "Channel Name"
-msgstr ""
+msgstr "Имя канала"
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -3647,7 +3647,7 @@ msgid "Configure the start months for your fiscal and tax years"
 msgstr "Настройте месяцы начала вашего финансового и налогового годов"
 
 msgid "Configure the steps above first."
-msgstr ""
+msgstr "Сначала настройте шаги выше."
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Установить, когда себестоимость закупленной номенклатуры должна обновляться из транзакций поставщика."
@@ -3759,7 +3759,7 @@ msgid "Connect your identity provider by pasting either its metadata URL or its 
 msgstr "Подключите вашего поставщика удостоверений, вставив либо URL его метаданных, либо его необработанный XML-файл метаданных — ровно один из двух."
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
-msgstr ""
+msgstr "Соединение до рабочих процессов требовало дополнительных разрешений. Переподключитесь, чтобы предоставить их — остальное продолжит работать."
 
 msgid "Connected to"
 msgstr "Подключено к"
@@ -4190,7 +4190,7 @@ msgid "Couldn't load related documents. Refresh before creating a new one to avo
 msgstr "Не удалось загрузить связанные документы. Обновите страницу перед созданием нового, чтобы избежать дублирования."
 
 msgid "Couldn't load the choices for this field."
-msgstr ""
+msgstr "Не удалось загрузить варианты для этого поля."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Не удалось загрузить целевые значения измерений поставщика — проверьте соединение и перезагрузите."
@@ -4214,7 +4214,7 @@ msgid "Count ID"
 msgstr "ID подсчета"
 
 msgid "Count items"
-msgstr ""
+msgstr "Подсчет элементов"
 
 msgid "Counted Qty"
 msgstr "Подсчитанное кол-во"
@@ -5512,7 +5512,7 @@ msgid "Description of Issue"
 msgstr "Описание проблемы"
 
 msgid "Description of the event. You can use HTML tags here."
-msgstr ""
+msgstr "Описание события. Здесь можно использовать теги HTML."
 
 msgid "Detail"
 msgstr "Подробности"
@@ -6280,7 +6280,7 @@ msgid "Email Address"
 msgstr "Адрес электронной почты"
 
 msgid "Email address to set as the \"Reply-To\" header"
-msgstr ""
+msgstr "Адрес электронной почты для установки в качестве заголовка «Ответить»"
 
 msgid "Email Domains"
 msgstr "Домены электронной почты"
@@ -6295,7 +6295,7 @@ msgid "Emails"
 msgstr "Письма"
 
 msgid "Emails of the attendees (guests)"
-msgstr ""
+msgstr "Адреса электронной почты участников (гостей)"
 
 msgid "Emoji"
 msgstr "Эмодзи"
@@ -6346,7 +6346,7 @@ msgid "Enable in Settings"
 msgstr "Включить в настройках"
 
 msgid "Enable link unfurling for this message"
-msgstr ""
+msgstr "Включить развертывание ссылок для этого сообщения"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."
@@ -7395,7 +7395,7 @@ msgid "Fix the problems with this workflow before testing it"
 msgstr "Исправьте проблемы в этом рабочем процессе перед его тестированием"
 
 msgid "Fix this"
-msgstr ""
+msgstr "Исправить это"
 
 msgid "Fixed"
 msgstr "Фиксированный"
@@ -7749,10 +7749,10 @@ msgid "GL Tie-Out"
 msgstr "Выверка главной книги"
 
 msgid "Gmail"
-msgstr ""
+msgstr "Gmail"
 
 msgid "Gmail: Send Email"
-msgstr ""
+msgstr "Gmail: отправить письмо"
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Запустите систему с первой попытки — с нашей командой рядом с вами"
@@ -7795,7 +7795,7 @@ msgid "Good morning, {name}."
 msgstr "Доброе утро, {name}."
 
 msgid "Google Calendar"
-msgstr ""
+msgstr "Google Календарь"
 
 msgid "Google Calendar: Create Event"
 msgstr "Google Calendar: создать событие"
@@ -8107,7 +8107,7 @@ msgid "I'm Still Working"
 msgstr "Я всё ещё работаю"
 
 msgid "Icon Emoji"
-msgstr ""
+msgstr "Значок Emoji"
 
 msgid "Id"
 msgstr "ID"
@@ -8624,7 +8624,7 @@ msgid "Is identity group"
 msgstr "Является группой идентификации"
 
 msgid "Is Private?"
-msgstr ""
+msgstr "Приватное?"
 
 msgid "Is supplier org group"
 msgstr "Является группой организаций поставщиков"
@@ -8835,7 +8835,7 @@ msgid "Join {0}"
 msgstr "Присоединиться к {0}"
 
 msgid "Join into text"
-msgstr ""
+msgstr "Присоединиться к тексту"
 
 msgid "Journal"
 msgstr "Операция"
@@ -8880,7 +8880,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "Сохранить существующее ценообразование, добавить только новую номенклатуру"
 
 msgid "Keep matching items"
-msgstr ""
+msgstr "Сохранить соответствующие элементы"
 
 msgid "Keep only items where…"
 msgstr "Оставить только элементы где…"
@@ -10979,7 +10979,7 @@ msgid "Nothing at this location matches \"{0}\"."
 msgstr "В этом месте нет ничего, соответствующего \"{0}\"."
 
 msgid "Nothing can work on this result."
-msgstr ""
+msgstr "Ничего не может работать с этим результатом."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
@@ -11136,7 +11136,7 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
-msgstr ""
+msgstr "Один из ваших аккаунтов {appName} требует переподключения перед тем, как этапы рабочего процесса смогут его использовать."
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Одна серийная единица или одна серия, которую Carbon отслеживает отдельно, со своим статусом и атрибутами, такими как срок годности."
@@ -11187,7 +11187,7 @@ msgid "Open"
 msgstr "Открыть"
 
 msgid "Open {appName} accounts"
-msgstr ""
+msgstr "Открыть аккаунты {appName}"
 
 msgid "Open a change notice"
 msgstr "Открыть Извещение об изменении"
@@ -11864,7 +11864,7 @@ msgid "Pick a date or leave blank to clear it."
 msgstr "Выберите дату или оставьте пустым, чтобы очистить."
 
 msgid "Pick a field…"
-msgstr ""
+msgstr "Выберите поле…"
 
 msgid "Pick a list variable…"
 msgstr "Выберите переменную списка…"
@@ -12331,7 +12331,7 @@ msgid "Profile"
 msgstr "Профиль"
 
 msgid "Profile Picture"
-msgstr ""
+msgstr "Фотография профиля"
 
 msgid "Progress"
 msgstr "Прогресс"
@@ -12428,7 +12428,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
 
 msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
-msgstr ""
+msgstr "Укажите ts (временную метку) или значение ссылки сообщения-**родителя**, чтобы сделать это сообщение ответом. Не используйте значение ts самого ответа; используйте вместо этого его родителя. Например, «1710304378.475129». Кроме того, вы можете легко получить ссылку на сообщение, щелкнув на три точки рядом с сообщением-родителем и выбрав опцию «Копировать ссылку»."
 
 msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
 msgstr "Предоставьте эти URL вашему поставщику удостоверений (Okta, Entra ID, Google Workspace и т. д.) при регистрации Carbon в качестве приложения SAML."
@@ -12996,7 +12996,7 @@ msgid "Received Qty"
 msgstr "Полученное кол-во"
 
 msgid "Receiver Email (To)"
-msgstr ""
+msgstr "Электронная почта получателя (Кому)"
 
 msgid "Receiving Location"
 msgstr "Площадка приемки"
@@ -13023,16 +13023,16 @@ msgid "Reconciling a purchase order against what was received and invoiced — i
 msgstr "Сверка заказа поставщику с полученными товарами и выставленными счетами — выполняется автоматически в Carbon на основе количеств в строках и остатка GR/IR."
 
 msgid "Reconnect"
-msgstr ""
+msgstr "Переподключить"
 
 msgid "Reconnect {appName}"
-msgstr ""
+msgstr "Переподключить {appName}"
 
 msgid "Reconnect it"
-msgstr ""
+msgstr "Переподключить это"
 
 msgid "Reconnect needed"
-msgstr ""
+msgstr "Требуется переподключение"
 
 msgid "Record"
 msgstr "Записать"
@@ -13065,11 +13065,11 @@ msgid "Records"
 msgstr "Записи"
 
 msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
-msgstr ""
+msgstr "Записи здесь отображаются в виде простого текста — {appLabel} не поддерживает ссылки в этом поле."
 
 #. placeholder {0}: notice.params.equals
 msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
-msgstr ""
+msgstr "Записи будут обычным текстом. Установите {siblingLabel} на {0} (в разделе Дополнительно), чтобы превратить их в ссылки."
 
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
@@ -13250,7 +13250,7 @@ msgid "Remove station"
 msgstr "Удалить рабочее место"
 
 msgid "Remove this operation"
-msgstr ""
+msgstr "Убрать эту операцию"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Удалите этот тип хранения из всех ссылающихся единиц хранения и удалите его. Это невозможно отменить."
@@ -13344,10 +13344,10 @@ msgid "Replenishment System"
 msgstr "Способ пополнения"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
-msgstr ""
+msgstr "Ответить в тему (ссылка/временная метка сообщения темы)"
 
 msgid "Reply-To Email"
-msgstr ""
+msgstr "Email для ответа"
 
 msgid "Report"
 msgstr "Отчет"
@@ -14511,10 +14511,10 @@ msgid "Send Via"
 msgstr "Отправить через"
 
 msgid "Sender Email"
-msgstr ""
+msgstr "Email отправителя"
 
 msgid "Sender Name"
-msgstr ""
+msgstr "Имя отправителя"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."
@@ -15005,16 +15005,16 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slack: Create Channel"
-msgstr ""
+msgstr "Slack: создать канал"
 
 msgid "Slack: Find User by Email"
-msgstr ""
+msgstr "Slack: найти пользователя по email"
 
 msgid "Slack: Send Message To A Channel"
-msgstr ""
+msgstr "Slack: отправить сообщение в канал"
 
 msgid "Slack: Send Message To A User"
-msgstr ""
+msgstr "Slack: отправить сообщение пользователю"
 
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Разбить активность активов по местоположению, товару или любому измерению"
@@ -15728,13 +15728,13 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "Настройте этот центр для покупателя. Изменения применяются в реальном времени для всех, кто его просматривает. Никогда не показывается покупателю здесь."
 
 msgid "Take one field from every item"
-msgstr ""
+msgstr "Взять одно поле из каждой номенклатуры"
 
 msgid "Take the first item"
-msgstr ""
+msgstr "Взять первую номенклатуру"
 
 msgid "Take the last item"
-msgstr ""
+msgstr "Взять последнюю номенклатуру"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Возьмите кратчайший оставшийся срок хранения из всей используемой номенклатуры для производства этой номенклатуры. Используйте, когда срок годности продукта зависит от его компонентов."
@@ -15917,13 +15917,13 @@ msgid "Text size"
 msgstr "Размер текста"
 
 msgid "That account is still being reconnected. Try again in a moment."
-msgstr ""
+msgstr "Этот аккаунт все еще переподключается. Повторите попытку через мгновение."
 
 msgid "That connection name is already used"
 msgstr "Это имя соединения уже используется"
 
 msgid "That field holds several values, so they are combined into one list."
-msgstr ""
+msgstr "Это поле содержит несколько значений, поэтому они объединяются в один список."
 
 msgid "That name is already used by another step."
 msgstr "Это имя уже используется другим шагом."
@@ -15942,7 +15942,7 @@ msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each tas
 msgstr "Фазы {0} до запуска, каждая заканчивается контрольной точкой. Отмечайте каждую задачу по мере её выполнения."
 
 msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
-msgstr ""
+msgstr "Аккаунт {appName}, используемый на этом шаге, недоступен — он был отключен или требует переподключения."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Измерение бухгалтерии, которое категоризирует номенклатуру для отчетности и анализа."
@@ -15954,7 +15954,7 @@ msgid "The action that copies a saved method (its materials, operations, and wor
 msgstr "Действие копирования сохраненного метода (его материалы, операции и рабочие инструкции) на производственный заказ или строку предложения."
 
 msgid "The address must be listed in your GMail account's settings"
-msgstr ""
+msgstr "Адрес должен быть указан в настройках вашего аккаунта GMail"
 
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "Разрешенные значения для атрибута типа списка; пользователи выбирают из них вместо свободного ввода текста."
@@ -16236,7 +16236,7 @@ msgid "The human-readable document number (like J000001 or ECO-000001) minted fr
 msgstr "Удобочитаемый номер документа (например J000001 или ECO-000001), созданный из правила нумерации и сохраненный в записи, отличный от его внутреннего идентификатора."
 
 msgid "The icon emoji of the bot"
-msgstr ""
+msgstr "Значок-эмодзи бота"
 
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "Идентификатор, который покупатель использует для этой детали в своих заказах; Carbon преобразует его во внутренний ID детали при импорте заказа."
@@ -16269,7 +16269,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
 
 msgid "The items in that list have no fields to take."
-msgstr ""
+msgstr "Номенклатура в этом списке не имеет полей для выборки."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "рабочие часы, подлежащие в этот день (на основе даты срока, не дня выполнения работы), с просроченной работой в разделе «Просроченные»."
@@ -16475,7 +16475,7 @@ msgid "The processes this work center can run; appears in process-pickers when s
 msgstr "Процессы, которые может выполнять этот рабочий центр; отображается в программах выбора процессов при планировании операций и ограничивает, какие производственные заказы могут проходить через этот рабочий центр."
 
 msgid "The profile picture of the bot"
-msgstr ""
+msgstr "Изображение профиля бота"
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Поставщик не предлагает целевые показатели по измерениям. Сначала включите функцию у поставщика (например, категории отслеживания, отслеживание класса или поля)."
@@ -16659,7 +16659,7 @@ msgid "The system passes every in-scope acceptance test in your configured syste
 msgstr "Система проходит все тесты приемки в области охвата в вашей настроенной системе с вашими данными; данные проверяются; и вы подписываете акт. Затем переход в боевую эксплуатацию."
 
 msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
-msgstr ""
+msgstr "Текст вашего сообщения. При использовании блоков Block Kit это используется как резервный вариант для уведомлений."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепь, связывающая запрос цен продаж, его коммерческое предложение и результирующий заказ покупателя — соединение, а не документ со своим собственным статусом."
@@ -16710,7 +16710,7 @@ msgid "The US tax depreciation system with IRS property-class tables, run as a s
 msgstr "Американская система налоговой амортизации с таблицами категорий имущества IRS, работающая как отдельный налоговый график вместе с графиком книг."
 
 msgid "The username of the bot"
-msgstr ""
+msgstr "Имя пользователя бота"
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Пользователи в этой группе; права доступа и уведомления уровня группы применяются к каждому члену, и пользователи могут принадлежать к нескольким группам (эффективные права доступа — объединение)."
@@ -16785,7 +16785,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Эти операции по-прежнему находятся в режиме Черновик, поэтому их дебеты и кредиты не включены в главную книгу для этого периода. Проведите каждый из них или переведите его в более поздний открытый период."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Эти строки связаны с данными за пределами вашей организации, поэтому невозможно создать резервную копию текущих данных. Удаление не может быть отменено. Если они окажутся общими с другими организациями в этой группе, ничего не будет удалено и восстановление не начнется."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Эти строки ссылаются на данные вне этой организации, поэтому они не могут быть восстановлены. Всё остальное было сохранено в резервной копии."
@@ -16794,10 +16794,10 @@ msgid "this ability"
 msgstr "этот навык"
 
 msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
-msgstr ""
+msgstr "Этот аккаунт перестал работать. Переподключите его — шаги рабочего процесса, использующие его, будут сбоить, пока вы этого не сделаете."
 
 msgid "This account needs to be reconnected."
-msgstr ""
+msgstr "Этот аккаунт требует переподключения."
 
 msgid "This backup could not be completed."
 msgstr "Эта резервная копия не может быть завершена."
@@ -17445,7 +17445,7 @@ msgid "Triggers"
 msgstr "Триггеры"
 
 msgid "Try again"
-msgstr ""
+msgstr "Повторить попытку"
 
 msgid "Tuesday"
 msgstr "Вторник"
@@ -17487,7 +17487,7 @@ msgid "Type a message..."
 msgstr "Введите сообщение..."
 
 msgid "Type a value and press Enter…"
-msgstr ""
+msgstr "Введите значение и нажмите Enter…"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Введите адрес электронной почты и нажмите Enter, чтобы добавить внешнего получателя"
@@ -17544,7 +17544,7 @@ msgid "Undo"
 msgstr "Отменить"
 
 msgid "Unfurl Links"
-msgstr ""
+msgstr "Развернуть ссылки"
 
 msgid "Uninstall"
 msgstr "Удалить"
@@ -17907,7 +17907,7 @@ msgid "User roles"
 msgstr "Роли пользователей"
 
 msgid "Username"
-msgstr ""
+msgstr "Имя пользователя"
 
 msgid "users"
 msgstr "пользователи"
@@ -18540,7 +18540,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
 
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
-msgstr ""
+msgstr "При ответе в теме сделайте сообщение видимым для всех в канале (применяется только если указана временная метка темы)"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
@@ -18912,7 +18912,7 @@ msgid "You can change the UI style any time through the theme setting"
 msgstr "Вы можете изменить стиль интерфейса в любое время через настройку темы"
 
 msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
-msgstr ""
+msgstr "Вы можете получить ID канала, щелкнув правой кнопкой мыши на канале и выбрав «Просмотр сведений канала»."
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Вы можете увидеть этот ключ только один раз. Сохраните его в безопасном месте."

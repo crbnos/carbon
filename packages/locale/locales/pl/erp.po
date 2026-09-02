@@ -197,7 +197,7 @@ msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% zobowiązań"
 
 msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
-msgstr ""
+msgstr "{appName} jest połączony, ale musi zostać ponownie połączony zanim kroki Przepływu pracy będą mogły go używać."
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
 msgstr "{appName} nie jest jeszcze połączony. Przed wykonaniem tego kroku połącz konto."
@@ -907,7 +907,7 @@ msgid "About (notification)"
 msgstr "Informacje (powiadomienie)"
 
 msgid "About this field"
-msgstr ""
+msgstr "Informacje o tym polu"
 
 msgid "Absent"
 msgstr "Nieobecny"
@@ -1253,7 +1253,7 @@ msgid "Add Note"
 msgstr "Dodaj notatkę"
 
 msgid "Add operation"
-msgstr ""
+msgstr "Dodaj operację"
 
 msgid "Add Operation"
 msgstr "Dodaj operację"
@@ -1407,7 +1407,7 @@ msgid "Advanced"
 msgstr "Zaawansowane"
 
 msgid "Advanced properties"
-msgstr ""
+msgstr "Zaawansowane właściwości"
 
 msgid "Affected item not found."
 msgstr "Element dotknięty zmianą nie został znaleziony."
@@ -1556,10 +1556,10 @@ msgid "Amount Type"
 msgstr "Typ kwoty"
 
 msgid "An account is already called that — pick a different name."
-msgstr ""
+msgstr "Konto o tej nazwie już istnieje — wybierz inną nazwę."
 
 msgid "An account is missing from this list until it is reconnected."
-msgstr ""
+msgstr "Konto brakuje z tej listy do czasu ponownego połączenia."
 
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Miejsce powstawania kosztów grupujące wydatki według działu lub funkcji, umożliwiające księdze głównej raportowanie wydatków wg grupy, a nie tylko wg konta."
@@ -2562,7 +2562,7 @@ msgid "Automatic, prorated consumption of a job's untracked materials when outpu
 msgstr "Automatyczne, proporcjonalne zużycie materiałów nieparowanych pracy po zgłoszeniu wydajności — materiały śledzone są wydawane ręcznie."
 
 msgid "Automatically create a Google Meet video conference link for this event"
-msgstr ""
+msgstr "Automatycznie utwórz link do konferencji Google Meet dla tego zdarzenia"
 
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Automatycznie zwolnij zadanie po zeskanowaniu kanban"
@@ -2701,7 +2701,7 @@ msgid "Batch Tracking"
 msgstr "Śledzenie partii"
 
 msgid "BCC Email"
-msgstr ""
+msgstr "E-mail UDW"
 
 msgid "Beginning"
 msgstr "Początek"
@@ -2793,7 +2793,7 @@ msgid "Body"
 msgstr "Treść"
 
 msgid "Body for the email you want to send"
-msgstr ""
+msgstr "Treść wiadomości e-mail, którą chcesz wysłać"
 
 msgid "BoM"
 msgstr "BoM"
@@ -2838,7 +2838,7 @@ msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's
 msgstr "Wprowadź swoje części, BOMy, Listy operacji i kalkulacje kosztów — za pomocą narzędzi importu Carbon, CSV lub pomocy LLM."
 
 msgid "Broadcast reply to channel"
-msgstr ""
+msgstr "Wyślij odpowiedź na kanał"
 
 msgid "Browse library"
 msgstr "Przeglądaj bibliotekę"
@@ -2907,7 +2907,7 @@ msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>
 msgstr "Akceptując zaproszenie, zgadzasz się na <0>Warunki Usługi</0> i <1>Politykę Prywatności</1>."
 
 msgid "By default it'll be 30 min post start time"
-msgstr ""
+msgstr "Domyślnie będzie to 30 minut po czasie rozpoczęcia"
 
 msgid "By dimension"
 msgstr "Wg wymiaru"
@@ -3184,7 +3184,7 @@ msgid "CC"
 msgstr "DW"
 
 msgid "CC Email"
-msgstr ""
+msgstr "E-mail DW"
 
 msgid "Centralized Billing Address"
 msgstr "Scentralizowany adres rozliczeniowy"
@@ -3271,10 +3271,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "Zmiana typu resetuje robocze edycje tego artykułu."
 
 msgid "Channel"
-msgstr ""
+msgstr "Kanał"
 
 msgid "Channel Name"
-msgstr ""
+msgstr "Nazwa kanału"
 
 msgid "Chart of accounts"
 msgstr "Plan kont"
@@ -3647,7 +3647,7 @@ msgid "Configure the start months for your fiscal and tax years"
 msgstr "Skonfiguruj miesiące rozpoczęcia dla lat obrachunkowych i podatkowych"
 
 msgid "Configure the steps above first."
-msgstr ""
+msgstr "Najpierw skonfiguruj kroki powyżej."
 
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Skonfiguruj, kiedy koszty zakupionych pozycji powinny być aktualizowane z transakcji dostawcy."
@@ -3759,7 +3759,7 @@ msgid "Connect your identity provider by pasting either its metadata URL or its 
 msgstr "Połącz dostawcę tożsamości, wklejając adres URL jego metadanych lub surowy kod XML metadanych — dokładnie jeden z nich."
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
-msgstr ""
+msgstr "Połączone przed Przepływami pracy wymagały dodatkowych uprawnień. Ponownie połącz, aby je przyznać — wszystko inne będzie działać w międzyczasie."
 
 msgid "Connected to"
 msgstr "Połączono z"
@@ -4190,7 +4190,7 @@ msgid "Couldn't load related documents. Refresh before creating a new one to avo
 msgstr "Nie można załadować powiązanych dokumentów. Odśwież przed utworzeniem nowego, aby uniknąć duplikatów."
 
 msgid "Couldn't load the choices for this field."
-msgstr ""
+msgstr "Nie można było załadować opcji dla tego pola."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Nie udało się załadować celów wymiarów dostawcy — sprawdź połączenie i przeładuj stronę."
@@ -4214,7 +4214,7 @@ msgid "Count ID"
 msgstr "ID Liczenia"
 
 msgid "Count items"
-msgstr ""
+msgstr "Policz elementy"
 
 msgid "Counted Qty"
 msgstr "Zliczona ilość"
@@ -5512,7 +5512,7 @@ msgid "Description of Issue"
 msgstr "Opis problemu"
 
 msgid "Description of the event. You can use HTML tags here."
-msgstr ""
+msgstr "Opis zdarzenia. Tutaj możesz używać znaczników HTML."
 
 msgid "Detail"
 msgstr "Szczegóły"
@@ -6280,7 +6280,7 @@ msgid "Email Address"
 msgstr "Adres e-mail"
 
 msgid "Email address to set as the \"Reply-To\" header"
-msgstr ""
+msgstr "Adres e-mail do ustawienia jako nagłówek \"Odpowiedź do\""
 
 msgid "Email Domains"
 msgstr "Domeny e-mail"
@@ -6295,7 +6295,7 @@ msgid "Emails"
 msgstr "Wiadomości e-mail"
 
 msgid "Emails of the attendees (guests)"
-msgstr ""
+msgstr "Adresy e-mail uczestników (gości)"
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -6346,7 +6346,7 @@ msgid "Enable in Settings"
 msgstr "Włącz w Ustawieniach"
 
 msgid "Enable link unfurling for this message"
-msgstr ""
+msgstr "Włącz rozwijanie linków dla tej wiadomości"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Włącz powiadomienia, gdy RFQ jest oznaczony jako gotowy do oferty."
@@ -7395,7 +7395,7 @@ msgid "Fix the problems with this workflow before testing it"
 msgstr "Napraw problemy tego przepływu pracy przed jego testowaniem"
 
 msgid "Fix this"
-msgstr ""
+msgstr "Napraw to"
 
 msgid "Fixed"
 msgstr "Stałe"
@@ -7749,10 +7749,10 @@ msgid "GL Tie-Out"
 msgstr "Wyrównanie Księgi Głównej"
 
 msgid "Gmail"
-msgstr ""
+msgstr "Gmail"
 
 msgid "Gmail: Send Email"
-msgstr ""
+msgstr "Gmail: Wyślij e-mail"
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Wdrażaj bez błędów za pierwszym razem — z naszym zespołem u boku"
@@ -7795,7 +7795,7 @@ msgid "Good morning, {name}."
 msgstr "Dzień dobry, {name}."
 
 msgid "Google Calendar"
-msgstr ""
+msgstr "Google Calendar"
 
 msgid "Google Calendar: Create Event"
 msgstr "Google Calendar: Utwórz zdarzenie"
@@ -8107,7 +8107,7 @@ msgid "I'm Still Working"
 msgstr "Wciąż pracuję"
 
 msgid "Icon Emoji"
-msgstr ""
+msgstr "Emoji ikony"
 
 msgid "Id"
 msgstr "Id"
@@ -8624,7 +8624,7 @@ msgid "Is identity group"
 msgstr "Czy jest grupą tożsamości"
 
 msgid "Is Private?"
-msgstr ""
+msgstr "Czy prywatne?"
 
 msgid "Is supplier org group"
 msgstr "Czy jest grupą organizacyjną dostawcy"
@@ -8835,7 +8835,7 @@ msgid "Join {0}"
 msgstr "Dołącz do {0}"
 
 msgid "Join into text"
-msgstr ""
+msgstr "Dołącz do tekstu"
 
 msgid "Journal"
 msgstr "Dowód księgowy"
@@ -8880,7 +8880,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "Zachowaj istniejące ceny, dodaj tylko nowe artykuły"
 
 msgid "Keep matching items"
-msgstr ""
+msgstr "Zachowaj pasujące elementy"
 
 msgid "Keep only items where…"
 msgstr "Zachowaj tylko przedmioty gdzie…"
@@ -10979,7 +10979,7 @@ msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nic w tej lokalizacji nie pasuje do \"{0}\"."
 
 msgid "Nothing can work on this result."
-msgstr ""
+msgstr "Nic nie może działać na tym wyniku."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "W tym miejscu nic innego nie ma zapasów do pobrania."
@@ -11136,7 +11136,7 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "Jedno wykonanie przepływu pracy, zarejestrowane krok po kroku z wartościami, które każdy krok użył i wygenerował, działając z uprawnieniami właściciela przepływu pracy."
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
-msgstr ""
+msgstr "Jedno z twoich kont {appName} musi zostać ponownie połączone zanim kroki Przepływu pracy będą mogły je używać."
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Jedna jednostka o numerze seryjnym lub jedna partia produkcyjna, którą Carbon śledzi indywidualnie, posiadająca własny status i atrybuty takie jak termin ważności."
@@ -11187,7 +11187,7 @@ msgid "Open"
 msgstr "Otwórz"
 
 msgid "Open {appName} accounts"
-msgstr ""
+msgstr "Otwórz konta {appName}"
 
 msgid "Open a change notice"
 msgstr "Otwórz zawiadomienie o zmianie"
@@ -11864,7 +11864,7 @@ msgid "Pick a date or leave blank to clear it."
 msgstr "Wybierz datę lub pozostaw puste pole, aby je wyczyścić."
 
 msgid "Pick a field…"
-msgstr ""
+msgstr "Wybierz pole…"
 
 msgid "Pick a list variable…"
 msgstr "Wybierz zmienną listy…"
@@ -12331,7 +12331,7 @@ msgid "Profile"
 msgstr "Profil"
 
 msgid "Profile Picture"
-msgstr ""
+msgstr "Zdjęcie profilowe"
 
 msgid "Progress"
 msgstr "Postęp"
@@ -12428,7 +12428,7 @@ msgid "Provide process knowledge and inputs"
 msgstr "Udostępnij wiedzę procesową i dane wejściowe"
 
 msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
-msgstr ""
+msgstr "Podaj wartość ts (znacznik czasu) lub link **wiadomości nadrzędnej**, aby uczynić tę wiadomość odpowiedzią. Nie używaj wartości ts samej odpowiedzi; zamiast tego użyj jej rodzica. Na przykład '1710304378.475129'. Alternatywnie możesz łatwo uzyskać link do wiadomości, klikając na trzy kropki obok wiadomości nadrzędnej i wybierając opcję 'Skopiuj link'."
 
 msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
 msgstr "Podaj te adresy URL dostawcy tożsamości (Okta, Entra ID, Google Workspace, itp.) podczas rejestracji Carbon jako aplikacji SAML."
@@ -12996,7 +12996,7 @@ msgid "Received Qty"
 msgstr "Otrzymana Ilość"
 
 msgid "Receiver Email (To)"
-msgstr ""
+msgstr "E-mail odbiorcy (Do)"
 
 msgid "Receiving Location"
 msgstr "Lokalizacja przyjęcia"
@@ -13023,16 +13023,16 @@ msgid "Reconciling a purchase order against what was received and invoiced — i
 msgstr "Uzgadnianie zamówienia zakupu z tym, co zostało przyjęte i zafakturowane — niejawne w Carbon, poprzez ilości pozycji i saldo GR/IR."
 
 msgid "Reconnect"
-msgstr ""
+msgstr "Ponownie połącz"
 
 msgid "Reconnect {appName}"
-msgstr ""
+msgstr "Ponownie połącz {appName}"
 
 msgid "Reconnect it"
-msgstr ""
+msgstr "Ponownie je połącz"
 
 msgid "Reconnect needed"
-msgstr ""
+msgstr "Wymagane ponowne połączenie"
 
 msgid "Record"
 msgstr "Nagrywaj"
@@ -13065,11 +13065,11 @@ msgid "Records"
 msgstr "Rekordy"
 
 msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
-msgstr ""
+msgstr "Rekordy tutaj pojawiają się jako zwykły tekst — {appLabel} nie obsługuje linków w tym polu."
 
 #. placeholder {0}: notice.params.equals
 msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
-msgstr ""
+msgstr "Rekordy będą zwykłym tekstem. Ustaw {siblingLabel} na {0} (w Opcje zaawansowane), aby zmienić je na linki."
 
 msgid "Recovery Period"
 msgstr "Zarejestruj"
@@ -13250,7 +13250,7 @@ msgid "Remove station"
 msgstr "Usuń stanowisko"
 
 msgid "Remove this operation"
-msgstr ""
+msgstr "Usuń tę operację"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Usuń ten typ magazynowania ze wszystkich jednostek magazynowych, które go wykorzystują, i go usuń. Tej operacji nie można cofnąć."
@@ -13344,10 +13344,10 @@ msgid "Replenishment System"
 msgstr "System uzupełniania zapasów"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
-msgstr ""
+msgstr "Odpowiedź w wątku (Link wiadomości wątku/Znacznik czasu)"
 
 msgid "Reply-To Email"
-msgstr ""
+msgstr "Email Odpowiedź do"
 
 msgid "Report"
 msgstr "Raport"
@@ -14511,10 +14511,10 @@ msgid "Send Via"
 msgstr "Wyślij przez"
 
 msgid "Sender Email"
-msgstr ""
+msgstr "Email nadawcy"
 
 msgid "Sender Name"
-msgstr ""
+msgstr "Nazwa nadawcy"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Odesłanie uszkodzonych jednostek do wcześniejszej operacji do poprawy zamiast ich złomowania."
@@ -15005,16 +15005,16 @@ msgid "Slack"
 msgstr "Slack"
 
 msgid "Slack: Create Channel"
-msgstr ""
+msgstr "Slack: Utwórz kanał"
 
 msgid "Slack: Find User by Email"
-msgstr ""
+msgstr "Slack: Znajdź użytkownika po adresie email"
 
 msgid "Slack: Send Message To A Channel"
-msgstr ""
+msgstr "Slack: Wyślij wiadomość na kanał"
 
 msgid "Slack: Send Message To A User"
-msgstr ""
+msgstr "Slack: Wyślij wiadomość użytkownikowi"
 
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Podziel aktywność aktywów według lokalizacji, pozycji lub dowolnego wymiaru"
@@ -15728,13 +15728,13 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "Dostosuj ten hub dla klienta. Zmiany są stosowane na żywo dla wszystkich go przeglądających. Nigdy nie jest pokazywane klientowi tutaj."
 
 msgid "Take one field from every item"
-msgstr ""
+msgstr "Weź jedno pole z każdego artykułu"
 
 msgid "Take the first item"
-msgstr ""
+msgstr "Weź pierwszy artykuł"
 
 msgid "Take the last item"
-msgstr ""
+msgstr "Weź ostatni artykuł"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Weź najkrótszy pozostały okres przydatności spośród materiałów zużytych do utworzenia tego artykułu. Użyj, gdy termin ważności produktu zależy od jego składników."
@@ -15917,13 +15917,13 @@ msgid "Text size"
 msgstr "Rozmiar tekstu"
 
 msgid "That account is still being reconnected. Try again in a moment."
-msgstr ""
+msgstr "To konto jest wciąż ponownie łączone. Spróbuj ponownie za moment."
 
 msgid "That connection name is already used"
 msgstr "Ta nazwa połączenia jest już używana"
 
 msgid "That field holds several values, so they are combined into one list."
-msgstr ""
+msgstr "To pole zawiera wiele wartości, dlatego są łączone w jedną listę."
 
 msgid "That name is already used by another step."
 msgstr "Ta nazwa jest już używana przez inny krok."
@@ -15942,7 +15942,7 @@ msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each tas
 msgstr "Fazy {0} przed wdrożeniem, każda kończąca się punktem kontrolnym. Zaznaczaj każde zadanie po jego ukończeniu."
 
 msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
-msgstr ""
+msgstr "Konto {appName} używane przez ten krok jest niedostępne — zostało rozłączone lub wymaga ponownego połączenia."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Wymiar księgowy, który kategoryzuje artykuły do raportowania i analizy."
@@ -15954,7 +15954,7 @@ msgid "The action that copies a saved method (its materials, operations, and wor
 msgstr "Czynność kopiowania zapisanej metody (jej materiałów, operacji i instrukcji roboczych) na zlecenie produkcyjne lub pozycję oferty."
 
 msgid "The address must be listed in your GMail account's settings"
-msgstr ""
+msgstr "Adres musi być wymieniony w ustawieniach konta GMail"
 
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "Dozwolone wartości dla atrybutu typu lista; użytkownicy wybierają z nich zamiast pisać swobodnie."
@@ -16236,7 +16236,7 @@ msgid "The human-readable document number (like J000001 or ECO-000001) minted fr
 msgstr "Czytelny dla człowieka numer dokumentu (np. J000001 lub ECO-000001) wyrażony z numeracji i przechowywany w rekordzie, różny od jego wewnętrznego identyfikatora."
 
 msgid "The icon emoji of the bot"
-msgstr ""
+msgstr "Emoji ikony bota"
 
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "Identyfikator, który klient używa dla tej części na swoich PO; Carbon rozwiązuje to do naszego wewnętrznego identyfikatora części przy imporcie zamówienia."
@@ -16269,7 +16269,7 @@ msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15
 msgstr "Klasa okresu odzyskania IRS dla tego zasobu w ramach MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 lat)."
 
 msgid "The items in that list have no fields to take."
-msgstr ""
+msgstr "Artykuły na tej liście nie mają pól do pobrania."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "godziny zadania należne tego dnia (na podstawie terminu, nie dnia wykonania), z zalegającymi pracami w Zalegające."
@@ -16475,7 +16475,7 @@ msgid "The processes this work center can run; appears in process-pickers when s
 msgstr "Procesy, które to stanowisko robocze może wykonywać; pojawia się w selektor procesów podczas planowania operacji i ogranicza, które zlecenia mogą przechodzić przez to stanowisko robocze."
 
 msgid "The profile picture of the bot"
-msgstr ""
+msgstr "Zdjęcie profilowe bota"
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Dostawca nie oferuje celów wymiarów. Najpierw włącz funkcję u dostawcy (np. kategorie śledzenia, śledzenie klasy lub pola)."
@@ -16659,7 +16659,7 @@ msgid "The system passes every in-scope acceptance test in your configured syste
 msgstr "System przechodzi każdy test akceptacyjny w zakresie w Twoim skonfigurowanym systemie, z Twoimi danymi; dane są zweryfikowane; i podpisujesz. Następnie uruchamiasz się na żywo."
 
 msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
-msgstr ""
+msgstr "Tekst twojej wiadomości. W przypadku korzystania z bloków Block Kit jest to używane jako opcja rezerwowa dla powiadomień."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Wątek, który łączy RFQ sprzedaży, jej wycenę i wynikające z tego zamówienie sprzedaży - połączenie, a nie dokument ze swoim statusem."
@@ -16710,7 +16710,7 @@ msgid "The US tax depreciation system with IRS property-class tables, run as a s
 msgstr "Amerykański system amortyzacji podatkowej z tabelami klas mienia IRS, uruchamiany jako oddzielny harmonogram podatkowy obok harmonogramu księgi."
 
 msgid "The username of the bot"
-msgstr ""
+msgstr "Nazwa użytkownika bota"
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Użytkownicy w tej grupie; uprawnienia i powiadomienia o zakresie grupy stosuje się do każdego członka, a użytkownicy mogą należeć do wielu grup (uprawnienia efektywne są unią)."
@@ -16785,7 +16785,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Te dowody księgowe są wciąż w wersji roboczej, dlatego ich wpisy Winien i Ma nie znajdują się w księdze dla tego okresu. Zaksięguj każdy z nich lub przesyć go do późniejszego otwartego okresu."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Te wiersze łączą się z danymi poza tą firmą, dlatego nie można zrobić kopii bezpieczeństwa bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są udostępniane innym firmom w tej grupie, nic nie jest usuwane i przywracanie się nie uruchamia."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie mogły być przywrócone. Wszystko inne miało kopię zapasową."
@@ -16794,10 +16794,10 @@ msgid "this ability"
 msgstr "ta zdolność"
 
 msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
-msgstr ""
+msgstr "To konto przestało działać. Połącz je ponownie — kroki przepływu pracy go używające będą się nie powieść, aż to zrobisz."
 
 msgid "This account needs to be reconnected."
-msgstr ""
+msgstr "To konto musi być ponownie połączone."
 
 msgid "This backup could not be completed."
 msgstr "Nie można było ukończyć tej kopii zapasowej."
@@ -17445,7 +17445,7 @@ msgid "Triggers"
 msgstr "Wyzwalacze"
 
 msgid "Try again"
-msgstr ""
+msgstr "Spróbuj ponownie"
 
 msgid "Tuesday"
 msgstr "Wtorek"
@@ -17487,7 +17487,7 @@ msgid "Type a message..."
 msgstr "Wpisz wiadomość..."
 
 msgid "Type a value and press Enter…"
-msgstr ""
+msgstr "Wpisz wartość i naciśnij Enter…"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Wpisz adres e-mail i naciśnij Enter, aby dodać zewnętrznego odbiorcy"
@@ -17544,7 +17544,7 @@ msgid "Undo"
 msgstr "Cofnij"
 
 msgid "Unfurl Links"
-msgstr ""
+msgstr "Rozwiń linki"
 
 msgid "Uninstall"
 msgstr "Odinstaluj"
@@ -17907,7 +17907,7 @@ msgid "User roles"
 msgstr "Role użytkownika"
 
 msgid "Username"
-msgstr ""
+msgstr "Nazwa użytkownika"
 
 msgid "users"
 msgstr "użytkownicy"
@@ -18540,7 +18540,7 @@ msgid "When on, this rule fires for every target of its type. Assignment rows ar
 msgstr "Gdy włączone, ta reguła uruchamia się dla każdego celu tego typu. Wiersze przypisania są ignorowane, ale zachowywane."
 
 msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
-msgstr ""
+msgstr "Odpowiadając w wątku, wyświetl również wiadomość wszystkim w kanale (dotyczy tylko wtedy, gdy podano znacznik czasu wątku)"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Kiedy oczekuje się odpowiedzi dostawców; dostawcy widzą tę datę w portalu RFQ, a Carbon przestaje akceptować spóźnione odpowiedzi po niej (konfigurowanej)."
@@ -18912,7 +18912,7 @@ msgid "You can change the UI style any time through the theme setting"
 msgstr "Możesz zmienić styl interfejsu użytkownika w dowolnym momencie za pośrednictwem ustawień motywu"
 
 msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
-msgstr ""
+msgstr "Możesz uzyskać ID kanału, klikając prawym przyciskiem myszy na kanał i wybierając „Wyświetl szczegóły kanału\"."
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Możesz zobaczyć ten klucz tylko raz. Przechowuj go bezpiecznie."

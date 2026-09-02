@@ -67,7 +67,7 @@ msgid "About"
 msgstr "Hakkında"
 
 msgid "About this field"
-msgstr ""
+msgstr "Bu alan hakkında"
 
 msgid "Accept"
 msgstr "Kabul Et"

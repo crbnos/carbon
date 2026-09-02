@@ -84,7 +84,7 @@ node -e 'const m=require("./packages/jobs/node_modules/@activepieces/piece-gmail
       // its test users can consent. gmail.send is merely "sensitive" — the same
       // verification tier the Calendar scopes already need. Adding a read or reply
       // action is therefore a compliance decision, not a one-line edit.
-      scope: ["https://www.googleapis.com/auth/gmail.send", "email"]
+      scope: ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/userinfo.email"]
     },
     accountLabel: {
       url: "https://www.googleapis.com/oauth2/v2/userinfo",
@@ -185,7 +185,7 @@ describe("gmail", () => {
 ```ts
   it("is send-only for gmail, never the piece's restricted scopes", async () => {
     const scopes = await requiredScopesFor("gmail");
-    expect(scopes).toEqual(["https://www.googleapis.com/auth/gmail.send", "email"]);
+    expect(scopes).toEqual(["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/userinfo.email"]);
   });
 ```
 
