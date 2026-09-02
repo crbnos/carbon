@@ -104,6 +104,20 @@
       "headings": ["Linear", "Jira", "Related"]
     },
     {
+      "slug": "docs/integrations/workflow-apps",
+      "title": "Workflow apps",
+      "description": "Connect Google Calendar, Gmail, and Slack accounts that workflow steps can act as.",
+      "keywords": ["workflow", "apps", "docs", "integrations"],
+      "headings": [
+        "Connecting an account",
+        "When an account says \"Reconnect needed\"",
+        "Google Calendar",
+        "Gmail",
+        "Slack",
+        "Related"
+      ]
+    },
+    {
       "slug": "docs/platform/architecture",
       "title": "Architecture",
       "description": "One journey from a button click, through the server, into Postgres, out to background jobs, and back to the screen.",
@@ -1608,6 +1622,7 @@
         "What starts a workflow",
         "The steps you can add",
         "Filling in a step",
+        "Steps in connected apps",
         "Calling an outside URL",
         "Saving, publishing, and versions",
         "Who can do what"
