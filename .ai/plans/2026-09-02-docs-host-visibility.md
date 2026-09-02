@@ -567,3 +567,51 @@ widened its reach by routing the MCP page's ENDPOINT through it.
   `path.ts` — all pass.
 
 Still not committed.
+
+
+---
+
+## Post-review fixes (CodeRabbit)
+
+**1. App origin was guessed from the REST host.** `appOrigin` rewrote `rest.` to
+`app.`, but `ERP_URL` and `CARBON_API_URL` are separate settings that need not
+share a domain, so MCP endpoints and Settings links could point somewhere wrong.
+The ERP now sends both origins (`?host=` and `?app=`), `appOrigin(base, appBase)`
+prefers the explicit value, and the rewrite remains only as a fallback for a
+host the reader typed themselves.
+
+**2. Client-module constant used by a server component.** `docs/app/mcp/page.tsx`
+is a server component that interpolated `DEFAULT_MCP_ENDPOINT` from the
+`"use client"` config module into build-time samples. Constants moved to a new
+neutral `config-constants.ts` that both sides import; `config-context.tsx`
+re-exports them so existing imports keep working.
+
+**3. Credential exposure via `?host=`.** A reader with a saved API key who
+followed a crafted `?host=evil` link (with no host of their own saved) got
+samples pasting their real key at the attacker's host, and `parseBaseUrl` accepts
+`http:`, so a key could go out in cleartext. A link-supplied host is now
+display-only: never persisted, and never credential-trusted. The key is also
+withheld from any cleartext host except loopback. Trust is *derived* at render
+from where the base came from plus its scheme, rather than kept in a parallel
+state flag — the first attempt used a `keyTrusted` state variable and immediately
+desynced, withholding the key from legitimately saved hosts too.
+
+### Pre-existing bug found while verifying #3
+
+The configured API key never appeared in rendered code samples at all, on `main`
+as well as this branch. Shiki escapes only what HTML requires, so the placeholder
+comes back as `&#x3C;api-key>` — `<` hex-encoded, `>` raw — while `applyConfig`
+matched only fully-encoded pairs (`&#x3C;api-key&#x3E;`). Now matched with a
+regex accepting either bracket in any form. In scope because this change touches
+that exact substitution path; verified against all five encodings.
+
+### Verification after these fixes
+
+- 16 unit assertions for the app-origin and constants changes, plus the original
+  21 — all pass.
+- 11 browser assertions for credential handling: key withheld from a
+  link-supplied host, withheld over cleartext, still rendered for a saved https
+  host, still rendered for loopback, param host not persisted.
+- The full 14-assertion browser suite still passes.
+- `typecheck --filter=docs`, `typecheck --filter=erp`, docs lint, biome on
+  `path.ts` — all pass.

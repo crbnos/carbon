@@ -82,8 +82,20 @@ shared module so validation cannot drift), and adopts it.
 `localStorage` (reader set it themselves) → `?host=` param → unknown. Rationale:
 the param is a *hint from a referrer*, while localStorage is a *decision by the
 reader*; silently overwriting the latter would make the configurator feel
-broken for someone who deliberately set a different instance. The param is still
-persisted when it is the source, so it survives in-docs navigation.
+broken for someone who deliberately set a different instance.
+
+**A param host is display-only** (revised during review). It is NOT persisted and
+never carries the reader's stored API key. Persisting it would let one crafted
+link permanently redirect a reader's samples, and pasting their key into samples
+aimed at a link-supplied host would hand that link the credential. The dialog is
+what turns a host into the reader's own choice. Credentials are additionally
+withheld from any cleartext `http:` host except loopback, since a key in a
+copy-pasted `http://` sample is a key on the wire.
+
+**Two origins, not one.** `ERP_URL` and `CARBON_API_URL` are configured
+independently upstream and need not share a domain, so the ERP sends both
+(`?host=` and `?app=`). The `rest.` → `app.` rewrite survives only as a fallback
+for a host the reader typed themselves.
 
 ### Part 3 — the unknown-host state (the core)
 
