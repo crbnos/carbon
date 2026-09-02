@@ -12,6 +12,7 @@ import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
+  IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   STRIPE_BYPASS_COMPANY_IDS,
   VERCEL_URL
@@ -284,9 +285,9 @@ export async function requirePermissions(
       }
 
       // Plan gate: API access is a Business-tier feature. Block Starter
-      // companies from authenticating with their API key. Self-hosted editions
-      // and bypass-listed companies are never gated.
-      if (CarbonEdition === Edition.Cloud) {
+      // companies from authenticating with their API key. Self-hosted editions,
+      // bypass-listed companies, and local dev stacks are never gated.
+      if (CarbonEdition === Edition.Cloud && !IS_LOCAL_DEV) {
         const isBypass = STRIPE_BYPASS_COMPANY_IDS
           ? STRIPE_BYPASS_COMPANY_IDS.split(",")
               .map((id: string) => id.trim())
