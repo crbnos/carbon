@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { ApiSamples } from "@/lib/api-types";
-import { applyBase, applyConfig, useApiConfig } from "./config-context";
+import { DEFAULT_API_BASE, applyBase, applyConfig, useApiConfig } from "./config-context";
+import { HostPlaceholder } from "./host-placeholder";
 import { MethodBadge } from "./method-badge";
 
 const LANGS: { key: keyof ApiSamples; label: string }[] = [
@@ -105,7 +106,16 @@ export function CodePanel({
           <div className="flex min-w-0 items-center gap-2">
             <MethodBadge method={method} />
             <span className="truncate font-mono text-ed-12 text-ed-text-muted">
-              {applyBase(fullPath, base)}
+              {base === null ? (
+                <>
+                  <HostPlaceholder />
+                  {fullPath.startsWith(DEFAULT_API_BASE)
+                    ? fullPath.slice(DEFAULT_API_BASE.length)
+                    : fullPath}
+                </>
+              ) : (
+                applyBase(fullPath, base)
+              )}
             </span>
           </div>
           <LangSelect value={lang} onChange={setLang} />
