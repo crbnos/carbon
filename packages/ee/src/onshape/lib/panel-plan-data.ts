@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { selectInBatches } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlanLine, PlanMethodRow, PlanOptions } from "../panel/plan";
 
@@ -7,6 +8,11 @@ import type { PlanLine, PlanMethodRow, PlanOptions } from "../panel/plan";
  * takes the ids it needs in one call — the plan for an 11-line BOM must not
  * cost 11 round trips — and returns plain maps the pure builders in
  * `panel/plan.ts` consume.
+ *
+ * "One call" is bounded by the gateway, not by us: an `.in()` list rides in
+ * the URL and the request line dies past 4 KB. Every list sized by the BOM
+ * therefore goes through `selectInBatches`, which splits on encoded bytes —
+ * a count would be wrong, since these ids range from 22 to 58 characters.
  */
 
 type Client = SupabaseClient<Database>;
@@ -37,11 +43,13 @@ export async function loadActiveMakeMethods(
 ): Promise<Map<string, PlanMethodRow>> {
   const ids = [...new Set(itemIds)];
   if (ids.length === 0) return new Map();
-  const rows = await client
-    .from("activeMakeMethods")
-    .select("id, itemId, status")
-    .eq("companyId", companyId)
-    .in("itemId", ids);
+  const rows = await selectInBatches(ids, (batch) =>
+    client
+      .from("activeMakeMethods")
+      .select("id, itemId, status")
+      .eq("companyId", companyId)
+      .in("itemId", batch)
+  );
   const byItemId = new Map<string, PlanMethodRow>();
   for (const row of rows.data ?? []) {
     if (row.id && row.itemId) {
@@ -50,6 +58,21 @@ export async function loadActiveMakeMethods(
   }
   return byItemId;
 }
+
+/**
+ * An Onshape-owned line as it stands in Carbon right now. The last three are
+ * the only columns a push is authoritative for, and they are carried so apply
+ * can tell an unchanged line from a changed one and skip the write entirely —
+ * an untouched re-push should cost no UPDATEs and leave no audit trail.
+ */
+export type MappedLineRow = {
+  mappingId: string;
+  lineId: string;
+  itemId: string;
+  quantity: number | null;
+  order: number | null;
+  materialMakeMethodId: string | null;
+};
 
 export type MethodLineOwnership = {
   /** Lines a previous Onshape push wrote, per method id. */
@@ -63,10 +86,7 @@ export type MethodLineOwnership = {
    * drops every Carbon-owned column on it (the operation link, scrap, tags,
    * kit, the line's own custom fields).
    */
-  mappedRows: Map<
-    string,
-    Array<{ mappingId: string; lineId: string; itemId: string }>
-  >;
+  mappedRows: Map<string, MappedLineRow[]>;
 };
 
 /**
@@ -91,18 +111,24 @@ export async function loadMethodLineOwnership(
   if (ids.length === 0) return result;
 
   const [lines, mappings] = await Promise.all([
-    client
-      .from("methodMaterial")
-      .select("id, makeMethodId, itemId, quantity")
-      .eq("companyId", companyId)
-      .in("makeMethodId", ids),
-    serviceRole
-      .from("externalIntegrationMapping")
-      .select("id, entityId, metadata")
-      .eq("companyId", companyId)
-      .eq("integration", "onshape")
-      .eq("entityType", "methodMaterial")
-      .in("metadata->>makeMethodId", ids)
+    selectInBatches(ids, (batch) =>
+      client
+        .from("methodMaterial")
+        .select(
+          "id, makeMethodId, itemId, quantity, order, materialMakeMethodId"
+        )
+        .eq("companyId", companyId)
+        .in("makeMethodId", batch)
+    ),
+    selectInBatches(ids, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("id, entityId, metadata")
+        .eq("companyId", companyId)
+        .eq("integration", "onshape")
+        .eq("entityType", "methodMaterial")
+        .in("metadata->>makeMethodId", batch)
+    )
   ]);
 
   // A read that failed is not "no Onshape lines": treating it so would make
@@ -121,14 +147,13 @@ export async function loadMethodLineOwnership(
   const itemIds = [
     ...new Set((lines.data ?? []).map((line) => line.itemId).filter(Boolean))
   ];
-  const items =
-    itemIds.length > 0
-      ? await client
-          .from("item")
-          .select("id, readableId")
-          .eq("companyId", companyId)
-          .in("id", itemIds)
-      : { data: [] as Array<{ id: string; readableId: string }> };
+  const items = await selectInBatches(itemIds, (batch) =>
+    client
+      .from("item")
+      .select("id, readableId")
+      .eq("companyId", companyId)
+      .in("id", batch)
+  );
   const readableIdByItemId = new Map(
     (items.data ?? []).map((item) => [item.id, item.readableId])
   );
@@ -148,7 +173,14 @@ export async function loadMethodLineOwnership(
       ]);
       result.mappedRows.set(methodId, [
         ...(result.mappedRows.get(methodId) ?? []),
-        { mappingId, lineId: line.id, itemId: line.itemId }
+        {
+          mappingId,
+          lineId: line.id,
+          itemId: line.itemId,
+          quantity: line.quantity,
+          order: line.order,
+          materialMakeMethodId: line.materialMakeMethodId
+        }
       ]);
     } else {
       result.manual.set(methodId, [

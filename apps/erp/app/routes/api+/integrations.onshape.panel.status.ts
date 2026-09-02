@@ -10,6 +10,7 @@ import {
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import { getOnshapeClient, OnshapeWVMType } from "@carbon/ee/onshape";
+import { selectInBatches } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -156,22 +157,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .eq("entityType", "item")
         .eq("externalId", externalIdForAssembly(documentId, elementId))
         .maybeSingle(),
-      lineExternalIds.length > 0
-        ? client
-            .from("externalIntegrationMapping")
-            .select("entityId, externalId, lastSyncedAt")
-            .eq("companyId", companyId)
-            .eq("integration", "onshape")
-            .eq("entityType", "item")
-            .in("externalId", lineExternalIds)
-        : Promise.resolve({ data: [], error: null }),
-      partNumbers.length > 0
-        ? client
-            .from("item")
-            .select("id, readableId, revision, name")
-            .eq("companyId", companyId)
-            .in("readableId", partNumbers)
-        : Promise.resolve({ data: [], error: null })
+      selectInBatches(lineExternalIds, (batch) =>
+        client
+          .from("externalIntegrationMapping")
+          .select("entityId, externalId, lastSyncedAt")
+          .eq("companyId", companyId)
+          .eq("integration", "onshape")
+          .eq("entityType", "item")
+          .in("externalId", batch)
+      ),
+      selectInBatches(partNumbers, (batch) =>
+        client
+          .from("item")
+          .select("id, readableId, revision, name")
+          .eq("companyId", companyId)
+          .in("readableId", batch)
+      )
     ]);
 
     if (lineMappings.error) {
@@ -194,15 +195,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .filter((id) => !assemblyItems.some((i) => i.id === id))
       )
     ];
-    let mappedItems: PanelItemRow[] = [];
-    if (mappedItemIds.length > 0) {
-      const result = await client
+    const mappedResult = await selectInBatches(mappedItemIds, (batch) =>
+      client
         .from("item")
         .select("id, readableId, revision, name")
         .eq("companyId", companyId)
-        .in("id", mappedItemIds);
-      mappedItems = (result.data ?? []) as PanelItemRow[];
-    }
+        .in("id", batch)
+    );
+    const mappedItems = mappedResult.data as PanelItemRow[];
     const allItems = [...assemblyItems, ...mappedItems];
 
     const itemByReadableId = new Map(
@@ -267,12 +267,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const partNumbers = parts
         .map((p) => p.partNumber)
         .filter((n): n is string => !!n);
-      if (partNumbers.length === 0) return { data: [], error: null };
-      return client
-        .from("item")
-        .select("id, readableId, revision, name")
-        .eq("companyId", companyId)
-        .in("readableId", partNumbers);
+      return selectInBatches(partNumbers, (batch) =>
+        client
+          .from("item")
+          .select("id, readableId, revision, name")
+          .eq("companyId", companyId)
+          .in("readableId", batch)
+      );
     })()
   ]);
 
@@ -283,15 +284,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const mappedItemIds = (mappings.data ?? [])
     .map((m) => m.entityId)
     .filter((id) => !(matches.data ?? []).some((i) => i.id === id));
-  let mappedItems: PanelItemRow[] = [];
-  if (mappedItemIds.length > 0) {
-    const result = await client
+  const mappedResult = await selectInBatches(mappedItemIds, (batch) =>
+    client
       .from("item")
       .select("id, readableId, revision, name")
       .eq("companyId", companyId)
-      .in("id", mappedItemIds);
-    mappedItems = (result.data ?? []) as PanelItemRow[];
-  }
+      .in("id", batch)
+  );
+  const mappedItems = mappedResult.data as PanelItemRow[];
 
   const statuses = buildPartStatuses({
     documentId,

@@ -6,6 +6,7 @@ import {
   resolveReleaseStates
 } from "@carbon/ee";
 import { getOnshapeClient } from "@carbon/ee/onshape";
+import { selectInBatches } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -67,18 +68,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     )
   ];
 
-  let carbonRows: ReleaseCarbonItemRow[] = [];
-  if (partNumbers.length > 0) {
-    const rows = await client
+  const rows = await selectInBatches(partNumbers, (batch) =>
+    client
       .from("item")
       .select("id, readableId, revision")
       .eq("companyId", companyId)
-      .in("readableId", partNumbers);
-    if (rows.error) {
-      return data({ error: "Failed to read Carbon items" }, { status: 500 });
-    }
-    carbonRows = (rows.data ?? []) as ReleaseCarbonItemRow[];
+      .in("readableId", batch)
+  );
+  if (rows.error) {
+    return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
+  const carbonRows = rows.data as ReleaseCarbonItemRow[];
 
   return data(
     { releases: resolveReleaseStates(releases, carbonRows) },

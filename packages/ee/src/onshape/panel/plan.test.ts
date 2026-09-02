@@ -310,6 +310,79 @@ describe("buildAssemblyPlan", () => {
     node({ index: "2", partNumber: "TOP-001", name: "Top" })
   ];
 
+  describe("depth", () => {
+    const build = (depth: "all" | "top") =>
+      buildAssemblyPlan({
+        documentId: "d",
+        wv: "w",
+        wvId: "w1",
+        elementId: "e",
+        root: {
+          partNumber: "WB-100",
+          name: "Workbench",
+          description: null,
+          revision: null
+        },
+        nodes,
+        items: [],
+        methodByItemId: new Map(),
+        mappedLinesByMethodId: new Map(),
+        manualLinesByMethodId: new Map(),
+        options,
+        depth
+      });
+
+    it("defaults to the whole tree, and says so", () => {
+      const plan = build("all");
+      expect(plan.depth).toBe("all");
+      expect(plan.deeper).toBeUndefined();
+      // Root + the sub-assembly: two methods.
+      expect(plan.methods.map((m) => m.parentPartNumber)).toEqual([
+        "WB-100",
+        "ASM-008"
+      ]);
+      expect(plan.items.map((i) => i.partNumber).sort()).toEqual([
+        "ASM-008",
+        "HDW-010",
+        "LEG-003",
+        "TOP-001"
+      ]);
+    });
+
+    it("writes one method and only the top level's items at top depth", () => {
+      const plan = build("top");
+      expect(plan.methods).toHaveLength(1);
+      const [rootMethod] = plan.methods;
+      expect(rootMethod?.parentPartNumber).toBe("WB-100");
+      // The root's own BOM is unchanged — the sub-assembly is still a line.
+      expect(rootMethod?.writes.map((w) => w.partNumber)).toEqual([
+        "ASM-008",
+        "TOP-001"
+      ]);
+      expect(plan.items.map((i) => i.partNumber).sort()).toEqual([
+        "ASM-008",
+        "TOP-001"
+      ]);
+    });
+
+    it("still classifies an unexploded sub-assembly as an assembly", () => {
+      // The trap: with its children out of scope, ASM-008 looks like a leaf.
+      // Treating it as purchased would create it as a Buy part and break the
+      // link to its own make method.
+      const item = build("top").items.find((i) => i.partNumber === "ASM-008");
+      expect(item?.isAssembly).toBe(true);
+      expect(item?.proposed?.replenishmentSystem).toBe("Make");
+    });
+
+    it("reports what a top-level push leaves out", () => {
+      const plan = build("top");
+      expect(plan.deeper?.subAssemblies).toEqual(["ASM-008"]);
+      // LEG-003 and HDW-010 sit below the top level; the unnamed row has no
+      // part number and is not counted.
+      expect(plan.deeper?.partCount).toBe(2);
+    });
+  });
+
   it("plans creates, reuses, methods and the line diff", () => {
     const plan = buildAssemblyPlan({
       documentId: "d",

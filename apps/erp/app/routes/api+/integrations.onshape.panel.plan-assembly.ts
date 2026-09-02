@@ -20,6 +20,7 @@ import {
   loadPlanOptions,
   OnshapeWVMType
 } from "@carbon/ee/onshape";
+import { selectInBatches } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -32,8 +33,23 @@ const payloadSchema = z.object({
   documentId: z.string().min(1),
   wv: z.enum(["w", "v"]),
   wvId: z.string().min(1),
-  elementId: z.string().min(1)
+  elementId: z.string().min(1),
+  /** Omitted by older panels, which only ever pushed the whole tree. */
+  depth: z.enum(["all", "top"]).default("all")
 });
+
+/**
+ * The most distinct part numbers one push will plan.
+ *
+ * Not a technical limit — the reads are batched and the writes are bulk — but
+ * a push is one HTTP request with no rollback, so a very large one is a long
+ * wait that can be cut off by a gateway halfway through, leaving a partly
+ * written BOM. Refusing with a number, and naming the level-by-level route
+ * out, beats a timeout the user cannot interpret.
+ *
+ * A `top` push is bounded by one level and is never refused.
+ */
+const MAX_PLAN_PARTS = 1500;
 
 /**
  * Plan an assembly push: read the BOM and the assembly's identity from
@@ -63,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!parsed.success) {
     return data({ error: "Invalid plan payload" }, { status: 400 });
   }
-  const { documentId, wv, wvId, elementId } = parsed.data;
+  const { documentId, wv, wvId, elementId, depth } = parsed.data;
 
   const onshape = await getOnshapeClient(client, companyId, userId);
   if (onshape.error || !onshape.client) {
@@ -122,7 +138,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // ---- Carbon side, all bulk --------------------------------------------
-  const allNodes = flattenNodes(lines);
+  // At `top` depth the push writes one method, so only the root's own children
+  // are planned; the rest of the tree belongs to its own push.
+  const allNodes = depth === "top" ? lines : flattenNodes(lines);
   const partNumbers = [
     ...new Set(
       [rootPartNumber, ...allNodes.map((node) => node.partNumber)].filter(
@@ -130,23 +148,45 @@ export async function action({ request }: ActionFunctionArgs) {
       )
     )
   ];
+  if (depth === "all" && partNumbers.length > MAX_PLAN_PARTS) {
+    const subAssemblies = lines.filter(
+      (node) => node.children.length > 0
+    ).length;
+    return data(
+      {
+        error:
+          `This assembly has ${partNumbers.length} distinct parts, and one push handles up to ${MAX_PLAN_PARTS}. ` +
+          (subAssemblies > 0
+            ? `Push its ${subAssemblies} sub-assemblies from their own tabs first, then push this one — Carbon links each level to the one below it.`
+            : "Split it into sub-assemblies in Onshape, push those first, then push this one.")
+      },
+      { status: 422 }
+    );
+  }
 
   // Every revision row, revision ascending, so the builder's pick per part
   // number is deterministic and apply can re-resolve the same way.
-  const existing = await client
-    .from("item")
-    .select(
-      "id, readableId, revision, name, description, type, defaultMethodType, unitOfMeasureCode"
-    )
-    .eq("companyId", companyId)
-    .in("readableId", partNumbers)
-    .order("revision");
+  const existing = await selectInBatches(partNumbers, (batch) =>
+    client
+      .from("item")
+      .select(
+        "id, readableId, revision, name, description, type, defaultMethodType, unitOfMeasureCode"
+      )
+      .eq("companyId", companyId)
+      .in("readableId", batch)
+      .order("revision")
+  );
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
+  // Batch order is not revision order; the builder's pick per part number
+  // depends on the whole set being ascending, so sort across the batches.
+  existing.data.sort((a, b) =>
+    (a.revision ?? "").localeCompare(b.revision ?? "")
+  );
   // item.revision is nullable; the builders read a missing one as "0", the
   // same default pickAdoptTarget and proposeItem use.
-  const items: PlanItemRow[] = (existing.data ?? []).map((row) => ({
+  const items: PlanItemRow[] = existing.data.map((row) => ({
     ...row,
     revision: row.revision ?? "0"
   }));
@@ -206,7 +246,8 @@ export async function action({ request }: ActionFunctionArgs) {
     methodByItemId,
     mappedLinesByMethodId: ownership.mapped,
     manualLinesByMethodId: ownership.manual,
-    options
+    options,
+    depth
   });
 
   // ---- Root custom fields (property map) ---------------------------------

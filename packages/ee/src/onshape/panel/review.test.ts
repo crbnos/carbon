@@ -142,6 +142,7 @@ const method = (
 
 const assemblyPlan = (over: Partial<AssemblyPlan> = {}): AssemblyPlan => ({
   kind: "assembly",
+  depth: "all",
   documentId: "d",
   wv: "w",
   wvId: "w1",
