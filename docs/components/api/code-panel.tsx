@@ -97,7 +97,7 @@ export function CodePanel({
   responseHtml: string;
 }) {
   const [lang, setLang] = useState<keyof ApiSamples>("curl");
-  const { base, apiKey } = useApiConfig();
+  const { base, apiKey, appBase } = useApiConfig();
 
   return (
     <div className="sticky top-22 flex flex-col gap-4">
@@ -121,12 +121,12 @@ export function CodePanel({
           <LangSelect value={lang} onChange={setLang} />
         </div>
         <div className="relative">
-          <CopyButton text={applyConfig(samples[lang], base, apiKey)} />
+          <CopyButton text={applyConfig(samples[lang], base, apiKey, false, appBase)} />
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
           <div
             className="api-shiki"
             dangerouslySetInnerHTML={{
-              __html: applyConfig(highlighted[lang], base, apiKey, true),
+              __html: applyConfig(highlighted[lang], base, apiKey, true, appBase),
             }}
           />
         </div>

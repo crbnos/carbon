@@ -13,8 +13,8 @@ import { HostPlaceholder } from "./host-placeholder";
 
 /** Inline MCP endpoint for the configured instance. */
 export function McpEndpoint() {
-  const { base } = useApiConfig();
-  const origin = appOrigin(base);
+  const { base, appBase } = useApiConfig();
+  const origin = appOrigin(base, appBase);
   if (origin === null) {
     return (
       <Code>
@@ -36,8 +36,8 @@ export function AuthHeader() {
  *  instance there is no host to link to, so the label becomes the configurator
  *  affordance instead of a dead link. */
 export function ApiKeysLink({ children }: { children: ReactNode }) {
-  const { base, openConfigurator } = useApiConfig();
-  const origin = appOrigin(base);
+  const { base, appBase, openConfigurator } = useApiConfig();
+  const origin = appOrigin(base, appBase);
   if (origin === null) {
     return (
       <button

@@ -16,15 +16,19 @@ const selectCompany = "/select-company"; // from ~/routes/select-company+ folder
 export const MES_URL = getMESUrl();
 export const ERP_URL = getAppUrl();
 
-/** Append this deployment's REST origin to a docs link, so the docs site can show
- *  the reader their own host rather than assuming Carbon Cloud. Purely additive:
- *  with no CARBON_API_URL the plain URL is returned and the docs fall back to
- *  their `<your-host>` placeholder. Safe when signed out — the value is public
+/** Append this deployment's origins to a docs link, so the docs site can show the
+ *  reader their own hosts rather than assuming Carbon Cloud. Both are sent because
+ *  they are configured independently (`CARBON_API_URL` serves the REST API, ERP_URL
+ *  the app) and need not share a domain, so neither can be derived from the other.
+ *  Purely additive: with neither set the plain URL is returned and the docs fall back
+ *  to their `<your-host>` placeholder. Safe when signed out — both values are public
  *  config already exposed on `window.env`. */
 function withDocsHost(url: string): string {
-  return CARBON_API_URL
-    ? `${url}?host=${encodeURIComponent(CARBON_API_URL)}`
-    : url;
+  const params = new URLSearchParams();
+  if (CARBON_API_URL) params.set("host", CARBON_API_URL);
+  if (ERP_URL) params.set("app", ERP_URL);
+  const qs = params.toString();
+  return qs ? `${url}?${qs}` : url;
 }
 
 export const path = {

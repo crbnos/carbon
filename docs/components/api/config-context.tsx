@@ -2,24 +2,46 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { parseBaseUrl } from "./base-url-parse";
+import {
+  APP_PARAM,
+  DEFAULT_API_BASE,
+  DEFAULT_APP_ORIGIN,
+  DEFAULT_MCP_ENDPOINT,
+  HOST_PARAM,
+  HOST_PLACEHOLDER,
+} from "./config-constants";
 
-export const DEFAULT_API_BASE = "https://rest.carbon.ms";
+export { DEFAULT_API_BASE, DEFAULT_MCP_ENDPOINT, HOST_PLACEHOLDER };
+
 const BASE_STORAGE_KEY = "carbon-api-base";
+const APP_STORAGE_KEY = "carbon-app-origin";
 const KEY_STORAGE_KEY = "carbon-api-key";
 const API_KEY_PLACEHOLDER = "<api-key>";
 
-/** Stand-in for the origin when we don't know which instance the reader is on.
- *  Mirrors the `<api-key>` convention: obviously a placeholder when copy-pasted. */
-export const HOST_PLACEHOLDER = "<your-host>";
-
-/** Query param the ERP adds to its "API Documentation" link, carrying that
- *  deployment's REST origin (`CARBON_API_URL`) so docs can show the real host. */
-const HOST_PARAM = "host";
+/** A host that arrived in the URL rather than from the reader is only trusted to
+ *  DISPLAY. Pasting the reader's stored key into samples aimed at it would hand a
+ *  crafted link their credential, so the key is withheld until they confirm the
+ *  instance in the dialog. Cleartext http is refused outright (except loopback,
+ *  which never leaves the machine) — a key in a copy-pasted http:// sample is a
+ *  key on the wire. */
+function isTrustedForCredentials(base: string | null): boolean {
+  if (base === null) return false;
+  try {
+    const u = new URL(base);
+    if (u.protocol === "https:") return true;
+    return u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "[::1]";
+  } catch {
+    return false;
+  }
+}
 
 type Ctx = {
   /** null = the reader's instance is unknown; render HOST_PLACEHOLDER instead. */
   base: string | null;
-  setBase: (v: string | null) => void;
+  setBase: (v: string | null, app?: string | null) => void;
+  /** App host (Settings, MCP). Configured separately from the REST host upstream,
+   *  so it is carried explicitly rather than guessed from `base`. */
+  appBase: string | null;
   isDefault: boolean;
   isUnknown: boolean;
   apiKey: string;
@@ -34,6 +56,7 @@ type Ctx = {
 const ApiConfigCtx = createContext<Ctx>({
   base: null,
   setBase: () => {},
+  appBase: null,
   isDefault: false,
   isUnknown: true,
   apiKey: "",
@@ -46,7 +69,11 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
   // Unknown until proven otherwise — showing rest.carbon.ms to a self-hosted
   // reader is the bug this state exists to fix.
   const [base, setBaseState] = useState<string | null>(null);
+  const [appBase, setAppBaseState] = useState<string | null>(null);
   const [apiKey, setApiKeyState] = useState("");
+  // Where `base` came from. Trust is derived from this + the scheme below, rather
+  // than stored, so no writer can forget to keep a parallel flag in sync.
+  const [baseFromLink, setBaseFromLink] = useState(false);
   const [openRequest, setOpenRequest] = useState(0);
 
   useEffect(() => {
@@ -54,36 +81,59 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
       // Precedence: a choice the reader saved themselves outranks the `?host=`
       // hint from a referring app, which outranks "unknown".
       const savedBase = localStorage.getItem(BASE_STORAGE_KEY);
-      if (savedBase) {
-        setBaseState(savedBase);
-      } else {
-        const fromParam = new URLSearchParams(window.location.search).get(HOST_PARAM);
-        if (fromParam) {
-          const result = parseBaseUrl(fromParam);
-          if ("url" in result) {
-            setBaseState(result.url);
-            localStorage.setItem(BASE_STORAGE_KEY, result.url);
-          }
-        }
-      }
       const savedKey = localStorage.getItem(KEY_STORAGE_KEY);
       if (savedKey) setApiKeyState(savedKey);
+
+      if (savedBase) {
+        // Saved by the reader in the dialog, so the key may be shown against it.
+        setBaseState(savedBase);
+        setAppBaseState(localStorage.getItem(APP_STORAGE_KEY));
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const fromParam = params.get(HOST_PARAM);
+      if (!fromParam) return;
+      const result = parseBaseUrl(fromParam);
+      if (!("url" in result)) return;
+
+      // Display-only: NOT persisted and never credential-trusted. Persisting would
+      // make one crafted link permanently redirect this reader's samples, and the
+      // dialog is where a host becomes the reader's own choice.
+      setBaseState(result.url);
+      setBaseFromLink(true);
+      const appParam = params.get(APP_PARAM);
+      if (appParam) {
+        const appResult = parseBaseUrl(appParam);
+        if ("url" in appResult) setAppBaseState(appResult.url);
+      }
     } catch {}
   }, []);
 
-  const setBase = (v: string | null) => {
+  /** Saving through the dialog is what makes a host the reader's OWN choice, so this
+   *  is the only path that persists one or lets the key be shown against it.
+   *  `app` is the instance's app host when known (the ERP passes it; the two are
+   *  configured independently upstream), else null to fall back to the rest.->app. guess. */
+  const setBase = (v: string | null, app: string | null = null) => {
     if (v === null) {
       setBaseState(null);
+      setAppBaseState(null);
+      setBaseFromLink(false);
       try {
         localStorage.removeItem(BASE_STORAGE_KEY);
+        localStorage.removeItem(APP_STORAGE_KEY);
       } catch {}
       return;
     }
     const val = (v || "").trim().replace(/\/+$/, "");
     if (!val) return;
     setBaseState(val);
+    setAppBaseState(app);
+    setBaseFromLink(false);
     try {
       localStorage.setItem(BASE_STORAGE_KEY, val);
+      if (app) localStorage.setItem(APP_STORAGE_KEY, app);
+      else localStorage.removeItem(APP_STORAGE_KEY);
     } catch {}
   };
 
@@ -101,9 +151,12 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
       value={{
         base,
         setBase,
+        appBase,
         isDefault: base === DEFAULT_API_BASE,
         isUnknown: base === null,
-        apiKey,
+        // Withheld while the host came from a link rather than the reader, and for
+        // any cleartext destination — samples would otherwise carry a real key there.
+        apiKey: baseFromLink || !isTrustedForCredentials(base) ? "" : apiKey,
         setApiKey,
         openConfigurator: () => setOpenRequest((n) => n + 1),
         openRequest,
@@ -125,32 +178,30 @@ export function applyBase(text: string, base: string | null): string {
   return text.split(DEFAULT_API_BASE).join(replacement);
 }
 
-// The MCP server lives on the app host (app.carbon.ms), a sibling of the REST API
-// host (rest.carbon.ms) the configurator controls. Derive the instance's MCP
-// endpoint from the configured base by swapping the `rest.` subdomain for `app.`.
-export const DEFAULT_MCP_ENDPOINT = "https://app.carbon.ms/api/mcp";
-
 /** App base for the configured instance (where Settings and the MCP server live).
- *  The configurator controls the REST base (rest.*); the app base swaps that subdomain.
  *  Returns null when the instance is unknown, so callers render the placeholder.
  *
- *  Keeps any path prefix, because `parseBaseUrl` deliberately preserves one: an
- *  instance served under `https://acme.com/api/v1` must not have that segment
- *  dropped from its MCP endpoint and Settings links while the REST samples keep it. */
-export function appOrigin(base: string | null): string | null {
+ *  `appBase` wins whenever it is known: upstream the app host and the REST host are
+ *  separate settings (`ERP_URL` vs `CARBON_API_URL`) and need not share a domain, so
+ *  the `rest.` -> `app.` rewrite below is only a fallback for a host the reader typed
+ *  themselves. Either way any path prefix survives, because `parseBaseUrl` preserves
+ *  one: an instance under `https://acme.com/api/v1` must not lose that segment here
+ *  while the REST samples keep it. */
+export function appOrigin(base: string | null, appBase: string | null = null): string | null {
+  if (appBase) return appBase.replace(/\/+$/, "");
   if (base === null) return null;
-  if (base === DEFAULT_API_BASE) return "https://app.carbon.ms";
+  if (base === DEFAULT_API_BASE) return DEFAULT_APP_ORIGIN;
   try {
     const u = new URL(base);
     u.hostname = u.hostname.replace(/^rest\./, "app.");
     return (u.origin + u.pathname).replace(/\/+$/, "");
   } catch {
-    return "https://app.carbon.ms";
+    return DEFAULT_APP_ORIGIN;
   }
 }
 
-function mcpEndpointFor(base: string | null): string {
-  const origin = appOrigin(base);
+function mcpEndpointFor(base: string | null, appBase: string | null = null): string {
+  const origin = appOrigin(base, appBase);
   return origin === null ? `${HOST_PLACEHOLDER}/api/mcp` : `${origin}/api/mcp`;
 }
 
@@ -169,7 +220,8 @@ export function applyConfig(
   text: string,
   base: string | null,
   apiKey: string,
-  html = false
+  html = false,
+  appBase: string | null = null
 ): string {
   // A configured base is reader-supplied and can hold `&` or `'` (new URL() leaves
   // both intact), so it needs the same escaping the api key gets — otherwise those
@@ -180,16 +232,20 @@ export function applyConfig(
   if (hostReplacement !== DEFAULT_API_BASE) {
     out = out.split(DEFAULT_API_BASE).join(hostReplacement);
   }
-  const mcp = mcpEndpointFor(base);
+  const mcp = mcpEndpointFor(base, appBase);
   out = out.split(DEFAULT_MCP_ENDPOINT).join(html ? escapeHtml(mcp) : mcp);
   if (apiKey) {
     if (html) {
       const keyEsc = escapeHtml(apiKey);
-      // Shiki encodes the placeholder's angle brackets as hex entities (&#x3C;);
-      // also cover decimal (&#60;) and named (&lt;) so substitution is encoding-proof.
-      for (const needle of ["&#x3C;api-key&#x3E;", "&#60;api-key&#62;", "&lt;api-key&gt;"]) {
-        out = out.split(needle).join(keyEsc);
-      }
+      // Shiki escapes only what HTML strictly requires, so the brackets around the
+      // placeholder come back INDEPENDENTLY encoded — in practice `&#x3C;api-key>`,
+      // with the `<` a hex entity and the `>` left raw. Matching a fixed pair of
+      // fully-encoded needles silently missed that and shipped a sample that still
+      // said `<api-key>` after the reader had set one. Match either bracket in any
+      // of its forms instead.
+      const LT = "(?:<|&#x3C;|&#60;|&lt;)";
+      const GT = "(?:>|&#x3E;|&#62;|&gt;)";
+      out = out.replace(new RegExp(`${LT}api-key${GT}`, "gi"), keyEsc);
     } else {
       out = out.split(API_KEY_PLACEHOLDER).join(apiKey);
     }

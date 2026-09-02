@@ -3,7 +3,8 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
 import { parseBaseUrl } from "./base-url-parse";
-import { DEFAULT_API_BASE, HOST_PLACEHOLDER, useApiConfig } from "./config-context";
+import { DEFAULT_API_BASE, DEFAULT_APP_ORIGIN } from "./config-constants";
+import { HOST_PLACEHOLDER, useApiConfig } from "./config-context";
 
 function ServerIcon({ className }: { className?: string }) {
   return (
@@ -130,7 +131,7 @@ export function Configurator() {
       }
       setBase(result.url);
     } else if (mode === "cloud") {
-      setBase(DEFAULT_API_BASE);
+      setBase(DEFAULT_API_BASE, DEFAULT_APP_ORIGIN);
     } else {
       setBase(null);
     }
