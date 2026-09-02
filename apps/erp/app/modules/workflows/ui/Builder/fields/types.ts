@@ -26,6 +26,8 @@ export type ValueFieldProps = {
   helpTermId?: TermId;
   /** Free-text ⓘ hover — a vendor's own field description. `helpTermId` wins. */
   help?: string;
+  /** Advisory one-liner under the control — a notice, muted, never blocking. */
+  hint?: string;
   /** The catalog's default for this input, shown when nothing is stored yet —
    * a boolean control especially must display what the run will actually send. */
   defaultValue?: unknown;

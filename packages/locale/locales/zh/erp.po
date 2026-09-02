@@ -13064,6 +13064,13 @@ msgstr "记录在此校准期间调整了量具；影响校准周期的重新计
 msgid "Records"
 msgstr "记录"
 
+msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
+msgstr ""
+
+#. placeholder {0}: notice.params.equals
+msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "注册"
 

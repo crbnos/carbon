@@ -1,5 +1,9 @@
 import type { TermId } from "@carbon/glossary";
-import type { OptionsSource, RequiredPermission } from "../definition/catalog";
+import type {
+  LinksDeclaration,
+  OptionsSource,
+  RequiredPermission
+} from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 
 export interface ActionInputLike {
@@ -7,9 +11,9 @@ export interface ActionInputLike {
   required: boolean;
   label: string;
   template?: boolean;
-  /** Prose a person reads: a record dropped in renders as a link. Not for webhook bodies,
-   * where a markdown link would ship to someone else's API as literal text. */
-  linkify?: boolean;
+  /** Prose that can carry a link, in the destination's own dialect. Not for webhook
+   * bodies, where a link would ship to someone else's API as literal text. */
+  links?: LinksDeclaration;
   /** Allowed literal values. The generated side infers these from the database schema;
    * a hand-written action is not a schema entity, so it must say so here. */
   choices?: readonly string[];
@@ -196,7 +200,8 @@ export const WORKFLOW_ACTIONS = {
         required: false,
         label: "message",
         template: true,
-        linkify: true
+        // Markdown: the dialect the in-app notification renderer reads.
+        links: { format: "markdown" }
       },
       // The value model has no "any record" type, so the record is named in two parts.
       aboutId: {

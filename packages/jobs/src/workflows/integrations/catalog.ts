@@ -81,7 +81,22 @@ export async function buildPieceActionDeclarations(): Promise<
           // Prose: the vendor's LongText, or a ShortText the allowlist knows better about.
           ...(mapped.template === true || override?.template === true
             ? { template: true }
-            : {})
+            : {}),
+          ...(override?.links === undefined
+            ? {}
+            : {
+                links: {
+                  format: override.links.format,
+                  ...(override.links.when === undefined
+                    ? {}
+                    : {
+                        when: {
+                          input: override.links.when.prop,
+                          equals: override.links.when.equals
+                        }
+                      })
+                }
+              })
         };
 
         if (visibility.show) inputs[propName] = declared;

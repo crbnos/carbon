@@ -18,6 +18,7 @@ export function ValueField({
   required,
   helpTermId,
   help,
+  hint,
   defaultValue,
   choices,
   value,
@@ -51,6 +52,7 @@ export function ValueField({
         helpTermId={helpTermId}
         help={help}
         issue={issue}
+        hint={hint}
       >
         <InlineValueEditor
           accepts={acceptsFilter}
@@ -81,6 +83,7 @@ export function ValueField({
       helpTermId={helpTermId}
       help={help}
       issue={issue}
+      hint={hint}
     >
       {/* The popup anchors to the control itself. A field is either a value you write
           or a variable you pick — never a box with a second way in bolted to its edge. */}

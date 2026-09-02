@@ -33,6 +33,14 @@ export interface AllowlistPropOverride {
   /** Prose the vendor declared as a ShortText (Gmail's email `body`): render the
    * multiline editor with inline variables, as a LongText gets automatically. */
   template?: boolean;
+  /** This prose reaches the vendor in a dialect that renders links, so a record
+   * dropped in becomes one (`format`) — optionally only while a sibling prop holds
+   * one of `equals` (Gmail links only an html body). Reviewed per action like
+   * `omit`, and pinned with the version: it asserts how THIS vendor renders text. */
+  links?: {
+    format: "slack" | "html";
+    when?: { prop: string; equals: readonly string[] };
+  };
 }
 
 export interface AllowlistEntry {
@@ -229,6 +237,8 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
     },
     props: {
       send_channel_message: {
+        // Posted as mrkdwn section blocks by the piece, so <url|label> renders.
+        text: { links: { format: "slack" } },
         // `false` sends as the user, which needs `auth.data.authed_user` — a user token
         // we do not request.
         sendAsBot: { omit: true, value: true },
@@ -239,6 +249,7 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
         blocks: { omit: true }
       },
       send_direct_message: {
+        text: { links: { format: "slack" } },
         mentionOriginFlow: { omit: true },
         blocks: { omit: true }
       }
@@ -274,8 +285,16 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
     props: {
       gmail_send_email: {
         // The piece declares the email body a ShortText. It is the one field an
-        // author writes paragraphs into.
-        body: { template: true },
+        // author writes paragraphs into — and the one that links records, but only
+        // as html: the MIME composer emits an html part only when body_type = html,
+        // and a plain-text part renders markup literally.
+        body: {
+          template: true,
+          links: {
+            format: "html",
+            when: { prop: "body_type", equals: ["html"] }
+          }
+        },
         // An array of {data,name} FILE objects; Carbon would send list<string>.
         // Deferred with the rest of attachments (needs a file value type).
         attachments: { omit: true },

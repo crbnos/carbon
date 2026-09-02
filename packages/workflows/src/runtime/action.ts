@@ -20,11 +20,17 @@ export const actionExecutor: NodeExecutor<ActionNode> = {
 
     const inputs: Record<string, RuntimeValue> = {};
     for (const [name, value] of Object.entries(node.data.inputs)) {
-      // Only a catalog-declared prose input linkifies, and only when the engine
-      // supplied a resolver — a webhook body must stay plain text.
+      // Only a catalog-declared `links` input renders records as links, and only
+      // when the engine supplied a resolver — a webhook body must stay plain text.
+      // A Carbon action's declaration carries no `when`; the integration executor
+      // owns that gate, against the vendor sibling that decides the dialect.
+      const links = action.inputs[name]?.links;
       const resolved =
-        action.inputs[name]?.linkify === true && value.kind === "template"
-          ? await renderTemplate(value, ctx, { linkFor: ctx.linkFor })
+        links !== undefined && value.kind === "template"
+          ? await renderTemplate(value, ctx, {
+              linkFor: ctx.linkFor,
+              format: links.format
+            })
           : await resolveValue(value, ctx);
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
       // In a batch the one list input stands for the item this turn is on. Only a

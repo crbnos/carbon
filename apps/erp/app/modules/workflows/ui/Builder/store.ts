@@ -1,7 +1,8 @@
 import type {
   BatchPlan,
   WorkflowIssue,
-  WorkflowNodeType
+  WorkflowNodeType,
+  WorkflowNotice
 } from "@carbon/workflows";
 import {
   getNodeHandles,
@@ -47,6 +48,9 @@ export type BuilderState = {
   /** Broken variables, recomputed as the graph is edited. Kept apart from `issues`
    * so a publish attempt and a live edit never overwrite each other's findings. */
   liveIssues: WorkflowIssue[];
+  /** Advisory notes recomputed alongside `liveIssues` — a record in a field that
+   * will not render it as a link. Never blocking, so never in `issues`. */
+  notices: WorkflowNotice[];
   /** Which action steps repeat and over what, by node id — derived from the wiring
    * alongside `liveIssues`, and absent for a step that runs once. */
   batchPlans: Record<string, BatchPlan>;
@@ -76,6 +80,7 @@ export type BuilderState = {
   setSelected: (id: string | null) => void;
   setIssues: (issues: WorkflowIssue[]) => void;
   setLiveIssues: (issues: WorkflowIssue[]) => void;
+  setNotices: (notices: WorkflowNotice[]) => void;
   setBatchPlans: (plans: Record<string, BatchPlan>) => void;
   setSaveState: (state: SaveState) => void;
   openTestRun: (nodeId: string) => void;
@@ -131,6 +136,7 @@ export function createBuilderStore(initial: {
     selectedNodeId: null,
     issues: [],
     liveIssues: [],
+    notices: [],
     batchPlans: {},
     saveState: "idle",
     isVersionLocked: initial.isVersionLocked,
@@ -259,6 +265,7 @@ export function createBuilderStore(initial: {
       if (current.length === 0 && liveIssues.length === 0) return;
       set({ liveIssues });
     },
+    setNotices: (notices) => set({ notices }),
     setBatchPlans: (plans) => {
       // Same identity rule as `liveIssues`: most graphs have no repeating step, and a
       // fresh empty object every 250 ms would re-render every card that reads one.

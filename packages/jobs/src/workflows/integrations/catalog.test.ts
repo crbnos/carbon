@@ -42,10 +42,13 @@ describe("buildPieceActionDeclarations (slack)", () => {
     expect(send.inputs.channel!.options?.provider).toBe("integration.property");
     // Slack's "Message" is a LongText: the multiline editor.
     expect(send.inputs.text!.template).toBe(true);
+    // Posted as mrkdwn blocks, so a record can be a real <url|label> link.
+    expect(send.inputs.text!.links).toEqual({ format: "slack" });
     expect(send.outputs).toHaveProperty("count");
     expect(send.outputs).toHaveProperty("result");
 
     const dm = all["integration.slack.send_direct_message"]!;
+    expect(dm.inputs.text!.links).toEqual({ format: "slack" });
     expect(dm.inputs).not.toHaveProperty("blocks");
     expect(dm.inputs).not.toHaveProperty("mentionOriginFlow");
     expect(dm.inputs.userId!.options?.provider).toBe("integration.property");
@@ -94,7 +97,12 @@ describe("buildPieceActionDeclarations (gmail)", () => {
     });
     // The body is a ShortText upstream; the allowlist says it is prose.
     expect(send.inputs.body!.template).toBe(true);
-    expect(send.inputs.subject!.template).toBeUndefined();
+    // Links only in an html body; the subject never links.
+    expect(send.inputs.body!.links).toEqual({
+      format: "html",
+      when: { input: "body_type", equals: ["html"] }
+    });
+    expect(send.inputs.subject!.links).toBeUndefined();
     expect(send.outputs).toHaveProperty("count");
     expect(send.outputs).toHaveProperty("result");
   });

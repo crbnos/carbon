@@ -141,7 +141,7 @@ async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
     outputs: args.outputs,
     // The one place a workflow value becomes a URL. `/api/link` performs the company
     // switch before redirecting, so a recipient whose active company differs still
-    // lands on the right record. Only inputs the catalog marks `linkify` use this.
+    // lands on the right record. Only inputs the catalog declares `links` on use this.
     linkFor: (of: string, id: string) =>
       buildNotificationLink(
         NotificationEvent.Workflow,

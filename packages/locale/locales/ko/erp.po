@@ -13064,6 +13064,13 @@ msgstr "이 교정 중에 계측기가 조정되었다고 기록되었습니다.
 msgid "Records"
 msgstr "레코드"
 
+msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
+msgstr ""
+
+#. placeholder {0}: notice.params.equals
+msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "회수 기간"
 

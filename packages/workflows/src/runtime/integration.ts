@@ -1,10 +1,11 @@
 import { integrationStepId } from "../definition/catalog";
+import { linkState } from "../definition/links";
 import {
   FAILURE_HANDLE,
   type IntegrationNode,
   SUCCESS_HANDLE
 } from "../definition/schema";
-import { resolveValue } from "./resolve";
+import { renderTemplate, resolveValue } from "./resolve";
 import type { NodeExecutor, RuntimeValue } from "./types";
 
 const GONE = "This integration step is no longer available.";
@@ -15,8 +16,9 @@ const GONE = "This integration step is no longer available.";
  * action path nor this one has to ask what the other kind is.
  *
  * One item only — batching belongs to the engine, which calls this once per item.
- * Nothing here linkifies: a vendor's field is not Carbon prose, and a markdown
- * link would arrive at someone else's API as literal text.
+ * A record in prose becomes a link only where the catalog declares `links` (and
+ * its gate holds — see `linkState`); everything else renders as plain text, so a
+ * link can never ship to a vendor field that would show it as literal markup.
  */
 export const integrationExecutor: NodeExecutor<IntegrationNode> = {
   permission: (node, catalog) =>
@@ -28,19 +30,26 @@ export const integrationExecutor: NodeExecutor<IntegrationNode> = {
     const step = ctx.catalog.getIntegration(id);
     if (step === undefined) return { status: "Skipped", reason: GONE };
 
+    const declared = { ...step.inputs, ...step.advancedInputs };
     const inputs: Record<string, RuntimeValue> = {};
     for (const [name, value] of Object.entries(node.data.inputs)) {
-      const resolved = await resolveValue(value, ctx);
+      const link = linkState(node, declared, name);
+      const resolved =
+        link.kind === "linked" && value.kind === "template"
+          ? await renderTemplate(value, ctx, {
+              linkFor: ctx.linkFor,
+              format: link.format
+            })
+          : await resolveValue(value, ctx);
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
       // In a batch the one list input stands for the item this turn is on. Only a
       // slot declared single-valued can be that input (`batchCandidates`); a slot
       // declared as a list keeps its list, or a real list input on the same step
       // would be replaced by the item on every turn.
-      const declared = step.inputs[name] ?? step.advancedInputs?.[name];
       inputs[name] =
         ctx.item !== undefined &&
         resolved.value.kind === "list" &&
-        declared?.type.kind !== "list"
+        declared[name]?.type.kind !== "list"
           ? ctx.item
           : resolved.value;
       ctx.record?.(name, inputs[name]);

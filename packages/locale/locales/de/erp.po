@@ -13064,6 +13064,13 @@ msgstr "Erfasst, dass das Prüfmittel während dieser Kalibrierung angepasst wur
 msgid "Records"
 msgstr "Aufzeichnungen"
 
+msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
+msgstr ""
+
+#. placeholder {0}: notice.params.equals
+msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Registrieren"
 

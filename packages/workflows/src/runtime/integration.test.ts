@@ -7,6 +7,7 @@ import type { IntegrationNode } from "../definition/schema";
 import { t } from "../definition/types";
 import { createRuntimeContext } from "./fixtures";
 import { integrationExecutor } from "./integration";
+import type { WorkflowServices } from "./types";
 
 const STEP: CatalogIntegration = {
   id: "integration.google-calendar.create_google_calendar_event",
@@ -154,6 +155,125 @@ describe("integrationExecutor", () => {
       // The single-valued slot took the item; the list slot kept its list.
       title: { kind: "primitive", of: "string", value: "Kickoff" },
       attendees: stringList(["a@example.com", "b@example.com"])
+    });
+  });
+
+  describe("record links", () => {
+    const LINKED: CatalogIntegration = {
+      ...STEP,
+      inputs: {
+        connectionId: { type: t.string, required: true },
+        text: {
+          type: t.string,
+          required: false,
+          links: { format: "slack" }
+        },
+        body: {
+          type: t.string,
+          required: false,
+          links: {
+            format: "html",
+            when: { input: "body_type", equals: ["html"] }
+          }
+        }
+      },
+      advancedInputs: {
+        body_type: {
+          type: t.string,
+          required: false,
+          defaultValue: "plain_text"
+        }
+      }
+    };
+
+    const orderTemplate = {
+      kind: "template" as const,
+      parts: [
+        { kind: "text" as const, text: "See " },
+        { kind: "ref" as const, nodeId: "trigger", output: "record", path: [] }
+      ]
+    };
+
+    const linkedCtx = (runIntegration: WorkflowServices["runIntegration"]) => {
+      const base = createRuntimeContext({
+        outputs: {
+          trigger: {
+            record: {
+              kind: "entity" as const,
+              of: "purchaseOrder",
+              id: "po_1",
+              row: { purchaseOrderId: "PO000123" }
+            }
+          }
+        },
+        services: { runIntegration },
+        linkFor: (of: string, id: string) => `https://erp.test/${of}/${id}`
+      });
+      return { ...base, catalog: catalogWith(LINKED) };
+    };
+
+    const run = () => vi.fn(async () => ({ ok: true as const, outputs: {} }));
+
+    it("always links slack-format text", async () => {
+      const runIntegration = run();
+      await integrationExecutor.execute(
+        node({
+          inputs: {
+            connectionId: { kind: "literal", type: t.string, value: "icn_1" },
+            text: orderTemplate
+          }
+        }),
+        linkedCtx(runIntegration)
+      );
+      expect(runIntegration).toHaveBeenCalledWith(LINKED.piece, {
+        connectionId: { kind: "primitive", of: "string", value: "icn_1" },
+        text: {
+          kind: "primitive",
+          of: "string",
+          value: "See <https://erp.test/purchaseOrder/po_1|PO000123>"
+        }
+      });
+    });
+
+    it("renders plain text while the gate sibling holds its default", async () => {
+      const runIntegration = run();
+      await integrationExecutor.execute(
+        node({
+          inputs: {
+            connectionId: { kind: "literal", type: t.string, value: "icn_1" },
+            body: orderTemplate
+          }
+        }),
+        linkedCtx(runIntegration)
+      );
+      expect(runIntegration).toHaveBeenCalledWith(LINKED.piece, {
+        connectionId: { kind: "primitive", of: "string", value: "icn_1" },
+        body: { kind: "primitive", of: "string", value: "See PO000123" }
+      });
+    });
+
+    it("renders an html anchor once the author sets the gate sibling", async () => {
+      const runIntegration = run();
+      await integrationExecutor.execute(
+        node({
+          inputs: {
+            connectionId: { kind: "literal", type: t.string, value: "icn_1" },
+            body: orderTemplate,
+            body_type: { kind: "literal", type: t.string, value: "html" }
+          }
+        }),
+        linkedCtx(runIntegration)
+      );
+      expect(runIntegration).toHaveBeenCalledWith(LINKED.piece, {
+        connectionId: { kind: "primitive", of: "string", value: "icn_1" },
+        body: {
+          kind: "primitive",
+          of: "string",
+          value:
+            'See <a href="https://erp.test/purchaseOrder/po_1">PO000123</a>'
+        },
+        body_type: { kind: "primitive", of: "string", value: "html" }
+      });
     });
   });
 });

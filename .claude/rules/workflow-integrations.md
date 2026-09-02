@@ -75,7 +75,12 @@ node holds `piece` and `action` separately, and `runIntegration` is handed the
 Running one: `runtime/integration.ts` `integrationExecutor`, registered in
 `runtime/executors.ts` like every other kind, calls `ctx.services.runIntegration`, which
 `packages/jobs/src/workflows/actions/services.ts` implements over the existing
-`actions/integration.ts`. Nothing linkifies: a vendor's field is not Carbon prose.
+`actions/integration.ts`. A record in prose renders as a LINK only where the input's
+catalog `links` declaration says the vendor renders one — Slack mrkdwn `<url|label>`,
+Gmail `<a href>` gated on `body_type = html` — via `renderTemplate`'s per-dialect
+renderers in `runtime/resolve.ts`. Everywhere else a record stays its plain name, and the
+builder says so with a muted one-liner under the field (`definition/notices.ts`
+`fieldNotices` → the store's `notices` → `Field`'s `hint`; copy in `noticeCopy.ts`).
 
 In the builder it is one **Integration** palette entry, not one per vendor — you drop the
 node, then pick the app and the step inside it. `config/forms/IntegrationNodeForm.tsx`
@@ -438,6 +443,12 @@ pin — otherwise the Advanced section would be a lie.
 `template: true` is the third override: prose the vendor declared a `ShortText` (Gmail's email
 `body`) gets the multiline editor a `LongText` gets automatically. Without it the body of an
 email is a one-line box.
+
+`links` is the fourth: this prose reaches the vendor in a dialect that renders links
+(`format: "slack" | "html"`, optionally gated `when` a sibling prop holds a value — Gmail
+links only an html body). It asserts how THIS vendor renders text, so it is reviewed and
+pinned like `omit`. Carbon's own Notify declares the same thing as `links: { format:
+"markdown" }` in `catalog/actions.ts`; the old `linkify` flag is gone.
 
 `omit: true` is the stronger override: the prop is in **neither** map. It is for a prop
 whose non-default value needs a host capability the shim refuses (`mentionOriginFlow` reads

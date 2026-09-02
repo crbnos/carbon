@@ -32,6 +32,8 @@ export type StepInputArgs = {
   helpTermId?: TermId;
   /** The vendor's own field description, already label-resolved. */
   help?: string;
+  /** Advisory one-liner under the control (a record that will not link, and why). */
+  hint?: string;
   /** Every input on the node, for gates and for fetched-choice dependencies. */
   inputs: Record<string, ValueOrRef>;
   issues?: WorkflowIssue[];
@@ -51,6 +53,7 @@ export function renderStepInput({
   label,
   helpTermId,
   help,
+  hint,
   inputs,
   issues,
   nodeId,
@@ -142,6 +145,7 @@ export function renderStepInput({
         label={label}
         helpTermId={helpTermId}
         help={help}
+        hint={hint}
         type={inputDef.type}
         required={inputDef.required}
         value={inputs[name]}
@@ -160,6 +164,7 @@ export function renderStepInput({
       label={label}
       helpTermId={helpTermId}
       help={help}
+      hint={hint}
       defaultValue={inputDef.defaultValue}
       type={inputDef.type}
       required={inputDef.required}

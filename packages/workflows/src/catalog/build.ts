@@ -3,6 +3,7 @@ import {
   type EventMatch,
   integrationAppLabelKey,
   isMultiSelect,
+  type LinksDeclaration,
   type OptionsSource,
   type RequiredPermission
 } from "../definition/catalog";
@@ -90,7 +91,7 @@ export interface BuiltActionInput {
   template?: boolean;
   /** Prose a person reads: a record dropped in renders as a link when the caller
    * supplies a resolver. Not set on webhook bodies. */
-  linkify?: boolean;
+  links?: LinksDeclaration;
   /** Table a non-entity foreign key points at, so the update executor can scope the
    * value to the company. Resolved here so a dropped fk note fails CI rather than
    * silently disabling that check at run time. */
@@ -175,7 +176,7 @@ function buildDeclaredInputs(
         ? { description: spec.description }
         : {}),
       ...(spec.template ? { template: true } : {}),
-      ...(spec.linkify ? { linkify: true } : {}),
+      ...(spec.links ? { links: spec.links } : {}),
       ...(spec.pairs ? { pairs: true } : {}),
       ...(spec.showWhen ? { showWhen: spec.showWhen } : {}),
       ...(spec.options ? { options: spec.options } : {})
@@ -511,6 +512,17 @@ export function validateCatalogInputs(
         !(spec.type.kind === "primitive" && spec.type.of === "string")
       ) {
         problems.push(`${id}.${input} is a template but is not a string.`);
+      }
+      if (spec.links !== undefined) {
+        if (!(spec.type.kind === "primitive" && spec.type.of === "string")) {
+          problems.push(`${id}.${input} declares links but is not a string.`);
+        }
+        const gate = spec.links.when;
+        if (gate !== undefined && declaredInputs[gate.input] === undefined) {
+          problems.push(
+            `${id}.${input} gates links on "${gate.input}", which the step does not have.`
+          );
+        }
       }
       // A fixed set of values on a list is what MAKES it a multi-select (`isMultiSelect`),
       // so a list of anything else has no reading in the builder.

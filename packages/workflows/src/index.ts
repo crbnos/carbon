@@ -10,6 +10,8 @@ export type {
   CatalogOperation,
   EventMatch,
   FixtureCatalogOptions,
+  LinkFormat,
+  LinksDeclaration,
   OptionsSource,
   PermissionAction,
   RequiredPermission,
@@ -66,6 +68,8 @@ export {
   parseWorkflowDefinition,
   readWorkflowVersion
 } from "./definition/normalize";
+export type { WorkflowNotice, WorkflowNoticeCode } from "./definition/notices";
+export { fieldNotices } from "./definition/notices";
 export { topologicalNodeOrder } from "./definition/order";
 export type { PathPosition } from "./definition/paths";
 export { pathLabel } from "./definition/paths";
@@ -205,6 +209,7 @@ export {
   resolveRef,
   resolveValue
 } from "./runtime";
+export type { RenderOptions } from "./runtime/resolve";
 export type {
   CompanyLock,
   DesiredSubscription,

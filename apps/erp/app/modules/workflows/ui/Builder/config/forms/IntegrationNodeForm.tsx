@@ -30,6 +30,7 @@ import {
 import { useBuilderStore } from "../../context";
 import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
 import { useWorkflowOptions } from "../../fields/useWorkflowOptions";
+import { useNoticeCopy } from "../../noticeCopy";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
 import { renderStepInput } from "./StepInput";
@@ -116,6 +117,20 @@ export function IntegrationNodeForm({
       actionInputLabelKey(stepId ?? "", name),
       catalog.getInputLabel(stepId ?? "", name) ?? name
     );
+
+  // A record in a field that will not render it as a link — advisory, computed
+  // beside liveIssues, shown as one muted line under the field.
+  const notices = useBuilderStore((s) => s.notices);
+  const noticeCopy = useNoticeCopy();
+  const hintFor = (name: string): string | undefined => {
+    const notice = notices.find(
+      (n) => n.nodeId === node.id && n.field === `inputs.${name}`
+    );
+    if (notice === undefined) return undefined;
+    const sibling =
+      notice.params === undefined ? "" : inputLabel(notice.params.input);
+    return noticeCopy(notice, appName, sibling);
+  };
 
   // Changing the app invalidates the step, and changing either invalidates every
   // input: a calendar id means nothing to a different app or a different step.
@@ -352,6 +367,7 @@ export function IntegrationNodeForm({
               name,
               inputDef,
               label: inputLabel(name),
+              hint: hintFor(name),
               helpTermId: workflowFieldHelp(
                 actionInputLabelKey(stepId ?? "", name)
               ),
@@ -393,6 +409,7 @@ export function IntegrationNodeForm({
                   name,
                   inputDef,
                   label: inputLabel(name),
+                  hint: hintFor(name),
                   help:
                     inputDef.description === undefined
                       ? undefined

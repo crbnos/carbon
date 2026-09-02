@@ -11,6 +11,8 @@ type FieldProps = {
   help?: string;
   /** Message from a validation issue whose `field` path resolves here. */
   issue?: string;
+  /** Advisory one-liner, muted. An issue outranks it — one line under a field. */
+  hint?: string;
   children: ReactNode;
 };
 
@@ -21,6 +23,7 @@ export function Field({
   helpTermId,
   help,
   issue,
+  hint,
   children
 }: FieldProps) {
   return (
@@ -36,6 +39,9 @@ export function Field({
           together read as a thick red slab. */}
       <div className="flex items-center gap-1">{children}</div>
       {issue && <p className="text-xs text-destructive">{issue}</p>}
+      {hint && !issue && (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
     </div>
   );
 }

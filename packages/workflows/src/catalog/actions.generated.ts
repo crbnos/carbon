@@ -147,7 +147,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
         type: { kind: "primitive", of: "string" },
         required: false,
         template: true,
-        linkify: true
+        links: { format: "markdown" }
       },
       aboutId: { type: { kind: "primitive", of: "string" }, required: false },
       aboutType: { type: { kind: "primitive", of: "string" }, required: false }
@@ -346,7 +346,11 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
         type: { kind: "primitive", of: "string" },
         required: true,
         description: "Body for the email you want to send",
-        template: true
+        template: true,
+        links: {
+          format: "html",
+          when: { input: "body_type", equals: ["html"] }
+        }
       },
       reply_to: {
         type: { kind: "list", of: { kind: "primitive", of: "string" } },
@@ -623,7 +627,8 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
         required: false,
         description:
           "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications.",
-        template: true
+        template: true,
+        links: { format: "slack" }
       },
       threadTs: {
         type: { kind: "primitive", of: "string" },
@@ -730,7 +735,8 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       text: {
         type: { kind: "primitive", of: "string" },
         required: true,
-        template: true
+        template: true,
+        links: { format: "slack" }
       },
       username: {
         type: { kind: "primitive", of: "string" },

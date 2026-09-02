@@ -1,4 +1,4 @@
-import { referenceIssues } from "@carbon/workflows";
+import { fieldNotices, referenceIssues } from "@carbon/workflows";
 import { useEffect } from "react";
 import { useWorkflowCatalog } from "./catalog";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
@@ -26,6 +26,7 @@ export function LiveValidation() {
       const definition = fromReactFlow(nodes, edges);
       const state = store.getState();
       state.setLiveIssues(referenceIssues(definition, catalog));
+      state.setNotices(fieldNotices(definition, catalog));
       state.setBatchPlans(batchPlansFor(definition, catalog));
     }, DEBOUNCE_MS);
 

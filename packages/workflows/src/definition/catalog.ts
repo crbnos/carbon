@@ -40,6 +40,17 @@ export interface OptionsSource {
   dependsOn?: readonly string[];
 }
 
+export type LinkFormat = "markdown" | "slack" | "html";
+
+/** This prose can carry a link, in the destination's own dialect — a record dropped
+ * in renders as one when the engine supplies a resolver. `when` gates it on a sibling
+ * input's literal value (Gmail links only an html body). Absent, a record renders as
+ * its plain name and the builder says so (`notices.ts`). Webhook bodies set nothing. */
+export interface LinksDeclaration {
+  format: LinkFormat;
+  when?: { input: string; equals: readonly string[] };
+}
+
 export interface CatalogInput {
   type: ValueType;
   required: boolean;
@@ -52,9 +63,7 @@ export interface CatalogInput {
   description?: string;
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
-  /** This input is prose a person reads, so a record dropped into it renders as a link
-   * when the caller supplies a resolver. Webhook bodies deliberately do not set this. */
-  linkify?: boolean;
+  links?: LinksDeclaration;
   /** Table a non-entity foreign key points at, so the write can be scoped to the company. */
   scopeTable?: string;
   /** The column rejects null; an input resolving to nothing is skipped, not written. */
