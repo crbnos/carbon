@@ -80,3 +80,35 @@ export async function savePanelSession(
 export async function deletePanelSession(token: string): Promise<void> {
   await redis.del(keyFor(token));
 }
+
+/**
+ * Supabase ROTATES refresh tokens, so two requests refreshing the same panel
+ * session at once cannot both succeed — the second is told the token was
+ * already used. The panel fires several requests together whenever it opens,
+ * so that race is the normal case rather than a rare one, and this lock is
+ * what makes exactly one of them do the refresh while the others wait for it.
+ *
+ * The TTL is the backstop: a request that dies mid-refresh must not lock the
+ * session out for the rest of its 12 hours.
+ */
+const REFRESH_LOCK_TTL_SECONDS = 15;
+
+function refreshLockKeyFor(token: string) {
+  return `panel-session-refresh:${token}`;
+}
+
+/** True when this caller owns the refresh, false when someone else already does. */
+export async function acquirePanelRefreshLock(token: string): Promise<boolean> {
+  const result = await redis.set(
+    refreshLockKeyFor(token),
+    "1",
+    "EX",
+    REFRESH_LOCK_TTL_SECONDS,
+    "NX"
+  );
+  return result === "OK";
+}
+
+export async function releasePanelRefreshLock(token: string): Promise<void> {
+  await redis.del(refreshLockKeyFor(token));
+}
