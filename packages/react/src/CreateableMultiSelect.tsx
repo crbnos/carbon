@@ -59,7 +59,8 @@ const CreatableMultiSelect = forwardRef<
       value,
       options,
       selected,
-      isReadOnly,
+      isReadOnly: isReadOnlyProp,
+      disabled,
       placeholder,
       emptyMessage,
       label,
@@ -77,6 +78,9 @@ const CreatableMultiSelect = forwardRef<
     ref
   ) => {
     const { t } = useLingui();
+    // Treat the native `disabled` prop as equivalent to `isReadOnly` — the type
+    // accepts it (extends button props), so honor it rather than swallow it.
+    const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
 

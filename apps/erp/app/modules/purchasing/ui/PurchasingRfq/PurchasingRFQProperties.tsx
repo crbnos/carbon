@@ -242,7 +242,6 @@ const PurchasingRFQProperties = () => {
           value={currentSupplierIds}
           inline={renderSuppliersInlinePreview}
           isReadOnly={isDisabled}
-          disabled={isDisabled}
           onChange={(selected) => {
             onUpdateSuppliers(selected);
           }}
