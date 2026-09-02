@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
-import { selectInBatches } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlanLine, PlanMethodRow, PlanOptions } from "../panel/plan";
+import { selectInBatches } from "./batched-filter";
 
 /**
  * Carbon reads the panel's plan and apply routes share. Every function here

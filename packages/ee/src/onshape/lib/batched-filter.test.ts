@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkFilterValues, selectInBatches } from "./supabase";
+import { chunkFilterValues, selectInBatches } from "./batched-filter";
 
 /**
  * The numbers here are the measured gateway limit, not a guess: an encoded
