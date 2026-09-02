@@ -20,10 +20,11 @@ import {
 import {
   loadPartCustomFieldDefinitions,
   peekPanelPlan,
+  selectInBatches,
   takePanelPlan
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
-import { datetime, selectInBatches } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
