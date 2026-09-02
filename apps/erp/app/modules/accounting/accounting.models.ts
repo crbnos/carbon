@@ -424,7 +424,10 @@ export const currencyValidator = z.object({
     z.number().positive({ message: "Rate must be greater than zero" })
   ),
   historicalExchangeRate: zfd.numeric(
-    z.number().positive({ message: "Rate must be greater than zero" }).optional()
+    z
+      .number()
+      .positive({ message: "Rate must be greater than zero" })
+      .optional()
   )
 });
 
