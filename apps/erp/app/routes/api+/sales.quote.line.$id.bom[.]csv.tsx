@@ -2,6 +2,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
+import type { BomItemAttributes } from "~/modules/items";
+import { getBomItemAttributes } from "~/modules/items";
 import { getQuoteMethodTrees } from "~/modules/sales";
 import type { BomOperation } from "~/utils/bom";
 import {
@@ -14,6 +16,7 @@ import { makeDurations } from "~/utils/duration";
 const bomHeaders = [
   "ID",
   "Item ID",
+  "Revision",
   "Description",
   "Quantity",
   "Total",
@@ -21,6 +24,11 @@ const bomHeaders = [
   "Total Cost",
   "Method Type",
   "Item Type",
+  "Tracking Type",
+  "Replenishment",
+  "Item Group",
+  "Batch Size",
+  "Lead Time",
   "Level",
   "Version"
 ];
@@ -91,13 +99,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...new Set(flattenedMethods.map((method) => method.data.quoteMakeMethodId))
   ];
 
-  const quoteOperations = await client
-    .from("quoteOperation")
-    .select(
-      "*, ...process(processName:name), ...workCenter(workCenterName:name)"
-    )
-    .in("quoteMakeMethodId", makeMethodIds)
-    .eq("companyId", companyId);
+  const itemIds = [
+    ...new Set(flattenedMethods.map((method) => method.data.itemId))
+  ];
+
+  const [quoteOperations, itemAttributesResult] = await Promise.all([
+    client
+      .from("quoteOperation")
+      .select(
+        "*, ...process(processName:name), ...workCenter(workCenterName:name)"
+      )
+      .in("quoteMakeMethodId", makeMethodIds)
+      .eq("companyId", companyId),
+    getBomItemAttributes(client, companyId, itemIds)
+  ]);
+
+  const itemAttributes =
+    itemAttributesResult.data ?? new Map<string, BomItemAttributes>();
 
   let operationsByMakeMethodId: Record<
     string,
@@ -178,12 +196,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const unitCost = computedCosts.get(node.id) ?? node.data.unitCost ?? 0;
     const totalCost = total * unitCost;
 
+    const attrs = itemAttributes.get(node.data.itemId);
+    const revision = attrs && attrs.revision !== "0" ? attrs.revision : "";
+    const itemGroup = (attrs?.itemPostingGroup ?? "").replace(/"/g, '""');
+
     csv += `${bomIds[index]},${
-      node.data.itemReadableId
-    },"${node.data.description?.replace(/"/g, '""')}",${
+      attrs?.readableId ?? node.data.itemReadableId
+    },${revision},"${node.data.description?.replace(/"/g, '""')}",${
       node.data.quantity
     },${total},${unitCost},${totalCost},${node.data.methodType},${
       node.data.itemType
+    },${attrs?.itemTrackingType ?? ""},${
+      attrs?.replenishmentSystem ?? ""
+    },"${itemGroup}",${attrs?.lotSize ?? ""},${
+      attrs?.leadTime ?? ""
     },${node.level},${node.data.version || ""}\n`;
 
     if (withOperations) {

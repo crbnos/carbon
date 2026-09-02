@@ -4,8 +4,8 @@ import { pluckUnique } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import type { Method } from "~/modules/items";
-import { getMethodTree } from "~/modules/items";
+import type { BomItemAttributes, Method } from "~/modules/items";
+import { getBomItemAttributes, getMethodTree } from "~/modules/items";
 import type { BomOperation, WorkCenterRate } from "~/utils/bom";
 import {
   calculateMadePartCosts,
@@ -18,6 +18,7 @@ import { makeDurations } from "~/utils/duration";
 const bomHeaders = [
   "ID",
   "Item ID",
+  "Revision",
   "Description",
   "Quantity",
   "Total",
@@ -26,6 +27,11 @@ const bomHeaders = [
   "UOM",
   "Method Type",
   "Item Type",
+  "Tracking Type",
+  "Replenishment",
+  "Item Group",
+  "Batch Size",
+  "Lead Time",
   "Level",
   "Version"
 ];
@@ -88,7 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const itemIds = pluckUnique(methods, (m) => m.data.itemId);
 
-  const [methodOperations, workCentersResult, lotSizesResult] =
+  const [methodOperations, workCentersResult, itemAttributesResult] =
     await Promise.all([
       client
         .from("methodOperation")
@@ -101,14 +107,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .from("workCenters")
         .select("id, active, laborRate, machineRate, overheadRate, processes")
         .eq("companyId", companyId),
-      client
-        .from("itemReplenishment")
-        .select("itemId, lotSize")
-        .in("itemId", itemIds)
+      getBomItemAttributes(client, companyId, itemIds)
     ]);
 
+  const itemAttributes =
+    itemAttributesResult.data ?? new Map<string, BomItemAttributes>();
+
   const lotSizesByItemId = new Map(
-    (lotSizesResult.data ?? []).map((r) => [r.itemId, r.lotSize ?? 1])
+    [...itemAttributes].map(([itemId, attrs]) => [itemId, attrs.lotSize ?? 1])
   );
 
   const workCenters: WorkCenterRate[] = (workCentersResult.data ?? []).map(
@@ -192,15 +198,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const unitCost = computedCosts.get(node.id) ?? node.data.unitCost ?? 0;
     const totalCost = total * unitCost;
 
+    const attrs = itemAttributes.get(node.data.itemId);
+    const revision = attrs && attrs.revision !== "0" ? attrs.revision : "";
+    const itemGroup = (attrs?.itemPostingGroup ?? "").replace(/"/g, '""');
+
     csv += `${bomIds[index]},${
-      node.data.itemReadableId
-    },"${node.data.description?.replace(/"/g, '""')}",${
+      attrs?.readableId ?? node.data.itemReadableId
+    },${revision},"${node.data.description?.replace(/"/g, '""')}",${
       node.data.quantity
     },${total},${unitCost},${totalCost},${
       node.data.unitOfMeasureCode
-    },${node.data.methodType},${node.data.itemType},${node.level},${
-      node.data.version || ""
-    }\n`;
+    },${node.data.methodType},${node.data.itemType},${
+      attrs?.itemTrackingType ?? ""
+    },${attrs?.replenishmentSystem ?? ""},"${itemGroup}",${
+      attrs?.lotSize ?? ""
+    },${attrs?.leadTime ?? ""},${node.level},${node.data.version || ""}\n`;
 
     if (withOperations) {
       const operations =
