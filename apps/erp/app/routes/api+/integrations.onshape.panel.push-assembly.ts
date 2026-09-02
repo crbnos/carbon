@@ -257,8 +257,11 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // Each batch came back sorted within itself; the pick below wants one
-  // ordering over all of them, so re-sort rather than trusting batch order.
+  // Each batch is sorted within itself, so the concatenation is not. Re-sorted
+  // to preserve the ascending order this read has always had — no consumer
+  // depends on it today (every pick below compares revisions directly rather
+  // than taking a position), but the reads document themselves as ordered and
+  // a future reader should be able to rely on that.
   existing.data.sort((a, b) =>
     (a.revision ?? "").localeCompare(b.revision ?? "")
   );
