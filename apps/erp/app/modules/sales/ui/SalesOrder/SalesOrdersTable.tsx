@@ -193,8 +193,10 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             if (line.methodType !== "Make to Order") return true;
             const relevantJobs =
               jobs.filter?.((job) => job.salesOrderLineId === line.id) ?? [];
+            // Only count quantity from non-cancelled jobs
             const totalJobQuantity = relevantJobs.reduce(
-              (acc, job) => acc + job.quantity,
+              (acc, job) =>
+                acc + (job.status === "Cancelled" ? 0 : job.quantity),
               0
             );
 
@@ -205,8 +207,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             if (line.methodType !== "Make to Order") return true;
             const relevantJobs =
               jobs.filter?.((job) => job.salesOrderLineId === line.id) ?? [];
+            // Only count quantity from jobs that are actually completed/closed
+            // Cancelled jobs should NOT count as completed
             const totalJobQuantity = relevantJobs.reduce(
-              (acc, job) => acc + job.quantityComplete,
+              (acc, job) =>
+                acc +
+                (["Completed", "Closed"].includes(job.status ?? "")
+                  ? job.quantityComplete
+                  : 0),
               0
             );
             return totalJobQuantity >= line.saleQuantity;

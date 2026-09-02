@@ -99,11 +99,17 @@ export const getSalesOrderJobStatus = (
 ) => {
   const filteredJobs =
     jobs?.filter((j) => j.salesOrderLineId === line.id) ?? [];
+  // Cancelled jobs are treated as non-existent for coverage: a Make to Order
+  // line whose only job is cancelled still "Requires Jobs" rather than reading
+  // as an active/planned line.
+  const activeJobs = filteredJobs.filter((j) => j.status !== "Cancelled");
   const isMade = line.methodType === "Make to Order";
   const saleQuantity = line.saleQuantity ?? 0;
 
+  // Exclude cancelled jobs from production totals - they don't contribute to coverage
   const totalProduction = filteredJobs.reduce(
-    (acc, job) => acc + (job.productionQuantity ?? 0),
+    (acc, job) =>
+      acc + (job.status === "Cancelled" ? 0 : (job.productionQuantity ?? 0)),
     0
   );
   // A job's quantityComplete persists after the job is reopened, so completion
@@ -118,8 +124,13 @@ export const getSalesOrderJobStatus = (
         : 0),
     0
   );
+  // A job is "released" if it's not in planning/draft AND not cancelled
   const totalReleased = filteredJobs.reduce((acc, job) => {
-    if (job.status !== "Planned" && job.status !== "Draft") {
+    if (
+      job.status !== "Planned" &&
+      job.status !== "Draft" &&
+      job.status !== "Cancelled"
+    ) {
       return acc + (job.productionQuantity ?? 0);
     }
     return acc;
@@ -151,7 +162,7 @@ export const getSalesOrderJobStatus = (
   } else if (isPartiallyShipped) {
     jobLabel = "Partially Shipped";
     jobVariant = "orange";
-  } else if (isMade && filteredJobs.length === 0) {
+  } else if (isMade && activeJobs.length === 0) {
     jobLabel = "Requires Jobs";
     jobVariant = "red";
   } else if (hasAnyQuantityReleased) {
@@ -213,12 +224,23 @@ export const hasIncompleteJobs = (
 
   for (const line of makeLines) {
     const lineJobs = jobs.filter((job) => job.salesOrderLineId === line.id);
-    if (lineJobs.length === 0) {
+    // Filter out cancelled jobs - they don't contribute to completion
+    const activeLineJobs = lineJobs.filter((job) => job.status !== "Cancelled");
+    if (activeLineJobs.length === 0) {
       return true;
     }
 
-    const totalCompleted = lineJobs.reduce(
-      (acc, job) => acc + (job.quantityComplete ?? 0),
+    // Mirror getSalesOrderJobStatus: quantityComplete persists after a job is
+    // reopened, so completion must be gated on the job being in a completed
+    // status. Otherwise a reopened (In Progress) job that still has a full
+    // quantityComplete would make hasIncompleteJobs return false and cause
+    // SalesStatus to omit "In Progress."
+    const totalCompleted = activeLineJobs.reduce(
+      (acc, job) =>
+        acc +
+        (["Completed", "Closed"].includes(job.status ?? "")
+          ? (job.quantityComplete ?? 0)
+          : 0),
       0
     );
     if (totalCompleted < (line.saleQuantity ?? 0)) {
