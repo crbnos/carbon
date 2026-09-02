@@ -63,6 +63,9 @@ msgstr "{fails} erfasste Fehler werden NICHT abgeschlossen – beheben Sie diese
 msgid "+{overflow} more"
 msgstr "+{overflow} weitere"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "Über"
 
@@ -288,6 +291,9 @@ msgstr "Verbrauchte abgelaufen"
 
 msgid "Continue"
 msgstr "Weiter"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Ideen, Vorschläge oder Probleme?"
 
 msgid "Idle for"
 msgstr "Untätig seit"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Auswirkung"

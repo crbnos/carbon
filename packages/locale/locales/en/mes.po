@@ -63,6 +63,9 @@ msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — re
 msgid "+{overflow} more"
 msgstr "+{overflow} more"
 
+msgid "3D model"
+msgstr "3D model"
+
 msgid "About"
 msgstr "About"
 
@@ -288,6 +291,9 @@ msgstr "Consumed expired"
 
 msgid "Continue"
 msgstr "Continue"
+
+msgid "Converting…"
+msgstr "Converting…"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Ideas, suggestions or problems?"
 
 msgid "Idle for"
 msgstr "Idle for"
+
+msgid "Image format not supported"
+msgstr "Image format not supported"
 
 msgid "Impact"
 msgstr "Impact"

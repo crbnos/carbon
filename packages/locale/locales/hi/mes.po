@@ -63,6 +63,9 @@ msgstr "{fails} नमूना विफलता(एं) दर्ज की �
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "के बारे में"
 
@@ -288,6 +291,9 @@ msgstr "खपत की गई समाप्त"
 
 msgid "Continue"
 msgstr "जारी रखें"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "विचार, सुझाव या समस्याएं?"
 
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "प्रभाव"

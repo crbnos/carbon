@@ -7316,6 +7316,9 @@ msgstr "Avez-vous oublié le pointage fin ?"
 msgid "Format"
 msgstr "Format"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "Ingénieur dédié au terrain"
 
@@ -7729,6 +7732,9 @@ msgstr "Contient des opérations qui ne peuvent pas être planifiées"
 
 msgid "Headers"
 msgstr "En-têtes"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "Aide"
@@ -15649,6 +15655,9 @@ msgstr "Valeur de test"
 
 msgid "Text size"
 msgstr "Taille du texte"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "Ce nom est déjà utilisé par une autre étape."

@@ -103,7 +103,11 @@ import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidesEditor,
+  uploadStepSlideImage,
+  uploadStepSlideModel
+} from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
   SortableList,
@@ -1879,7 +1883,7 @@ function AttributesForm({
   onConfigure?: (c: Configuration) => void;
   itemMentions: { id: string; label: string }[];
 }) {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const fetcher = useFetcher<typeof newMethodOperationParameterAction>();
   const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
@@ -2036,20 +2040,21 @@ function AttributesForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        "parts"
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       setDraftSlides((prev) => [
         ...prev,
         {
           id: nanoid(),
-          imagePath: result.data.path,
+          imagePath: result.path,
           modelUploadId: null,
           caption: "",
           size: "medium",
@@ -3095,7 +3100,7 @@ function StepSlides({
   step: OperationStep;
   isDisabled: boolean;
 }) {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const fetcher = useFetcher();
   const captionFetcher = useFetcher();
   const { carbon } = useCarbon();
@@ -3119,18 +3124,19 @@ function StepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        "parts"
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       const fd = new FormData();
       fd.append("stepId", step.id);
-      fd.append("imagePath", result.data.path);
+      fd.append("imagePath", result.path);
       fd.append("sortOrder", String(nextSortOrder()));
       fetcher.submit(fd, {
         method: "post",

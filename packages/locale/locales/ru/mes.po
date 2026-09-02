@@ -63,6 +63,9 @@ msgstr "{fails} записанных отказов будут НЕ заверш
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "О системе"
 
@@ -288,6 +291,9 @@ msgstr "Израсходовано - истек срок"
 
 msgid "Continue"
 msgstr "Продолжить"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Идеи, предложения или проблемы?"
 
 msgid "Idle for"
 msgstr "Простой в течение"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Влияние"

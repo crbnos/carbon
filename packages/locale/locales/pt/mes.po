@@ -63,6 +63,9 @@ msgstr "{fails} falha(s) amostrada(s) registrada(s) e NÃO será(ão) concluída
 msgid "+{overflow} more"
 msgstr "+{overflow} mais"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "Sobre"
 
@@ -288,6 +291,9 @@ msgstr "Consumido vencido"
 
 msgid "Continue"
 msgstr "Continuar"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Ideias, sugestões ou problemas?"
 
 msgid "Idle for"
 msgstr "Inativo por"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Impacto"

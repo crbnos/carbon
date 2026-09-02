@@ -63,6 +63,9 @@ msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS co
 msgid "+{overflow} more"
 msgstr "+{overflow} autres"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "À propos"
 
@@ -288,6 +291,9 @@ msgstr "Consommé expiré"
 
 msgid "Continue"
 msgstr "Continuer"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Des idées, suggestions ou problèmes ?"
 
 msgid "Idle for"
 msgstr "Inactif depuis"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Impact"

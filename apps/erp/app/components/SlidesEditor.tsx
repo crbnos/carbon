@@ -1,12 +1,20 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
-import { supportedModelTypes } from "@carbon/utils";
+import {
+  isSupportedSlideImagePath,
+  SLIDE_IMAGE_HEADER_BYTES,
+  sniffSlideImageType,
+  supportedModelTypes,
+  supportedSlideImageTypes
+} from "@carbon/utils";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { useEffect, useMemo, useState } from "react";
-import { LuBox, LuCirclePlus, LuMapPin, LuX } from "react-icons/lu";
+import { LuBox, LuCirclePlus, LuImageOff, LuMapPin, LuX } from "react-icons/lu";
 import type { SlideAnnotation, SlideSize } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
 import { SlideAnnotator } from "./SlideAnnotator";
@@ -21,11 +29,70 @@ export const MODEL_FILE_ACCEPT = supportedModelTypes
   .map((type) => `.${type}`)
   .join(",");
 
-// Upload a 3D model file for a step slide: the raw file goes to the private bucket
-// under the models prefix, then the model-upload API registers the modelUpload row —
-// `convert` also starts the assembler's STEP → GLB conversion (best-effort, so the
-// slide still works via client-side parsing when the assembler is unavailable).
-// Returns the new modelUpload id, or null on failure.
+// File-input accept for image slides. Explicit extensions, NOT `image/*` — the
+// wildcard lets the picker hand us HEIC (the iPhone camera default), which only
+// Safari can decode, and the resulting slide is a grey box on the shop floor.
+export const SLIDE_IMAGE_ACCEPT = supportedSlideImageTypes
+  .map((type) => `.${type}`)
+  .join(",");
+
+export type SlideImageUploadResult =
+  | { path: string; error?: undefined }
+  | { path?: undefined; error: MessageDescriptor };
+
+/**
+ * Upload an image for a step slide. The file is stored byte-for-byte — nothing
+ * is decoded, re-encoded or resized — so the gate is up front: the container
+ * header must be a format every browser can paint. `accept` alone isn't enough
+ * (it's a picker hint, and `file.type` is derived from the extension), so a
+ * renamed `.heic` → `.jpg` is caught here and nowhere else.
+ *
+ * @param folder Path segment(s) under the company prefix: "parts" for BOP steps,
+ *   `assembly/{instructionId}` for assembly instructions.
+ * @returns The stored path, or a translatable message describing the rejection.
+ *   The stored extension comes from the sniff, not the filename, so an
+ *   extension-less upload still serves with the right Content-Type.
+ */
+export async function uploadStepSlideImage(
+  carbon: SupabaseClient<Database>,
+  companyId: string,
+  file: File,
+  folder: string
+): Promise<SlideImageUploadResult> {
+  // The header read is the upload layer's job — @carbon/utils stays synchronous
+  // and pure, so it gets the bytes rather than the Blob.
+  const header = new Uint8Array(
+    await file.slice(0, SLIDE_IMAGE_HEADER_BYTES).arrayBuffer()
+  );
+  const ext = sniffSlideImageType(header);
+  if (!ext) {
+    const named = file.name.toLowerCase().split(".").pop() ?? "";
+    const isHeic = named === "heic" || named === "heif";
+    return {
+      error: isHeic
+        ? msg`HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG.`
+        : msg`That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF.`
+    };
+  }
+
+  const upload = await carbon.storage
+    .from("private")
+    .upload(`${companyId}/${folder}/${nanoid()}.${ext}`, file);
+  if (upload.error || !upload.data) {
+    return { error: msg`Failed to upload image` };
+  }
+  return { path: upload.data.path };
+}
+
+/**
+ * Upload a 3D model file for a step slide: the raw file goes to the private
+ * bucket under the models prefix, then the model-upload API registers the
+ * modelUpload row — `convert` also starts the assembler's STEP → GLB conversion
+ * (best-effort, so the slide still works via client-side parsing when the
+ * assembler is unavailable).
+ *
+ * @returns The new modelUpload id, or null on failure.
+ */
 export async function uploadStepSlideModel(
   carbon: SupabaseClient<Database>,
   companyId: string,
@@ -174,7 +241,7 @@ export function SlidesEditor({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept={SLIDE_IMAGE_ACCEPT}
               className="hidden"
               onChange={onFileChange}
             />
@@ -258,6 +325,20 @@ export function SlidesEditor({
                         </span>
                       )}
                     </div>
+                  ) : !isSupportedSlideImagePath(slide.imagePath) ? (
+                    // Written before the upload gate existed (or by a client that
+                    // skipped it): say so instead of rendering a broken image.
+                    <div
+                      className={cn(
+                        "flex w-full flex-col items-center justify-center gap-1 rounded-md bg-muted/40 px-2 text-center",
+                        SLIDE_IMAGE_HEIGHT
+                      )}
+                    >
+                      <LuImageOff className="size-5 text-muted-foreground" />
+                      <span className="text-[9px] leading-tight text-muted-foreground">
+                        {t`Format can't be displayed — re-upload as JPEG or PNG`}
+                      </span>
+                    </div>
                   ) : (
                     <>
                       <img
@@ -305,19 +386,21 @@ export function SlidesEditor({
                     {model.name}
                   </p>
                 )}
-                {!isDisabled && !slide.modelUploadId && (
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-6 px-2 text-[10px]"
-                      leftIcon={<LuMapPin className="size-3" />}
-                      onClick={() => setAnnotatingIndex(index)}
-                    >
-                      {pins.length > 0 ? pins.length : t`Pin`}
-                    </Button>
-                  </div>
-                )}
+                {!isDisabled &&
+                  !slide.modelUploadId &&
+                  isSupportedSlideImagePath(slide.imagePath) && (
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 px-2 text-[10px]"
+                        leftIcon={<LuMapPin className="size-3" />}
+                        onClick={() => setAnnotatingIndex(index)}
+                      >
+                        {pins.length > 0 ? pins.length : t`Pin`}
+                      </Button>
+                    </div>
+                  )}
                 <input
                   type="text"
                   aria-label={t`Caption`}
@@ -333,18 +416,20 @@ export function SlidesEditor({
         </div>
       )}
 
-      {annotating?.imagePath && annotatingIndex != null && (
-        <SlideAnnotator
-          open
-          imageUrl={getPrivateUrl(annotating.imagePath)}
-          initial={annotating.annotations ?? []}
-          onSave={(next) => {
-            onAnnotationsChange(annotatingIndex, next);
-            setAnnotatingIndex(null);
-          }}
-          onClose={() => setAnnotatingIndex(null)}
-        />
-      )}
+      {annotating?.imagePath &&
+        isSupportedSlideImagePath(annotating.imagePath) &&
+        annotatingIndex != null && (
+          <SlideAnnotator
+            open
+            imageUrl={getPrivateUrl(annotating.imagePath)}
+            initial={annotating.annotations ?? []}
+            onSave={(next) => {
+              onAnnotationsChange(annotatingIndex, next);
+              setAnnotatingIndex(null);
+            }}
+            onClose={() => setAnnotatingIndex(null)}
+          />
+        )}
     </VStack>
   );
 }

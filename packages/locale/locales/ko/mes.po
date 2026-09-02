@@ -63,6 +63,9 @@ msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "정보"
 
@@ -288,6 +291,9 @@ msgstr "소모 만료"
 
 msgid "Continue"
 msgstr "계속"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
 msgid "Idle for"
 msgstr "유휴 상태"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "영향"
