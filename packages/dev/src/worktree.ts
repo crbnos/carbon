@@ -26,7 +26,7 @@ export const PORT_NAMES = [
   "PORT_ASSEMBLER",
   "PORT_EMAIL"
 ] as const;
-type PortName = (typeof PORT_NAMES)[number];
+export type PortName = (typeof PORT_NAMES)[number];
 
 const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL"];
 

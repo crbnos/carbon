@@ -1,4 +1,5 @@
 import { defineCommand, runMain } from "citty";
+import { resolveAppSelection } from "./app-selection.js";
 import { copy, envSync } from "./commands/copy.js";
 import { down } from "./commands/down.js";
 import { initWorktree } from "./commands/init.js";
@@ -11,6 +12,20 @@ import { reset } from "./commands/reset.js";
 import { type RestoreMode, restore } from "./commands/restore.js";
 import { status } from "./commands/status.js";
 import { up } from "./commands/up.js";
+
+/**
+ * Run flag validation, printing just the message on failure. citty doesn't
+ * export its `CLIError`, so an ordinary throw would dump a stack trace — a
+ * wrong flag combination is a user error, not a crash.
+ */
+function exitOnUserError<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    console.error((err as Error).message);
+    process.exit(1);
+  }
+}
 
 const main = defineCommand({
   meta: {
@@ -37,6 +52,11 @@ const main = defineCommand({
           default: true,
           description:
             "Spawn ERP/MES dev servers (use --no-apps for services-only boot)"
+        },
+        app: {
+          type: "string",
+          description:
+            "Apps to run, skipping the picker: erp, mes, assembler, email. Repeatable or comma-separated (--app erp --app mes, --app erp,mes)"
         },
         all: {
           type: "boolean",
@@ -86,12 +106,20 @@ const main = defineCommand({
             "Run a local headless Chromium container so model-thumbnail renders locally (default: skipped on local)"
         }
       },
-      run: ({ args }) =>
-        up({
+      run: ({ args }) => {
+        // Resolved (and its flag conflicts rejected) before `up` touches
+        // docker, so a contradictory invocation fails instantly.
+        const selection = exitOnUserError(() =>
+          resolveAppSelection({
+            apps: args.apps !== false,
+            all: args.all === true,
+            app: args.app as string | string[] | undefined
+          })
+        );
+        return up({
           migrate: args.migrate !== false,
           regen: args.regen !== false,
-          apps: args.apps !== false,
-          all: args.all === true,
+          selection,
           pull: args.pull === true,
           borrow: args.borrow === true,
           portless: args.portless !== false,
@@ -99,7 +127,8 @@ const main = defineCommand({
           volumes: args.volumes === true,
           minimal: args.minimal === true,
           thumbnails: args.thumbnails === true
-        })
+        });
+      }
     }),
     down: defineCommand({
       meta: { description: "Stop the compose stack (volumes preserved)" },

@@ -28,6 +28,7 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 | Command | Description |
 |---|---|
 | `crbn up` | Boot compose stack + apps. Picker includes opt-in apps: Assembler, Email previews (react-email server for every email template at `email.<branch>.dev`). |
+| `crbn up --app erp,mes` | Run exactly these apps, skipping the picker. Repeatable (`--app erp --app mes`), ids `erp`, `mes`, `assembler`, `email`. Unknown ids are an error, not a silent drop. |
 | `crbn up --all` | Launch all apps without the picker (ERP, MES, email previews; assembler when its OCCT build exists). |
 | `crbn up --no-portless` | Localhost mode: fixed ports (API `:54321`, ERP `:3000`, MES `:3001`). |
 | `crbn up --borrow` | Reuse another worktree's running containers (DB, API, etc). |
@@ -43,6 +44,11 @@ source ./setup.sh   # adds crbn to PATH + installs shell wrapper
 `CARBON_DEV_APPS` skips the picker: `CARBON_DEV_APPS=erp,mes,email crbn up`.
 Comma-separated, from `erp`, `mes`, `assembler`, `email` — unrecognized names
 are dropped silently. Shell-level only; it is not read from `.env.local`.
+`--app` is the flag form of the same thing and takes precedence over it.
+
+`--app`, `--all` and `--no-apps` all pick apps, so passing two of them is an
+error rather than a silent win for one. Every other `up` flag is orthogonal and
+composes freely — e.g. `crbn up --app erp --borrow --run "pnpm test:e2e"`.
 
 ### Files
 

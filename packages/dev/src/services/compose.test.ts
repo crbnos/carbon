@@ -1,5 +1,13 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "pathe";
 import { describe, expect, it } from "vitest";
-import { buildDownArgs, buildUpArgs, teardownExitCode } from "./compose.js";
+import {
+  buildDownArgs,
+  buildPsArgs,
+  buildUpArgs,
+  teardownExitCode
+} from "./compose.js";
 
 // The teardown itself talks to Docker and isn't unit-testable. The argv is.
 // A `down` missing a profile exits 0 having left those containers running;
@@ -102,5 +110,36 @@ describe("buildUpArgs", () => {
     });
     expect(profilesIn(args)).toEqual([]);
     expect(args).toContain("postgres");
+  });
+});
+
+describe("buildPsArgs", () => {
+  // Without --env-file, compose can't interpolate ${DOMAIN} / ${INNGEST_TLS_HOST}
+  // into extra_hosts, exits 1 with "bad host name ''" and prints nothing — which
+  // `crbn status` rendered as "no containers running" on top of a healthy stack.
+  it("passes the env file when the worktree has one", () => {
+    const dir = mkdtempSync(join(tmpdir(), "crbn-ps-"));
+    try {
+      writeFileSync(join(dir, ".env.local"), "DOMAIN=localhost\n");
+      const args = buildPsArgs(dir, SLUG);
+      expect(args).toContain("--env-file");
+      expect(args[args.indexOf("--env-file") + 1]).toBe(".env.local");
+      // Same env-file treatment every other compose call already gets.
+      expect(args.slice(args.indexOf("--env-file"))).toEqual(
+        expect.arrayContaining(["ps", "-a", "--format", "json"])
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("omits it for a worktree that has never booted", () => {
+    // Passing a non-existent --env-file is itself a compose error.
+    const dir = mkdtempSync(join(tmpdir(), "crbn-ps-"));
+    try {
+      expect(buildPsArgs(dir, SLUG)).not.toContain("--env-file");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
