@@ -1,4 +1,9 @@
-import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import {
+  CARBON_API_URL,
+  getAppUrl,
+  getMESUrl,
+  SUPABASE_URL
+} from "@carbon/auth";
 import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
@@ -10,6 +15,17 @@ const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
 const selectCompany = "/select-company"; // from ~/routes/select-company+ folder
 export const MES_URL = getMESUrl();
 export const ERP_URL = getAppUrl();
+
+/** Append this deployment's REST origin to a docs link, so the docs site can show
+ *  the reader their own host rather than assuming Carbon Cloud. Purely additive:
+ *  with no CARBON_API_URL the plain URL is returned and the docs fall back to
+ *  their `<your-host>` placeholder. Safe when signed out — the value is public
+ *  config already exposed on `window.env`. */
+function withDocsHost(url: string): string {
+  return CARBON_API_URL
+    ? `${url}?host=${encodeURIComponent(CARBON_API_URL)}`
+    : url;
+}
 
 export const path = {
   to: {
@@ -317,7 +333,10 @@ export const path = {
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`)
     },
-    apiDocs: "https://docs.carbon.ms/api-reference",
+    // The docs render every endpoint against a host. Hand them this deployment's
+    // REST origin so a self-hosted or non-default-region reader sees their own
+    // host instead of rest.carbon.ms; with none set the docs show `<your-host>`.
+    apiDocs: withDocsHost("https://docs.carbon.ms/api-reference"),
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     approvalRule: (id: string) =>
@@ -1380,7 +1399,7 @@ export const path = {
     materials: `${x}/items/materials`,
     materialType: (id: string) => generatePath(`${x}/items/types/${id}`),
     materialTypes: `${x}/items/types`,
-    mcpDocs: "https://docs.carbon.ms/mcp",
+    mcpDocs: withDocsHost("https://docs.carbon.ms/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
     // list lives in the invoicing nav beside Payments; details mirror payments.
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
