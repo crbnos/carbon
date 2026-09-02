@@ -20,6 +20,17 @@ const logger = getLogger("ee", "onshape");
 interface OnshapeClientConfig {
   baseUrl: string;
   accessToken: string;
+  /**
+   * Re-acquire an access token after Onshape rejects the current one, so a
+   * single request can recover instead of surfacing a 401.
+   *
+   * A stored expiry is a prediction, not a fact: it is written when a token is
+   * minted and cannot know about a revocation, a clock difference, or a token
+   * that dies between the expiry check and the call going out. Refreshing
+   * early narrows that window; only retrying on the actual 401 closes it.
+   * Returns null when no new token could be obtained.
+   */
+  onUnauthorized?: () => Promise<string | null>;
 }
 
 /**
@@ -167,10 +178,14 @@ export class OnshapeClient {
   private baseUrl: string;
   private accessToken: string;
   private axiosInstance: ReturnType<typeof axios.create>;
+  private onUnauthorized?: () => Promise<string | null>;
+  /** One recovery per client: a second 401 is a real authorization failure. */
+  private retriedUnauthorized = false;
 
   constructor(config: OnshapeClientConfig) {
     this.baseUrl = config.baseUrl;
     this.accessToken = config.accessToken;
+    this.onUnauthorized = config.onUnauthorized;
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -240,6 +255,29 @@ export class OnshapeClient {
       return response.data;
     } catch (error) {
       await this.countLiveCall(path);
+
+      // A 401 here means the token was dead when the call went out, which the
+      // expiry check cannot rule out on its own. Re-acquire once and retry:
+      // otherwise the caller surfaces "Onshape API error (401)" and the user
+      // has to press the button again, which is all a retry would have done.
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 401 &&
+        this.onUnauthorized &&
+        !this.retriedUnauthorized
+      ) {
+        this.retriedUnauthorized = true;
+        const token = await this.onUnauthorized();
+        if (token) {
+          this.accessToken = token;
+          this.axiosInstance.defaults.headers = {
+            ...this.axiosInstance.defaults.headers,
+            ...this.getAuthHeaders()
+          } as typeof this.axiosInstance.defaults.headers;
+          return this.request<T>(method, path, body);
+        }
+      }
+
       throw this.toApiError(error);
     }
   }
@@ -788,6 +826,10 @@ export class OnshapeClient {
     access_token: string;
     refresh_token: string;
     token_type: string;
+    /** Seconds the new token is good for. Onshape returns it; use it rather
+     * than assuming an hour — a stored expiry that outlives the real token is
+     * what makes a call go out with a dead credential. */
+    expires_in?: number;
   }> {
     if (!ONSHAPE_CLIENT_ID || !ONSHAPE_CLIENT_SECRET) {
       throw new Error("Onshape OAuth not configured");
@@ -816,6 +858,17 @@ export class OnshapeClient {
   }
 }
 
+/**
+ * Refresh this many seconds BEFORE the recorded expiry. Onshape access tokens
+ * live about an hour; a two-minute margin covers a slow request, a clock
+ * difference between Carbon and Onshape, and a token that would otherwise
+ * expire between the check and the call.
+ */
+const REFRESH_MARGIN_SECONDS = 120;
+const REFRESH_LOCK_TTL_SECONDS = 20;
+const REFRESH_WAIT_ATTEMPTS = 20;
+const REFRESH_WAIT_MS = 150;
+
 export async function getOnshapeClient(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -833,6 +886,8 @@ export async function getOnshapeClient(
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
   }
+  // Captured so the refresh closure below keeps the narrowing.
+  const integrationRow = integration.data;
 
   // Secret material (accessToken/refreshToken) lives in Supabase Vault; merge it
   // back so we read `metadata.credentials` the same as before. Vault RPCs require
@@ -855,38 +910,93 @@ export async function getOnshapeClient(
   let accessToken = credentials.accessToken;
   const baseUrl = metadata?.baseUrl ?? "https://cad.onshape.com";
 
-  // Refresh token if expired
-  if (
-    credentials.expiresAt &&
-    credentials.refreshToken &&
-    new Date(credentials.expiresAt) <= new Date()
-  ) {
+  /**
+   * Exchange the refresh token and persist the result, once across concurrent
+   * callers.
+   *
+   * Onshape rotates refresh tokens, so two callers refreshing the same
+   * connection cannot both succeed — and the loser would persist a dead pair
+   * over the winner's live one, breaking the integration until someone
+   * reconnects. The panel opens several requests at once, so this is the
+   * ordinary case, not a rare one.
+   */
+  const refreshNow = async (): Promise<string | null> => {
+    if (!credentials.refreshToken) return null;
+    const lockKey = `onshape-token-refresh:${companyId}`;
+    const held = await redis
+      .set(lockKey, "1", "EX", REFRESH_LOCK_TTL_SECONDS, "NX")
+      .catch(() => null);
+
+    if (held !== "OK") {
+      // Someone else is refreshing. Wait for them and re-read what they
+      // stored rather than spending our own (now stale) refresh token.
+      for (let attempt = 0; attempt < REFRESH_WAIT_ATTEMPTS; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
+        const current = (await resolveIntegrationSecrets(
+          serviceRole,
+          companyId,
+          "onshape",
+          integrationRow.metadata,
+          integrationRow.secretRef
+        ).catch(() => null)) as Record<string, any> | null;
+        const token = current?.credentials?.accessToken;
+        if (token && token !== accessToken) return token;
+      }
+      return null;
+    }
+
     try {
       const refreshed = await OnshapeClient.refreshAccessToken(
         credentials.refreshToken
       );
-
-      accessToken = refreshed.access_token;
-
-      // Persist the new tokens. Secret material is split out to Supabase Vault;
-      // only the non-secret config is written to the metadata column.
+      // Onshape tells us how long the token is good for; assuming an hour is
+      // how a stored expiry ends up outliving the real credential.
+      const lifetimeSeconds = refreshed.expires_in ?? 3600;
       await persistIntegrationSecrets(serviceRole, companyId, "onshape", {
         ...metadata,
         credentials: {
           ...credentials,
           accessToken: refreshed.access_token,
           refreshToken: refreshed.refresh_token,
-          expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+          expiresAt: new Date(Date.now() + lifetimeSeconds * 1000).toISOString()
         }
       });
+      return refreshed.access_token;
     } catch (error) {
       logger.error("Failed to refresh Onshape token", { error });
+      return null;
+    } finally {
+      // Best-effort: the lock's own TTL is the real release.
+      await redis.del(lockKey).catch(() => undefined);
+    }
+  };
+
+  // Refresh BEFORE the token expires, not at the instant it does: a token with
+  // seconds left dies mid-request, and a connection with no recorded expiry
+  // (an older install) would otherwise never refresh at all and 401 forever.
+  const expiresAt = credentials.expiresAt
+    ? new Date(credentials.expiresAt).getTime()
+    : 0;
+  if (
+    credentials.refreshToken &&
+    expiresAt - REFRESH_MARGIN_SECONDS * 1000 <= Date.now()
+  ) {
+    const refreshedToken = await refreshNow();
+    if (!refreshedToken) {
       return { client: null, error: "Failed to refresh Onshape token" };
     }
+    accessToken = refreshedToken;
   }
 
   return {
-    client: new OnshapeClient({ baseUrl, accessToken }),
+    client: new OnshapeClient({
+      baseUrl,
+      accessToken,
+      // Last line of defence: the expiry above is a prediction, so a token can
+      // still be dead when the call lands. Recover in-flight instead of
+      // handing the user a 401 that a second click would have fixed.
+      onUnauthorized: refreshNow
+    }),
     error: null
   };
 }
