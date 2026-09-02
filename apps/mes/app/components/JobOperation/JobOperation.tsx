@@ -676,7 +676,7 @@ export const JobOperation = ({
                     {operation.reworkId && <Badge variant="red">Rework</Badge>}
                   </HStack>
                   <p className="text-muted-foreground line-clamp-1">
-                    {operation.itemDescription}{" "}
+                    {operation.itemReadableId}
                   </p>
                 </div>
               </HStack>

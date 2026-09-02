@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
+import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
@@ -10,17 +12,23 @@ import {
   backupAssetsDir,
   backupTablePath,
   buildScopeFilter,
+  computeScopeExclusions,
   copyAssetsToBackup,
+  ExportScopeViolationError,
   encodeValue,
   exportableColumns,
-  findExportScopeViolations,
+  findExportScopeViolationsDetailed,
   getCompanyTableCatalog,
   mapWithConcurrency,
+  type ScopeExclusions,
+  type ScopeViolation,
   STORAGE_BUCKET,
   selectExportableTables,
   serializeTable,
   writeBackupManifest
 } from "./company-backup";
+
+const log = getLogger("jobs", "company-export");
 
 // Assets are copied server-side into the backup's `assets/` folder (no bytes pass
 // through this process), so there's no memory reason to cap a single file — the
@@ -52,6 +60,13 @@ export async function buildCompanyBackup(
     includeStorage: "none" | "all";
     /** Override the generated folder name (snapshots pass their own). */
     name?: string;
+    /**
+     * Exclude (and record in `manifest.excludedRows`) rows whose NOT-NULL FK
+     * escapes company scope, plus rows depending on them. Default false =
+     * refuse: the guard is a tenant-leak detector, and skipping is a
+     * user-confirmed recovery after a visible failure (spec 2026-09-01).
+     */
+    skipCorrupted?: boolean;
     /** Live progress of the table-dump phase (`tables`). Throttled by the caller. */
     onProgress?: (p: {
       phase: string;
@@ -114,20 +129,44 @@ export async function buildCompanyBackup(
   // which runs without it — is the first thing in the system wide enough to see a
   // cross-tenant reference at all. Excluding the rows and carrying on would make
   // the only detector we have go quiet.
-  const scopeViolations = await findExportScopeViolations(
-    db,
-    exportable,
-    byName,
-    companyId,
-    companyGroupId
-  );
-  if (scopeViolations.length > 0) {
-    throw new Error(
-      `Refusing to export ${companyId}: ${scopeViolations.length} NOT-NULL reference(s) ` +
-        `escape company scope, so the backup could never be restored:\n  ${scopeViolations.join(
-          "\n  "
-        )}`
+  //
+  // `skipCorrupted` is the ONE sanctioned bypass — user-confirmed after a visible
+  // failure, logged loudly here, and the manifest records what was dropped.
+  let exclusions: ScopeExclusions | null = null;
+  if (opts.skipCorrupted) {
+    exclusions = await computeScopeExclusions(
+      db,
+      exportable,
+      byName,
+      companyId,
+      companyGroupId
     );
+    if (exclusions.summary.length > 0) {
+      // Skipping a group-shared row deletes nothing, but the artifact then
+      // lacks config the whole group depends on — worth its own log line. The
+      // purge refuses outright on these; see `purgeScopeViolations`.
+      const shared = exclusions.summary.filter(
+        (e) => byName.get(e.table)?.scopeColumn === "companyGroupId"
+      );
+      log.warn("Company export skipping out-of-scope rows", {
+        companyId,
+        excludedRows: exclusions.summary,
+        ...(shared.length > 0
+          ? { sharedGroupTablesAffected: shared.map((e) => e.table) }
+          : {})
+      });
+    }
+  } else {
+    const { violations, rowsByTable } = await findExportScopeViolationsDetailed(
+      db,
+      exportable,
+      byName,
+      companyId,
+      companyGroupId
+    );
+    if (violations.length > 0) {
+      throw new ExportScopeViolationError(companyId, violations, rowsByTable);
+    }
   }
 
   // Dump each non-empty table to its own `tables/<table>.ndjson.gz`, in parallel.
@@ -140,13 +179,16 @@ export async function buildCompanyBackup(
       table.name === "externalIntegrationMapping"
         ? sql` AND ${sql.id("integration")} != ${BACKUP_INTEGRATION}`
         : sql``;
+    // A skipCorrupted export leaves out the rows computeScopeExclusions decided on.
+    const exclusion = exclusions?.predicates.get(table.name);
+    const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
     // Direct-scoped tables filter by their companyId/companyGroupId column;
     // transitively-scoped child tables (contacts, line prices, …) filter through
     // their parent FK — see buildScopeFilter.
     const result = await sql<Record<string, unknown>>`
       SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
       FROM ${sql.id(table.name)}
-      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${ledgerFilter}
+      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${ledgerFilter}${exclusionFilter}
     `.execute(db);
 
     if (result.rows.length === 0) {
@@ -226,7 +268,9 @@ export async function buildCompanyBackup(
     includeStorage,
     tables: tableManifest,
     storage: storageManifest,
-    excludedTables
+    excludedTables,
+    excludedRows: exclusions?.summary ?? [],
+    excludedRowsByTable: exclusions?.perTable ?? []
   };
 
   // The manifest is NOT written here — the caller writes it LAST (after assets)
@@ -252,6 +296,15 @@ async function upsertExportMarker(
     startedAt: string;
     progress?: ExportProgress;
     error?: string;
+    /** On failure: what was asked for, so a recovery retry can reuse it. */
+    label?: string | null;
+    includeStorage?: "none" | "all";
+    /** Set only when the closure guard refused — the UI offers "skip" for exactly this. */
+    reason?: "scope-violations";
+    /** Per FK EDGE — the breakdown, never summable into a row count. */
+    violations?: ScopeViolation[];
+    /** DISTINCT rows involved, per table — what the user is told. */
+    violationRowsByTable?: Array<{ table: string; rows: number }>;
   }
 ): Promise<void> {
   const existing = await client
@@ -298,7 +351,8 @@ export const companyExportFunction = inngest.createFunction(
   },
   { event: "carbon/company-export" },
   async ({ event, step, logger }) => {
-    const { companyId, userId, label, includeStorage } = event.data;
+    const { companyId, userId, label, includeStorage, skipCorrupted } =
+      event.data;
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
@@ -335,6 +389,7 @@ export const companyExportFunction = inngest.createFunction(
             userId,
             label,
             includeStorage,
+            skipCorrupted: skipCorrupted === true,
             onProgress: report
           });
 
@@ -380,8 +435,23 @@ export const companyExportFunction = inngest.createFunction(
         await upsertExportMarker(client, companyId, userId, {
           status: "failed",
           startedAt,
-          error: message.slice(0, 2000)
+          error: message.slice(0, 2000),
+          label: label ?? null,
+          includeStorage,
+          ...(err instanceof ExportScopeViolationError
+            ? {
+                reason: "scope-violations",
+                violations: err.violations,
+                violationRowsByTable: err.rowsByTable
+              }
+            : {})
         });
+        // The guard's verdict is deterministic — a retry would only flip the
+        // marker back to "running" and fail again ~10s later, resurrecting the
+        // failure banner after the user has already recovered (skipped).
+        if (err instanceof ExportScopeViolationError) {
+          throw new NonRetriableError(message, { cause: err });
+        }
         throw err;
       }
     });
