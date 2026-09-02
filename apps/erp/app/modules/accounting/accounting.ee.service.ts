@@ -5099,19 +5099,17 @@ export async function postJournalEntry(
     .single();
 }
 
-// The company's current posted Opening Balance journal entry (with its lines
-// decoded to per-account debit/credit), or null. Only status='Posted' blocks a
-// new one — a Reversed entry means the user may enter a fresh set. Used by the
-// Opening Balances screen both to gate re-entry and to display the existing set.
+// Returns `{ id }` of the company's current posted Opening Balance journal
+// entry, or null. Callers only need existence — this is the re-entry gate. Only
+// status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
+// one.
 export async function getExistingOpeningBalanceEntry(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   const entry = await client
     .from("journal")
-    .select(
-      "id, journalEntryId, postingDate, journalLine(accountId, amount, account(id, class, number, name))"
-    )
+    .select("id")
     .eq("companyId", companyId)
     .eq("sourceType", "Opening Balance")
     .eq("status", "Posted")
@@ -5120,36 +5118,7 @@ export async function getExistingOpeningBalanceEntry(
     .maybeSingle();
 
   if (entry.error) return { data: null, error: entry.error };
-  if (!entry.data) return { data: null, error: null };
-
-  const lines = (entry.data.journalLine ?? [])
-    .map((l) => {
-      const account = l.account as {
-        id: string;
-        class: Database["public"]["Enums"]["glAccountClass"];
-        number: string | null;
-        name: string;
-      } | null;
-      if (!account) return null;
-      return {
-        accountId: l.accountId as string,
-        accountNumber: account.number,
-        accountName: account.name,
-        debit: toDisplayDebit(Number(l.amount), account.class),
-        credit: toDisplayCredit(Number(l.amount), account.class)
-      };
-    })
-    .filter((l): l is NonNullable<typeof l> => l !== null);
-
-  return {
-    data: {
-      id: entry.data.id,
-      journalEntryId: entry.data.journalEntryId,
-      postingDate: entry.data.postingDate,
-      lines
-    },
-    error: null
-  };
+  return { data: entry.data ? { id: entry.data.id } : null, error: null };
 }
 
 // Posts the company's opening balances as a single balanced journal entry
@@ -5173,6 +5142,21 @@ export async function createOpeningBalanceJournal(
   const entered = balances.filter((b) => b.amount !== 0);
   if (entered.length === 0) {
     return { data: null, error: { message: "No opening balances entered" } };
+  }
+
+  // Guard here — not only in the route — so every caller (the route action AND
+  // the MCP-exposed tool) is protected. Opening balances are entered once; an
+  // un-reversed posted entry must be reversed before a new set is posted.
+  const existing = await getExistingOpeningBalanceEntry(client, companyId);
+  if (existing.error) return { data: null, error: existing.error };
+  if (existing.data) {
+    return {
+      data: null,
+      error: {
+        message:
+          "An opening balance entry already exists — reverse it before entering new balances"
+      }
+    };
   }
 
   // Retained Earnings is the balancing plug.
@@ -5266,6 +5250,14 @@ export async function createOpeningBalanceJournal(
   }
   const id = created.data.id;
 
+  // No transaction spans create → save → post (these reuse the supabase-client
+  // JE helpers), so on any failure roll back the Draft header we just created —
+  // journalLine cascades (ON DELETE CASCADE). Otherwise an orphan 'Opening
+  // Balance' Draft lingers that the Posted-only re-entry gate can't see, and the
+  // user would accumulate one per retry (e.g. an as-of date in a Closed period).
+  const rollbackDraft = () =>
+    client.from("journal").delete().eq("id", id).eq("status", "Draft");
+
   const saved = await saveJournalEntryWithLines(client, {
     journalEntryId: id,
     postingDate,
@@ -5275,10 +5267,16 @@ export async function createOpeningBalanceJournal(
     companyId,
     companyGroupId
   });
-  if (saved.error) return { data: null, error: saved.error };
+  if (saved.error) {
+    await rollbackDraft();
+    return { data: null, error: saved.error };
+  }
 
   const posted = await postJournalEntry(client, id, userId);
-  if (posted.error) return { data: null, error: posted.error };
+  if (posted.error) {
+    await rollbackDraft();
+    return { data: null, error: posted.error };
+  }
 
   return { data: { id }, error: null };
 }

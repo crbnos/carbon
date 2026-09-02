@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-02T19:12:24.349Z",
+  "generated": "2026-09-02T20:05:23.287Z",
   "totalTools": 1490,
   "modules": 15,
   "tools": [
@@ -3634,7 +3634,7 @@
     {
       "name": "accounting_createOpeningBalanceJournal",
       "module": "accounting",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "create opening balance journal",
       "paramCount": 2,
       "serviceParams": [

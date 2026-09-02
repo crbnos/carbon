@@ -92,31 +92,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // Opening balances are entered once. Re-check server-side that no un-reversed
-  // posted entry exists before posting a second one.
-  const existing = await getExistingOpeningBalanceEntry(client, companyId);
-  if (existing.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(existing.error, "Failed to check existing opening balances")
-      )
-    );
-  }
-  if (existing.data) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          null,
-          "An opening balance entry already exists — reverse it before entering new balances"
-        )
-      )
-    );
-  }
-
+  // The re-entry guard (and the "already posted" message) lives in
+  // createOpeningBalanceJournal so every caller is protected; the loader hides
+  // the entry button when one exists, so this is just the backstop.
   const result = await createOpeningBalanceJournal(client, {
     companyId,
     companyGroupId,
