@@ -23,7 +23,7 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { datetime, selectInBatches } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -228,21 +228,21 @@ export async function action({ request }: ActionFunctionArgs) {
     )
   ];
   const [byNumber, byId] = await Promise.all([
-    partNumbers.length > 0
-      ? client
-          .from("item")
-          .select("id, readableId, revision, name, type")
-          .eq("companyId", companyId)
-          .in("readableId", partNumbers)
-          .order("revision")
-      : Promise.resolve({ data: [], error: null }),
-    targetItemIds.length > 0
-      ? client
-          .from("item")
-          .select("id, readableId, revision, name, type")
-          .eq("companyId", companyId)
-          .in("id", targetItemIds)
-      : Promise.resolve({ data: [], error: null })
+    selectInBatches(partNumbers, (batch) =>
+      client
+        .from("item")
+        .select("id, readableId, revision, name, type")
+        .eq("companyId", companyId)
+        .in("readableId", batch)
+        .order("revision")
+    ),
+    selectInBatches(targetItemIds, (batch) =>
+      client
+        .from("item")
+        .select("id, readableId, revision, name, type")
+        .eq("companyId", companyId)
+        .in("id", batch)
+    )
   ]);
   if (byNumber.error || byId.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
@@ -355,18 +355,18 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     )
   ];
-  if (ownedReadableIds.length > 0) {
-    const partRows = await client
+  const partRows = await selectInBatches(ownedReadableIds, (batch) =>
+    client
       .from("part")
       .select("id, customFields")
       .eq("companyId", companyId)
-      .in("id", ownedReadableIds);
-    if (partRows.error) {
-      return data({ error: "Failed to read Carbon parts" }, { status: 500 });
-    }
-    for (const partRow of partRows.data ?? []) {
-      partCustomFieldsByReadableId.set(partRow.id, partRow.customFields);
-    }
+      .in("id", batch)
+  );
+  if (partRows.error) {
+    return data({ error: "Failed to read Carbon parts" }, { status: 500 });
+  }
+  for (const partRow of partRows.data) {
+    partCustomFieldsByReadableId.set(partRow.id, partRow.customFields);
   }
 
   const results: ApplyResult[] = [];

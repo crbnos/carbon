@@ -558,6 +558,24 @@ export type AssemblyPlanRoot = {
   customFieldProblems?: string[];
 };
 
+/**
+ * How far down the BOM a push writes.
+ *
+ * `all` explodes the whole tree: every sub-assembly gets its own make method
+ * and its own lines, in one push.
+ *
+ * `top` writes ONE method — the root's — and treats each sub-assembly as an
+ * item to create or reuse rather than a tree to explode. It exists because a
+ * BOM line already points at its child's own make method
+ * (`methodMaterial.materialMakeMethodId`), so a multi-level structure composes
+ * from levels pushed separately, with no extra data model. Push each
+ * sub-assembly from its own Onshape tab, push the top last, and the tree nests.
+ *
+ * That composition is also what makes a large assembly tractable: a push is
+ * then bounded by one level's line count instead of by the whole tree.
+ */
+export type AssemblyPlanDepth = "all" | "top";
+
 export type AssemblyPlan = {
   kind: "assembly";
   documentId: string;
@@ -571,6 +589,17 @@ export type AssemblyPlan = {
   /** BOM rows the push cannot place ("<name>: no part number in Onshape"). */
   skipped: string[];
   options: PlanOptions;
+  depth: AssemblyPlanDepth;
+  /**
+   * Only on a `top` plan: what this push is NOT writing, so the panel can say
+   * so rather than leaving the user to notice the tree is missing.
+   */
+  deeper?: {
+    /** Sub-assemblies directly under the root, each pushable on its own. */
+    subAssemblies: string[];
+    /** Distinct part numbers below the top level. */
+    partCount: number;
+  };
 };
 
 export function flattenNodes(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
@@ -596,7 +625,8 @@ export function buildAssemblyPlan({
   methodByItemId,
   mappedLinesByMethodId,
   manualLinesByMethodId,
-  options
+  options,
+  depth = "all"
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -619,6 +649,7 @@ export function buildAssemblyPlan({
   /** Lines no push wrote, per method id. */
   manualLinesByMethodId: Map<string, PlanLine[]>;
   options: PlanOptions;
+  depth?: AssemblyPlanDepth;
 }): AssemblyPlan {
   // One row per part number: the latest revision, whatever order the rows
   // arrived in, so the plan pins the same item the apply would pick.
@@ -629,10 +660,17 @@ export function buildAssemblyPlan({
       itemByReadableId.set(item.readableId, item);
     }
   }
-  const all = flattenNodes(nodes);
+  const everything = flattenNodes(nodes);
+  // At `top` depth only the root's own children become items: the rest of the
+  // tree is somebody else's push. `everything` is still needed to describe
+  // what is being left out.
+  const all = depth === "top" ? nodes : everything;
 
+  // A node with children is made, at every depth — a sub-assembly the push is
+  // not exploding is still an assembly, and classifying it as purchased
+  // because this push declined to look inside it would be wrong.
   const madePartNumbers = new Set<string>([root.partNumber]);
-  for (const node of all) {
+  for (const node of everything) {
     if (node.partNumber && node.children.length > 0) {
       madePartNumbers.add(node.partNumber);
     }
@@ -753,6 +791,34 @@ export function buildAssemblyPlan({
   };
   addMethod(root.partNumber, rootItem?.id ?? null, nodes);
 
+  if (depth === "all") {
+    return {
+      kind: "assembly",
+      documentId,
+      wv,
+      wvId,
+      elementId,
+      root: planRoot,
+      items: planItems,
+      methods,
+      skipped,
+      options,
+      depth
+    };
+  }
+
+  const topLevelPartNumbers = new Set(
+    nodes.map((node) => node.partNumber).filter((n): n is string => !!n)
+  );
+  const deeperPartNumbers = new Set(
+    everything
+      .map((node) => node.partNumber)
+      .filter(
+        (n): n is string =>
+          !!n && !topLevelPartNumbers.has(n) && n !== root.partNumber
+      )
+  );
+
   return {
     kind: "assembly",
     documentId,
@@ -761,9 +827,19 @@ export function buildAssemblyPlan({
     elementId,
     root: planRoot,
     items: planItems,
-    methods,
+    // One method: the root's. `addMethod` recursed into the children, so drop
+    // everything it added below the top rather than teaching it the depth —
+    // the recursion is what builds `writes` for the root in the first place.
+    methods: methods.slice(0, 1),
     skipped,
-    options
+    options,
+    depth,
+    deeper: {
+      subAssemblies: nodes
+        .filter((node) => !!node.partNumber && node.children.length > 0)
+        .map((node) => node.partNumber as string),
+      partCount: deeperPartNumbers.size
+    }
   };
 }
 

@@ -14,6 +14,7 @@ import {
   loadPlanOptions,
   OnshapeWVMType
 } from "@carbon/ee/onshape";
+import { selectInBatches } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -106,18 +107,20 @@ export async function action({ request }: ActionFunctionArgs) {
   const releasePartNumbers = [
     ...new Set(modelItems.map((item) => item.partNumber))
   ];
-  const releaseRows = await client
-    .from("item")
-    .select(
-      "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
-    )
-    .eq("companyId", companyId)
-    .in("readableId", releasePartNumbers)
-    .order("revision");
+  const releaseRows = await selectInBatches(releasePartNumbers, (batch) =>
+    client
+      .from("item")
+      .select(
+        "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
+      )
+      .eq("companyId", companyId)
+      .in("readableId", batch)
+      .order("revision")
+  );
   if (releaseRows.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  const items = (releaseRows.data ?? []) as PlanItemRow[];
+  const items = releaseRows.data as PlanItemRow[];
 
   // Method status only matters for assemblies already at the released letter
   // (the reuse case): a released method refuses the BOM, and the review shows
@@ -199,20 +202,20 @@ export async function action({ request }: ActionFunctionArgs) {
         )
     )
   ];
-  if (childPartNumbers.length > 0) {
-    const childRows = await client
+  const childRows = await selectInBatches(childPartNumbers, (batch) =>
+    client
       .from("item")
       .select(
         "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
-      .in("readableId", childPartNumbers)
-      .order("revision");
-    if (childRows.error) {
-      return data({ error: "Failed to read Carbon items" }, { status: 500 });
-    }
-    items.push(...((childRows.data ?? []) as PlanItemRow[]));
+      .in("readableId", batch)
+      .order("revision")
+  );
+  if (childRows.error) {
+    return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
+  items.push(...(childRows.data as PlanItemRow[]));
 
   const plan = buildReleasePlan({
     documentId,
