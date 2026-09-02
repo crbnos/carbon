@@ -56,8 +56,17 @@ export type MethodLineOwnership = {
   mapped: Map<string, PlanLine[]>;
   /** Lines nothing pushed (manual), per method id. */
   manual: Map<string, PlanLine[]>;
-  /** The rows apply deletes before rewriting, per method id. */
-  mappedRows: Map<string, Array<{ mappingId: string; lineId: string }>>;
+  /**
+   * The Onshape-owned rows apply reconciles against the plan, per method id.
+   * `itemId` is what pairs an existing line with the write for the same
+   * component, so the line can be UPDATED in place — a delete-and-reinsert
+   * drops every Carbon-owned column on it (the operation link, scrap, tags,
+   * kit, the line's own custom fields).
+   */
+  mappedRows: Map<
+    string,
+    Array<{ mappingId: string; lineId: string; itemId: string }>
+  >;
 };
 
 /**
@@ -139,7 +148,7 @@ export async function loadMethodLineOwnership(
       ]);
       result.mappedRows.set(methodId, [
         ...(result.mappedRows.get(methodId) ?? []),
-        { mappingId, lineId: line.id }
+        { mappingId, lineId: line.id, itemId: line.itemId }
       ]);
     } else {
       result.manual.set(methodId, [
