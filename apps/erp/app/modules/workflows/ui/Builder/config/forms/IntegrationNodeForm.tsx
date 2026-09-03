@@ -164,9 +164,17 @@ export function IntegrationNodeForm({
 
   function handleStepChange(next: string) {
     if (next === action) return;
+    const seeded = piece ? seededInputs(integrationStepId(piece, next)) : {};
+    // The app's connection is shared by every step of the app, so a same-app step
+    // change keeps the chosen account — the auto-fill effect only restores it when
+    // exactly one account exists, and with two the author had to re-pick each time.
+    const connection = inputs[INTEGRATION_CONNECTION_INPUT];
     updateNodeData(node.id, {
       action: next,
-      inputs: piece ? seededInputs(integrationStepId(piece, next)) : {}
+      inputs:
+        connection === undefined
+          ? seeded
+          : { ...seeded, [INTEGRATION_CONNECTION_INPUT]: connection }
     });
   }
 

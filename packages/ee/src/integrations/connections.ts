@@ -54,9 +54,10 @@ export class ConnectionSecretUnavailableError extends Error {
 }
 
 /**
- * The vendor answered the token request with a definitive no (4xx — a revoked or
- * invalid grant). Only this condemns a connection; a network failure or a vendor
- * 5xx is transient and must leave the row Active so the next use retries.
+ * The vendor answered the token request with a definitive no (a 4xx that is not
+ * rate limiting or a transient OAuth code — a revoked or invalid grant). Only this
+ * condemns a connection; a network failure, a 429, or a vendor 5xx is transient
+ * and must leave the row Active so the next use retries.
  */
 export class ConnectionRejectedError extends Error {
   constructor(status: number) {
@@ -276,7 +277,19 @@ export async function createConnection(
 
   if (error || data === null) throw error ?? new Error("Connection not saved.");
 
-  await writeTokens(serviceClient, args.companyId, data.id, args.tokens);
+  try {
+    await writeTokens(serviceClient, args.companyId, data.id, args.tokens);
+  } catch (cause) {
+    // An Active row with no vault secret reads as a usable account everywhere and
+    // reserves its unique name, so a fresh insert must not survive a vault failure.
+    // Best-effort: if the delete also fails, the vault error is still what matters.
+    await serviceClient
+      .from("integrationConnection")
+      .delete()
+      .eq("companyId", args.companyId)
+      .eq("id", data.id);
+    throw cause;
+  }
   return { id: data.id };
 }
 
@@ -311,7 +324,10 @@ export async function disconnectConnection(
   });
   if (error) throw error;
 
-  return serviceClient
+  // The row update is part of the same transition: an Active row whose secret is
+  // already gone reads as a usable account that fails every use, so a failure here
+  // must surface rather than let an uninstall report success.
+  const updated = await serviceClient
     .from("integrationConnection")
     .update({
       status: "Revoked",
@@ -321,6 +337,7 @@ export async function disconnectConnection(
     })
     .eq("companyId", companyId)
     .eq("id", connectionId);
+  if (updated.error) throw new Error(updated.error.message);
 }
 
 /**
@@ -523,7 +540,7 @@ export async function resolveConnectionAuth(
       refreshToken: refreshed.refreshToken ?? tokens.refreshToken
     });
 
-    await serviceClient
+    const settled = await serviceClient
       .from("integrationConnection")
       .update({
         expiresAt: refreshed.expiresAt,
@@ -533,6 +550,9 @@ export async function resolveConnectionAuth(
       })
       .eq("companyId", companyId)
       .eq("id", connectionId);
+    // A silent failure here leaves `expiresAt` stale and the claim held, so every
+    // later request loses the claim and polls out a timeout that names nothing.
+    if (settled.error) throw new Error(settled.error.message);
   } catch (cause) {
     // The token itself is fine — storing it was not. Release the claim so the next
     // attempt can retry immediately rather than waiting out a phantom refresh.
@@ -598,17 +618,20 @@ async function awaitRefreshedToken(
   throw new ConnectionRefreshTimeoutError(connectionId);
 }
 
-/** Drop a refresh claim without touching status — the connection may still be fine. */
+/** Drop a refresh claim without touching status — the connection may still be fine.
+ * A failed release is thrown, never swallowed: the stale-claim takeover bounds the
+ * damage at 30 seconds, but the caller should not report a clean retry it did not get. */
 async function releaseClaim(
   serviceClient: SupabaseClient<Database>,
   companyId: string,
   connectionId: string
 ): Promise<void> {
-  await serviceClient
+  const { error } = await serviceClient
     .from("integrationConnection")
     .update({ refreshingAt: null })
     .eq("companyId", companyId)
     .eq("id", connectionId);
+  if (error) throw new Error(error.message);
 }
 
 async function markExpired(
@@ -617,11 +640,14 @@ async function markExpired(
   connectionId: string,
   lastError: string
 ): Promise<void> {
-  await serviceClient
+  // A failed write here would leave a condemned connection Active — the next use
+  // would retry a grant the vendor already rejected instead of saying "reconnect".
+  const { error } = await serviceClient
     .from("integrationConnection")
     .update({ status: "Expired", lastError, refreshingAt: null })
     .eq("companyId", companyId)
     .eq("id", connectionId);
+  if (error) throw new Error(error.message);
 }
 
 export interface ExchangedTokens {
@@ -640,6 +666,14 @@ export interface ExchangedTokens {
  * The OAuth callback matches on this rejection message to pick its error code, so
  * the string is a contract between two files and is written here once.
  */
+const TOKEN_REQUEST_TIMEOUT_MS = 10_000;
+
+/** RFC 6749 codes that mean "try again", not "the grant is dead". */
+const TRANSIENT_OAUTH_ERRORS = new Set([
+  "temporarily_unavailable",
+  "slow_down"
+]);
+
 async function postTokenRequest(
   tokenUrl: string,
   body: Record<string, string>
@@ -647,16 +681,38 @@ async function postTokenRequest(
   const response = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(body)
+    body: new URLSearchParams(body),
+    // A stalled token endpoint would otherwise hang the OAuth callback or a
+    // step's refresh with it. The abort throws, which every caller treats as
+    // transient — exactly right for a vendor that stopped answering.
+    signal: AbortSignal.timeout(TOKEN_REQUEST_TIMEOUT_MS)
   });
 
-  if (response.status >= 400 && response.status < 500) {
+  if (!response.ok) {
+    // Only a definitive grant rejection may condemn the connection. Rate limiting
+    // (429), a vendor 5xx, or a body naming a transient OAuth code must stay
+    // retryable — marking a valid connection Expired over a 429 strands it.
+    if (response.status === 429 || response.status >= 500) {
+      throw new Error(`The vendor token endpoint failed (${response.status}).`);
+    }
+    const code = await oauthErrorCode(response);
+    if (code !== undefined && TRANSIENT_OAUTH_ERRORS.has(code)) {
+      throw new Error(
+        `The vendor token endpoint failed (${response.status}: ${code}).`
+      );
+    }
     throw new ConnectionRejectedError(response.status);
   }
-  if (!response.ok) {
-    throw new Error(`The vendor token endpoint failed (${response.status}).`);
-  }
   return readTokenResponse(await response.json());
+}
+
+async function oauthErrorCode(response: Response): Promise<string | undefined> {
+  try {
+    const payload = (await response.json()) as { error?: unknown };
+    return typeof payload.error === "string" ? payload.error : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function exchangeRefreshToken(

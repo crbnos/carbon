@@ -34,11 +34,15 @@ export function batchCandidates(
   inputs: Record<string, ValueOrRef>
 ): string[] {
   if (!action.batchable) return [];
+  // Advanced inputs share the stored bag, so they are candidates like any other —
+  // reading only the visible map would let a list wired into an Advanced scalar
+  // slot run the step once instead of once per item.
+  const declared = { ...action.inputs, ...action.advancedInputs };
   // Declaration order, so the validator and the engine always agree on "the first one".
-  return Object.keys(action.inputs).filter((name) => {
-    if (action.inputs[name]?.type.kind === "list") return false;
+  return Object.keys(declared).filter((name) => {
+    if (declared[name]?.type.kind === "list") return false;
     // Rows are never the list a step repeats over.
-    if (action.inputs[name]?.pairs) return false;
+    if (declared[name]?.pairs) return false;
     const supplied = inputs[name];
     return supplied !== undefined && supplied.kind !== "item";
   });

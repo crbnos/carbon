@@ -424,13 +424,22 @@ export async function getIntegrationHealth(
     if (cached === "1") return { ...integration, health: "healthy" };
     if (cached === "0") return { ...integration, health: "unhealthy" };
 
-    const [rows, required] = await Promise.all([
-      readConnections(getCarbonServiceRole(), companyId, integration.id!),
-      requiredScopesFor(integration.id!)
-    ]);
-    const healthy =
-      connectionsHealthy(rows) &&
-      !rows.some((row) => needsReconnect(row, required));
+    // A failed read is one unhealthy card, never a crashed Settings page —
+    // `getIntegrationsWithHealth` runs these in a Promise.all with no catch. It
+    // is not cached: the next load should re-ask rather than pin a transient
+    // failure for the TTL.
+    let healthy: boolean;
+    try {
+      const [rows, required] = await Promise.all([
+        readConnections(getCarbonServiceRole(), companyId, integration.id!),
+        requiredScopesFor(integration.id!)
+      ]);
+      healthy =
+        connectionsHealthy(rows) &&
+        !rows.some((row) => needsReconnect(row, required));
+    } catch {
+      return { ...integration, health: "unhealthy" };
+    }
     // An unhealthy piece card stays unhealthy until someone reconnects, and every
     // path that changes that (callback, disconnect, uninstall) invalidates this
     // key — so a short negative cache is safe and stops the Settings grid from

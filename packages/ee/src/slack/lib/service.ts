@@ -225,17 +225,23 @@ function workspaceFacts(connection: IntegrationConnection) {
 
 /**
  * The Slack workspace the Assistant acts as for a company: the OLDEST Active
- * connection for piece `slack` (`readConnections` orders by createdAt). Credentials
- * and workspace facts live on the connection alone — `companyIntegration.slack` is
- * only the installed flag. Service-role client required (vault).
+ * connection for piece `slack` that carries a webhook channel, falling back to the
+ * oldest Active one (`readConnections` orders by createdAt). The channel preference
+ * lives HERE so every Assistant surface picks the same workspace — without it, an
+ * oldest connection made without the webhook picker hid a later, complete one.
+ * Credentials and workspace facts live on the connection alone —
+ * `companyIntegration.slack` is only the installed flag. Service-role client
+ * required (vault).
  */
 export async function getSlackWorkspace(
   serviceRole: SupabaseClient<Database>,
   companyId: string
 ): Promise<SlackWorkspace | null> {
-  const connection = (
+  const active = (
     await readConnections(serviceRole, companyId, "slack")
-  ).find((c) => c.status === "Active");
+  ).filter((c) => c.status === "Active");
+  const connection =
+    active.find((c) => workspaceFacts(c).channelId !== undefined) ?? active[0];
   if (connection === undefined) return null;
   const token = await readConnectionAccessToken(
     serviceRole,

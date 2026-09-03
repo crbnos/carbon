@@ -100,7 +100,7 @@ An app you haven't connected offers no steps. The form says so — *"… isn't c
 An integration step runs as the connected account, not as the workflow's owner, on the vendor's side. If the vendor refuses, the step fails with the vendor's own message in run history; if the account is missing a permission, the message instead points you to the fix — reconnect the account under the app's **"Accounts"** tab.
 </Callout>
 
-Everything else works like an action: variables, the **Success** and **Failure** handles, and repeating — wire a list into a single-value field and the step runs once per item.
+Everything else works like an action: variables and the **Success** and **Failure** handles. The one exception is repeating — an integration step doesn't yet run once per item when a list is wired into a single-value field, so the builder flags that wiring instead of guessing.
 
 ## Calling an outside URL
 

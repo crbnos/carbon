@@ -150,6 +150,17 @@ async function runCard(
         return { ok: false, reason: "No field was chosen to take." };
       }
       const path = (card.field ?? "").split(".");
+      // The declared type decides up front, not the data: an EMPTY source has no
+      // item to trip the per-value list guard below, so without this an unflattened
+      // list field slipped through as an empty list instead of the same refusal.
+      const declared = walkPath(of, path, ctx.catalog);
+      if (declared?.kind === "list" && !card.flatten) {
+        return {
+          ok: false,
+          reason:
+            "That field holds a list of its own. Turn on flattening to take it."
+        };
+      }
       const picked: RuntimeValue[] = [];
       for (const item of items) {
         const value = await pick(item, path, ctx);
@@ -173,12 +184,15 @@ async function runCard(
       }
       // The declared type the builder promised, not one guessed from the data:
       // when every picked value is null, sampling typed the list `null` and
-      // disagreed with the type every downstream step was built against.
-      const declared = walkPath(of, path, ctx.catalog);
+      // disagreed with the type every downstream step was built against. A
+      // declared list is flattened (the guard above), so its element type is the
+      // list's own `of` — sampling there typed an empty flatten `list<null>`.
       const sample = picked.find((value) => !isNull(value));
       const elementType: ScalarType =
-        declared !== undefined && declared.kind !== "list"
-          ? declared
+        declared !== undefined
+          ? declared.kind === "list"
+            ? declared.of
+            : declared
           : sample === undefined
             ? { kind: "primitive", of: "null" }
             : typeOfValue(sample);
