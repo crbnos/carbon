@@ -230,6 +230,12 @@ const Editor = ({
   if (initialContentRef.current === undefined) {
     if (titleMode) {
       const titleValue = title?.value ?? "";
+      // Missing OR empty stored content still needs a body block after the
+      // locked H1, or the document is schema-invalid (heading with no body).
+      const body =
+        initialValue?.content && initialValue.content.length > 0
+          ? initialValue.content
+          : [{ type: "paragraph" }];
       initialContentRef.current = {
         type: "doc",
         content: [
@@ -240,7 +246,7 @@ const Editor = ({
               ? { content: [{ type: "text", text: titleValue }] }
               : {})
           },
-          ...(initialValue?.content ?? [])
+          ...body
         ]
       };
     } else {

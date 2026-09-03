@@ -109,7 +109,7 @@ const QualityDocumentProperties = () => {
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <Subheading variant="light">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
           </Subheading>
           <HStack spacing={1}>

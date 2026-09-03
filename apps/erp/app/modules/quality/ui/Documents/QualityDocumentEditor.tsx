@@ -51,8 +51,6 @@ export default function QualityDocumentEditor() {
 
   const nameFetcher = useFetcher<typeof action>();
   const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
-  // Clear the header's live title mirror when leaving the document.
-  useEffect(() => () => setLiveTitle(null), [setLiveTitle]);
 
   const updateName = useDebounce(
     async (name: string) => {
@@ -90,6 +88,14 @@ export default function QualityDocumentEditor() {
 
   const isDraft = loaderData?.document?.status === "Draft";
   const canEdit = permissions.can("update", "quality") && isDraft;
+
+  // Mirror the live title only while editing; clear it when editing ends (e.g.
+  // a Draft→Active transition that doesn't remount the route) or on unmount, so
+  // the header title bar can never show a stale edited title.
+  useEffect(() => {
+    if (!canEdit) setLiveTitle(null);
+    return () => setLiveTitle(null);
+  }, [canEdit, setLiveTitle]);
 
   return (
     <div className="flex flex-col w-full h-full">

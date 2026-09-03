@@ -39,7 +39,9 @@ export default function AssemblyStepTools({
 
   return (
     <VStack spacing={2} className="w-full">
-      <Subheading variant="light">Tools</Subheading>
+      <Subheading as="h4" variant="light">
+        Tools
+      </Subheading>
       {tools.length === 0 ? (
         <p className="text-xs text-muted-foreground">No tools to display</p>
       ) : (

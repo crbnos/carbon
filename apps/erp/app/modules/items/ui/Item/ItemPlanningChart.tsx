@@ -9,7 +9,6 @@ import {
   HStack,
   Input,
   Loading,
-  Subheading,
   Tabs,
   TabsContent,
   TabsList,
@@ -1278,10 +1277,7 @@ const sourceTypeIcons: Record<SourceType, JSX.Element> = {
 
 function SupplyDemandPlanningHeader() {
   return (
-    <Subheading
-      variant="heavy"
-      className="flex flex-1 justify-between items-center w-full px-4 py-2 border-b bg-muted/40"
-    >
+    <div className="flex flex-1 justify-between items-center w-full px-4 py-2 border-b bg-muted/40 text-xs font-medium uppercase tracking-wide text-muted-foreground">
       <HStack spacing={4} className="w-1/2">
         <HStack spacing={4} className="flex-1">
           <div className="size-8 shrink-0" aria-hidden />
@@ -1294,7 +1290,7 @@ function SupplyDemandPlanningHeader() {
         </HStack>
       </HStack>
       <Trans>On Hand</Trans>
-    </Subheading>
+    </div>
   );
 }
 

@@ -133,7 +133,7 @@ export function DocumentTemplateEditor({
           >
             <ScrollArea className="h-full bg-card">
               <div className="flex flex-col gap-1.5 p-3">
-                <Subheading variant="heavy" className="block">
+                <Subheading as="h2" variant="heavy" className="block">
                   Configure
                 </Subheading>
                 <BlockConfig />
@@ -166,7 +166,7 @@ function ControlRail() {
     <div className="flex h-full flex-col bg-card">
       {/* Fixed Blocks header with the inline add-block button. */}
       <div className="flex shrink-0 items-center justify-between px-3 pt-3 pb-1">
-        <Subheading variant="heavy" className="block">
+        <Subheading as="h2" variant="heavy" className="block">
           Blocks
         </Subheading>
         <AddBlockMenu />
@@ -202,7 +202,7 @@ function ControlRail() {
           <ScrollArea className="max-h-[45vh]">
             <TabsContent value="style" className="flex flex-col gap-5 p-3 pt-4">
               <section className="flex flex-col gap-3">
-                <Subheading variant="heavy" className="block">
+                <Subheading as="h3" variant="heavy" className="block">
                   Typography
                 </Subheading>
                 <FontConfig />
@@ -214,7 +214,7 @@ function ControlRail() {
                 className="flex flex-col gap-5 p-3 pt-4"
               >
                 <section className="flex flex-col gap-2">
-                  <Subheading variant="heavy" className="block">
+                  <Subheading as="h3" variant="heavy" className="block">
                     Theme colors
                   </Subheading>
                   <ThemeConfig />

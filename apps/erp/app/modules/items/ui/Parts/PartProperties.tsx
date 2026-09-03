@@ -383,7 +383,7 @@ const PartProperties = ({
               copy affordances there. Part page (non-embedded) is unchanged. */}
           {!embedded && (
             <HStack className="w-full justify-between">
-              <Subheading variant="light">
+              <Subheading as="h3" variant="light">
                 <Trans>Properties</Trans>
               </Subheading>
               <HStack spacing={1}>

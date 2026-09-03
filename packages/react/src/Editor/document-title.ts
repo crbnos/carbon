@@ -3,8 +3,8 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 
 /**
  * Locks the document's first node as an H1 "title": it can't be deleted, merged
- * into, or turned into another block type, and pressing Enter inside it drops
- * the cursor into the body rather than splitting the title.
+ * into (from either direction), or turned into another block type, and pressing
+ * Enter inside it drops the cursor into the body rather than splitting the title.
  *
  * Modeled on Plane's document title behavior, but as a single-editor extension
  * (Carbon stores `name`/`content` separately and has no Yjs, so the consuming
@@ -15,25 +15,72 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
  */
 export const DocumentTitle = Extension.create({
   name: "documentTitle",
-  // Run our Backspace/Enter handlers before StarterKit's defaults.
+  // Run our Backspace/Delete/Enter handlers before StarterKit's defaults.
   priority: 1000,
 
   addKeyboardShortcuts() {
+    // The title is always the first top-level node.
+    const atTitleStart = () => {
+      const { $from, empty } = this.editor.state.selection;
+      return (
+        empty &&
+        $from.parent === this.editor.state.doc.firstChild &&
+        $from.parentOffset === 0
+      );
+    };
+    const atTitleEnd = () => {
+      const { $from, empty } = this.editor.state.selection;
+      const first = this.editor.state.doc.firstChild;
+      return (
+        empty &&
+        !!first &&
+        $from.parent === first &&
+        $from.parentOffset === first.content.size
+      );
+    };
+    const atBodyStart = () => {
+      const { $from, empty } = this.editor.state.selection;
+      const second = this.editor.state.doc.maybeChild(1);
+      return (
+        empty && !!second && $from.parent === second && $from.parentOffset === 0
+      );
+    };
+    // Move the cursor to the end of the title's text (never merging content).
+    const focusTitleEnd = () => {
+      const first = this.editor.state.doc.firstChild;
+      if (!first) return false;
+      return this.editor
+        .chain()
+        .focus(first.nodeSize - 1)
+        .run();
+    };
+
+    // Backspace at the very start of the title, and at the start of the body,
+    // must never join the two nodes together.
+    const guardBackspace = () => {
+      if (atTitleStart()) return true;
+      if (atBodyStart()) return focusTitleEnd();
+      return false;
+    };
+    // Delete/forward-delete at the end of the title must not pull the body up
+    // into the heading.
+    const guardDelete = () => {
+      if (!atTitleEnd()) return false;
+      const first = this.editor.state.doc.firstChild;
+      if (!first) return false;
+      const hasBody = !!this.editor.state.doc.maybeChild(1);
+      if (!hasBody) return true; // nothing after the title — swallow
+      return this.editor
+        .chain()
+        .focus(first.nodeSize + 1)
+        .run();
+    };
+
     return {
-      Backspace: () => {
-        const { state } = this.editor;
-        const { $from, empty } = state.selection;
-        // At the very start of the title, swallow Backspace so the title can
-        // never be deleted or have the body merged up into it.
-        if (
-          empty &&
-          $from.parent === state.doc.firstChild &&
-          $from.parentOffset === 0
-        ) {
-          return true;
-        }
-        return false;
-      },
+      Backspace: guardBackspace,
+      "Mod-Backspace": guardBackspace,
+      Delete: guardDelete,
+      "Mod-Delete": guardDelete,
       Enter: () => {
         const { state } = this.editor;
         const { $from } = state.selection;
@@ -68,18 +115,28 @@ export const DocumentTitle = Extension.create({
     return [
       new Plugin({
         key: new PluginKey("documentTitleLock"),
-        // Coerce node 0 back to an H1 after any transaction that changed it
-        // (e.g. the block-type dropdown turning it into a paragraph or H2).
+        // Coerce node 0 back to an H1 after any transaction that changed it —
+        // the block-type dropdown turning it into a paragraph/H2 (a textblock,
+        // preserve inline marks), or into a list/blockquote (not a textblock,
+        // rebuild from its text so the schema stays valid).
         appendTransaction: (_transactions, _oldState, newState) => {
           const first = newState.doc.firstChild;
-          if (!first || !first.isTextblock) return null;
+          if (!first) return null;
           const isTitle =
             first.type.name === "heading" && first.attrs.level === 1;
           if (isTitle) return null;
-          const tr = newState.tr.setNodeMarkup(0, headingType, {
-            ...first.attrs,
-            level: 1
-          });
+
+          const tr = newState.tr;
+          if (first.isTextblock) {
+            tr.setNodeMarkup(0, headingType, { ...first.attrs, level: 1 });
+          } else {
+            const text = first.textContent;
+            const heading = headingType.createChecked(
+              { level: 1 },
+              text ? newState.schema.text(text) : undefined
+            );
+            tr.replaceWith(0, first.nodeSize, heading);
+          }
           return tr.steps.length ? tr : null;
         }
       })

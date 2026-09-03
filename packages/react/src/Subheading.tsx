@@ -1,6 +1,6 @@
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ElementType } from "react";
 import { forwardRef } from "react";
 
 import { cn } from "./utils/cn";
@@ -19,7 +19,14 @@ const subheadingVariants = cva("uppercase tracking-wide", {
 
 export interface SubheadingProps
   extends Omit<ComponentProps<"span">, "color">,
-    VariantProps<typeof subheadingVariants> {}
+    VariantProps<typeof subheadingVariants> {
+  /**
+   * The element to render. Defaults to `span` (inline, no document semantics).
+   * Pass a heading tag (`"h2"`/`"h3"`/`"h4"`) when the label is a real section
+   * heading so it stays in the heading outline / screen-reader navigation.
+   */
+  as?: ElementType;
+}
 
 /**
  * Small uppercase label that groups related content into a section.
@@ -29,18 +36,20 @@ export interface SubheadingProps
  * - `light`: group names in the grouped-content sidebar and entity Properties
  *   panels.
  *
- * Spacing/layout is left to the caller — pass `className` for margins, flex, etc.
+ * Renders a `span` by default; pass `as="h3"` (etc.) to preserve native heading
+ * semantics. Spacing/layout is left to the caller — pass `className` for
+ * margins, flex, etc.
  */
-const Subheading = forwardRef<HTMLSpanElement, SubheadingProps>(
-  ({ className, variant, children, ...props }, ref) => {
+const Subheading = forwardRef<HTMLElement, SubheadingProps>(
+  ({ as: Component = "span", className, variant, children, ...props }, ref) => {
     return (
-      <span
+      <Component
         className={cn(subheadingVariants({ variant, className }))}
         ref={ref}
         {...props}
       >
         {children}
-      </span>
+      </Component>
     );
   }
 );

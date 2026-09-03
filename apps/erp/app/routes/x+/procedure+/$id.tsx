@@ -110,8 +110,6 @@ function ProcedureEditor() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
-  // Clear the header's live title mirror when leaving the procedure.
-  useEffect(() => () => setLiveTitle(null), [setLiveTitle]);
 
   const loaderData = useLoaderData<typeof loader>();
 
@@ -122,6 +120,18 @@ function ProcedureEditor() {
   const [content, setContent] = useState<JSONContent>(
     (loaderData?.procedure?.content ?? {}) as JSONContent
   );
+
+  const canEdit =
+    permissions.can("update", "production") &&
+    loaderData?.procedure?.status === "Draft";
+
+  // Mirror the live title only while editing; clear it when editing ends (e.g.
+  // a Draft→Active transition that doesn't remount the route) or on unmount, so
+  // the header title bar can never show a stale edited title.
+  useEffect(() => {
+    if (!canEdit) setLiveTitle(null);
+    return () => setLiveTitle(null);
+  }, [canEdit, setLiveTitle]);
 
   const { carbon } = useCarbon();
   const {
@@ -190,8 +200,7 @@ function ProcedureEditor() {
 
   return (
     <div className="flex flex-col w-full h-full">
-      {permissions.can("update", "production") &&
-      loaderData?.procedure?.status === "Draft" ? (
+      {canEdit ? (
         <Editor
           toolbar
           title={{

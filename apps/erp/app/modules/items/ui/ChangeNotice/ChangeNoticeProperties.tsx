@@ -50,7 +50,9 @@ function PropertiesSection({
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
-        <Subheading variant="light">{title}</Subheading>
+        <Subheading as="h3" variant="light">
+          {title}
+        </Subheading>
         {accessory}
       </HStack>
       {children}
@@ -149,7 +151,7 @@ const ChangeNoticeProperties = () => {
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <Subheading variant="light">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
           </Subheading>
           <Tooltip>

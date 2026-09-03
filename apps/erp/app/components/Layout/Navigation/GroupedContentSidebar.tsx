@@ -79,7 +79,7 @@ const GroupedContentSidebar = ({
               key={group.name}
               className="border-b border-border p-2 pb-4 space-y-0.5"
             >
-              <Subheading variant="light" className="pl-4 py-1">
+              <Subheading as="h4" variant="light" className="pl-4 py-1">
                 {group.name}
               </Subheading>
               {group.routes.map((route) => {

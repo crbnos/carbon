@@ -75,7 +75,9 @@ export default function AssemblyStepMaterials({
 
   return (
     <VStack spacing={2} className="w-full">
-      <Subheading variant="light">Materials</Subheading>
+      <Subheading as="h4" variant="light">
+        Materials
+      </Subheading>
       {materials.length === 0 ? (
         <p className="text-xs text-muted-foreground">No materials to display</p>
       ) : (

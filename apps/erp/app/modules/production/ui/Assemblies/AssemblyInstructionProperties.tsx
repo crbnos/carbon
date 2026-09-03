@@ -521,7 +521,7 @@ function StepForm({
           description="Operators must record this step to complete the operation"
         />
 
-        <Subheading variant="heavy" className="block w-full pt-1">
+        <Subheading as="h4" variant="heavy" className="block w-full pt-1">
           Playback &amp; components
         </Subheading>
         <VStack
