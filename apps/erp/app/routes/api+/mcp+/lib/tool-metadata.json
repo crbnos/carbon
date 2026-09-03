@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-02T20:05:23.287Z",
+  "generated": "2026-09-03T00:55:59.939Z",
   "totalTools": 1490,
   "modules": 15,
   "tools": [
@@ -20801,17 +20801,23 @@
       "module": "production",
       "classification": "READ",
       "description": "get jobs list",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyId"
+        "companyId",
+        "statuses"
       ],
       "injectAuth": [
         "companyId"
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "statuses": {
+            "type": "array",
+            "items": {}
+          }
+        }
       }
     },
     {
@@ -23885,7 +23891,8 @@
             "type": "string",
             "enum": [
               "itemToJob",
-              "quoteLineToJob"
+              "quoteLineToJob",
+              "jobToJob"
             ]
           },
           "jobMethod": {
@@ -23898,6 +23905,9 @@
                 "type": "string"
               },
               "configuration": {},
+              "versionId": {
+                "type": "string"
+              },
               "parts": {
                 "type": "object",
                 "properties": {
@@ -23947,7 +23957,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job material make method",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "jobMaterial"
@@ -23967,6 +23977,9 @@
             "type": "string"
           },
           "configuration": {},
+          "versionId": {
+            "type": "string"
+          },
           "parts": {
             "type": "object",
             "properties": {

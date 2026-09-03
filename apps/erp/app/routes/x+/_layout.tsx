@@ -470,11 +470,11 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               <TooltipProvider>
-                <div className="flex flex-col h-screen">
-                  <Topbar />
-                  <div className="flex flex-1 h-[calc(100vh-var(--topbar-height))] relative">
-                    <PrimaryNavigation />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-card sm:rounded-tl-2xl relative z-10">
+                <div className="flex h-screen">
+                  <PrimaryNavigation />
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border relative z-10">
+                    <Topbar />
+                    <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <Outlet />
                     </main>
                   </div>

@@ -138,13 +138,41 @@
     {
       "slug": "docs/platform/backups",
       "title": "Backups",
-      "description": "Snapshot a company's data and files, restore it in place with one-click revert, or stand up a new company from a demo template.",
+      "description": "Snapshot a company's data and files, see at a glance whether each backup can still be restored, and restore in place with one-click revert.",
       "keywords": ["backups", "docs", "platform"],
       "headings": [
         "What a backup contains",
         "Create a backup",
+        "If the backup fails",
+        "Is it still restorable?",
         "Restore in place",
-        "Start a company from a template"
+        "If the restore is blocked by corrupted data",
+        "Start a company from a backup",
+        "Troubleshooting",
+        "The Backups page isn't in my Settings menu",
+        "A backup shows \"Not restorable\" or \"Restorable with changes\"",
+        "A backup shows \"Incomplete\"",
+        "\"Backup failed\" banner with rows that \"link to data outside this company\"",
+        "Can't start a restore — told to finish the current one first",
+        "Restore finished but integrations are disconnected"
+      ]
+    },
+    {
+      "slug": "docs/platform/demo-data",
+      "title": "Demo data",
+      "description": "Fill a company with a realistic industry story, so every screen has something in it, and put back exactly what was there before with one click.",
+      "keywords": ["demo", "data", "docs", "platform"],
+      "headings": [
+        "The templates",
+        "Apply a template",
+        "Demo data at sign-up",
+        "Troubleshooting",
+        "The Demo Data page isn't in my Settings menu",
+        "I applied a template and want my old data back",
+        "The apply or revert looks stuck",
+        "Can't apply a second template",
+        "Applying failed with an error",
+        "The demo dates look recent — is that real activity?"
       ]
     },
     {

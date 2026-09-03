@@ -66,14 +66,14 @@ the factors.
   garbage. The walk builds into a SECOND map; mutating in place made the result
   depend on iteration order. Pinned by `lib/supersession-pick.test.ts`.
 
-## get-method: three flows, one invariant
+## get-method: four flows, one invariant
 
-`itemToJob`, `itemToJobMakeMethod`, `quoteLineToJob` each build `jobMaterial`
-rows independently. **Resolve the swap BEFORE any field derives from the item.**
+`itemToJob`, `itemToJobMakeMethod`, `quoteLineToJob`, `jobToJob` each build
+`jobMaterial` rows independently. **Resolve the swap BEFORE any field derives from the item.**
 
 Building the row first and patching it afterwards is how
 `itemScrapPercentage` was left on the predecessor for years: the patch list was
-hand-written and the field was simply absent from it. All three now resolve
+hand-written and the field was simply absent from it. All four now resolve
 `itemId` at the top of the row builder, so every derived field — scrap rate,
 bin, cost, tracking flags — follows automatically, including fields added later.
 
@@ -86,7 +86,7 @@ there under-explodes the entire sub-tree — every row below looks individually
 correct on a wrong base.
 
 `loadSupersessionRedirect` is loaded **once per request**, before the
-transaction, in all three flows. It pages with `fetchAll` + `.order("itemId")`;
+transaction, in all four flows. It pages with `fetchAll` + `.order("itemId")`;
 a bare select stops at PostgREST's 1000-row cap and would silently redirect a
 different subset than MRP.
 
@@ -104,9 +104,10 @@ re-derives it when the stored value is NULL — which a NOT NULL column never is
 
 ## Known gaps
 
-- `quoteLineToJob` never swaps **made** sub-assemblies — documented as "a later
-  layer". Fail-safe (you get the quoted structure), but it disagrees with
-  MRP, which has already redirected that demand.
+- `quoteLineToJob` and `jobToJob` never swap **made** sub-assemblies —
+  documented as "a later layer". Fail-safe (you get the quoted/copied
+  structure), but it disagrees with MRP, which has already redirected that
+  demand.
 - A Make→Buy successor leaves the line on the predecessor, and that fallthrough
   is indistinguishable from "successor's make method isn't Active" or "item read
   failed".

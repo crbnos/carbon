@@ -145,7 +145,7 @@ const AssemblyInstructionProperties = ({
   return (
     <VStack
       spacing={0}
-      className="w-[450px] bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm"
+      className="w-[450px] bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm"
     >
       {/* Sticky panel header: which step you're editing, its status, and a
           one-glance summary (component count, flagged). */}
