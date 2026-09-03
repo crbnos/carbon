@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-03T03:53:51.373Z",
-  "totalTools": 1492,
+  "generated": "2026-09-03T04:09:48.856Z",
+  "totalTools": 1494,
   "modules": 15,
   "tools": [
     {
@@ -3707,6 +3707,53 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getExistingOpeningBalanceEntry",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get existing opening balance entry",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_createOpeningBalanceJournal",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "create opening balance journal",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "postingDate": {
+            "type": "string"
+          },
+          "balances": {}
+        },
+        "required": [
+          "postingDate",
+          "balances"
         ]
       }
     },

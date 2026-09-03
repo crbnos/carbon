@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düş�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} çakışma"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesaplar}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
@@ -829,6 +832,9 @@ msgstr "Sevkiyatın durumu değişti"
 
 msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Aşağıdaki tarih itibarıyla tek bir dengeli yevmiye kaydı muhasebeleştirilecek; fark Dağıtılmamış kârlara kaydedilecektir."
 
 msgid "A step needs a name."
 msgstr "Bir adım bir ada ihtiyaç duyuyor."
@@ -2287,6 +2293,9 @@ msgstr "Itibaren"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0} itibariyle"
+
+msgid "As of date"
+msgstr "Tarihi itibarıyla"
 
 msgid "As of:"
 msgstr "Şu tarih itibariyle:"
@@ -11145,8 +11154,18 @@ msgstr "Açılış"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Bir operasyonu açmak zamanlayıcısını başlatır, böylece zaman çalışma başladığı andan itibaren izlenir."
 
+msgid "Opening Balance"
+msgstr "Açılış Bakiyesi"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0} için Açılış Bakiyesi"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortismanın açılış bakiyesi (yeni satın almalar için 0 kullanın)."
+
+msgid "Opening Balances"
+msgstr "Açılış Bakiyeleri"
 
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
@@ -11898,6 +11917,9 @@ msgstr "Faturayı Kaydet"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Uygun hesap ve açıklama kodları ile muhasebe fişlerini muhasebeleştirin"
+
+msgid "Post opening balances"
+msgstr "Açılış Bakiyelerini Muhasebeleştir"
 
 msgid "Post Receipt"
 msgstr "Makbuzu Kaydet"

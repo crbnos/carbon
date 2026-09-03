@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al succ
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflitti"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# conto con saldo} other {# conti con saldo}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
@@ -829,6 +832,9 @@ msgstr "Lo stato della spedizione cambia"
 
 msgid "A shipment's tracking number changes"
 msgstr "Il numero di tracciamento di una spedizione cambia"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Una singola riga di registrazione bilanciata sarà registrata alla data indicata di seguito, con la differenza compensata agli Utili non distribuiti."
 
 msgid "A step needs a name."
 msgstr "Un passaggio ha bisogno di un nome."
@@ -2287,6 +2293,9 @@ msgstr "Al"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "Al {0}"
+
+msgid "As of date"
+msgstr "Data al"
 
 msgid "As of:"
 msgstr "A partire da:"
@@ -11145,8 +11154,18 @@ msgstr "Apertura"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "L'apertura di un'operazione avvia il suo timer, quindi il tempo viene tracciato dal momento in cui inizia il lavoro."
 
+msgid "Opening Balance"
+msgstr "Saldo iniziale"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Saldo iniziale per {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo di apertura dell'ammortamento già contabilizzato prima dell'aggiunta di questo asset a Carbon (utilizzare 0 per le nuove acquisizioni)."
+
+msgid "Opening Balances"
+msgstr "Saldi iniziali"
 
 msgid "Operating Expenses"
 msgstr "Spese Operative"
@@ -11898,6 +11917,9 @@ msgstr "Registra Fattura"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Registra inserimenti della prima nota con codici di conto e descrizione appropriati"
+
+msgid "Post opening balances"
+msgstr "Registra saldi iniziali"
 
 msgid "Post Receipt"
 msgstr "Registra Ricevuta"

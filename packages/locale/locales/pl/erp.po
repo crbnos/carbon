@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostateczne
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} konflikty"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# konto z saldem} other {# konta z saldem}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
@@ -829,6 +832,9 @@ msgstr "Status wysyłki zmienia się"
 
 msgid "A shipment's tracking number changes"
 msgstr "Zmiana numeru śledzenia wysyłki"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Jeden zbilansowany zapis księgowy będzie zaksięgowany na dzień poniżej, z różnicą przeniesioną do Zysków zatrzymanych."
 
 msgid "A step needs a name."
 msgstr "Krok wymaga nazwy."
@@ -2287,6 +2293,9 @@ msgstr "Na dzień"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "Od {0}"
+
+msgid "As of date"
+msgstr "Na dzień"
 
 msgid "As of:"
 msgstr "Na dzień:"
@@ -11145,8 +11154,18 @@ msgstr "Otwarcie"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Otwarcie operacji uruchamia jej timer, więc czas jest liczony od momentu, gdy praca się zaczyna."
 
+msgid "Opening Balance"
+msgstr "Saldo Otwarcia"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Saldo Otwarcia dla {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo otwarcia amortyzacji już zaksięgowanej przed dodaniem tego zasobu do Carbon (użyj 0 dla nowych przejęć)."
+
+msgid "Opening Balances"
+msgstr "Salda Otwarcia"
 
 msgid "Operating Expenses"
 msgstr "Koszty operacyjne"
@@ -11898,6 +11917,9 @@ msgstr "Zaksięguj fakturę"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Zaksięguj wpisy dowodu księgowego z odpowiednimi kodami konta i opisu"
+
+msgid "Post opening balances"
+msgstr "Zaksięguj salda otwarcia"
 
 msgid "Post Receipt"
 msgstr "Zaksięguj Paragon"
