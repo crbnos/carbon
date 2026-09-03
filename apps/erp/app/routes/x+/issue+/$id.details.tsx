@@ -22,6 +22,7 @@ import {
 import {
   ActionTasksList,
   AssociatedItemsList,
+  CreateSupplierReturn,
   IssueContent,
   ReviewersList
 } from "~/modules/quality/ui/Issue";
@@ -160,10 +161,20 @@ export default function IssueDetailsRoute() {
       >
         <Await resolve={routeData?.associations}>
           {(resolvedAssociations) => (
-            <AssociatedItemsList
-              associatedItems={resolvedAssociations?.items ?? []}
-              isDisabled={isIssueLocked(nonConformance?.status)}
-            />
+            <>
+              <AssociatedItemsList
+                associatedItems={resolvedAssociations?.items ?? []}
+                isDisabled={isIssueLocked(nonConformance?.status)}
+              />
+              <CreateSupplierReturn
+                issueId={id}
+                hasReturnToSupplier={(resolvedAssociations?.items ?? []).some(
+                  (item: { disposition?: string | null }) =>
+                    item.disposition === "Return to Supplier"
+                )}
+                isDisabled={isIssueLocked(nonConformance?.status)}
+              />
+            </>
           )}
         </Await>
       </Suspense>

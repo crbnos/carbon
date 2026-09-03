@@ -654,3 +654,88 @@ export function canCreatePurchaseOrderRevision(transition: {
     Boolean(transition.orderDate)
   );
 }
+
+// ─── Purchase Return Orders (Supplier Returns) ───
+
+export const purchaseReturnOrderStatusType = [
+  "Draft",
+  "Confirmed",
+  "Partially Shipped",
+  "Shipped",
+  "Completed",
+  "Cancelled"
+] as const;
+
+export const PURCHASE_RETURN_ORDER_LOCKED_STATUSES = [
+  "Completed",
+  "Cancelled"
+] as const;
+
+export function isPurchaseReturnOrderLocked(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_RETURN_ORDER_LOCKED_STATUSES.includes(
+    status as (typeof PURCHASE_RETURN_ORDER_LOCKED_STATUSES)[number]
+  );
+}
+
+export const purchaseReturnOrderValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  purchaseReturnOrderId: zfd.text(z.string().optional()),
+  status: z.enum(purchaseReturnOrderStatusType).optional(),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
+  supplierLocationId: zfd.text(z.string().optional()),
+  supplierContactId: zfd.text(z.string().optional()),
+  supplierReference: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  purchaseOrderId: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  orderDate: z.string().min(1, { message: "Order date is required" }),
+  expirationDate: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional())
+});
+
+export const purchaseReturnOrderLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  purchaseReturnOrderId: z
+    .string()
+    .min(1, { message: "Return order is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be positive" })
+  ),
+  unitOfMeasureCode: zfd.text(z.string().optional()),
+  unitPrice: zfd.numeric(z.number().min(0)),
+  restockFeePercent: zfd.numeric(z.number().min(0).max(1).optional()),
+  returnReasonId: zfd.text(z.string().optional()),
+  purchaseOrderLineId: zfd.text(z.string().optional()),
+  receiptLineId: zfd.text(z.string().optional()),
+  purchaseInvoiceLineId: zfd.text(z.string().optional()),
+  trackedEntityIds: zfd.repeatableOfType(z.string()).optional()
+});
+
+// Credit dialog: repeatable per-line quantity rows (same encoding as
+// selectedLines — a JSON-encoded field)
+export const purchaseReturnOrderCreditValidator = z.object({
+  lines: z
+    .string()
+    .transform((val, ctx) => {
+      try {
+        return JSON.parse(val) as unknown;
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+        return z.NEVER;
+      }
+    })
+    .pipe(
+      z
+        .array(
+          z.object({
+            purchaseReturnOrderLineId: z.string().min(1),
+            quantity: z.number().min(0)
+          })
+        )
+        .min(1, { message: "At least one line is required" })
+    )
+});

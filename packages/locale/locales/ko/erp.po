@@ -72,6 +72,12 @@ msgstr "{0} 전"
 msgid "{0} cells with deltas"
 msgstr "{0}개 셀에 변경사항 있음"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr "{0} 크레딧 가능 ({1} / {2} 크레딧 완료)"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "잔액이 있는 고객 {0}명"
@@ -117,6 +123,11 @@ msgstr "{0}개의 문제 — 게시되지 않음"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "공정 {0}개"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr "{0} 입고 · {1} 크레딧 완료"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -725,6 +736,9 @@ msgstr "입고의 상태가 변경되었습니다"
 msgid "A receipt's supplier changes"
 msgstr "입고의 공급업체가 변경됩니다."
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr "반품 수권(RMA)은 고객이 교환, 교체 또는 수리를 위해 상품을 반품할 수 있도록 허가합니다."
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "공법에 첨부된 재사용 가능하고 버전이 지정된 작업 표준서 집합으로 공정에 기록 및 확인할 순서가 지정된 단계와 실행 매개변수를 제공합니다."
 
@@ -847,6 +861,9 @@ msgstr "공급업체가 생성됨"
 
 msgid "A supplier is deleted"
 msgstr "공급업체가 삭제됨"
+
+msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
+msgstr "공급업체 반품은 이전에 받은 상품을 교환 또는 교체를 위해 공급업체에 다시 보냅니다."
 
 msgid "A supplier's account manager changes"
 msgstr "공급업체의 계정 관리자가 변경됨"
@@ -1233,6 +1250,12 @@ msgstr "라인 추가"
 msgid "Add Line Item"
 msgstr "라인 항목 추가"
 
+msgid "Add Lines"
+msgstr "라인 추가"
+
+msgid "Add lines from document"
+msgstr "문서에서 라인 추가"
+
 msgid "Add match"
 msgstr "일치 추가"
 
@@ -1353,6 +1376,10 @@ msgstr "추가 비용"
 
 msgid "Added"
 msgstr "추가됨"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr "{0}개 라인이 추가되었습니다"
 
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
@@ -1890,14 +1917,32 @@ msgstr "{orderLabel}을(를) 취소하시겠습니까? 주문이 종료됩니다
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "이 작업 지시를 취소하시겠습니까? 현장에서 더 이상 가용하지 않습니다."
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr "이 RMA를 취소하시겠습니까? 이는 허가된 수량을 원본 문서로 복구합니다."
+
+msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
+msgstr "이 공급업체 반품을 취소하시겠습니까? 이는 허가된 수량을 원본 문서로 복구합니다."
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "{propertyName} 속성을 변경하시겠습니까? 자동 생성된 자재 ID를 사용하고 있으므로, 이 변경으로 해당 품목의 품목 ID와 관련된 모든 리비전이 변경됩니다."
+
+msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
+msgstr "이 RMA를 완료하시겠습니까? 모든 라인은 완전히 수령되거나 단축 마감되어야 하며, 처리 대기 중인 수령 수량이 없어야 합니다."
 
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "이 재고 이동을 완료하시겠습니까?"
 
+msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
+msgstr "이 공급업체 반품을 완료하시겠습니까? 모든 라인은 완전히 배송되거나 단축 마감되어야 합니다."
+
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr "이 RMA를 확인하시겠습니까? 확인하면 고객이 라인상의 상품을 반품할 수 있도록 허가됩니다."
+
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "이 수주를 확인하시겠습니까? 수주를 확인하면 공급 및 소요량 계산에 사용되는 주문 수량에 영향을 미칩니다."
+
+msgid "Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier."
+msgstr "이 공급업체 반품을 확인하시겠습니까? 확인하면 라인상의 상품이 공급업체로 배송되도록 허가됩니다."
 
 msgid "Are you sure you want to convert the RFQ to a quote?"
 msgstr "이 RFQ를 견적으로 전환하시겠습니까?"
@@ -2109,6 +2154,10 @@ msgstr "프린터 \"{0}\"을(를) 삭제하시겠습니까? 이 프린터를 참
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "매입 송장 라인을 삭제하시겠습니까: {0} {1}? 이 작업은 취소할 수 없습니다."
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr "반품 사유 '{0}'을(를) 삭제하시겠습니까? 이는 취소할 수 없습니다."
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -2195,6 +2244,9 @@ msgstr "이 레코드를 삭제하시겠습니까?"
 
 msgid "Are you sure you want to delete this required action?"
 msgstr "이 필수 조치를 삭제하시겠습니까?"
+
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr "이 반품 주문 라인을 삭제하시겠습니까? 이는 취소할 수 없습니다."
 
 msgid "Are you sure you want to delete this risk?"
 msgstr "이 리스크를 삭제하시겠습니까?"
@@ -2721,6 +2773,9 @@ msgstr "자재명세서"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "공백 = 능력의 재인증 기간에서 계산됨"
 
+msgid "Blind"
+msgstr "맹검"
+
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
@@ -2947,6 +3002,11 @@ msgstr "이 파일을 다운로드할 수 없습니다"
 msgid "Cancel"
 msgstr "취소"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr "{0} 취소"
+
 msgid "Cancel change notice"
 msgstr "변경 통지 취소"
 
@@ -2961,6 +3021,12 @@ msgstr "주문 취소"
 
 msgid "Cancel Purchase Order"
 msgstr "발주서 취소"
+
+msgid "Cancel Return"
+msgstr "반품 취소"
+
+msgid "Cancel RMA"
+msgstr "RMA 취소"
 
 msgid "Cancel Sales Order"
 msgstr "수주 취소"
@@ -3470,6 +3536,11 @@ msgstr "공급업체 견적 비교"
 msgid "Complete"
 msgstr "완료"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Complete {0}"
+msgstr "{0} 완료"
+
 msgid "Complete All"
 msgstr "모두 완료"
 
@@ -3603,7 +3674,9 @@ msgstr "설정됨"
 msgid "Confirm"
 msgstr "확인"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "{0} 확인"
 
@@ -3645,6 +3718,9 @@ msgstr "비밀번호 확인"
 
 msgid "Confirm Skip"
 msgstr "건너뛰기 확인"
+
+msgid "Confirmed"
+msgstr "확인됨"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "확정된 입고 — 발주서 및 생산 지시(0 이상의 막대)."
@@ -3913,8 +3989,14 @@ msgstr "품목 링크 복사"
 msgid "Copy link to procedure"
 msgstr "절차서 링크 복사"
 
+msgid "Copy link to RMA"
+msgstr "RMA 링크 복사"
+
 msgid "Copy link to service"
 msgstr "서비스 링크 복사"
+
+msgid "Copy link to supplier return"
+msgstr "공급업체 반품 링크 복사"
 
 msgid "Copy link to tool"
 msgstr "공구 링크 복사"
@@ -3966,6 +4048,12 @@ msgstr "견적 복사"
 
 msgid "Copy Quote number"
 msgstr "견적 번호 복사"
+
+msgid "Copy return number"
+msgstr "반품 번호 복사"
+
+msgid "Copy RMA number"
+msgstr "RMA 번호 복사"
 
 msgid "Copy service number"
 msgstr "서비스 번호 복사"
@@ -4236,11 +4324,17 @@ msgstr "생산 수량 생성"
 msgid "Create Quote Revision"
 msgstr "견적 리비전 생성"
 
+msgid "Create Replacement"
+msgstr "교체 생성"
+
 msgid "Create Revision"
 msgstr "리비전 생성"
 
 msgid "Create Rule"
 msgstr "규칙 생성"
+
+msgid "Create Supplier Return"
+msgstr "공급업체 반품 생성"
 
 msgid "Create Transfer"
 msgstr "이전 생성"
@@ -4357,6 +4451,9 @@ msgstr "공정 생성됨"
 msgid "Created required action"
 msgstr "필수 조치 생성됨"
 
+msgid "Created return reason"
+msgstr "반품 사유가 생성되었습니다"
+
 msgid "Created scrap reason"
 msgstr "스크랩 사유 생성됨"
 
@@ -4387,6 +4484,9 @@ msgstr "웹훅 생성됨"
 
 msgid "Created work center"
 msgstr "작업장 생성됨"
+
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr "아직 크레딧되지 않은 배송 수량에 대한 공급업체 크레딧 메모 초안을 생성합니다"
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "회계연도의 12개월 기간을 생성합니다. 이미 존재하는 기간은 유지됩니다."
@@ -4421,6 +4521,12 @@ msgstr "제조 원가가 재공품에 편입될 때 사용되는 대변 계정"
 
 msgid "Credit Memo"
 msgstr "대변전표"
+
+msgid "Credit total"
+msgstr "크레딧 합계"
+
+msgid "Credited"
+msgstr "크레딧됨"
 
 msgid "Credits"
 msgstr "대변"
@@ -5203,6 +5309,9 @@ msgstr "RFQ 삭제"
 msgid "Delete Risk"
 msgstr "리스크 삭제"
 
+msgid "Delete RMA"
+msgstr "RMA 삭제"
+
 msgid "Delete row"
 msgstr "행 삭제"
 
@@ -5262,6 +5371,9 @@ msgstr "공급업체 삭제"
 
 msgid "Delete Supplier Quote"
 msgstr "공급업체 견적 삭제"
+
+msgid "Delete Supplier Return"
+msgstr "공급업체 반품 삭제"
 
 msgid "Delete Supplier Type"
 msgstr "공급업체 유형 삭제"
@@ -5628,6 +5740,9 @@ msgstr "템플릿 다운로드"
 
 msgid "Draft"
 msgstr "초안"
+
+msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
+msgstr "공급업체 반품으로 처리된 수량에 대한 공급업체 반품 초안을 작성합니다. 연결된 반품으로 이미 처리된 수량은 제외되며, 연결된 반품이 열려있는 동안 이 문제는 종료할 수 없습니다."
 
 msgid "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
 msgstr "초안은 수정 가능하고, 활성은 사용 중이므로 변경하려면 새 버전이 필요하며, 보관됨은 더 이상 사용하지 않는 상태입니다."
@@ -6773,6 +6888,13 @@ msgstr "실패"
 msgid "Failed features"
 msgstr "부적합 특성"
 
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr "행 추가 실패 — {0}개 중 {addedCount}개 행이 추가되었습니다"
+
+msgid "Failed to add lines"
+msgstr "라인 추가 실패"
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
 msgstr "자산 클래스 생성 실패: {0}"
@@ -6868,6 +6990,10 @@ msgstr "지불 조건 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "공정 생성 실패: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr "반품 사유 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -6967,6 +7093,15 @@ msgstr "입고 라인을 불러오지 못했습니다"
 msgid "Failed to load receipts"
 msgstr "입고를 불러오지 못했습니다"
 
+msgid "Failed to load return reasons"
+msgstr "반품 사유를 불러오지 못했습니다"
+
+msgid "Failed to load RMA lines"
+msgstr "RMA 라인 로드 실패"
+
+msgid "Failed to load RMAs"
+msgstr "RMA 로드 실패"
+
 msgid "Failed to load sales order lines"
 msgstr "수주 라인 로드 실패"
 
@@ -6981,6 +7116,12 @@ msgstr "출하를 불러오지 못했습니다"
 
 msgid "Failed to load supplier part details"
 msgstr "공급업체 부품 세부정보를 불러오지 못했습니다"
+
+msgid "Failed to load supplier return lines"
+msgstr "공급업체 반품 라인을 로드하지 못했습니다"
+
+msgid "Failed to load supplier returns"
+msgstr "공급업체 반품을 로드하지 못했습니다"
 
 msgid "Failed to load tracked entities"
 msgstr "추적 개체를 불러오지 못했습니다"
@@ -8487,6 +8628,9 @@ msgstr "이슈"
 msgid "Issue (material)"
 msgstr "출고(자재)"
 
+msgid "Issue Credit"
+msgstr "신용권 발행"
+
 msgid "Issue description"
 msgstr "이슈 설명"
 
@@ -8975,6 +9119,13 @@ msgstr "조명 꺼짐 (24/7)"
 msgid "Likelihood"
 msgstr "발생 가능성"
 
+msgid "Line"
+msgstr "라인"
+
+#. placeholder {0}: line.lineNumber
+msgid "Line {0}"
+msgstr "라인 {0}"
+
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
 
@@ -9007,6 +9158,12 @@ msgstr "링크"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "링크 (선택 사항) — 예: /x/settings/…"
+
+msgid "Link a purchase order"
+msgstr "구매 주문 연결"
+
+msgid "Link a sales order"
+msgstr "판매 주문 연결"
 
 msgid "Link Jira Issue"
 msgstr "Jira 이슈 연결"
@@ -9069,11 +9226,17 @@ msgstr "전환 시점에 마지막으로 불러와 잔액이 최신 상태로 �
 msgid "Loading associated jobs..."
 msgstr "관련 작업 지시를 로딩 중..."
 
+msgid "Loading creditable lines..."
+msgstr "신용권을 받을 수 있는 라인 로드 중..."
+
 msgid "Loading current quantity…"
 msgstr "현재 수량 로드 중…"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
+
+msgid "Loading returnable lines..."
+msgstr "반품 가능한 라인 로드 중..."
 
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon의 가져오기 도구로 직접 데이터 불러오기"
@@ -10132,6 +10295,9 @@ msgstr "새 리비전"
 msgid "New RFQ"
 msgstr "새 RFQ"
 
+msgid "New RMA"
+msgstr "새 RMA"
+
 msgid "New rule"
 msgstr "새 규칙"
 
@@ -10182,6 +10348,9 @@ msgstr "새 공급업체"
 
 msgid "New Supplier Part"
 msgstr "새 공급업체 부품"
+
+msgid "New Supplier Return"
+msgstr "새 공급업체 반품"
 
 msgid "New Timecard"
 msgstr "새 근무기록"
@@ -10367,6 +10536,9 @@ msgstr "변환이 필요하지 않습니다"
 msgid "No cost history found"
 msgstr "원가 이력이 없습니다"
 
+msgid "No credits yet"
+msgstr "아직 신용권 없음"
+
 msgid "No Data"
 msgstr "데이터 없음"
 
@@ -10456,6 +10628,9 @@ msgstr "검사 계획 없음"
 
 msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
+
+msgid "No issues yet"
+msgstr "아직 문제 없음"
 
 msgid "No items"
 msgstr "품목 없음"
@@ -10601,8 +10776,14 @@ msgstr "견적 거절 사유"
 msgid "No Quote Reasons"
 msgstr "견적 거절 사유"
 
+msgid "No receipts yet"
+msgstr "아직 영수증 없음"
+
 msgid "No receivables"
 msgstr "매출채권이 없습니다"
+
+msgid "No received quantity remains creditable"
+msgstr "받은 수량 중 신용권을 받을 수 있는 수량이 없습니다"
 
 msgid "No records found"
 msgstr "기록을 찾을 수 없습니다"
@@ -10625,6 +10806,12 @@ msgstr "결과 없음"
 msgid "No results found"
 msgstr "결과가 없습니다"
 
+msgid "No returnable lines found for this customer"
+msgstr "이 고객에 대한 반품 가능한 라인을 찾을 수 없습니다"
+
+msgid "No returnable lines found for this supplier"
+msgstr "이 공급업체에 대한 반품 가능한 라인을 찾을 수 없습니다"
+
 msgid "No rows here."
 msgstr "행이 없습니다."
 
@@ -10636,6 +10823,9 @@ msgstr "이 시간대에 스케줄된 작업이 없습니다"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "교대근무 구성 없음 — 월–금, 8시간 근무일 가정"
+
+msgid "No shipments yet"
+msgstr "아직 배송 없음"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
@@ -11497,6 +11687,12 @@ msgstr "부품 대체"
 msgid "Partial"
 msgstr "부분"
 
+msgid "Partially Received"
+msgstr "부분 수령됨"
+
+msgid "Partially Shipped"
+msgstr "부분 배송됨"
+
 msgid "Partner"
 msgstr "파트너"
 
@@ -11724,6 +11920,9 @@ msgstr "피킹 목록"
 
 msgid "Pick Order"
 msgstr "피킹 순서"
+
+msgid "Pick serials/batches to return"
+msgstr "반품할 일련번호/배치 선택"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "재고가 필요한 빈을 선택한 다음, 재고를 가져올 빈을 선택합니다."
@@ -12824,8 +13023,14 @@ msgstr "입고 일시"
 msgid "Received By"
 msgstr "입고 담당자"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
+
 msgid "Received Qty"
 msgstr "입고 수량"
+
+msgid "Received quantity not yet credited. The credit memo is created as a draft."
+msgstr "수령된 수량이 아직 신용권으로 처리되지 않았습니다. 신용장은 초안으로 생성됩니다."
 
 msgid "Receiving Location"
 msgstr "입고 사업장"
@@ -13138,6 +13343,9 @@ msgstr "PDF 교체"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "이 회사의 데이터를 데모 데이터셋으로 교체합니다 — 먼저 스냅샷을 저장하여 나중에 복원할 수 있습니다."
 
+msgid "Replacement Order"
+msgstr "대체 주문"
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF를 교체하면 이 문서의 모든 풍선 표시가 제거됩니다. 기능 행과 값은 유지되며, 새 도면에 풍선을 다시 배치할 수 있습니다."
 
@@ -13307,6 +13515,22 @@ msgstr "자원"
 msgid "Resources"
 msgstr "자원"
 
+msgid "Restock"
+msgstr "재입고"
+
+msgid "restock fee"
+msgstr "재입고 수수료"
+
+msgid "Restock Fee Percent"
+msgstr "재입고 수수료 비율"
+
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr "재입고 수수료 {0}"
+
+msgid "Restocking fee:"
+msgstr "재입고 수수료:"
+
 msgid "Restorable with changes"
 msgstr "변경 사항과 함께 복원 가능"
 
@@ -13346,6 +13570,9 @@ msgstr "페이지당 결과 수"
 msgid "Resume Receiving"
 msgstr "수령 재개"
 
+msgid "Resume Shipping"
+msgstr "배송 재개"
+
 msgid "Retained Earnings"
 msgstr "이익잉여금"
 
@@ -13367,11 +13594,44 @@ msgstr "복원 재시도"
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
 
+msgid "Return ID"
+msgstr "반품 ID"
+
+msgid "Return Location"
+msgstr "반품 위치"
+
+msgid "Return Number"
+msgstr "반품 번호"
+
+msgid "Return Quantity"
+msgstr "반품 수량"
+
+msgid "Return Reason"
+msgstr "반품 사유"
+
+msgid "Return Reasons"
+msgstr "반품 사유"
+
+msgid "returnable"
+msgstr "반품 가능"
+
 msgid "Returned"
 msgstr "반환됨"
 
+msgid "Returned batch"
+msgstr "반품된 배치"
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr "반품된 상품은 0 가치로 재입고됩니다"
+
+msgid "Returned serial numbers"
+msgstr "반품된 일련번호"
+
 msgid "Returning unused picked material"
 msgstr "미사용 선택 재료 반환 중"
+
+msgid "Returns"
+msgstr "반품"
 
 msgid "Returns:"
 msgstr "반환 값:"
@@ -13503,6 +13763,24 @@ msgstr "리스크 등록부"
 
 msgid "Risks"
 msgstr "리스크"
+
+msgid "RMA"
+msgstr "RMA"
+
+msgid "RMA ID"
+msgstr "RMA ID"
+
+msgid "RMA Line"
+msgstr "RMA 라인"
+
+msgid "RMA Lines"
+msgstr "RMA 라인"
+
+msgid "RMA Number"
+msgstr "RMA 번호"
+
+msgid "RMAs"
+msgstr "RMA"
 
 msgid "Role"
 msgstr "역할"
@@ -14172,6 +14450,9 @@ msgstr "고객 선택"
 msgid "Select dimension"
 msgstr "차원 선택"
 
+msgid "Select disposition"
+msgstr "처리 방법 선택"
+
 msgid "Select Employee"
 msgstr "직원 선택"
 
@@ -14352,6 +14633,12 @@ msgstr "일련번호/배치 #"
 
 msgid "Serialize & sell your parts"
 msgstr "부품에 일련번호를 부여하고 판매하세요."
+
+msgid "Serials and batches on hand that were received from this supplier"
+msgstr "이 공급업체에서 받은 현재 보유 중인 일련번호 및 배치"
+
+msgid "Serials/batches to return"
+msgstr "반품할 일련번호/배치"
 
 msgid "Series"
 msgstr "시리즈"
@@ -14576,6 +14863,12 @@ msgstr "출하 위치"
 msgid "Shipments"
 msgstr "출하"
 
+msgid "Shipped"
+msgstr "배송됨"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr "이 고객의 배송 라인 중 반품할 수량이 남아 있는 라인"
+
 msgid "Shipped Qty"
 msgstr "출하 수량"
 
@@ -14647,6 +14940,9 @@ msgstr "{itemName} 부족 피킹"
 
 msgid "Shortcuts"
 msgstr "단축키"
+
+msgid "Show"
+msgstr "표시"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID 열을 표시합니다. 어느 쪽이든 고객은 내부적으로 동일하게 식별됩니다."
@@ -15107,6 +15403,9 @@ msgstr "이 날짜 이후로 발주서를 발행하지 마십시오"
 msgid "Stop Receiving"
 msgstr "수령 중지"
 
+msgid "Stop Shipping"
+msgstr "배송 중지"
+
 msgid "Storage client not available"
 msgstr "저장소 클라이언트를 사용할 수 없습니다"
 
@@ -15299,6 +15598,9 @@ msgstr "공급업체"
 msgid "Supplier"
 msgstr "공급업체"
 
+msgid "Supplier (optional — auto-resolved)"
+msgstr "공급업체 (선택 사항 — 자동 확인)"
+
 msgid "Supplier Accounts"
 msgstr "공급업체 계정"
 
@@ -15397,6 +15699,21 @@ msgstr "공급업체 참조"
 
 msgid "Supplier Reference"
 msgstr "공급업체 참조"
+
+msgid "Supplier Return"
+msgstr "공급업체 반품"
+
+msgid "Supplier Return Line"
+msgstr "공급업체 반품 라인"
+
+msgid "Supplier Return Lines"
+msgstr "공급업체 반품 라인"
+
+msgid "Supplier Returns"
+msgstr "공급업체 반품"
+
+msgid "Supplier RMA #"
+msgstr "공급업체 RMA #"
 
 msgid "Supplier Status"
 msgstr "공급업체 상태"
@@ -15850,6 +16167,9 @@ msgstr "상품이 실제로 창고를 떠나는 날짜로, 출하 전기에 기�
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "기간의 예상 소요량을 충당하기 위해 현장에서 품목이 필요한 날짜"
 
+msgid "The date the return authorization expires"
+msgstr "반품 허가 만료 날짜"
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "이 자산이 사용 중단되는 날짜로, 이 날짜에 감가상각이 중단되고 남은 순장부가액이 처분 계정에 계상됩니다."
 
@@ -16039,6 +16359,9 @@ msgstr "이 공급업체의 생명주기 상태(활성, 비활성, 승인 대기
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "이 사업장이 시간을 보고하는 로컬 시간대로, 사용자의 브라우저 로케일에 관계없이 이 사업장의 일정, 타임카드 및 교대조 시간이 이 시간대로 해석됩니다."
 
+msgid "The location the goods will be shipped from"
+msgstr "상품이 배송될 위치"
+
 msgid "The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record."
 msgstr "이 직원의 기본 사업장으로, 타임카드의 시간대 해석 및 작업 지시 레코드의 기본 교대조 선택기를 결정합니다."
 
@@ -16050,6 +16373,9 @@ msgstr "이 견적이 주문으로 전환될 경우 처리할 위치입니다. �
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "이 RFQ가 견적을 거쳐 주문으로 전환될 경우 처리할 위치입니다."
+
+msgid "The location where the goods will be received"
+msgstr "상품이 수령될 위치"
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "모든 개체에 대해 발생한 리스크 및 기회의 로그로, 각각 독립적인 1~5 심각도 및 발생 가능성으로 평가되고 해결에 이릅니다."
@@ -16366,6 +16692,9 @@ msgstr "이 주문에 대한 공급업체 자체 참조번호(자사 시스템�
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "공급업체의 패킹리스트 또는 출하 번호로, 감사를 위해 기록되며 전기 로직에는 사용되지 않습니다."
 
+msgid "The supplier's return authorization number"
+msgstr "공급업체의 반품 허가 번호"
+
 msgid "The suppliers and vendors you buy from"
 msgstr "구매처인 공급업체 및 벤더"
 
@@ -16664,6 +16993,9 @@ msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는
 msgid "This restore could not be completed."
 msgstr "이 복원을 완료할 수 없습니다."
 
+msgid "This return order has no lines to credit"
+msgstr "이 반품 주문에 크레딧할 라인이 없습니다"
+
 msgid "This revert could not be completed."
 msgstr "이 되돌리기를 완료할 수 없습니다."
 
@@ -16754,6 +17086,14 @@ msgstr "이것은 배치 크기를 사용하여 활성 생산 방법의 자재 �
 #. placeholder {1}: routeData?.job?.salesOrderReadableId
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "이것은 {0}과(와) {1}의 연결을 제거합니다. 작업 지시는 더 이상 수주 아래에 나타나지 않을 것이고 출하가 이를 찾을 수 없을 것입니다."
+
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "{0}와(과) 구매 주문 간의 연결이 해제됩니다. 반품이 더 이상 구매 주문 아래에 표시되지 않습니다."
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "{0}와(과) 판매 주문 간의 연결이 해제됩니다. RMA가 더 이상 판매 주문 아래에 표시되지 않습니다."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체됩니다."
@@ -17310,6 +17650,12 @@ msgstr "연결 해제"
 
 msgid "Unlink job from sales order?"
 msgstr "작업 지시를 수주에서 분리하시겠습니까?"
+
+msgid "Unlink return from purchase order?"
+msgstr "구매 주문에서 반품 연결을 해제하시겠습니까?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "판매 주문에서 RMA 연결을 해제하시겠습니까?"
 
 msgid "Unlock"
 msgstr "잠금 해제"
@@ -17878,6 +18224,12 @@ msgstr "입고 보기"
 
 msgid "View Receivables"
 msgstr "매출채권 보기"
+
+msgid "View replacement purchase order"
+msgstr "대체 구매 주문 보기"
+
+msgid "View replacement sales order"
+msgstr "대체 판매 주문 보기"
 
 msgid "View Run"
 msgstr "실행 보기"
@@ -18754,6 +19106,12 @@ msgstr "Z1.4 검사 수준(I / II / III)으로, 수준이 높을수록 동일 �
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4 심각도 (정상 / 까다로운 검사 / 수월한 검사); 최근 로트 수용 이력에 기반한 규칙에 따라 전환됩니다."
+
+msgid "Zero inventory value"
+msgstr "재고 가치 0"
+
+msgid "Zero Inventory Value"
+msgstr "재고 가치 0"
 
 msgid "Zoom Box"
 msgstr "확대 영역"

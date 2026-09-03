@@ -151,6 +151,21 @@ export default function IssueRoute() {
                           children: resolvedAssociations.receiptLines
                         },
                         {
+                          key: "salesReturnOrderLines",
+                          name: t`RMA Line`,
+                          pluralName: t`RMA Lines`,
+                          module: "sales",
+                          children: resolvedAssociations.salesReturnOrderLines
+                        },
+                        {
+                          key: "purchaseReturnOrderLines",
+                          name: t`Supplier Return Line`,
+                          pluralName: t`Supplier Return Lines`,
+                          module: "purchasing",
+                          children:
+                            resolvedAssociations.purchaseReturnOrderLines
+                        },
+                        {
                           key: "trackedEntities",
                           name: t`Tracked Entity`,
                           pluralName: t`Tracked Entities`,

@@ -5,7 +5,8 @@ import {
   LuLayoutList,
   LuListTodo,
   LuPackageSearch,
-  LuStar
+  LuStar,
+  LuUndo2
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -44,6 +45,12 @@ export default function usePurchasingSubmodules() {
           to: path.to.purchaseOrders,
           icon: <LuLayoutList />,
           table: "purchaseOrder"
+        },
+        {
+          name: t`Supplier Returns`,
+          to: path.to.purchaseReturnOrders,
+          icon: <LuUndo2 />,
+          table: "purchaseReturnOrder"
         }
       ]
     },

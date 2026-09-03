@@ -72,7 +72,7 @@ export const replenishmentSystemTypes = [
 export const receiptSourceDocumentType = [
   // "Sales Order",
   // "Sales Invoice",
-  // "Sales Return Order",
+  "Sales Return Order",
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
@@ -293,10 +293,10 @@ export const shipmentStatusType = [
 export const shipmentSourceDocumentType = [
   "Sales Order",
   // "Sales Invoice",
-  // "Sales Return Order",
+  "Sales Return Order",
   "Purchase Order",
   // "Purchase Invoice",
-  // "Purchase Return Order",
+  "Purchase Return Order",
   // "Inbound Transfer",
   "Outbound Transfer"
 ] as const;

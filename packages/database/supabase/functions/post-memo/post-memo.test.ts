@@ -90,3 +90,123 @@ Deno.test("rejects an unknown reason account class", () => {
     "Unknown GL account class"
   );
 });
+
+// Scenario pin for the supplier-return cycle. The return SHIPMENT posts
+// DR GRNI / CR Inventory, so the memo must CREDIT GRNI back to zero and DEBIT
+// (reduce) AP — net DR AP / CR Inventory. That requires direction "Debit";
+// `createPurchaseReturnOrderCredit` shipped as "Credit" once, which increased
+// AP and left GRNI holding a permanent 2x debit. Both accounts are Liability,
+// so a debit stores −magnitude and a credit +magnitude.
+Deno.test("supplier RETURN debit memo: DR AP, CR GRNI (clears the shipment's GRNI debit)", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+    })
+  );
+  // AP debited → we owe the supplier less.
+  assertEquals(line(r, "acct_ap").amount, -300);
+  // GRNI credited → nets off the return shipment's DR GRNI.
+  assertEquals(line(r, "acct_grni").amount, 300);
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+// The inverse, spelled out so the regression is unmistakable: a Credit
+// direction on the same supplier-return inputs moves BOTH legs the wrong way.
+Deno.test("supplier RETURN with Credit direction is backwards (increases AP, re-debits GRNI)", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Credit",
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+    })
+  );
+  assertEquals(line(r, "acct_ap").amount, 300); // AP credited = owe MORE
+  assertEquals(line(r, "acct_grni").amount, -300); // GRNI debited AGAIN
+});
+
+// --- Supplier return with a credit-vs-cost delta (spec: "credit-vs-cost delta
+// → purchaseVarianceAccount"). The shipment debited GRNI at carried cost; the
+// memo clears exactly that and books the difference as PPV, so GRNI nets to 0.
+
+Deno.test("supplier RETURN: credited LESS than carried cost → DR variance (a loss)", () => {
+  // RTS000001 shape: shipment relieved 120 of stock, supplier credits only 60.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amountBase: 60,
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+      reasonAmountBase: 120,
+      varianceAccountId: "acct_ppv",
+    })
+  );
+  assertEquals(r.lines.length, 3);
+  assertEquals(line(r, "acct_ap").amount, -60); // DR AP by the credit
+  assertEquals(line(r, "acct_grni").amount, 120); // CR GRNI by carried cost
+  assertEquals(line(r, "acct_ppv").amount, 60); // DR expense = loss
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+Deno.test("supplier RETURN: credited MORE than carried cost → CR variance (a gain)", () => {
+  // RTS000005 shape: shipment relieved 24 of stock, supplier credits 200.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amountBase: 200,
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+      reasonAmountBase: 24,
+      varianceAccountId: "acct_ppv",
+    })
+  );
+  assertEquals(r.lines.length, 3);
+  assertEquals(line(r, "acct_ap").amount, -200);
+  assertEquals(line(r, "acct_grni").amount, 24);
+  assertEquals(line(r, "acct_ppv").amount, -176); // CR expense = gain
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+Deno.test("supplier RETURN: credit equals carried cost → no variance leg at all", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amountBase: 290,
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+      reasonAmountBase: 290,
+      varianceAccountId: "acct_ppv",
+    })
+  );
+  assertEquals(r.lines.length, 2);
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+Deno.test("refuses to post an unbalanced memo when no variance account is configured", () => {
+  assertThrows(
+    () =>
+      buildMemoJournal(
+        base({
+          isAR: false,
+          direction: "Debit",
+          amountBase: 60,
+          reasonAccountClass: "Liability",
+          reasonAmountBase: 120,
+          varianceAccountId: null,
+        })
+      ),
+    Error,
+    "no variance account"
+  );
+});

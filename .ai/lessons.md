@@ -1152,6 +1152,52 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## A memo's `direction` means OPPOSITE things on AR and AP
+
+**Context:** Supplier returns settle through an AP `memo`. The RMA spec and
+`createPurchaseReturnOrderCredit` both used `direction: "Credit"` — the same
+value the (correct) customer-side credit uses.
+
+**Problem:** `direction` alone decides the CONTROL side for both parties
+(`buildMemoJournal`): a Credit memo CREDITS the control account, a Debit memo
+DEBITS it. On AR (an asset) a credit REDUCES the balance — right for a customer
+refund. On AP (a liability) a credit INCREASES it — so returning goods made
+Carbon show we owed the supplier MORE, and the reason leg re-debited GR/IR
+instead of clearing what the return shipment had debited, leaving a permanent
+2x residual in a suspense account. Every entry still BALANCED, so no guard
+fired, and it survived four review rounds. The rest of invoicing already
+assumed the opposite (`getAvailableCredits` selects supplier memos with
+`direction = 'Debit'`), so the memos were also invisible to "Apply Credit".
+
+**Rule:** A vendor return is a **Debit** memo (`debitMemo` `DR-` sequence); a
+customer return is a **Credit** memo. Never reason about `direction` without
+naming the party — write out which way the control account moves and whether
+that account is an asset or a liability. Balanced ≠ correct: when a posting has
+a suspense account (GR/IR), assert the CYCLE nets to zero, not just that each
+entry balances.
+
+**Applies to:** `apps/erp/app/modules/purchasing/purchasing.service.ts`
+(`createPurchaseReturnOrderCredit`), `apps/erp/app/modules/sales/sales.service.ts`
+(`createSalesReturnOrderCredit`), `packages/database/supabase/functions/post-memo/*`,
+any new `memo` writer.
+
+## A bare FormLabel outside FormControl 500s the whole route
+
+**Context:** The returns-module line forms (`SalesReturnOrderLineForm`, `PurchaseReturnOrderLineForm`) used `<FormLabel>` as a standalone section heading for the tracked-entity picker area.
+
+**Problem:** `FormLabel` (`packages/react/src/Form/FormLabel.tsx`) calls `useFormControlContext()`, which **throws** outside a `<FormControl>`. The throw happens at render, so the route's error boundary replaces the page — the user sees "Error 500. Something broke on our end." on an otherwise-valid URL. Subtler: when the crash is below a `ValidatedForm`, the form unmounts, so a page can LOOK fine in a stale snapshot while its Save button is dead. The error is only visible in the browser console (`useFormControlContext() must be used inside of a FormControl`); the server log shows nothing useful.
+
+**Rule:** `FormLabel`/`FormError` are only valid inside a `<FormControl>`. For a standalone section heading in a form, use a plain `<label>`/heading element. When a page 500s with no server error, check the browser console for context-hook throws before suspecting the loader — and treat "form renders but Save does nothing" as a possible sibling-render crash, not a submit bug.
+
+**Applies to:** any usage of `packages/react/src/Form/{FormLabel,FormError}.tsx`; form components under `apps/erp/app/modules/*/ui/`.
+
+## Demo-seeded attributes can make a dead query look alive
+
+- **Context:** The supplier-return entity picker filtered `trackedEntity` on `attributes ->> Supplier`. Browser verification on the local DB showed results, so the query looked correct.
+- **Problem:** No production code ever writes a `Supplier` attribute — the 49 local entities carrying it came from MCP demo seeding (Axiom/Northspoke programs). In production the picker would always be empty. Verification against hand-seeded data validated the seed, not the code.
+- **Rule:** Before anchoring a query on a `trackedEntity.attributes` key, grep for the WRITER of that key in app + edge-function code (receipt tracking writes `Receipt`/`Receipt Line`/`Receipt Line Index`; shipment tracking writes `Shipment`/`Shipment Line`). If the only writers are tests or seeds, the key does not exist in production. Local rows proving a filter matches prove nothing about who writes the attribute.
+- **Applies to:** any `attributes ->> X` filter on trackedEntity/trackedActivity; browser verification on a DB that has been demo-seeded.
+
 ## `crbn reload` must load root `.env` — compose-substituted secrets silently reset
 
 **Context:** Enabling GoTrue SAML via `${SAML_ENABLED:-false}` / `${SAML_PRIVATE_KEY:-}` in docker-compose.dev.yml, values kept in root `.env`.
@@ -1161,6 +1207,7 @@ canvas hosting Radix popovers/selects.
 **Rule:** Any crbn command that invokes docker compose must preload BOTH env files into process.env the way `up.ts` does (`loadDotenv(.env.local)` then `loadDotenv(.env)`, both `override: false`). `reload.ts` now does this. After any reload, still verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status.
 
 **Applies to:** packages/dev reload/compose commands; any GoTrue/Kong/storage env sourced from root `.env`.
+
 ## An incremental pull-sweep cursor must advance on the SAME field the query filters on
 
 **Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.
