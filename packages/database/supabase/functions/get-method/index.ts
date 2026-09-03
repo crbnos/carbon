@@ -140,6 +140,14 @@ function remapStepLinks(
   });
 }
 
+// A BOM line whose quantity is explicitly 0 contributes nothing, so it is
+// dropped whenever a method is instantiated or copied. `null`/`undefined` is
+// NOT treated as zero — those fall back to a quantity of 1 elsewhere in this
+// file, so only a real numeric 0 removes the line.
+function isZeroQuantity(quantity: unknown): boolean {
+  return quantity !== null && quantity !== undefined && Number(quantity) === 0;
+}
+
 const partsValidator = z.object({
   billOfMaterial: z.boolean().default(true),
   billOfProcess: z.boolean().default(true),
@@ -291,12 +299,17 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
-          // Copy materials from source to target
-          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
-                sourceMaterials.data.map((material) => ({
+                materialsToCopy.map((material) => ({
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
@@ -1321,6 +1334,10 @@ serve(async (req: Request) => {
               ]);
 
               if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM. Made sub-assemblies drop out of `configuredChildren`
+              // below with the row, so their sub-tree is never exploded either.
+              if (isZeroQuantity(quantity)) return null;
 
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
@@ -2234,6 +2251,10 @@ serve(async (req: Request) => {
               [];
 
             for await (const child of node.children) {
+              // A zero-quantity BOM line is removed from the method. `madeChildren`
+              // below filters the same way, so a skipped made row stays index-aligned
+              // and its sub-tree is never exploded.
+              if (isZeroQuantity(child.data.quantity)) continue;
               const material = await mapMethodMaterialToJobMaterial(child);
               if (child.data.methodType === "Make to Order") {
                 madeMaterials.push(material);
@@ -2287,7 +2308,9 @@ serve(async (req: Request) => {
               }
 
               const madeChildren = node.children.filter(
-                (child) => child.data.methodType === "Make to Order"
+                (child) =>
+                  child.data.methodType === "Make to Order" &&
+                  !isZeroQuantity(child.data.quantity)
               );
 
               for (const [index, child] of madeChildren.entries()) {
@@ -2941,6 +2964,9 @@ serve(async (req: Request) => {
               ]);
 
               if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM (and its sub-tree, via configuredChildren below).
+              if (isZeroQuantity(quantity)) return null;
 
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
@@ -3446,11 +3472,18 @@ serve(async (req: Request) => {
               customFields: {},
             });
 
+            // A zero-quantity BOM line is removed from the method. Filtering the
+            // children (not the mapped rows) keeps `madeChildren`/`madeMaterials`
+            // index-aligned and stops a made line's sub-tree from being exploded.
             const madeChildren = node.children.filter(
-              (child) => child.data.methodType === "Make to Order"
+              (child) =>
+                child.data.methodType === "Make to Order" &&
+                !isZeroQuantity(child.data.quantity)
             );
             const unmadeChildren = node.children.filter(
-              (child) => child.data.methodType !== "Make to Order"
+              (child) =>
+                child.data.methodType !== "Make to Order" &&
+                !isZeroQuantity(child.data.quantity)
             );
 
             const madeMaterials = madeChildren.map(
@@ -3616,6 +3649,8 @@ serve(async (req: Request) => {
             }
 
             node.children.forEach((child) => {
+              // A zero-quantity BOM line is dropped from the saved method.
+              if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -3936,6 +3971,8 @@ serve(async (req: Request) => {
             }
 
             node.children.forEach((child) => {
+              // A zero-quantity BOM line is dropped from the saved method.
+              if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -4441,6 +4478,16 @@ serve(async (req: Request) => {
               }
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the copied job.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const sourceMaterial = sourceMaterialById.get(child.id);
                 const newMaterialId = nanoid();
                 sourceMaterialIdToJobMaterialId[child.id] = newMaterialId;
@@ -4961,12 +5008,17 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
-          // Copy materials from source to target
-          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
-                sourceMaterials.data.map((material) => ({
+                materialsToCopy.map((material) => ({
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
@@ -5344,6 +5396,8 @@ serve(async (req: Request) => {
               }
 
               node.children.forEach((child) => {
+                // A zero-quantity BOM line is dropped from the saved method.
+                if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -5665,6 +5719,8 @@ serve(async (req: Request) => {
               }
 
               node.children.forEach((child) => {
+                // A zero-quantity BOM line is dropped from the saved method.
+                if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -6067,6 +6123,16 @@ serve(async (req: Request) => {
               }
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the created job.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const newMaterialId = nanoid();
                 quoteMaterialIdToJobMaterialId[child.id] = newMaterialId;
 
@@ -6529,6 +6595,16 @@ serve(async (req: Request) => {
                 [];
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the copied quote.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const newMaterialId = nanoid();
                 quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
 
@@ -7055,6 +7131,16 @@ serve(async (req: Request) => {
                   [];
 
                 for await (const child of node.children) {
+                  // A zero-quantity Buy/Pick line is dropped from the new quote.
+                  // A made sub-assembly is left intact even at quantity 0: its
+                  // operations are copied by make method below and would reference
+                  // a make method that never got created if the row were removed.
+                  if (
+                    isZeroQuantity(child.data.quantity) &&
+                    child.data.methodType !== "Make to Order"
+                  ) {
+                    continue;
+                  }
                   const newMaterialId = nanoid();
                   quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
 
