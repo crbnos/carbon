@@ -10,6 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Separator,
   SidebarTrigger,
   Switch,
   ToggleGroup,
@@ -71,10 +72,10 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 type AssignedView = "board" | "list";
 
 const ASSIGNED_VIEW_KEY = "assigned-view";
-const EMPTY_WORK_CENTERS_KEY = "assigned-show-empty-work-centers";
+const DISPLAY_SETTINGS_KEY = "kanban-assigned-display-settings";
 const UNASSIGNED_COLUMN_ID = "unassigned";
 
-const displaySettings: DisplaySettings = {
+const defaultDisplaySettings: DisplaySettings = {
   emptyWorkCenters: false,
   showCustomer: false,
   showDescription: true,
@@ -96,9 +97,13 @@ export default function AssignedRoute() {
     ASSIGNED_VIEW_KEY,
     "board"
   );
-  const [showEmptyWorkCenters, setShowEmptyWorkCenters] = useLocalStorage(
-    EMPTY_WORK_CENTERS_KEY,
-    false
+  const [displaySettings, setDisplaySettings] = useLocalStorage(
+    DISPLAY_SETTINGS_KEY,
+    defaultDisplaySettings
+  );
+  const mergedDisplaySettings = useMemo(
+    () => ({ ...defaultDisplaySettings, ...displaySettings }),
+    [displaySettings]
   );
 
   const filteredOperations = useMemo(() => {
@@ -136,7 +141,7 @@ export default function AssignedRoute() {
 
     // By default only work centers with assigned operations become columns;
     // the display setting adds the rest of the current location's work centers.
-    if (showEmptyWorkCenters) {
+    if (mergedDisplaySettings.emptyWorkCenters) {
       for (const workCenter of workCenters) {
         if (workCenter.id && workCenter.locationId === locationId) {
           columnWorkCenterIds.add(workCenter.id);
@@ -205,13 +210,19 @@ export default function AssignedRoute() {
     })) satisfies Item[];
 
     return { columns, items };
-  }, [filteredOperations, workCenters, showEmptyWorkCenters, locationId, t]);
+  }, [
+    filteredOperations,
+    workCenters,
+    mergedDisplaySettings.emptyWorkCenters,
+    locationId,
+    t
+  ]);
 
   // With "Empty work centers" on, an empty board of location columns is
   // still worth showing — but a search with no matches keeps its empty state.
   const showEmptyBoard =
     view === "board" &&
-    showEmptyWorkCenters &&
+    mergedDisplaySettings.emptyWorkCenters &&
     !searchTerm &&
     columns.length > 0;
 
@@ -256,12 +267,62 @@ export default function AssignedRoute() {
                         <span className="text-xs font-medium text-muted-foreground">
                           <Trans>Columns</Trans>
                         </span>
-                        <Switch
-                          variant="small"
-                          label={t`Empty work centers`}
-                          checked={showEmptyWorkCenters}
-                          onCheckedChange={setShowEmptyWorkCenters}
-                        />
+                        {[
+                          {
+                            key: "emptyWorkCenters",
+                            label: t`Empty work centers`
+                          }
+                        ].map(({ key, label }) => (
+                          <Switch
+                            key={key}
+                            variant="small"
+                            label={label}
+                            checked={
+                              mergedDisplaySettings[
+                                key as keyof DisplaySettings
+                              ]
+                            }
+                            onCheckedChange={(checked) =>
+                              setDisplaySettings((prev) => ({
+                                ...defaultDisplaySettings,
+                                ...prev,
+                                [key]: checked
+                              }))
+                            }
+                          />
+                        ))}
+                        <Separator />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          <Trans>Cards</Trans>
+                        </span>
+                        {[
+                          { key: "showCustomer", label: t`Customer` },
+                          { key: "showDescription", label: t`Description` },
+                          { key: "showDueDate", label: t`Due Date` },
+                          { key: "showDuration", label: t`Duration` },
+                          { key: "showProgress", label: t`Progress` },
+                          { key: "showStatus", label: t`Status` },
+                          { key: "showSalesOrder", label: t`Sales Order` },
+                          { key: "showThumbnail", label: t`Thumbnail` }
+                        ].map(({ key, label }) => (
+                          <Switch
+                            key={key}
+                            variant="small"
+                            label={label}
+                            checked={
+                              mergedDisplaySettings[
+                                key as keyof DisplaySettings
+                              ]
+                            }
+                            onCheckedChange={(checked) =>
+                              setDisplaySettings((prev) => ({
+                                ...defaultDisplaySettings,
+                                ...prev,
+                                [key]: checked
+                              }))
+                            }
+                          />
+                        ))}
                       </VStack>
                     </PopoverContent>
                   </Popover>
@@ -295,15 +356,12 @@ export default function AssignedRoute() {
               }
             >
               {() => (
-                <div className="flex flex-grow items-stretch justify-center overflow-hidden relative">
-                  <div
-                    className="flex flex-1 min-h-full w-full relative"
-                    style={{ maxWidth: `${columns.length * 350}px` }}
-                  >
+                <div className="flex flex-grow items-stretch overflow-hidden relative">
+                  <div className="flex flex-1 min-h-full w-full relative">
                     <Kanban
                       columns={columns}
                       items={items}
-                      {...displaySettings}
+                      {...mergedDisplaySettings}
                     />
                   </div>
                 </div>
