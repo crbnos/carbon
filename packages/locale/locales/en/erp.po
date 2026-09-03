@@ -3209,6 +3209,9 @@ msgstr "Changing this will update the part ID"
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
 
+msgid "Chart"
+msgstr "Chart"
+
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
 
@@ -9973,6 +9976,9 @@ msgstr "New Cost Center"
 msgid "New Credit / Debit Memo"
 msgstr "New Credit / Debit Memo"
 
+msgid "New Currency"
+msgstr "New Currency"
+
 msgid "New Custom Field"
 msgstr "New Custom Field"
 
@@ -12656,8 +12662,14 @@ msgstr "Raise it at the weekly status call"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 
+msgid "Rate"
+msgstr "Rate"
+
 msgid "Rate Limit"
 msgstr "Rate Limit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 
 msgid "Ratio"
 msgstr "Ratio"

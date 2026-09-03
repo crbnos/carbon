@@ -3209,6 +3209,9 @@ msgstr "Modificare questo aggiornerà l'ID della parte"
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
 
+msgid "Chart"
+msgstr "Grafico"
+
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
 
@@ -9973,6 +9976,9 @@ msgstr "Nuovo Centro di Costo"
 msgid "New Credit / Debit Memo"
 msgstr "Nuova nota di credito / debito"
 
+msgid "New Currency"
+msgstr "Nuova Valuta"
+
 msgid "New Custom Field"
 msgstr "Nuovo Campo Personalizzato"
 
@@ -12656,8 +12662,14 @@ msgstr "Segnalalo nella riunione di stato settimanale"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "segnalalo presto e segnalalo chiaramente. Un problema identificato nella settimana 2 è una piccola correzione; lo stesso problema al lancio è un ritardo."
 
+msgid "Rate"
+msgstr "Tasso"
+
 msgid "Rate Limit"
 msgstr "Limite di Velocità"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel consolidamento (IAS 21). Lasciare vuoto per usare il tasso di cambio corrente."
 
 msgid "Ratio"
 msgstr "Rapporto"

@@ -5,12 +5,7 @@ import { inngest } from "../../client";
 
 type CurrencyCode = string;
 
-type ExchangeClientOptions = {
-  apiKey?: string;
-  apiUrl: string;
-};
-
-export type Rates = { [key in CurrencyCode]?: number };
+type Rates = { [key in CurrencyCode]?: number };
 
 type ExchangeRatesSuccessResponse = {
   success: boolean;
@@ -31,51 +26,85 @@ type ExchangeRatesResponse =
   | ExchangeRatesErrorResponse
   | ExchangeRatesSuccessResponse;
 
-export class ExchangeRatesClient {
-  #apiKey: string;
-  #apiUrl: string;
+/**
+ * Fetches the latest exchange rates from the API. For the free tier of the
+ * API, we can only fetch the rates with a base currency of EUR.
+ */
+async function fetchEurRates(
+  apiKey: string,
+  apiUrl = "https://api.exchangeratesapi.io/v1/latest"
+): Promise<Rates> {
+  const response = await fetch(`${apiUrl}?access_key=${apiKey}`);
 
-  constructor(options: ExchangeClientOptions) {
-    if (!options.apiKey) throw new Error("EXCHANGE_RATES_API_KEY not set");
-
-    this.#apiKey = options.apiKey;
-    this.#apiUrl = options.apiUrl;
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  async getExchangeRates(): Promise<Rates> {
-    /**
-     * Fetches the latest exchange rates from the API. For the free tier of the API, we can only fetch
-     * the rates with a base currency of EUR.
-     */
-    const url = `${this.#apiUrl}?access_key=${this.#apiKey}`;
+  const data: ExchangeRatesResponse = await response.json();
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data: ExchangeRatesResponse = await response.json();
-
-    if ("success" in data && data.success === true) {
-      return data.rates;
-    }
-
-    throw new Error("Unrecognized response from exchange rates server");
+  if ("success" in data && data.success === true && data.rates) {
+    return data.rates;
   }
+
+  throw new Error("Unrecognized response from exchange rates server");
 }
 
-export const getExchangeRatesClient = (
-  apiKey?: string,
-  apiUrl: string = "https://api.exchangeratesapi.io/v1/latest"
-) => {
-  return typeof apiKey === "string"
-    ? new ExchangeRatesClient({
-        apiKey,
-        apiUrl
-      })
-    : undefined;
+/** Codes retired or redenominated — no live feed quotes them, so their
+ * absence is expected and not worth a warning. */
+const OBSOLETE_CURRENCY_CODES = new Set([
+  "VEF",
+  "ZMK",
+  "LTL",
+  "LVL",
+  "HRK",
+  "ZWL"
+]);
+
+type ExchangeRateRow = {
+  currencyCode: string;
+  effectiveDate: string;
+  rate: number;
+  updatedAt: string;
 };
+
+/**
+ * Anchors the EUR-based feed on USD (rate = units of currencyCode per 1 USD)
+ * and partitions the known codes into upsertable rows and stale codes.
+ * Throws when the feed has no usable USD quote — a partial payload may
+ * succeed on retry.
+ */
+export function buildExchangeRateRows(
+  ratesEur: Rates,
+  codes: string[],
+  effectiveDate: string,
+  updatedAt: string
+): { rows: ExchangeRateRow[]; staleCodes: string[] } {
+  const usd = Number(ratesEur["USD"]);
+  if (!Number.isFinite(usd) || usd <= 0) {
+    throw new Error("USD rate missing from feed, cannot anchor to USD");
+  }
+
+  const rows: ExchangeRateRow[] = [];
+  const staleCodes: string[] = [];
+
+  for (const code of codes) {
+    const feedRate = ratesEur[code];
+    // Rates carry internal scale — never the currency's DISPLAY
+    // decimals, which zeroed every 0-decimal currency's fraction and
+    // silently froze rates that rounded to 0
+    const rate =
+      feedRate === undefined ? Number.NaN : round(Number(feedRate) / usd);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      if (!OBSOLETE_CURRENCY_CODES.has(code)) {
+        staleCodes.push(code);
+      }
+      continue;
+    }
+    rows.push({ currencyCode: code, effectiveDate, rate, updatedAt });
+  }
+
+  return { rows, staleCodes };
+}
 
 export const updateExchangeRatesFunction = inngest.createFunction(
   { id: "update-exchange-rates", retries: 2 },
@@ -89,39 +118,22 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         return;
       }
 
-      const exchangeRatesClient = getExchangeRatesClient(
-        EXCHANGE_RATES_API_KEY
-      );
-      if (!exchangeRatesClient) {
-        logger.info(
-          "Exchange rates client is undefined, skipping exchange rate update"
-        );
-        return;
-      }
-
       // Fetch the exchange rates once, with the free tier's base currency of EUR
-      let ratesEUR: Rates;
+      let ratesEur: Rates;
       try {
-        ratesEUR = await exchangeRatesClient.getExchangeRates();
-        if (!ratesEUR)
-          throw new Error("No rates returned from exchange rates API");
-        logger.info(
-          "Successfully fetched exchange rates with base currency EUR",
-          {
-            currencyCount: Object.keys(ratesEUR).length
-          }
-        );
+        ratesEur = await fetchEurRates(EXCHANGE_RATES_API_KEY);
       } catch (error) {
         logger.error("Error fetching exchange rates", { error });
-        return;
+        throw new Error(
+          `Error fetching exchange rates: ${(error as Error).message}`
+        );
       }
-
-      // The global store anchors on USD: rate = units of currencyCode per 1 USD
-      const usdRate = ratesEUR["USD"];
-      if (!usdRate) {
-        logger.error("USD rate missing from feed, cannot anchor to USD");
-        return;
-      }
+      logger.info(
+        "Successfully fetched exchange rates with base currency EUR",
+        {
+          currencyCount: Object.keys(ratesEur).length
+        }
+      );
 
       const serviceRole = getCarbonServiceRole();
 
@@ -134,36 +146,21 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         logger.error("Error fetching currency codes", {
           error: currencyCodes.error
         });
-        return;
+        throw new Error(
+          `Error fetching currency codes: ${currencyCodes.error.message}`
+        );
       }
 
       const updatedAt = datetime.timestamp();
       // The feed is a UTC-day artifact, so the UTC day is the effective date
       const effectiveDate = updatedAt.slice(0, 10);
 
-      const staleCodes: string[] = [];
-      const rows: {
-        currencyCode: string;
-        effectiveDate: string;
-        rate: number;
-        updatedAt: string;
-      }[] = [];
-
-      for (const { code } of currencyCodes.data ?? []) {
-        const feedRate = ratesEUR[code];
-        // Rates carry internal scale — never the currency's DISPLAY
-        // decimals, which zeroed every 0-decimal currency's fraction and
-        // silently froze rates that rounded to 0
-        const rate =
-          feedRate === undefined
-            ? Number.NaN
-            : round(Number(feedRate) / usdRate);
-        if (!Number.isFinite(rate) || rate <= 0) {
-          staleCodes.push(code);
-          continue;
-        }
-        rows.push({ currencyCode: code, effectiveDate, rate, updatedAt });
-      }
+      const { rows, staleCodes } = buildExchangeRateRows(
+        ratesEur,
+        (currencyCodes.data ?? []).map(({ code }) => code),
+        effectiveDate,
+        updatedAt
+      );
 
       if (staleCodes.length > 0) {
         logger.warn(
@@ -183,7 +180,9 @@ export const updateExchangeRatesFunction = inngest.createFunction(
 
       if (upsertError) {
         logger.error("Error upserting exchange rates", { error: upsertError });
-        return;
+        throw new Error(
+          `Error upserting exchange rates: ${upsertError.message}`
+        );
       }
 
       logger.info("Exchange rates task completed", {

@@ -3209,6 +3209,9 @@ msgstr "이를 변경하면 품목 ID가 업데이트됩니다"
 msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
 
+msgid "Chart"
+msgstr "차트"
+
 msgid "Chart of accounts"
 msgstr "계정과목표"
 
@@ -9973,6 +9976,9 @@ msgstr "신규 원가 센터"
 msgid "New Credit / Debit Memo"
 msgstr "신규 대변/차변 메모"
 
+msgid "New Currency"
+msgstr "신규 통화"
+
 msgid "New Custom Field"
 msgstr "신규 사용자 정의 필드"
 
@@ -12656,8 +12662,14 @@ msgstr "매주 상태 검토 회의에서 제기하세요"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 문제는 작은 수정이지만, 오픈 시점에 같은 문제가 나오면 지연으로 이어집니다."
 
+msgid "Rate"
+msgstr "환율"
+
 msgid "Rate Limit"
 msgstr "요청 제한"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "연결 시 자본 계정 환산에 사용되는 환율(IAS 21)입니다. 비워 두면 현재 환율이 사용됩니다."
 
 msgid "Ratio"
 msgstr "비율"

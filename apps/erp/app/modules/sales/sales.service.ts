@@ -3521,7 +3521,7 @@ export async function insertQuote(
       input.companyId,
       input.currencyCode
     );
-    if (exchangeRateResult.error || exchangeRateResult.data === null) {
+    if (exchangeRateResult.error) {
       return { data: null, error: exchangeRateResult.error };
     }
     exchangeRate = exchangeRateResult.data;
@@ -3625,8 +3625,7 @@ export async function updateQuote(
     digitalQuoteAcceptedByEmail?: string | null;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -3646,7 +3645,6 @@ export async function updateQuote(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
     const exchangeRateResult = await getExchangeRate(
@@ -3654,7 +3652,7 @@ export async function updateQuote(
       existing.data.companyId,
       updates.currencyCode
     );
-    if (exchangeRateResult.error || exchangeRateResult.data === null) {
+    if (exchangeRateResult.error) {
       return { data: null, error: exchangeRateResult.error };
     }
     exchangeRate = exchangeRateResult.data;
@@ -3736,7 +3734,7 @@ export async function upsertQuote(
         quote.companyId,
         quote.currencyCode
       );
-      if (exchangeRateResult.error || exchangeRateResult.data === null) {
+      if (exchangeRateResult.error) {
         return { data: null, error: exchangeRateResult.error };
       }
       quote.exchangeRate = exchangeRateResult.data;
@@ -3833,7 +3831,7 @@ export async function upsertQuote(
         existingQuote.data.companyId,
         quote.currencyCode
       );
-      if (exchangeRateResult.error || exchangeRateResult.data === null) {
+      if (exchangeRateResult.error) {
         return { data: null, error: exchangeRateResult.error };
       }
       quote.exchangeRate = exchangeRateResult.data;
@@ -5358,7 +5356,7 @@ export async function insertSalesOrder(
       input.companyId,
       currencyCode
     );
-    if (exchangeRateResult.error || exchangeRateResult.data === null) {
+    if (exchangeRateResult.error) {
       return { data: null, error: exchangeRateResult.error };
     }
     exchangeRate = exchangeRateResult.data;
@@ -5444,8 +5442,7 @@ export async function updateSalesOrder(
     customerId?: string;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -5465,7 +5462,6 @@ export async function updateSalesOrder(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
     const exchangeRateResult = await getExchangeRate(
@@ -5473,7 +5469,7 @@ export async function updateSalesOrder(
       existing.data.companyId,
       updates.currencyCode
     );
-    if (exchangeRateResult.error || exchangeRateResult.data === null) {
+    if (exchangeRateResult.error) {
       return { data: null, error: exchangeRateResult.error };
     }
     exchangeRate = exchangeRateResult.data;
@@ -5633,7 +5629,7 @@ export async function upsertSalesOrder(
         existingSalesOrder.data.companyId,
         salesOrder.currencyCode
       );
-      if (exchangeRateResult.error || exchangeRateResult.data === null) {
+      if (exchangeRateResult.error) {
         return { data: null, error: exchangeRateResult.error };
       }
       salesOrder.exchangeRate = exchangeRateResult.data;
@@ -5694,7 +5690,7 @@ export async function upsertSalesOrder(
       salesOrder.companyId,
       salesOrder.currencyCode
     );
-    if (exchangeRateResult.error || exchangeRateResult.data === null) {
+    if (exchangeRateResult.error) {
       return { data: null, error: exchangeRateResult.error };
     }
     salesOrder.exchangeRate = exchangeRateResult.data;

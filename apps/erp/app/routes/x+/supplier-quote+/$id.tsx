@@ -57,6 +57,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The reads above run service-role (RLS bypassed) — refuse a cross-company id
+  // before resolving anything against it.
+  if (quote.data.companyId !== companyId) {
+    throw redirect(
+      path.to.supplierQuotes,
+      await flash(request, error(null, "Failed to load quote"))
+    );
+  }
+
   const [supplierInteraction, presentationCurrency, supplier, companySettings] =
     await Promise.all([
       getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
@@ -82,16 +91,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (quote.data?.currencyCode) {
     const rate = await getExchangeRate(
       serviceRole,
-      companyId,
+      quote.data.companyId,
       quote.data.currencyCode
     );
-    if (rate.error) {
-      throw redirect(
-        path.to.supplierQuotes,
-        await flash(request, error(rate.error, "Failed to load exchange rate"))
-      );
-    }
-    exchangeRate = rate.data;
+    // A missing LIVE rate must not make the quote unopenable — this page hosts
+    // the refresh button that fixes it. Fall back to the document's own stamped
+    // snapshot (the PDF routes' policy); writes still refuse.
+    exchangeRate =
+      rate.error || rate.data === null
+        ? (quote.data.exchangeRate ?? 1)
+        : rate.data;
   }
 
   // Extract sibling quotes from the linked data

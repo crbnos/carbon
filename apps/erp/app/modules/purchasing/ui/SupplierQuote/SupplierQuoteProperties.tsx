@@ -338,12 +338,7 @@ const SupplierQuoteProperties = () => {
                 icon={<LuRefreshCcw />}
                 isDisabled={isDisabled}
                 onClick={() => {
-                  const formData = new FormData();
-                  formData.append(
-                    "currencyCode",
-                    routeData?.quote?.currencyCode ?? ""
-                  );
-                  exchangeRateFetcher.submit(formData, {
+                  exchangeRateFetcher.submit(null, {
                     method: "post",
                     action: path.to.supplierQuoteExchangeRate(id)
                   });

@@ -6959,7 +6959,10 @@ serve(async (req: Request) => {
                     quantity: l.quantity ?? 0,
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
-                    exchangeRate: l.exchangeRate ?? 0,
+                    // 1, never 0: a zero rate is not a valid snapshot (DB
+                    // CHECK "exchangeRate" > 0) and zeroes every converted*
+                    // generated column on the line.
+                    exchangeRate: l.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
                     // stays protected on the new quote/revision.

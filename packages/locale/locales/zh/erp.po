@@ -2616,7 +2616,7 @@ msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand<
 msgstr "柱状图显示每周的流向：<0>供应</0>推高库存，<1>需求</1>拉低库存。<2>线</2>表示您的预计现有库存 — 当它跌破<3>安全库存</3>时，您面临风险；跌破零则是<4>缺货</4>。"
 
 msgid "Base currency"
-msgstr "本位币"
+msgstr "基础货币"
 
 msgid "Base Currency"
 msgstr "基础货币"
@@ -3208,6 +3208,9 @@ msgstr "更改此项将更新零件ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "更改类型将重置此项目的草稿编辑。"
+
+msgid "Chart"
+msgstr "图表"
 
 msgid "Chart of accounts"
 msgstr "会计科目表"
@@ -9973,6 +9976,9 @@ msgstr "新建成本中心"
 msgid "New Credit / Debit Memo"
 msgstr "新建贷方/借方备忘录"
 
+msgid "New Currency"
+msgstr "新货币"
+
 msgid "New Custom Field"
 msgstr "新建自定义字段"
 
@@ -12656,8 +12662,14 @@ msgstr "在每周状态会议上提出"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很容易修复；同样的问题在上线时就会导致延期。"
 
+msgid "Rate"
+msgstr "汇率"
+
 msgid "Rate Limit"
 msgstr "速率限制"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空则使用当前汇率。"
 
 msgid "Ratio"
 msgstr "比率"

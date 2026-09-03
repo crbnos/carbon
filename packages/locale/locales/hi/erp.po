@@ -3209,6 +3209,9 @@ msgstr "इसे बदलने से पार्ट ID अपडेट ह�
 msgid "Changing type resets this item's draft edits."
 msgstr "प्रकार बदलने से इस आइटम के ड्राफ्ट संपादन रीसेट हो जाते हैं।"
 
+msgid "Chart"
+msgstr "चार्ट"
+
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
 
@@ -9973,6 +9976,9 @@ msgstr "नया लागत केंद्र"
 msgid "New Credit / Debit Memo"
 msgstr "नया जमा / नामे मेमो"
 
+msgid "New Currency"
+msgstr "नई मुद्रा"
+
 msgid "New Custom Field"
 msgstr "नया कस्टम फील्ड"
 
@@ -12656,8 +12662,14 @@ msgstr "इसे साप्ताहिक स्थिति कॉल म�
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "इसे जल्दी उठाएं और स्पष्ट रूप से उठाएं। सप्ताह 2 में नामित समस्या एक छोटी सी मरम्मत है; go-live पर वही समस्या एक देरी है।"
 
+msgid "Rate"
+msgstr "दर"
+
 msgid "Rate Limit"
 msgstr "दर सीमा"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "समेकन में इक्विटी खातों के रूपांतरण के लिए उपयोग की जाने वाली दर (IAS 21)। वर्तमान विनिमय दर का उपयोग करने के लिए खाली छोड़ें।"
 
 msgid "Ratio"
 msgstr "अनुपात"

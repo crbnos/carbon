@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -118,22 +118,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await updateSalesOrder(
-    client,
-    {
-      id,
-      status: validation.data.status,
-      currencyCode: validation.data.currencyCode,
-      orderDate: validation.data.orderDate,
-      customerId: validation.data.customerId,
-      customerContactId: validation.data.customerContactId || null,
-      customerLocationId: validation.data.customerLocationId || null,
-      notes: validation.data.notes,
-      customFields: setCustomFields(formData),
-      updatedBy: userId
-    },
-    companyGroupId
-  );
+  const result = await updateSalesOrder(client, {
+    id,
+    status: validation.data.status,
+    currencyCode: validation.data.currencyCode,
+    orderDate: validation.data.orderDate,
+    customerId: validation.data.customerId,
+    customerContactId: validation.data.customerContactId || null,
+    customerLocationId: validation.data.customerLocationId || null,
+    notes: validation.data.notes,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
+  });
   if (result.error) {
     throw redirect(
       path.to.salesOrder(id),

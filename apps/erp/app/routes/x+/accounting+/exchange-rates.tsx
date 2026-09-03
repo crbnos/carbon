@@ -1,8 +1,10 @@
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
 import { getCurrencies, getExchangeRates } from "~/modules/accounting";
 import { ExchangeRatesTable } from "~/modules/accounting/ui/ExchangeRates";
 import type { Handle } from "~/utils/handle";
@@ -39,6 +41,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }),
     getExchangeRates(client, companyId)
   ]);
+
+  // A broken rates page must not be indistinguishable from a healthy one —
+  // this is the screen that administers the rates.
+  if (currencies.error || exchangeRates.error) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(
+          currencies.error ?? exchangeRates.error,
+          "Failed to load exchange rates"
+        )
+      )
+    );
+  }
 
   const resolvedByCode = new Map(
     (exchangeRates.data ?? []).map((rate) => [rate.currencyCode, rate])

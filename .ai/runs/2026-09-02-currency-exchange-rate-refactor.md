@@ -37,5 +37,10 @@ Plan approved autonomously: it covers every spec acceptance criterion (traced ta
 ## 🛑 Gate: spec Open Questions — auto-resolved (autonomous mode)
 All 11 resolved in spec with **Autonomous:** markers; recommendation order codebase-precedent → research-consensus → judgment. Veto-flagged: (1) dropping `currency.exchangeRate` (ADDITIVE-ONLY exception, data migrated to overrides first); (2) migration heuristic (integration-inactive groups only, rate ≠ 1, code ≠ company base, per member company). — 2026-09-02
 
+## Phase log (continued)
+- Self-review: done — nuclear mode, three parallel reviewers over the full 74-file diff, findings verified in code before reporting. 6 must-fix + 9 risks + 7 suggestions found.
+- Review fixes: done — commit fd6e0aaf3a (49 files). All must-fixes applied (get-method ??0, VALIDATE data repair, M2 retry guard, dead companyGroupId gates/params, consolidation dedup via delegation, stale EE docs) plus risks 7-14 (snapshot-fallback loaders, supplier-quote company guard, feed-job retries, consolidation fail-loudly, base-change override clearing + base-pin refusal, admin page error surfacing, translation fixes) and the cheap suggestions (feed math unit tests, typed RPC call, Updated column, dead payloads, form i18n, lessons).
+
 ## Outcome
-- (pending)
+- Two commits on `currency-exchange-rate-refactor`: 7f0c2eed43 (the refactor) + fd6e0aaf3a (review hardening). Typecheck green (erp/jobs/ee/database), lint clean, all tests pass (incl. new feed-math suite), dataset gate passes; backup gate bypassed with documented cause (main's baseline polluted with phantom onshape tables — fixed baseline ships in this branch).
+- OPEN: Task 16 browser verification (stack was torn down mid-run; needs crbn up + /test of the five flows), Task 17 docs-site pages (integrations index + accounting mdx still describe the deleted integration). Deferred by design: `create` edge fn null-supplier-currency USD default → company base (behavior-preserving choice, flagged); repo-wide raw `* rate` checks ban (spec follow-up); per-line rate elimination (spec follow-up).

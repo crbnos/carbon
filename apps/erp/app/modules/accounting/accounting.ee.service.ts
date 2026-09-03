@@ -832,8 +832,9 @@ export async function getConsolidatedPeriodSeries(
   // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.
   eliminationClient: SupabaseClient<Database> = client
 ): Promise<{
-  data: ChartPeriodSeries[];
+  data: ChartPeriodSeries[] | null;
   ctaByBucket: Record<string, number>;
+  error: string | null;
 }> {
   const bucketKeys = args.buckets.map((b) => b.key);
   const allIds = await resolveConsolidationCompanyIds(
@@ -934,6 +935,17 @@ export async function getConsolidatedPeriodSeries(
   const ctaByBucket: Record<string, number> = Object.fromEntries(
     bucketKeys.map((key) => [key, 0])
   );
+
+  // A subsidiary whose translation failed must fail the consolidation loudly —
+  // silently excluding it produces a wrong consolidated total with no signal.
+  const failedSeriesTranslation = results.find((r) => r.translation.error);
+  if (failedSeriesTranslation?.translation.error) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      error: failedSeriesTranslation.translation.error
+    };
+  }
 
   for (const { series, translation } of results) {
     if (translation.error) continue;
@@ -1057,7 +1069,8 @@ export async function getConsolidatedPeriodSeries(
       rollUpTranslatedGroups(consolidated, bucketKeys),
       bucketKeys
     ),
-    ctaByBucket
+    ctaByBucket,
+    error: null
   };
 }
 
@@ -1990,19 +2003,31 @@ export async function upsertExchangeRateOverride(
     userId: string;
   }
 ) {
+  // Update-first so re-pinning a rate never rewrites the original creator.
+  const update = await client
+    .from("exchangeRateOverride")
+    .update({
+      rate: override.rate,
+      updatedBy: override.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("companyId", override.companyId)
+    .eq("currencyCode", override.currencyCode)
+    .select("id");
+
+  if (update.error) return { data: null, error: update.error };
+  if (update.data.length > 0) {
+    return { data: update.data[0] ?? null, error: null };
+  }
+
   return client
     .from("exchangeRateOverride")
-    .upsert(
-      {
-        companyId: override.companyId,
-        currencyCode: override.currencyCode,
-        rate: override.rate,
-        createdBy: override.userId,
-        updatedBy: override.userId,
-        updatedAt: datetime.timestamp()
-      },
-      { onConflict: "companyId,currencyCode" }
-    )
+    .insert({
+      companyId: override.companyId,
+      currencyCode: override.currencyCode,
+      rate: override.rate,
+      createdBy: override.userId
+    })
     .select("id")
     .single();
 }
@@ -4356,21 +4381,16 @@ export async function translateCompanyBalances(
   cta: number;
   error: string | null;
 }> {
-  // getConsolidationRates is defined in migration
-  // 20260713225803_ledger-balance-posted-filter.sql; the committed DB types
-  // regenerate from the cloud DB after deploy, hence the cast.
-  const { data: ratesData, error: ratesError } = await (
-    client.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>
-    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>
-  )("getConsolidationRates", {
-    p_company_group_id: companyGroupId,
-    p_company_id: companyId,
-    p_target_currency: targetCurrency,
-    p_period_end: periodEnd,
-    p_period_start: periodStart
-  });
+  const { data: ratesData, error: ratesError } = await client.rpc(
+    "getConsolidationRates",
+    {
+      p_company_group_id: companyGroupId,
+      p_company_id: companyId,
+      p_target_currency: targetCurrency,
+      p_period_end: periodEnd,
+      p_period_start: periodStart
+    }
+  );
 
   if (ratesError) {
     return { data: null, cta: 0, error: ratesError.message };
@@ -4553,6 +4573,13 @@ export async function getConsolidatedBalances(
   const allBalances = results.map((r) => r.balances);
   const translations = results.map((r) => r.translation);
 
+  // A subsidiary whose translation failed must fail the consolidation loudly —
+  // silently excluding it produces a wrong consolidated total with no signal.
+  const failedTranslation = translations.find((t) => t.error);
+  if (failedTranslation?.error) {
+    return { data: null, cta: 0, error: failedTranslation.error };
+  }
+
   // Build a map of translated balances per account, summed across companies
   const translationByAccount = new Map<
     string,
@@ -4633,7 +4660,11 @@ export async function getConsolidatedBalances(
     };
   });
 
-  return { data: applyRootSignCorrection(consolidated), cta: totalCta };
+  return {
+    data: applyRootSignCorrection(consolidated),
+    cta: totalCta,
+    error: null
+  };
 }
 
 // -- Intercompany --

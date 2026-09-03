@@ -1,11 +1,12 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
-import { formatExchangeRate } from "@carbon/utils";
+import { formatDate, formatExchangeRate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
+  LuCalendar,
   LuEuro,
   LuGlobe,
   LuPencil,
@@ -82,6 +83,22 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
         meta: {
           icon: <LuGlobe />,
           exportValue: (row: CurrencyWithRate) => row.rateSource
+        }
+      },
+      {
+        accessorKey: "rateUpdatedAt",
+        header: t`Updated`,
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.rateUpdatedAt
+            ? formatDate(row.original.rateUpdatedAt, undefined, locale)
+            : null,
+        meta: {
+          icon: <LuCalendar />,
+          exportValue: (row: CurrencyWithRate) =>
+            row.rateUpdatedAt
+              ? formatDate(row.rateUpdatedAt, undefined, locale)
+              : null
         }
       }
     ];

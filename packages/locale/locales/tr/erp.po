@@ -3209,6 +3209,9 @@ msgstr "Bunu değiştirmek parça kimliğini güncelleyecektir"
 msgid "Changing type resets this item's draft edits."
 msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
 
+msgid "Chart"
+msgstr "Grafik"
+
 msgid "Chart of accounts"
 msgstr "Hesap planı"
 
@@ -9973,6 +9976,9 @@ msgstr "Yeni Maliyet Merkezi"
 msgid "New Credit / Debit Memo"
 msgstr "Yeni Kredi / Borç Notu"
 
+msgid "New Currency"
+msgstr "Yeni Para Birimi"
+
 msgid "New Custom Field"
 msgstr "Yeni Özel Alan"
 
@@ -12656,8 +12662,14 @@ msgstr "Bunu haftalık durum çağrısında gündeme getir"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "bunu erken ve açık bir şekilde dile getir. 2. haftada adı konulan bir sorun küçük bir düzeltmedir; go-live'da aynı sorun bir gecikmedir."
 
+msgid "Rate"
+msgstr "Kur"
+
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."
 
 msgid "Ratio"
 msgstr "Oran"

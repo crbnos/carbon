@@ -1594,8 +1594,7 @@ export async function updatePurchaseOrder(
     purchaseOrderType?: (typeof purchaseOrderTypeType)[number];
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -2158,8 +2157,7 @@ export async function updateSupplierQuote(
     supplierLocationId?: string | null;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;

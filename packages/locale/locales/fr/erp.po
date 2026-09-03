@@ -3209,6 +3209,9 @@ msgstr "Modifier ceci mettra à jour l'ID de pièce"
 msgid "Changing type resets this item's draft edits."
 msgstr "Modifier le type réinitialise les brouillons de cet article."
 
+msgid "Chart"
+msgstr "Graphique"
+
 msgid "Chart of accounts"
 msgstr "Plan comptable"
 
@@ -9973,6 +9976,9 @@ msgstr "Nouveau centre de coûts"
 msgid "New Credit / Debit Memo"
 msgstr "Nouveau Mémo de Crédit / Débit"
 
+msgid "New Currency"
+msgstr "Nouvelle devise"
+
 msgid "New Custom Field"
 msgstr "Nouveau champ personnalisé"
 
@@ -12656,8 +12662,14 @@ msgstr "Soulevez-le lors de l'appel de statut hebdomadaire"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "soulevez-le tôt et soulevez-le clairement. Un problème identifié à la semaine 2 est une petite correction ; le même problème au lancement est un retard."
 
+msgid "Rate"
+msgstr "Taux"
+
 msgid "Rate Limit"
 msgstr "Limite de débit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Taux utilisé pour la conversion des comptes de capitaux propres en consolidation (IAS 21). Laissez vide pour utiliser le taux de change actuel."
 
 msgid "Ratio"
 msgstr "Ratio"

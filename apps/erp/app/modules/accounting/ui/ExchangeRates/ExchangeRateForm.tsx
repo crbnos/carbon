@@ -157,7 +157,9 @@ const CurrencyForm = ({
       <DrawerContent>
         <div className="flex flex-col h-full">
           <DrawerHeader>
-            <DrawerTitle>{isEditing ? "Edit" : "New"} Currency</DrawerTitle>
+            <DrawerTitle>
+              {isEditing ? t`Edit Currency` : t`New Currency`}
+            </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             {isEditing && (
@@ -221,8 +223,8 @@ const CurrencyForm = ({
             >
               <Hidden name="id" />
               <VStack spacing={4}>
-                <Input name="name" label="Name" isReadOnly />
-                <Input name="code" label="Code" isReadOnly />
+                <Input name="name" label={t`Name`} isReadOnly />
+                <Input name="code" label={t`Code`} isReadOnly />
                 <NumberField
                   name="decimalPlaces"
                   label={t`Decimal Places`}
@@ -238,7 +240,7 @@ const CurrencyForm = ({
                     minValue={0}
                     step={INPUT_STEP.exchangeRate}
                     formatOptions={INPUT_FORMAT.exchangeRate}
-                    helperText="Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+                    helperText={t`Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate.`}
                   />
                 )}
 
@@ -256,14 +258,14 @@ const CurrencyForm = ({
                     <CardAction>
                       <HStack>
                         <TabsList>
-                          <TabsTrigger value="chart">Chart</TabsTrigger>
-                          <TabsTrigger value="table">Table</TabsTrigger>
+                          <TabsTrigger value="chart">{t`Chart`}</TabsTrigger>
+                          <TabsTrigger value="table">{t`Table`}</TabsTrigger>
                         </TabsList>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <IconButton
-                              aria-label="Download CSV"
-                              title="Download CSV"
+                              aria-label={t`Download CSV`}
+                              title={t`Download CSV`}
                               variant="ghost"
                               icon={<LuDownload />}
                               className="!border-dashed border-border"
@@ -271,7 +273,7 @@ const CurrencyForm = ({
                             />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Download CSV</p>
+                            <p>{t`Download CSV`}</p>
                           </TooltipContent>
                         </Tooltip>
                       </HStack>
@@ -335,8 +337,8 @@ const CurrencyForm = ({
                         <Table>
                           <Thead>
                             <Tr>
-                              <Th>Date</Th>
-                              <Th className="text-right">Rate</Th>
+                              <Th>{t`Date`}</Th>
+                              <Th className="text-right">{t`Rate`}</Th>
                             </Tr>
                           </Thead>
                           <Tbody>
@@ -362,10 +364,10 @@ const CurrencyForm = ({
           <DrawerFooter>
             <HStack>
               <Submit formId={CONFIG_FORM_ID} isDisabled={isDisabled}>
-                Save
+                {t`Save`}
               </Submit>
               <Button variant="solid" onClick={onClose}>
-                Cancel
+                {t`Cancel`}
               </Button>
             </HStack>
           </DrawerFooter>

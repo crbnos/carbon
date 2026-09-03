@@ -2616,7 +2616,7 @@ msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand<
 msgstr "棒グラフは毎週の流れを表示します：<0>供給</0>は在庫を増加させ、<1>所要量</1>は減少させます。<2>線</2>は予測在庫です。<3>安全在庫</3>を下回る場合はリスク状態であり、ゼロを下回る場合は<4>欠品</4>です。"
 
 msgid "Base currency"
-msgstr "基準通貨"
+msgstr "基本通貨"
 
 msgid "Base Currency"
 msgstr "基本通貨"
@@ -3208,6 +3208,9 @@ msgstr "これを変更するとパーツIDが更新されます"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "タイプを変更すると、この品目の下書き編集がリセットされます。"
+
+msgid "Chart"
+msgstr "チャート"
 
 msgid "Chart of accounts"
 msgstr "勘定科目表"
@@ -9973,6 +9976,9 @@ msgstr "新規原価センター"
 msgid "New Credit / Debit Memo"
 msgstr "新しい貸方/借方メモ"
 
+msgid "New Currency"
+msgstr "新規通貨"
+
 msgid "New Custom Field"
 msgstr "新しいカスタムフィールド"
 
@@ -12656,8 +12662,14 @@ msgstr "毎週のステータスミーティングで提起してください"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "早期に報告し、明確に報告してください。2週目に特定された問題は小さな修正で済みますが、本番リリース時の同じ問題は遅延につながります。"
 
+msgid "Rate"
+msgstr "レート"
+
 msgid "Rate Limit"
 msgstr "レート制限"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
 
 msgid "Ratio"
 msgstr "比率"

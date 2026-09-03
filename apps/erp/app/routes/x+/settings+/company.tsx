@@ -53,6 +53,12 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const existing = await client
+    .from("company")
+    .select("baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+
   const update = await updateCompany(client, companyId, {
     ...validation.data,
     updatedBy: userId
@@ -62,6 +68,20 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(request, error(update.error, "Failed to update company"))
     );
+
+  // Exchange-rate overrides are denominated in the company's base currency —
+  // after a base change they'd silently resolve against the wrong anchor
+  // (and one on the new base would be invisible dead data). Clear them; market
+  // rates take over until the user re-pins.
+  if (
+    existing.data?.baseCurrencyCode &&
+    existing.data.baseCurrencyCode !== validation.data.baseCurrencyCode
+  ) {
+    await client
+      .from("exchangeRateOverride")
+      .delete()
+      .eq("companyId", companyId);
+  }
 
   // company.timezone may have changed — drop the cached resolution.
   await invalidateCompanyTimeZone(companyId);

@@ -3209,6 +3209,9 @@ msgstr "Cambiar esto actualizará el ID de la pieza"
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiar el tipo restablece los borradores editados de este elemento."
 
+msgid "Chart"
+msgstr "Gráfico"
+
 msgid "Chart of accounts"
 msgstr "Plan de cuentas"
 
@@ -9417,13 +9420,13 @@ msgid "Mark to delete"
 msgstr "Marcar para eliminar"
 
 msgid "Market rate"
-msgstr "Tipo de mercado"
+msgstr "Tipo de cambio de mercado"
 
 msgid "Market rate (per USD)"
-msgstr "Tipo de mercado (por USD)"
+msgstr "Tipo de cambio de mercado (por USD)"
 
 msgid "Market Rate History (per USD)"
-msgstr "Historial del tipo de mercado (por USD)"
+msgstr "Historial del tipo de cambio de mercado (por USD)"
 
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marca a la persona como ausente para cada día en el rango. No se programarán mientras estén fuera."
@@ -9972,6 +9975,9 @@ msgstr "Nuevo Centro de Costos"
 
 msgid "New Credit / Debit Memo"
 msgstr "Nuevo memorando de crédito/débito"
+
+msgid "New Currency"
+msgstr "Nueva Moneda"
 
 msgid "New Custom Field"
 msgstr "Nuevo Campo Personalizado"
@@ -12656,8 +12662,14 @@ msgstr "Plantéalo en la llamada de estado semanal"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "plantéalo temprano y plantéalo claramente. Un problema identificado en la semana 2 es una corrección pequeña; el mismo problema en el lanzamiento es un retraso."
 
+msgid "Rate"
+msgstr "Tipo de cambio"
+
 msgid "Rate Limit"
 msgstr "Límite de Velocidad"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Tipo de cambio utilizado para la conversión de cuentas de patrimonio en la consolidación (IAS 21). Déjelo en blanco para usar el tipo de cambio actual."
 
 msgid "Ratio"
 msgstr "Relación"

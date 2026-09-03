@@ -3209,6 +3209,9 @@ msgstr "Изменение этого обновит ID детали"
 msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
 
+msgid "Chart"
+msgstr "График"
+
 msgid "Chart of accounts"
 msgstr "План счетов"
 
@@ -9973,6 +9976,9 @@ msgstr "Новый центр затрат"
 msgid "New Credit / Debit Memo"
 msgstr "Новый кредит-нота / дебет-нота"
 
+msgid "New Currency"
+msgstr "Новая валюта"
+
 msgid "New Custom Field"
 msgstr "Новое пользовательское поле"
 
@@ -12656,8 +12662,14 @@ msgstr "Поднимите это на еженедельном статус-з�
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "поднимайте проблемы рано и говорите о них прямо. Проблема, выявленная на 2-й неделе, — это небольшое исправление; та же проблема при запуске — это задержка."
 
+msgid "Rate"
+msgstr "Курс"
+
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."
 
 msgid "Ratio"
 msgstr "Коэффициент"

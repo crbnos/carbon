@@ -123,22 +123,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId,
       quote.data.currencyCode
     );
-    if (
-      presentationExchangeRate.error ||
-      presentationExchangeRate.data === null
-    ) {
-      throw redirect(
-        path.to.quotes,
-        await flash(
-          request,
-          error(
-            presentationExchangeRate.error,
-            "Failed to load the quote's exchange rate"
-          )
-        )
-      );
-    }
-    exchangeRate = presentationExchangeRate.data;
+    // A missing LIVE rate must not make the quote unopenable — this page hosts
+    // the refresh button that fixes it. Fall back to the document's own stamped
+    // snapshot (the PDF routes' policy); writes still refuse.
+    exchangeRate =
+      presentationExchangeRate.error || presentationExchangeRate.data === null
+        ? (quote.data.exchangeRate ?? 1)
+        : presentationExchangeRate.data;
   }
 
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;

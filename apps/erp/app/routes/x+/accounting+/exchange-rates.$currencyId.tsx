@@ -72,6 +72,24 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
+    // The base currency is 1 by definition and the resolver checks base before
+    // overrides — a pin on the base code would be invisible dead data (and turn
+    // wrong the day the base changes). The UI hides the field; enforce it here.
+    const company = await client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single();
+    if (company.data?.baseCurrencyCode === validation.data.currencyCode) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(null, "The base currency's exchange rate is always 1")
+        )
+      );
+    }
+
     const upsertOverride = await upsertExchangeRateOverride(client, {
       companyId,
       currencyCode: validation.data.currencyCode,

@@ -199,7 +199,11 @@ ON CONFLICT ("currencyCode", "effectiveDate") DO NOTHING;
 
 -- Resolver: "units of p_currency_code per 1 unit of THIS company's base currency".
 -- base -> 1 by definition; override wins; else the ratio of the two USD-anchored
--- market rates; a missing rate is an ERROR, never 1.
+-- market rates; a missing rate is an ERROR, never 1. Deliberate asymmetry with
+-- the consolidation functions: STAMPING a document refuses when no rate exists
+-- on/before the date (a wrong snapshot is permanent), while consolidation
+-- REPORTING ("getConsolidationRates") falls back to the store's earliest row
+-- for periods predating it (a report can be re-run; refusing history helps no one).
 CREATE OR REPLACE FUNCTION get_exchange_rate(
   p_company_id TEXT,
   p_currency_code TEXT,

@@ -9,20 +9,31 @@
 --    non-default (<> 1), non-base rate to a per-company override so every
 --    member company resolves the same value it resolves today. Feed-derived
 --    rates (integration-active groups) must NOT become standing pins.
-INSERT INTO "exchangeRateOverride" ("companyId", "currencyCode", "rate", "createdBy")
-SELECT co."id", cu."code", cu."exchangeRate", 'system'
-FROM "currency" cu
-JOIN "company" co ON co."companyGroupId" = cu."companyGroupId"
-WHERE cu."exchangeRate" <> 1
-  AND cu."code" <> co."baseCurrencyCode"
-  AND NOT EXISTS (
-    SELECT 1 FROM "companyIntegration" ci
-    WHERE ci."id" = 'exchange-rates-v1' AND ci."active" = true
-      AND ci."companyId" IN (
-        SELECT c2."id" FROM "company" c2 WHERE c2."companyGroupId" = cu."companyGroupId"
+-- Guarded on the column still existing: a retry of this file over committed
+-- partial state (the deploy runner's failure mode) lands after the DROP below,
+-- and this SELECT must not be the statement that wedges the deploy.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'currency' AND column_name = 'exchangeRate'
+  ) THEN
+    INSERT INTO "exchangeRateOverride" ("companyId", "currencyCode", "rate", "createdBy")
+    SELECT co."id", cu."code", cu."exchangeRate", 'system'
+    FROM "currency" cu
+    JOIN "company" co ON co."companyGroupId" = cu."companyGroupId"
+    WHERE cu."exchangeRate" <> 1
+      AND cu."code" <> co."baseCurrencyCode"
+      AND NOT EXISTS (
+        SELECT 1 FROM "companyIntegration" ci
+        WHERE ci."id" = 'exchange-rates-v1' AND ci."active" = true
+          AND ci."companyId" IN (
+            SELECT c2."id" FROM "company" c2 WHERE c2."companyGroupId" = cu."companyGroupId"
+          )
       )
-  )
-ON CONFLICT ("companyId", "currencyCode") DO NOTHING;
+    ON CONFLICT ("companyId", "currencyCode") DO NOTHING;
+  END IF;
+END $$;
 
 -- 2) The "currencies" view selects c.*, so it must be dropped before the column
 --    can go. Recreated below from the newest definition (20260228023426) minus
