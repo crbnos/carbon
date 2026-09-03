@@ -82,7 +82,7 @@ import { resolvePrice, applyPriceRules, getCustomer } from "~/modules/sales";
 - **items** — quote lines reference items; methods copied from item make methods
 - **purchasing** — outside operations on quotes create PO lines
 - **inventory** — shipments fulfill sales order lines
-- **accounting** — sales invoices tie to orders; `getCurrencyByCode` used for exchange rates
+- **accounting** — sales invoices tie to orders; `getExchangeRate` resolves document exchange rates (per-company: base=1, override, else global market store)
 - **people** — `getEmployeeJob` used for assignee lookups
 
 ## Rules References

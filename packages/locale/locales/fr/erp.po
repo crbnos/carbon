@@ -2624,6 +2624,9 @@ msgstr "Dépenses de frais bancaires et de services financiers"
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Les barres montrent le flux de chaque semaine : <0>l'approvisionnement</0> augmente les stocks, <1>les besoins</1> les diminuent. La <2>ligne</2> est votre inventaire prévu en main — quand elle descend en dessous du <3>stock de sécurité</3>, vous êtes à risque, et en dessous de zéro c'est une <4>rupture de stock</4>."
 
+msgid "Base currency"
+msgstr "Devise de base"
+
 msgid "Base Currency"
 msgstr "Devise de base"
 
@@ -3214,6 +3217,9 @@ msgstr "Modifier ceci mettra à jour l'ID de pièce"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Modifier le type réinitialise les brouillons de cet article."
+
+msgid "Chart"
+msgstr "Graphique"
 
 msgid "Chart of accounts"
 msgstr "Plan comptable"
@@ -9422,6 +9428,15 @@ msgstr "Marquer comme manquant"
 msgid "Mark to delete"
 msgstr "Marquer pour supprimer"
 
+msgid "Market rate"
+msgstr "Taux du marché"
+
+msgid "Market rate (per USD)"
+msgstr "Taux du marché (par USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Historique du taux du marché (par USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marque la personne comme absente pour chaque jour de la plage. Ils ne seront pas programmés pendant leur absence."
 
@@ -9969,6 +9984,9 @@ msgstr "Nouveau centre de coûts"
 
 msgid "New Credit / Debit Memo"
 msgstr "Nouveau Mémo de Crédit / Débit"
+
+msgid "New Currency"
+msgstr "Nouvelle devise"
 
 msgid "New Custom Field"
 msgstr "Nouveau champ personnalisé"
@@ -10601,6 +10619,9 @@ msgstr "Raison du refus de devis"
 msgid "No Quote Reasons"
 msgstr "Raisons du refus de devis"
 
+msgid "No rate"
+msgstr "Aucun taux"
+
 msgid "No receivables"
 msgstr "Aucune créance client"
 
@@ -10965,6 +10986,11 @@ msgstr "Livraison à temps"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Intégrez votre agent à Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} équivaut à combien de {1} ?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Une exécution d'un workflow, enregistrée étape par étape avec les valeurs que chaque étape a utilisées et produites, agissant tout au long avec les autorisations du propriétaire du workflow."
@@ -12658,8 +12684,14 @@ msgstr "Soulevez-le lors de l'appel de statut hebdomadaire"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "soulevez-le tôt et soulevez-le clairement. Un problème identifié à la semaine 2 est une petite correction ; le même problème au lancement est un retard."
 
+msgid "Rate"
+msgstr "Taux"
+
 msgid "Rate Limit"
 msgstr "Limite de débit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Taux utilisé pour la conversion des comptes de capitaux propres en consolidation (IAS 21). Laissez vide pour utiliser le taux de change actuel."
 
 msgid "Ratio"
 msgstr "Ratio"
@@ -13272,6 +13304,9 @@ msgstr "Réinitialiser le PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Réinitialiser le PIN pour {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Réinitialiser au taux du marché"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Réinitialiser l'authentification à deux facteurs"
 
@@ -13807,6 +13842,9 @@ msgstr "Enregistrer les paramètres d'axe analytique"
 
 msgid "Save Method"
 msgstr "Enregistrer la méthode"
+
+msgid "Save Rate"
+msgstr "Enregistrer le taux"
 
 msgid "Save view"
 msgstr "Enregistrer la vue"
@@ -16583,6 +16621,9 @@ msgstr "Ceci est un environnement contrôlé par l'ITAR. L'accès est restreint 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Cela prend plus de temps que prévu. Il peut encore finir — sinon, réessayez l'annulation pour restaurer vos données."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Ceci est la devise de base. Le taux de change est toujours 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "C'est le mois où commence votre exercice comptable."
 
@@ -18727,6 +18768,9 @@ msgstr "Votre projet de bout en bout : le plan, les jalons et la mise en product
 
 msgid "Your Project Team"
 msgstr "Votre équipe de projet"
+
+msgid "Your rate"
+msgstr "Votre taux"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Vos données réelles sont chargées et vous avez vérifié un échantillon et l'avez approuvé."

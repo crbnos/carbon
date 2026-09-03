@@ -16,7 +16,7 @@ import {
   useSubmit
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import type { SalesOrderLine } from "~/modules/sales";
 import {
@@ -50,13 +50,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "sales",
-      bypassRls: true
-    }
-  );
+  const { client, companyId } = await requirePermissions(request, {
+    view: "sales",
+    bypassRls: true
+  });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -121,14 +118,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
-    const presentationCurrency = await getCurrencyByCode(
+    const presentationExchangeRate = await getExchangeRate(
       client,
-      companyGroupId,
+      companyId,
       quote.data.currencyCode
     );
-    if (presentationCurrency.data?.exchangeRate) {
-      exchangeRate = presentationCurrency.data.exchangeRate;
-    }
+    // A missing LIVE rate must not make the quote unopenable — this page hosts
+    // the refresh button that fixes it. Fall back to the document's own stamped
+    // snapshot (the PDF routes' policy); writes still refuse.
+    exchangeRate =
+      presentationExchangeRate.error || presentationExchangeRate.data === null
+        ? (quote.data.exchangeRate ?? 1)
+        : presentationExchangeRate.data;
   }
 
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;

@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode, getExchangeRate } from "~/modules/accounting";
 import {
   getSiblingQuotesForQuote,
   getSupplier,
@@ -57,6 +57,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The reads above run service-role (RLS bypassed) — refuse a cross-company id
+  // before resolving anything against it.
+  if (quote.data.companyId !== companyId) {
+    throw redirect(
+      path.to.supplierQuotes,
+      await flash(request, error(null, "Failed to load quote"))
+    );
+  }
+
   const [supplierInteraction, presentationCurrency, supplier, companySettings] =
     await Promise.all([
       getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
@@ -79,8 +88,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let exchangeRate = 1;
-  if (quote.data?.currencyCode && presentationCurrency.data?.exchangeRate) {
-    exchangeRate = presentationCurrency.data.exchangeRate;
+  if (quote.data?.currencyCode) {
+    const rate = await getExchangeRate(
+      serviceRole,
+      quote.data.companyId,
+      quote.data.currencyCode
+    );
+    // A missing LIVE rate must not make the quote unopenable — this page hosts
+    // the refresh button that fixes it. Fall back to the document's own stamped
+    // snapshot (the PDF routes' policy); writes still refuse.
+    exchangeRate =
+      rate.error || rate.data === null
+        ? (quote.data.exchangeRate ?? 1)
+        : rate.data;
   }
 
   // Extract sibling quotes from the linked data

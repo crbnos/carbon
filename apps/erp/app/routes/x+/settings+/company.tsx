@@ -28,9 +28,11 @@ import type { Company as CompanyType } from "~/modules/settings";
 import {
   CompanyForm,
   companyValidator,
-  updateCompany
+  updateCompany,
+  updateCompanyWithBaseCurrencyChange
 } from "~/modules/settings";
 import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -53,15 +55,47 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateCompany(client, companyId, {
-    ...validation.data,
-    updatedBy: userId
-  });
-  if (update.error)
-    return data(
-      {},
-      await flash(request, error(update.error, "Failed to update company"))
-    );
+  const existing = await client
+    .from("company")
+    .select("baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+
+  const baseCurrencyChanged =
+    !!existing.data?.baseCurrencyCode &&
+    existing.data.baseCurrencyCode !== validation.data.baseCurrencyCode;
+
+  if (baseCurrencyChanged) {
+    // Overrides are denominated in the company's base currency — after a base
+    // change they'd silently resolve against the wrong anchor. Clear them in
+    // the SAME transaction as the base flip; market rates take over until the
+    // user re-pins.
+    try {
+      await updateCompanyWithBaseCurrencyChange(
+        getDatabaseClient(),
+        companyId,
+        {
+          ...validation.data,
+          updatedBy: userId
+        }
+      );
+    } catch (err) {
+      return data(
+        {},
+        await flash(request, error(err, "Failed to update company"))
+      );
+    }
+  } else {
+    const update = await updateCompany(client, companyId, {
+      ...validation.data,
+      updatedBy: userId
+    });
+    if (update.error)
+      return data(
+        {},
+        await flash(request, error(update.error, "Failed to update company"))
+      );
+  }
 
   // company.timezone may have changed — drop the cached resolution.
   await invalidateCompanyTimeZone(companyId);

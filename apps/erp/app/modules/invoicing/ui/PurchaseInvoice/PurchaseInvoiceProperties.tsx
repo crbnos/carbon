@@ -452,12 +452,7 @@ const PurchaseInvoiceProperties = () => {
                 icon={<LuRefreshCcw />}
                 isDisabled={isDisabled}
                 onClick={() => {
-                  const formData = new FormData();
-                  formData.append(
-                    "currencyCode",
-                    routeData?.purchaseInvoice?.currencyCode ?? ""
-                  );
-                  exchangeRateFetcher.submit(formData, {
+                  exchangeRateFetcher.submit(null, {
                     method: "post",
                     action: path.to.purchaseInvoiceExchangeRate(invoiceId)
                   });

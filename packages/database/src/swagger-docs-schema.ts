@@ -12942,6 +12942,150 @@ export default {
         tags: ["receiptLines"]
       }
     },
+    "/exchangeRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/exchangeRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["exchangeRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["exchangeRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["exchangeRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["exchangeRate"]
+      }
+    },
     "/nonConformanceRequiredAction": {
       get: {
         parameters: [
@@ -36291,177 +36435,6 @@ export default {
         tags: ["salesOrderFavorite"]
       }
     },
-    "/exchangeRateHistory": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.currencyCode"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.rate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.effectiveDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.companyGroupId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/exchangeRateHistory"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["exchangeRateHistory"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.exchangeRateHistory"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["exchangeRateHistory"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.currencyCode"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.rate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.effectiveDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.companyGroupId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["exchangeRateHistory"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.currencyCode"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.rate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.effectiveDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.companyGroupId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.exchangeRateHistory.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.exchangeRateHistory"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["exchangeRateHistory"]
-      }
-    },
     "/materialFinishes": {
       get: {
         parameters: [
@@ -39331,9 +39304,6 @@ export default {
             $ref: "#/parameters/rowFilter.currencies.code"
           },
           {
-            $ref: "#/parameters/rowFilter.currencies.exchangeRate"
-          },
-          {
             $ref: "#/parameters/rowFilter.currencies.decimalPlaces"
           },
           {
@@ -39359,6 +39329,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.currencies.companyGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.historicalExchangeRate"
           },
           {
             $ref: "#/parameters/rowFilter.currencies.name"
@@ -58588,9 +58561,6 @@ export default {
             $ref: "#/parameters/rowFilter.currency.code"
           },
           {
-            $ref: "#/parameters/rowFilter.currency.exchangeRate"
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.decimalPlaces"
           },
           {
@@ -58686,9 +58656,6 @@ export default {
             $ref: "#/parameters/rowFilter.currency.code"
           },
           {
-            $ref: "#/parameters/rowFilter.currency.exchangeRate"
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.decimalPlaces"
           },
           {
@@ -58736,9 +58703,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.currency.code"
-          },
-          {
-            $ref: "#/parameters/rowFilter.currency.exchangeRate"
           },
           {
             $ref: "#/parameters/rowFilter.currency.decimalPlaces"
@@ -79209,6 +79173,168 @@ export default {
         tags: ["stockTransfer"]
       }
     },
+    "/exchangeRateOverride": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/exchangeRateOverride"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["exchangeRateOverride"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.exchangeRateOverride"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["exchangeRateOverride"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["exchangeRateOverride"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.rate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.exchangeRateOverride.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.exchangeRateOverride"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["exchangeRateOverride"]
+      }
+    },
     "/jobOperationsWithMakeMethods": {
       get: {
         parameters: [
@@ -92731,6 +92857,85 @@ export default {
         tags: ["(rpc) get_primary_key_columns"]
       }
     },
+    "/rpc/get_exchange_rate": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_currency_code",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_as_of",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_exchange_rate"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_as_of: {
+                  format: "date",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_currency_code: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_currency_code"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_exchange_rate"]
+      }
+    },
     "/rpc/check_api_key_rate_limit": {
       post: {
         parameters: [
@@ -99702,6 +99907,63 @@ export default {
         tags: ["(rpc) get_job_operation_step_records"]
       }
     },
+    "/rpc/get_exchange_rates": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_exchange_rates"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_exchange_rates"]
+      }
+    },
     "/rpc/get_custom_field_unique_values": {
       post: {
         parameters: [
@@ -100023,9 +100285,18 @@ export default {
                 p_period_start: {
                   format: "date",
                   type: "string"
+                },
+                p_target_currency: {
+                  format: "text",
+                  type: "string"
                 }
               },
-              required: ["p_company_group_id", "p_company_id", "p_period_end"],
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_target_currency",
+                "p_period_end"
+              ],
               type: "object"
             }
           },
@@ -106140,6 +106411,41 @@ export default {
         },
         description: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    exchangeRate: {
+      required: ["id", "currencyCode", "effectiveDate", "rate", "createdAt"],
+      properties: {
+        id: {
+          default: "public.id('xrate'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        effectiveDate: {
+          format: "date",
+          type: "string"
+        },
+        rate: {
+          format: "numeric",
+          type: "number"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -117320,63 +117626,6 @@ export default {
       },
       type: "object"
     },
-    exchangeRateHistory: {
-      required: [
-        "id",
-        "currencyCode",
-        "rate",
-        "effectiveDate",
-        "companyGroupId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id('exr'::text)",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        currencyCode: {
-          description:
-            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
-          format: "text",
-          type: "string"
-        },
-        rate: {
-          format: "numeric",
-          type: "number"
-        },
-        effectiveDate: {
-          format: "date",
-          type: "string"
-        },
-        companyGroupId: {
-          description:
-            "Note:\nThis is a Foreign Key to `companyGroup.id`.<fk table='companyGroup' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     materialFinishes: {
       properties: {
         id: {
@@ -118862,10 +119111,6 @@ export default {
           format: "text",
           type: "string"
         },
-        exchangeRate: {
-          format: "numeric",
-          type: "number"
-        },
         decimalPlaces: {
           format: "integer",
           type: "integer"
@@ -118907,6 +119152,10 @@ export default {
             "Note:\nThis is a Foreign Key to `companyGroup.id`.<fk table='companyGroup' column='id'/>",
           format: "text",
           type: "string"
+        },
+        historicalExchangeRate: {
+          format: "numeric",
+          type: "number"
         },
         name: {
           format: "text",
@@ -127657,7 +127906,6 @@ export default {
       required: [
         "id",
         "code",
-        "exchangeRate",
         "decimalPlaces",
         "active",
         "createdBy",
@@ -127676,11 +127924,6 @@ export default {
             "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
           type: "string"
-        },
-        exchangeRate: {
-          default: 1,
-          format: "numeric",
-          type: "number"
         },
         decimalPlaces: {
           default: 2,
@@ -137703,6 +137946,62 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    exchangeRateOverride: {
+      required: [
+        "id",
+        "companyId",
+        "currencyCode",
+        "rate",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('xrovr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        rate: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -148967,6 +149266,51 @@ export default {
     },
     "rowFilter.receiptLines.description": {
       name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.exchangeRate": {
+      name: "exchangeRate",
+      description: "exchangeRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/exchangeRate"
+      }
+    },
+    "rowFilter.exchangeRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRate.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRate.effectiveDate": {
+      name: "effectiveDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRate.rate": {
+      name: "rate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRate.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -161595,69 +161939,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.exchangeRateHistory": {
-      name: "exchangeRateHistory",
-      description: "exchangeRateHistory",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/exchangeRateHistory"
-      }
-    },
-    "rowFilter.exchangeRateHistory.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.rate": {
-      name: "rate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.effectiveDate": {
-      name: "effectiveDate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.companyGroupId": {
-      name: "companyGroupId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.exchangeRateHistory.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.materialFinishes": {
       name: "materialFinishes",
       description: "materialFinishes",
@@ -163265,12 +163546,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.currencies.exchangeRate": {
-      name: "exchangeRate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.currencies.decimalPlaces": {
       name: "decimalPlaces",
       required: false,
@@ -163321,6 +163596,12 @@ export default {
     },
     "rowFilter.currencies.companyGroupId": {
       name: "companyGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.currencies.historicalExchangeRate": {
+      name: "historicalExchangeRate",
       required: false,
       in: "query",
       type: "string"
@@ -173069,12 +173350,6 @@ export default {
     },
     "rowFilter.currency.code": {
       name: "code",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.currency.exchangeRate": {
-      name: "exchangeRate",
       required: false,
       in: "query",
       type: "string"
@@ -184259,6 +184534,63 @@ export default {
     },
     "rowFilter.stockTransfer.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.exchangeRateOverride": {
+      name: "exchangeRateOverride",
+      description: "exchangeRateOverride",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/exchangeRateOverride"
+      }
+    },
+    "rowFilter.exchangeRateOverride.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.rate": {
+      name: "rate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.exchangeRateOverride.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

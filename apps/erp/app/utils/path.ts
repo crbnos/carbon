@@ -2258,12 +2258,28 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
+/**
+ * The Referer header, reduced to a SAME-ORIGIN relative path (or null). Many
+ * actions redirect back here — returning the raw header would let a crafted
+ * request bounce the user to an attacker origin (CWE-601 open redirect), so a
+ * cross-origin or unparsable referer yields null and callers fall back to
+ * their fixed route.
+ */
 export const requestReferrer = (request: Request, withParams = true) => {
-  return request.headers.get("referer");
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  try {
+    const requestUrl = new URL(request.url);
+    const url = new URL(referer, requestUrl.origin);
+    if (url.origin !== requestUrl.origin) return null;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return null;
+  }
 };
 
 export const getParams = (request: Request) => {
-  const url = new URL(requestReferrer(request) ?? "");
+  const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };

@@ -462,12 +462,7 @@ const PurchaseOrderProperties = () => {
                 icon={<LuRefreshCcw />}
                 isDisabled={isDisabled}
                 onClick={() => {
-                  const formData = new FormData();
-                  formData.append(
-                    "currencyCode",
-                    routeData?.purchaseOrder?.currencyCode ?? ""
-                  );
-                  exchangeRateFetcher.submit(formData, {
+                  exchangeRateFetcher.submit(null, {
                     method: "post",
                     action: path.to.purchaseOrderExchangeRate(orderId)
                   });
