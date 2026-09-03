@@ -7,16 +7,21 @@ count adjustment, should the offsetting entry go to a **dedicated inventory
 variance / adjustment / shrinkage account**, or straight against the raw
 material / finished goods (inventory asset) account?
 
-Consensus across every ERP surveyed — SAP S/4HANA, NetSuite, Dynamics 365
-Business Central, QuickBooks, and Fishbowl — is unanimous: the inventory asset
-account is **one** leg of the journal, and the **offset must be a dedicated
-P&L (COGS-type) variance/adjustment account**, never a second inventory-asset
-line. Routing the offset back into the inventory account would net the journal
-to zero and destroy the ability to analyse shrinkage. **Carbon already does
-this correctly today** — it posts DR/CR against the inventory asset
+Across every ERP surveyed — SAP S/4HANA, NetSuite, Dynamics 365 Business
+Central, QuickBooks Online, and Fishbowl — the common pattern is the same: the
+inventory asset account is **one** leg of the journal, and the recommended
+**offset is a dedicated P&L (COGS-type) variance/adjustment account**, not a
+second inventory-asset line. This is each product's default or recommended
+configuration, not a hard-coded universal rule — the offset is typically a
+configurable account (NetSuite exposes a transaction-level Adjustment Account;
+Business Central resolves an Inventory Adjmt. Account through configurable
+posting setups), and specific defaults/capabilities vary by product and version.
+Routing the offset back into the inventory account would net the journal to zero
+and destroy the ability to analyse shrinkage. **Carbon's own policy already
+follows this pattern** — it posts DR/CR against the inventory asset
 (`rawMaterialsAccount`/`finishedGoodsAccount`) and a dedicated
 `inventoryAdjustmentVarianceAccount`. No change is required; this note documents
-that the current behaviour matches industry standard and captures the one
+that Carbon's behaviour matches the common industry pattern and captures the one
 genuine design choice (whether to split gains vs. losses).
 
 ## Competitors Surveyed
@@ -25,7 +30,9 @@ genuine design choice (whether to split gains vs. losses).
   automatic account determination.
 - **NetSuite** — mid-market cloud ERP; closest analogue to Carbon's model.
 - **Dynamics 365 Business Central** — posting-group-matrix account determination.
-- **QuickBooks (Online/Desktop)** — SMB baseline; auto-created shrinkage account.
+- **QuickBooks Online** — SMB baseline; adjustment posts to a selected
+  (auto-created "Inventory Shrinkage") account. Desktop is not covered by the
+  cited source.
 - **Fishbowl Inventory** — inventory sub-ledger that syncs journals to QB/Xero;
   part-type + per-part account mapping, plus a distinct Scrap account.
 
