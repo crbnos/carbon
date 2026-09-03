@@ -24,7 +24,7 @@ RETURNS TABLE (
     "isRoot" BOOLEAN,
     "kit" BOOLEAN,
     "revision" TEXT,
-    "version" NUMERIC(10,2),
+    "version" NUMERIC,
     "storageUnitId" TEXT,
     "replenishmentSystem" "itemReplenishmentSystem"
 ) AS $$
