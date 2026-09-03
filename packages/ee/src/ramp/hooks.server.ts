@@ -45,8 +45,28 @@ async function convergeRamp(
 
   await ensureRampConnection(serviceRole, companyId);
   await pushChartOfAccounts(serviceRole, companyId);
-  await pushCostCenters(serviceRole, companyId);
-  await ensureRampWebhook(serviceRole, companyId, getAppUrl());
+  // Cost-center coding is a secondary convenience — a Ramp-side rejection here
+  // must NOT abort the OAuth connect. Log and continue so the integration installs.
+  try {
+    await pushCostCenters(serviceRole, companyId);
+  } catch (err) {
+    console.warn(
+      `[ramp] cost-center push failed for company ${companyId}; continuing install`,
+      err
+    );
+  }
+  // The webhook is latency, not correctness — the hourly `ramp-sweep` is the
+  // correctness guarantee. Ramp can't reach a non-public dev host
+  // (erp.<branch>.dev), so webhook registration will fail locally; that must not
+  // block the connect. Log and continue.
+  try {
+    await ensureRampWebhook(serviceRole, companyId, getAppUrl());
+  } catch (err) {
+    console.warn(
+      `[ramp] webhook registration failed for company ${companyId}; continuing install (hourly sweep covers correctness)`,
+      err
+    );
+  }
 
   if (opts.fireInitialSync) {
     // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
@@ -55,14 +75,23 @@ async function convergeRamp(
     // reached via a lazy runtime import resolved through the app that owns both
     // packages. The non-literal specifier keeps TS from resolving/type-checking a
     // module ee cannot see.
-    const jobsModule = "@carbon/jobs";
-    const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
-      trigger: (
-        task: string,
-        payload: { companyId: string; reason: string }
-      ) => Promise<unknown>;
-    };
-    await jobs.trigger("ramp-sync", { companyId, reason: "install" });
+    // A failure to enqueue the initial sync must not fail the connect — the
+    // hourly `ramp-sweep` fires `ramp-sync` for every active company regardless.
+    try {
+      const jobsModule = "@carbon/jobs";
+      const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
+        trigger: (
+          task: string,
+          payload: { companyId: string; reason: string }
+        ) => Promise<unknown>;
+      };
+      await jobs.trigger("ramp-sync", { companyId, reason: "install" });
+    } catch (err) {
+      console.warn(
+        `[ramp] initial sync enqueue failed for company ${companyId}; the hourly sweep will cover it`,
+        err
+      );
+    }
   }
 }
 

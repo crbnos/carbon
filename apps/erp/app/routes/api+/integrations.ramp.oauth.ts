@@ -1,4 +1,4 @@
-import { VERCEL_URL } from "@carbon/auth";
+import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Ramp } from "@carbon/ee";
 import { rampOnInstall } from "@carbon/ee/ramp/hooks.server";
@@ -48,11 +48,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Invalid state parameter" }, { status: 400 });
   }
 
+  // The redirect_uri sent to Ramp's token endpoint MUST byte-for-byte match the
+  // one used at authorize time. The authorize step builds it browser-side from
+  // `window.location.origin` (IntegrationCard), so we must reproduce the SAME
+  // public origin here — NOT `new URL(request.url).origin`, which behind the
+  // portless dev proxy (and any TLS-terminating proxy) is the internal
+  // `http://127.0.0.1:<port>` and produces an `invalid_grant` (DEVELOPER_7012)
+  // mismatch. `getAppUrl()` is the canonical public origin in dev/preview/prod.
+  const redirectUri = `${getAppUrl()}/api/integrations/ramp/oauth`;
+
   try {
-    const credentials = await exchangeRampOAuthCode(
-      code,
-      `${url.origin}/api/integrations/ramp/oauth`
-    );
+    const credentials = await exchangeRampOAuthCode(code, redirectUri);
 
     const created = await upsertCompanyIntegration(client, {
       id: Ramp.id,
@@ -74,15 +80,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // ensure the connection + webhook) and fire the initial sync.
     await rampOnInstall(companyId);
 
-    const requestUrl = new URL(request.url);
-    if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-      requestUrl.protocol = "http";
-    }
-    return redirect(`${requestUrl.origin}${path.to.integrations}`);
+    // Redirect back to the integrations page on the canonical public origin —
+    // `request.url`'s origin is the internal proxy address in dev, which would
+    // bounce the user to an unreachable host and drop their session cookies.
+    return redirect(`${getAppUrl()}${path.to.integrations}`);
   } catch (err) {
     console.error("Ramp OAuth Error:", err);
     return data(
-      { error: "Failed to exchange the Ramp authorization code" },
+      {
+        error: "Failed to exchange the Ramp authorization code",
+        detail: err instanceof Error ? err.message : String(err)
+      },
       { status: 500 }
     );
   }

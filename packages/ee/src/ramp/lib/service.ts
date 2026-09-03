@@ -13,7 +13,7 @@ import {
   persistIntegrationSecrets,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
-import { buildRampIdempotencyKey, RampClient } from "./client";
+import { buildRampIdempotencyKey, RampApiError, RampClient } from "./client";
 import {
   RampAccountingConnectionSchema,
   type RampCredentials,
@@ -376,8 +376,22 @@ export async function pushChartOfAccounts(
 
   let pushed = 0;
   for (const batch of chunk(glAccounts, RAMP_ACCOUNTS_BATCH_SIZE)) {
-    await client.postAccountingAccounts({ gl_accounts: batch });
-    pushed += batch.length;
+    try {
+      await client.postAccountingAccounts({ gl_accounts: batch });
+      pushed += batch.length;
+    } catch (err) {
+      // Ramp's account upload is INSERT-ONLY — re-pushing an already-uploaded
+      // account returns 400 DEVELOPER_7020 ("an account with the same id already
+      // exists"). Treat that as idempotently satisfied so a re-converge (a retry,
+      // or an `onUpdate` settings save) doesn't fail once accounts exist in Ramp.
+      // NOTE: a batch mixing new + already-uploaded accounts fails atomically, so
+      // Carbon accounts added AFTER the first push are not created here — a full
+      // list-and-diff upsert is the proper follow-up.
+      if (err instanceof RampApiError && err.code === "DEVELOPER_7020") {
+        continue;
+      }
+      throw err;
+    }
   }
 
   return { pushed };
@@ -407,17 +421,24 @@ export async function pushCostCenters(
     return { pushed: 0 };
   }
 
-  await client.postAccountingFields({
-    id: "carbon-cost-center",
+  // Ramp's custom-field API assigns its own UUID `id` and keys the ERP
+  // identifier as `external_id` — UNLIKE /accounting/accounts, which accepts an
+  // arbitrary string `id`. Putting the Carbon id in `id` here returned
+  // 422 DEVELOPER_7001 "Not a valid UUID". So the Carbon-side ids go in
+  // `external_id` (matching the READ model in models.ts and what the sync reads
+  // back to match a coded cost center), and the options reference the field by
+  // the Ramp UUID returned from the create.
+  const field = await client.postAccountingFields<{ id?: string }>({
+    external_id: "carbon-cost-center",
     name: "Cost Center",
     input_type: "SINGLE_CHOICE",
     is_splittable: true
   });
 
   await client.postAccountingFieldOptions({
-    field_id: "carbon-cost-center",
+    field_id: field?.id,
     options: costCenters.map((costCenter) => ({
-      id: costCenter.id,
+      external_id: costCenter.id,
       value: costCenter.name
     }))
   });

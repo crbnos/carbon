@@ -388,8 +388,12 @@ function CardSelector({ setting }: { setting: IntegrationSetting }) {
  * boolean (see `packages/ee/src/email/config.tsx`).
  */
 function SwitchField({ setting }: { setting: IntegrationSetting }) {
-  const [value, setValue] = useControlField<boolean>(setting.name);
-  const checked = value === true;
+  const [value, setValue] = useControlField<boolean | string>(setting.name);
+  // The control value arrives as a boolean OR the string "true"/"false" — the
+  // config default (`value: "true"`) and the persisted hidden input below are
+  // both strings, so a strict `=== true` renders every default-on switch as off.
+  // Treat both representations of "on" as checked.
+  const checked = value === true || value === "true";
 
   return (
     <div className="flex items-center justify-between gap-4 w-full p-3 border rounded-lg">

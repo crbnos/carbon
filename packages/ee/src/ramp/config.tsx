@@ -12,7 +12,11 @@ import { defineIntegration } from "../fns";
  * `offline_access` requests a refresh token; the app must have the Refresh Token
  * grant enabled. IntegrationCard builds the authorize redirect from this block.
  */
-const RAMP_AUTHORIZE_URL = "https://api.ramp.com/v1/authorize";
+// The user-consent authorize endpoint lives on the APP host (app.ramp.com), NOT
+// the API host — hitting api.ramp.com/v1/authorize returns "Not Authorized" from
+// the API gateway before any consent screen. The token exchange DOES stay on the
+// API host (api.ramp.com/developer/v1/token).
+const RAMP_AUTHORIZE_URL = "https://app.ramp.com/v1/authorize";
 const RAMP_TOKEN_URL = "https://api.ramp.com/developer/v1/token";
 const RAMP_OAUTH_SCOPES = [
   "accounting:read",

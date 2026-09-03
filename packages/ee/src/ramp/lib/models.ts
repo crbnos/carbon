@@ -411,6 +411,23 @@ export const RampCursorsSchema = z
 
 export type RampCursors = z.infer<typeof RampCursorsSchema>;
 
+/**
+ * The settings form persists the five sync toggles as FLAT string flags at the
+ * metadata root (`pullTransactions: "true" | "false"`, …), but the runtime reads
+ * them as the nested boolean `sync` object above. This is the single place that
+ * bridges the two: an explicit `"false"`/`false` disables a family; anything else
+ * — including an absent flag on a fresh OAuth install — leaves it ON, matching
+ * the schema default. Applied on every read, so all runtime `metadata.sync.*`
+ * gates stay correct without the form and the sync engine agreeing on a shape.
+ */
+function flatSyncFlagEnabled(
+  raw: Record<string, unknown>,
+  key: string
+): boolean {
+  const value = raw[key];
+  return value !== "false" && value !== false;
+}
+
 export const RampIntegrationMetadataSchema = z
   .object({
     credentials: RampCredentialsSchema,
@@ -425,7 +442,20 @@ export const RampIntegrationMetadataSchema = z
     cursors: RampCursorsSchema,
     sync: RampSyncFlagsSchema
   })
-  .passthrough();
+  .passthrough()
+  .transform((m) => {
+    const raw = m as Record<string, unknown>;
+    return {
+      ...m,
+      sync: {
+        pullTransactions: flatSyncFlagEnabled(raw, "pullTransactions"),
+        pullBills: flatSyncFlagEnabled(raw, "pullBills"),
+        pullReimbursements: flatSyncFlagEnabled(raw, "pullReimbursements"),
+        pushPurchaseOrders: flatSyncFlagEnabled(raw, "pushPurchaseOrders"),
+        pushInvoices: flatSyncFlagEnabled(raw, "pushInvoices")
+      }
+    };
+  });
 
 export type RampIntegrationMetadata = z.infer<
   typeof RampIntegrationMetadataSchema
