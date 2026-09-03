@@ -148,7 +148,7 @@ function isConnectionLinked(status: string | null | undefined): boolean {
   );
 }
 
-/** Extract a connection list from either `[...]` or `{ data: [...] }`. */
+/** Extract a connection list from `{ connections: [...] }` (Ramp), `{ data: [...] }`, or a bare array. */
 function extractConnections(response: unknown): Array<{ status?: string }> {
   if (Array.isArray(response)) return response as Array<{ status?: string }>;
   if (response && typeof response === "object") {
