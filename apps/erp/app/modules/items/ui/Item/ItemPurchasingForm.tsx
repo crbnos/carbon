@@ -9,15 +9,12 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
-  FormControl,
-  FormLabel
+  CardTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import type { z } from "zod";
-import { Enumerable } from "~/components/Enumerable";
 import { Hidden, Number, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { useSuppliers } from "~/stores/suppliers";
@@ -114,22 +111,6 @@ const ItemPurchasingForm = ({
               label={t`Lead Time (Days)`}
               termId="item-purchasing-lead-time"
             />
-            <FormControl>
-              <FormLabel>
-                <Trans>Purchasing Unit of Measure</Trans>
-              </FormLabel>
-              {purchasingUnitOfMeasureCode ? (
-                <Enumerable value={purchasingUnitOfMeasureCode} />
-              ) : (
-                <span className="text-sm text-muted-foreground">—</span>
-              )}
-            </FormControl>
-            <FormControl>
-              <FormLabel>
-                <Trans>Conversion Factor</Trans>
-              </FormLabel>
-              <span className="text-sm">{conversionFactor}</span>
-            </FormControl>
             {/* <Boolean name="purchasingBlocked" label={t`Purchasing Blocked`} /> */}
           </div>
         </CardContent>
