@@ -160,7 +160,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
       }),
       exportOnlyColumn<PartListItem>({
         id: "itemName",
-        header: t`Description`,
+        header: t`Item Name`,
         value: (row) => row.name ?? null
       }),
       exportOnlyColumn<PartListItem>({

@@ -486,7 +486,7 @@ const partImportFields = {
     type: "string"
   },
   readableId: {
-    label: "Part ID",
+    label: "Part Number",
     required: true,
     type: "string"
   },
@@ -2076,7 +2076,7 @@ export const importSchemas: Record<
       ),
     readableId: z
       .string()
-      .min(1, { message: "Part ID is required" })
+      .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),

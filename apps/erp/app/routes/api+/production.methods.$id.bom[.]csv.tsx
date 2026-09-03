@@ -190,7 +190,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const totalCost = total * unitCost;
 
     const attrs = itemAttributes.get(node.data.itemId);
-    const revision = attrs && attrs.revision !== "0" ? attrs.revision : "";
+    const revision = attrs?.revision || "0";
     const itemGroup = (attrs?.itemPostingGroup ?? "").replace(/"/g, '""');
 
     csv += `${bomIds[index]},${
