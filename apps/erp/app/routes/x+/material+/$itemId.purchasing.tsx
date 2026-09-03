@@ -131,6 +131,7 @@ export default function MaterialPurchasingRoute() {
         allowedSuppliers={
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
+        supplierParts={supplierParts}
       />
       <SupplierParts
         supplierParts={supplierParts}

@@ -9,33 +9,31 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
+  FormControl,
+  FormLabel
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import type { z } from "zod";
-import {
-  ConversionFactor,
-  Hidden,
-  Number,
-  Submit,
-  UnitOfMeasure
-} from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { Enumerable } from "~/components/Enumerable";
+import { Hidden, Number, Submit } from "~/components/Form";
+import { usePermissions } from "~/hooks";
 import { useSuppliers } from "~/stores/suppliers";
-import { path } from "~/utils/path";
 import { itemPurchasingValidator } from "../../items.models";
-import type { PartSummary } from "../../types";
+import type { SupplierPart } from "../../types";
 
 type ItemPurchasingFormProps = {
   initialValues: z.infer<typeof itemPurchasingValidator>;
   allowedSuppliers?: string[];
+  supplierParts?: SupplierPart[];
 };
 
 const ItemPurchasingForm = ({
   initialValues,
-  allowedSuppliers
+  allowedSuppliers,
+  supplierParts
 }: ItemPurchasingFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -56,14 +54,18 @@ const ItemPurchasingForm = ({
     [] as { label: string; value: string }[]
   );
 
-  const routeData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(itemId)
-  );
+  // Purchasing unit of measure and conversion factor are not editable here —
+  // they are pulled from the preferred supplier's supplier part record.
+  const [preferredSupplierId, setPreferredSupplierId] = useState<
+    string | undefined
+  >(initialValues.preferredSupplierId ?? undefined);
 
-  const inventoryCode = routeData?.partSummary?.unitOfMeasureCode;
-  const [purchasingCode, setPurchasingCode] = useState<string | null>(
-    initialValues.purchasingUnitOfMeasureCode ?? null
+  const preferredSupplierPart = supplierParts?.find(
+    (sp) => sp.supplierId === preferredSupplierId
   );
+  const purchasingUnitOfMeasureCode =
+    preferredSupplierPart?.supplierUnitOfMeasureCode ?? "";
+  const conversionFactor = preferredSupplierPart?.conversionFactor ?? 1;
 
   return (
     <Card>
@@ -79,12 +81,20 @@ const ItemPurchasingForm = ({
         </CardHeader>
         <CardContent>
           <Hidden name="itemId" />
+          <Hidden
+            name="purchasingUnitOfMeasureCode"
+            value={purchasingUnitOfMeasureCode}
+          />
+          <Hidden name="conversionFactor" value={conversionFactor} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Select
               name="preferredSupplierId"
               label={t`Preferred Supplier`}
               termId="item-preferred-supplier"
               options={allowedSuppliersOptions}
+              onChange={(newValue) =>
+                setPreferredSupplierId(newValue?.value ?? undefined)
+              }
               emptyMessage={
                 <FieldEmptyState
                   title={<Trans>No suppliers yet</Trans>}
@@ -104,21 +114,22 @@ const ItemPurchasingForm = ({
               label={t`Lead Time (Days)`}
               termId="item-purchasing-lead-time"
             />
-            <UnitOfMeasure
-              name="purchasingUnitOfMeasureCode"
-              label={t`Purchasing Unit of Measure`}
-              termId="item-purchasing-uom"
-              onChange={(newValue) => {
-                if (newValue) setPurchasingCode(newValue.value);
-              }}
-            />
-            <ConversionFactor
-              name="conversionFactor"
-              isReadOnly={!purchasingCode || !inventoryCode}
-              purchasingCode={purchasingCode ?? undefined}
-              inventoryCode={inventoryCode ?? undefined}
-              termId="conversion-factor"
-            />
+            <FormControl>
+              <FormLabel>
+                <Trans>Purchasing Unit of Measure</Trans>
+              </FormLabel>
+              {purchasingUnitOfMeasureCode ? (
+                <Enumerable value={purchasingUnitOfMeasureCode} />
+              ) : (
+                <span className="text-sm text-muted-foreground">—</span>
+              )}
+            </FormControl>
+            <FormControl>
+              <FormLabel>
+                <Trans>Conversion Factor</Trans>
+              </FormLabel>
+              <span className="text-sm">{conversionFactor}</span>
+            </FormControl>
             {/* <Boolean name="purchasingBlocked" label={t`Purchasing Blocked`} /> */}
           </div>
         </CardContent>

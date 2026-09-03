@@ -122,6 +122,7 @@ export default function PartPurchasingRoute() {
         allowedSuppliers={
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
+        supplierParts={supplierParts}
       />
       <SupplierParts
         supplierParts={supplierParts}
