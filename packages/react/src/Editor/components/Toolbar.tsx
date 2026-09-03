@@ -28,7 +28,7 @@ export const Toolbar = ({ className }: { className?: string }) => {
   return (
     <div
       className={cn(
-        "sticky top-0 z-10 flex w-full flex-wrap items-center gap-1 border-b border-border bg-background p-2",
+        "sticky top-0 z-10 flex w-full flex-wrap items-center gap-1 border-b border-border bg-card p-2",
         className
       )}
     >

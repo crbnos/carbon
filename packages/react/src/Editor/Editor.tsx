@@ -319,7 +319,7 @@ const Editor = ({
           tippyOptions={{
             placement: "top"
           }}
-          className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl p-2"
+          className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-card shadow-xl p-2"
         >
           <Separator orientation="vertical" />
           <Suspense fallback={null}>
