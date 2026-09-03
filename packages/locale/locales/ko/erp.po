@@ -3104,6 +3104,12 @@ msgstr "Carbon의 현장 앱으로 작업자가 공정을 실행하고, 수량�
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon의 부품 번호를 가진 모든 것에 대한 단일 레코드 — 부품, 자재, 공구, 서비스, 소모품 또는 지그 — 작업 지시, 방법, 주문 및 재고 관리가 모두 참조합니다."
 
+msgid "Card Holder"
+msgstr "카드 소유자"
+
+msgid "Card Transactions"
+msgstr "카드 거래"
+
 msgid "Cards"
 msgstr "카드"
 
@@ -9611,6 +9617,9 @@ msgstr "메모 날짜"
 msgid "Memo ID"
 msgstr "메모 ID"
 
+msgid "Merchant"
+msgstr "가맹점"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10471,6 +10480,9 @@ msgstr "생성된 작업 지시가 없음"
 
 msgid "No journal lines in scope for this period"
 msgstr "이 기간의 범위 내 전표 라인이 없음"
+
+msgid "No lines"
+msgstr "항목 없음"
 
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
@@ -12657,6 +12669,9 @@ msgstr "매주 상태 검토 회의에서 제기하세요"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 문제는 작은 수정이지만, 오픈 시점에 같은 문제가 나오면 지연으로 이어집니다."
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "요청 제한"
@@ -17100,6 +17115,12 @@ msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
 
 msgid "Trainings"
 msgstr "교육"
+
+msgid "Transaction Date"
+msgstr "거래 일자"
+
+msgid "Transaction ID"
+msgstr "거래 ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "거래에 따라 전표 항목이 생성되고 총계정원장이 업데이트됩니다."

@@ -1,0 +1,227 @@
+import { round } from "@carbon/utils";
+import { describe, expect, it } from "vitest";
+import {
+  chunk,
+  diffChartOfAccounts,
+  RAMP_ACCOUNTS_BATCH_SIZE,
+  type RampAccountMapping,
+  rampClassificationForClass,
+  scaleLinesToTotal,
+  scaleRepaymentLines
+} from "../service";
+
+describe("rampClassificationForClass", () => {
+  it("maps each Carbon GL class to its Ramp classification", () => {
+    expect(rampClassificationForClass("Asset", false)).toBe("ASSET");
+    expect(rampClassificationForClass("Liability", false)).toBe("LIABILITY");
+    expect(rampClassificationForClass("Equity", false)).toBe("EQUITY");
+    expect(rampClassificationForClass("Revenue", false)).toBe("REVENUE");
+    expect(rampClassificationForClass("Expense", false)).toBe("EXPENSE");
+  });
+
+  it("maps the card-liability account to CREDCARD regardless of class", () => {
+    expect(rampClassificationForClass("Liability", true)).toBe("CREDCARD");
+    expect(rampClassificationForClass("Asset", true)).toBe("CREDCARD");
+    expect(rampClassificationForClass(null, true)).toBe("CREDCARD");
+    expect(rampClassificationForClass(undefined, true)).toBe("CREDCARD");
+  });
+
+  it("returns null for an account with no class (unclassifiable)", () => {
+    expect(rampClassificationForClass(null, false)).toBeNull();
+    expect(rampClassificationForClass(undefined, false)).toBeNull();
+  });
+});
+
+describe("chunk", () => {
+  it("splits into batches of at most the given size", () => {
+    const items = Array.from({ length: 1250 }, (_, index) => index);
+    const batches = chunk(items, RAMP_ACCOUNTS_BATCH_SIZE);
+    expect(batches).toHaveLength(3);
+    expect(batches[0]).toHaveLength(500);
+    expect(batches[1]).toHaveLength(500);
+    expect(batches[2]).toHaveLength(250);
+    // No item is dropped or duplicated.
+    expect(batches.flat()).toEqual(items);
+  });
+
+  it("returns exactly one batch when the input fits", () => {
+    expect(chunk([1, 2, 3], RAMP_ACCOUNTS_BATCH_SIZE)).toEqual([[1, 2, 3]]);
+  });
+
+  it("returns no batches for an empty input", () => {
+    expect(chunk([], RAMP_ACCOUNTS_BATCH_SIZE)).toEqual([]);
+  });
+
+  it("throws when the batch size is not positive", () => {
+    expect(() => chunk([1], 0)).toThrow();
+    expect(() => chunk([1], -1)).toThrow();
+  });
+});
+
+describe("scaleRepaymentLines", () => {
+  it("scales a 3-line original to a partial repayment, putting the rounding residual on the largest line so the sum equals the header exactly", () => {
+    const original = [
+      { accountId: "a", amount: 10 },
+      { accountId: "b", amount: 10 },
+      { accountId: "c", amount: 13.33 }
+    ];
+    // ratio = 11.11 / 33.33 ≈ 0.33333 → 3.33, 3.33, 4.44 (sum 11.10), residual
+    // 0.01 lands on the largest line (c → 4.45).
+    const scaled = scaleRepaymentLines(original, 11.11, 33.33, 2);
+
+    expect(scaled.map((line) => line.amount)).toEqual([3.33, 3.33, 4.45]);
+
+    const sum = round(
+      scaled.reduce((acc, line) => acc + line.amount, 0),
+      2
+    );
+    expect(sum).toBe(11.11);
+  });
+
+  it("returns an empty list for no original lines", () => {
+    expect(scaleRepaymentLines([], 5, 10, 2)).toEqual([]);
+  });
+});
+
+describe("scaleLinesToTotal", () => {
+  it("converts a single merchant-currency line to the settlement header total (foreign charge)", () => {
+    // A CAD 608.98 charge that settled at USD 431.68 — the line comes in the
+    // merchant currency and must be scaled to the settlement amount so it sums
+    // to the header (post-card-transaction's invariant).
+    const lines = [{ accountId: "adv", amount: 608.98 }];
+    const scaled = scaleLinesToTotal(lines, 431.68, 2);
+    expect(scaled.map((l) => l.amount)).toEqual([431.68]);
+  });
+
+  it("is a no-op when the lines already sum to the target (same-currency)", () => {
+    const lines = [
+      { accountId: "a", amount: 100 },
+      { accountId: "b", amount: 50 }
+    ];
+    const scaled = scaleLinesToTotal(lines, 150, 2);
+    expect(scaled.map((l) => l.amount)).toEqual([100, 50]);
+  });
+
+  it("scales multiple lines proportionally, residual on the largest so the sum is exact", () => {
+    const lines = [
+      { accountId: "a", amount: 10 },
+      { accountId: "b", amount: 10 },
+      { accountId: "c", amount: 13.33 }
+    ];
+    const scaled = scaleLinesToTotal(lines, 11.11, 2);
+    expect(scaled.map((l) => l.amount)).toEqual([3.33, 3.33, 4.45]);
+    const sum = round(
+      scaled.reduce((acc, l) => acc + l.amount, 0),
+      2
+    );
+    expect(sum).toBe(11.11);
+  });
+
+  it("preserves non-amount fields on each line", () => {
+    const lines = [
+      { accountId: "a", amount: 5, costCenterId: "cc1", description: "x" }
+    ];
+    const [scaled] = scaleLinesToTotal(lines, 10, 2);
+    expect(scaled).toMatchObject({
+      accountId: "a",
+      amount: 10,
+      costCenterId: "cc1",
+      description: "x"
+    });
+  });
+
+  it("degrades a zero raw-sum to the target on the largest line", () => {
+    const lines = [
+      { accountId: "a", amount: 0 },
+      { accountId: "b", amount: 0 }
+    ];
+    const scaled = scaleLinesToTotal(lines, 7, 2);
+    expect(
+      round(
+        scaled.reduce((acc, l) => acc + l.amount, 0),
+        2
+      )
+    ).toBe(7);
+  });
+
+  it("returns an empty list for no lines", () => {
+    expect(scaleLinesToTotal([], 5, 2)).toEqual([]);
+  });
+});
+
+describe("diffChartOfAccounts", () => {
+  // Must match accountFingerprint(): `${name} ${code ?? ""}` (name + code only —
+  // classification is not PATCHable in Ramp, so it is not tracked).
+  const fp = (name: string, code: string) => `${name} ${code}`;
+
+  const cash = {
+    id: "acc_cash",
+    name: "Cash",
+    code: "1000",
+    classification: "ASSET"
+  };
+  const ramp = {
+    id: "acc_ramp",
+    name: "Ramp Card",
+    code: "2000",
+    classification: "CREDCARD"
+  };
+
+  it("creates unmapped accounts", () => {
+    const { toCreate, toUpdate } = diffChartOfAccounts([cash, ramp], []);
+    expect(toCreate).toEqual([cash, ramp]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("skips a mapped account whose name/code are unchanged", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const { toCreate, toUpdate } = diffChartOfAccounts([cash], mappings);
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("updates a mapped account whose name or code changed", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const renamed = { ...cash, name: "Operating Cash" };
+    const { toCreate, toUpdate } = diffChartOfAccounts([renamed], mappings);
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([{ account: renamed, externalId: "ramp_1" }]);
+  });
+
+  it("does NOT update on a classification-only change (not PATCHable in Ramp)", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const reclassified = { ...cash, classification: "LIABILITY" };
+    const { toCreate, toUpdate } = diffChartOfAccounts(
+      [reclassified],
+      mappings
+    );
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("falls back to the Carbon account id when the mapping has no externalId", () => {
+    const mappings: RampAccountMapping[] = [
+      { entityId: "acc_cash", externalId: null, fingerprint: "stale" }
+    ];
+    const { toUpdate } = diffChartOfAccounts([cash], mappings);
+    expect(toUpdate).toEqual([{ account: cash, externalId: "acc_cash" }]);
+  });
+});

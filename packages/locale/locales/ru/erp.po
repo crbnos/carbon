@@ -3104,6 +3104,12 @@ msgstr "Приложение Carbon для цеха, где операторы �
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Единая запись Carbon для всего, что имеет номер детали — Деталь, Материал, Инструмент, Услуга, Расходный материал или Приспособление — на которую ссылаются производственные заказы, методы, заказы и запасы."
 
+msgid "Card Holder"
+msgstr "Держатель карты"
+
+msgid "Card Transactions"
+msgstr "Транзакции карты"
+
 msgid "Cards"
 msgstr "Карточки"
 
@@ -9611,6 +9617,9 @@ msgstr "Дата меморандума"
 msgid "Memo ID"
 msgstr "ID Памятки"
 
+msgid "Merchant"
+msgstr "Продавец"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10471,6 +10480,9 @@ msgstr "Производственные заказы не были создан
 
 msgid "No journal lines in scope for this period"
 msgstr "Нет строк операций в этом периоде"
+
+msgid "No lines"
+msgstr "Нет строк"
 
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
@@ -12657,6 +12669,9 @@ msgstr "Поднимите это на еженедельном статус-з�
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "поднимайте проблемы рано и говорите о них прямо. Проблема, выявленная на 2-й неделе, — это небольшое исправление; та же проблема при запуске — это задержка."
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
@@ -17100,6 +17115,12 @@ msgstr "Обучение вашей команды через Academy и вст�
 
 msgid "Trainings"
 msgstr "Обучение"
+
+msgid "Transaction Date"
+msgstr "Дата транзакции"
+
+msgid "Transaction ID"
+msgstr "ID транзакции"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Операции создадут записи и обновят Главную книгу"

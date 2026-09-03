@@ -6,6 +6,7 @@ import { Onshape } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
+import { Ramp } from "./ramp/config";
 import { Rillet } from "./rillet/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
@@ -38,6 +39,7 @@ export const integrations = [
   Onshape,
   PaperlessParts,
   QuickBooks,
+  Ramp,
   Rillet,
   Sage,
   Slack,
@@ -52,6 +54,7 @@ export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
+export { Ramp } from "./ramp/config";
 export { Rillet } from "./rillet/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";

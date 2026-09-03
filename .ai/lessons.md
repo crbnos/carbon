@@ -1221,6 +1221,26 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `apps/erp/app/**` table cells reading loader rows; any `as { x?: T }` over a generated DB/RPC type.
 
+---
+
+**Context:** Ramp integration live verification kept failing at every DB touch of the chart of accounts — post-card-transaction 500'd, pushChartOfAccounts pushed 0, every coded card charge failed "Failed to verify accounts" (2026-08-28).
+
+**Problem:** The `account` (chart of accounts) table is scoped by **`companyGroupId`, not `companyId`** — it has **no `companyId` column** and its PK is `id` alone (globally unique). Four separate sites wrote `.from("account")…​.eq("companyId", companyId)`, which PostgREST rejects ("column companyId does not exist"). Each caller either 500'd or swallowed the error and behaved as if zero accounts existed. The bug was invisible to unit tests (they mock the data, never hit the query) and recurred because a well-meaning "add companyId scoping everywhere" self-review pass applied the standard multi-tenant pattern to a table that breaks it. Same class as `item` (single-column PK, globally unique).
+
+**Rule:** Before scoping any query by `companyId`, confirm the table HAS a `companyId` column. Group-shared config tables — `account` (chart of accounts), and check others — are scoped by `companyGroupId`; resolve it from `company.companyGroupId` (or `ctx.companyGroupId`) and filter by that, or by `id` alone when the ids already come from this company's own rows. `account.id` is globally unique, so an `.in("id", ids)` lookup is correct and tenant-safe on its own.
+
+**Applies to:** any `.from("account")` in services/edge-functions/jobs; the general check "does this table actually have companyId?" before applying the multi-tenant scoping pattern (mirror of the `item` single-column-PK lesson).
+
+---
+
+**Context:** ramp-sync's card family silently created 0 transactions every run; the error "Cannot use a pool after calling end on the pool" was swallowed by family-failure isolation (2026-08-28).
+
+**Problem:** `getJobDatabaseClient(size)` (packages/jobs/src/db.ts) caches a Kysely client over the shared pool from `getPostgresConnectionPool(size)`. Three accounting sweeps (`accounting-outbound-sweep` cron 15,45, `-consolidation`, `-reconciliation`) call `getPostgresConnectionPool(5)` and `pool.end()` it in a `finally`. `getPostgresConnectionPool` evicts an ended pool for ITS callers, but `getJobDatabaseClient` kept a SEPARATE client cache still wrapping the dead pool — so after any sweep ran, every later `getJobDatabaseClient(5)` job broke until process restart.
+
+**Rule:** A cached client over a shared, end-able pool must detect the ended pool and rebuild — cache the pool alongside the client and check `pool.ending` (node-postgres) before returning the cached client. More generally, never `pool.end()` a pool obtained from a shared cache (`getPostgresConnectionPool`) unless every cache that wraps it also re-derives on end.
+
+**Applies to:** `packages/jobs/src/db.ts` and any code calling `pool.end()` on a `getPostgresConnectionPool(...)` result.
+
 ## A verdict computed against its own input is a tautology — diff across time, at read time
 
 **Context:** PR #1477 stored a "can this backup still be restored?" verdict (`compatibility.json`) beside each backup, written once by the export job and never refreshed. Its badge, typed-confirm gate, and no-confirm-button state were the PR's headline UX. CI was green; ~500 lines of tests passed.

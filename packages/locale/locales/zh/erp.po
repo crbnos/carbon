@@ -3104,6 +3104,12 @@ msgstr "Carbon的车间应用程序，操作员可在其中执行工序、报告
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon对任何具有零件号的事物的单一记录 — 零件、原材料、刀具、服务、耗材或工装夹具 — 工单、方法、订单和库存管理都指向。"
 
+msgid "Card Holder"
+msgstr "持卡人"
+
+msgid "Card Transactions"
+msgstr "卡交易"
+
 msgid "Cards"
 msgstr "卡片"
 
@@ -9611,6 +9617,9 @@ msgstr "备忘录日期"
 msgid "Memo ID"
 msgstr "备忘录 ID"
 
+msgid "Merchant"
+msgstr "商家"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10471,6 +10480,9 @@ msgstr "没有创建工单"
 
 msgid "No journal lines in scope for this period"
 msgstr "此期间范围内没有凭证行"
+
+msgid "No lines"
+msgstr "无行项"
 
 msgid "No lines to map"
 msgstr "没有行需要映射"
@@ -12657,6 +12669,9 @@ msgstr "在每周状态会议上提出"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很容易修复；同样的问题在上线时就会导致延期。"
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "速率限制"
@@ -17100,6 +17115,12 @@ msgstr "通过 Academy 和应用内指南培训班组"
 
 msgid "Trainings"
 msgstr "培训"
+
+msgid "Transaction Date"
+msgstr "交易日期"
+
+msgid "Transaction ID"
+msgstr "交易ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "交易将创建凭证并更新总账。"

@@ -3104,6 +3104,12 @@ msgstr "Carbons Werkstatt-App, auf der Werker Arbeitsgänge durchführen, Mengen
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbons einzelner Datensatz für alles mit einer Teilenummer – Teil, Werkstoff, Werkzeug, Dienstleistung, Verbrauchsmaterial oder Vorrichtung – auf den alle Fertigungsaufträge, Methoden, Bestellungen und Bestände verweisen."
 
+msgid "Card Holder"
+msgstr "Karteninhaber"
+
+msgid "Card Transactions"
+msgstr "Kartentransaktionen"
+
 msgid "Cards"
 msgstr "Karten"
 
@@ -9611,6 +9617,9 @@ msgstr "Memo-Datum"
 msgid "Memo ID"
 msgstr "Memo-ID"
 
+msgid "Merchant"
+msgstr "Händler"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10471,6 +10480,9 @@ msgstr "Keine Fertigungsaufträge wurden erstellt"
 
 msgid "No journal lines in scope for this period"
 msgstr "Keine Buchungssatzpositionen im Umfang für diesen Zeitraum"
+
+msgid "No lines"
+msgstr "Keine Zeilen"
 
 msgid "No lines to map"
 msgstr "Keine Zeilen zum Zuordnen"
@@ -12657,6 +12669,9 @@ msgstr "Bringen Sie es beim wöchentlichen Statusgespräch zur Sprache"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "Sprechen Sie es früh an und sprechen Sie es deutlich an. Ein Problem, das in Woche 2 benannt wird, ist eine kleine Reparatur; das gleiche Problem beim Go-Live ist eine Verzögerung."
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Ratenlimit"
@@ -17100,6 +17115,12 @@ msgstr "Schulung Ihres Teams über die Academy und In-App-Leitfäden"
 
 msgid "Trainings"
 msgstr "Schulungen"
+
+msgid "Transaction Date"
+msgstr "Transaktionsdatum"
+
+msgid "Transaction ID"
+msgstr "Transaktions-ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transaktionen erstellen Buchungssätze und aktualisieren das Hauptbuch."

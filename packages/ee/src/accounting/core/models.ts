@@ -338,6 +338,11 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  "Card Transaction": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
   "Production Order": {
     representation: "journal",
     defaultEnabled: true,

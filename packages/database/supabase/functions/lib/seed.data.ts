@@ -458,6 +458,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "cardTransaction",
+    name: "Card Transaction",
+    prefix: "CARD-%{yyyy}-%{mm}-",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     // Credit/debit memos are payment-shaped `memo` documents with their own
     // numbering; the insert path picks the sequence by direction. Mirrors the
     // backfill in 20260628143012_ar-ap-payments.sql.

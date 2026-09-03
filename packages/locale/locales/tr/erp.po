@@ -3104,6 +3104,12 @@ msgstr "Carbon'ın operatörlerin operasyonları çalıştırdığı, miktarlar�
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon'ın bir parça numarası olan her şey için — Parça, Malzeme, Takım, Hizmet, Sarf malzemesi veya Bağlama aparatı — iş emirleri, yöntemler, siparişler ve envanterin işaret ettiği tek stok kartı."
 
+msgid "Card Holder"
+msgstr "Kart Sahibi"
+
+msgid "Card Transactions"
+msgstr "Kart İşlemleri"
+
 msgid "Cards"
 msgstr "Kartlar"
 
@@ -9611,6 +9617,9 @@ msgstr "Muhasebe Tarihi"
 msgid "Memo ID"
 msgstr "Muhasebe Belgesi Kimliği"
 
+msgid "Merchant"
+msgstr "Satıcı"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10471,6 +10480,9 @@ msgstr "İş emri oluşturulmadı"
 
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde muhasebe fişi satırı yok"
+
+msgid "No lines"
+msgstr "Satır yok"
 
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
@@ -12657,6 +12669,9 @@ msgstr "Bunu haftalık durum çağrısında gündeme getir"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "bunu erken ve açık bir şekilde dile getir. 2. haftada adı konulan bir sorun küçük bir düzeltmedir; go-live'da aynı sorun bir gecikmedir."
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
@@ -17100,6 +17115,12 @@ msgstr "Ekibinizi Academy ve uygulama içi kılavuzlar aracılığıyla eğitin"
 
 msgid "Trainings"
 msgstr "Eğitimler"
+
+msgid "Transaction Date"
+msgstr "İşlem Tarihi"
+
+msgid "Transaction ID"
+msgstr "İşlem Kimliği"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "İşlemler muhasebe fişileri oluşturacak ve Büyük defteri güncelleyecektir."

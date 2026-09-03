@@ -406,6 +406,11 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
+    cardTransaction: (id: string) =>
+      generatePath(`${x}/invoicing/card-transactions/${id}`),
+    cardTransactions: `${x}/invoicing/card-transactions`,
+    cardTransactionVoid: (id: string) =>
+      generatePath(`${x}/invoicing/card-transactions/${id}/void`),
     changeNotice: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}`),
     changeNoticeAction: (id: string) =>

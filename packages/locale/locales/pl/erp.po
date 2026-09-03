@@ -3104,6 +3104,12 @@ msgstr "Aplikacja Carbon do pracy na hali, gdzie operatorzy uruchamiają operacj
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Pojedynczy zapis Carbon dla wszystkiego z numerem części — Część, Materiał, Narzędzie, Usługa, Materiał eksploatacyjny lub Przyrząd obróbkowy — na które wskazują zlecenia, metody, zamówienia i zapasy."
 
+msgid "Card Holder"
+msgstr "Posiadacz Karty"
+
+msgid "Card Transactions"
+msgstr "Transakcje Kartą"
+
 msgid "Cards"
 msgstr "Karty"
 
@@ -9611,6 +9617,9 @@ msgstr "Data memorandum"
 msgid "Memo ID"
 msgstr "ID Notatki"
 
+msgid "Merchant"
+msgstr "Handlowiec"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10471,6 +10480,9 @@ msgstr "Nie utworzono zleceń produkcyjnych"
 
 msgid "No journal lines in scope for this period"
 msgstr "Brak pozycji dowodu księgowego dla tego okresu"
+
+msgid "No lines"
+msgstr "Brak wierszy"
 
 msgid "No lines to map"
 msgstr "Brak linii do mapowania"
@@ -12657,6 +12669,9 @@ msgstr "Zgłoś to na cotygodniowym spotkaniu statusowym"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "zgłoś to wcześnie i zgłoś to jasno. Problem zidentyfikowany w tygodniu 2 to mała naprawa; ten sam problem w momencie uruchomienia to opóźnienie."
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Limit Szybkości"
@@ -17100,6 +17115,12 @@ msgstr "Szkolenie zespołu za pośrednictwem Academy i przewodników w aplikacji
 
 msgid "Trainings"
 msgstr "Szkolenia"
+
+msgid "Transaction Date"
+msgstr "Data Transakcji"
+
+msgid "Transaction ID"
+msgstr "ID Transakcji"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transakcje będą tworzyć wpisy księgowe i aktualizować księgę główną."

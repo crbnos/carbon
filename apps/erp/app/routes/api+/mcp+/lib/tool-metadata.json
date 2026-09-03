@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-03T02:17:05.898Z",
-  "totalTools": 1490,
+  "generated": "2026-09-03T04:17:16.876Z",
+  "totalTools": 1492,
   "modules": 15,
   "tools": [
     {
@@ -10724,6 +10724,72 @@
                   "type": "string"
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "invoicing_getCardTransaction",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "get card transaction",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "invoicing_getCardTransactions",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "get card transactions",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {},
+              "status": {}
             }
           }
         }

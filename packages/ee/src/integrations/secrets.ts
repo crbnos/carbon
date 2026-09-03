@@ -28,6 +28,12 @@ export const SECRET_KEYS: Record<string, string[]> = {
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
+  ramp: [
+    "credentials.clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken",
+    "webhookSecret"
+  ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
   resend: ["apiKey"],
