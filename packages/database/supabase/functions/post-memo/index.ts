@@ -371,6 +371,9 @@ serve(async (req: Request) => {
         reasonAccountClass: reasonAccount.data.class as string,
         reasonAmountBase,
         varianceAccountId: accountDefaults.data.purchaseVarianceAccount,
+        reasonDescription: memo.data.purchaseReturnOrderId
+          ? "Goods Received Not Invoiced"
+          : undefined,
       });
       journalLineInserts.push(...lines);
 

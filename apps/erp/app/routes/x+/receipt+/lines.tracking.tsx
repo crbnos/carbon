@@ -175,6 +175,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
         .from("receiptLine")
         .select("id, lineId")
         .eq("id", receiptLineId)
+        // Scoped to BOTH the company and this receipt: `receiptLineId` is
+        // caller-supplied, and without the receipt link a line belonging to
+        // another receipt of the same return order would tag the entity with a
+        // mismatched Receipt / Receipt Line pair.
+        .eq("receiptId", receiptId)
+        .eq("companyId", companyId)
         .single(),
       client
         .from("trackedEntity")

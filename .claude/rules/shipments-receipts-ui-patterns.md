@@ -69,6 +69,13 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   serials reconciled across indices `0..receivedQuantity`; uses `useStorageRuleViolations`),
   `ShipmentVoidModal` / `ReceiptVoidModal` (destructive `Alert` + bulleted consequences, submit
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
+  **Both post modals are source-aware for return flows**, and must stay in step with
+  `lines.tracking`'s guard or they reject what tracking accepted:
+  `ReceiptPostModal` counts a serial slot as filled when the entity is merely ASSIGNED on a
+  `Sales Return Order` receipt (returned units are picked, not typed, so they carry no
+  `readableId` of their own); `ShipmentPostModal` and `ShipmentLines`' batch/serial inputs
+  expect `On Hold` rather than `Available` when the shipment's source is a
+  `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
 ## Posting flow (`$id.post.tsx` → edge fn)
 

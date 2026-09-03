@@ -94,6 +94,11 @@ export interface BuildMemoJournalInput {
   // the entry stays the ordinary two-line shape.
   reasonAmountBase?: number;
   varianceAccountId?: string | null;
+  // Overrides the reason leg's description. Defaults to "Credit memo" /
+  // "Debit memo"; a supplier return names the account instead ("Goods
+  // Received Not Invoiced") so the three-line entry reads the same way the
+  // return shipment's own GRNI line does.
+  reasonDescription?: string;
 }
 
 export interface BuildMemoJournalResult {
@@ -120,6 +125,7 @@ export function buildMemoJournal(
     reasonAccountClass,
     reasonAmountBase,
     varianceAccountId,
+    reasonDescription,
   } = input;
 
   if (!controlAccountId) {
@@ -188,7 +194,8 @@ export function buildMemoJournal(
     controlIsDebit ? "credit" : "debit",
     reasonType,
     reasonAccountId,
-    direction === "Credit" ? "Credit memo" : "Debit memo",
+    reasonDescription ??
+      (direction === "Credit" ? "Credit memo" : "Debit memo"),
     reasonMagnitude
   );
 
