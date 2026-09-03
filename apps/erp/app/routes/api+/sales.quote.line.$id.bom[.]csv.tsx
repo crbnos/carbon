@@ -9,7 +9,8 @@ import type { BomOperation } from "~/utils/bom";
 import {
   calculateMadePartCosts,
   calculateTotalQuantity,
-  generateBomIds
+  generateBomIds,
+  stripCsvFormulaPrefix
 } from "~/utils/bom";
 import { makeDurations } from "~/utils/duration";
 
@@ -198,7 +199,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     const attrs = itemAttributes.get(node.data.itemId);
     const revision = attrs?.revision || "0";
-    const itemGroup = (attrs?.itemPostingGroup ?? "").replace(/"/g, '""');
+    const itemGroup = stripCsvFormulaPrefix(
+      attrs?.itemPostingGroup ?? ""
+    ).replace(/"/g, '""');
 
     csv += `${bomIds[index]},${
       attrs?.readableId ?? node.data.itemReadableId

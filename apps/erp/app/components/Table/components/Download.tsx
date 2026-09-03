@@ -98,7 +98,13 @@ const Download = ({
       }
       return out;
     });
-    let csvData = json2csv(rows, { emptyFieldValue: "" });
+    // preventCsvInjection strips formula-leading characters (=, +, -, @) from
+    // non-numeric strings so exported cells can't execute in spreadsheet apps;
+    // numbers and numeric strings pass through untouched.
+    let csvData = json2csv(rows, {
+      emptyFieldValue: "",
+      preventCsvInjection: true
+    });
     // Create a CSV file and allow the user to download it
     let blob = new Blob([csvData], { type: "text/csv" });
     let url = window.URL.createObjectURL(blob);
