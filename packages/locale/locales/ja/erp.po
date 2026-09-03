@@ -5242,9 +5242,6 @@ msgstr "出荷方法を削除"
 msgid "Delete step"
 msgstr "ステップを削除"
 
-msgid "Delete Step"
-msgstr "ステップを削除"
-
 msgid "Delete Stock Transfer"
 msgstr "在庫移動を削除"
 
@@ -6100,9 +6097,6 @@ msgstr "出荷方法を編集"
 
 msgid "Edit Size"
 msgstr "サイズを編集"
-
-msgid "Edit Step"
-msgstr "ステップを編集"
 
 msgid "Edit Stock Transfer"
 msgstr "在庫移動を編集"

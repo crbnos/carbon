@@ -5242,9 +5242,6 @@ msgstr "배송 방법 삭제"
 msgid "Delete step"
 msgstr "단계 삭제"
 
-msgid "Delete Step"
-msgstr "단계 삭제"
-
 msgid "Delete Stock Transfer"
 msgstr "재고 이동 삭제"
 
@@ -6100,9 +6097,6 @@ msgstr "배송 방법 편집"
 
 msgid "Edit Size"
 msgstr "크기 편집"
-
-msgid "Edit Step"
-msgstr "단계 편집"
 
 msgid "Edit Stock Transfer"
 msgstr "재고 이송 편집"

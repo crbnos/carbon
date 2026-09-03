@@ -5242,9 +5242,6 @@ msgstr "Versandmethode löschen"
 msgid "Delete step"
 msgstr "Schritt löschen"
 
-msgid "Delete Step"
-msgstr "Schritt löschen"
-
 msgid "Delete Stock Transfer"
 msgstr "Bestandsübertragung löschen"
 
@@ -6100,9 +6097,6 @@ msgstr "Versandmethode bearbeiten"
 
 msgid "Edit Size"
 msgstr "Größe bearbeiten"
-
-msgid "Edit Step"
-msgstr "Schritt bearbeiten"
 
 msgid "Edit Stock Transfer"
 msgstr "Lagertransfer bearbeiten"

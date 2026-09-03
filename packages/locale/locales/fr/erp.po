@@ -5242,9 +5242,6 @@ msgstr "Supprimer le mode d'expédition"
 msgid "Delete step"
 msgstr "Supprimer l'étape"
 
-msgid "Delete Step"
-msgstr "Supprimer l'étape"
-
 msgid "Delete Stock Transfer"
 msgstr "Supprimer le transfert de stock"
 
@@ -6100,9 +6097,6 @@ msgstr "Modifier le mode d'expédition"
 
 msgid "Edit Size"
 msgstr "Modifier la taille"
-
-msgid "Edit Step"
-msgstr "Modifier l'étape"
 
 msgid "Edit Stock Transfer"
 msgstr "Modifier le transfert de stock"

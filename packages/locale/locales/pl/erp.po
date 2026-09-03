@@ -5242,9 +5242,6 @@ msgstr "Usuń sposób wysyłki"
 msgid "Delete step"
 msgstr "Usuń krok"
 
-msgid "Delete Step"
-msgstr "Usuń krok"
-
 msgid "Delete Stock Transfer"
 msgstr "Usuń transfer magazynowy"
 
@@ -6100,9 +6097,6 @@ msgstr "Edytuj sposób wysyłki"
 
 msgid "Edit Size"
 msgstr "Edytuj rozmiar"
-
-msgid "Edit Step"
-msgstr "Edytuj krok"
 
 msgid "Edit Stock Transfer"
 msgstr "Edytuj Transfer Zapasów"

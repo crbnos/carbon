@@ -803,8 +803,6 @@ export const path = {
       generatePath(`${x}/purchasing-rfq/${id}/${lineId}/delete`),
     deleteQualityDocument: (id: string) =>
       generatePath(`${x}/quality-document/delete/${id}`),
-    deleteQualityDocumentStep: (id: string, stepId: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/delete/${stepId}`),
     deleteQuote: (id: string) => generatePath(`${x}/quote/${id}/delete`),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
@@ -1588,8 +1586,6 @@ export const path = {
     newPurchasingRFQLine: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/new`),
     newQualityDocument: `${x}/quality/documents/new`,
-    newQualityDocumentStep: (id: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/new`),
     newQuote: `${x}/quote/new`,
     newQuoteLine: (id: string) => generatePath(`${x}/quote/${id}/new`),
     newQuoteLineCost: (id: string, lineId: string) =>
@@ -1848,10 +1844,6 @@ export const path = {
     qualityActions: `${x}/quality/actions`,
     qualityDocument: (id: string) =>
       generatePath(`${x}/quality-document/${id}`),
-    qualityDocumentStep: (id: string, attributeId: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/${attributeId}`),
-    qualityDocumentStepOrder: (id: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/order`),
     qualityDocuments: `${x}/quality/documents`,
     qualitySettings: `${x}/settings/quality`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),

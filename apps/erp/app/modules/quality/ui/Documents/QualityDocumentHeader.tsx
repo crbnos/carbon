@@ -23,7 +23,6 @@ import {
   LuCheckCheck,
   LuClipboardCheck,
   LuEllipsisVertical,
-  LuPanelLeft,
   LuPanelRight,
   LuTrash,
   LuX
@@ -57,7 +56,7 @@ const QualityDocumentHeader = () => {
 
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { toggleExplorer, toggleProperties } = usePanels();
+  const { toggleProperties } = usePanels();
   // Live title from the editor's locked title block, so the header updates as
   // the user types (before the loader revalidates).
   const liveTitle = useDocumentStore((s) => s.liveTitle);
@@ -121,12 +120,6 @@ const QualityDocumentHeader = () => {
     <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
       <VStack spacing={0} className="flex-grow">
         <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
           <Heading size="h4" className="flex items-center gap-2">
             <span>{displayName}</span>
             <Badge variant="outline">V{routeData?.document?.version}</Badge>

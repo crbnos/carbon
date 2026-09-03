@@ -5242,9 +5242,6 @@ msgstr "删除发货方式"
 msgid "Delete step"
 msgstr "删除步骤"
 
-msgid "Delete Step"
-msgstr "删除步骤"
-
 msgid "Delete Stock Transfer"
 msgstr "删除库存转移"
 
@@ -6100,9 +6097,6 @@ msgstr "编辑 发货方式"
 
 msgid "Edit Size"
 msgstr "编辑尺寸"
-
-msgid "Edit Step"
-msgstr "编辑步骤"
 
 msgid "Edit Stock Transfer"
 msgstr "编辑库存转移"

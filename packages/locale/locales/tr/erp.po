@@ -5242,9 +5242,6 @@ msgstr "Sevkiyat Yöntemini Sil"
 msgid "Delete step"
 msgstr "Adımı sil"
 
-msgid "Delete Step"
-msgstr "Adımı Sil"
-
 msgid "Delete Stock Transfer"
 msgstr "Stok Transferini Sil"
 
@@ -6100,9 +6097,6 @@ msgstr "Sevkiyat Yöntemi Düzenle"
 
 msgid "Edit Size"
 msgstr "Boyut Düzenle"
-
-msgid "Edit Step"
-msgstr "Adımı Düzenle"
 
 msgid "Edit Stock Transfer"
 msgstr "Stok Transfer Düzenle"

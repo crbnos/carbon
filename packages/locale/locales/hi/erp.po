@@ -5242,9 +5242,6 @@ msgstr "शिपिंग विधि हटाएं"
 msgid "Delete step"
 msgstr "चरण हटाएं"
 
-msgid "Delete Step"
-msgstr "चरण हटाएँ"
-
 msgid "Delete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर हटाएं"
 
@@ -6100,9 +6097,6 @@ msgstr "शिपिंग विधि संपादित करें"
 
 msgid "Edit Size"
 msgstr "आकार संपादित करें"
-
-msgid "Edit Step"
-msgstr "चरण संपादित करें"
 
 msgid "Edit Stock Transfer"
 msgstr "स्टॉक ट्रांसफर संपादित करें"

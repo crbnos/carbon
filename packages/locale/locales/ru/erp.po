@@ -5242,9 +5242,6 @@ msgstr "Удалить способ доставки"
 msgid "Delete step"
 msgstr "Удалить шаг"
 
-msgid "Delete Step"
-msgstr "Удалить шаг"
-
 msgid "Delete Stock Transfer"
 msgstr "Удалить передачу запасов"
 
@@ -6100,9 +6097,6 @@ msgstr "Изменить Способ доставки"
 
 msgid "Edit Size"
 msgstr "Изменить Размер"
-
-msgid "Edit Step"
-msgstr "Изменить Шаг"
 
 msgid "Edit Stock Transfer"
 msgstr "Изменить Перемещение запаса"
