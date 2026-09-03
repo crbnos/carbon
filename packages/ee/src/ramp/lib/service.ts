@@ -315,17 +315,134 @@ export async function ensureRampConnection(
 // *              Master-data push (CoA, dims)             *
 // \********************************************************/
 
+/** A GL account in the shape Carbon pushes to Ramp. */
+type RampGlAccount = {
+  id: string;
+  name: string;
+  code?: string;
+  classification: string;
+};
+
 /**
- * Push Carbon's active, non-group chart of accounts into Ramp as coding options
- * (`POST /accounting/accounts`, `id` = Carbon `account.id`). Batches at 500. A
- * re-push is an upsert per Ramp semantics.
+ * Stable fingerprint of the fields Carbon can UPDATE in Ramp (name + code). A
+ * change here marks an already-pushed account for a re-push. Classification is
+ * set at create but is NOT a PATCH field in Ramp (422 "Unknown field"), so a
+ * reclassification is deliberately not tracked here — it can't be propagated.
+ */
+function accountFingerprint(account: { name: string; code?: string }): string {
+  return `${account.name} ${account.code ?? ""}`;
+}
+
+/** An `account` mapping row: Carbon id ↔ Ramp id + the last-pushed fingerprint. */
+export type RampAccountMapping = {
+  entityId: string;
+  externalId: string | null;
+  fingerprint: string | null;
+};
+
+/**
+ * Pure diff of the desired chart of accounts against what was last pushed
+ * (tracked in `externalIntegrationMapping`, entityType `"account"`): an unmapped
+ * account is created; a mapped account whose fingerprint changed is updated; an
+ * unchanged one is skipped. This is what makes a re-run (the hourly sweep, a
+ * settings save, install) cheap and lets Carbon CoA edits reach Ramp.
+ */
+export function diffChartOfAccounts(
+  desired: RampGlAccount[],
+  mappings: RampAccountMapping[]
+): {
+  toCreate: RampGlAccount[];
+  toUpdate: Array<{ account: RampGlAccount; externalId: string }>;
+} {
+  const byId = new Map(mappings.map((m) => [m.entityId, m]));
+  const toCreate: RampGlAccount[] = [];
+  const toUpdate: Array<{ account: RampGlAccount; externalId: string }> = [];
+  for (const account of desired) {
+    const existing = byId.get(account.id);
+    if (!existing) {
+      toCreate.push(account);
+    } else if (existing.fingerprint !== accountFingerprint(account)) {
+      toUpdate.push({ account, externalId: existing.externalId ?? account.id });
+    }
+  }
+  return { toCreate, toUpdate };
+}
+
+/**
+ * Drain Ramp's uploaded GL accounts into a `Carbon account.id -> Ramp UUID` map.
+ * Ramp echoes the pushed `id` (our `account.id`) and assigns its own `ramp_id`;
+ * the PATCH endpoint keys on `ramp_id`, so an update must resolve it here first.
+ */
+async function fetchRampAccountRampIds(
+  client: RampClient
+): Promise<Map<string, string>> {
+  const byAccountId = new Map<string, string>();
+  for await (const page of client.listAccountingAccounts()) {
+    for (const account of page) {
+      if (account.id && account.ramp_id) {
+        byAccountId.set(account.id, account.ramp_id);
+      }
+    }
+  }
+  return byAccountId;
+}
+
+/**
+ * Record (upsert) the `account` mappings for the pushed accounts, stamping the
+ * current fingerprint so the next diff skips them until they change again, and
+ * the Ramp UUID (when known) as the external id. `createdAt`/`createdBy` are
+ * omitted so a re-push never rewrites them.
+ */
+async function upsertAccountMappings(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  accounts: RampGlAccount[],
+  rampIdByAccountId: Map<string, string>
+): Promise<void> {
+  if (accounts.length === 0) return;
+  const now = new Date().toISOString();
+  const rows = accounts.map((account) => ({
+    entityType: "account",
+    entityId: account.id,
+    integration: RAMP,
+    // Ramp's own UUID (the id its PATCH endpoint keys on); falls back to the
+    // Carbon account.id for a just-created account not yet in the Ramp list.
+    externalId: rampIdByAccountId.get(account.id) ?? account.id,
+    companyId,
+    metadata: { fingerprint: accountFingerprint(account) },
+    lastSyncedAt: now,
+    remoteUpdatedAt: now,
+    updatedAt: now
+  }));
+  const { error } = await serviceRole
+    .from("externalIntegrationMapping")
+    .upsert(rows, {
+      onConflict: "entityType,entityId,integration,companyId"
+    });
+  if (error) {
+    throw new Error(`Failed to record Ramp account mappings: ${error.message}`);
+  }
+}
+
+/**
+ * Sync Carbon's active, non-group chart of accounts into Ramp as coding options,
+ * as a true UPSERT (create new + update changed), tracked per account in
+ * `externalIntegrationMapping`. Runs on install/settings-save and on every
+ * `ramp-sync` (the hourly sweep is the correctness guarantee), so a Carbon CoA
+ * edit reaches Ramp within ≤1h. An unchanged CoA is a cheap no-op (two reads,
+ * no Ramp calls).
+ *
+ * `POST /accounting/accounts` is INSERT-ONLY (400 DEVELOPER_7020 on a duplicate
+ * id) and fails a mixed batch atomically, so creates fall back to per-account on
+ * that error — which also backfills mappings for accounts pushed before this was
+ * mapping-tracked. Changed accounts go through `PATCH /accounting/accounts/{id}`.
  */
 export async function pushChartOfAccounts(
   serviceRole: SupabaseClient<Database>,
   companyId: string
-): Promise<{ pushed: number }> {
+): Promise<{ created: number; updated: number; pushed: number }> {
   const integration = await getRampIntegration(serviceRole, companyId);
-  if (!integration) return { pushed: 0 };
+  if (!integration) return { created: 0, updated: 0, pushed: 0 };
 
   const { client, metadata } = integration;
 
@@ -358,43 +475,112 @@ export async function pushChartOfAccounts(
   }
 
   const cardLiabilityId = metadata.cardLiabilityAccountId;
-  const glAccounts = (accounts ?? [])
-    .map((account) => {
-      const classification = rampClassificationForClass(
-        account.class,
-        account.id === cardLiabilityId
-      );
-      if (!classification) return null;
-      return {
-        id: account.id,
-        name: account.name,
-        code: account.number ?? undefined,
-        classification
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
-
-  let pushed = 0;
-  for (const batch of chunk(glAccounts, RAMP_ACCOUNTS_BATCH_SIZE)) {
-    try {
-      await client.postAccountingAccounts({ gl_accounts: batch });
-      pushed += batch.length;
-    } catch (err) {
-      // Ramp's account upload is INSERT-ONLY — re-pushing an already-uploaded
-      // account returns 400 DEVELOPER_7020 ("an account with the same id already
-      // exists"). Treat that as idempotently satisfied so a re-converge (a retry,
-      // or an `onUpdate` settings save) doesn't fail once accounts exist in Ramp.
-      // NOTE: a batch mixing new + already-uploaded accounts fails atomically, so
-      // Carbon accounts added AFTER the first push are not created here — a full
-      // list-and-diff upsert is the proper follow-up.
-      if (err instanceof RampApiError && err.code === "DEVELOPER_7020") {
-        continue;
-      }
-      throw err;
-    }
+  const desired: RampGlAccount[] = [];
+  for (const account of accounts ?? []) {
+    const classification = rampClassificationForClass(
+      account.class,
+      account.id === cardLiabilityId
+    );
+    if (!classification) continue;
+    desired.push({
+      id: account.id,
+      name: account.name,
+      code: account.number ?? undefined,
+      classification
+    });
   }
 
-  return { pushed };
+  // What was pushed before (per Carbon account, with the last fingerprint)?
+  const { data: mappingRows, error: mappingError } = await serviceRole
+    .from("externalIntegrationMapping")
+    .select("entityId, externalId, metadata")
+    .eq("companyId", companyId)
+    .eq("integration", RAMP)
+    .eq("entityType", "account");
+  if (mappingError) {
+    throw new Error(
+      `Failed to load Ramp account mappings: ${mappingError.message}`
+    );
+  }
+  const mappings: RampAccountMapping[] = (mappingRows ?? []).map((row) => ({
+    entityId: row.entityId,
+    externalId: row.externalId,
+    fingerprint:
+      (row.metadata as { fingerprint?: string } | null)?.fingerprint ?? null
+  }));
+
+  const { toCreate, toUpdate } = diffChartOfAccounts(desired, mappings);
+  if (toCreate.length === 0 && toUpdate.length === 0) {
+    return { created: 0, updated: 0, pushed: 0 };
+  }
+
+  // Resolve Ramp's internal ids once: PATCH keys on `ramp_id`, and it's stored
+  // as the mapping's external id.
+  const rampIdByAccountId = await fetchRampAccountRampIds(client);
+
+  // Creates — batch POST; on an already-exists conflict retry per account so a
+  // first-run backfill (accounts pushed before this was mapping-tracked) records
+  // the mapping instead of failing the whole batch atomically.
+  let created = 0;
+  for (const batch of chunk(toCreate, RAMP_ACCOUNTS_BATCH_SIZE)) {
+    try {
+      await client.postAccountingAccounts({ gl_accounts: batch });
+      created += batch.length;
+    } catch (err) {
+      if (!(err instanceof RampApiError && err.code === "DEVELOPER_7020")) {
+        throw err;
+      }
+      for (const account of batch) {
+        try {
+          await client.postAccountingAccounts({ gl_accounts: [account] });
+          created += 1;
+        } catch (perErr) {
+          // Already in Ramp from an earlier push — record the mapping anyway.
+          if (
+            !(
+              perErr instanceof RampApiError && perErr.code === "DEVELOPER_7020"
+            )
+          ) {
+            throw perErr;
+          }
+        }
+      }
+    }
+    await upsertAccountMappings(
+      serviceRole,
+      companyId,
+      batch,
+      rampIdByAccountId
+    );
+  }
+
+  // Updates — PATCH by the Ramp UUID (the Carbon account.id 404s), then bump the
+  // mapping. An account with no resolvable `ramp_id` is left for the next run
+  // (its create/backfill will have registered it by then).
+  let updated = 0;
+  for (const { account } of toUpdate) {
+    const rampId = rampIdByAccountId.get(account.id);
+    if (!rampId) {
+      console.warn(
+        `[ramp] no ramp_id for account ${account.id}; skipping update this run`
+      );
+      continue;
+    }
+    // Only name + code are PATCHable in Ramp; classification is create-only.
+    await client.patchAccountingAccount(rampId, {
+      name: account.name,
+      code: account.code
+    });
+    await upsertAccountMappings(
+      serviceRole,
+      companyId,
+      [account],
+      rampIdByAccountId
+    );
+    updated += 1;
+  }
+
+  return { created, updated, pushed: created + updated };
 }
 
 /**

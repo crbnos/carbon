@@ -2,7 +2,9 @@ import { round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   chunk,
+  diffChartOfAccounts,
   RAMP_ACCOUNTS_BATCH_SIZE,
+  type RampAccountMapping,
   rampClassificationForClass,
   scaleLinesToTotal,
   scaleRepaymentLines
@@ -144,5 +146,82 @@ describe("scaleLinesToTotal", () => {
 
   it("returns an empty list for no lines", () => {
     expect(scaleLinesToTotal([], 5, 2)).toEqual([]);
+  });
+});
+
+describe("diffChartOfAccounts", () => {
+  // Must match accountFingerprint(): `${name} ${code ?? ""}` (name + code only —
+  // classification is not PATCHable in Ramp, so it is not tracked).
+  const fp = (name: string, code: string) => `${name} ${code}`;
+
+  const cash = {
+    id: "acc_cash",
+    name: "Cash",
+    code: "1000",
+    classification: "ASSET"
+  };
+  const ramp = {
+    id: "acc_ramp",
+    name: "Ramp Card",
+    code: "2000",
+    classification: "CREDCARD"
+  };
+
+  it("creates unmapped accounts", () => {
+    const { toCreate, toUpdate } = diffChartOfAccounts([cash, ramp], []);
+    expect(toCreate).toEqual([cash, ramp]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("skips a mapped account whose name/code are unchanged", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const { toCreate, toUpdate } = diffChartOfAccounts([cash], mappings);
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("updates a mapped account whose name or code changed", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const renamed = { ...cash, name: "Operating Cash" };
+    const { toCreate, toUpdate } = diffChartOfAccounts([renamed], mappings);
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([{ account: renamed, externalId: "ramp_1" }]);
+  });
+
+  it("does NOT update on a classification-only change (not PATCHable in Ramp)", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const reclassified = { ...cash, classification: "LIABILITY" };
+    const { toCreate, toUpdate } = diffChartOfAccounts(
+      [reclassified],
+      mappings
+    );
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("falls back to the Carbon account id when the mapping has no externalId", () => {
+    const mappings: RampAccountMapping[] = [
+      { entityId: "acc_cash", externalId: null, fingerprint: "stale" }
+    ];
+    const { toUpdate } = diffChartOfAccounts([cash], mappings);
+    expect(toUpdate).toEqual([{ account: cash, externalId: "acc_cash" }]);
   });
 });

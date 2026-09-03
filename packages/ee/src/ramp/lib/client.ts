@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { z } from "zod";
+import { z } from "zod";
 import type { RampCredentials } from "./models";
 import {
   RampBillSchema,
@@ -456,6 +456,25 @@ export class RampClient {
     return this.request<T>("POST", "/developer/v1/accounting/accounts", {
       body: batch
     });
+  }
+
+  /**
+   * List the GL accounts already uploaded to Ramp (paginated). Each row carries
+   * `id` (the Carbon `account.id` we pushed, echoed back) and `ramp_id` (Ramp's
+   * internal UUID). The PATCH endpoint keys on `ramp_id`, so callers resolve it
+   * here before updating.
+   */
+  listAccountingAccounts() {
+    return this.listPaginated(
+      "/developer/v1/accounting/accounts",
+      undefined,
+      z
+        .object({
+          id: z.string().nullish(),
+          ramp_id: z.string().nullish()
+        })
+        .passthrough()
+    );
   }
 
   patchAccountingAccount<T = unknown>(id: string, body: unknown): Promise<T> {

@@ -28,6 +28,7 @@ import {
   confirmSyncs,
   fromMinorUnits,
   getRampIntegration,
+  pushChartOfAccounts,
   pushInvoiceDraftBill,
   pushPurchaseOrder,
   type RampBill,
@@ -1944,6 +1945,28 @@ export const rampSyncFunction = inngest.createFunction(
     const cardLiabilityAccountId = metadata.cardLiabilityAccountId;
     const entityId = metadata.entityId;
 
+    // ---- Chart of accounts (Carbon -> Ramp coding options) ---------------
+    // Keep Ramp's coding options in step with Carbon's chart of accounts. The
+    // upsert is change-gated (a cheap no-op when nothing changed), so running it
+    // every sync — and thus on the hourly sweep — propagates a Carbon CoA edit
+    // to Ramp within ≤1h. Isolated like the other families: a failure here does
+    // not abort the pull/push families below.
+    const coaResult = await step.run("ramp-chart-of-accounts", async () => {
+      try {
+        const { created, updated } = await pushChartOfAccounts(
+          client,
+          companyId
+        );
+        return { created, updated, failed: 0 };
+      } catch (err) {
+        console.error(
+          `[RAMP SYNC] ${companyId}: chart-of-accounts push failed`,
+          err
+        );
+        return { created: 0, updated: 0, failed: 1 };
+      }
+    });
+
     // ---- Card transactions (Charge / Credit) -----------------------------
     const cardResult = await step.run("ramp-card-transactions", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
@@ -2959,6 +2982,7 @@ export const rampSyncFunction = inngest.createFunction(
     });
 
     const totalFailed =
+      coaResult.failed +
       cardResult.failed +
       transferResult.failed +
       cashbackResult.failed +
@@ -2996,6 +3020,7 @@ export const rampSyncFunction = inngest.createFunction(
 
     return {
       companyId,
+      chartOfAccounts: coaResult,
       card: cardResult,
       transfers: transferResult,
       cashbacks: cashbackResult,
