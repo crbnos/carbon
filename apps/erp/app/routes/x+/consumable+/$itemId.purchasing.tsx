@@ -53,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -72,6 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updateConsumablePurchasing = await upsertItemPurchasing(client, {
     ...validation.data,
     itemId,
+    companyId,
     updatedBy: userId
   });
   if (updateConsumablePurchasing.error) {
