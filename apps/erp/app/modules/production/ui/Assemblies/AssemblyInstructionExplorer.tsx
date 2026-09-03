@@ -527,7 +527,7 @@ function AssemblyInstructionExplorer({
       <Tabs
         value={tab}
         onValueChange={(value) => setTab(value as "steps" | "components")}
-        className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] w-full flex-col"
+        className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full flex-col"
       >
         <TabsList className="w-auto flex-none gap-1 mx-3 mt-3">
           <TabsTrigger className="flex-1" value="steps">

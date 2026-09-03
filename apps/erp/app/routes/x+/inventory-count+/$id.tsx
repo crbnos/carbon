@@ -141,7 +141,7 @@ export default function InventoryCountDetailRoute() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] w-full overflow-hidden">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden">
         <InventoryCountDetails
           inventoryCount={inventoryCount}
           lines={lines}
