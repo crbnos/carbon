@@ -3971,11 +3971,26 @@ export async function getCreditableQuantitiesForPurchaseReturn(
 }
 
 /**
- * Issue supplier credit: one AP memo (direction Credit, linked via
- * memo.purchaseReturnOrderId) + per-line purchaseReturnOrderCreditLine
+ * Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine
  * breakdown. Cap = shipped − already credited over NON-VOIDED memos,
  * validated under a row lock. Amount rounded once at the currency's
  * decimals. Returns the memo id.
+ *
+ * The memo is a **Debit** memo (the `debitMemo` DR- sequence), NOT a Credit
+ * memo. `direction` alone decides the control side for both AR and AP
+ * (`buildMemoJournal`): a Credit memo CREDITS the control account, which on
+ * AP — a liability — would INCREASE what we owe the supplier. Returning goods
+ * must reduce it, so the control leg has to be a debit. That also makes the
+ * reason leg CREDIT GRNI, clearing the debit the return shipment posted
+ * (DR GRNI / CR Inventory) so the suspense account nets to zero over the
+ * cycle. Net effect: DR AP / CR Inventory, which is the SAP/NetSuite/D365
+ * vendor-return pattern. The sales side is the mirror image and correctly
+ * stays `Credit` (crediting AR, an asset, reduces it).
+ *
+ * The rest of invoicing already assumes this: `getAvailableCredits` and
+ * `getCompanyHasOpenCredits` select supplier memos with
+ * `direction = "Debit"`, so a Credit-direction memo here is also invisible to
+ * "Apply Credit" on a supplier invoice.
  */
 export async function createPurchaseReturnOrderCredit(
   client: SupabaseClient<Database>,
@@ -4019,11 +4034,11 @@ export async function createPurchaseReturnOrderCredit(
   const decimalPlaces = currency.data?.decimalPlaces ?? 2;
 
   const seq = await client.rpc("get_next_sequence", {
-    sequence_name: "creditMemo",
+    sequence_name: "debitMemo",
     company_id: companyId
   });
   if (seq.error || !seq.data) {
-    throw new Error("Failed to allocate credit memo number");
+    throw new Error("Failed to allocate debit memo number");
   }
   const memoId = seq.data;
 
@@ -4132,7 +4147,7 @@ export async function createPurchaseReturnOrderCredit(
       .insertInto("memo")
       .values({
         memoId,
-        direction: "Credit",
+        direction: "Debit",
         status: "Draft",
         supplierId: order.data.supplierId,
         memoDate,

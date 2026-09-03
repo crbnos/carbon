@@ -53,7 +53,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 | `purchasingRfq` / `purchasingRfqLine` / `purchasingRfqSupplier` | RFQ header, lines, and invited suppliers |
 | `terms` | Payment/delivery terms reference data |
 | `purchaseReturnOrder` / `purchaseReturnOrderLine` / `purchaseReturnOrders` (view) | Supplier returns: authorize → ship (via shipments, source "Purchase Return Order") → credit. Statuses Draft → Confirmed → Partially Shipped → Shipped → Completed/Cancelled; `supplierReference` carries the supplier's own RMA number; line quantities/prices are ALWAYS inventory-UOM (converted once at authoring) |
-| `purchaseReturnOrderLineTrackedEntity` / `purchaseReturnOrderCreditLine` | Entities to send back (picked from Available stock from that supplier); per-line credit breakdown behind the AP `memo` (`memo.purchaseReturnOrderId`, reason account = GRNI) |
+| `purchaseReturnOrderLineTrackedEntity` / `purchaseReturnOrderCreditLine` | Entities to send back (picked from Available stock from that supplier); per-line credit breakdown behind the AP `memo` (`memo.purchaseReturnOrderId`, reason account = GRNI). The memo is a **Debit** memo (`DR-` sequence): direction alone picks the control side, so Credit would INCREASE AP and re-debit GRNI — a vendor return must DR AP / CR GRNI |
 
 ## Key Service Functions
 

@@ -90,3 +90,42 @@ Deno.test("rejects an unknown reason account class", () => {
     "Unknown GL account class"
   );
 });
+
+// Scenario pin for the supplier-return cycle. The return SHIPMENT posts
+// DR GRNI / CR Inventory, so the memo must CREDIT GRNI back to zero and DEBIT
+// (reduce) AP — net DR AP / CR Inventory. That requires direction "Debit";
+// `createPurchaseReturnOrderCredit` shipped as "Credit" once, which increased
+// AP and left GRNI holding a permanent 2x debit. Both accounts are Liability,
+// so a debit stores −magnitude and a credit +magnitude.
+Deno.test("supplier RETURN debit memo: DR AP, CR GRNI (clears the shipment's GRNI debit)", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+    })
+  );
+  // AP debited → we owe the supplier less.
+  assertEquals(line(r, "acct_ap").amount, -300);
+  // GRNI credited → nets off the return shipment's DR GRNI.
+  assertEquals(line(r, "acct_grni").amount, 300);
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+// The inverse, spelled out so the regression is unmistakable: a Credit
+// direction on the same supplier-return inputs moves BOTH legs the wrong way.
+Deno.test("supplier RETURN with Credit direction is backwards (increases AP, re-debits GRNI)", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Credit",
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+    })
+  );
+  assertEquals(line(r, "acct_ap").amount, 300); // AP credited = owe MORE
+  assertEquals(line(r, "acct_grni").amount, -300); // GRNI debited AGAIN
+});

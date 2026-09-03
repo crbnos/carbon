@@ -236,10 +236,14 @@ serve(async (req: Request) => {
       // customer memos adjust sales (salesDiscountAccount); supplier memos adjust
       // purchases (supplierPaymentDiscountAccount). Direction only flips the
       // debit/credit side, handled inside buildMemoJournal.
-      // Return-order memos override the offset: a customer-RMA credit books to
-      // the contra-revenue salesReturnsAccount (fallback salesAccount), and a
-      // supplier-return credit nets GRNI against payables (its shipment already
-      // debited GRNI at carried cost).
+      // Return-order memos override the offset: a customer-RMA credit memo
+      // books to the contra-revenue salesReturnsAccount (fallback
+      // salesAccount), and a supplier-return DEBIT memo nets GRNI against
+      // payables — its shipment already DEBITED GRNI at carried cost, so the
+      // memo's reason leg credits GRNI back to zero while the control leg
+      // debits (reduces) AP. Direction is set at creation
+      // (`createPurchaseReturnOrderCredit`); a Credit direction here would
+      // increase AP and double-debit GRNI instead.
       const reasonAccountId = memo.data.salesReturnOrderId
         ? (ad.salesReturnsAccount ?? ad.salesAccount)
         : memo.data.purchaseReturnOrderId
