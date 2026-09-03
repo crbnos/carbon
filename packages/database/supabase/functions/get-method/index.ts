@@ -145,7 +145,11 @@ function remapStepLinks(
 // NOT treated as zero — those fall back to a quantity of 1 elsewhere in this
 // file, so only a real numeric 0 removes the line.
 function isZeroQuantity(quantity: unknown): boolean {
-  return quantity !== null && quantity !== undefined && Number(quantity) === 0;
+  // Only a real numeric 0 removes the line. `getConfiguredValue` returns a
+  // dynamically-configured value behind a type assertion, so `""`/`false`/`[]`
+  // can reach here — `Number("")`/`Number(false)` are 0 and would wrongly drop
+  // the line. A strict typeof check keeps those falling back to a quantity of 1.
+  return typeof quantity === "number" && quantity === 0;
 }
 
 const partsValidator = z.object({
