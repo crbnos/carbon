@@ -1,7 +1,5 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { RampClient } from "./lib/client";
-import { RampIntegrationMetadataSchema } from "./lib/models";
 import {
   ensureRampConnection,
   ensureRampWebhook,
@@ -153,28 +151,35 @@ function isConnectionLinked(status: string | null | undefined): boolean {
 /** Extract a connection list from either `[...]` or `{ data: [...] }`. */
 function extractConnections(response: unknown): Array<{ status?: string }> {
   if (Array.isArray(response)) return response as Array<{ status?: string }>;
-  if (
-    response &&
-    typeof response === "object" &&
-    Array.isArray((response as { data?: unknown }).data)
-  ) {
-    return (response as { data: Array<{ status?: string }> }).data;
+  if (response && typeof response === "object") {
+    // Ramp's GET /accounting/connections returns `{ connections: [...] }`.
+    // Tolerate `{ data: [...] }` too for resilience.
+    const obj = response as { connections?: unknown; data?: unknown };
+    if (Array.isArray(obj.connections))
+      return obj.connections as Array<{ status?: string }>;
+    if (Array.isArray(obj.data)) return obj.data as Array<{ status?: string }>;
   }
   return [];
 }
 
 export async function rampHealthcheck(
-  _companyId: string,
-  metadata: Record<string, unknown>
+  companyId: string,
+  _metadata: Record<string, unknown>
 ): Promise<boolean> {
-  const parsed = RampIntegrationMetadataSchema.safeParse(metadata);
-  if (!parsed.success) return false;
+  // Build the client via getRampIntegration so it carries the OAuth app creds
+  // and token-refresh. The health framework's passed metadata builds a client
+  // with no `oauthApp`, which cannot refresh an expired oauth2 access token and
+  // would report a healthy connection as unhealthy after ~1h.
+  const integration = await getRampIntegration(
+    getCarbonServiceRole(),
+    companyId
+  );
+  if (!integration) return false;
 
-  const client = new RampClient(parsed.data.credentials);
   try {
-    await client.getBusiness();
+    await integration.client.getBusiness();
     const connections = extractConnections(
-      await client.getAccountingConnections()
+      await integration.client.getAccountingConnections()
     );
     return connections.some((connection) =>
       isConnectionLinked(connection.status)
