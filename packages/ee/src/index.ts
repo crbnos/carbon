@@ -1,5 +1,4 @@
 import { Email } from "./email/config";
-import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Onshape } from "./onshape/config";
@@ -32,7 +31,6 @@ export type {
 export const integrations = [
   // Radan,
   Email,
-  ExchangeRates,
   Jira,
   Linear,
   Onshape,

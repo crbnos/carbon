@@ -13,7 +13,7 @@ import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.ee.service";
+import { getExchangeRate } from "../accounting/accounting.ee.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   canApproveRequest,
@@ -1505,15 +1505,14 @@ export async function insertPurchaseOrder(
   let exchangeRate = 1;
   let exchangeRateUpdatedAt = new Date().toISOString();
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
@@ -1605,16 +1604,22 @@ export async function updatePurchaseOrder(
 
   let exchangeRate: number | undefined;
   let exchangeRateUpdatedAt: string | undefined;
-  if (updates.currencyCode && companyGroupId) {
-    const currency = await getCurrencyByCode(
+  if (updates.currencyCode) {
+    const existing = await client
+      .from("purchaseOrder")
+      .select("companyId")
+      .eq("id", id)
+      .single();
+    if (existing.error) return { data: null, error: existing.error };
+
+    const rate = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   return client
@@ -1693,15 +1698,14 @@ export async function upsertPurchaseOrder(
     supplierShipping.data;
 
   if (purchaseOrder.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      purchaseOrder.companyGroupId,
+      purchaseOrder.companyId,
       purchaseOrder.currencyCode
     );
-    if (currency.data) {
-      purchaseOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
-      purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    purchaseOrder.exchangeRate = rate.data;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
   } else {
     purchaseOrder.exchangeRate = 1;
     purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
@@ -2074,15 +2078,14 @@ export async function insertSupplierQuote(
   let exchangeRate = 1;
   let exchangeRateUpdatedAt = new Date().toISOString();
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const supplierInteraction = await insertSupplierInteraction(
@@ -2168,7 +2171,7 @@ export async function updateSupplierQuote(
 
   const existing = await client
     .from("supplierQuote")
-    .select("currencyCode")
+    .select("currencyCode, companyId")
     .eq("id", id)
     .single();
 
@@ -2176,18 +2179,16 @@ export async function updateSupplierQuote(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   return client
@@ -2232,15 +2233,14 @@ export async function upsertSupplierQuote(
 ) {
   if ("createdBy" in supplierQuote) {
     if (supplierQuote.currencyCode) {
-      const currency = await getCurrencyByCode(
+      const rate = await getExchangeRate(
         client,
-        supplierQuote.companyGroupId,
+        supplierQuote.companyId,
         supplierQuote.currencyCode
       );
-      if (currency.data) {
-        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-      }
+      if (rate.error) return { data: null, error: rate.error };
+      supplierQuote.exchangeRate = rate.data;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     } else {
       supplierQuote.exchangeRate = 1;
       supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
@@ -2318,15 +2318,14 @@ export async function upsertSupplierQuote(
       supplierQuote.currencyCode &&
       currencyCode !== supplierQuote.currencyCode
     ) {
-      const currency = await getCurrencyByCode(
+      const rate = await getExchangeRate(
         client,
-        supplierQuote.companyGroupId,
+        companyId,
         supplierQuote.currencyCode
       );
-      if (currency.data) {
-        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-      }
+      if (rate.error) return { data: null, error: rate.error };
+      supplierQuote.exchangeRate = rate.data;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     }
     const { companyGroupId: _companyGroupId2, ...supplierQuoteUpdateData } =
       supplierQuote;

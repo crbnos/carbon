@@ -2615,6 +2615,9 @@ msgstr "Despesas de taxas de serviços bancários e financeiros."
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Os gráficos mostram o fluxo de cada semana: <0>suprimento</0> aumenta o inventário, <1>demanda</1> o reduz. A <2>linha</2> é seu inventário disponível projetado — quando cai abaixo do <3>estoque de segurança</3> você está em risco, e abaixo de zero é uma <4>ruptura de estoque</4>."
 
+msgid "Base currency"
+msgstr "Moeda base"
+
 msgid "Base Currency"
 msgstr "Moeda Base"
 
@@ -9413,6 +9416,15 @@ msgstr "Marcar como Falta"
 msgid "Mark to delete"
 msgstr "Marcar para exclusão"
 
+msgid "Market rate"
+msgstr "Taxa de mercado"
+
+msgid "Market rate (per USD)"
+msgstr "Taxa de mercado (por USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Histórico da taxa de mercado (por USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marca a pessoa como ausente para cada dia no intervalo. Ela não será agendada enquanto estiver fora."
 
@@ -10592,6 +10604,9 @@ msgstr "Sem Motivo de Cotação"
 msgid "No Quote Reasons"
 msgstr "Sem Motivos de Cotação"
 
+msgid "No rate"
+msgstr "Sem taxa"
+
 msgid "No receivables"
 msgstr "Sem contas a receber"
 
@@ -10956,6 +10971,11 @@ msgstr "Entrega no prazo"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Integre seu agente ao Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} equivale a quantos {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Uma execução de um fluxo de trabalho, registrada passo a passo com os valores que cada etapa usou e produziu, agindo sempre com as permissões do proprietário do fluxo de trabalho."
@@ -13250,6 +13270,9 @@ msgstr "Redefinir PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Redefinir PIN para {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Redefinir para a taxa de mercado"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Redefinir Autenticação de Dois Fatores"
 
@@ -13785,6 +13808,9 @@ msgstr "Salvar configurações de dimensão"
 
 msgid "Save Method"
 msgstr "Salvar Método"
+
+msgid "Save Rate"
+msgstr "Salvar taxa"
 
 msgid "Save view"
 msgstr "Salvar visualização"
@@ -16561,6 +16587,9 @@ msgstr "Este é um ambiente controlado por ITAR. O acesso é restrito a Pessoas 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Isto está levando mais tempo do que o esperado. Pode ainda terminar — se não terminar, tente reverter novamente para colocar seus dados de volta."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Esta é a moeda base. A taxa de câmbio é sempre 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Este é o mês em que seu ano fiscal começa."
 
@@ -18702,6 +18731,9 @@ msgstr "Seu projeto do início ao fim: o plano, os gates e o go-live"
 
 msgid "Your Project Team"
 msgstr "Sua Equipe de Projeto"
+
+msgid "Your rate"
+msgstr "Sua taxa"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Os seus dados reais foram carregados e você verificou uma amostra e aprovou."

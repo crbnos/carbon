@@ -3,7 +3,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getCurrencies } from "~/modules/accounting";
+import { getCurrencies, getExchangeRates } from "~/modules/accounting";
 import { ExchangeRatesTable } from "~/modules/accounting/ui/ExchangeRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -15,10 +15,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "accounting",
+      role: "employee"
+    }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -26,13 +29,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  return await getCurrencies(client, companyGroupId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  const [currencies, exchangeRates] = await Promise.all([
+    getCurrencies(client, companyGroupId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters
+    }),
+    getExchangeRates(client, companyId)
+  ]);
+
+  const resolvedByCode = new Map(
+    (exchangeRates.data ?? []).map((rate) => [rate.currencyCode, rate])
+  );
+
+  return {
+    count: currencies.count ?? 0,
+    data: (currencies.data ?? []).map((currency) => {
+      const resolved = currency.code
+        ? resolvedByCode.get(currency.code)
+        : undefined;
+      return {
+        ...currency,
+        rate: resolved?.rate ?? null,
+        rateSource: resolved?.source ?? null,
+        rateUpdatedAt: resolved?.rateUpdatedAt ?? null
+      };
+    })
+  };
 }
 
 export default function ExchangeRatesRoute() {

@@ -523,29 +523,23 @@ serve(async (req: Request) => {
             throw new Error(supplierShipping.error.message);
 
           const currencyCodes = new Set(
-            suppliers.data
-              ?.map((d) => d.currencyCode)
-              .filter(Boolean) as string[]
+            suppliers.data?.map((d) => d.currencyCode ?? "USD")
           );
 
-          const companyRecord = await client
-            .from("company")
-            .select("companyGroupId")
-            .eq("id", companyId)
-            .single();
-          if (companyRecord.error) throw new Error(companyRecord.error.message);
-
+          // get_exchange_rate raises on a missing rate -- a resolver error
+          // must fail the operation rather than default the rate.
           const exchangeRates = await Promise.all(
             Array.from(currencyCodes).map(async (currencyCode) => {
-              const exchangeRate = await client
-                .from("currency")
-                .select("*")
-                .eq("code", currencyCode)
-                .eq("companyGroupId", companyRecord.data.companyGroupId)
-                .single();
+              const exchangeRate = await client.rpc("get_exchange_rate", {
+                p_company_id: companyId,
+                p_currency_code: currencyCode,
+              });
+              if (exchangeRate.error) {
+                throw new Error(exchangeRate.error.message);
+              }
               return {
                 currencyCode,
-                exchangeRate: exchangeRate.data?.exchangeRate ?? 1,
+                exchangeRate: Number(exchangeRate.data),
               };
             })
           );
@@ -562,6 +556,18 @@ serve(async (req: Request) => {
               const shipping = supplierShipping.data?.find(
                 (d) => d.supplierId === supplier
               );
+
+              const supplierCurrencyCode =
+                suppliers.data?.find((d) => d.id === supplier)?.currencyCode ??
+                "USD";
+              const exchangeRate = exchangeRates.find(
+                (d) => d.currencyCode === supplierCurrencyCode
+              )?.exchangeRate;
+              if (exchangeRate === undefined) {
+                throw new Error(
+                  `No exchange rate resolved for currency ${supplierCurrencyCode}`
+                );
+              }
 
               let purchaseOrderId =
                 purchaseOrdersBySupplierId[supplier] === "new"
@@ -602,16 +608,8 @@ serve(async (req: Request) => {
                     createdBy: userId,
                     purchaseOrderType: "Outside Processing",
                     supplierInteractionId: supplierInteractionId,
-                    currencyCode:
-                      suppliers.data?.find((d) => d.id === supplier)
-                        ?.currencyCode ?? "USD",
-                    exchangeRate:
-                      exchangeRates.find(
-                        (d) =>
-                          d.currencyCode ===
-                          suppliers.data?.find((d) => d.id === supplier)
-                            ?.currencyCode
-                      )?.exchangeRate ?? 1,
+                    currencyCode: supplierCurrencyCode,
+                    exchangeRate,
                     exchangeRateUpdatedAt: new Date().toISOString(),
                   })
                   .returning(["id"])
@@ -702,13 +700,7 @@ serve(async (req: Request) => {
                     jobOperationId: operation.id,
                     companyId,
                     createdBy: userId,
-                    exchangeRate:
-                      exchangeRates.find(
-                        (d) =>
-                          d.currencyCode ===
-                          suppliers.data?.find((d) => d.id === supplier)
-                            ?.currencyCode
-                      )?.exchangeRate ?? 1,
+                    exchangeRate,
                   });
                 }
               }

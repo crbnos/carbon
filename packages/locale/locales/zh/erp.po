@@ -2615,6 +2615,9 @@ msgstr "银行和金融服务费用。"
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "柱状图显示每周的流向：<0>供应</0>推高库存，<1>需求</1>拉低库存。<2>线</2>表示您的预计现有库存 — 当它跌破<3>安全库存</3>时，您面临风险；跌破零则是<4>缺货</4>。"
 
+msgid "Base currency"
+msgstr "本位币"
+
 msgid "Base Currency"
 msgstr "基础货币"
 
@@ -9413,6 +9416,15 @@ msgstr "标记短缺"
 msgid "Mark to delete"
 msgstr "标记删除"
 
+msgid "Market rate"
+msgstr "市场汇率"
+
+msgid "Market rate (per USD)"
+msgstr "市场汇率（兑美元）"
+
+msgid "Market Rate History (per USD)"
+msgstr "市场汇率历史（兑美元）"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "在范围内的每一天都标记该人缺席。他们在外出期间不会被安排。"
 
@@ -10592,6 +10604,9 @@ msgstr "不报价原因"
 msgid "No Quote Reasons"
 msgstr "不报价原因"
 
+msgid "No rate"
+msgstr "无汇率"
+
 msgid "No receivables"
 msgstr "没有应收款项"
 
@@ -10956,6 +10971,11 @@ msgstr "准时交付"
 
 msgid "Onboard your agent to Carbon"
 msgstr "将您的代理接入Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} 等于多少 {1}？"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，始终以工作流负责人的权限行动。"
@@ -13250,6 +13270,9 @@ msgstr "重置PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "重置 {0} {1} 的 PIN"
 
+msgid "Reset to market rate"
+msgstr "重置为市场汇率"
+
 msgid "Reset Two-Factor Auth"
 msgstr "重置双因素认证"
 
@@ -13785,6 +13808,9 @@ msgstr "保存维度设置"
 
 msgid "Save Method"
 msgstr "保存方法"
+
+msgid "Save Rate"
+msgstr "保存汇率"
 
 msgid "Save view"
 msgstr "保存视图"
@@ -16561,6 +16587,9 @@ msgstr "这是一个ITAR管制环境。访问仅限于美国人。"
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "这比预期花费的时间更长。它可能仍会完成——如果没有，请重试还原以恢复您的数据。"
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "这是本位币。汇率始终为1。"
+
 msgid "This is the month your fiscal year starts."
 msgstr "这是你会计年度开始的月份。"
 
@@ -18706,6 +18735,9 @@ msgstr "您的项目端到端：计划、关卡和上线"
 
 msgid "Your Project Team"
 msgstr "您的项目团队"
+
+msgid "Your rate"
+msgstr "自定义汇率"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"

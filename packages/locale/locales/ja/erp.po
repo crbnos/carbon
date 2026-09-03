@@ -2615,6 +2615,9 @@ msgstr "銀行およびサービス料費用"
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "棒グラフは毎週の流れを表示します：<0>供給</0>は在庫を増加させ、<1>所要量</1>は減少させます。<2>線</2>は予測在庫です。<3>安全在庫</3>を下回る場合はリスク状態であり、ゼロを下回る場合は<4>欠品</4>です。"
 
+msgid "Base currency"
+msgstr "基準通貨"
+
 msgid "Base Currency"
 msgstr "基本通貨"
 
@@ -9413,6 +9416,15 @@ msgstr "短い数量をマーク"
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
+msgid "Market rate"
+msgstr "市場レート"
+
+msgid "Market rate (per USD)"
+msgstr "市場レート（対USD）"
+
+msgid "Market Rate History (per USD)"
+msgstr "市場レート履歴（対USD）"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "範囲内のすべての日について、その人を休止します。外出中はスケジュール設定されません。"
 
@@ -10592,6 +10604,9 @@ msgstr "見積辞退理由"
 msgid "No Quote Reasons"
 msgstr "見積辞退理由"
 
+msgid "No rate"
+msgstr "レートなし"
+
 msgid "No receivables"
 msgstr "売掛金がありません"
 
@@ -10956,6 +10971,11 @@ msgstr "オンタイム配送"
 
 msgid "Onboard your agent to Carbon"
 msgstr "エージェントを Carbon にオンボード"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} は何 {1} に相当しますか？"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値を含めてステップバイステップで記録され、全体を通じてワークフロー責任者の権限で実行されます。"
@@ -13250,6 +13270,9 @@ msgstr "PINをリセット"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}のPINをリセット"
 
+msgid "Reset to market rate"
+msgstr "市場レートにリセット"
+
 msgid "Reset Two-Factor Auth"
 msgstr "2要素認証をリセット"
 
@@ -13785,6 +13808,9 @@ msgstr "ディメンション設定を保存"
 
 msgid "Save Method"
 msgstr "メソッドを保存"
+
+msgid "Save Rate"
+msgstr "レートを保存"
 
 msgid "Save view"
 msgstr "ビューを保存"
@@ -16561,6 +16587,9 @@ msgstr "これはITAR管理環境です。アクセスは米国人に限定さ�
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "予想より時間がかかっています。終了する可能性があります。終了しない場合は、リバートを再試行してデータを復元してください。"
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "これは基準通貨です。為替レートは常に1です。"
+
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
 
@@ -18702,6 +18731,9 @@ msgstr "プロジェクト全体：計画、ゲート、本番稼働"
 
 msgid "Your Project Team"
 msgstr "あなたのプロジェクトチーム"
+
+msgid "Your rate"
+msgstr "カスタムレート"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"

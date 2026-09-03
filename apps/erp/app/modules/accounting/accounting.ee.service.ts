@@ -1950,6 +1950,75 @@ export async function getCurrencyByCode(
     .single();
 }
 
+/**
+ * The one sanctioned answer to "how many units of `currencyCode` per 1 unit of
+ * THIS company's base currency, right now". Base currency resolves to 1 by
+ * definition; a user override wins next; otherwise the ratio of the two
+ * USD-anchored market rates. A missing rate is an ERROR — never 1.
+ */
+export async function getExchangeRate(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client.rpc("get_exchange_rate", {
+    p_company_id: companyId,
+    p_currency_code: currencyCode
+  });
+}
+
+/**
+ * Every active currency of the company's group, resolved for THIS company,
+ * with provenance: 'base' | 'override' | 'market' | 'missing'. Backs the
+ * exchange-rates settings page.
+ */
+export async function getExchangeRates(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("get_exchange_rates", {
+    p_company_id: companyId
+  });
+}
+
+export async function upsertExchangeRateOverride(
+  client: SupabaseClient<Database>,
+  override: {
+    companyId: string;
+    currencyCode: string;
+    rate: number;
+    userId: string;
+  }
+) {
+  return client
+    .from("exchangeRateOverride")
+    .upsert(
+      {
+        companyId: override.companyId,
+        currencyCode: override.currencyCode,
+        rate: override.rate,
+        createdBy: override.userId,
+        updatedBy: override.userId,
+        updatedAt: datetime.timestamp()
+      },
+      { onConflict: "companyId,currencyCode" }
+    )
+    .select("id")
+    .single();
+}
+
+export async function deleteExchangeRateOverride(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client
+    .from("exchangeRateOverride")
+    .delete()
+    .eq("companyId", companyId)
+    .eq("currencyCode", currencyCode);
+}
+
 export async function getCurrencies(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4298,6 +4367,7 @@ export async function translateCompanyBalances(
   )("getConsolidationRates", {
     p_company_group_id: companyGroupId,
     p_company_id: companyId,
+    p_target_currency: targetCurrency,
     p_period_end: periodEnd,
     p_period_start: periodStart
   });
@@ -4732,21 +4802,26 @@ export async function getIntercompanyBalance(
   });
 }
 
+/**
+ * Market-rate history for the chart on the exchange-rates page. Reads the
+ * platform-global "exchangeRate" store (USD-anchored), newest ~6 months of
+ * daily rows, ascending for the chart.
+ */
 export async function getExchangeRateHistory(
   client: SupabaseClient<Database>,
-  companyGroupId: string,
   currencyCode: string
 ) {
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  return client
-    .from("exchangeRateHistory")
+  const result = await client
+    .from("exchangeRate")
     .select("effectiveDate, rate")
-    .eq("companyGroupId", companyGroupId)
     .eq("currencyCode", currencyCode)
-    .gte("effectiveDate", sixMonthsAgo.toISOString().split("T")[0])
-    .order("effectiveDate", { ascending: true });
+    .order("effectiveDate", { ascending: false })
+    .limit(180);
+
+  return {
+    data: result.data ? [...result.data].reverse() : result.data,
+    error: result.error
+  };
 }
 
 // -- Journal Entries --

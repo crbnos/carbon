@@ -23,12 +23,9 @@ import { buildPreviewProps } from "~/modules/settings/documentPreview.server";
  * Buffer/streams) and guarantees the preview matches the real PDF route.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "settings"
-    }
-  );
+  const { client, companyId } = await requirePermissions(request, {
+    view: "settings"
+  });
 
   const documentType = documentTemplateTypeSchema.parse(params.type);
 
@@ -87,7 +84,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? await buildPreviewProps(
         client,
         companyId,
-        companyGroupId,
         documentType,
         previewId,
         locale

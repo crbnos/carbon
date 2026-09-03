@@ -2615,6 +2615,9 @@ msgstr "Wydatki na opłaty bankowe i usługi finansowe."
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Paski pokazują przepływ każdego tygodnia: <0>pokrycie</0> zwiększa zapasy, <1>zapotrzebowanie</1> je zmniejsza. <2>Linia</2> to twoje prognozowane zapasy w magazynie — gdy spadną poniżej <3>zapasu bezpieczeństwa</3>, jesteś zagrożony, a poniżej zera to <4>brak zapasu</4>."
 
+msgid "Base currency"
+msgstr "Waluta bazowa"
+
 msgid "Base Currency"
 msgstr "Waluta bazowa"
 
@@ -9413,6 +9416,15 @@ msgstr "Oznacz jako brakujące"
 msgid "Mark to delete"
 msgstr "Oznacz do usunięcia"
 
+msgid "Market rate"
+msgstr "Kurs rynkowy"
+
+msgid "Market rate (per USD)"
+msgstr "Kurs rynkowy (za USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Historia kursu rynkowego (za USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Oznacza osobę jako nieobecną na każdy dzień z zakresu. Nie będą zaplanowani, gdy są nieobecni."
 
@@ -10592,6 +10604,9 @@ msgstr "Powód odmowy oferty"
 msgid "No Quote Reasons"
 msgstr "Przyczyny odmowy oferty"
 
+msgid "No rate"
+msgstr "Brak kursu"
+
 msgid "No receivables"
 msgstr "Brak należności"
 
@@ -10956,6 +10971,11 @@ msgstr "Dostawa na czas"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Dodaj swojego agenta do Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} to ile {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Jedno wykonanie przepływu pracy, zarejestrowane krok po kroku z wartościami, które każdy krok użył i wygenerował, działając z uprawnieniami właściciela przepływu pracy."
@@ -13250,6 +13270,9 @@ msgstr "Resetuj PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Resetuj PIN dla {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Przywróć kurs rynkowy"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Zresetuj uwierzytelnianie dwuskładnikowe"
 
@@ -13785,6 +13808,9 @@ msgstr "Zapisz ustawienia wymiarów"
 
 msgid "Save Method"
 msgstr "Zapisz metodę"
+
+msgid "Save Rate"
+msgstr "Zapisz kurs"
 
 msgid "Save view"
 msgstr "Zapisz widok"
@@ -16561,6 +16587,9 @@ msgstr "To jest środowisko kontrolowane przez ITAR. Dostęp jest ograniczony do
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "To trwa dłużej niż oczekiwano. Może się nadal zakończyć — jeśli nie, ponów przywracanie, aby przywrócić swoje dane."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "To jest waluta bazowa. Kurs wymiany wynosi zawsze 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "To jest miesiąc, w którym zaczyna się twój rok obrotowy."
 
@@ -18702,6 +18731,9 @@ msgstr "Twój projekt od początku do końca: plan, bramy i wdrożenie"
 
 msgid "Your Project Team"
 msgstr "Twój Zespół Projektowy"
+
+msgid "Your rate"
+msgstr "Twój kurs"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Twoje rzeczywiste dane są załadowane i sprawdziłeś próbkę oraz ją zatwierdziłeś."

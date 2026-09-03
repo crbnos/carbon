@@ -1,115 +1,105 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Rates } from "@carbon/ee/exchange-rates.server";
-import { getExchangeRatesClient } from "@carbon/ee/exchange-rates.server";
 import { EXCHANGE_RATES_API_KEY } from "@carbon/env";
-import { round } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { inngest } from "../../client";
 
-type CurrencyCode =
-  | "EUR"
-  | "USD"
-  | "GBP"
-  | "JPY"
-  | "CHF"
-  | "CAD"
-  | "AUD"
-  | "CNY"
-  | "INR"
-  | "MXN"
-  | "BRL"
-  | "RUB"
-  | "ZAR"
-  | "TRY"
-  | "SEK"
-  | "NOK"
-  | "DKK"
-  | "SGD"
-  | "HKD"
-  | "TWD"
-  | "THB"
-  | "MYR"
-  | "PHP"
-  | "IDR"
-  | "VND"
-  | "KRW"
-  | "TND"
-  | "MAD"
-  | "AED"
-  | "SAR"
-  | "QAR"
-  | "KWD"
-  | "BHD"
-  | "OMR"
-  | "JOD"
-  | "LYD"
-  | "EGP"
-  | "ILS"
-  | "KZT"
-  | "KGS"
-  | "UZS"
-  | "TJS"
-  | "AZN"
-  | "TMT"
-  | "UYU"
-  | "BYN"
-  | "KZT"
-  | "KGS"
-  | "UZS"
-  | "TJS"
-  | "AZN"
-  | "TMT"
-  | "UYU"
-  | "BYN"
-  | "KZT"
-  | "KGS"
-  | "UZS"
-  | "TJS"
-  | "AZN"
-  | "TMT"
-  | "UYU"
-  | "BYN";
+type CurrencyCode = string;
+
+type ExchangeClientOptions = {
+  apiKey?: string;
+  apiUrl: string;
+};
+
+export type Rates = { [key in CurrencyCode]?: number };
+
+type ExchangeRatesSuccessResponse = {
+  success: boolean;
+  timestamp: number;
+  base: CurrencyCode;
+  date: string;
+  rates: Rates;
+};
+
+type ExchangeRatesErrorResponse = {
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+type ExchangeRatesResponse =
+  | ExchangeRatesErrorResponse
+  | ExchangeRatesSuccessResponse;
+
+export class ExchangeRatesClient {
+  #apiKey: string;
+  #apiUrl: string;
+
+  constructor(options: ExchangeClientOptions) {
+    if (!options.apiKey) throw new Error("EXCHANGE_RATES_API_KEY not set");
+
+    this.#apiKey = options.apiKey;
+    this.#apiUrl = options.apiUrl;
+  }
+
+  async getExchangeRates(): Promise<Rates> {
+    /**
+     * Fetches the latest exchange rates from the API. For the free tier of the API, we can only fetch
+     * the rates with a base currency of EUR.
+     */
+    const url = `${this.#apiUrl}?access_key=${this.#apiKey}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: ExchangeRatesResponse = await response.json();
+
+    if ("success" in data && data.success === true) {
+      return data.rates;
+    }
+
+    throw new Error("Unrecognized response from exchange rates server");
+  }
+}
+
+export const getExchangeRatesClient = (
+  apiKey?: string,
+  apiUrl: string = "https://api.exchangeratesapi.io/v1/latest"
+) => {
+  return typeof apiKey === "string"
+    ? new ExchangeRatesClient({
+        apiKey,
+        apiUrl
+      })
+    : undefined;
+};
 
 export const updateExchangeRatesFunction = inngest.createFunction(
   { id: "update-exchange-rates", retries: 2 },
   { cron: "0 0 * * *" },
   async ({ step, logger }) => {
-    const serviceRole = getCarbonServiceRole();
     await step.run("fetch-and-update-exchange-rates", async () => {
-      logger.info("Exchange rates task started");
-      const integrations = await serviceRole
-        .from("companyIntegration")
-        .select("active, companyId")
-        .eq("id", "exchange-rates-v1")
-        .eq("active", true);
-
-      if (integrations.error) {
-        logger.error("Error fetching integrations", {
-          error: integrations.error
-        });
-        return;
-      }
-
-      if (integrations.data?.length === 0) {
-        logger.info("No active exchange rate integrations found, exiting task");
-        return;
-      }
-
-      logger.info("Found active integrations", {
-        count: integrations.data.length
-      });
-
-      // Fetch the exchange rates for the base currency of EUR
-      const exchangeRatesClient = getExchangeRatesClient(
-        EXCHANGE_RATES_API_KEY
-      );
-
-      if (!exchangeRatesClient) {
-        logger.error(
-          "Exchange rates client is undefined, check API key configuration"
+      if (!EXCHANGE_RATES_API_KEY) {
+        logger.info(
+          "EXCHANGE_RATES_API_KEY is not configured, skipping exchange rate update"
         );
         return;
       }
 
+      const exchangeRatesClient = getExchangeRatesClient(
+        EXCHANGE_RATES_API_KEY
+      );
+      if (!exchangeRatesClient) {
+        logger.info(
+          "Exchange rates client is undefined, skipping exchange rate update"
+        );
+        return;
+      }
+
+      // Fetch the exchange rates once, with the free tier's base currency of EUR
       let ratesEUR: Rates;
       try {
         ratesEUR = await exchangeRatesClient.getExchangeRates();
@@ -126,118 +116,80 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         return;
       }
 
-      // Cache the rates for each currency to avoid unnecessary computations
-      let cachedRates: { [key in CurrencyCode]?: Rates } = {
-        EUR: ratesEUR
-      };
-
-      for (const integration of integrations.data) {
-        logger.info("Processing integration for company", {
-          companyId: integration.companyId
-        });
-
-        const company = await serviceRole
-          .from("company")
-          .select("*")
-          .eq("id", integration.companyId)
-          .single();
-
-        if (company.error) {
-          logger.error("Error fetching company", {
-            companyId: integration.companyId,
-            error: company.error
-          });
-          continue;
-        }
-
-        const baseCurrencyCode = company.data.baseCurrencyCode as CurrencyCode;
-        let rates: Rates | undefined;
-        rates = cachedRates[baseCurrencyCode];
-        // Check if the rates for this base currency are cached, and if not compute them
-        if (rates) {
-          logger.info("Using cached rates", { baseCurrencyCode });
-        } else {
-          logger.info("Computing rates", { baseCurrencyCode });
-          rates = await exchangeRatesClient.convertExchangeRates(
-            baseCurrencyCode,
-            ratesEUR
-          );
-          cachedRates[baseCurrencyCode] = rates;
-        }
-
-        const updatedAt = new Date().toISOString();
-
-        try {
-          if (!company.data.companyGroupId) {
-            logger.warn("Company has no companyGroupId, skipping", {
-              companyId: integration.companyId
-            });
-            continue;
-          }
-          const { data, error } = await serviceRole
-            .from("currency")
-            .select("*")
-            .eq("companyGroupId", company.data.companyGroupId);
-
-          if (error) {
-            logger.error("Error fetching currencies for company", {
-              companyId: integration.companyId,
-              error
-            });
-            continue;
-          }
-
-          if (!data || data.length === 0) {
-            logger.info("No currencies found for company", {
-              companyId: integration.companyId
-            });
-            continue;
-          }
-
-          const updates = data
-            .map((currency) => ({
-              ...currency,
-              // Rates carry internal scale — never the currency's DISPLAY
-              // decimals, which zeroed every 0-decimal currency's fraction and
-              // silently froze rates that rounded to 0
-              exchangeRate: round(Number(rates[currency.code as CurrencyCode])),
-              updatedAt
-            }))
-            .filter((currency) => currency.exchangeRate);
-
-          if (updates.length === 0) {
-            logger.info("No currency updates needed for company", {
-              companyId: integration.companyId
-            });
-            continue;
-          }
-
-          logger.info("Updating currencies for company", {
-            count: updates.length,
-            companyId: integration.companyId
-          });
-          const { error: upsertError } = await serviceRole
-            .from("currency")
-            .upsert(updates);
-          if (upsertError) {
-            logger.error("Error updating currencies for company", {
-              companyId: integration.companyId,
-              error: upsertError
-            });
-          } else {
-            logger.info("Successfully updated currencies for company", {
-              companyId: integration.companyId
-            });
-          }
-        } catch (err) {
-          logger.error("Unexpected error processing company", {
-            companyId: integration.companyId,
-            error: err
-          });
-        }
+      // The global store anchors on USD: rate = units of currencyCode per 1 USD
+      const usdRate = ratesEUR["USD"];
+      if (!usdRate) {
+        logger.error("USD rate missing from feed, cannot anchor to USD");
+        return;
       }
 
-      logger.info("Exchange rates task completed");
+      const serviceRole = getCarbonServiceRole();
+
+      // Reference table — no tenancy
+      const currencyCodes = await serviceRole
+        .from("currencyCode")
+        .select("code");
+
+      if (currencyCodes.error) {
+        logger.error("Error fetching currency codes", {
+          error: currencyCodes.error
+        });
+        return;
+      }
+
+      const updatedAt = datetime.timestamp();
+      // The feed is a UTC-day artifact, so the UTC day is the effective date
+      const effectiveDate = updatedAt.slice(0, 10);
+
+      const staleCodes: string[] = [];
+      const rows: {
+        currencyCode: string;
+        effectiveDate: string;
+        rate: number;
+        updatedAt: string;
+      }[] = [];
+
+      for (const { code } of currencyCodes.data ?? []) {
+        const feedRate = ratesEUR[code];
+        // Rates carry internal scale — never the currency's DISPLAY
+        // decimals, which zeroed every 0-decimal currency's fraction and
+        // silently froze rates that rounded to 0
+        const rate =
+          feedRate === undefined
+            ? Number.NaN
+            : round(Number(feedRate) / usdRate);
+        if (!Number.isFinite(rate) || rate <= 0) {
+          staleCodes.push(code);
+          continue;
+        }
+        rows.push({ currencyCode: code, effectiveDate, rate, updatedAt });
+      }
+
+      if (staleCodes.length > 0) {
+        logger.warn(
+          "Currency codes absent from the feed (or with unusable rates) — their stored rates are going stale",
+          { codes: staleCodes }
+        );
+      }
+
+      if (rows.length === 0) {
+        logger.info("No exchange rates to upsert");
+        return;
+      }
+
+      const { error: upsertError } = await serviceRole
+        .from("exchangeRate")
+        .upsert(rows, { onConflict: "currencyCode,effectiveDate" });
+
+      if (upsertError) {
+        logger.error("Error upserting exchange rates", { error: upsertError });
+        return;
+      }
+
+      logger.info("Exchange rates task completed", {
+        count: rows.length,
+        effectiveDate
+      });
     });
   }
 );

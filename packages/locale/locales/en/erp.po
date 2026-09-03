@@ -2615,6 +2615,9 @@ msgstr "Bank and financial service charge expenses"
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 
+msgid "Base currency"
+msgstr "Base currency"
+
 msgid "Base Currency"
 msgstr "Base Currency"
 
@@ -9413,6 +9416,15 @@ msgstr "Mark Short"
 msgid "Mark to delete"
 msgstr "Mark to delete"
 
+msgid "Market rate"
+msgstr "Market rate"
+
+msgid "Market rate (per USD)"
+msgstr "Market rate (per USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Market Rate History (per USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marks the person off for every day in the range. They won't be scheduled while they're away."
 
@@ -10592,6 +10604,9 @@ msgstr "No Quote Reason"
 msgid "No Quote Reasons"
 msgstr "No Quote Reasons"
 
+msgid "No rate"
+msgstr "No rate"
+
 msgid "No receivables"
 msgstr "No receivables"
 
@@ -10956,6 +10971,11 @@ msgstr "On-time delivery"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Onboard your agent to Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "One {0} is equal to how many {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
@@ -13250,6 +13270,9 @@ msgstr "Reset PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reset PIN for {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Reset to market rate"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Reset Two-Factor Auth"
 
@@ -13785,6 +13808,9 @@ msgstr "Save dimension settings"
 
 msgid "Save Method"
 msgstr "Save Method"
+
+msgid "Save Rate"
+msgstr "Save Rate"
 
 msgid "Save view"
 msgstr "Save view"
@@ -16561,6 +16587,9 @@ msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Per
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "This is the base currency. Exchange rate is always 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
 
@@ -18706,6 +18735,9 @@ msgstr "Your project end to end: the plan, the gates, and go-live"
 
 msgid "Your Project Team"
 msgstr "Your Project Team"
+
+msgid "Your rate"
+msgstr "Your rate"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Your real data is loaded and you have checked a sample and approved it."

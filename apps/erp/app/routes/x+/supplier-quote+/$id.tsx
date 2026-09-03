@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode, getExchangeRate } from "~/modules/accounting";
 import {
   getSiblingQuotesForQuote,
   getSupplier,
@@ -79,8 +79,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let exchangeRate = 1;
-  if (quote.data?.currencyCode && presentationCurrency.data?.exchangeRate) {
-    exchangeRate = presentationCurrency.data.exchangeRate;
+  if (quote.data?.currencyCode) {
+    const rate = await getExchangeRate(
+      serviceRole,
+      companyId,
+      quote.data.currencyCode
+    );
+    if (rate.error) {
+      throw redirect(
+        path.to.supplierQuotes,
+        await flash(request, error(rate.error, "Failed to load exchange rate"))
+      );
+    }
+    exchangeRate = rate.data;
   }
 
   // Extract sibling quotes from the linked data

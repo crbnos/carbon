@@ -2615,6 +2615,9 @@ msgstr "Расходы банка и сервисного сбора финан�
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Столбцы показывают поток каждой недели: <0>обеспечение</0> увеличивает запасы, <1>потребность</1> снижает их. <2>Строка</2> — это ваши прогнозируемые запасы на складе — когда она падает ниже <3>страхового запаса</3>, вы в зоне риска, а ниже нуля — <4>дефицит</4>."
 
+msgid "Base currency"
+msgstr "Базовая валюта"
+
 msgid "Base Currency"
 msgstr "Базовая валюта"
 
@@ -9413,6 +9416,15 @@ msgstr "Отметить как недостача"
 msgid "Mark to delete"
 msgstr "Отметить к удалению"
 
+msgid "Market rate"
+msgstr "Рыночный курс"
+
+msgid "Market rate (per USD)"
+msgstr "Рыночный курс (за USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "История рыночного курса (за USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Отмечает человека как отсутствующего на каждый день в диапазоне. Его не будут планировать, пока он отсутствует."
 
@@ -10592,6 +10604,9 @@ msgstr "Причина отказа от предложения"
 msgid "No Quote Reasons"
 msgstr "Причины отказа от предложения"
 
+msgid "No rate"
+msgstr "Курс отсутствует"
+
 msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
 
@@ -10956,6 +10971,11 @@ msgstr "Своевременная доставка"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Подключите вашего агента к Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} — это сколько {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
@@ -13250,6 +13270,9 @@ msgstr "Сброс PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Сбросить к рыночному курсу"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Сбросить двухфакторную аутентификацию"
 
@@ -13785,6 +13808,9 @@ msgstr "Сохранить настройки измерений"
 
 msgid "Save Method"
 msgstr "Сохранить метод"
+
+msgid "Save Rate"
+msgstr "Сохранить курс"
 
 msgid "Save view"
 msgstr "Сохранить представление"
@@ -16561,6 +16587,9 @@ msgstr "Это среда, контролируемая ITAR. Доступ ог�
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Это занимает больше времени, чем ожидалось. Процесс может все еще завершиться — если нет, повторите восстановление, чтобы вернуть ваши данные."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Это базовая валюта. Валютный курс всегда равен 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
 
@@ -18702,6 +18731,9 @@ msgstr "Ваш проект от начала до конца: план, эта�
 
 msgid "Your Project Team"
 msgstr "Ваша команда проекта"
+
+msgid "Your rate"
+msgstr "Ваш курс"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."
