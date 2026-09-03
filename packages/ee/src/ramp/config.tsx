@@ -6,11 +6,11 @@ import { z } from "zod";
 import { defineIntegration } from "../fns";
 
 /**
- * OAuth "Connect to Ramp" authorization-code flow (production). Declared inline
- * (not imported from `./lib/client`, which pulls `node:crypto` into the
- * client bundle). Sandbox / self-hosted use the client-credentials fields below.
- * `offline_access` requests a refresh token; the app must have the Refresh Token
- * grant enabled. IntegrationCard builds the authorize redirect from this block.
+ * OAuth "Connect to Ramp" authorization-code flow (production) — the ONLY way to
+ * connect Ramp. Declared inline (not imported from `./lib/client`, which pulls
+ * `node:crypto` into the client bundle). `offline_access` requests a refresh
+ * token; the app must have the Refresh Token grant enabled. IntegrationCard
+ * builds the authorize redirect from this block.
  */
 // The user-consent authorize endpoint lives on the APP host (app.ramp.com), NOT
 // the API host — hitting api.ramp.com/v1/authorize returns "Not Authorized" from
@@ -39,20 +39,13 @@ const RAMP_OAUTH_SCOPES = [
 ];
 
 /**
- * Ramp settings form schema. The credentials (clientId/clientSecret/
- * environment) are entered flat here and folded into `metadata.credentials`
- * by the settings route; the account-mapping and sync-toggle fields stay flat
- * at the metadata root. `clientSecret` is optional so an empty submit means
- * "keep the existing vaulted secret" (D4a anti-overwrite in splitSecrets).
+ * Ramp settings form schema. Connection is exclusively via the "Connect to Ramp"
+ * OAuth flow — the callback stores `metadata.credentials` (oauth2), pinned to
+ * production — so the form carries NO client credentials. It only holds the
+ * optional entity scope, the account mapping, and the sync toggles, all flat at
+ * the metadata root.
  */
 const RampSettingsSchema = z.object({
-  // Optional: OAuth-connected installs get their credentials from the Connect
-  // flow, so the client-credentials fields are only for the advanced /
-  // self-hosted / sandbox path. The install hook's `getBusiness()` is the real
-  // credential gate. Empty clientSecret means "keep the existing vaulted secret".
-  clientId: z.string().optional(),
-  clientSecret: z.string().optional(),
-  environment: z.enum(["production", "sandbox"]).default("production"),
   entityId: z.string().optional(),
   // Required non-empty (the card liability + statement bank accounts back every
   // card journal); populated by the loader's dynamicOptions.
@@ -108,46 +101,6 @@ export const Ramp = defineIntegration({
     }
   ],
   settings: [
-    {
-      name: "clientId",
-      label: "Client ID (advanced)",
-      description:
-        "Optional — most customers connect via the Connect to Ramp button. For a self-hosted or sandbox client-credentials setup, create an API client in Ramp under Settings → Developer API and paste its Client ID here.",
-      group: "Connection",
-      type: "text" as const,
-      required: false,
-      value: ""
-    },
-    {
-      name: "clientSecret",
-      label: "Client secret (advanced)",
-      description:
-        "The Client Secret paired with the Client ID above. Leave blank to keep the stored secret.",
-      group: "Connection",
-      type: "secret" as const,
-      required: false,
-      value: ""
-    },
-    {
-      name: "environment",
-      label: "Environment",
-      group: "Connection",
-      type: "options" as const,
-      listOptions: [
-        {
-          value: "production",
-          label: "Production",
-          description: "api.ramp.com"
-        },
-        {
-          value: "sandbox",
-          label: "Sandbox",
-          description: "demo-api.ramp.com"
-        }
-      ],
-      required: true,
-      value: "production"
-    },
     {
       name: "entityId",
       label: "Entity ID",
@@ -257,32 +210,12 @@ function SetupInstructions({ companyId }: { companyId: string }) {
     <div className="text-sm text-muted-foreground">
       <ol className="list-decimal space-y-3 pl-4">
         <li>
-          <span className="font-medium text-foreground">
-            Create a Ramp API client.
-          </span>{" "}
-          In Ramp go to Settings → Developer API → Create app and choose the{" "}
-          <span className="font-medium">
-            server-to-server (client credentials)
-          </span>{" "}
-          grant. Under Set scopes, enable the accounting, transactions, bills,
-          reimbursements, transfers, cashbacks, receipts, statements, entities,
-          vendors, purchase-orders, and business scopes (read, plus write for
-          accounting, bills, vendors, and purchase orders) — the simplest is to
-          use <span className="font-medium">Enable all</span>.
-        </li>
-        <li>
-          <span className="font-medium text-foreground">
-            Connect the client.
-          </span>{" "}
-          Paste the Client ID and Client Secret into the fields below and set{" "}
-          <span className="font-medium">Environment</span> to match your Ramp
-          app (Sandbox → demo-api.ramp.com, Production → api.ramp.com). Carbon
-          connects <span className="font-medium">server-to-server</span> (client
-          credentials), so Ramp's{" "}
-          <span className="font-medium">Redirect URI</span> isn't used — leave
-          it blank, or set it to this Carbon URL if the form requires a value.
-          If Ramp asks for <span className="font-medium">Allowed origins</span>{" "}
-          or to verify a domain, use this Carbon URL.
+          <span className="font-medium text-foreground">Connect to Ramp.</span>{" "}
+          Click <span className="font-medium">Connect to Ramp</span> and approve
+          access in the Ramp window. You must sign in to Ramp as an{" "}
+          <span className="font-medium">Admin</span> or{" "}
+          <span className="font-medium">Business Owner</span> to authorize the
+          connection.
         </li>
         <li>
           <span className="font-medium text-foreground">
@@ -290,6 +223,11 @@ function SetupInstructions({ companyId }: { companyId: string }) {
           </span>{" "}
           under Accounts so card charges, statement payments, cashback, and
           reimbursements post to the right places.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">Choose what syncs</span>{" "}
+          under Sync — card transactions, bills, and reimbursements flow in;
+          purchase orders and invoices push out. All are on by default.
         </li>
         <li>
           <span className="font-medium text-foreground">
