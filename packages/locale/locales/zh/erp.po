@@ -212,6 +212,9 @@ msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 个冲突"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的账户}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
@@ -843,6 +846,9 @@ msgstr "发货单的状态已更改"
 
 msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "一条平衡的分录将以下面的日期过账，差额冲至未分配利润。"
 
 msgid "A step needs a name."
 msgstr "步骤需要一个名称。"
@@ -2339,6 +2345,9 @@ msgstr "截至"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "截至 {0}"
+
+msgid "As of date"
+msgstr "截至日期"
 
 msgid "As of:"
 msgstr "截至："
@@ -10875,6 +10884,9 @@ msgstr "没有变量匹配{query}"
 msgid "No variables available"
 msgstr "没有可用的变量"
 
+msgid "No versions available"
+msgstr "没有可用的版本"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
@@ -11306,8 +11318,18 @@ msgstr "期初"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "打开一个操作会启动其计时器，因此从工作开始时起就跟踪时间。"
 
+msgid "Opening Balance"
+msgstr "期初余额"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0}的期初余额"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
+
+msgid "Opening Balances"
+msgstr "期初余额"
 
 msgid "Operating Expenses"
 msgstr "运营费用"
@@ -12068,6 +12090,9 @@ msgstr "过账发票"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "使用正确的科目和描述代码过账凭证。"
+
+msgid "Post opening balances"
+msgstr "过账期初余额"
 
 msgid "Post Receipt"
 msgstr "过账收据"
@@ -14319,6 +14344,9 @@ msgstr "选择"
 msgid "Select a assignee"
 msgstr "选择经办人"
 
+msgid "Select a completed job"
+msgstr "选择已完成的工单"
+
 msgid "Select a default approver"
 msgstr "选择默认审批人"
 
@@ -15129,6 +15157,9 @@ msgstr "源单据可读"
 
 msgid "Source Item"
 msgstr "源项目"
+
+msgid "Source Job"
+msgstr "源工单"
 
 msgid "Source list"
 msgstr "源列表"
@@ -16800,7 +16831,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "这些行链接到该公司外的数据，因此无法为您的当前数据创建安全副本。删除这些行无法撤销。如果这些行与此组中的其他公司共享，则不会删除任何内容，恢复也不会启动。"
+msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"

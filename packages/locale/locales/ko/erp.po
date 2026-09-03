@@ -212,6 +212,9 @@ msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount}개 충돌"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있는 계정}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
@@ -843,6 +846,9 @@ msgstr "출하의 상태가 변경됨"
 
 msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "하나의 균형잡힌 분개가 아래의 날짜로 전기되며, 차액은 이익잉여금으로 상계됩니다."
 
 msgid "A step needs a name."
 msgstr "단계에 이름이 필요합니다."
@@ -2339,6 +2345,9 @@ msgstr "기준"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0} 기준"
+
+msgid "As of date"
+msgstr "기준일"
 
 msgid "As of:"
 msgstr "기준:"
@@ -10875,6 +10884,9 @@ msgstr "{query}와 일치하는 변수가 없습니다"
 msgid "No variables available"
 msgstr "사용 가능한 변수가 없습니다."
 
+msgid "No versions available"
+msgstr "가용한 버전이 없습니다"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -11306,8 +11318,18 @@ msgstr "기초"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "작업을 열면 타이머가 시작되므로 작업이 시작되는 순간부터 시간이 추적됩니다."
 
+msgid "Opening Balance"
+msgstr "개시잔액"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0}의 개시잔액"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
+
+msgid "Opening Balances"
+msgstr "개시잔액"
 
 msgid "Operating Expenses"
 msgstr "영업비용"
@@ -12068,6 +12090,9 @@ msgstr "송장 전기"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "올바른 계정 및 설명 코드로 전표를 전기"
+
+msgid "Post opening balances"
+msgstr "개시잔액 전기"
 
 msgid "Post Receipt"
 msgstr "입고 전기"
@@ -14319,6 +14344,9 @@ msgstr "선택"
 msgid "Select a assignee"
 msgstr "담당자 선택"
 
+msgid "Select a completed job"
+msgstr "완료된 작업 지시를 선택하세요"
+
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
 
@@ -15129,6 +15157,9 @@ msgstr "원본 문서 읽기 가능"
 
 msgid "Source Item"
 msgstr "소스 품목"
+
+msgid "Source Job"
+msgstr "원본 작업 지시"
 
 msgid "Source list"
 msgstr "원본 목록"
@@ -16800,7 +16831,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 대변이 원장에 없습니다. 각 전표를 전기하거나 이후 미결 기간으로 다시 날짜를 지정하십시오."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있어서 현재 데이터의 안전 복사본을 만들 수 없습니다. 이들을 삭제하면 취소할 수 없습니다. 이들이 이 그룹의 다른 회사와 공유되는 경우 아무것도 삭제되지 않으며 복원이 시작되지 않습니다."
+msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있으므로 현재 데이터의 안전한 사본을 만들 수 없습니다. 이들을 삭제하면 되돌릴 수 없습니다. 이들이 이 그룹의 다른 회사와 공유되는 경우, 아무것도 삭제되지 않고 복원이 시작되지 않습니다."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원할 수 없습니다. 그 외 모든 것은 백업되었습니다."

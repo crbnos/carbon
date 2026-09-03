@@ -5099,6 +5099,199 @@ export async function postJournalEntry(
     .single();
 }
 
+// Returns `{ id }` of the company's current posted Opening Balance journal
+// entry, or null. Callers only need existence — this is the re-entry gate. Only
+// status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
+// one.
+export async function getExistingOpeningBalanceEntry(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const entry = await client
+    .from("journal")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("sourceType", "Opening Balance")
+    .eq("status", "Posted")
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (entry.error) return { data: null, error: entry.error };
+  return { data: entry.data ? { id: entry.data.id } : null, error: null };
+}
+
+// Posts the company's opening balances as a single balanced journal entry
+// (sourceType 'Opening Balance'). Each `balances` row carries one signed
+// natural-balance amount for a posting account; the net difference is plugged to
+// the Retained Earnings default account so debits equal credits. Reuses the
+// manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
+// postJournalEntry (which validates the balance and resolves the period).
+export async function createOpeningBalanceJournal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    postingDate: string;
+    balances: Array<{ accountId: string; amount: number }>;
+  }
+) {
+  const { companyId, companyGroupId, userId, postingDate, balances } = args;
+
+  const entered = balances.filter((b) => b.amount !== 0);
+  if (entered.length === 0) {
+    return { data: null, error: { message: "No opening balances entered" } };
+  }
+
+  // Guard here — not only in the route — so every caller (the route action AND
+  // the MCP-exposed tool) is protected. Opening balances are entered once; an
+  // un-reversed posted entry must be reversed before a new set is posted.
+  const existing = await getExistingOpeningBalanceEntry(client, companyId);
+  if (existing.error) return { data: null, error: existing.error };
+  if (existing.data) {
+    return {
+      data: null,
+      error: {
+        message:
+          "An opening balance entry already exists — reverse it before entering new balances"
+      }
+    };
+  }
+
+  // Retained Earnings is the balancing plug.
+  const defaults = await getDefaultAccounts(client, companyId);
+  if (defaults.error) return { data: null, error: defaults.error };
+  const retainedEarningsAccount = defaults.data?.retainedEarningsAccount;
+  if (!retainedEarningsAccount) {
+    return {
+      data: null,
+      error: {
+        message:
+          "No Retained Earnings account is configured in Default Accounts"
+      }
+    };
+  }
+
+  // Account classes turn each signed natural-balance amount into debit/credit
+  // (saveJournalEntryWithLines re-derives the stored amount from debit/credit).
+  const accountIds = [...new Set(entered.map((b) => b.accountId))];
+  const accounts = await client
+    .from("account")
+    .select("id, class")
+    .in("id", accountIds)
+    // Scope to the caller's chart of accounts (company-group). A foreign id then
+    // resolves to no class and aborts below with "Account not found", so a
+    // crafted payload can't post against another tenant's accounts.
+    .eq("companyGroupId", companyGroupId);
+  if (accounts.error) return { data: null, error: accounts.error };
+  const classById = new Map(
+    accounts.data.map((a) => [
+      a.id,
+      a.class as Database["public"]["Enums"]["glAccountClass"]
+    ])
+  );
+
+  const isNaturalDebit = (cls: Database["public"]["Enums"]["glAccountClass"]) =>
+    cls === "Asset" || cls === "Expense";
+
+  // Sum in "debit positive" space so the plug's sign is unambiguous.
+  let netDebitMinusCredit = 0;
+  const lines: Array<{ accountId: string; debit: number; credit: number }> = [];
+  for (const b of entered) {
+    const cls = classById.get(b.accountId);
+    if (!cls) {
+      return {
+        data: null,
+        error: { message: `Account not found: ${b.accountId}` }
+      };
+    }
+    const isDebit = isNaturalDebit(cls) ? b.amount >= 0 : b.amount < 0;
+    const magnitude = Math.abs(b.amount);
+    const debit = isDebit ? magnitude : 0;
+    const credit = isDebit ? 0 : magnitude;
+    netDebitMinusCredit += debit - credit;
+    lines.push({ accountId: b.accountId, debit, credit });
+  }
+
+  // Plug to Retained Earnings unless the entered lines already balance (shared
+  // tolerance, no literal). More debit ⇒ the plug is a credit, and vice-versa.
+  if (!isBalanced(netDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
+    lines.push({
+      accountId: retainedEarningsAccount,
+      debit: netDebitMinusCredit < 0 ? -netDebitMinusCredit : 0,
+      credit: netDebitMinusCredit > 0 ? netDebitMinusCredit : 0
+    });
+  }
+
+  const journalEntryId = await getNextSequence(
+    client,
+    "journalEntry",
+    companyId
+  );
+  if (journalEntryId.error || !journalEntryId.data) {
+    return {
+      data: null,
+      error: journalEntryId.error ?? {
+        message: "Failed to allocate journal entry number"
+      }
+    };
+  }
+
+  const created = await createJournalEntry(client, {
+    journalEntryId: journalEntryId.data as string,
+    sourceType: "Opening Balance",
+    companyId,
+    createdBy: userId,
+    postingDate,
+    description: "Opening balances"
+  });
+  if (created.error || !created.data) {
+    return {
+      data: null,
+      error: created.error ?? { message: "Failed to create journal entry" }
+    };
+  }
+  const id = created.data.id;
+
+  // No transaction spans create → save → post (these reuse the supabase-client
+  // JE helpers), so on any failure roll back the Draft header we just created —
+  // journalLine cascades (ON DELETE CASCADE). Otherwise an orphan 'Opening
+  // Balance' Draft lingers that the Posted-only re-entry gate can't see, and the
+  // user would accumulate one per retry (e.g. an as-of date in a Closed period).
+  const rollbackDraft = () =>
+    client.from("journal").delete().eq("id", id).eq("status", "Draft");
+
+  const saved = await saveJournalEntryWithLines(client, {
+    journalEntryId: id,
+    postingDate,
+    description: "Opening balances",
+    updatedBy: userId,
+    lines,
+    companyId,
+    companyGroupId
+  });
+  if (saved.error) {
+    await rollbackDraft();
+    return { data: null, error: saved.error };
+  }
+
+  const posted = await postJournalEntry(client, id, userId);
+  if (posted.error) {
+    await rollbackDraft();
+    // A unique violation on journal_one_posted_opening_balance_per_company means
+    // a concurrent request already posted the company's opening balances — the
+    // atomic backstop for the check-then-post race.
+    const message =
+      (posted.error as { code?: string }).code === "23505"
+        ? "An opening balance entry already exists — reverse it before entering new balances"
+        : posted.error.message;
+    return { data: null, error: { message } };
+  }
+
+  return { data: { id }, error: null };
+}
+
 export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
   id: string,

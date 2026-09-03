@@ -212,6 +212,9 @@ msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイン
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 個の競合"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残高のある勘定}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
@@ -843,6 +846,9 @@ msgstr "出荷のステータスが変更される"
 
 msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "1 つの仕訳行が以下の日付で転記され、差分が利益剰余金にオフセットされます。"
 
 msgid "A step needs a name."
 msgstr "ステップには名前が必要です。"
@@ -2339,6 +2345,9 @@ msgstr "現在時点で"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0}時点で"
+
+msgid "As of date"
+msgstr "対象日付"
 
 msgid "As of:"
 msgstr "以下の日付時点:"
@@ -10875,6 +10884,9 @@ msgstr "{query}に一致する変数がありません"
 msgid "No variables available"
 msgstr "利用可能な変数がありません"
 
+msgid "No versions available"
+msgstr "利用可能なバージョンがありません"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
 
@@ -11306,8 +11318,18 @@ msgstr "開始残高"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "操作を開くとそのタイマーが開始され、作業開始時点から時間が追跡されます。"
 
+msgid "Opening Balance"
+msgstr "初期残高"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0}の初期残高"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
+
+msgid "Opening Balances"
+msgstr "初期残高"
 
 msgid "Operating Expenses"
 msgstr "営業費用"
@@ -12068,6 +12090,9 @@ msgstr "請求書を転記"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "適切なアカウントと説明コードを使用して仕訳を転記する"
+
+msgid "Post opening balances"
+msgstr "初期残高を転記"
 
 msgid "Post Receipt"
 msgstr "領収書を転記"
@@ -14319,6 +14344,9 @@ msgstr "選択"
 msgid "Select a assignee"
 msgstr "担当者を選択"
 
+msgid "Select a completed job"
+msgstr "完了した製造指図を選択してください"
+
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
 
@@ -15129,6 +15157,9 @@ msgstr "参照伝票判読可能"
 
 msgid "Source Item"
 msgstr "ソースアイテム"
+
+msgid "Source Job"
+msgstr "ソース製造指図"
 
 msgid "Source list"
 msgstr "ソースリスト"
@@ -16800,7 +16831,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "これらの行は、この会社外のデータにリンクしています。そのため、現在のデータのセーフティコピーを作成できません。これらの削除は元に戻すことはできません。もしこれらがこのグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
+msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"

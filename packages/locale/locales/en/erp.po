@@ -212,6 +212,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflicts"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
@@ -843,6 +846,9 @@ msgstr "A shipment's status changes"
 
 msgid "A shipment's tracking number changes"
 msgstr "A shipment's tracking number changes"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 
 msgid "A step needs a name."
 msgstr "A step needs a name."
@@ -2339,6 +2345,9 @@ msgstr "As of"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "As of {0}"
+
+msgid "As of date"
+msgstr "As of date"
 
 msgid "As of:"
 msgstr "As of:"
@@ -10875,6 +10884,9 @@ msgstr "No variable matches {query}"
 msgid "No variables available"
 msgstr "No variables available"
 
+msgid "No versions available"
+msgstr "No versions available"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -11306,8 +11318,18 @@ msgstr "Opening"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Opening an operation starts its timer, so time is tracked from the moment work begins."
 
+msgid "Opening Balance"
+msgstr "Opening Balance"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Opening balance for {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
+
+msgid "Opening Balances"
+msgstr "Opening Balances"
 
 msgid "Operating Expenses"
 msgstr "Operating Expenses"
@@ -12068,6 +12090,9 @@ msgstr "Post Invoice"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Post journal entries with proper account and description codes"
+
+msgid "Post opening balances"
+msgstr "Post opening balances"
 
 msgid "Post Receipt"
 msgstr "Post Receipt"
@@ -14319,6 +14344,9 @@ msgstr "Select"
 msgid "Select a assignee"
 msgstr "Select a assignee"
 
+msgid "Select a completed job"
+msgstr "Select a completed job"
+
 msgid "Select a default approver"
 msgstr "Select a default approver"
 
@@ -15129,6 +15157,9 @@ msgstr "Source document readable"
 
 msgid "Source Item"
 msgstr "Source Item"
+
+msgid "Source Job"
+msgstr "Source Job"
 
 msgid "Source list"
 msgstr "Source list"

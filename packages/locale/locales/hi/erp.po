@@ -212,6 +212,9 @@ msgstr "{chainLabel}. इस भाग को सीधे अंतिम उ�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} विरोध"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# शेष राशि वाला खाता} other {# शेष राशि वाले खाते}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
@@ -843,6 +846,9 @@ msgstr "किसी शिपमेंट की स्थिति में �
 
 msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "एक संतुलित जर्नल प्रविष्टि नीचे दी गई तारीख के अनुसार पोस्ट की जाएगी, अंतर को प्रतिधारित आय में समायोजित करते हुए।"
 
 msgid "A step needs a name."
 msgstr "एक चरण को एक नाम की आवश्यकता है।"
@@ -2339,6 +2345,9 @@ msgstr "के अनुसार"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0} के अनुसार"
+
+msgid "As of date"
+msgstr "तारीख के अनुसार"
 
 msgid "As of:"
 msgstr "इसके अनुसार:"
@@ -10875,6 +10884,9 @@ msgstr "कोई चर {query} से मेल नहीं खाता"
 msgid "No variables available"
 msgstr "कोई चर उपलब्ध नहीं"
 
+msgid "No versions available"
+msgstr "कोई संस्करण उपलब्ध नहीं है"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
 
@@ -11306,8 +11318,18 @@ msgstr "शुरुआती"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "किसी ऑपरेशन को खोलने से इसका टाइमर शुरू हो जाता है, इसलिए काम शुरू होने के समय से समय ट्रैक किया जाता है।"
 
+msgid "Opening Balance"
+msgstr "प्रारंभिक शेष राशि"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0} की प्रारंभिक शेष राशि"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "इस संपत्ति को Carbon में जोड़े जाने से पहले दर्ज मूल्यह्रास का प्रारंभिक शेष (नई खरीद के लिए 0 का उपयोग करें)।"
+
+msgid "Opening Balances"
+msgstr "प्रारंभिक शेष राशि"
 
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
@@ -12068,6 +12090,9 @@ msgstr "चालान पोस्ट करें"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "उचित खाता और विवरण कोड के साथ जर्नल प्रविष्टियां पोस्ट करें"
+
+msgid "Post opening balances"
+msgstr "प्रारंभिक शेष राशि पोस्ट करें"
 
 msgid "Post Receipt"
 msgstr "रसीद पोस्ट करें"
@@ -14319,6 +14344,9 @@ msgstr "चुनें"
 msgid "Select a assignee"
 msgstr "एक असाइनी चुनें"
 
+msgid "Select a completed job"
+msgstr "एक पूर्ण जॉब चुनें"
+
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
 
@@ -15129,6 +15157,9 @@ msgstr "स्रोत दस्तावेज़ पठनीय"
 
 msgid "Source Item"
 msgstr "स्रोत आइटम"
+
+msgid "Source Job"
+msgstr "स्रोत जॉब"
 
 msgid "Source list"
 msgstr "स्रोत सूची"
@@ -16800,7 +16831,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "ये पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा का बैकअप नहीं बनाया जा सकता। इन्हें हटाना अपरिवर्तनीय है। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ नहीं हटाया जाता है और पुनर्स्थापन शुरू नहीं होता है।"
+msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ भी हटाया नहीं जाता है और पुनर्स्थापन शुरू नहीं होता है।"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"

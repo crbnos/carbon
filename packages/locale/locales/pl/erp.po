@@ -212,6 +212,9 @@ msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostateczne
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} konflikty"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# konto z saldem} other {# konta z saldem}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
@@ -843,6 +846,9 @@ msgstr "Status wysyłki zmienia się"
 
 msgid "A shipment's tracking number changes"
 msgstr "Zmiana numeru śledzenia wysyłki"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Jeden zbilansowany zapis księgowy będzie zaksięgowany na dzień poniżej, z różnicą przeniesioną do Zysków zatrzymanych."
 
 msgid "A step needs a name."
 msgstr "Krok wymaga nazwy."
@@ -2339,6 +2345,9 @@ msgstr "Na dzień"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "Od {0}"
+
+msgid "As of date"
+msgstr "Na dzień"
 
 msgid "As of:"
 msgstr "Na dzień:"
@@ -10875,6 +10884,9 @@ msgstr "Żadna zmienna nie pasuje do {query}"
 msgid "No variables available"
 msgstr "Brak dostępnych zmiennych"
 
+msgid "No versions available"
+msgstr "Brak dostępnych wersji"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 
@@ -11306,8 +11318,18 @@ msgstr "Otwarcie"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Otwarcie operacji uruchamia jej timer, więc czas jest liczony od momentu, gdy praca się zaczyna."
 
+msgid "Opening Balance"
+msgstr "Saldo Otwarcia"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Saldo Otwarcia dla {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo otwarcia amortyzacji już zaksięgowanej przed dodaniem tego zasobu do Carbon (użyj 0 dla nowych przejęć)."
+
+msgid "Opening Balances"
+msgstr "Salda Otwarcia"
 
 msgid "Operating Expenses"
 msgstr "Koszty operacyjne"
@@ -12068,6 +12090,9 @@ msgstr "Zaksięguj fakturę"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Zaksięguj wpisy dowodu księgowego z odpowiednimi kodami konta i opisu"
+
+msgid "Post opening balances"
+msgstr "Zaksięguj salda otwarcia"
 
 msgid "Post Receipt"
 msgstr "Zaksięguj Paragon"
@@ -14319,6 +14344,9 @@ msgstr "Wybierz"
 msgid "Select a assignee"
 msgstr "Wybierz osobę przypisaną"
 
+msgid "Select a completed job"
+msgstr "Wybierz zakończone zlecenie produkcyjne"
+
 msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"
 
@@ -15129,6 +15157,9 @@ msgstr "Dokument źródłowy czytelny"
 
 msgid "Source Item"
 msgstr "Element źródłowy"
+
+msgid "Source Job"
+msgstr "Zlecenie źródłowe"
 
 msgid "Source list"
 msgstr "Lista źródłowa"
@@ -16800,7 +16831,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Te dowody księgowe są wciąż w wersji roboczej, dlatego ich wpisy Winien i Ma nie znajdują się w księdze dla tego okresu. Zaksięguj każdy z nich lub przesyć go do późniejszego otwartego okresu."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "Te wiersze łączą się z danymi spoza tej firmy, więc nie można utworzyć kopii bezpieczeństwa twoich bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są one współdzielone z innymi firmami w tej grupie, nic nie zostanie usunięte i przywracanie się nie uruchomi."
+msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wykonać bezpiecznej kopii bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są współdzielone z innymi firmami w tej grupie, nic nie zostanie usunięte i przywracanie nie zostanie uruchomione."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie mogły być przywrócone. Wszystko inne miało kopię zapasową."

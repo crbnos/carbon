@@ -212,6 +212,9 @@ msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düş�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} çakışma"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesaplar}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
@@ -843,6 +846,9 @@ msgstr "Sevkiyatın durumu değişti"
 
 msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Aşağıdaki tarih itibarıyla tek bir dengeli yevmiye kaydı muhasebeleştirilecek; fark Dağıtılmamış kârlara kaydedilecektir."
 
 msgid "A step needs a name."
 msgstr "Bir adım bir ada ihtiyaç duyuyor."
@@ -2339,6 +2345,9 @@ msgstr "Itibaren"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0} itibariyle"
+
+msgid "As of date"
+msgstr "Tarihi itibarıyla"
 
 msgid "As of:"
 msgstr "Şu tarih itibariyle:"
@@ -10875,6 +10884,9 @@ msgstr "Değişken {query} ile eşleşmiyor"
 msgid "No variables available"
 msgstr "Kullanılabilir değişken yok"
 
+msgid "No versions available"
+msgstr "Kullanılabilir sürüm yok"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden düzenlenene kadar eldeki stok negatif olacaktır, ancak yine de alabilirsiniz."
 
@@ -11306,8 +11318,18 @@ msgstr "Açılış"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Bir operasyonu açmak zamanlayıcısını başlatır, böylece zaman çalışma başladığı andan itibaren izlenir."
 
+msgid "Opening Balance"
+msgstr "Açılış Bakiyesi"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0} için Açılış Bakiyesi"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortismanın açılış bakiyesi (yeni satın almalar için 0 kullanın)."
+
+msgid "Opening Balances"
+msgstr "Açılış Bakiyeleri"
 
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
@@ -12068,6 +12090,9 @@ msgstr "Faturayı Kaydet"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Uygun hesap ve açıklama kodları ile muhasebe fişlerini muhasebeleştirin"
+
+msgid "Post opening balances"
+msgstr "Açılış Bakiyelerini Muhasebeleştir"
 
 msgid "Post Receipt"
 msgstr "Makbuzu Kaydet"
@@ -14319,6 +14344,9 @@ msgstr "Seç"
 msgid "Select a assignee"
 msgstr "Bir atanan seçin"
 
+msgid "Select a completed job"
+msgstr "Tamamlanmış bir iş emri seçin"
+
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
 
@@ -15129,6 +15157,9 @@ msgstr "Okunabilir kaynak belge"
 
 msgid "Source Item"
 msgstr "Kaynak Ürün"
+
+msgid "Source Job"
+msgstr "Kaynak İş Emri"
 
 msgid "Source list"
 msgstr "Kaynak listesi"
@@ -16800,7 +16831,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "Bu satırlar bu Şirket dışındaki verilerle bağlantılı olduğundan, mevcut verilerinizin güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bu satırların bu gruptaki diğer Şirketler ile paylaşılması durumunda hiçbir şey silinmez ve geri yükleme başlamaz."
+msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
