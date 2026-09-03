@@ -1,15 +1,16 @@
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, Input, toast, useDebounce } from "@carbon/react";
+import { generateHTML, toast, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { usePermissions, useUser } from "~/hooks";
 import type { loader } from "~/routes/x+/quality-document+/$id";
 import type { action } from "~/routes/x+/quality-document+/update";
+import { useDocumentStore } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export default function QualityDocumentEditor() {
@@ -49,21 +50,28 @@ export default function QualityDocumentEditor() {
   );
 
   const nameFetcher = useFetcher<typeof action>();
+  const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
+  // Clear the header's live title mirror when leaving the document.
+  useEffect(() => () => setLiveTitle(null), [setLiveTitle]);
 
-  const updateName = async (name: string) => {
-    const versions = await Promise.resolve(loaderData?.versions);
-    const formData = new FormData();
-    formData.append("ids", id);
-    if (Array.isArray(versions?.data) && versions.data.length > 0) {
-      for (const v of versions.data) formData.append("ids", v.id);
-    }
-    formData.append("field", "name");
-    formData.append("value", name);
-    nameFetcher.submit(formData, {
-      method: "post",
-      action: path.to.bulkUpdateQualityDocument
-    });
-  };
+  const updateName = useDebounce(
+    async (name: string) => {
+      const versions = await Promise.resolve(loaderData?.versions);
+      const formData = new FormData();
+      formData.append("ids", id);
+      if (Array.isArray(versions?.data) && versions.data.length > 0) {
+        for (const v of versions.data) formData.append("ids", v.id);
+      }
+      formData.append("field", "name");
+      formData.append("value", name);
+      nameFetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateQualityDocument
+      });
+    },
+    500,
+    true
+  );
 
   const onUploadImage = async (file: File) => {
     const ext = file.name.split(".").pop();
@@ -84,16 +92,19 @@ export default function QualityDocumentEditor() {
   const canEdit = permissions.can("update", "quality") && isDraft;
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full p-6">
-      <Input
-        className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
-        value={documentName}
-        borderless
-        onChange={canEdit ? (e) => setDocumentName(e.target.value) : undefined}
-        onBlur={canEdit ? (e) => updateName(e.target.value) : undefined}
-      />
+    <div className="flex flex-col w-full h-full">
       {canEdit ? (
         <Editor
+          toolbar
+          title={{
+            value: documentName,
+            placeholder: t`Untitled`,
+            onChange: (name) => {
+              setDocumentName(name);
+              setLiveTitle(name);
+              updateName(name);
+            }
+          }}
           initialValue={content}
           onUpload={onUploadImage}
           onChange={(value) => {
@@ -102,10 +113,15 @@ export default function QualityDocumentEditor() {
           }}
         />
       ) : (
-        <div
-          className="prose dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: generateHTML(content) }}
-        />
+        <div className="flex flex-col gap-6 w-full h-full p-8">
+          <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
+            {documentName}
+          </h1>
+          <div
+            className="prose dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: generateHTML(content) }}
+          />
+        </div>
       )}
     </div>
   );

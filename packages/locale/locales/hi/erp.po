@@ -17374,6 +17374,9 @@ msgstr "अभी भेजे जाने वाले ऑर्डर"
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
 
+msgid "Untitled"
+msgstr ""
+
 msgid "Untitled Diagram"
 msgstr "बिना शीर्षक वाला आरेख"
 

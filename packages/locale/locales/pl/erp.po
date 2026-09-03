@@ -17374,6 +17374,9 @@ msgstr "Niewysłane zamówienia"
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Nieobsługiwany typ dokumentu źródłowego: {sourceDocument}"
 
+msgid "Untitled"
+msgstr ""
+
 msgid "Untitled Diagram"
 msgstr "Diagram bez tytułu"
 

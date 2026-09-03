@@ -17374,6 +17374,9 @@ msgstr "미출하 주문"
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
 
+msgid "Untitled"
+msgstr ""
+
 msgid "Untitled Diagram"
 msgstr "제목 없는 다이어그램"
 

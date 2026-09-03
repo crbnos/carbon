@@ -20,6 +20,7 @@ import {
   ModalHeader,
   ModalTitle,
   Spinner,
+  Subheading,
   Table,
   Tbody,
   Td,
@@ -346,9 +347,7 @@ export function AccountMapping({
         ) : (
           grouped.map((group) => (
             <div key={group.class} className="flex w-full flex-col gap-1">
-              <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                {group.class}
-              </span>
+              <Subheading variant="heavy">{group.class}</Subheading>
               <div className="w-full rounded-lg border border-border">
                 <div className="flex w-full flex-col divide-y divide-border">
                   {group.accounts.map((account) => {

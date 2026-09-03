@@ -182,6 +182,7 @@ function TrainingEditor() {
       {permissions.can("update", "people") &&
       loaderData?.training?.status === "Draft" ? (
         <Editor
+          toolbar
           initialValue={content}
           onUpload={onUploadImage}
           onChange={(value) => {

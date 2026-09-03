@@ -3,6 +3,7 @@ import {
   Button,
   cn,
   Skeleton,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -613,14 +614,17 @@ function Section({
   return (
     <section className="px-3 py-3">
       {title && (
-        <header className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+        <Subheading
+          variant="heavy"
+          className="flex items-center justify-between mb-2"
+        >
           <span>{title}</span>
           {typeof count === "number" && (
             <span className="tabular-nums text-muted-foreground/60">
               {count}
             </span>
           )}
-        </header>
+        </Subheading>
       )}
       {children}
     </section>

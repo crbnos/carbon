@@ -321,7 +321,7 @@ export default function ServiceRoute() {
               </div>
             }
             content={
-              <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
+              <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
                 <Outlet />
               </div>
             }

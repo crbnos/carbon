@@ -17374,6 +17374,9 @@ msgstr "未发货订单"
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
 
+msgid "Untitled"
+msgstr ""
+
 msgid "Untitled Diagram"
 msgstr "未命名图表"
 
