@@ -10,6 +10,7 @@ import {
 } from "./company-backup";
 import {
   assertReferentiallyClosed,
+  buildIdMaps,
   buildRowTransforms,
   findDanglingReferences
 } from "./company-backup.transforms";
@@ -500,6 +501,71 @@ describe("buildRowTransforms", () => {
       ctx({ scrubEmail: () => "redacted@example.test" })
     );
     expect(out.email).toBe("redacted@example.test");
+  });
+});
+
+describe("buildIdMaps", () => {
+  it("remaps a composite-PK table — the cross-company id collision", () => {
+    // changeOrderRequiredAction keys on ("id", "companyId") but carries a global
+    // UNIQUE(id) so children can FK to it. Gating on `hasId` left its source ids
+    // in place, so a cross-company restore collided with the SOURCE company's
+    // still-live rows and rolled the whole restore back.
+    const t = table(
+      "changeOrderRequiredAction",
+      [col("id"), col("companyId"), col("name")],
+      [],
+      { pkColumns: ["id", "companyId"], uniqueColumns: ["id"] }
+    );
+    expect(t.hasId).toBe(false);
+    const maps = buildIdMaps([t], {
+      changeOrderRequiredAction: [{ id: "cora_1", companyId: "src-co" }]
+    });
+    expect(maps.get("changeOrderRequiredAction")?.get("cora_1")).toBeTypeOf(
+      "string"
+    );
+    expect(maps.get("changeOrderRequiredAction")?.get("cora_1")).not.toBe(
+      "cora_1"
+    );
+  });
+
+  it("gives a 1:1 extension table its PARENT's map, not a second id", () => {
+    const parent = table("purchaseOrder", [col("id"), col("companyId")]);
+    const child = table(
+      "purchaseOrderDelivery",
+      [col("id"), col("companyId")],
+      [fk("id", "purchaseOrder")]
+    );
+    const maps = buildIdMaps([parent, child], {
+      purchaseOrder: [{ id: "po1", companyId: "src-co" }],
+      purchaseOrderDelivery: [{ id: "po1", companyId: "src-co" }]
+    });
+    expect(maps.get("purchaseOrderDelivery")?.get("po1")).toBe(
+      maps.get("purchaseOrder")?.get("po1")
+    );
+  });
+
+  it("leaves an id-FK table unmapped when its parent has no map", () => {
+    // `terms.id -> company`: the id follows the company, via a column transform.
+    const t = table(
+      "terms",
+      [col("id"), col("companyId")],
+      [fk("id", "company")]
+    );
+    expect(buildIdMaps([t], { terms: [{ id: "src-co" }] }).has("terms")).toBe(
+      false
+    );
+  });
+
+  it("skips an int/serial id (a nanoid doesn't fit)", () => {
+    const idCol: ColumnInfo = {
+      ...col("id"),
+      dataType: "integer",
+      udtName: "int4"
+    };
+    const t = table("journal", [idCol, col("companyId")]);
+    expect(buildIdMaps([t], { journal: [{ id: 7 }] }).has("journal")).toBe(
+      false
+    );
   });
 });
 

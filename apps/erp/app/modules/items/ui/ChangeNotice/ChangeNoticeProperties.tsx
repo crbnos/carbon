@@ -135,7 +135,7 @@ const ChangeNoticeProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 flex-shrink-0 bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 pt-2 pb-12 text-sm"
+      className="w-96 flex-shrink-0 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 pt-2 pb-12 text-sm"
     >
       {/* Release is triggered from the header button (opens this confirmation
           dialog via releaseDialogOpenAtom). The dialog is mounted here — headless

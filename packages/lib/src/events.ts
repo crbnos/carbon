@@ -161,6 +161,8 @@ export type Events = {
       userId: string;
       label?: string;
       includeStorage: "none" | "all";
+      /** Opt-in: exclude rows whose NOT-NULL FK escapes company scope instead of refusing. */
+      skipCorrupted?: boolean;
     };
   };
 

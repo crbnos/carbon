@@ -80816,6 +80816,7 @@ export type Database = {
         | "Non-Conformance"
         | "Inbound Inspection"
         | "Card Transaction"
+        | "Opening Balance"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -82230,6 +82231,7 @@ export const Constants = {
         "Non-Conformance",
         "Inbound Inspection",
         "Card Transaction",
+        "Opening Balance",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [

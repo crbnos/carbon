@@ -1,4 +1,4 @@
-import { Heading } from "@carbon/react";
+import { cn, Heading } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
@@ -21,7 +21,7 @@ type GreetingProps = ComponentProps<typeof Heading> & {
  * but rotating each minute for variety. Lines are declarative (never a question)
  * and only some include the name, so it reads like a person, not a template.
  */
-export function Greeting({ hour, pick, ...props }: GreetingProps) {
+export function Greeting({ hour, pick, className, ...props }: GreetingProps) {
   const { t } = useLingui();
   const user = useUser();
 
@@ -86,7 +86,11 @@ export function Greeting({ hour, pick, ...props }: GreetingProps) {
   }, [hour, pick, t, user.firstName]);
 
   return (
-    <Heading size="display" {...props}>
+    <Heading
+      size="display"
+      className={cn("text-2xl sm:text-3xl md:text-[44px]", className)}
+      {...props}
+    >
       {greeting}
     </Heading>
   );

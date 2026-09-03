@@ -1,11 +1,16 @@
 import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   useIsMobile
 } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
+import { useOptimisticLocation } from "~/hooks";
 
 interface PanelContextType {
   isExplorerCollapsed: boolean;
@@ -86,9 +91,15 @@ export function ResizablePanels({
   content,
   properties
 }: ResizablePanelsProps) {
-  const { isExplorerCollapsed, isPropertiesCollapsed, setIsExplorerCollapsed } =
-    usePanels();
+  const {
+    isExplorerCollapsed,
+    isPropertiesCollapsed,
+    setIsExplorerCollapsed,
+    setIsPropertiesCollapsed
+  } = usePanels();
   const panelRef = useRef<ImperativePanelHandle>(null);
+  const isMobile = useIsMobile();
+  const location = useOptimisticLocation();
 
   useEffect(() => {
     if (isExplorerCollapsed) {
@@ -97,6 +108,69 @@ export function ResizablePanels({
       panelRef.current?.expand();
     }
   }, [isExplorerCollapsed]);
+
+  // On mobile the side panels overlay the content as drawers; collapse them once
+  // the pathname changes (e.g. picking an item in the explorer) so the drawer
+  // doesn't sit over the destination.
+  useEffect(() => {
+    if (isMobile) {
+      setIsExplorerCollapsed(true);
+      setIsPropertiesCollapsed(true);
+    }
+  }, [
+    location.pathname,
+    isMobile,
+    setIsExplorerCollapsed,
+    setIsPropertiesCollapsed
+  ]);
+
+  // A resizable column split is unreadable at phone width. Render the content
+  // full-width and float the explorer / properties as overlay drawers instead.
+  if (isMobile) {
+    return (
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] w-full overflow-hidden">
+        {content}
+        {explorer && (
+          <Drawer
+            open={!isExplorerCollapsed}
+            onOpenChange={(open) => setIsExplorerCollapsed(!open)}
+          >
+            <DrawerContent
+              position="left"
+              size="content"
+              className="w-[20rem] max-w-[90vw] p-0"
+            >
+              <DrawerTitle className="sr-only">
+                <Trans>Explorer</Trans>
+              </DrawerTitle>
+              <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+                {explorer}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
+        {properties && (
+          <Drawer
+            open={!isPropertiesCollapsed}
+            onOpenChange={(open) => setIsPropertiesCollapsed(!open)}
+          >
+            <DrawerContent
+              position="right"
+              size="content"
+              className="w-[20rem] max-w-[90vw] p-0"
+            >
+              <DrawerTitle className="sr-only">
+                <Trans>Properties</Trans>
+              </DrawerTitle>
+              <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+                {properties}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
+      </div>
+    );
+  }
 
   return (
     <ResizablePanelGroup direction="horizontal">

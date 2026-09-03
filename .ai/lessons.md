@@ -1240,3 +1240,69 @@ canvas hosting Radix popovers/selects.
 **Rule:** A cached client over a shared, end-able pool must detect the ended pool and rebuild — cache the pool alongside the client and check `pool.ending` (node-postgres) before returning the cached client. More generally, never `pool.end()` a pool obtained from a shared cache (`getPostgresConnectionPool`) unless every cache that wraps it also re-derives on end.
 
 **Applies to:** `packages/jobs/src/db.ts` and any code calling `pool.end()` on a `getPostgresConnectionPool(...)` result.
+
+## A verdict computed against its own input is a tautology — diff across time, at read time
+
+**Context:** PR #1477 stored a "can this backup still be restored?" verdict (`compatibility.json`) beside each backup, written once by the export job and never refreshed. Its badge, typed-confirm gate, and no-confirm-button state were the PR's headline UX. CI was green; ~500 lines of tests passed.
+
+**Problem:** The export computed `reportBackupCompatibility(catalog, manifest)` where the manifest had just been PROJECTED from that same catalog, in the same process. `diff(x, project(x))` is empty by construction, so the stored status was `"ready"` for every backup forever, and every downstream state driven by findings was unreachable. Nothing failed: the function was correct, the tests exercised it with hand-built drifted inputs, and only the one production call site was degenerate.
+
+**Rule:** A comparison is only meaningful when its two sides come from different points in time or different origins. When a check's input is derived from the thing it is checked against — at the same moment, by the same code — the check can only ever pass, and green tests won't catch it because tests construct the divergent inputs the call site never produces. Compute such verdicts at READ time (live schema vs stored artifact), and when reviewing, trace where each argument of a comparison actually comes from at the real call site.
+
+**Applies to:** `packages/jobs/src/backups/schema.ts` (`reportBackupCompatibility`), `getCompanyBackups` in `apps/erp/app/modules/settings/backups.server.ts`, and any future "is X still valid?" precomputation (schema drift, config validation, cache-freshness verdicts).
+
+## Bare-tsx scripts: isolate the import chain, never flip a shared package's `type`
+
+**Context:** `pnpm db:check:backups` (`packages/jobs/src/scripts/check-backups.ts`) runs under bare `tsx`, which cannot named-import a CJS workspace package at runtime. Its import of `company-backup.ts` pulled in `@carbon/logger` via a module-scope `getLogger`, and the branch "fixed" the resulting crash by adding `"type": "module"` to `packages/logger/package.json` — a module-system change to a package consumed by 13 others, made for one dev script.
+
+**Problem:** Flipping a shared package's `type` field changes resolution for every consumer to satisfy one entrypoint, and the connection between the flip and its reason is invisible — the next person hitting the same error flips the next package. The actual dependency was incidental: the script needed six pure functions that sat in a file whose module scope also called the logger.
+
+**Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
+
+**Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## A "did my job finish?" baseline must include the rows a FAILED run left behind
+
+**Context:** The Backups page shows a spinner row while an export runs, and decides the
+run finished when a backup appears in the list that was not in a `baseline` snapshot
+taken when tracking began. The baseline recorded only backups with status `ready`.
+
+**Problem:** A failed export leaves a **pending** (manifest-less) folder in the list.
+When the user clicked "Skip corrupted rows and retry", that leftover folder later
+flipped to `ready` — it was not in the ready-only baseline, so it read as "this run
+completed" and the spinner vanished a second after the retry started, while the job was
+still running. The job was correct throughout; only the completion test was wrong. The
+same shape bit the failure banner: a marker cleared by the action could still arrive via
+a revalidation already in flight, so the banner reappeared under the running row.
+
+**Rule:** A baseline for "something NEW appeared" must snapshot **every** item already
+present, in every status — not just the ones in the terminal state you are waiting for.
+A prior failure's debris is exactly what will later transition into that state and fake
+a completion. And when a stale record can still arrive after you delete it, identify it
+by **identity** (the exact row you superseded), never by comparing a client timestamp
+against a server one — clock skew then decides your control flow.
+
+**Applies to:** `apps/erp/app/routes/x+/settings+/backups.tsx` (`runningExport`,
+`knownBackupNames`, `failedIsStale`), and any optimistic progress row driven by polling
+a list.
+
+## Per-edge findings are not a row count
+
+**Context:** `findExportScopeViolations` returns one entry per offending FK edge
+(`jobOperationDependency` violates `jobId`, `operationId` and `dependsOnId`), and the
+backup UI summed `violations[].rows` for the figure it showed the user.
+
+**Problem:** A row escaping scope through three foreign keys was counted three times.
+The failed-backup banner claimed "10 rows" where 4 rows existed, and the same sum sat on
+the confirm button of an irreversible delete that then removed 4 — the toast and the
+modal disagreed inside one flow.
+
+**Rule:** When a diagnostic groups by RELATIONSHIP (FK edge, constraint, rule), it
+cannot be summed into a count of ROWS. Compute the distinct count separately — one
+`count(*)` over the OR of the offending predicates — and keep the per-edge list purely
+as the breakdown. Name the two so they cannot be confused (`violations` vs
+`rowsByTable`) and say so in the type's doc comment.
+
+**Applies to:** `packages/jobs/src/backups/scope.ts`
+(`findExportScopeViolationsDetailed`, `computeScopeExclusions`, `totalExcludedRows`),
+`Manifest.excludedRowsByTable`, and any future "N things are wrong" surface.

@@ -88,6 +88,11 @@ export type Operation = Omit<
 
 export type Job = {
   id?: string;
+  /**
+   * Job header status. Governs whether a scheduling run may (re)set this job's
+   * operation statuses — only `capacityHoldingJobStatuses` jobs are open work.
+   */
+  status?: Database["public"]["Enums"]["jobStatus"];
   dueDate?: string | null;
   deadlineType?: DeadlineType;
   locationId?: string;

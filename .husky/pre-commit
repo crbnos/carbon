@@ -13,21 +13,29 @@ pnpm exec lint-staged
 # Compile lingui translations if any relevant files were modified
 if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     echo "Compiling translations..."
-    pnpm lingui:check
-    
-    # Strip `#:` origin refs before committing — they shift on any upstream
-    # code edit and are the biggest PR-conflict source. They're kept in the
-    # working dir during the translate flow (linguito needs them for LLM
-    # context) and only stripped right before commit.
-    pnpm lingui:clean
-    
-    # Add compiled locale files to the commit
-    git add packages/locale/locales/**/*.po
+    # Not a blocker — a catalog that won't compile is worth knowing about, but it
+    # is not a reason to refuse the commit. It DOES stop the staging below, so a
+    # failed run can never commit half-written catalogs.
+    if pnpm lingui:check; then
+        # Strip `#:` origin refs before committing — they shift on any upstream
+        # code edit and are the biggest PR-conflict source. They're kept in the
+        # working dir during the translate flow (linguito needs them for LLM
+        # context) and only stripped right before commit.
+        pnpm lingui:clean
+
+        # Add compiled locale files to the commit
+        git add packages/locale/locales/**/*.po
+    else
+        echo "⚠ Translations did not compile — catalogs left unstaged for this commit."
+    fi
 fi
 
 # Regenerate MCP tools if any .service.ts file was modified
 if git diff --cached --name-only | grep -q '\.service\.ts$'; then
-    npx tsx scripts/generate-mcp.ts
+    if ! npx tsx scripts/generate-mcp.ts; then
+        echo "✗ MCP tool metadata could not be regenerated. Nothing was staged."
+        exit 1
+    fi
     git add apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
 fi
 
@@ -38,7 +46,22 @@ if [ -z "$CARBON_SKIP_DATASET_CHECK" ] && git diff --cached --name-only | grep -
     echo "Checking demo datasets against the schema..."
     # --silent so pnpm's ELIFECYCLE trailer doesn't bury the script's own advice.
     if ! pnpm --silent db:check:datasets; then
-        echo "Commit blocked: the demo datasets no longer apply. See above."
+        echo ""
+        echo "Commit blocked by the demo-dataset check. The reason is printed above."
+        echo "Skip it with: CARBON_SKIP_DATASET_CHECK=1 git commit ..."
+        exit 1
+    fi
+fi
+
+# A migration can make a backup a customer already holds unrestorable, without the
+# backup changing at all. This compares the schema baseline on main with your live
+# schema, then updates and stages the baseline. Set CARBON_SKIP_BACKUP_CHECK=1 to skip.
+if [ -z "$CARBON_SKIP_BACKUP_CHECK" ] && git diff --cached --name-only | grep -q '^packages/database/supabase/migrations/'; then
+    echo "Checking backup compatibility against the schema..."
+    if ! pnpm --silent db:check:backups -- --stage; then
+        echo ""
+        echo "Commit blocked by the backup compatibility check. The reason is printed above."
+        echo "Skip it with: CARBON_SKIP_BACKUP_CHECK=1 git commit ..."
         exit 1
     fi
 fi

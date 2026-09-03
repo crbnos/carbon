@@ -19504,9 +19504,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
           },
           {
@@ -19514,6 +19511,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.jobMakeMethodId"
@@ -32215,9 +32215,6 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -32225,6 +32222,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/select"
@@ -32397,9 +32397,6 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -32407,6 +32404,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -32533,9 +32533,6 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
-          },
-          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -32543,6 +32540,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/body.job"
@@ -105018,7 +105018,8 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Card Transaction"
+            "Card Transaction",
+            "Opening Balance"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -110000,10 +110001,6 @@ export default {
           format: "double precision",
           type: "number"
         },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
-        },
         projectedCompletionAt: {
           format: "timestamp with time zone",
           type: "string"
@@ -110015,6 +110012,10 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
         },
         jobMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -116234,10 +116235,6 @@ export default {
           format: "double precision",
           type: "number"
         },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
-        },
         projectedCompletionAt: {
           description:
             "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
@@ -116253,6 +116250,10 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -116612,7 +116613,8 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Card Transaction"
+            "Card Transaction",
+            "Opening Balance"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -129418,7 +129420,8 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Card Transaction"
+            "Card Transaction",
+            "Opening Balance"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -153561,12 +153564,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.jobs.projectedCompletionAt": {
       name: "projectedCompletionAt",
       required: false,
@@ -153581,6 +153578,12 @@ export default {
     },
     "rowFilter.jobs.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -160553,12 +160556,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.job.projectedCompletionAt": {
       name: "projectedCompletionAt",
       description:
@@ -160577,6 +160574,12 @@ export default {
     },
     "rowFilter.job.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"

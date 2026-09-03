@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-31T02:33:29.090Z",
-  "totalTools": 1490,
+  "generated": "2026-09-03T04:17:16.876Z",
+  "totalTools": 1492,
   "modules": 15,
   "tools": [
     {
@@ -3610,6 +3610,53 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getExistingOpeningBalanceEntry",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get existing opening balance entry",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_createOpeningBalanceJournal",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "create opening balance journal",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "postingDate": {
+            "type": "string"
+          },
+          "balances": {}
+        },
+        "required": [
+          "postingDate",
+          "balances"
         ]
       }
     },
@@ -20558,6 +20605,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "db",
         "jobId",
         "companyId",
         "userId"
@@ -20819,17 +20867,23 @@
       "module": "production",
       "classification": "READ",
       "description": "get jobs list",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyId"
+        "companyId",
+        "statuses"
       ],
       "injectAuth": [
         "companyId"
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "statuses": {
+            "type": "array",
+            "items": {}
+          }
+        }
       }
     },
     {
@@ -22398,6 +22452,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "db",
         "params"
       ],
       "injectAuth": [
@@ -22476,6 +22531,7 @@
       "paramCount": 2,
       "serviceParams": [
         "client",
+        "db",
         "params"
       ],
       "injectAuth": [
@@ -23901,7 +23957,8 @@
             "type": "string",
             "enum": [
               "itemToJob",
-              "quoteLineToJob"
+              "quoteLineToJob",
+              "jobToJob"
             ]
           },
           "jobMethod": {
@@ -23914,6 +23971,9 @@
                 "type": "string"
               },
               "configuration": {},
+              "versionId": {
+                "type": "string"
+              },
               "parts": {
                 "type": "object",
                 "properties": {
@@ -23963,7 +24023,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job material make method",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "jobMaterial"
@@ -23983,6 +24043,9 @@
             "type": "string"
           },
           "configuration": {},
+          "versionId": {
+            "type": "string"
+          },
           "parts": {
             "type": "object",
             "properties": {

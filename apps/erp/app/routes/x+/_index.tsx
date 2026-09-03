@@ -13,11 +13,6 @@ import {
   stateMap,
   type Tier
 } from "@carbon/onboarding";
-import {
-  detectImplementationSignals,
-  getImplementationCheckStates,
-  getImplementationHub
-} from "@carbon/onboarding/server";
 import { OnboardingHubSummary } from "@carbon/onboarding/ui";
 import {
   Button,
@@ -33,7 +28,7 @@ import {
   useOperatingSystem,
   useRouteData
 } from "@carbon/react";
-import { datetime, formatRelativeTime, isInternalEmail } from "@carbon/utils";
+import { datetime, formatRelativeTime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import * as cookie from "cookie";
@@ -49,7 +44,7 @@ import {
 } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import type { LoaderFunctionArgs } from "react-router";
-import { Link, redirect, useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
 import {
   ClaudeIcon,
   CodexIcon,
@@ -76,25 +71,11 @@ import { copyToClipboard } from "~/utils/string";
 // cookie so the loader can read it server-side and SSR renders the final state.
 const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 
-// While a hub is active (not yet finished) it replaces the home page for
-// internal users, who land straight in it until every checkpoint is done.
-// Customers keep the normal home page (with the hub summary card) — only the
-// auto-redirect is internal-only.
+// The home page is always accessible. When a hub is active (enrolled and not yet
+// finished) it surfaces as a primary-nav item (`useImplementationNavItem`) and a
+// summary card below — it never replaces the home page for anyone.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {});
-  if (isInternalEmail(email)) {
-    const hub = await getImplementationHub(client, companyId);
-    const status = hub.data?.status;
-    if (hub.data && status !== "complete" && status !== "archived") {
-      const [states, signals] = await Promise.all([
-        getImplementationCheckStates(client, companyId),
-        detectImplementationSignals(client, companyId)
-      ]);
-      const spine = spineForTier(SPINE, hub.data.tier);
-      const done = gatesDone(spine, stateMap(states.data ?? []), signals);
-      if (done < spine.length) throw redirect(path.to.getStarted);
-    }
-  }
+  const { client, companyId } = await requirePermissions(request, {});
 
   // Compute the greeting on the server so SSR and hydration render the SAME
   // line — no client-side randomness, so no flash on refresh. `pick` is the

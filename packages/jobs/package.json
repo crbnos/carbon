@@ -26,7 +26,7 @@
     "inngest": "^3.52.7",
     "kysely": "catalog:",
     "nanoid": "catalog:",
-    "nodemailer": "6.10.1",
+    "nodemailer": "9.0.1",
     "pdfjs-dist": "5.4.296",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -41,13 +41,16 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@types/nodemailer": "6.4.23",
+    "@types/pg": "8.15.6",
     "@types/react": "catalog:",
+    "pg": "8.20.0",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts",
+    "./backups": "./src/backups/schema.ts",
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/index.ts",
     "./worker": "./src/inngest/worker.ts"
@@ -56,6 +59,7 @@
   "name": "@carbon/jobs",
   "private": true,
   "scripts": {
+    "db:check:backups": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=../../.env src/scripts/check-backups.ts",
     "dev:jobs": "pnpm dlx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

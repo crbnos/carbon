@@ -318,10 +318,10 @@ function makeItem(
           {projectedDate &&
             (behindDays > 0 ? (
               <Tooltip>
-                <TooltipTrigger>
-                  <span className="text-xs text-amber-500 whitespace-nowrap">
+                <TooltipTrigger asChild>
+                  <Badge variant="red">
                     <Trans>Projected {formatDate(projectedDate)}</Trans>
-                  </span>
+                  </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>

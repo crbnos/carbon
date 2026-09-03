@@ -4,6 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import z from "npm:zod@^3.24.1";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -348,9 +349,15 @@ async function triggerRework(
 
   // 7b. Convergence: downstream ops that depended on triggeredAt also depend
   //     on the last rework op so the DAG merges back.
+  // Filter on `jobId`, not `companyId`: dependency edges are per-job, and
+  // `jobId` is the column the scheduler's own rebuild filters on. Trusting the
+  // row's stamped `companyId` would trust exactly the field that cross-tenant
+  // mis-stamping makes unreliable. Without any filter this read reaches every
+  // tenant's edges and re-inserts them under this job's company.
   const downstreamDeps = await trx
     .selectFrom("jobOperationDependency")
     .select(["operationId"])
+    .where("jobId", "=", jobId)
     .where("dependsOnId", "=", triggeredAtJobOperationId)
     .where("operationId", "not in", clonedOperationIds)
     .execute();
@@ -424,6 +431,32 @@ serve(async (req) => {
     }
 
     const body = parsed.data;
+
+    // This function had NO authorization gate at all. It writes rework
+    // operations, dependency edges and productionQuantity rows, so it needs the
+    // same gate every other write function uses. Note `requirePermissions`
+    // short-circuits for a service_role caller (the two MES callers), which is
+    // exactly why the ownership check below — not this call — is what protects
+    // those paths.
+    await requirePermissions(req, body.companyId, body.userId, {
+      update: "production",
+    });
+
+    // `jobId` and `companyId` both arrive in the payload, and nothing proved
+    // they belong together. Without this, a request pairing one company's id
+    // with another company's job writes rows attributed to the wrong tenant.
+    // See .ai/specs/2026-08-25-backup-durability.md Part 3.
+    const job = await db
+      .selectFrom("job")
+      .select(["id", "companyId"])
+      .where("id", "=", body.jobId)
+      .executeTakeFirst();
+
+    // 404, not 403: a job in another company must be indistinguishable from a
+    // job that does not exist.
+    if (!job || job.companyId !== body.companyId) {
+      return errorResponse("Job not found in this company", 404);
+    }
 
     console.info(
       `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`

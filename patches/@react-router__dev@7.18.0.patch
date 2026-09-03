@@ -1,8 +1,8 @@
 diff --git a/dist/cli/index.js b/dist/cli/index.js
-index da54c0d..e51d41f 100644
+index 3ae2f13..8cc2dce 100644
 --- a/dist/cli/index.js
 +++ b/dist/cli/index.js
-@@ -1654,16 +1654,19 @@ async function cleanViteManifests(environmentsOptions, ctx) {
+@@ -1733,16 +1733,19 @@ async function cleanViteManifests(environmentsOptions, ctx) {
    );
    await Promise.all(
      viteManifestPaths.map(async (viteManifestPath) => {

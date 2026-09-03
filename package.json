@@ -40,6 +40,7 @@
     "ci:migrations": "pnpm --filter ci ci:migrations",
     "ci:deploy": "pnpm --filter ci ci:deploy",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./pnpm-lock.yaml",
+    "db:check:backups": "pnpm --filter @carbon/jobs db:check:backups --",
     "db:check:datasets": "pnpm --filter @carbon/database db:check:datasets --",
     "db:function:new": "pnpm --filter @carbon/database db:function:new",
     "db:migrate": "crbn migrate",
@@ -84,7 +85,7 @@
     "@react-router/remix-routes-option-adapter": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
-    "fast-uri": "3.1.0",
+    "fast-uri": "3.1.5",
     "fdir": "6.5.0",
     "nanoid": "catalog:",
     "react-pdf": "catalog:",
@@ -113,7 +114,7 @@
     ],
     "patchedDependencies": {
       "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
-      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch",
+      "@react-router/dev@7.18.0": "patches/@react-router__dev@7.18.0.patch",
       "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
       "supabase@2.89.0": "patches/supabase@2.89.0.patch"
     }

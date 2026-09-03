@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getJobExpediteForecast } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -18,6 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const expedite = await getJobExpediteForecast(
     getCarbonServiceRole(),
+    getDatabaseClient(),
     jobId,
     companyId,
     userId
