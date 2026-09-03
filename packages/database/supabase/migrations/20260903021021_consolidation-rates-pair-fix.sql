@@ -79,7 +79,14 @@ BEGIN
     AND s."effectiveDate" >= COALESCE(p_period_start, p_period_end - INTERVAL '1 year')
     AND s."effectiveDate" <= p_period_end;
 
-  -- Historical rate: from currency table (manually set for equity)
+  -- Historical rate: from currency table (manually set for equity, IAS 21).
+  -- Its anchor is BY CONVENTION target-per-source against the group's
+  -- presentation currency — every consolidated report passes the ROOT
+  -- company's base as p_target_currency, and the edit form documents the
+  -- convention. It is NOT re-anchored per target: a manual equity rate is a
+  -- stated historical fact, not a derivable ratio. Consolidating to any other
+  -- target is a consolidation-feature follow-up (tracked in the spec), not a
+  -- silent conversion this function should invent.
   SELECT "historicalExchangeRate" INTO v_historical_rate
   FROM "currency"
   WHERE "code" = v_source_currency

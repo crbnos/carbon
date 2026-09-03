@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-03T04:09:48.856Z",
-  "totalTools": 1494,
+  "generated": "2026-09-03T04:29:35.054Z",
+  "totalTools": 1495,
   "modules": 15,
   "tools": [
     {
@@ -45468,6 +45468,31 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "companyId",
+        "company"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "company": {}
+        },
+        "required": [
+          "company"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateCompanyWithBaseCurrencyChange",
+      "module": "settings",
+      "classification": "DESTRUCTIVE",
+      "description": "update company with base currency change",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
         "companyId",
         "company"
       ],

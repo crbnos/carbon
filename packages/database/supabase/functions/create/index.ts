@@ -522,8 +522,21 @@ serve(async (req: Request) => {
           if (supplierShipping.error)
             throw new Error(supplierShipping.error.message);
 
+          // A supplier with no configured currency means "the company's own
+          // base currency" (rate 1 by definition) -- never a hardcoded USD,
+          // which is only correct for USD-base companies.
+          const companyRecord = await client
+            .from("company")
+            .select("baseCurrencyCode")
+            .eq("id", companyId)
+            .single();
+          if (companyRecord.error) {
+            throw new Error(companyRecord.error.message);
+          }
+          const baseCurrencyCode = companyRecord.data.baseCurrencyCode;
+
           const currencyCodes = new Set(
-            suppliers.data?.map((d) => d.currencyCode ?? "USD")
+            suppliers.data?.map((d) => d.currencyCode ?? baseCurrencyCode)
           );
 
           // get_exchange_rate raises on a missing rate -- a resolver error
@@ -559,7 +572,7 @@ serve(async (req: Request) => {
 
               const supplierCurrencyCode =
                 suppliers.data?.find((d) => d.id === supplier)?.currencyCode ??
-                "USD";
+                baseCurrencyCode;
               const exchangeRate = exchangeRates.find(
                 (d) => d.currencyCode === supplierCurrencyCode
               )?.exchangeRate;

@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
             companyId,
             currencyCode
           );
-          if (exchangeRate.error || exchangeRate.data === null) {
+          if (exchangeRate.error) {
             return { error: exchangeRate.error, data: null };
           }
           return await client
@@ -78,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "currencyCode":
       if (value) {
         const exchangeRate = await getExchangeRate(client, companyId, value);
-        if (exchangeRate.error || exchangeRate.data === null) {
+        if (exchangeRate.error) {
           return { error: exchangeRate.error, data: null };
         }
         return await client

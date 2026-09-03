@@ -94,7 +94,8 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       currencyCode: validation.data.currencyCode,
       rate: validation.data.rate,
-      userId
+      createdBy: userId,
+      updatedBy: userId
     });
 
     if (upsertOverride.error) {

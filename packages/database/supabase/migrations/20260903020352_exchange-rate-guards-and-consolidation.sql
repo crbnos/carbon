@@ -32,9 +32,13 @@ CREATE OR REPLACE FUNCTION sync_sales_invoice_line_exchange_rate_on_insert()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW."exchangeRate" IS NULL OR NEW."exchangeRate" = 1 THEN
-    SELECT "exchangeRate" INTO NEW."exchangeRate"
+    -- salesInvoice."exchangeRate" is NOT NULL, but COALESCE anyway so a
+    -- missing header row can never write NULL through this trigger (the CHECK
+    -- below does not reject NULL — NULL satisfies a CHECK constraint).
+    SELECT COALESCE("exchangeRate", 1) INTO NEW."exchangeRate"
     FROM "salesInvoice"
     WHERE "id" = NEW."invoiceId";
+    NEW."exchangeRate" := COALESCE(NEW."exchangeRate", 1);
   END IF;
   RETURN NEW;
 END;
@@ -58,12 +62,22 @@ WHERE si."id" = sil."invoiceId"
   AND si."status" = 'Draft'
   AND sil."exchangeRate" IS DISTINCT FROM si."exchangeRate";
 
--- 2) A zero or negative exchange rate is never a valid document snapshot
+-- 2) A zero, negative, or NaN exchange rate is never a valid document snapshot
+--    ('NaN'::numeric > 0 is TRUE in Postgres, so NaN needs its own clause; the
+--    CHECK deliberately does NOT reject NULL — the nullable header columns
+--    accept rate-less inserts from writers that predate stamping, and NULL is
+--    handled by the resolver/stamping layer, not the constraint).
 --    (subsumes PR #1541). Before validating, repair the two legacy classes the
 --    constraint would otherwise trip on mid-deploy: NULL header/line rates
 --    (columns added 2024-10 with no backfill; their line snapshots already
 --    defaulted to 1) and rates the old 4-decimal NUMERIC clamp rounded to 0.0000
---    (widened 2026-08). NOT VALID + VALIDATE so a huge table never takes an
+--    (widened 2026-08). The repair value is 1 for foreign-currency rows too,
+--    deliberately: pre-refactor code treated these NULL/zero rates as 1
+--    everywhere they were read, the rows' own line snapshots defaulted to 1,
+--    and no truer rate is recoverable (the clamped-to-zero class means the
+--    real rate was below 0.00005 and was never stored). Re-deriving from
+--    today's market rates would REWRITE historical documents, which snapshots
+--    exist to prevent. NOT VALID + VALIDATE so a huge table never takes an
 --    exclusive-lock full rewrite; guarded so re-application (or PR #1541
 --    landing too) is a no-op.
 DO $$
@@ -89,7 +103,7 @@ BEGIN
         AND conrelid = format('%I', t)::regclass
     ) THEN
       EXECUTE format(
-        'ALTER TABLE %I ADD CONSTRAINT %I CHECK ("exchangeRate" > 0) NOT VALID',
+        'ALTER TABLE %I ADD CONSTRAINT %I CHECK ("exchangeRate" > 0 AND "exchangeRate" <> ''NaN''::numeric) NOT VALID',
         t, t || '_exchangeRate_positive'
       );
     END IF;

@@ -132,14 +132,14 @@ get_exchange_rate(companyId, code, asOf = today) →
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Global store anchor | USD | Carbon's default base (`20240930183906` backfilled `'USD'`); anchor is invisible to consumers (all reads are ratios); feed's EUR-based payload converted at write |
-| Global store shape | `(currencyCode, effectiveDate)` unique, effective-dated, insert-only per day | NetSuite/SAP/BC/Odoo consensus; gives consolidation a real closing/average source; ~43k rows/yr platform-wide |
+| Global store shape | `(currencyCode, effectiveDate)` unique, effective-dated; the feed may CORRECT the same day's row via upsert (user data never lives in this table, so same-day correction clobbers nothing) | NetSuite/SAP/BC/Odoo consensus; gives consolidation a real closing/average source; ~43k rows/yr platform-wide |
 | Global store tenancy | none (no companyId/companyGroupId), SELECT for all authenticated, writes service-role only | Market data, not tenant data — same class as `currencyCode` reference table; flagged as a deliberate multi-tenancy exception |
 | Override scope | per **company**, not group | The entire point: rate-to-base is only well-defined per company; `company.baseCurrencyCode` is the anchor |
 | Override dating | standing pin (one row per company+code), not effective-dated | Matches Carbon's current single-current-rate model + document snapshots; NetSuite-style dated manual rows are a compatible future extension |
 | Override precedence | override always beats feed; delete restores market rate | QBO "your rate"/"market rate"; separate tables make clobbering structurally impossible |
 | `currency` table fate | keep, group-scoped, as currency CONFIG (decimalPlaces, active, tags, customFields, historicalExchangeRate); drop `exchangeRate` | Decimals are intrinsic to a currency (JPY=0 everywhere) and group-sharing them is harmless (blast radius: `useCurrencies`, seeds, backups all unchanged); the rate is what breaks at group scope |
 | `historicalExchangeRate` | untouched on `currency` (manual IAS-21 equity rate) | Consolidation's separate concern (NetSuite separates consolidation rates from transaction rates); its direction question is documented, not solved here |
-| `exchangeRateHistory` | DROP (replaced by global `exchangeRate` table) | Zero writers ever → zero rows → zero data loss; two history tables is worse than one |
+| `exchangeRateHistory` | DROP (replaced by global `exchangeRate` table), guarded: the migration REFUSES if any deployment holds rows (the table was API-reachable even with no app writer) | Zero app writers ever; refusal beats silent discard for the theoretical API-written row |
 | Consolidation closing/average | `translateTrialBalance` reads the global table: closing = r(target)/r(source) at period end, average = AVG over period | Its existing `balance * rate` multiply becomes CORRECT once the rate is a true target-per-source pair ratio — resolves the direction contradiction instead of patching it |
 | Resolver | SQL functions `get_exchange_rate(companyId, code, asOf)` + `get_exchange_rates(companyId)` (all active codes + source) | One implementation for app services, edge functions (`convert`, `create`), and jobs (`paperless-parts` duplicate dies); PLPGSQL so ordering/inlining is deterministic |
 | Missing rate | ERROR (SAP SG105), surfaced at point of use; base=1 the only free constant | Kills the `?? 1` class; seeded snapshot makes "missing" genuinely exceptional (unknown code only) |
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS "exchangeRate" (
     "id" TEXT NOT NULL DEFAULT id('xrate'),
     "currencyCode" TEXT NOT NULL,
     "effectiveDate" DATE NOT NULL,
-    "rate" NUMERIC(20,8) NOT NULL,
+    "rate" NUMERIC NOT NULL CHECK ("rate" > 0 AND "rate" <> 'NaN'::numeric), -- NaN > 0 is TRUE in PG
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     CONSTRAINT "exchangeRate_pkey" PRIMARY KEY ("id"),
@@ -401,7 +401,8 @@ through the new path.
       refactor; table has four dropped-column precedents; a live-looking-but-dead rate
       column is the worse outcome. **Surfaced for veto explicitly.**
 - [x] Migration heuristic for existing rates → overrides? — **Autonomous:** only
-      integration-INACTIVE groups (feed-derived values must not become pins), only rows
+      groups that NEVER had the integration (any exchange-rates-v1 row, active or
+      not, means feed-derived values that must not become pins), only rows
       with rate ≠ 1 and code ≠ that company's base, copied per member company (preserves
       each company's currently-resolved value). **Surfaced for veto** — this is the one
       data-shape judgment call.

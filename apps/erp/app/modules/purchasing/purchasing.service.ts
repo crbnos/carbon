@@ -1477,6 +1477,21 @@ export async function insertPurchaseOrder(
     purchaseOrderId = seq.data;
   }
 
+  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
+  // failure must not leave an orphaned interaction row behind.
+  let exchangeRate = 1;
+  let exchangeRateUpdatedAt = new Date().toISOString();
+  if (input.currencyCode) {
+    const rate = await getExchangeRate(
+      client,
+      input.companyId,
+      input.currencyCode
+    );
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
       insertSupplierInteraction(client, input.companyId, input.supplierId),
@@ -1501,19 +1516,6 @@ export async function insertPurchaseOrder(
 
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
-
-  let exchangeRate = 1;
-  let exchangeRateUpdatedAt = new Date().toISOString();
-  if (input.currencyCode) {
-    const rate = await getExchangeRate(
-      client,
-      input.companyId,
-      input.currencyCode
-    );
-    if (rate.error) return { data: null, error: rate.error };
-    exchangeRate = rate.data;
-    exchangeRateUpdatedAt = new Date().toISOString();
-  }
 
   const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
 
@@ -1670,6 +1672,22 @@ export async function upsertPurchaseOrder(
       .select("id, purchaseOrderId");
   }
 
+  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
+  // failure must not leave an orphaned interaction row behind.
+  if (purchaseOrder.currencyCode) {
+    const rate = await getExchangeRate(
+      client,
+      purchaseOrder.companyId,
+      purchaseOrder.currencyCode
+    );
+    if (rate.error) return { data: null, error: rate.error };
+    purchaseOrder.exchangeRate = rate.data;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  } else {
+    purchaseOrder.exchangeRate = 1;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
       insertSupplierInteraction(
@@ -1695,20 +1713,6 @@ export async function upsertPurchaseOrder(
 
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
-
-  if (purchaseOrder.currencyCode) {
-    const rate = await getExchangeRate(
-      client,
-      purchaseOrder.companyId,
-      purchaseOrder.currencyCode
-    );
-    if (rate.error) return { data: null, error: rate.error };
-    purchaseOrder.exchangeRate = rate.data;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  } else {
-    purchaseOrder.exchangeRate = 1;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
 
   const locationId =
     purchaseOrder.locationId ?? purchaser?.data?.locationId ?? null;

@@ -2000,7 +2000,8 @@ export async function upsertExchangeRateOverride(
     companyId: string;
     currencyCode: string;
     rate: number;
-    userId: string;
+    createdBy: string;
+    updatedBy: string;
   }
 ) {
   // Update-first so re-pinning a rate never rewrites the original creator.
@@ -2008,7 +2009,7 @@ export async function upsertExchangeRateOverride(
     .from("exchangeRateOverride")
     .update({
       rate: override.rate,
-      updatedBy: override.userId,
+      updatedBy: override.updatedBy,
       updatedAt: datetime.timestamp()
     })
     .eq("companyId", override.companyId)
@@ -2020,16 +2021,36 @@ export async function upsertExchangeRateOverride(
     return { data: update.data[0] ?? null, error: null };
   }
 
-  return client
+  const insert = await client
     .from("exchangeRateOverride")
     .insert({
       companyId: override.companyId,
       currencyCode: override.currencyCode,
       rate: override.rate,
-      createdBy: override.userId
+      createdBy: override.createdBy
     })
     .select("id")
     .single();
+
+  // Two concurrent first-time pins can both miss the update and race the
+  // insert; the loser hits the (companyId, currencyCode) unique constraint.
+  // Retry as an update so the second write wins instead of erroring.
+  if (insert.error?.code === "23505") {
+    const retry = await client
+      .from("exchangeRateOverride")
+      .update({
+        rate: override.rate,
+        updatedBy: override.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("companyId", override.companyId)
+      .eq("currencyCode", override.currencyCode)
+      .select("id");
+    if (retry.error) return { data: null, error: retry.error };
+    return { data: retry.data[0] ?? null, error: null };
+  }
+
+  return insert;
 }
 
 export async function deleteExchangeRateOverride(

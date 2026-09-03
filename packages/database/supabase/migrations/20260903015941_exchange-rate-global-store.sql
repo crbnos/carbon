@@ -8,7 +8,10 @@ CREATE TABLE IF NOT EXISTS "exchangeRate" (
     "id" TEXT NOT NULL DEFAULT id('xrate'),
     "currencyCode" TEXT NOT NULL REFERENCES "currencyCode"("code") ON DELETE CASCADE ON UPDATE CASCADE,
     "effectiveDate" DATE NOT NULL,
-    "rate" NUMERIC NOT NULL CHECK ("rate" > 0),
+    -- 'NaN'::numeric > 0 is TRUE in Postgres, so the positivity check alone
+    -- would admit NaN written through PostgREST; NaN = NaN is also TRUE here,
+    -- which is what makes the inequality reliable.
+    "rate" NUMERIC NOT NULL CHECK ("rate" > 0 AND "rate" <> 'NaN'::numeric),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     CONSTRAINT "exchangeRate_pkey" PRIMARY KEY ("id"),
@@ -31,7 +34,7 @@ CREATE TABLE IF NOT EXISTS "exchangeRateOverride" (
     "id" TEXT NOT NULL DEFAULT id('xrovr'),
     "companyId" TEXT NOT NULL,
     "currencyCode" TEXT NOT NULL REFERENCES "currencyCode"("code") ON DELETE CASCADE ON UPDATE CASCADE,
-    "rate" NUMERIC NOT NULL CHECK ("rate" > 0),
+    "rate" NUMERIC NOT NULL CHECK ("rate" > 0 AND "rate" <> 'NaN'::numeric),
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "updatedBy" TEXT REFERENCES "user"("id"),
@@ -197,6 +200,13 @@ VALUES
   ('ZWL', '2026-09-01', 6100)
 ON CONFLICT ("currencyCode", "effectiveDate") DO NOTHING;
 
+-- SECURITY INVOKER on purpose: the override read runs under the caller's RLS,
+-- so tenant authorization stays with the policies rather than an in-function
+-- check a DEFINER would need. Contract: callers are the company's own
+-- employees or the service role; a caller who can see the company row but not
+-- its overrides (no employee role there) gets the market ratio — sanctioned
+-- callers never hit that split, and no cross-tenant data is derivable (a
+-- company outside the caller's group resolves to 'Company % not found').
 -- Resolver: "units of p_currency_code per 1 unit of THIS company's base currency".
 -- base -> 1 by definition; override wins; else the ratio of the two USD-anchored
 -- market rates; a missing rate is an ERROR, never 1. Deliberate asymmetry with
