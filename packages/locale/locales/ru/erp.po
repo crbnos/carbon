@@ -202,7 +202,7 @@ msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} конфликтов"
 
 msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr ""
+msgstr "{count, plural, one {# счет с остатком} other {# счетов с остатком}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
@@ -834,7 +834,7 @@ msgid "A shipment's tracking number changes"
 msgstr "Номер отслеживания отгрузки изменился"
 
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr ""
+msgstr "Одна сбалансированная проводка будет проведена на дату, указанную ниже, с разницей, отнесенной на счет нераспределенной прибыли."
 
 msgid "A step needs a name."
 msgstr "Шаг должен иметь имя."
@@ -2295,7 +2295,7 @@ msgid "As of {0}"
 msgstr "По состоянию на {0}"
 
 msgid "As of date"
-msgstr ""
+msgstr "На дату"
 
 msgid "As of:"
 msgstr "По состоянию на:"
@@ -11129,17 +11129,17 @@ msgid "Opening an operation starts its timer, so time is tracked from the moment
 msgstr "Открытие операции запускает её таймер, поэтому время отсчитывается с момента начала работы."
 
 msgid "Opening Balance"
-msgstr ""
+msgstr "Начальный остаток"
 
 #. placeholder {0}: account.name
 msgid "Opening balance for {0}"
-msgstr ""
+msgstr "Начальный остаток для {0}"
 
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Начальный остаток амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
 
 msgid "Opening Balances"
-msgstr ""
+msgstr "Начальные остатки"
 
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
@@ -11893,7 +11893,7 @@ msgid "Post journal entries with proper account and description codes"
 msgstr "Проводите операции журнала с правильными кодами счетов и описания"
 
 msgid "Post opening balances"
-msgstr ""
+msgstr "Провести начальные остатки"
 
 msgid "Post Receipt"
 msgstr "Отправить квитанцию"

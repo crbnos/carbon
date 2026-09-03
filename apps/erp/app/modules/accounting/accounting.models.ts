@@ -690,21 +690,42 @@ export const openingBalanceValidator = z.object({
     .string()
     .min(1, { message: "At least one balance is required" })
     .transform((val, ctx) => {
+      let parsed: unknown;
       try {
-        const parsed = JSON.parse(val) as Array<{
-          accountId: string;
-          amount: number;
-        }>;
-        return parsed.filter(
-          (l) => l.accountId && typeof l.amount === "number" && l.amount !== 0
-        );
+        parsed = JSON.parse(val);
       } catch {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Invalid lines"
-        });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
         return z.NEVER;
       }
+      if (!Array.isArray(parsed)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+        return z.NEVER;
+      }
+
+      // Reject structurally-invalid rows rather than silently dropping them, so
+      // a malformed payload fails loudly instead of posting a partial entry. A
+      // zero amount is a legitimately-empty input and is the only thing skipped.
+      const result: Array<{ accountId: string; amount: number }> = [];
+      for (const row of parsed) {
+        const accountId = (row as { accountId?: unknown }).accountId;
+        const amount = (row as { amount?: unknown }).amount;
+        if (typeof accountId !== "string" || accountId.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "An opening balance row is missing its account"
+          });
+          return z.NEVER;
+        }
+        if (typeof amount !== "number" || !Number.isFinite(amount)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "An opening balance row has an invalid amount"
+          });
+          return z.NEVER;
+        }
+        if (amount !== 0) result.push({ accountId, amount });
+      }
+      return result;
     })
     .refine((lines) => lines.length > 0, {
       message: "At least one balance is required"

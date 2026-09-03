@@ -202,7 +202,7 @@ msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 個の競合"
 
 msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr ""
+msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残高のある勘定}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
@@ -834,7 +834,7 @@ msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
 
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr ""
+msgstr "1 つの仕訳行が以下の日付で転記され、差分が利益剰余金にオフセットされます。"
 
 msgid "A step needs a name."
 msgstr "ステップには名前が必要です。"
@@ -2295,7 +2295,7 @@ msgid "As of {0}"
 msgstr "{0}時点で"
 
 msgid "As of date"
-msgstr ""
+msgstr "対象日付"
 
 msgid "As of:"
 msgstr "以下の日付時点:"
@@ -11129,17 +11129,17 @@ msgid "Opening an operation starts its timer, so time is tracked from the moment
 msgstr "操作を開くとそのタイマーが開始され、作業開始時点から時間が追跡されます。"
 
 msgid "Opening Balance"
-msgstr ""
+msgstr "初期残高"
 
 #. placeholder {0}: account.name
 msgid "Opening balance for {0}"
-msgstr ""
+msgstr "{0}の初期残高"
 
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
 
 msgid "Opening Balances"
-msgstr ""
+msgstr "初期残高"
 
 msgid "Operating Expenses"
 msgstr "営業費用"
@@ -11893,7 +11893,7 @@ msgid "Post journal entries with proper account and description codes"
 msgstr "適切なアカウントと説明コードを使用して仕訳を転記する"
 
 msgid "Post opening balances"
-msgstr ""
+msgstr "初期残高を転記"
 
 msgid "Post Receipt"
 msgstr "領収書を転記"

@@ -202,7 +202,7 @@ msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflits"
 
 msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr ""
+msgstr "{count, plural, one {# compte avec un solde} other {# comptes avec un solde}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# cours} other {# cours}}"
@@ -834,7 +834,7 @@ msgid "A shipment's tracking number changes"
 msgstr "Le numéro de suivi d'une expédition change"
 
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr ""
+msgstr "Une seule ligne d'écriture équilibrée sera comptabilisée à la date indiquée ci-dessous, la différence étant imputée au Report à nouveau."
 
 msgid "A step needs a name."
 msgstr "Une étape doit avoir un nom."
@@ -2295,7 +2295,7 @@ msgid "As of {0}"
 msgstr "Au {0}"
 
 msgid "As of date"
-msgstr ""
+msgstr "Date de référence"
 
 msgid "As of:"
 msgstr "Au :"
@@ -11129,17 +11129,17 @@ msgid "Opening an operation starts its timer, so time is tracked from the moment
 msgstr "Ouvrir une opération démarre son chronomètre, donc le temps est suivi à partir du moment où le travail commence."
 
 msgid "Opening Balance"
-msgstr ""
+msgstr "Solde d'ouverture"
 
 #. placeholder {0}: account.name
 msgid "Opening balance for {0}"
-msgstr ""
+msgstr "Solde d'ouverture pour {0}"
 
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Solde d'ouverture de l'amortissement déjà comptabilisé avant l'ajout de cet actif à Carbon (utilisez 0 pour les nouvelles acquisitions)."
 
 msgid "Opening Balances"
-msgstr ""
+msgstr "Soldes d'ouverture"
 
 msgid "Operating Expenses"
 msgstr "Charges d'exploitation"
@@ -11893,7 +11893,7 @@ msgid "Post journal entries with proper account and description codes"
 msgstr "Enregistrer les écritures de journal avec les codes de compte et de description appropriés"
 
 msgid "Post opening balances"
-msgstr ""
+msgstr "Comptabiliser les soldes d'ouverture"
 
 msgid "Post Receipt"
 msgstr "Valider le reçu"

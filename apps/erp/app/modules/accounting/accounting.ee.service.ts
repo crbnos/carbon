@@ -5179,7 +5179,11 @@ export async function createOpeningBalanceJournal(
   const accounts = await client
     .from("account")
     .select("id, class")
-    .in("id", accountIds);
+    .in("id", accountIds)
+    // Scope to the caller's chart of accounts (company-group). A foreign id then
+    // resolves to no class and aborts below with "Account not found", so a
+    // crafted payload can't post against another tenant's accounts.
+    .eq("companyGroupId", companyGroupId);
   if (accounts.error) return { data: null, error: accounts.error };
   const classById = new Map(
     accounts.data.map((a) => [
@@ -5275,7 +5279,14 @@ export async function createOpeningBalanceJournal(
   const posted = await postJournalEntry(client, id, userId);
   if (posted.error) {
     await rollbackDraft();
-    return { data: null, error: posted.error };
+    // A unique violation on journal_one_posted_opening_balance_per_company means
+    // a concurrent request already posted the company's opening balances — the
+    // atomic backstop for the check-then-post race.
+    const message =
+      (posted.error as { code?: string }).code === "23505"
+        ? "An opening balance entry already exists — reverse it before entering new balances"
+        : posted.error.message;
+    return { data: null, error: { message } };
   }
 
   return { data: { id }, error: null };

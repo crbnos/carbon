@@ -6,6 +6,16 @@
 
 ## Design summary
 
+> **Implementation note (superseded entry point):** the standalone
+> `/x/accounting/opening-balances` screen below was the original design. It was
+> replaced during implementation by an **inline mode on the Chart of Accounts
+> page** — the `charts.tsx` loader/action, a toolbar button that toggles
+> `openingBalanceMode` in `ChartOfAccountsTree`, and `OpeningBalancePostModal`
+> for the as-of date. The authoritative route/action/guard contract is the one
+> described in `apps/erp/app/modules/accounting/AGENTS.md`. The service layer
+> (`createOpeningBalanceJournal` / `getExistingOpeningBalanceEntry`) is unchanged
+> from this plan; only the UI entry point moved.
+
 New screen at **Accounting → General Ledger → Opening Balances**
 (`/x/accounting/opening-balances`). The user sets the initial GL balance for each
 posting (leaf) account as of a cutover posting date. On save, the tool posts **one
@@ -77,8 +87,9 @@ see what was entered.
 
 **Verify:**
 ```bash
-grep -c "Opening Balance" packages/database/supabase/migrations/*_opening-balance-source-type.sql
-# Expected: 1 (the ALTER TYPE line; the comment says "Opening Balances" plural so only the SQL line matches)
+grep -c "ADD VALUE IF NOT EXISTS 'Opening Balance'" packages/database/supabase/migrations/*_opening-balance-source-type.sql
+# Expected: 1 (match the exact ALTER TYPE statement — a bare "Opening Balance"
+# substring also matches the descriptive comment and would report 2).
 ```
 Also confirm the enum applied:
 ```bash

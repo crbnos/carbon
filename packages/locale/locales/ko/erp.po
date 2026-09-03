@@ -202,7 +202,7 @@ msgid "{conflictCount} conflicts"
 msgstr "{conflictCount}개 충돌"
 
 msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr ""
+msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있는 계정}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
@@ -834,7 +834,7 @@ msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
 
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr ""
+msgstr "하나의 균형잡힌 분개가 아래의 날짜로 전기되며, 차액은 이익잉여금으로 상계됩니다."
 
 msgid "A step needs a name."
 msgstr "단계에 이름이 필요합니다."
@@ -2295,7 +2295,7 @@ msgid "As of {0}"
 msgstr "{0} 기준"
 
 msgid "As of date"
-msgstr ""
+msgstr "기준일"
 
 msgid "As of:"
 msgstr "기준:"
@@ -11129,17 +11129,17 @@ msgid "Opening an operation starts its timer, so time is tracked from the moment
 msgstr "작업을 열면 타이머가 시작되므로 작업이 시작되는 순간부터 시간이 추적됩니다."
 
 msgid "Opening Balance"
-msgstr ""
+msgstr "개시잔액"
 
 #. placeholder {0}: account.name
 msgid "Opening balance for {0}"
-msgstr ""
+msgstr "{0}의 개시잔액"
 
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
 
 msgid "Opening Balances"
-msgstr ""
+msgstr "개시잔액"
 
 msgid "Operating Expenses"
 msgstr "영업비용"
@@ -11893,7 +11893,7 @@ msgid "Post journal entries with proper account and description codes"
 msgstr "올바른 계정 및 설명 코드로 전표를 전기"
 
 msgid "Post opening balances"
-msgstr ""
+msgstr "개시잔액 전기"
 
 msgid "Post Receipt"
 msgstr "입고 전기"

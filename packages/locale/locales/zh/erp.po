@@ -202,7 +202,7 @@ msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 个冲突"
 
 msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr ""
+msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的账户}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
@@ -834,7 +834,7 @@ msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
 
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr ""
+msgstr "一条平衡的分录将以下面的日期过账，差额冲至未分配利润。"
 
 msgid "A step needs a name."
 msgstr "步骤需要一个名称。"
@@ -2295,7 +2295,7 @@ msgid "As of {0}"
 msgstr "截至 {0}"
 
 msgid "As of date"
-msgstr ""
+msgstr "截至日期"
 
 msgid "As of:"
 msgstr "截至："
@@ -11129,17 +11129,17 @@ msgid "Opening an operation starts its timer, so time is tracked from the moment
 msgstr "打开一个操作会启动其计时器，因此从工作开始时起就跟踪时间。"
 
 msgid "Opening Balance"
-msgstr ""
+msgstr "期初余额"
 
 #. placeholder {0}: account.name
 msgid "Opening balance for {0}"
-msgstr ""
+msgstr "{0}的期初余额"
 
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
 
 msgid "Opening Balances"
-msgstr ""
+msgstr "期初余额"
 
 msgid "Operating Expenses"
 msgstr "运营费用"
@@ -11893,7 +11893,7 @@ msgid "Post journal entries with proper account and description codes"
 msgstr "使用正确的科目和描述代码过账凭证。"
 
 msgid "Post opening balances"
-msgstr ""
+msgstr "过账期初余额"
 
 msgid "Post Receipt"
 msgstr "过账收据"

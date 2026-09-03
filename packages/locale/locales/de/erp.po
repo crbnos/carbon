@@ -202,7 +202,7 @@ msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} Konflikte"
 
 msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr ""
+msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
@@ -834,7 +834,7 @@ msgid "A shipment's tracking number changes"
 msgstr "Die Verfolgungsnummer einer Lieferung ändert sich"
 
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr ""
+msgstr "Ein einzelner ausgeglichener Buchungssatz wird zum unten angegebenen Datum gebucht, wobei die Differenz auf den Gewinnvortrag verrechnet wird."
 
 msgid "A step needs a name."
 msgstr "Ein Schritt benötigt einen Namen."
@@ -2295,7 +2295,7 @@ msgid "As of {0}"
 msgstr "Zum Stand von {0}"
 
 msgid "As of date"
-msgstr ""
+msgstr "Zum Datum"
 
 msgid "As of:"
 msgstr "Zum Stand von:"
@@ -11129,17 +11129,17 @@ msgid "Opening an operation starts its timer, so time is tracked from the moment
 msgstr "Das Öffnen einer Operation startet seinen Timer, sodass die Zeit vom Moment des Arbeitsbeginn verfolgt wird."
 
 msgid "Opening Balance"
-msgstr ""
+msgstr "Eröffnungssaldo"
 
 #. placeholder {0}: account.name
 msgid "Opening balance for {0}"
-msgstr ""
+msgstr "Eröffnungssaldo für {0}"
 
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Eröffnungssaldo der bereits vor dem Hinzufügen dieses Vermögenswerts zu Carbon gebuchten Abschreibung (für neue Akquisitionen 0 verwenden)."
 
 msgid "Opening Balances"
-msgstr ""
+msgstr "Eröffnungssalden"
 
 msgid "Operating Expenses"
 msgstr "Betriebsaufwendungen"
@@ -11893,7 +11893,7 @@ msgid "Post journal entries with proper account and description codes"
 msgstr "Buchen Sie Buchungssätze mit korrekten Konto- und Beschreibungscodes."
 
 msgid "Post opening balances"
-msgstr ""
+msgstr "Eröffnungssalden buchen"
 
 msgid "Post Receipt"
 msgstr "Beleg buchen"
