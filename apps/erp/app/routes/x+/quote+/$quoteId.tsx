@@ -240,14 +240,14 @@ export default function QuoteRoute() {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <PanelProvider key={quoteId}>
-        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full ">
+        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full ">
           <QuoteHeader />
-          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
             <div className="flex flex-grow overflow-hidden">
               <ResizablePanels
                 explorer={<QuoteExplorer methods={methods} />}
                 content={
-                  <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
+                  <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
                     <VStack spacing={4} className="p-4">
                       <Outlet />
                     </VStack>

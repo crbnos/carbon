@@ -9,7 +9,8 @@ import {
   cn,
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
+  Subheading
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentType } from "react";
@@ -157,10 +158,10 @@ function GroupHeading({
   label: string;
 }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <Subheading variant="heavy" className="flex items-center gap-1.5">
       <Icon className="size-3" />
       {label}
-    </span>
+    </Subheading>
   );
 }
 

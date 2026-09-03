@@ -43,28 +43,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   const serviceRole = await getCarbonServiceRole();
 
-  const [quote, lines, prices, siblingQuotes] = await Promise.all([
-    getSupplierQuote(serviceRole, id),
-    getSupplierQuoteLines(serviceRole, id),
-    getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
-    getSiblingQuotesForQuote(serviceRole, id)
-  ]);
+  // These reads run service-role (RLS bypassed), and `id` is the untrusted URL
+  // param, so resolve the quote and confirm it belongs to the caller's company
+  // BEFORE reading anything else keyed off it — otherwise a cross-company id
+  // would load that quote's lines/prices/siblings (CWE-639 IDOR).
+  const quote = await getSupplierQuote(serviceRole, id);
 
-  if (quote.error) {
+  if (quote.error || !quote.data) {
     throw redirect(
       path.to.supplierQuotes,
       await flash(request, error(quote.error, "Failed to load quote"))
     );
   }
 
-  // The reads above run service-role (RLS bypassed) — refuse a cross-company id
-  // before resolving anything against it.
   if (quote.data.companyId !== companyId) {
     throw redirect(
       path.to.supplierQuotes,
       await flash(request, error(null, "Failed to load quote"))
     );
   }
+
+  const [lines, prices, siblingQuotes] = await Promise.all([
+    getSupplierQuoteLines(serviceRole, id),
+    getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
+    getSiblingQuotesForQuote(serviceRole, id)
+  ]);
 
   const [supplierInteraction, presentationCurrency, supplier, companySettings] =
     await Promise.all([
@@ -146,14 +149,14 @@ export default function SupplierQuoteRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <SupplierQuoteHeader />
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<SupplierQuoteExplorer />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>

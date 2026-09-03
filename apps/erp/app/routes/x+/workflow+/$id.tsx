@@ -195,7 +195,7 @@ export default function WorkflowBuilderRoute() {
         canEdit={canEdit}
         isOwner={isOwner}
       >
-        <div className="flex h-[calc(100dvh-var(--topbar-height))] w-full flex-col">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full flex-col">
           <BuilderHeader
             workflow={workflow}
             versions={versions}
