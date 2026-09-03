@@ -12,6 +12,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  Subheading,
   Switch,
   Table,
   Tbody,
@@ -250,9 +251,9 @@ export function DimensionMapping({
           <section className="flex w-full flex-col gap-2">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">
-                <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+                <Subheading variant="light">
                   <Trans>Dimension slots</Trans>
-                </span>
+                </Subheading>
                 <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
                   {rows.length}
                 </span>
@@ -559,9 +560,7 @@ function MappingSection({
     <section className="flex w-full flex-col gap-2">
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2">
-          <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-            {title}
-          </span>
+          <Subheading variant="light">{title}</Subheading>
           <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
             {count}
           </span>

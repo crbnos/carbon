@@ -211,6 +211,9 @@ msgstr "{chainLabel}. Рассмотрите возможность указан
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} конфликтов"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# счет с остатком} other {# счетов с остатком}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
@@ -839,6 +842,9 @@ msgstr "Статус отгрузки изменился"
 
 msgid "A shipment's tracking number changes"
 msgstr "Номер отслеживания отгрузки изменился"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Одна сбалансированная проводка будет проведена на дату, указанную ниже, с разницей, отнесенной на счет нераспределенной прибыли."
 
 msgid "A step needs a name."
 msgstr "Шаг должен иметь имя."
@@ -2325,6 +2331,9 @@ msgstr "На дату"
 msgid "As of {0}"
 msgstr "По состоянию на {0}"
 
+msgid "As of date"
+msgstr "На дату"
+
 msgid "As of:"
 msgstr "По состоянию на:"
 
@@ -2660,6 +2669,9 @@ msgstr "Расходы банка и сервисного сбора финан�
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Столбцы показывают поток каждой недели: <0>обеспечение</0> увеличивает запасы, <1>потребность</1> снижает их. <2>Строка</2> — это ваши прогнозируемые запасы на складе — когда она падает ниже <3>страхового запаса</3>, вы в зоне риска, а ниже нуля — <4>дефицит</4>."
+
+msgid "Base currency"
+msgstr "Базовая валюта"
 
 msgid "Base Currency"
 msgstr "Базовая валюта"
@@ -3275,6 +3287,9 @@ msgstr "Канал"
 
 msgid "Channel Name"
 msgstr "Имя канала"
+
+msgid "Chart"
+msgstr "График"
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -9579,6 +9594,15 @@ msgstr "Отметить как недостача"
 msgid "Mark to delete"
 msgstr "Отметить к удалению"
 
+msgid "Market rate"
+msgstr "Рыночный курс"
+
+msgid "Market rate (per USD)"
+msgstr "Рыночный курс (за USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "История рыночного курса (за USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Отмечает человека как отсутствующего на каждый день в диапазоне. Его не будут планировать, пока он отсутствует."
 
@@ -10126,6 +10150,9 @@ msgstr "Новый центр затрат"
 
 msgid "New Credit / Debit Memo"
 msgstr "Новый кредит-нота / дебет-нота"
+
+msgid "New Currency"
+msgstr "Новая валюта"
 
 msgid "New Custom Field"
 msgstr "Новое пользовательское поле"
@@ -10764,6 +10791,9 @@ msgstr "Причина отказа от предложения"
 msgid "No Quote Reasons"
 msgstr "Причины отказа от предложения"
 
+msgid "No rate"
+msgstr "Курс отсутствует"
+
 msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
 
@@ -10856,6 +10886,9 @@ msgstr "Нет переменных соответствующих {query}"
 
 msgid "No variables available"
 msgstr "Нет доступных переменных"
+
+msgid "No versions available"
+msgstr "Нет доступных версий"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
@@ -11132,6 +11165,11 @@ msgstr "Своевременная доставка"
 msgid "Onboard your agent to Carbon"
 msgstr "Подключите вашего агента к Carbon"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} — это сколько {1}?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
 
@@ -11300,8 +11338,18 @@ msgstr "Открытие"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Открытие операции запускает её таймер, поэтому время отсчитывается с момента начала работы."
 
+msgid "Opening Balance"
+msgstr "Начальный остаток"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Начальный остаток для {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Начальный остаток амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
+
+msgid "Opening Balances"
+msgstr "Начальные остатки"
 
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
@@ -12056,6 +12104,9 @@ msgstr "Провести счет-фактуру"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Проводите операции журнала с правильными кодами счетов и описания"
+
+msgid "Post opening balances"
+msgstr "Провести начальные остатки"
 
 msgid "Post Receipt"
 msgstr "Отправить квитанцию"
@@ -12826,8 +12877,14 @@ msgstr "Поднимите это на еженедельном статус-з�
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "поднимайте проблемы рано и говорите о них прямо. Проблема, выявленная на 2-й неделе, — это небольшое исправление; та же проблема при запуске — это задержка."
 
+msgid "Rate"
+msgstr "Курс"
+
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."
 
 msgid "Ratio"
 msgstr "Коэффициент"
@@ -13471,6 +13528,9 @@ msgstr "Сброс PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Сбросить к рыночному курсу"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Сбросить двухфакторную аутентификацию"
 
@@ -14007,6 +14067,9 @@ msgstr "Сохранить настройки измерений"
 msgid "Save Method"
 msgstr "Сохранить метод"
 
+msgid "Save Rate"
+msgstr "Сохранить курс"
+
 msgid "Save view"
 msgstr "Сохранить представление"
 
@@ -14267,6 +14330,9 @@ msgstr "Выбрать"
 
 msgid "Select a assignee"
 msgstr "Выберите исполнителя"
+
+msgid "Select a completed job"
+msgstr "Выберите завершённый производственный заказ"
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
@@ -15087,6 +15153,9 @@ msgstr "Читаемый документ-основание"
 
 msgid "Source Item"
 msgstr "Исходный элемент"
+
+msgid "Source Job"
+msgstr "Исходный производственный заказ"
 
 msgid "Source list"
 msgstr "Список источников"
@@ -16785,7 +16854,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Эти операции по-прежнему находятся в режиме Черновик, поэтому их дебеты и кредиты не включены в главную книгу для этого периода. Проведите каждый из них или переведите его в более поздний открытый период."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "Эти строки связаны с данными за пределами вашей организации, поэтому невозможно создать резервную копию текущих данных. Удаление не может быть отменено. Если они окажутся общими с другими организациями в этой группе, ничего не будет удалено и восстановление не начнется."
+msgstr "Эти строки связаны с данными вне этой организации, поэтому не удаётся создать резервную копию текущих данных. Удаление их не может быть отменено. Если окажется, что они используются другими организациями в этой группе, ничего не удаляется и восстановление не начинается."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Эти строки ссылаются на данные вне этой организации, поэтому они не могут быть восстановлены. Всё остальное было сохранено в резервной копии."
@@ -16877,6 +16946,9 @@ msgstr "Это среда, контролируемая ITAR. Доступ ог�
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Это занимает больше времени, чем ожидалось. Процесс может все еще завершиться — если нет, повторите восстановление, чтобы вернуть ваши данные."
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Это базовая валюта. Валютный курс всегда равен 1."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
@@ -17680,6 +17752,9 @@ msgstr "Невыполненные заказы"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Безымянная диаграмма"
@@ -19040,6 +19115,9 @@ msgstr "Ваш проект от начала до конца: план, эта�
 
 msgid "Your Project Team"
 msgstr "Ваша команда проекта"
+
+msgid "Your rate"
+msgstr "Ваш курс"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."

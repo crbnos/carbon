@@ -211,6 +211,9 @@ msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düş�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} çakışma"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesaplar}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
@@ -839,6 +842,9 @@ msgstr "Sevkiyatın durumu değişti"
 
 msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Aşağıdaki tarih itibarıyla tek bir dengeli yevmiye kaydı muhasebeleştirilecek; fark Dağıtılmamış kârlara kaydedilecektir."
 
 msgid "A step needs a name."
 msgstr "Bir adım bir ada ihtiyaç duyuyor."
@@ -2325,6 +2331,9 @@ msgstr "Itibaren"
 msgid "As of {0}"
 msgstr "{0} itibariyle"
 
+msgid "As of date"
+msgstr "Tarihi itibarıyla"
+
 msgid "As of:"
 msgstr "Şu tarih itibariyle:"
 
@@ -2660,6 +2669,9 @@ msgstr "Banka ve mali hizmet bedeli giderleri"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Çubuklar her haftanın akışını gösterir: <0>arz</0> envanteri yukarı iter, <1>talep</1> onu aşağı çeker. <2>Satır</2> tahmini eldeki envanterdir — <3>emniyet stoku</3> altına düştüğünde risk altındasın ve sıfırın altı bir <4>stoksuzluk</4>."
+
+msgid "Base currency"
+msgstr "Ana para birimi"
 
 msgid "Base Currency"
 msgstr "Temel Para Birimi"
@@ -3275,6 +3287,9 @@ msgstr "Kanal"
 
 msgid "Channel Name"
 msgstr "Kanal Adı"
+
+msgid "Chart"
+msgstr "Grafik"
 
 msgid "Chart of accounts"
 msgstr "Hesap planı"
@@ -9579,6 +9594,15 @@ msgstr "Az eksik olarak işaretle"
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
+msgid "Market rate"
+msgstr "Piyasa kuru"
+
+msgid "Market rate (per USD)"
+msgstr "Piyasa kuru (USD başına)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Piyasa kuru geçmişi (USD başına)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Kişiyi aralıktaki her gün için işaretler. Uzakta iken çizelgelenmazlar."
 
@@ -10126,6 +10150,9 @@ msgstr "Yeni Maliyet Merkezi"
 
 msgid "New Credit / Debit Memo"
 msgstr "Yeni Kredi / Borç Notu"
+
+msgid "New Currency"
+msgstr "Yeni Para Birimi"
 
 msgid "New Custom Field"
 msgstr "Yeni Özel Alan"
@@ -10764,6 +10791,9 @@ msgstr "Teklif Nedeni Yok"
 msgid "No Quote Reasons"
 msgstr "Teklif Nedeni Yok"
 
+msgid "No rate"
+msgstr "Kur yok"
+
 msgid "No receivables"
 msgstr "Alacak yok"
 
@@ -10856,6 +10886,9 @@ msgstr "Değişken {query} ile eşleşmiyor"
 
 msgid "No variables available"
 msgstr "Kullanılabilir değişken yok"
+
+msgid "No versions available"
+msgstr "Kullanılabilir sürüm yok"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden düzenlenene kadar eldeki stok negatif olacaktır, ancak yine de alabilirsiniz."
@@ -11132,6 +11165,11 @@ msgstr "Zamanında teslimat"
 msgid "Onboard your agent to Carbon"
 msgstr "Aracınızı Carbon'a dahil edin"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} kaç {1} eder?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
 
@@ -11300,8 +11338,18 @@ msgstr "Açılış"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Bir operasyonu açmak zamanlayıcısını başlatır, böylece zaman çalışma başladığı andan itibaren izlenir."
 
+msgid "Opening Balance"
+msgstr "Açılış Bakiyesi"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0} için Açılış Bakiyesi"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortismanın açılış bakiyesi (yeni satın almalar için 0 kullanın)."
+
+msgid "Opening Balances"
+msgstr "Açılış Bakiyeleri"
 
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
@@ -12056,6 +12104,9 @@ msgstr "Faturayı Kaydet"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Uygun hesap ve açıklama kodları ile muhasebe fişlerini muhasebeleştirin"
+
+msgid "Post opening balances"
+msgstr "Açılış Bakiyelerini Muhasebeleştir"
 
 msgid "Post Receipt"
 msgstr "Makbuzu Kaydet"
@@ -12826,8 +12877,14 @@ msgstr "Bunu haftalık durum çağrısında gündeme getir"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "bunu erken ve açık bir şekilde dile getir. 2. haftada adı konulan bir sorun küçük bir düzeltmedir; go-live'da aynı sorun bir gecikmedir."
 
+msgid "Rate"
+msgstr "Kur"
+
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."
 
 msgid "Ratio"
 msgstr "Oran"
@@ -13471,6 +13528,9 @@ msgstr "PIN'i Sıfırla"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN'i sıfırla {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Piyasa kuruna sıfırla"
+
 msgid "Reset Two-Factor Auth"
 msgstr "İki Faktörlü Kimlik Doğrulamayı Sıfırla"
 
@@ -14007,6 +14067,9 @@ msgstr "Boyut ayarlarını kaydet"
 msgid "Save Method"
 msgstr "Yöntemi Kaydet"
 
+msgid "Save Rate"
+msgstr "Kuru kaydet"
+
 msgid "Save view"
 msgstr "Görünümü kaydet"
 
@@ -14267,6 +14330,9 @@ msgstr "Seç"
 
 msgid "Select a assignee"
 msgstr "Bir atanan seçin"
+
+msgid "Select a completed job"
+msgstr "Tamamlanmış bir iş emri seçin"
 
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
@@ -15087,6 +15153,9 @@ msgstr "Okunabilir kaynak belge"
 
 msgid "Source Item"
 msgstr "Kaynak Ürün"
+
+msgid "Source Job"
+msgstr "Kaynak İş Emri"
 
 msgid "Source list"
 msgstr "Kaynak listesi"
@@ -16785,7 +16854,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "Bu satırlar bu şirket dışındaki verilere bağlantı veriyor, bu nedenle mevcut verilerinizin bir güvenlik kopyası yapılamıyor. Bunları silmek geri alınamaz. Bu grubun diğer şirketleriyle paylaşıldığı ortaya çıkarsa, hiçbir şey silinmez ve geri yükleme başlamaz."
+msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
@@ -16877,6 +16946,9 @@ msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD 
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Bu beklenenden daha uzun sürüyor. Yine de bitebilir — olmazsa, verilerinizi geri koymak için geri alma işlemini tekrar deneyin."
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Bu ana para birimidir. Döviz kuru her zaman 1'dir."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
@@ -17680,6 +17752,9 @@ msgstr "Gönderilmemiş siparişler"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Başlıksız Diyagram"
@@ -19040,6 +19115,9 @@ msgstr "Projeniz baştan sona: plan, kapılar ve canlı yayına geçiş"
 
 msgid "Your Project Team"
 msgstr "Proje Ekibiniz"
+
+msgid "Your rate"
+msgstr "Sizin kurunuz"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladınız."

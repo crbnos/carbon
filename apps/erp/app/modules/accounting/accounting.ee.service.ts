@@ -832,8 +832,9 @@ export async function getConsolidatedPeriodSeries(
   // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.
   eliminationClient: SupabaseClient<Database> = client
 ): Promise<{
-  data: ChartPeriodSeries[];
+  data: ChartPeriodSeries[] | null;
   ctaByBucket: Record<string, number>;
+  error: string | null;
 }> {
   const bucketKeys = args.buckets.map((b) => b.key);
   const allIds = await resolveConsolidationCompanyIds(
@@ -934,6 +935,17 @@ export async function getConsolidatedPeriodSeries(
   const ctaByBucket: Record<string, number> = Object.fromEntries(
     bucketKeys.map((key) => [key, 0])
   );
+
+  // A subsidiary whose translation failed must fail the consolidation loudly —
+  // silently excluding it produces a wrong consolidated total with no signal.
+  const failedSeriesTranslation = results.find((r) => r.translation.error);
+  if (failedSeriesTranslation?.translation.error) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      error: failedSeriesTranslation.translation.error
+    };
+  }
 
   for (const { series, translation } of results) {
     if (translation.error) continue;
@@ -1057,7 +1069,8 @@ export async function getConsolidatedPeriodSeries(
       rollUpTranslatedGroups(consolidated, bucketKeys),
       bucketKeys
     ),
-    ctaByBucket
+    ctaByBucket,
+    error: null
   };
 }
 
@@ -1948,6 +1961,108 @@ export async function getCurrencyByCode(
     .eq("code", currencyCode)
     .eq("companyGroupId", companyGroupId)
     .single();
+}
+
+/**
+ * The one sanctioned answer to "how many units of `currencyCode` per 1 unit of
+ * THIS company's base currency, right now". Base currency resolves to 1 by
+ * definition; a user override wins next; otherwise the ratio of the two
+ * USD-anchored market rates. A missing rate is an ERROR — never 1.
+ */
+export async function getExchangeRate(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client.rpc("get_exchange_rate", {
+    p_company_id: companyId,
+    p_currency_code: currencyCode
+  });
+}
+
+/**
+ * Every active currency of the company's group, resolved for THIS company,
+ * with provenance: 'base' | 'override' | 'market' | 'missing'. Backs the
+ * exchange-rates settings page.
+ */
+export async function getExchangeRates(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("get_exchange_rates", {
+    p_company_id: companyId
+  });
+}
+
+export async function upsertExchangeRateOverride(
+  client: SupabaseClient<Database>,
+  override: {
+    companyId: string;
+    currencyCode: string;
+    rate: number;
+    createdBy: string;
+    updatedBy: string;
+  }
+) {
+  // Update-first so re-pinning a rate never rewrites the original creator.
+  const update = await client
+    .from("exchangeRateOverride")
+    .update({
+      rate: override.rate,
+      updatedBy: override.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("companyId", override.companyId)
+    .eq("currencyCode", override.currencyCode)
+    .select("id");
+
+  if (update.error) return { data: null, error: update.error };
+  if (update.data.length > 0) {
+    return { data: update.data[0] ?? null, error: null };
+  }
+
+  const insert = await client
+    .from("exchangeRateOverride")
+    .insert({
+      companyId: override.companyId,
+      currencyCode: override.currencyCode,
+      rate: override.rate,
+      createdBy: override.createdBy
+    })
+    .select("id")
+    .single();
+
+  // Two concurrent first-time pins can both miss the update and race the
+  // insert; the loser hits the (companyId, currencyCode) unique constraint.
+  // Retry as an update so the second write wins instead of erroring.
+  if (insert.error?.code === "23505") {
+    const retry = await client
+      .from("exchangeRateOverride")
+      .update({
+        rate: override.rate,
+        updatedBy: override.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("companyId", override.companyId)
+      .eq("currencyCode", override.currencyCode)
+      .select("id");
+    if (retry.error) return { data: null, error: retry.error };
+    return { data: retry.data[0] ?? null, error: null };
+  }
+
+  return insert;
+}
+
+export async function deleteExchangeRateOverride(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client
+    .from("exchangeRateOverride")
+    .delete()
+    .eq("companyId", companyId)
+    .eq("currencyCode", currencyCode);
 }
 
 export async function getCurrencies(
@@ -4287,20 +4402,16 @@ export async function translateCompanyBalances(
   cta: number;
   error: string | null;
 }> {
-  // getConsolidationRates is defined in migration
-  // 20260713225803_ledger-balance-posted-filter.sql; the committed DB types
-  // regenerate from the cloud DB after deploy, hence the cast.
-  const { data: ratesData, error: ratesError } = await (
-    client.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>
-    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>
-  )("getConsolidationRates", {
-    p_company_group_id: companyGroupId,
-    p_company_id: companyId,
-    p_period_end: periodEnd,
-    p_period_start: periodStart
-  });
+  const { data: ratesData, error: ratesError } = await client.rpc(
+    "getConsolidationRates",
+    {
+      p_company_group_id: companyGroupId,
+      p_company_id: companyId,
+      p_target_currency: targetCurrency,
+      p_period_end: periodEnd,
+      p_period_start: periodStart
+    }
+  );
 
   if (ratesError) {
     return { data: null, cta: 0, error: ratesError.message };
@@ -4483,6 +4594,13 @@ export async function getConsolidatedBalances(
   const allBalances = results.map((r) => r.balances);
   const translations = results.map((r) => r.translation);
 
+  // A subsidiary whose translation failed must fail the consolidation loudly —
+  // silently excluding it produces a wrong consolidated total with no signal.
+  const failedTranslation = translations.find((t) => t.error);
+  if (failedTranslation?.error) {
+    return { data: null, cta: 0, error: failedTranslation.error };
+  }
+
   // Build a map of translated balances per account, summed across companies
   const translationByAccount = new Map<
     string,
@@ -4563,7 +4681,11 @@ export async function getConsolidatedBalances(
     };
   });
 
-  return { data: applyRootSignCorrection(consolidated), cta: totalCta };
+  return {
+    data: applyRootSignCorrection(consolidated),
+    cta: totalCta,
+    error: null
+  };
 }
 
 // -- Intercompany --
@@ -4732,21 +4854,26 @@ export async function getIntercompanyBalance(
   });
 }
 
+/**
+ * Market-rate history for the chart on the exchange-rates page. Reads the
+ * platform-global "exchangeRate" store (USD-anchored), newest ~6 months of
+ * daily rows, ascending for the chart.
+ */
 export async function getExchangeRateHistory(
   client: SupabaseClient<Database>,
-  companyGroupId: string,
   currencyCode: string
 ) {
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  return client
-    .from("exchangeRateHistory")
+  const result = await client
+    .from("exchangeRate")
     .select("effectiveDate, rate")
-    .eq("companyGroupId", companyGroupId)
     .eq("currencyCode", currencyCode)
-    .gte("effectiveDate", sixMonthsAgo.toISOString().split("T")[0])
-    .order("effectiveDate", { ascending: true });
+    .order("effectiveDate", { ascending: false })
+    .limit(180);
+
+  return {
+    data: result.data ? [...result.data].reverse() : result.data,
+    error: result.error
+  };
 }
 
 // -- Journal Entries --
@@ -5097,6 +5224,199 @@ export async function postJournalEntry(
     .eq("id", id)
     .select("id")
     .single();
+}
+
+// Returns `{ id }` of the company's current posted Opening Balance journal
+// entry, or null. Callers only need existence — this is the re-entry gate. Only
+// status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
+// one.
+export async function getExistingOpeningBalanceEntry(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const entry = await client
+    .from("journal")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("sourceType", "Opening Balance")
+    .eq("status", "Posted")
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (entry.error) return { data: null, error: entry.error };
+  return { data: entry.data ? { id: entry.data.id } : null, error: null };
+}
+
+// Posts the company's opening balances as a single balanced journal entry
+// (sourceType 'Opening Balance'). Each `balances` row carries one signed
+// natural-balance amount for a posting account; the net difference is plugged to
+// the Retained Earnings default account so debits equal credits. Reuses the
+// manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
+// postJournalEntry (which validates the balance and resolves the period).
+export async function createOpeningBalanceJournal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    postingDate: string;
+    balances: Array<{ accountId: string; amount: number }>;
+  }
+) {
+  const { companyId, companyGroupId, userId, postingDate, balances } = args;
+
+  const entered = balances.filter((b) => b.amount !== 0);
+  if (entered.length === 0) {
+    return { data: null, error: { message: "No opening balances entered" } };
+  }
+
+  // Guard here — not only in the route — so every caller (the route action AND
+  // the MCP-exposed tool) is protected. Opening balances are entered once; an
+  // un-reversed posted entry must be reversed before a new set is posted.
+  const existing = await getExistingOpeningBalanceEntry(client, companyId);
+  if (existing.error) return { data: null, error: existing.error };
+  if (existing.data) {
+    return {
+      data: null,
+      error: {
+        message:
+          "An opening balance entry already exists — reverse it before entering new balances"
+      }
+    };
+  }
+
+  // Retained Earnings is the balancing plug.
+  const defaults = await getDefaultAccounts(client, companyId);
+  if (defaults.error) return { data: null, error: defaults.error };
+  const retainedEarningsAccount = defaults.data?.retainedEarningsAccount;
+  if (!retainedEarningsAccount) {
+    return {
+      data: null,
+      error: {
+        message:
+          "No Retained Earnings account is configured in Default Accounts"
+      }
+    };
+  }
+
+  // Account classes turn each signed natural-balance amount into debit/credit
+  // (saveJournalEntryWithLines re-derives the stored amount from debit/credit).
+  const accountIds = [...new Set(entered.map((b) => b.accountId))];
+  const accounts = await client
+    .from("account")
+    .select("id, class")
+    .in("id", accountIds)
+    // Scope to the caller's chart of accounts (company-group). A foreign id then
+    // resolves to no class and aborts below with "Account not found", so a
+    // crafted payload can't post against another tenant's accounts.
+    .eq("companyGroupId", companyGroupId);
+  if (accounts.error) return { data: null, error: accounts.error };
+  const classById = new Map(
+    accounts.data.map((a) => [
+      a.id,
+      a.class as Database["public"]["Enums"]["glAccountClass"]
+    ])
+  );
+
+  const isNaturalDebit = (cls: Database["public"]["Enums"]["glAccountClass"]) =>
+    cls === "Asset" || cls === "Expense";
+
+  // Sum in "debit positive" space so the plug's sign is unambiguous.
+  let netDebitMinusCredit = 0;
+  const lines: Array<{ accountId: string; debit: number; credit: number }> = [];
+  for (const b of entered) {
+    const cls = classById.get(b.accountId);
+    if (!cls) {
+      return {
+        data: null,
+        error: { message: `Account not found: ${b.accountId}` }
+      };
+    }
+    const isDebit = isNaturalDebit(cls) ? b.amount >= 0 : b.amount < 0;
+    const magnitude = Math.abs(b.amount);
+    const debit = isDebit ? magnitude : 0;
+    const credit = isDebit ? 0 : magnitude;
+    netDebitMinusCredit += debit - credit;
+    lines.push({ accountId: b.accountId, debit, credit });
+  }
+
+  // Plug to Retained Earnings unless the entered lines already balance (shared
+  // tolerance, no literal). More debit ⇒ the plug is a credit, and vice-versa.
+  if (!isBalanced(netDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
+    lines.push({
+      accountId: retainedEarningsAccount,
+      debit: netDebitMinusCredit < 0 ? -netDebitMinusCredit : 0,
+      credit: netDebitMinusCredit > 0 ? netDebitMinusCredit : 0
+    });
+  }
+
+  const journalEntryId = await getNextSequence(
+    client,
+    "journalEntry",
+    companyId
+  );
+  if (journalEntryId.error || !journalEntryId.data) {
+    return {
+      data: null,
+      error: journalEntryId.error ?? {
+        message: "Failed to allocate journal entry number"
+      }
+    };
+  }
+
+  const created = await createJournalEntry(client, {
+    journalEntryId: journalEntryId.data as string,
+    sourceType: "Opening Balance",
+    companyId,
+    createdBy: userId,
+    postingDate,
+    description: "Opening balances"
+  });
+  if (created.error || !created.data) {
+    return {
+      data: null,
+      error: created.error ?? { message: "Failed to create journal entry" }
+    };
+  }
+  const id = created.data.id;
+
+  // No transaction spans create → save → post (these reuse the supabase-client
+  // JE helpers), so on any failure roll back the Draft header we just created —
+  // journalLine cascades (ON DELETE CASCADE). Otherwise an orphan 'Opening
+  // Balance' Draft lingers that the Posted-only re-entry gate can't see, and the
+  // user would accumulate one per retry (e.g. an as-of date in a Closed period).
+  const rollbackDraft = () =>
+    client.from("journal").delete().eq("id", id).eq("status", "Draft");
+
+  const saved = await saveJournalEntryWithLines(client, {
+    journalEntryId: id,
+    postingDate,
+    description: "Opening balances",
+    updatedBy: userId,
+    lines,
+    companyId,
+    companyGroupId
+  });
+  if (saved.error) {
+    await rollbackDraft();
+    return { data: null, error: saved.error };
+  }
+
+  const posted = await postJournalEntry(client, id, userId);
+  if (posted.error) {
+    await rollbackDraft();
+    // A unique violation on journal_one_posted_opening_balance_per_company means
+    // a concurrent request already posted the company's opening balances — the
+    // atomic backstop for the check-then-post race.
+    const message =
+      (posted.error as { code?: string }).code === "23505"
+        ? "An opening balance entry already exists — reverse it before entering new balances"
+        : posted.error.message;
+    return { data: null, error: { message } };
+  }
+
+  return { data: { id }, error: null };
 }
 
 export async function reverseJournalEntry(

@@ -313,6 +313,8 @@ import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
 import { SplitButton } from "./SplitButton";
 import { Status } from "./Status";
+import type { SubheadingProps } from "./Subheading";
+import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
@@ -596,6 +598,7 @@ export {
   Spinner,
   SplitButton,
   Status,
+  Subheading,
   Switch,
   Table,
   TableCaption,
@@ -659,6 +662,7 @@ export type {
   OperatingSystemPlatform,
   Shortcut,
   ShortcutDefinition,
+  SubheadingProps,
   TextareaProps,
   ExpiredEntityPolicy,
   TrackedEntityOption,

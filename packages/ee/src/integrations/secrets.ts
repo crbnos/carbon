@@ -34,7 +34,6 @@ export const SECRET_KEYS: Record<string, string[]> = {
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.
   email: ["apiKey", "password"]
-  // exchange-rates-v1: none (apiKey is env-based, never in metadata).
 };
 
 /** Thrown when a secret is expected in the vault but cannot be read (fail-closed). */

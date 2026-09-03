@@ -5,6 +5,7 @@ import {
   Button,
   cn,
   HStack,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -367,7 +368,7 @@ const PartProperties = ({
           : "flex flex-col items-start space-y-4",
         embedded
           ? "px-1 py-2"
-          : "w-96 bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
+          : "w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
       )}
     >
       {formLayout ? (
@@ -382,9 +383,9 @@ const PartProperties = ({
               copy affordances there. Part page (non-embedded) is unchanged. */}
           {!embedded && (
             <HStack className="w-full justify-between">
-              <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+              <Subheading as="h3" variant="light">
                 <Trans>Properties</Trans>
-              </h3>
+              </Subheading>
               <HStack spacing={1}>
                 <Tooltip>
                   <TooltipTrigger asChild>

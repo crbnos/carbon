@@ -69,6 +69,10 @@ type PeopleMatrixProps = {
   weekDates: string[];
   locationTimeZone?: string;
   employees: { id: string; name: string | null; avatarUrl: string | null }[];
+  /** selected department filter — floats its people to the top, hides no one */
+  departmentId: string | null;
+  /** employeeId → their department, for the department-first ordering */
+  employeeDepartments: Record<string, string | null>;
   workCenters: MatrixWorkCenter[];
   assignments: MatrixAssignment[];
   absences: { id: string; employeeId: string; date: string }[];
@@ -92,6 +96,8 @@ export function PeopleMatrix({
   weekDates,
   locationTimeZone,
   employees,
+  departmentId,
+  employeeDepartments,
   workCenters,
   assignments,
   absences,
@@ -165,12 +171,19 @@ export function PeopleMatrix({
     [absences]
   );
 
-  // department scoping happens at the page level (workCenters/employees
-  // arrive pre-filtered); rows are just the employees, sorted
+  // The roster shows everyone; the department filter only reorders — its people
+  // float to the top, everyone else follows, each group alphabetical by name.
   const rows = useMemo(
     () =>
-      [...employees].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
-    [employees]
+      [...employees].sort((a, b) => {
+        if (departmentId) {
+          const aInDept = employeeDepartments[a.id] === departmentId ? 0 : 1;
+          const bInDept = employeeDepartments[b.id] === departmentId ? 0 : 1;
+          if (aInDept !== bInDept) return aInDept - bInDept;
+        }
+        return (a.name ?? "").localeCompare(b.name ?? "");
+      }),
+    [employees, departmentId, employeeDepartments]
   );
 
   const hoursLadder = { shiftHoursById, employeeShiftHours, defaultShiftHours };

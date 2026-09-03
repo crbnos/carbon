@@ -34,6 +34,7 @@ import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ApprovalDecision } from "~/modules/shared/types";
+import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";
 import QualityDocumentApprovalModal from "./QualityDocumentApprovalModal";
@@ -57,6 +58,10 @@ const QualityDocumentHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
+  // Live title from the editor's locked title block, so the header updates as
+  // the user types (before the loader revalidates).
+  const liveTitle = useDocumentStore((s) => s.liveTitle);
+  const displayName = liveTitle ?? routeData?.document?.name ?? "";
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const statusFetcher = useFetcher<{ error?: { message: string } }>();
@@ -123,7 +128,7 @@ const QualityDocumentHeader = () => {
             variant="ghost"
           />
           <Heading size="h4" className="flex items-center gap-2">
-            <span>{routeData?.document?.name}</span>
+            <span>{displayName}</span>
             <Badge variant="outline">V{routeData?.document?.version}</Badge>
             <QualityDocumentStatus status={routeData?.document?.status} />
           </Heading>

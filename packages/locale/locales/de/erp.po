@@ -211,6 +211,9 @@ msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nach
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} Konflikte"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
@@ -839,6 +842,9 @@ msgstr "Der Status einer Lieferung ändert sich"
 
 msgid "A shipment's tracking number changes"
 msgstr "Die Verfolgungsnummer einer Lieferung ändert sich"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Ein einzelner ausgeglichener Buchungssatz wird zum unten angegebenen Datum gebucht, wobei die Differenz auf den Gewinnvortrag verrechnet wird."
 
 msgid "A step needs a name."
 msgstr "Ein Schritt benötigt einen Namen."
@@ -2325,6 +2331,9 @@ msgstr "Zum Stand von"
 msgid "As of {0}"
 msgstr "Zum Stand von {0}"
 
+msgid "As of date"
+msgstr "Zum Datum"
+
 msgid "As of:"
 msgstr "Zum Stand von:"
 
@@ -2660,6 +2669,9 @@ msgstr "Aufwendungen für Bank- und Finanzservicegebühren"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Balken zeigen den wöchentlichen Fluss: <0>Deckung</0> erhöht den Bestand, <1>Bedarf</1> senkt ihn. Die <2>Linie</2> ist Ihr geplanter verfügbarer Bestand — wenn er unter <3>Sicherheitsbestand</3> fällt, sind Sie gefährdet, und unter Null ist ein <4>Fehlbestand</4>."
+
+msgid "Base currency"
+msgstr "Basiswährung"
 
 msgid "Base Currency"
 msgstr "Basiswährung"
@@ -3275,6 +3287,9 @@ msgstr "Kanal"
 
 msgid "Channel Name"
 msgstr "Kanalname"
+
+msgid "Chart"
+msgstr "Diagramm"
 
 msgid "Chart of accounts"
 msgstr "Kontenplan"
@@ -9579,6 +9594,15 @@ msgstr "Als kurz markieren"
 msgid "Mark to delete"
 msgstr "Zum Löschen markieren"
 
+msgid "Market rate"
+msgstr "Marktkurs"
+
+msgid "Market rate (per USD)"
+msgstr "Marktkurs (pro USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Marktkursverlauf (pro USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Markiert die Person für jeden Tag im Bereich als frei. Sie werden nicht eingeplant, während sie weg sind."
 
@@ -10126,6 +10150,9 @@ msgstr "Neue Kostenstelle"
 
 msgid "New Credit / Debit Memo"
 msgstr "Neue Haben-/Soll-Buchung"
+
+msgid "New Currency"
+msgstr "Neue Währung"
 
 msgid "New Custom Field"
 msgstr "Neues benutzerdefiniertes Feld"
@@ -10764,6 +10791,9 @@ msgstr "Kein Angebotgrund"
 msgid "No Quote Reasons"
 msgstr "Keine Angebotsgründe"
 
+msgid "No rate"
+msgstr "Kein Kurs"
+
 msgid "No receivables"
 msgstr "Keine Forderungen"
 
@@ -10856,6 +10886,9 @@ msgstr "Keine Variable stimmt mit {query} überein"
 
 msgid "No variables available"
 msgstr "Keine Variablen verfügbar"
+
+msgid "No versions available"
+msgstr "Keine Versionen verfügbar"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
@@ -11132,6 +11165,11 @@ msgstr "Pünktliche Lieferung"
 msgid "Onboard your agent to Carbon"
 msgstr "Ihren Agenten bei Carbon registrieren"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} entspricht wie vielen {1}?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Ein Workflow-Durchlauf, aufgezeichnet Schritt für Schritt mit den Werten, die jeder Schritt verwendet und erzeugt, ausgeführt mit den Berechtigungen des Verantwortlichen des Workflows."
 
@@ -11300,8 +11338,18 @@ msgstr "Eröffnung"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Das Öffnen einer Operation startet seinen Timer, sodass die Zeit vom Moment des Arbeitsbeginn verfolgt wird."
 
+msgid "Opening Balance"
+msgstr "Eröffnungssaldo"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Eröffnungssaldo für {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Eröffnungssaldo der bereits vor dem Hinzufügen dieses Vermögenswerts zu Carbon gebuchten Abschreibung (für neue Akquisitionen 0 verwenden)."
+
+msgid "Opening Balances"
+msgstr "Eröffnungssalden"
 
 msgid "Operating Expenses"
 msgstr "Betriebsaufwendungen"
@@ -12056,6 +12104,9 @@ msgstr "Rechnung buchen"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Buchen Sie Buchungssätze mit korrekten Konto- und Beschreibungscodes."
+
+msgid "Post opening balances"
+msgstr "Eröffnungssalden buchen"
 
 msgid "Post Receipt"
 msgstr "Beleg buchen"
@@ -12826,8 +12877,14 @@ msgstr "Bringen Sie es beim wöchentlichen Statusgespräch zur Sprache"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "Sprechen Sie es früh an und sprechen Sie es deutlich an. Ein Problem, das in Woche 2 benannt wird, ist eine kleine Reparatur; das gleiche Problem beim Go-Live ist eine Verzögerung."
 
+msgid "Rate"
+msgstr "Kurs"
+
 msgid "Rate Limit"
 msgstr "Ratenlimit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Kurs für die Umrechnung von Eigenkapitalkonten in der Konsolidierung (IAS 21). Leer lassen, um den aktuellen Wechselkurs zu verwenden."
 
 msgid "Ratio"
 msgstr "Verhältnis"
@@ -13471,6 +13528,9 @@ msgstr "PIN zurücksetzen"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN zurücksetzen für {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Auf Marktkurs zurücksetzen"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Zwei-Faktor-Authentifizierung zurücksetzen"
 
@@ -14007,6 +14067,9 @@ msgstr "Dimensionseinstellungen speichern"
 msgid "Save Method"
 msgstr "Methode speichern"
 
+msgid "Save Rate"
+msgstr "Kurs speichern"
+
 msgid "Save view"
 msgstr "Ansicht speichern"
 
@@ -14267,6 +14330,9 @@ msgstr "Auswählen"
 
 msgid "Select a assignee"
 msgstr "Einen Bearbeiter auswählen"
+
+msgid "Select a completed job"
+msgstr "Wählen Sie einen fertiggestellten Fertigungsauftrag"
 
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
@@ -15087,6 +15153,9 @@ msgstr "Ursprungsbeleg lesbar"
 
 msgid "Source Item"
 msgstr "Quellartikel"
+
+msgid "Source Job"
+msgstr "Quell-Fertigungsauftrag"
 
 msgid "Source list"
 msgstr "Quellenliste"
@@ -16785,7 +16854,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Diese Buchungssätze sind noch Entwurf, sodass ihre Sollposten und Habenposten nicht im Sachkonto für diesen Zeitraum enthalten sind. Buchen Sie jeden einzelnen oder ändern Sie das Datum zu einem späteren offenen Zeitraum."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Wenn sich herausstellt, dass sie mit anderen Unternehmen in dieser Gruppe geteilt werden, wird nichts gelöscht und die Wiederherstellung startet nicht."
+msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher kann keine Sicherheitskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Sollten diese sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Wiederherstellung wird nicht gestartet."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Diese Zeilen sind mit Daten außerhalb dieses Unternehmens verknüpft, daher könnten sie nie wiederhergestellt werden. Alles andere wurde gesichert."
@@ -16877,6 +16946,9 @@ msgstr "Dies ist eine ITAR-kontrollierte Umgebung. Der Zugriff ist auf U.S. Pers
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Dies dauert länger als erwartet. Es kann trotzdem noch beendet werden – wenn nicht, versuchen Sie das Zurücksetzen erneut, um Ihre Daten wiederherzustellen."
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Dies ist die Basiswährung. Der Wechselkurs ist immer 1."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Dies ist der Monat, in dem Ihr Geschäftsjahr beginnt."
@@ -17680,6 +17752,9 @@ msgstr "Nicht versendete Bestellungen"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Unbenanntes Diagramm"
@@ -19040,6 +19115,9 @@ msgstr "Ihr Projekt von Anfang bis Ende: die Planung, die Meilensteine und der G
 
 msgid "Your Project Team"
 msgstr "Ihr Projektteam"
+
+msgid "Your rate"
+msgstr "Ihr Kurs"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ihre echten Daten sind geladen und Sie haben eine Stichprobe überprüft und genehmigt."

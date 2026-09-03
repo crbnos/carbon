@@ -1,5 +1,4 @@
 import { Email } from "./email/config";
-import { ExchangeRates } from "./exchange-rates/config";
 import { Gmail } from "./gmail/config";
 import { GoogleCalendar } from "./google-calendar/config";
 import { Jira } from "./jira/config";
@@ -34,7 +33,6 @@ export type {
 export const integrations = [
   // Radan,
   Email,
-  ExchangeRates,
   Gmail,
   GoogleCalendar,
   Jira,

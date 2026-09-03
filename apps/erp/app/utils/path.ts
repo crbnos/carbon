@@ -1,4 +1,9 @@
-import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import {
+  CARBON_API_URL,
+  getAppUrl,
+  getMESUrl,
+  SUPABASE_URL
+} from "@carbon/auth";
 import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
@@ -10,6 +15,21 @@ const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
 const selectCompany = "/select-company"; // from ~/routes/select-company+ folder
 export const MES_URL = getMESUrl();
 export const ERP_URL = getAppUrl();
+
+/** Append this deployment's origins to a docs link, so the docs site can show the
+ *  reader their own hosts rather than assuming Carbon Cloud. Both are sent because
+ *  they are configured independently (`CARBON_API_URL` serves the REST API, ERP_URL
+ *  the app) and need not share a domain, so neither can be derived from the other.
+ *  Purely additive: with neither set the plain URL is returned and the docs fall back
+ *  to their `<your-host>` placeholder. Safe when signed out — both values are public
+ *  config already exposed on `window.env`. */
+function withDocsHost(url: string): string {
+  const params = new URLSearchParams();
+  if (CARBON_API_URL) params.set("host", CARBON_API_URL);
+  if (ERP_URL) params.set("app", ERP_URL);
+  const qs = params.toString();
+  return qs ? `${url}?${qs}` : url;
+}
 
 export const path = {
   to: {
@@ -321,7 +341,10 @@ export const path = {
         generatePath(`${api}/resources/work-centers?location=${id}`),
       workflowOptions: `${api}/workflows/options`
     },
-    apiDocs: "https://docs.carbon.ms/api-reference",
+    // The docs render every endpoint against a host. Hand them this deployment's
+    // REST origin so a self-hosted or non-default-region reader sees their own
+    // host instead of rest.carbon.ms; with none set the docs show `<your-host>`.
+    apiDocs: withDocsHost("https://docs.carbon.ms/api-reference"),
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     approvalRule: (id: string) =>
@@ -1385,7 +1408,7 @@ export const path = {
     materials: `${x}/items/materials`,
     materialType: (id: string) => generatePath(`${x}/items/types/${id}`),
     materialTypes: `${x}/items/types`,
-    mcpDocs: "https://docs.carbon.ms/mcp",
+    mcpDocs: withDocsHost("https://docs.carbon.ms/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
     // list lives in the invoicing nav beside Payments; details mirror payments.
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
@@ -2240,12 +2263,28 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
+/**
+ * The Referer header, reduced to a SAME-ORIGIN relative path (or null). Many
+ * actions redirect back here — returning the raw header would let a crafted
+ * request bounce the user to an attacker origin (CWE-601 open redirect), so a
+ * cross-origin or unparsable referer yields null and callers fall back to
+ * their fixed route.
+ */
 export const requestReferrer = (request: Request, withParams = true) => {
-  return request.headers.get("referer");
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  try {
+    const requestUrl = new URL(request.url);
+    const url = new URL(referer, requestUrl.origin);
+    if (url.origin !== requestUrl.origin) return null;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return null;
+  }
 };
 
 export const getParams = (request: Request) => {
-  const url = new URL(requestReferrer(request) ?? "");
+  const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };

@@ -16,7 +16,7 @@ export const handle: Handle = {
 
 export default function TemplatesRoute() {
   return (
-    <div className="h-full w-full bg-background">
+    <div className="h-full w-full bg-card">
       <Outlet />
     </div>
   );
