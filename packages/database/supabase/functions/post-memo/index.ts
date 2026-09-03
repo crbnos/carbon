@@ -277,6 +277,87 @@ serve(async (req: Request) => {
         throw new Error("Failed to fetch the derived reason account");
       }
 
+      // Supplier returns only: the reason leg (GRNI) must clear exactly what
+      // the return SHIPMENT debited — the goods' carried cost — while the
+      // control leg (AP) moves by what the supplier agreed to credit. The two
+      // are independent figures, so recover the carried cost here and let the
+      // builder book the difference as a purchase price variance. Without
+      // this, GRNI keeps a residual for the life of the company.
+      //
+      // Cost basis comes from the `costLedger` rows the shipment wrote
+      // (documentType 'Purchase Return Shipment'), which are already in BASE
+      // currency — do NOT scale them by the memo's exchange rate.
+      let reasonAmountBase: number | undefined;
+      if (memo.data.purchaseReturnOrderId) {
+        const shipments = await client
+          .from("shipment")
+          .select("id")
+          .eq("sourceDocument", "Purchase Return Order")
+          .eq("sourceDocumentId", memo.data.purchaseReturnOrderId)
+          .eq("companyId", companyId);
+        const shipmentIds = (shipments.data ?? []).map((row) => row.id);
+
+        if (shipmentIds.length > 0) {
+          const [costRows, creditLines] = await Promise.all([
+            client
+              .from("costLedger")
+              .select("itemId, quantity, cost")
+              .eq("documentType", "Purchase Return Shipment")
+              .in("documentId", shipmentIds)
+              .eq("companyId", companyId),
+            client
+              .from("purchaseReturnOrderCreditLine")
+              .select("purchaseReturnOrderLineId, quantity")
+              .eq("memoId", memoId)
+              .eq("companyId", companyId),
+          ]);
+
+          // Per-item carried cost per unit, from what the shipment relieved.
+          const relieved = new Map<string, { qty: number; cost: number }>();
+          for (const row of costRows.data ?? []) {
+            const key = row.itemId as string;
+            const prev = relieved.get(key) ?? { qty: 0, cost: 0 };
+            relieved.set(key, {
+              qty: prev.qty + Math.abs(Number(row.quantity ?? 0)),
+              cost: prev.cost + Math.abs(Number(row.cost ?? 0)),
+            });
+          }
+
+          const lineIds = (creditLines.data ?? []).map(
+            (row) => row.purchaseReturnOrderLineId as string
+          );
+          const returnLines = lineIds.length
+            ? await client
+                .from("purchaseReturnOrderLine")
+                .select("id, itemId")
+                .in("id", lineIds)
+                .eq("companyId", companyId)
+            : { data: [] };
+          const itemByLine = new Map(
+            (returnLines.data ?? []).map((row) => [
+              row.id as string,
+              row.itemId as string,
+            ])
+          );
+
+          // Credited quantity x that item's per-unit carried cost.
+          let carried = 0;
+          for (const creditLine of creditLines.data ?? []) {
+            const itemId = itemByLine.get(
+              creditLine.purchaseReturnOrderLineId as string
+            );
+            const totals = itemId ? relieved.get(itemId) : undefined;
+            if (!totals || totals.qty === 0) continue;
+            carried +=
+              (totals.cost / totals.qty) * Number(creditLine.quantity ?? 0);
+          }
+          // Only override when we actually recovered a cost basis. A zero-cost
+          // or accounting-disabled-at-shipment return keeps the old two-line
+          // shape rather than inventing a variance.
+          if (carried > 0) reasonAmountBase = carried;
+        }
+      }
+
       const journalLineReference = nanoid();
       const { lines } = buildMemoJournal({
         memoId,
@@ -288,6 +369,8 @@ serve(async (req: Request) => {
         controlAccountId,
         reasonAccountId,
         reasonAccountClass: reasonAccount.data.class as string,
+        reasonAmountBase,
+        varianceAccountId: accountDefaults.data.purchaseVarianceAccount,
       });
       journalLineInserts.push(...lines);
 

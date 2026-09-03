@@ -129,3 +129,84 @@ Deno.test("supplier RETURN with Credit direction is backwards (increases AP, re-
   assertEquals(line(r, "acct_ap").amount, 300); // AP credited = owe MORE
   assertEquals(line(r, "acct_grni").amount, -300); // GRNI debited AGAIN
 });
+
+// --- Supplier return with a credit-vs-cost delta (spec: "credit-vs-cost delta
+// → purchaseVarianceAccount"). The shipment debited GRNI at carried cost; the
+// memo clears exactly that and books the difference as PPV, so GRNI nets to 0.
+
+Deno.test("supplier RETURN: credited LESS than carried cost → DR variance (a loss)", () => {
+  // RTS000001 shape: shipment relieved 120 of stock, supplier credits only 60.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amountBase: 60,
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+      reasonAmountBase: 120,
+      varianceAccountId: "acct_ppv",
+    })
+  );
+  assertEquals(r.lines.length, 3);
+  assertEquals(line(r, "acct_ap").amount, -60); // DR AP by the credit
+  assertEquals(line(r, "acct_grni").amount, 120); // CR GRNI by carried cost
+  assertEquals(line(r, "acct_ppv").amount, 60); // DR expense = loss
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+Deno.test("supplier RETURN: credited MORE than carried cost → CR variance (a gain)", () => {
+  // RTS000005 shape: shipment relieved 24 of stock, supplier credits 200.
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amountBase: 200,
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+      reasonAmountBase: 24,
+      varianceAccountId: "acct_ppv",
+    })
+  );
+  assertEquals(r.lines.length, 3);
+  assertEquals(line(r, "acct_ap").amount, -200);
+  assertEquals(line(r, "acct_grni").amount, 24);
+  assertEquals(line(r, "acct_ppv").amount, -176); // CR expense = gain
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+Deno.test("supplier RETURN: credit equals carried cost → no variance leg at all", () => {
+  const r = buildMemoJournal(
+    base({
+      isAR: false,
+      direction: "Debit",
+      amountBase: 290,
+      controlAccountId: "acct_ap",
+      reasonAccountId: "acct_grni",
+      reasonAccountClass: "Liability",
+      reasonAmountBase: 290,
+      varianceAccountId: "acct_ppv",
+    })
+  );
+  assertEquals(r.lines.length, 2);
+  assert(Math.abs(r.signedDebitTotal) < 0.01);
+});
+
+Deno.test("refuses to post an unbalanced memo when no variance account is configured", () => {
+  assertThrows(
+    () =>
+      buildMemoJournal(
+        base({
+          isAR: false,
+          direction: "Debit",
+          amountBase: 60,
+          reasonAccountClass: "Liability",
+          reasonAmountBase: 120,
+          varianceAccountId: null,
+        })
+      ),
+    Error,
+    "no variance account"
+  );
+});
