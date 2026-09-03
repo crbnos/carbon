@@ -1,4 +1,4 @@
-import { VERCEL_URL } from "@carbon/auth";
+import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getIntegrationConfigById } from "@carbon/ee";
 import {
@@ -39,7 +39,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const redirectUri = `${url.origin}/api/integrations/jira/oauth`;
+    // Must match the authorize-time redirect_uri, which IntegrationCard builds
+    // from `window.location.origin`. `new URL(request.url).origin` is the
+    // internal proxy address behind a TLS-terminating proxy (e.g. the portless
+    // dev proxy → http://127.0.0.1:<port>), which fails as a redirect_uri
+    // mismatch. `getAppUrl()` is the canonical public origin in dev/preview/prod.
+    const redirectUri = `${getAppUrl()}/api/integrations/jira/oauth`;
 
     // Exchange the authorization code for tokens
     const tokens = await exchangeCodeForTokens(params.code, redirectUri);
@@ -89,15 +94,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (await config.onInstall(companyId));
 
     if (createdJiraIntegration?.data?.metadata) {
-      const requestUrl = new URL(request.url);
-
-      if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-        requestUrl.protocol = "http";
-      }
-
-      const redirectUrl = `${requestUrl.origin}${path.to.integrations}`;
-
-      return redirect(redirectUrl);
+      // Redirect on the canonical public origin — `request.url`'s origin is the
+      // internal proxy address in dev, which would drop the session cookies.
+      return redirect(`${getAppUrl()}${path.to.integrations}`);
     } else {
       return data(
         { error: "Failed to save Jira integration" },
