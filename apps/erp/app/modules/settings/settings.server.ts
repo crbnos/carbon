@@ -1,3 +1,4 @@
+import { hashApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -10,6 +11,7 @@ import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { Integration } from "~/modules/settings/types";
 import { sanitize } from "~/utils/supabase";
@@ -545,4 +547,18 @@ export async function updateIntegrationMetadata(
     )
     .eq("companyId", companyId)
     .eq("id", integrationId);
+}
+
+/**
+ * Mint a fresh API key secret. The raw value is shown to the user exactly once;
+ * only the hash is stored, plus the last five characters as a preview. Used by
+ * creation and regeneration so the two can never drift in format or hashing.
+ */
+export function mintApiKey() {
+  const rawKey = `crbn_${nanoid()}`;
+  return {
+    rawKey,
+    keyHash: hashApiKey(rawKey),
+    keyPreview: rawKey.slice(-5)
+  };
 }

@@ -725,6 +725,9 @@ msgstr "Status rachunku zmienia się"
 msgid "A receipt's supplier changes"
 msgstr "Dostawca rachunku zmienia się"
 
+msgid "A regenerated secret would be rejected as expired on its first request. Extend or clear the expiration on the key first, then regenerate."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Wielokrotnie użyteczny, wersjonowany zestaw instrukcji roboczych dołączony do procesu, dający operacji uporządkowane kroki do zarejestrowania i sprawdzenia oraz parametry, przy których pracuje."
 
@@ -6516,6 +6519,9 @@ msgstr "Każdy warunek musi się zgadzać"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Każdy test w zakresie przechodzi w Twoim skonfigurowanym systemie, z Twoimi danymi."
+
+msgid "Every integration still sending it will start failing until you give it the new key. The new key is shown once."
+msgstr ""
 
 msgid "Every match"
 msgstr "Każde dopasowanie"
@@ -12931,6 +12937,15 @@ msgstr "Odśwież kurs wymiany"
 msgid "Regenerate"
 msgstr "Wygeneruj ponownie"
 
+msgid "Regenerate {name}"
+msgstr ""
+
+msgid "Regenerate API Key"
+msgstr ""
+
+msgid "Regenerate Key"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Wygeneruj ponownie harmonogram dla tej lokalizacji teraz. Uruchamia się również automatycznie około 30 sekund po ostatniej zmianie harmonogramu (edycje są zbiorowe, więc kilka szybkich zmian powoduje jedno wygenerowanie)."
 
@@ -15840,6 +15855,9 @@ msgstr "Poprawiona data wygaśnięcia dla tego lotu/numeru seryjnego; istniejąc
 msgid "The currencies you trade in and their rates"
 msgstr "Waluty, w których handlujesz, i ich kursy"
 
+msgid "The current key stops working the moment you confirm"
+msgstr ""
+
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Rekord klienta, do którego jest powiązane to konto portalu; tylko kontakty już na tym kliencie mogą być wybrane jako posiadacz konta poniżej."
 
@@ -16222,6 +16240,9 @@ msgstr "Fabryki, magazyny i obiekty, w których znajduje się Twoja praca i zapa
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Wstępnie ustawiony pakiet zadań i wymagań zatwierdzenia stosowany do tego problemu; zastępuje domyślny przepływ pracy typu problemu, jeśli jest ustawiony."
+
+msgid "The previous key has stopped working"
+msgstr ""
 
 msgid "The principle:"
 msgstr "Zasada:"
@@ -16641,6 +16662,16 @@ msgstr "To zlecenie produkcyjne nie będzie już dostępne na hali produkcyjnej.
 
 msgid "This job's own required quantity for the material."
 msgstr "Własna wymagana ilość materiału dla tego zadania."
+
+msgid "This key has expired"
+msgstr ""
+
+msgid "This key has never authenticated a request. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
+
+#. placeholder {0}: formatTimeAgo(lastUsedAt)
+msgid "This key last authenticated a request {0}. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Ta lokalizacja planuje tylko obsadzone stanowiska robocze, ale to stanowisko bez nadzoru (24×7) — jest zwolnione i pracuje bez operatora."
@@ -17459,6 +17490,10 @@ msgstr "Zaktualizuj element"
 
 msgid "Update costs on"
 msgstr "Aktualizuj koszty na"
+
+#. placeholder {0}: apiKey.name
+msgid "Update every integration that authenticates as {0}."
+msgstr ""
 
 msgid "Update Forecast"
 msgstr "Aktualizuj Prognozę"

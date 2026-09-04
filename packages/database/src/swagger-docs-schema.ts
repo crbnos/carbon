@@ -76108,6 +76108,9 @@ export default {
             $ref: "#/parameters/rowFilter.apiKey.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.apiKey.updatedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -76206,6 +76209,9 @@ export default {
             $ref: "#/parameters/rowFilter.apiKey.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.apiKey.updatedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -76256,6 +76262,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.apiKey.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.apiKey.updatedAt"
           },
           {
             $ref: "#/parameters/body.apiKey"
@@ -136377,6 +136386,10 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -182758,6 +182771,12 @@ export default {
     },
     "rowFilter.apiKey.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.apiKey.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

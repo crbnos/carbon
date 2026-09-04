@@ -16,7 +16,11 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // no permission check of its own (every ERP route gates on `production` update
   // before calling it). `production_scheduleJob` is the intended MCP entry point —
   // it re-applies that gate — so the raw trigger must not be reachable via MCP.
-  "production_triggerJobSchedule"
+  "production_triggerJobSchedule",
+  // Takes the new secret's hash from the caller. Fine for the settings route,
+  // which mints it server-side, but over MCP it would let a company-scoped
+  // token overwrite ANY key's secret with a value it already knows.
+  "settings_regenerateApiKey"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {

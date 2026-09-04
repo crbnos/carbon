@@ -725,6 +725,9 @@ msgstr "收据的状态已更改"
 msgid "A receipt's supplier changes"
 msgstr "收据的供应商已更改"
 
+msgid "A regenerated secret would be rejected as expired on its first request. Extend or clear the expiration on the key first, then regenerate."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "一套可重用的、版本化的作业指导书，附加到一个工艺并为工序提供有序的步骤以进行记录和检查，以及运行参数。"
 
@@ -6516,6 +6519,9 @@ msgstr "每个条件都必须匹配"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
+
+msgid "Every integration still sending it will start failing until you give it the new key. The new key is shown once."
+msgstr ""
 
 msgid "Every match"
 msgstr "每次匹配"
@@ -12931,6 +12937,15 @@ msgstr "刷新汇率"
 msgid "Regenerate"
 msgstr "重新生成"
 
+msgid "Regenerate {name}"
+msgstr ""
+
+msgid "Regenerate API Key"
+msgstr ""
+
+msgid "Regenerate Key"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
 
@@ -15840,6 +15855,9 @@ msgstr "此批次/序列号的修正有效期；更改后，现有库存会根�
 msgid "The currencies you trade in and their rates"
 msgstr "您交易的货币及其汇率"
 
+msgid "The current key stops working the moment you confirm"
+msgstr ""
+
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "此门户帐户链接到的客户记录；只有该客户上已有的联系人才能被选为以下帐户持有人。"
 
@@ -16222,6 +16240,9 @@ msgstr "您的工作和库存所在的工厂、仓库和场所"
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖问题类型的默认工作流。"
+
+msgid "The previous key has stopped working"
+msgstr ""
 
 msgid "The principle:"
 msgstr "原则："
@@ -16641,6 +16662,16 @@ msgstr "此工作将不再在车间可用。"
 
 msgid "This job's own required quantity for the material."
 msgstr "这个工单所需的原材料数量。"
+
+msgid "This key has expired"
+msgstr ""
+
+msgid "This key has never authenticated a request. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
+
+#. placeholder {0}: formatTimeAgo(lastUsedAt)
+msgid "This key last authenticated a request {0}. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "此地点仅对配置人员的工作中心进行排程，但这是一个无人值守（24×7）工作站——它被豁免，可以无人值守运行。"
@@ -17459,6 +17490,10 @@ msgstr "更新项目"
 
 msgid "Update costs on"
 msgstr "更新成本于"
+
+#. placeholder {0}: apiKey.name
+msgid "Update every integration that authenticates as {0}."
+msgstr ""
 
 msgid "Update Forecast"
 msgstr "更新预测"

@@ -725,6 +725,9 @@ msgstr "Der Status eines Wareneingangs ändert sich"
 msgid "A receipt's supplier changes"
 msgstr "Der Lieferant eines Wareneingangs ändert sich"
 
+msgid "A regenerated secret would be rejected as expired on its first request. Extend or clear the expiration on the key first, then regenerate."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Ein wiederverwendbarer, versionierter Satz von Arbeitsanweisungen, die an einen Prozess angehängt sind und einem Vorgang seine geordneten Schritte zum Aufzeichnen und Überprüfen sowie die Parameter, mit denen er ausgeführt wird, geben."
 
@@ -6516,6 +6519,9 @@ msgstr "Jede Bedingung muss erfüllt sein"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten bestanden."
+
+msgid "Every integration still sending it will start failing until you give it the new key. The new key is shown once."
+msgstr ""
 
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
@@ -12931,6 +12937,15 @@ msgstr "Wechselkurs aktualisieren"
 msgid "Regenerate"
 msgstr "Neu generieren"
 
+msgid "Regenerate {name}"
+msgstr ""
+
+msgid "Regenerate API Key"
+msgstr ""
+
+msgid "Regenerate Key"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Generieren Sie den Terminplan für diesen Standort jetzt neu. Er wird auch automatisch etwa 30 Sekunden nach der letzten Planänderung ausgeführt (Bearbeitungen werden zusammengefasst, sodass mehrere schnelle Änderungen eine einzelne Neugenerierung auslösen)."
 
@@ -15840,6 +15855,9 @@ msgstr "Das korrigierte Ablaufdatum für dieses Los/diese Seriennummer; vorhande
 msgid "The currencies you trade in and their rates"
 msgstr "Die Währungen, in denen Sie handeln, und deren Kurse"
 
+msgid "The current key stops working the moment you confirm"
+msgstr ""
+
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Der Kundendatensatz, mit dem dieses Portal-Konto verknüpft ist; nur Kontakte, die bereits bei diesem Kunden sind, können als Kontoinhaber unten ausgewählt werden."
 
@@ -16222,6 +16240,9 @@ msgstr "Die Fabriken, Lagerhäuser und Standorte, an denen sich Ihre Arbeit und 
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Das vordefinierte Paket aus Aufgaben und Genehmigungsanforderungen, das auf diesen Fall angewendet wird; überschreibt den Standard-Workflow des Falltyps, wenn festgelegt."
+
+msgid "The previous key has stopped working"
+msgstr ""
 
 msgid "The principle:"
 msgstr "Das Prinzip:"
@@ -16641,6 +16662,16 @@ msgstr "Dieser Auftrag ist auf der Werkstatt nicht mehr verfügbar."
 
 msgid "This job's own required quantity for the material."
 msgstr "Die für dieses Material benötigte Menge dieses Auftrags."
+
+msgid "This key has expired"
+msgstr ""
+
+msgid "This key has never authenticated a request. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
+
+#. placeholder {0}: formatTimeAgo(lastUsedAt)
+msgid "This key last authenticated a request {0}. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Dieser Standort plant nur bemannte Arbeitsplätze, aber dies ist eine unbemannte 24×7-Station — sie ist ausgenommen und läuft unbeaufsichtigt weiter."
@@ -17459,6 +17490,10 @@ msgstr "Einen Artikel aktualisieren"
 
 msgid "Update costs on"
 msgstr "Kosten aktualisieren am"
+
+#. placeholder {0}: apiKey.name
+msgid "Update every integration that authenticates as {0}."
+msgstr ""
 
 msgid "Update Forecast"
 msgstr "Prognose aktualisieren"

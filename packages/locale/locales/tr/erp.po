@@ -725,6 +725,9 @@ msgstr "Makbuzun durumu değişti"
 msgid "A receipt's supplier changes"
 msgstr "Makbuzun tedarikçisi değişti"
 
+msgid "A regenerated secret would be rejected as expired on its first request. Extend or clear the expiration on the key first, then regenerate."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Bir işleme bağlı, yeniden kullanılabilir, sürümlendirilmiş bir iş talimatları seti; bir operasyona kaydedilecek ve kontrol edilecek sıralı adımlar ile çalıştığı parametreleri sağlar."
 
@@ -6516,6 +6519,9 @@ msgstr "Her koşul eşleşmelidir"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
+
+msgid "Every integration still sending it will start failing until you give it the new key. The new key is shown once."
+msgstr ""
 
 msgid "Every match"
 msgstr "Her eşleşme"
@@ -12931,6 +12937,15 @@ msgstr "Döviz kurunu yenile"
 msgid "Regenerate"
 msgstr "Yeniden Oluştur"
 
+msgid "Regenerate {name}"
+msgstr ""
+
+msgid "Regenerate API Key"
+msgstr ""
+
+msgid "Regenerate Key"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Bu lokasyon için çizelgeyi şimdi yeniden oluşturun. Son çizelgeleme değişikliğinden yaklaşık 30 saniye sonra da otomatik olarak çalışır (düzenlemeler toplu halde yapılır, bu nedenle birkaç hızlı değişiklik tek bir yeniden oluşturmayı tetikler)."
 
@@ -15840,6 +15855,9 @@ msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut el
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
 
+msgid "The current key stops working the moment you confirm"
+msgstr ""
+
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Bu portal hesabının bağlandığı müşteri kaydı; yalnızca zaten o müşteri üzerindeki ilgili kişiler aşağıda hesap sahibi olarak seçilebilir."
 
@@ -16222,6 +16240,9 @@ msgstr "Çalışmanızın ve stokunuzun bulunduğu fabrikalar, depolar ve tesisl
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Bu soruna uygulanan önceden ayarlanmış görev ve onay gereksinimi paketi; ayarlandığında sorun türünün varsayılan iş akışını geçersiz kılar."
+
+msgid "The previous key has stopped working"
+msgstr ""
 
 msgid "The principle:"
 msgstr "İlke:"
@@ -16641,6 +16662,16 @@ msgstr "Bu iş emri atölye'de artık kullanılamayacaktır."
 
 msgid "This job's own required quantity for the material."
 msgstr "Bu işin malzeme için kendi gerekli miktarı."
+
+msgid "This key has expired"
+msgstr ""
+
+msgid "This key has never authenticated a request. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
+
+#. placeholder {0}: formatTimeAgo(lastUsedAt)
+msgid "This key last authenticated a request {0}. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Bu lokasyon yalnızca personeli olan iş merkezlerini çizelgeler, ancak burası ışıksız bir (24×7) istasyondur — muaftır ve gözetimsiz olarak çalışmaya devam eder."
@@ -17459,6 +17490,10 @@ msgstr "Öğeyi güncelle"
 
 msgid "Update costs on"
 msgstr "Maliyetleri şu konularda güncelle"
+
+#. placeholder {0}: apiKey.name
+msgid "Update every integration that authenticates as {0}."
+msgstr ""
 
 msgid "Update Forecast"
 msgstr "Tahmini Güncelle"

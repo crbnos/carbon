@@ -725,6 +725,9 @@ msgstr "領収書のステータスが変更される"
 msgid "A receipt's supplier changes"
 msgstr "領収書の仕入先が変更される"
 
+msgid "A regenerated secret would be rejected as expired on its first request. Extend or clear the expiration on the key first, then regenerate."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "工法に添付された再利用可能でバージョン管理された作業手順書のセット。工程に記録および確認する順序付きステップとそれが実行されるときのパラメーターを提供します。"
 
@@ -6516,6 +6519,9 @@ msgstr "すべての条件が一致する必要があります"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
+
+msgid "Every integration still sending it will start failing until you give it the new key. The new key is shown once."
+msgstr ""
 
 msgid "Every match"
 msgstr "すべてのマッチ"
@@ -12931,6 +12937,15 @@ msgstr "為替レートを更新"
 msgid "Regenerate"
 msgstr "再生成"
 
+msgid "Regenerate {name}"
+msgstr ""
+
+msgid "Regenerate API Key"
+msgstr ""
+
+msgid "Regenerate Key"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動的にも実行されます（編集はバッチ処理されるため、いくつかの迅速な変更により1つの再生成がトリガーされます）。"
 
@@ -15840,6 +15855,9 @@ msgstr "このロット/シリアル番号の修正された有効期限。変�
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
 
+msgid "The current key stops working the moment you confirm"
+msgstr ""
+
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "このポータル アカウントがリンクしている得意先レコード。その得意先にすでに存在する担当者のみが、以下のアカウント ホルダーとして選択できます。"
 
@@ -16222,6 +16240,9 @@ msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサ
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "このイシューに適用される定義済みのタスクと承認要件のバンドル。設定されている場合、イシュータイプの既定ワークフローを上書きします。"
+
+msgid "The previous key has stopped working"
+msgstr ""
 
 msgid "The principle:"
 msgstr "原則:"
@@ -16641,6 +16662,16 @@ msgstr "この製造指図は製造現場では利用できなくなります。
 
 msgid "This job's own required quantity for the material."
 msgstr "この材料に対するこのジョブ自体の必要数量。"
+
+msgid "This key has expired"
+msgstr ""
+
+msgid "This key has never authenticated a request. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
+
+#. placeholder {0}: formatTimeAgo(lastUsedAt)
+msgid "This key last authenticated a request {0}. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "この拠点は人員が配置された作業区のみをスケジュール管理しますが、ここは無人（24×7）ステーション — 除外され、無人で稼働を続けます。"
@@ -17459,6 +17490,10 @@ msgstr "アイテムを更新"
 
 msgid "Update costs on"
 msgstr "原価を更新"
+
+#. placeholder {0}: apiKey.name
+msgid "Update every integration that authenticates as {0}."
+msgstr ""
 
 msgid "Update Forecast"
 msgstr "予測を更新"

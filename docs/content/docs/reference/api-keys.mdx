@@ -11,13 +11,23 @@ Create and manage keys under **Settings → API Keys**. Every key you see is lis
 
 Click **New API Key** and give it a **Name** (unique within your company). Optionally set **Expires At** — a future date after which the key stops working; leave it blank and the key never expires. Then grant scopes with the permission matrix (covered below) and save.
 
-Carbon shows the full key exactly once, in a dialog headed "You can only see this key once. Store it safely." Copy it right then. Carbon never stores the raw key: it keeps only a SHA-256 hash for lookup and the five-character preview for display. There is no way to reveal a key again later, so if you lose it, delete the key and create a new one.
+Carbon shows the full key exactly once, in a dialog headed "You can only see this key once. Store it safely." Copy it right then. Carbon never stores the raw key: it keeps only a SHA-256 hash for lookup and the five-character preview for display. There is no way to reveal a key again later — if you lose it, **regenerate** the key (below) rather than deleting and recreating it.
 
 <Callout type="warn" title="The key is a bearer secret">
-Anyone holding the key can act as it, within its scopes. Treat it like a password: store it in a secret manager, never commit it to source control, and rotate it (delete and recreate) if it leaks.
+Anyone holding the key can act as it, within its scopes. Treat it like a password: store it in a secret manager, never commit it to source control, and regenerate it if it leaks.
 </Callout>
 
 The full format is `crbn_` followed by a random token. The same dialog also hands you a ready-to-paste MCP command that wires the key into an AI assistant — see [The MCP endpoint](#the-mcp-endpoint) below.
+
+## Regenerating a key
+
+**Settings → API Keys → the key's context menu → Regenerate API Key** issues a new secret for an existing key. The row keeps its id, name, scopes and expiration; only the secret changes, so every integration you point at the new value keeps exactly the access it had.
+
+The old secret stops working the instant you confirm — there is no grace period and no overlap window. Anything still sending it gets "API key not found" on its next request, so have somewhere to paste the new value before you start. The confirmation dialog reports when the key last authenticated a request, which is the quickest way to tell whether something live is about to break.
+
+Regeneration is refused on an expired key — a fresh secret on an expired row would be rejected on its first request — so extend or clear **Expires At** first. It also clears the key's last-used timestamp, since that recorded the retired secret, and stamps who regenerated it and when. The new key is shown once, in the same dialog creation uses, with the same ready-to-paste MCP command.
+
+Use this instead of delete-and-recreate for a lost or leaked key: recreating means re-entering the name and re-granting every scope, and any integration pointed at the old key id has to be rewired.
 
 ## How a key authenticates a request
 
@@ -105,5 +115,5 @@ The key's `expiresAt` is in the past, so it's rejected before any work (`supabas
 The `carbon-key` (or Bearer token) didn't hash to a key for this company (`supabase.ts:287`). Usually a mistyped/truncated key, a key from a different company, or one that was deleted. Carbon stores only a SHA-256 hash and the five-character preview, so verify the full key value.
 
 ### I lost the key / can't find where to see it again
-There's no way to reveal a key after creation. Carbon shows the full key exactly once, in the "You can only see this key once. Store it safely." dialog, and keeps only a hash afterward. If you lost it, delete the key and create a new one.
+There's no way to reveal a key after creation. Carbon shows the full key exactly once, in the "You can only see this key once. Store it safely." dialog, and keeps only a hash afterward. If you lost it, use **Regenerate API Key** from the key's context menu: it issues a new secret on the same row, keeping the name, scopes and expiration. The old secret dies immediately, so update every caller. Deleting and recreating also works but throws away the scope configuration.
 </AgentContext>

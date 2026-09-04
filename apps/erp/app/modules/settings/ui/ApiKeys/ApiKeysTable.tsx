@@ -8,12 +8,13 @@ import {
   LuGauge,
   LuKey,
   LuPencil,
+  LuRefreshCw,
   LuShield,
   LuTag,
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
@@ -189,6 +190,16 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
             <Trans>Edit API Key</Trans>
           </MenuItem>
           <MenuItem
+            onClick={() => {
+              navigate(
+                `${path.to.regenerateApiKey(row.id!)}?${params?.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuRefreshCw />} />
+            <Trans>Regenerate API Key</Trans>
+          </MenuItem>
+          <MenuItem
             destructive
             onClick={() => {
               navigate(
@@ -230,7 +241,6 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         renderContextMenu={renderContextMenu}
         title={t`API Keys`}
       />
-      <Outlet />
     </>
   );
 });

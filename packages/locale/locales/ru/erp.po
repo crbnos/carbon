@@ -725,6 +725,9 @@ msgstr "Статус квитанции меняется"
 msgid "A receipt's supplier changes"
 msgstr "Поставщик квитанции меняется"
 
+msgid "A regenerated secret would be rejected as expired on its first request. Extend or clear the expiration on the key first, then regenerate."
+msgstr ""
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Многократно используемый, версионируемый набор рабочих инструкций, прикрепленный к процессу, предоставляющий операции упорядоченные шаги для записи и проверки, а также параметры, с которыми она работает."
 
@@ -6516,6 +6519,9 @@ msgstr "Каждое условие должно совпадать"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
+
+msgid "Every integration still sending it will start failing until you give it the new key. The new key is shown once."
+msgstr ""
 
 msgid "Every match"
 msgstr "Каждое совпадение"
@@ -12931,6 +12937,15 @@ msgstr "Обновить валютный курс"
 msgid "Regenerate"
 msgstr "Обновить"
 
+msgid "Regenerate {name}"
+msgstr ""
+
+msgid "Regenerate API Key"
+msgstr ""
+
+msgid "Regenerate Key"
+msgstr ""
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Пересчитать график для этой площадки сейчас. Пересчет также выполняется автоматически примерно через 30 секунд после последнего изменения в планировании (изменения группируются, поэтому несколько быстрых изменений запускают один пересчет)."
 
@@ -15840,6 +15855,9 @@ msgstr "Исправленная дата истечения для этой п�
 msgid "The currencies you trade in and their rates"
 msgstr "Валюты, в которых вы торгуете, и их курсы"
 
+msgid "The current key stops working the moment you confirm"
+msgstr ""
+
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Запись покупателя, к которой привязана эта учетная запись портала; в качестве владельца учетной записи ниже можно выбрать только контактных лиц этого покупателя."
 
@@ -16222,6 +16240,9 @@ msgstr "Заводы, склады и объекты, где находятся 
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
+
+msgid "The previous key has stopped working"
+msgstr ""
 
 msgid "The principle:"
 msgstr "Принцип:"
@@ -16641,6 +16662,16 @@ msgstr "Этот производственный заказ больше не �
 
 msgid "This job's own required quantity for the material."
 msgstr "Собственное требуемое количество материала для этого задания."
+
+msgid "This key has expired"
+msgstr ""
+
+msgid "This key has never authenticated a request. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
+
+#. placeholder {0}: formatTimeAgo(lastUsedAt)
+msgid "This key last authenticated a request {0}. Its name, scopes and expiration are unchanged — only the secret is replaced."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Эта площадка планирует только укомплектованные рабочие центры, но это полностью автоматизированная станция (24×7) — она исключена и продолжает работать автоматически."
@@ -17459,6 +17490,10 @@ msgstr "Обновить товар"
 
 msgid "Update costs on"
 msgstr "Обновить Себестоимость на"
+
+#. placeholder {0}: apiKey.name
+msgid "Update every integration that authenticates as {0}."
+msgstr ""
 
 msgid "Update Forecast"
 msgstr "Обновить прогноз"

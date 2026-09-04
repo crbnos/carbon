@@ -340,6 +340,7 @@
       "keywords": ["api", "keys", "docs", "reference"],
       "headings": [
         "Creating a key",
+        "Regenerating a key",
         "How a key authenticates a request",
         "Permission scoping",
         "Rate limiting",
