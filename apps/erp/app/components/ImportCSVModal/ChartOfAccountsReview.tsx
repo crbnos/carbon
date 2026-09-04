@@ -356,7 +356,6 @@ export function ChartOfAccountsReview({
                 <p>
                   {summary.length > 0 ? (
                     summary.map((part, i) => (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: fixed order
                       <Fragment key={i}>
                         {i > 0 && " · "}
                         {part}
