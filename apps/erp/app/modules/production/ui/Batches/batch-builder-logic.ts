@@ -7,6 +7,7 @@ import {
   BATCH_RULE_DIMENSIONS,
   type BatchRuleDimension,
   type BatchRules,
+  type BatchType,
   type MemberValueSets,
   mustViolations,
   resolveBatchRules
@@ -123,18 +124,22 @@ export type BatchPlanBreakdown = {
 };
 
 // The planned batch durations by type: ONE shared setup (the largest member's),
-// labor and machine summed. The single source for the review preview, the
-// setup-saving chip, and the batch-detail Run card. `unitDefaults` supplies a
-// per-type fallback unit when a member's own unit is null (the drawer defaults
-// setup to Total Minutes and labor/machine to Minutes/Piece); the builder passes
-// none, so a missing unit contributes nothing.
+// then labor and machine per the process's batch type — summed for Sequential
+// (members run one after another off the shared setup) or the largest member
+// for Simultaneous (members run together, e.g. one furnace cycle). The single
+// source for the review preview, the setup-saving chip, and the batch-detail
+// Run card. `unitDefaults` supplies a per-type fallback unit when a member's
+// own unit is null (the drawer defaults setup to Total Minutes and
+// labor/machine to Minutes/Piece); the builder passes none, so a missing unit
+// contributes nothing.
 export function batchPlanBreakdown(
   members: BatchDurationMember[],
   unitDefaults?: {
     setupUnit?: string;
     laborUnit?: string;
     machineUnit?: string;
-  }
+  },
+  batchType: BatchType = "Sequential"
 ): BatchPlanBreakdown {
   let setup = 0;
   let labor = 0;
@@ -150,15 +155,28 @@ export function batchPlanBreakdown(
       operationQuantity: m.operationQuantity
     });
     setup = Math.max(setup, d.setupDuration);
-    labor += d.laborDuration;
-    machine += d.machineDuration;
+    if (batchType === "Simultaneous") {
+      labor = Math.max(labor, d.laborDuration);
+      machine = Math.max(machine, d.machineDuration);
+    } else {
+      labor += d.laborDuration;
+      machine += d.machineDuration;
+    }
   }
   return { setup, labor, machine };
 }
 
-// Estimated batch run time: one shared setup (largest), labor and machine summed.
-export function batchEstimateMs(members: BatchCandidate[]): number {
-  const { setup, labor, machine } = batchPlanBreakdown(members);
+// Estimated batch run time: one shared setup (largest), plus labor and machine
+// per the batch type (see batchPlanBreakdown).
+export function batchEstimateMs(
+  members: BatchCandidate[],
+  batchType: BatchType = "Sequential"
+): number {
+  const { setup, labor, machine } = batchPlanBreakdown(
+    members,
+    undefined,
+    batchType
+  );
   return setup + labor + machine;
 }
 

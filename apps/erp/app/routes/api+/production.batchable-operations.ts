@@ -21,16 +21,11 @@ const ACTIVE_STATUSES = [
   "Paused"
 ] as const;
 
-// The RPC only offers operations on released jobs — mirror its predicate so the
-// hidden-op breakdown attributes the right reason.
-const RELEASED_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
-
-// What the builder tells the planner about ops the RPC excluded, per reason —
-// a bare count mislabeled "started or batched" when the real reason was an
-// unreleased (Draft/Planned) job, which is the common case.
+// What the builder tells the planner about ops the RPC excluded, per reason.
+// The RPC offers operations from ALL live jobs (Draft/Planned included), so
+// "not yet released" is no longer an exclusion — only started and batched are.
 export type HiddenOps = {
   total: number;
-  unreleased: number;
   started: number;
   batched: number;
 };
@@ -39,8 +34,8 @@ export type HiddenOps = {
 // get_batchable_operations RPC — the same source the deleted schedule board used —
 // and enriches each row with the op's time fields + due date (for the wizard's
 // setup-saving/run-time/due-spread chips) and the job item's thumbnail, which the
-// RPC omits. Rows carrying a jobOperationBatchId (Active/Completing lane members)
-// are kept; the builder partitions client-side (add-to-batch targets, add-mode).
+// RPC omits. Rows carrying a jobOperationBatchId (Planned/Active/Completing lane
+// members) are kept; the builder partitions client-side (add targets, add-mode).
 // Also returns workCenterLoad (active ops per WC at the location — the "N in
 // queue" helper on the WC picker) and hidden (a per-reason breakdown of the ops
 // on this process the RPC excluded).
@@ -55,7 +50,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const processId = url.searchParams.get("process");
   const emptyHidden: HiddenOps = {
     total: 0,
-    unreleased: 0,
     started: 0,
     batched: 0
   };
@@ -82,13 +76,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .in("status", [...ACTIVE_STATUSES])
       .not("workCenterId", "is", null),
     // All active-ish ops on this process at the location, with what's needed to
-    // say WHY each one the RPC excluded is absent.
+    // say WHY each one the RPC excluded is absent. Terminal jobs mirror the
+    // RPC's live-jobs predicate — their ops are not "hidden", they're gone.
     client
       .from("jobOperation")
       .select("id, jobOperationBatchId, job!inner(locationId, status)")
       .eq("companyId", companyId)
       .eq("processId", processId)
       .eq("job.locationId", locationId)
+      .not("job.status", "in", '("Completed","Closed","Cancelled")')
       .in("status", [...ACTIVE_STATUSES])
   ]);
 
@@ -105,16 +101,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   for (const op of processOps.data ?? []) {
     if (rpcIds.has(op.id)) continue;
     hidden.total += 1;
-    if (
-      !(RELEASED_JOB_STATUSES as readonly string[]).includes(
-        op.job?.status ?? ""
-      )
-    ) {
-      hidden.unreleased += 1;
-    } else if (op.jobOperationBatchId) {
+    if (op.jobOperationBatchId) {
       hidden.batched += 1;
     } else {
-      // Released, unbatched, active-status — the only remaining exclusion is
+      // Live job, unbatched, active-status — the only remaining exclusion is
       // the RPC's started guard (recorded productionEvent or in-progress).
       hidden.started += 1;
     }

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 // Import the logic module directly — the ERP barrels drag lingui macros vitest
 // does not transform (see batching-migration-guards.test.ts).
 import {
+  batchPlanBreakdown,
   candidateValueSets,
   computeGuideMismatches,
   computeLockedById,
@@ -413,5 +414,57 @@ describe("computeGuideMismatches (advisory guide mismatch)", () => {
       rules
     );
     expect(mismatches.has("b")).toBe(false);
+  });
+});
+
+// The review preview's duration math per the process's batchType: setup is
+// always ONE shared load (the largest member); labor/machine sum for
+// Sequential (members run one after another) and take the largest member for
+// Simultaneous (members share one cycle, e.g. a furnace load).
+describe("batchPlanBreakdown (Sequential vs Simultaneous)", () => {
+  // Distinct member times, all in makeDurations' milliseconds:
+  // m1: setup 30 min, labor 2 min/pc × 10 = 20 min, machine 3 min/pc × 10 = 30 min
+  // m2: setup 45 min, labor 1 min/pc × 5 = 5 min, machine 8 min total
+  const members = [
+    {
+      setupTime: 30,
+      setupUnit: "Total Minutes",
+      laborTime: 2,
+      laborUnit: "Minutes/Piece",
+      machineTime: 3,
+      machineUnit: "Minutes/Piece",
+      operationQuantity: 10
+    },
+    {
+      setupTime: 45,
+      setupUnit: "Total Minutes",
+      laborTime: 1,
+      laborUnit: "Minutes/Piece",
+      machineTime: 8,
+      machineUnit: "Total Minutes",
+      operationQuantity: 5
+    }
+  ];
+
+  it("Sequential: one shared setup (max), labor and machine summed", () => {
+    expect(batchPlanBreakdown(members, undefined, "Sequential")).toEqual({
+      setup: 45 * 60_000,
+      labor: (20 + 5) * 60_000,
+      machine: (30 + 8) * 60_000
+    });
+  });
+
+  it("Simultaneous: one shared setup (max), labor and machine each the largest member", () => {
+    expect(batchPlanBreakdown(members, undefined, "Simultaneous")).toEqual({
+      setup: 45 * 60_000,
+      labor: 20 * 60_000,
+      machine: 30 * 60_000
+    });
+  });
+
+  it("defaults to Sequential when no batchType is passed", () => {
+    expect(batchPlanBreakdown(members)).toEqual(
+      batchPlanBreakdown(members, undefined, "Sequential")
+    );
   });
 });

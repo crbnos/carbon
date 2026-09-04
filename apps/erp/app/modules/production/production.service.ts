@@ -5988,7 +5988,7 @@ export async function getBatchableProcesses(
 ) {
   return client
     .from("process")
-    .select("id, name, batchRules")
+    .select("id, name, batchable, batchType, batchRules")
     .eq("companyId", companyId)
     .eq("batchable", true)
     .eq("active", true)

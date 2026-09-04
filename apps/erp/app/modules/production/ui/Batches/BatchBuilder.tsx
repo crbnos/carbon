@@ -29,6 +29,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   useLocalStorage,
   VStack
@@ -36,6 +39,7 @@ import {
 import {
   type BatchRuleDimension,
   type BatchRules,
+  type BatchType,
   formatDate,
   formatDurationMilliseconds,
   RoundingMode,
@@ -65,7 +69,9 @@ import {
 import { useFetcher, useNavigate } from "react-router";
 import { ItemThumbnail, Table } from "~/components";
 import { path } from "~/utils/path";
+import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
+import JobStatus from "../Jobs/JobStatus";
 import {
   batchPlanBreakdown,
   candidateValueSets,
@@ -148,6 +154,26 @@ function CompatBadge({
   return null;
 }
 
+// Job statuses already on the floor — the norm for a candidate, so no chip.
+// Anything else (Draft/Planned) is a job the batch would pull forward; chip it
+// with the same status badge the job tables use, so the planner sees that
+// choice before creating (or releasing) the batch.
+const FLOOR_JOB_STATUSES: readonly string[] = [
+  "Ready",
+  "In Progress",
+  "Paused"
+];
+
+function CandidateJobStatus({ status }: { status: string | null }) {
+  if (!status || FLOOR_JOB_STATUSES.includes(status)) return null;
+  return (
+    <JobStatus
+      status={status as (typeof jobStatus)[number]}
+      className="flex-shrink-0"
+    />
+  );
+}
+
 // The material chips shown on a candidate row: one per distinct BOM line —
 // property string when present, else the material item's readable id.
 function materialChips(candidate: BatchCandidate): string[] {
@@ -206,14 +232,12 @@ type StoredScope = {
 
 type HiddenOps = {
   total: number;
-  unreleased: number;
   started: number;
   batched: number;
 };
 
 const NO_HIDDEN_OPS: HiddenOps = {
   total: 0,
-  unreleased: 0,
   started: 0,
   batched: 0
 };
@@ -239,7 +263,12 @@ export function BatchBuilder({
   initialLocationId?: string | null;
   initialProcessId?: string | null;
   locations: { id: string; name: string }[];
-  processes: { id: string; name: string; batchRules?: BatchRules | null }[];
+  processes: {
+    id: string;
+    name: string;
+    batchType?: BatchType | null;
+    batchRules?: BatchRules | null;
+  }[];
   workCenters: {
     id: string;
     name: string;
@@ -376,9 +405,6 @@ export function BatchBuilder({
 
   // "6 hidden" alone reads as a bug when the list is empty — name the reasons.
   const hiddenParts = [
-    hidden.unreleased > 0
-      ? t`${hidden.unreleased} on jobs not yet released`
-      : null,
     hidden.started > 0 ? t`${hidden.started} already started` : null,
     hidden.batched > 0 ? t`${hidden.batched} already in a batch` : null
   ].filter((p): p is string => Boolean(p));
@@ -411,6 +437,12 @@ export function BatchBuilder({
       ),
     [processes, processId]
   );
+
+  // The scoped process's duration model for the review preview: Sequential
+  // members run one after another off the shared setup (labor/machine sum);
+  // Simultaneous members share one cycle, e.g. a furnace load (max).
+  const batchType: BatchType =
+    processes.find((p) => p.id === processId)?.batchType ?? "Sequential";
 
   const dimLabel = useMemo<Record<BatchRuleDimension, string>>(
     () => ({
@@ -620,7 +652,7 @@ export function BatchBuilder({
     }
   }, [submitFetcher.state, submitFetcher.data, isAddMode, batch?.id, navigate]);
 
-  const submit = (targetBatchId?: string) => {
+  const submit = (targetBatchId?: string, opts?: { release?: boolean }) => {
     const fd = new FormData();
     if (isAddMode || targetBatchId) {
       addTargetRef.current = targetBatchId ?? null;
@@ -632,6 +664,9 @@ export function BatchBuilder({
       fd.set("locationId", locationId);
       if (workCenterId) fd.set("workCenterId", workCenterId);
       if (notes.trim()) fd.set("notes", notes.trim());
+      // Create & Release: the create validator's zfd.checkbox reads "on" and
+      // the edge fn inserts the batch already Active (on the floor).
+      if (opts?.release) fd.set("release", "on");
     }
     for (const id of selectedById.keys()) fd.append("jobOperationIds", id);
     submitFetcher.submit(fd, {
@@ -679,6 +714,19 @@ export function BatchBuilder({
     () => workCenters.find((wc) => wc.id === workCenterId) ?? null,
     [workCenters, workCenterId]
   );
+
+  // Release needs a work center the batch can run at: the explicit pick, or —
+  // mirroring the edge fn's adoption rule — the single distinct work center
+  // the selected members already sit on (members without one don't block
+  // adoption). Otherwise the edge fn refuses Create & Release.
+  const memberWorkCenterIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of selected) {
+      if (c.workCenterId) ids.add(c.workCenterId);
+    }
+    return ids;
+  }, [selected]);
+  const canRelease = Boolean(workCenterId) || memberWorkCenterIds.size === 1;
 
   return (
     <Drawer
@@ -774,6 +822,7 @@ export function BatchBuilder({
               existingMembers={batch?.members ?? []}
               selected={selected}
               rules={rules}
+              batchType={batchType}
               onRemove={toggle}
               workCenterId={workCenterId}
               workCenterOptions={workCenterOptions}
@@ -810,6 +859,32 @@ export function BatchBuilder({
                   {t`Add to ${target.readableId}`}
                 </Button>
               ))}
+            {!isAddMode &&
+              (canRelease ? (
+                <Button
+                  variant="secondary"
+                  isDisabled={selected.length === 0 || isSubmitting}
+                  onClick={() => submit(undefined, { release: true })}
+                >
+                  {t`Create & Release`}
+                </Button>
+              ) : (
+                <Tooltip>
+                  {/* A disabled button swallows pointer and focus events, so
+                      the wrapper carries the tooltip (ItemChangeNoticeLock
+                      precedent). */}
+                  <TooltipTrigger asChild>
+                    <div tabIndex={0}>
+                      <Button variant="secondary" isDisabled>
+                        {t`Create & Release`}
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t`Select a work center to release`}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
             <Button
               leftIcon={<LuLayers />}
               isLoading={isSubmitting}
@@ -818,7 +893,7 @@ export function BatchBuilder({
             >
               {isAddMode
                 ? t`Add ${selected.length} operations`
-                : t`Create batch (${selected.length})`}
+                : t`Create batch`}
             </Button>
           </HStack>
         </DrawerFooter>
@@ -1501,7 +1576,10 @@ function CandidateTable({
         accessorKey: "jobReadableId",
         header: t`Job`,
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.jobReadableId}</span>
+          <HStack spacing={2} className="items-center">
+            <span className="font-medium">{row.original.jobReadableId}</span>
+            <CandidateJobStatus status={row.original.jobStatus} />
+          </HStack>
         )
       },
       {
@@ -1868,6 +1946,7 @@ function CandidateGroup({
                     <span className="text-sm font-medium">
                       {c.jobReadableId}
                     </span>
+                    <CandidateJobStatus status={c.jobStatus} />
                     <span className="text-xs text-muted-foreground truncate">
                       {c.itemReadableId}
                     </span>
@@ -1957,6 +2036,7 @@ function ReviewPanel({
   existingMembers,
   selected,
   rules,
+  batchType,
   onRemove,
   workCenterId,
   workCenterOptions,
@@ -1970,6 +2050,7 @@ function ReviewPanel({
   existingMembers: BatchBuilderBatch["members"];
   selected: BatchCandidate[];
   rules: Required<BatchRules>;
+  batchType: BatchType;
   onRemove: (c: BatchCandidate) => void;
   workCenterId: string | null;
   workCenterOptions: {
@@ -1986,8 +2067,9 @@ function ReviewPanel({
   const { t } = useLingui();
 
   // Planned durations for the batch, by type: one shared setup (the largest
-  // member) plus summed labor and machine. The estimate is their sum.
-  const plan = batchPlanBreakdown(selected);
+  // member) plus labor/machine per the process's batch type — summed for
+  // Sequential, the largest member for Simultaneous. The estimate is their sum.
+  const plan = batchPlanBreakdown(selected, undefined, batchType);
   const estimateMs = plan.setup + plan.labor + plan.machine;
 
   // Setup saving: one shared setup (the largest member) instead of the sum.
@@ -2050,7 +2132,11 @@ function ReviewPanel({
                 <>
                   {" · "}
                   <span
-                    title={t`One shared setup plus the summed labor and machine time`}
+                    title={
+                      batchType === "Simultaneous"
+                        ? t`One shared setup plus the longest labor and machine time — the members run together`
+                        : t`One shared setup plus the summed labor and machine time`
+                    }
                   >
                     {t`≈ ${formatDurationMilliseconds(estimateMs, {
                       style: "short"

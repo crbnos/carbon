@@ -480,6 +480,18 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 
 ## Changelog
 
+### 2026-09-04 — Scheduling HIGH risk resolved by the batch-release spec
+
+The "capacity planning collision" risk (per-op reservations N×-over-booking a
+batch work center; nightly replan splitting a batch across work centers) is
+RESOLVED by `.ai/specs/2026-09-04-batch-release-and-scheduling.md`: a Released
+batch now schedules as ONE coalesced `capacityReservation` (tagged
+`jobOperationBatchId`), members pin to the batch window, and the batch stays on
+its work center. That spec also added the `Planned` pre-floor state ("Released"
+= the `Active` value's UI label), the membership-handoff floor rule, and
+`process.batchType` (Sequential/Simultaneous durations).
+
+
 ### 2026-09-01 — Self-review fixes: tenant integrity, signature split, logic module
 
 - **Tenant integrity**: the `batch-operations` edge fn now re-reads payload

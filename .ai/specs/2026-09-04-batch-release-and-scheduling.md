@@ -450,7 +450,7 @@ Design-level contract (engine internals to be detailed in `/plan`):
 | Process form (`resources/ui/Processes/ProcessForm.tsx`) | When `batchable` is on, show a **Batch type** selector: **Sequential** ("parts run one after another — saw, laser table") vs **Simultaneous** ("parts run together in one load — furnace, oven, plating"). Default Sequential |
 | Batch builder (`ui/Batches/BatchBuilder.tsx`) | Candidate list widened to unreleased jobs (a job-status chip distinguishes Draft/Planned from Released so the planner sees what they're pulling forward). Review step: **"Create"** (Planned) and **"Create & Release"** (Active). The run-time estimate uses `batchDuration(batchType, …)` (max vs Σ) instead of the hardcoded sum |
 | Batches list + detail drawer (`ui/Batches/…`) | New **Released** (was "Active") label; a **Planned** status badge; a **Release** action (Planned rows, requires a work center — the action is disabled with a hint if none) and an **Unrelease** action (Active rows with no production event). Status filter gains Planned |
-| Operations schedule board / batch card (`BatchItemCard`) | The batch card renders in its work-center column as one bar for the whole batch duration; **Planned** batches show as a distinct (not-yet-on-floor) card; **Released** batches show live. Members are not drawn individually (Brad: show the batch, not the members) |
+| Operations schedule board / batch card (`BatchItemCard`) | The batch card renders in its work-center column for **Released** batches; members are not drawn individually (Brad: show the batch, not the members). **Amended at implementation (Fable, for veto): Planned batches do NOT appear on the board** — the board reads the floor RPC (shared with the MES kanban), and widening it would put planning-state work on a dispatch surface, the exact ambiguity this feature removes. Planned batches are managed on the Batches list + builder (status filter, Release action, drawer). The card ships a dashed `Planned` variant, dormant unless a planner lane is added later |
 | MES kanban / floor | Unchanged UI, but a Released batch's members now appear even when their job is unreleased; a `Planned` batch's members do not appear even when their job is released. A batchable op **not** in any batch on a released job appears normally (happy path) |
 | Job detail | A job with unbatched batchable operations after release surfaces an informational "**N operations awaiting batching**" line (not a block) so a planner knows those ops are held for the planner, not lost |
 
@@ -572,6 +572,10 @@ the completeness findings that review added:
   equivalence); no contradictions. Two non-blocking future refinements noted
   (p-batch weight/size-driven duration; non-quantity override weights).
   Status: draft, pending Brad's veto pass on the recommended items, then `/plan`.
+- 2026-09-04: Implementation amendment (Fable, for veto): the priority board
+  stays floor-pure — Planned batches render only on the Batches list/builder,
+  not as board cards (the board + MES kanban share the floor RPC; a Planned
+  card there would re-mix planning into dispatch). Card variant kept dormant.
 - 2026-09-04: **Independent Fable review** (Brad switched models and delegated
   the review + plan). All six recommendations **upheld**; one amended (#4 gains
   the member-job `recalculateJobRequirements` at release). Completeness

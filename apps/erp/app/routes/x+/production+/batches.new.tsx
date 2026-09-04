@@ -47,8 +47,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? paramProcess
       : null;
 
-  // Add-mode: pre-scope to an existing Active batch. A Completing/Completed
-  // batch can't take members — bounce back to its drawer.
+  // Add-mode: pre-scope to an existing Planned or Active batch. A Completing/
+  // Completed batch can't take members — bounce back to its drawer.
   let batch: {
     id: string;
     readableId: string;
@@ -75,12 +75,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         await flash(request, error(result.error, "Failed to load batch"))
       );
     }
-    if (result.data.status !== "Active") {
+    if (result.data.status !== "Planned" && result.data.status !== "Active") {
       throw redirect(
         path.to.operationBatch(batchId),
         await flash(
           request,
-          error(null, "Only an active batch can take more operations")
+          error(null, "Only a planned or active batch can take more operations")
         )
       );
     }
@@ -103,6 +103,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     processes: (processes.data ?? []).map((p) => ({
       id: p.id,
       name: p.name,
+      // Drives the review preview's duration model (Sequential Σ vs
+      // Simultaneous max) in the builder.
+      batchType: p.batchType,
       batchRules: (p.batchRules ?? null) as BatchRules | null
     })),
     locations: (locations.data ?? []).map((l) => ({ id: l.id, name: l.name })),

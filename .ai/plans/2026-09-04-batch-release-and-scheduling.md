@@ -25,11 +25,11 @@ Core rule being implemented (memorize before any task):
 - [x] Task 9: Scheduler batch pre-pass + pinned members (+ tests)
 - [x] Task 10: MES floor guards + `getOpenJobs` widening
 - [x] Task 11: Process form — Batch type selector
-- [ ] Task 12: Batch builder — Create vs Create & Release, job-status chips, duration
-- [ ] Task 13: Batches list/drawer/board — Planned state, Release/Unrelease actions
-- [ ] Task 14: Job detail — "operations awaiting batching" notice
+- [x] Task 12: Batch builder — Create vs Create & Release, job-status chips, duration
+- [x] Task 13: Batches list/drawer/board — Planned state, Release/Unrelease actions
+- [x] Task 14: Job detail — "operations awaiting batching" notice
 - [ ] Task 15: i18n extract + translate
-- [ ] Task 16: Docs sync (AGENTS.md + rules + spec changelog)
+- [x] Task 16: Docs sync (AGENTS.md + rules + spec changelog)
 - [ ] Task 17: Validation gates (typecheck, lint, tests, db checks)
 - [ ] Task 18: Browser verification via /test
 
