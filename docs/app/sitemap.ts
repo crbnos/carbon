@@ -20,40 +20,41 @@ export default function sitemap(): MetadataRoute.Sitemap {
     out.push({ url: abs(page.url), changeFrequency: "monthly", priority: 0.7 });
   }
 
-  // REST API reference
+  // Carbon API (the headline surface — service layer, reached over MCP today)
+  out.push({ url: abs("/api"), changeFrequency: "monthly", priority: 0.7 });
+  out.push({ url: abs("/api/mcp"), changeFrequency: "monthly", priority: 0.5 });
   out.push({
-    url: abs("/api-reference"),
-    changeFrequency: "monthly",
-    priority: 0.6
-  });
-  out.push({
-    url: abs("/api-reference/authentication"),
-    changeFrequency: "yearly",
-    priority: 0.5
-  });
-  for (const { module, resource } of allResourceParams()) {
-    out.push({
-      url: abs(`/api-reference/${module}/${resource}`),
-      changeFrequency: "monthly",
-      priority: 0.5
-    });
-  }
-
-  // MCP
-  out.push({ url: abs("/mcp"), changeFrequency: "monthly", priority: 0.6 });
-  out.push({
-    url: abs("/mcp/authentication"),
+    url: abs("/api/authentication"),
     changeFrequency: "yearly",
     priority: 0.5
   });
   out.push({
-    url: abs("/mcp/tools"),
+    url: abs("/api/operations"),
     changeFrequency: "monthly",
     priority: 0.5
   });
   for (const { tool } of allToolParams()) {
     out.push({
-      url: abs(`/mcp/tools/${tool}`),
+      url: abs(`/api/operations/${tool}`),
+      changeFrequency: "monthly",
+      priority: 0.5
+    });
+  }
+
+  // Data API (PostgREST — the secondary data plane, demoted below the Carbon API)
+  out.push({
+    url: abs("/api-reference"),
+    changeFrequency: "monthly",
+    priority: 0.5
+  });
+  out.push({
+    url: abs("/api-reference/authentication"),
+    changeFrequency: "yearly",
+    priority: 0.4
+  });
+  for (const { module, resource } of allResourceParams()) {
+    out.push({
+      url: abs(`/api-reference/${module}/${resource}`),
       changeFrequency: "monthly",
       priority: 0.4
     });

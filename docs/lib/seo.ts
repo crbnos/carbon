@@ -26,11 +26,12 @@ export const SEO = {
   },
   api: {
     intro: {
-      title: "API reference",
-      description: "Carbon's REST API — every table and view is an endpoint.",
+      title: "Data API",
+      description:
+        "Direct REST access to Carbon's tables and views — the raw data plane under the Carbon API.",
     },
     auth: {
-      title: "API authentication",
+      title: "Data API authentication",
       description: "Create a scoped API key, send it as a bearer token.",
     },
   },

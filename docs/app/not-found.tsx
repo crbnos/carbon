@@ -20,10 +20,14 @@ const LINKS = [
   },
   {
     label: "API",
-    desc: "REST resources for every table and view",
-    href: "/api-reference"
+    desc: "The service layer — read and write the safe way",
+    href: "/api"
   },
-  { label: "MCP", desc: "Connect AI clients to your data", href: "/mcp" }
+  {
+    label: "Data API",
+    desc: "Direct REST access to every table and view",
+    href: "/api-reference"
+  }
 ];
 
 function Arrow() {

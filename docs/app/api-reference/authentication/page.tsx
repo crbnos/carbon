@@ -20,7 +20,7 @@ export const metadata = pageSeo({
   ogTitle: SEO.api.auth.title,
   description: SEO.api.auth.description,
   path: "/api-reference/authentication",
-  eyebrow: "API reference"
+  eyebrow: "Data API"
 });
 
 const REQUEST = `curl 'https://rest.carbon.ms/item?limit=1' \\
@@ -66,11 +66,11 @@ export default async function AuthenticationPage() {
   const html = await highlight(REQUEST, "curl");
   return (
     <DocPage>
-      <DocEyebrow>REST API</DocEyebrow>
+      <DocEyebrow>Data API</DocEyebrow>
       <DocTitle>Authentication</DocTitle>
       <Lead>
-        Carbon authenticates public API requests with a scoped, optionally
-        expiring API key.
+        Carbon authenticates Data API requests with a scoped, optionally
+        expiring API key — the same key that unlocks the Carbon API.
       </Lead>
       <P>
         Create a key in{" "}

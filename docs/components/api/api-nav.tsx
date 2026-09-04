@@ -19,7 +19,7 @@ const METHOD_ABBR: Record<string, string> = {
   DELETE: "DEL",
 };
 
-const REST_API = [
+const DATA_API = [
   { label: "Overview", href: "/api-reference" },
   { label: "Authentication", href: "/api-reference/authentication" },
 ];
@@ -84,8 +84,8 @@ export function ApiNav({ tree }: { tree: NavModule[] }) {
     <div>
       <nav className="flex flex-col gap-0.5">
         <div className="mb-2.5">
-          <p className={SECTION_LABEL}>REST API</p>
-          {REST_API.map((item) => (
+          <p className={SECTION_LABEL}>Data API</p>
+          {DATA_API.map((item) => (
             <Link
               key={item.href}
               href={item.href}

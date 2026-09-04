@@ -23,17 +23,17 @@ export const metadata = pageSeo({
   ogTitle: SEO.api.intro.title,
   description: SEO.api.intro.description,
   path: "/api-reference",
-  eyebrow: "API reference"
+  eyebrow: "Data API"
 });
 
 const ENV = `# .env
-CARBON_API_URL=${apiBase}
-CARBON_API_KEY=<your-api-key>`;
+CARBON_DATA_API_URL=${apiBase}
+CARBON_DATA_API_KEY=<your-api-key>`;
 
 const INIT = `import { createClient } from '@supabase/supabase-js'
 
-const apiUrl = process.env.CARBON_API_URL
-const apiKey = process.env.CARBON_API_KEY
+const apiUrl = process.env.CARBON_DATA_API_URL
+const apiKey = process.env.CARBON_DATA_API_KEY
 
 export const carbon = createClient(apiUrl, apiKey)`;
 
@@ -45,22 +45,24 @@ export default async function ApiIntroPage() {
 
   return (
     <DocPage>
-      <DocEyebrow>REST API</DocEyebrow>
+      <DocEyebrow>Data API</DocEyebrow>
       <DocTitle>Overview</DocTitle>
       <Lead>
-        The Carbon API is a REST interface over your manufacturing data — every
-        table and view is an endpoint, with full read and write access.
+        The Data API is direct REST access to Carbon's tables and views — the
+        raw data plane beneath the <DocLink href="/api">Carbon API</DocLink>.
+        Every table and view is an endpoint.
       </Lead>
       <P>
-        There are three ways to call it: directly over HTTP, through the{" "}
-        <DocLink href="#client-libraries">JavaScript SDK</DocLink>, or from the{" "}
-        <DocLink href="/mcp">MCP server</DocLink>. Start by creating an{" "}
+        It's built for reads — bulk exports, analytics, dashboards. For writes,
+        reach for the <DocLink href="/api">Carbon API</DocLink> instead: writing
+        a row here skips the service layer, so derived totals and statuses are
+        not recalculated. Start by creating an{" "}
         <DocLink href="/api-reference/authentication">API key</DocLink>.
       </P>
 
       <H2 id="client-libraries">Client libraries</H2>
       <P>
-        Carbon's API is standard REST, so it works from any language. The
+        The Data API is standard REST, so it works from any language. The
         recommended client is the JavaScript SDK, built on{" "}
         <Code>supabase-js</Code>.
       </P>

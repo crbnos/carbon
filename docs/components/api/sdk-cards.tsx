@@ -44,7 +44,7 @@ const CARDS = [
     glyph: <Brand path={siTypescript.path} />,
     tone: "bg-[#E8F0FB] text-[#3178C6]",
     name: "JavaScript & TypeScript",
-    desc: "The recommended client — supabase-js. Read and write Carbon with carbon.from('…').",
+    desc: "The recommended Data API client — supabase-js. Query tables and views with carbon.from('…').",
     href: "#quickstart",
     cta: "Quickstart",
   },

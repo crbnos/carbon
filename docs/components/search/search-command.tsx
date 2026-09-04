@@ -42,23 +42,23 @@ const SURFACES = [
   { key: "all", label: "All", tag: undefined },
   { key: "guide", label: "Guide", tag: "guide" },
   { key: "docs", label: "Reference", tag: "docs" },
-  { key: "resources", label: "API", tag: "resources" },
-  { key: "tools", label: "MCP", tag: "tools" },
+  { key: "tools", label: "API", tag: "tools" },
+  { key: "resources", label: "Data API", tag: "resources" },
 ] as const;
 
 const surfaceToneClasses: Record<string, string> = {
   guide: "border-ed-blue-border bg-ed-blue-bg text-ed-blue-mid",
   api: "border-ed-green-border bg-ed-green-bg text-ed-green-text",
-  mcp: "border-ed-amber-stroke bg-ed-amber-fill text-ed-amber-text",
+  "data-api": "border-ed-amber-stroke bg-ed-amber-fill text-ed-amber-text",
   docs: "border-ed-warm-400 bg-ed-warm-150 text-ed-ink/60",
 };
 
 // Which surface a result belongs to is read back off its URL — the flat result list
-// from fetchClient doesn't echo the index `tag`.
+// from fetchClient doesn't echo the index `tag`. Check /api-reference before /api.
 function surfaceOf(url: string): { label: string; key: string } {
   if (url.startsWith("/guides")) return { label: "Guide", key: "guide" };
-  if (url.startsWith("/api-reference")) return { label: "API", key: "api" };
-  if (url.startsWith("/mcp")) return { label: "MCP", key: "mcp" };
+  if (url.startsWith("/api-reference")) return { label: "Data API", key: "data-api" };
+  if (url.startsWith("/api")) return { label: "API", key: "api" };
   return { label: "Reference", key: "docs" };
 }
 

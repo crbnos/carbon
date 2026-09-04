@@ -14,7 +14,8 @@ const GLOSSARY_URL = "/docs/glossary";
 
 /* One Orama index over all four doc surfaces. Each entry is `tag`ged so the single
  * /api/search endpoint can be filtered per surface (the header's All/Guide/Reference/
- * API/MCP pills map to these tags). MDX pages reuse the `structuredData` the
+ * API/Data API pills map to these tags — `tools` is the Carbon API operation catalog,
+ * `resources` is the PostgREST Data API). MDX pages reuse the `structuredData` the
  * fumadocs-mdx pipeline already produces (the same field createFromSource read); the
  * generated API/MCP data is shaped into structuredData by hand so column- and
  * parameter-level matches still land the right page. */
@@ -61,12 +62,12 @@ function toolIndexes(): AdvancedIndex[] {
         contents.push({ heading: undefined, content: `Parameters: ${params.join(", ")}.` });
       }
       return {
-        id: `/mcp/tools/${tool.slug}`,
-        url: `/mcp/tools/${tool.slug}`,
+        id: `/api/operations/${tool.slug}`,
+        url: `/api/operations/${tool.slug}`,
         title: tool.name,
         description: tool.description,
         tag: "tools",
-        breadcrumbs: ["MCP", mod.name],
+        breadcrumbs: ["API", mod.name],
         structuredData: { headings: [], contents },
       };
     }),
@@ -105,7 +106,7 @@ function resourceIndexes(): AdvancedIndex[] {
         title: r.name,
         description: r.description,
         tag: "resources",
-        breadcrumbs: ["API", mod.name],
+        breadcrumbs: ["Data API", mod.name],
         structuredData: { headings, contents },
       };
     }),

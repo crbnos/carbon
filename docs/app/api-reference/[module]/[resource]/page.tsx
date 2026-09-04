@@ -18,11 +18,11 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   const { module, resource } = await props.params;
   const found = getResource(module, resource);
   return pageSeo({
-    title: found ? `${found.resource.name} — Carbon API` : "Carbon API",
-    ogTitle: found?.resource.name ?? "Carbon API",
+    title: found ? `${found.resource.name} — Carbon Data API` : "Carbon Data API",
+    ogTitle: found?.resource.name ?? "Carbon Data API",
     description: found?.resource.description,
     path: `/api-reference/${module}/${resource}`,
-    eyebrow: found ? found.module.name : "API reference"
+    eyebrow: found ? found.module.name : "Data API"
   });
 }
 
@@ -35,7 +35,10 @@ export default async function ResourcePage(props: Params) {
   return (
     <div className="max-w-295">
       <Breadcrumb
-        items={[{ label: "API", href: "/api-reference" }, { label: mod.name }]}
+        items={[
+          { label: "Data API", href: "/api-reference" },
+          { label: mod.name }
+        ]}
       />
       <h1 className="m-0 mt-2 text-ed-32 font-semibold tracking-tight leading-[120%] text-ed-ink">
         {r.name}
