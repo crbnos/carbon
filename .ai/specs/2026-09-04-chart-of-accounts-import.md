@@ -162,7 +162,7 @@ type (`integration = xero | quickbooks | rillet`).
 - [x] The two system roots are never written; a file "Balance Sheet" adopts the root. (Planner test.)
 - [x] Deactivating an account referenced by `accountDefault` is refused per row. (Planner test.)
 - [x] The dry run and the commit produce the same plan. (Same planner call; browser counts matched.)
-- [x] Planner unit tests cover every structure mode, adoption, promotion, conflicts, cycles, class agreement, and resolutions. (`import-csv/account-import.test.ts`, 14 tests.)
+- [x] Planner unit tests cover every structure mode, adoption, promotion, conflicts, cycles, class agreement, and resolutions. (`import-csv/account-import.test.ts`, 17 tests.)
 
 ## Out of Scope
 
@@ -170,3 +170,64 @@ type (`integration = xero | quickbooks | rillet`).
 - Re-pointing `accountDefault` after an import (the review lists the seeded leaves still referenced; the Default Accounts page changes them).
 - Pulling a chart from a connected provider (Xero / QuickBooks / Rillet); the planner is written so a provider read can feed it later.
 - Excel files, non-comma delimiters, header rows below row 1 (wizard limits).
+
+## Feedback from the 2026-09-04 walkthrough
+
+Two lists: what applies to the shared CSV import wizard (noted, not
+implemented), and what is specific to the chart-of-accounts review step
+(implemented the same day).
+
+### General CSV upload feedback
+
+- Closing the wizard should ask for confirmation. The close (×), Escape and
+  the dev-server reload all discard the uploaded file, the column and value
+  mappings and, on the review step, every resolution the user has entered,
+  with no prompt. A "Discard this import?" confirmation once a file has been
+  uploaded, and ideally state that survives a reload, would stop work being
+  lost by a mis-click.
+- The modal has no vertical constraint. `ModalContent` sizes to its content
+  and `AnimatedSizeContainer` animates height with `overflow-hidden`, so a
+  tall step (an enum step with many values, the review table) pushes the
+  modal flush against the top of the viewport and the primary action
+  (Next / Confirm Import) below the fold; the page scrolls instead of the
+  modal body. Predates this branch. Candidate fix: cap `ModalContent` at
+  `max-h-[calc(100vh-4rem)]` with `ModalBody` as the scroll region, and stop
+  animating height when the content exceeds it.
+- Check that the modal's resize animation matches origin/main's import
+  window and the rest of the UI. Inherited from main: `ImportCSVModal`
+  already wrapped the wizard in `AnimatedSizeContainer height` (spring,
+  0.3 s), so the height animation between steps is not new. New on this
+  branch: the modal switches `size` from `medium` to `xxlarge` on entering a
+  review step and back on leaving it — a width jump main never does, and
+  `ModalContent`'s `max-w-*` change is not animated. Verify on main
+  (Customers → Bulk Import) and decide whether the width change should
+  animate, be a fixed wide modal for the whole wizard, or be dropped.
+- Horizontal scroll inside a modal should not be the design. The review
+  table (and `ImportResultsModal`, which uses the same `w-max min-w-full`
+  pattern) scrolls sideways when its columns exceed the modal width. In the
+  results modal it is tolerable because the columns are the user's own CSV;
+  in a review it hides the part that matters.
+- On first load the chart tree is blank for a few seconds: `window.env` is
+  injected differently on server and client (`root.tsx`), React reports a
+  hydration mismatch and re-renders the document on the client. Unrelated to
+  the import; noted because a click in that window hits an element that is
+  about to be replaced.
+
+### Chart of accounts specific feedback (implemented 2026-09-04)
+
+- Details clipping: each plan row is two lines — the account on the first,
+  the reason / changes and the resolution on the second, spanning the
+  table. The table is `table-fixed` at the modal's width, so nothing scrolls
+  sideways.
+- Batched resolutions: picks accumulate in the review's local state and
+  show as Pending; an "Update plan" action re-runs the dry run once with all
+  of them, and Confirm sends the same set. A Resolved / Pending badge and
+  Undo sit under each row.
+- Bulk number choice: "Use the file's numbers for N matching accounts" and
+  "Keep Carbon's numbers" act on every linkable conflict and every matched
+  row at once, and each reverses the other. Per row, an update that
+  renumbers offers "Keep Carbon's number" and "Leave this account as it is".
+  The planner gained the `keepNumber` resolution (also honoured as a
+  name-only match for a numbered row) and reports the matched account's
+  number and name so the badge can name it. Verified in the browser: keep →
+  27 updates / 7 unchanged / 0 attention; file's numbers → 34 updates.

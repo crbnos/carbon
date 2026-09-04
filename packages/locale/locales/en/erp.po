@@ -280,6 +280,9 @@ msgstr "{noDemandItemCount} parts skipped — nothing to make"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
+msgid "{pendingCount} change(s) not yet in the plan"
+msgstr "{pendingCount} change(s) not yet in the plan"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 
@@ -8100,6 +8103,14 @@ msgstr "Import"
 msgid "Import {label} CSV"
 msgstr "Import {label} CSV"
 
+#. placeholder {0}: resolution.name
+msgid "Import as \"{0}\""
+msgstr "Import as \"{0}\""
+
+#. placeholder {0}: resolution.number
+msgid "Import as {0}"
+msgstr "Import as {0}"
+
 msgid "Import results"
 msgstr "Import results"
 
@@ -8187,9 +8198,6 @@ msgstr "Include extra parts in shipment"
 
 msgid "Include Inactive"
 msgstr "Include Inactive"
-
-msgid "Include this row again"
-msgstr "Include this row again"
 
 msgid "Included"
 msgstr "Included"
@@ -8792,6 +8800,12 @@ msgstr "Kanbans"
 msgid "Keep"
 msgstr "Keep"
 
+msgid "Keep Carbon's number"
+msgstr "Keep Carbon's number"
+
+msgid "Keep Carbon's numbers"
+msgstr "Keep Carbon's numbers"
+
 msgid "Keep Current"
 msgstr "Keep Current"
 
@@ -8809,6 +8823,9 @@ msgstr "Keep Open"
 
 msgid "Keep picking"
 msgstr "Keep picking"
+
+msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
+msgstr "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Keeps orders, quotes, and settings behind a second check"
@@ -9548,6 +9565,9 @@ msgstr "Matched"
 
 msgid "matches"
 msgstr "matches"
+
+msgid "Matching accounts are updated in place; choose whose numbers they keep."
+msgstr "Matching accounts are updated in place; choose whose numbers they keep."
 
 msgid "Matching Pairs"
 msgstr "Matching Pairs"
@@ -13412,6 +13432,9 @@ msgstr "Residual Value %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 
+msgid "Resolved"
+msgstr "Resolved"
+
 msgid "Resolved Price"
 msgstr "Resolved Price"
 
@@ -13886,9 +13909,17 @@ msgstr "Sales, quoting, and configure-to-order"
 msgid "Salesperson"
 msgstr "Salesperson"
 
-#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
-msgid "Same as {0}"
-msgstr "Same as {0}"
+msgid "Same as {target}"
+msgstr "Same as {target}"
+
+msgid "Same as {target} (keep its number)"
+msgstr "Same as {target} (keep its number)"
+
+msgid "Same as {target} (use this file's number)"
+msgstr "Same as {target} (use this file's number)"
+
+msgid "Same as {target}, keeping its number"
+msgstr "Same as {target}, keeping its number"
 
 msgid "Same as Book"
 msgstr "Same as Book"
@@ -17270,10 +17301,6 @@ msgstr "Transfer To"
 msgid "Trash"
 msgstr "Trash"
 
-#. placeholder {0}: mergeable.length
-msgid "Treat {0} same-name matches as the same account"
-msgstr "Treat {0} same-name matches as the same account"
-
 msgid "Trial Balance"
 msgstr "Trial Balance"
 
@@ -17598,6 +17625,9 @@ msgstr "Update Password"
 msgid "Update Permissions"
 msgstr "Update Permissions"
 
+msgid "Update plan"
+msgstr "Update plan"
+
 msgid "Update Quantity"
 msgstr "Update Quantity"
 
@@ -17714,6 +17744,9 @@ msgstr "Use a different email"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Use metric system for default material dimensions."
+
+msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgstr "Use the file's numbers for {matchingCount} matching accounts"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
 msgstr "Use the file's parent column, name paths, or total rows when present."

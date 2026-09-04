@@ -128,9 +128,15 @@ renders the returned `plan` before the real submit. Spec:
   system root for its `incomeBalance`. A top-level file group named like a Carbon group of
   the same class links to it instead of creating one.
 - **Identity**, in order: a `link` resolution, `externalId` via the csv mapping, `number`
-  for leaves, `(name, isGroup)` for groups and numberless leaves. A number match updates
-  (rename allowed); a name held by another account of the same kind is a conflict with a
-  `PlanConflict` the review turns into skip / rename / renumber / "same as existing".
+  for leaves, `(name, isGroup)` for groups, numberless leaves, and leaves whose resolution
+  is `keepNumber`. A number match updates (rename allowed); a name held by another account
+  of the same kind is a conflict with a `PlanConflict` the review turns into skip / rename /
+  renumber / `link` ("same as existing", `keepNumber` to leave Carbon's number). A resolved
+  node reports `existingId` / `existingNumber` / `existingName`.
+- **Review batching.** Resolutions accumulate in the review's `pending` state; only
+  "Update plan" (or the final submit, which sends the pending set as `options`) re-runs the
+  dry run. The two bulk buttons set `link` / `link + keepNumber` on every linkable conflict
+  and toggle `keepNumber` on every matched row without dropping the row's link.
 - **Refusals**, per row, never a 500: system roots (adopted as parents only), class change
   or deactivation on an account with journal lines, deactivation of an
   `accountDefault` / `fixedAssetClass` account, class disagreeing with the parent, a

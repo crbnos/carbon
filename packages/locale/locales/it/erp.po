@@ -280,6 +280,9 @@ msgstr "{noDemandItemCount} componenti saltati — nulla da produrre"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} verrà riaperto per la modifica come revisione {0}. Il documento già inviato al fornitore rimane invariato fino a quando non si finalizza e si rinvia l'ordine."
 
+msgid "{pendingCount} change(s) not yet in the plan"
+msgstr ""
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {Eliminare definitivamente # righe?}}"
 
@@ -8100,6 +8103,14 @@ msgstr ""
 msgid "Import {label} CSV"
 msgstr "Importa {label} CSV"
 
+#. placeholder {0}: resolution.name
+msgid "Import as \"{0}\""
+msgstr ""
+
+#. placeholder {0}: resolution.number
+msgid "Import as {0}"
+msgstr ""
+
 msgid "Import results"
 msgstr "Risultati dell'Importazione"
 
@@ -8187,9 +8198,6 @@ msgstr "Includi componenti aggiuntivi nella spedizione"
 
 msgid "Include Inactive"
 msgstr "Includi Inattivi"
-
-msgid "Include this row again"
-msgstr ""
 
 msgid "Included"
 msgstr "Incluso"
@@ -8792,6 +8800,12 @@ msgstr "Kanban"
 msgid "Keep"
 msgstr "Mantieni"
 
+msgid "Keep Carbon's number"
+msgstr ""
+
+msgid "Keep Carbon's numbers"
+msgstr ""
+
 msgid "Keep Current"
 msgstr "Mantieni Attuale"
 
@@ -8809,6 +8823,9 @@ msgstr "Mantieni Aperto"
 
 msgid "Keep picking"
 msgstr "Continua il prelievo"
+
+msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Mantiene ordini, offerte e impostazioni dietro un secondo controllo"
@@ -9548,6 +9565,9 @@ msgstr "Abbinato"
 
 msgid "matches"
 msgstr "corrisponde"
+
+msgid "Matching accounts are updated in place; choose whose numbers they keep."
+msgstr ""
 
 msgid "Matching Pairs"
 msgstr "Coppie di corrispondenza"
@@ -13412,6 +13432,9 @@ msgstr "Valore residuo %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Risolvi questi prima di completare l'NCR: ogni riga deve avere una disposizione non in sospeso e le quantità delle entità collegate devono corrispondere alla quantità della riga."
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "Prezzo Risolto"
 
@@ -13886,8 +13909,16 @@ msgstr "Vendite, preventivi e configurazione su ordinazione"
 msgid "Salesperson"
 msgstr "Addetto alle vendite"
 
-#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
-msgid "Same as {0}"
+msgid "Same as {target}"
+msgstr ""
+
+msgid "Same as {target} (keep its number)"
+msgstr ""
+
+msgid "Same as {target} (use this file's number)"
+msgstr ""
+
+msgid "Same as {target}, keeping its number"
 msgstr ""
 
 msgid "Same as Book"
@@ -17270,10 +17301,6 @@ msgstr "Trasferisci A"
 msgid "Trash"
 msgstr "Cestino"
 
-#. placeholder {0}: mergeable.length
-msgid "Treat {0} same-name matches as the same account"
-msgstr ""
-
 msgid "Trial Balance"
 msgstr "Bilancio di verifica"
 
@@ -17598,6 +17625,9 @@ msgstr "Aggiorna Password"
 msgid "Update Permissions"
 msgstr "Aggiorna Autorizzazioni"
 
+msgid "Update plan"
+msgstr ""
+
 msgid "Update Quantity"
 msgstr "Aggiorna Quantità"
 
@@ -17714,6 +17744,9 @@ msgstr "Usa un'email diversa"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Utilizza il sistema metrico per le dimensioni predefinite dei materiali."
+
+msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgstr ""
 
 msgid "Use the file's parent column, name paths, or total rows when present."
 msgstr ""

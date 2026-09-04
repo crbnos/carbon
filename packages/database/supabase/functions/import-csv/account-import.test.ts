@@ -306,6 +306,35 @@ Deno.test("a number match renames; a name held by another account is a conflict 
   assertEquals(byName(third, "Accounts Receivable (11000)").action, "create");
 });
 
+Deno.test("keepNumber keeps Carbon's number on a linked or matched account", () => {
+  const linked = planChartOfAccounts(
+    rows({ number: "11000", name: "Accounts Receivable", accountType: "Accounts Receivable" }),
+    ctx(),
+    { resolutions: { "0": { action: "link", accountId: "1110", keepNumber: true } } }
+  );
+  const ar = byName(linked, "Accounts Receivable");
+  assertEquals(ar.existingId, "1110");
+  assertEquals(ar.action, "unchanged");
+
+  const matched = planChartOfAccounts(
+    rows({ number: "1015", name: "Bank - Cash", accountType: "Bank", externalId: "ext-1" }),
+    ctx({ externalIdMap: new Map([["ext-1", "1010"]]) }),
+    { resolutions: { "0": { action: "keepNumber" } } }
+  );
+  assertEquals(byName(matched, "Bank - Cash").action, "unchanged");
+
+  // A numbered row told to keep Carbon's number is the account of that name.
+  const named = planChartOfAccounts(
+    rows({ number: "11000", name: "Accounts Receivable", accountType: "Accounts Receivable" }),
+    ctx(),
+    { resolutions: { "0": { action: "keepNumber" } } }
+  );
+  const namedAr = byName(named, "Accounts Receivable");
+  assertEquals(namedAr.existingId, "1110");
+  assertEquals(namedAr.existingNumber, "1110");
+  assertEquals(namedAr.action, "unchanged");
+});
+
 Deno.test("system roots are adopted, never written", () => {
   const plan = planChartOfAccounts(
     rows(

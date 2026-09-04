@@ -280,6 +280,9 @@ msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
 
+msgid "{pendingCount} change(s) not yet in the plan"
+msgstr ""
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
@@ -8100,6 +8103,14 @@ msgstr ""
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
+#. placeholder {0}: resolution.name
+msgid "Import as \"{0}\""
+msgstr ""
+
+#. placeholder {0}: resolution.number
+msgid "Import as {0}"
+msgstr ""
+
 msgid "Import results"
 msgstr "导入结果"
 
@@ -8187,9 +8198,6 @@ msgstr "在发货中包含额外零件"
 
 msgid "Include Inactive"
 msgstr "包括已停用"
-
-msgid "Include this row again"
-msgstr ""
 
 msgid "Included"
 msgstr "已包含"
@@ -8792,6 +8800,12 @@ msgstr "看板"
 msgid "Keep"
 msgstr "保留"
 
+msgid "Keep Carbon's number"
+msgstr ""
+
+msgid "Keep Carbon's numbers"
+msgstr ""
+
 msgid "Keep Current"
 msgstr "保持当前"
 
@@ -8809,6 +8823,9 @@ msgstr "保持未结"
 
 msgid "Keep picking"
 msgstr "继续拣货"
+
+msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
@@ -9548,6 +9565,9 @@ msgstr "已匹配"
 
 msgid "matches"
 msgstr "匹配"
+
+msgid "Matching accounts are updated in place; choose whose numbers they keep."
+msgstr ""
 
 msgid "Matching Pairs"
 msgstr "匹配对"
@@ -13412,6 +13432,9 @@ msgstr "残值 %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "已解决价格"
 
@@ -13886,8 +13909,16 @@ msgstr "销售、报价和按订单配置"
 msgid "Salesperson"
 msgstr "销售人员"
 
-#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
-msgid "Same as {0}"
+msgid "Same as {target}"
+msgstr ""
+
+msgid "Same as {target} (keep its number)"
+msgstr ""
+
+msgid "Same as {target} (use this file's number)"
+msgstr ""
+
+msgid "Same as {target}, keeping its number"
 msgstr ""
 
 msgid "Same as Book"
@@ -17270,10 +17301,6 @@ msgstr "转移至"
 msgid "Trash"
 msgstr "垃圾桶"
 
-#. placeholder {0}: mergeable.length
-msgid "Treat {0} same-name matches as the same account"
-msgstr ""
-
 msgid "Trial Balance"
 msgstr "试算平衡表"
 
@@ -17598,6 +17625,9 @@ msgstr "更新密码"
 msgid "Update Permissions"
 msgstr "更新权限"
 
+msgid "Update plan"
+msgstr ""
+
 msgid "Update Quantity"
 msgstr "更新数量"
 
@@ -17714,6 +17744,9 @@ msgstr "使用不同的电子邮件"
 
 msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"
+
+msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgstr ""
 
 msgid "Use the file's parent column, name paths, or total rows when present."
 msgstr ""

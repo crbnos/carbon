@@ -280,6 +280,9 @@ msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
 
+msgid "{pendingCount} change(s) not yet in the plan"
+msgstr ""
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
 
@@ -8100,6 +8103,14 @@ msgstr ""
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
+#. placeholder {0}: resolution.name
+msgid "Import as \"{0}\""
+msgstr ""
+
+#. placeholder {0}: resolution.number
+msgid "Import as {0}"
+msgstr ""
+
 msgid "Import results"
 msgstr "가져오기 결과"
 
@@ -8187,9 +8198,6 @@ msgstr "출하에 여분 부품 포함"
 
 msgid "Include Inactive"
 msgstr "비활성 포함"
-
-msgid "Include this row again"
-msgstr ""
 
 msgid "Included"
 msgstr "포함됨"
@@ -8792,6 +8800,12 @@ msgstr "칸반"
 msgid "Keep"
 msgstr "유지"
 
+msgid "Keep Carbon's number"
+msgstr ""
+
+msgid "Keep Carbon's numbers"
+msgstr ""
+
 msgid "Keep Current"
 msgstr "현재 값 유지"
 
@@ -8809,6 +8823,9 @@ msgstr "열린 상태 유지"
 
 msgid "Keep picking"
 msgstr "피킹 유지"
+
+msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
@@ -9548,6 +9565,9 @@ msgstr "일치함"
 
 msgid "matches"
 msgstr "일치"
+
+msgid "Matching accounts are updated in place; choose whose numbers they keep."
+msgstr ""
 
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"
@@ -13412,6 +13432,9 @@ msgstr "잔존가액 %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR을 완료하기 전에 이를 해결합니다: 모든 행에는 대기 중이 아닌 처분 결정이 있어야 하고, 연결된 엔티티 수량이 행 수량과 일치해야 합니다."
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "확정 가격"
 
@@ -13886,8 +13909,16 @@ msgstr "영업, 견적 및 주문형 구성"
 msgid "Salesperson"
 msgstr "영업사원"
 
-#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
-msgid "Same as {0}"
+msgid "Same as {target}"
+msgstr ""
+
+msgid "Same as {target} (keep its number)"
+msgstr ""
+
+msgid "Same as {target} (use this file's number)"
+msgstr ""
+
+msgid "Same as {target}, keeping its number"
 msgstr ""
 
 msgid "Same as Book"
@@ -17270,10 +17301,6 @@ msgstr "이동 도착지"
 msgid "Trash"
 msgstr "휴지통"
 
-#. placeholder {0}: mergeable.length
-msgid "Treat {0} same-name matches as the same account"
-msgstr ""
-
 msgid "Trial Balance"
 msgstr "시산표"
 
@@ -17598,6 +17625,9 @@ msgstr "비밀번호 업데이트"
 msgid "Update Permissions"
 msgstr "권한 업데이트"
 
+msgid "Update plan"
+msgstr ""
+
 msgid "Update Quantity"
 msgstr "수량 업데이트"
 
@@ -17714,6 +17744,9 @@ msgstr "다른 이메일 사용"
 
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법을 사용합니다."
+
+msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgstr ""
 
 msgid "Use the file's parent column, name paths, or total rows when present."
 msgstr ""

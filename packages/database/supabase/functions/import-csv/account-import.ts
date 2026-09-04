@@ -151,7 +151,10 @@ export type Resolution =
   | { action: "skip" }
   | { action: "rename"; name: string }
   | { action: "renumber"; number: string }
-  | { action: "link"; accountId: string };
+  // Carbon's account IS this row; with keepNumber the file's number is not applied.
+  | { action: "link"; accountId: string; keepNumber?: boolean }
+  // For a row that already matches an account: apply everything but the number.
+  | { action: "keepNumber" };
 
 export type AccountImportOptions = {
   structure?: "auto" | "file" | "carbon";
@@ -213,6 +216,8 @@ export type PlanNode = {
   parentLabel: string | null;
   // Existing account this node resolves to (update / link / unchanged).
   existingId: string | null;
+  existingNumber: string | null;
+  existingName: string | null;
   depth: number;
   // Name of the existing account the top of this node's subtree hangs under.
   anchorLabel: string | null;
@@ -255,6 +260,7 @@ type SourceRow = {
   activeSpecified: boolean;
   externalId: string | null;
   linkAccountId: string | null;
+  keepNumber: boolean;
   skipReason: string | null;
   errorReason: string | null;
 };
@@ -434,6 +440,7 @@ export function planChartOfAccounts(
       activeSpecified: record.active !== undefined,
       externalId: (record.externalId ?? "").trim() || null,
       linkAccountId: null,
+      keepNumber: false,
       skipReason: null,
       errorReason: null,
     };
@@ -455,6 +462,10 @@ export function planChartOfAccounts(
           break;
         case "link":
           row.linkAccountId = resolution.accountId;
+          row.keepNumber = !!resolution.keepNumber;
+          break;
+        case "keepNumber":
+          row.keepNumber = true;
           break;
       }
     }
@@ -706,6 +717,8 @@ export function planChartOfAccounts(
       parentId: null,
       parentLabel: null,
       existingId: null,
+      existingNumber: null,
+      existingName: null,
       depth: 0,
       anchorLabel: null,
       synthesized: true,
@@ -732,6 +745,8 @@ export function planChartOfAccounts(
       parentId: null,
       parentLabel: null,
       existingId: null,
+      existingNumber: null,
+      existingName: null,
       depth: 0,
       anchorLabel: null,
       promoted: promoted.has(r.index) || undefined,
@@ -885,6 +900,8 @@ export function planChartOfAccounts(
         const adopt = existingGroupByName.get(norm(node.name));
         if (adopt && (adopt.class === null || adopt.class === node.class)) {
           node.existingId = adopt.id;
+          node.existingNumber = adopt.number;
+          node.existingName = adopt.name;
           node.action = "link";
           node.anchorLabel = adopt.name;
           node.parentId = adopt.parentId;
@@ -972,8 +989,10 @@ export function planChartOfAccounts(
       }
     }
     // Groups are keyed by name (their numbers are cosmetic); leaves only
-    // when the file gives no number, since number is a leaf's identity.
-    if (!existing && (node.kind === "group" || !node.number)) {
+    // when the file gives no number, since number is a leaf's identity — or
+    // when the row is told to keep Carbon's number, which can only mean the
+    // account of that name.
+    if (!existing && (node.kind === "group" || !node.number || r?.keepNumber)) {
       const byName = (node.kind === "group" ? existingGroupByName : existingLeafByName).get(norm(node.name));
       if (byName) {
         existing = byName;
@@ -995,6 +1014,8 @@ export function planChartOfAccounts(
     if (existing && (matchedBy === "adopt" || existing.isSystem)) {
       claimed.set(existing.id, node);
       node.existingId = existing.id;
+      node.existingNumber = existing.number;
+      node.existingName = existing.name;
       node.action = "link";
       seenNames.set(nameKey(node), node);
       continue;
@@ -1018,7 +1039,7 @@ export function planChartOfAccounts(
       );
       continue;
     }
-    if (node.number && existing && norm(existing.number) !== norm(node.number)) {
+    if (node.number && existing && !r?.keepNumber && norm(existing.number) !== norm(node.number)) {
       const numberOwner = existingByNumber.get(norm(node.number));
       if (numberOwner && numberOwner.id !== existing.id) {
         node.conflict = {
@@ -1040,6 +1061,8 @@ export function planChartOfAccounts(
 
     claimed.set(existing.id, node);
     node.existingId = existing.id;
+    node.existingNumber = existing.number;
+    node.existingName = existing.name;
 
     // A group matched by name keeps Carbon's number and name; only a move
     // (and its class consequences) counts as a change.
@@ -1055,7 +1078,7 @@ export function planChartOfAccounts(
     // Changes for an update.
     const changes: string[] = [];
     if (!groupByName && existing.name !== node.name) changes.push(`name: "${existing.name}" → "${node.name}"`);
-    if (node.number && !groupByName && (matchedBy === "externalId" || matchedBy === "link" || matchedBy === "name") && norm(existing.number) !== norm(node.number)) {
+    if (node.number && !groupByName && !r?.keepNumber && (matchedBy === "externalId" || matchedBy === "link" || matchedBy === "name") && norm(existing.number) !== norm(node.number)) {
       changes.push(`number: ${existing.number ?? "—"} → ${node.number}`);
     }
     if (node.kind === "account" && node.accountType && existing.accountType !== node.accountType) {
