@@ -2,9 +2,14 @@ import { Slot, Slottable } from "@radix-ui/react-slot";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { ButtonHTMLAttributes, ReactElement } from "react";
-import { cloneElement, forwardRef } from "react";
+import { cloneElement, forwardRef, useCallback, useRef } from "react";
+import type { ShortcutInput } from "./hooks/useShortcutKeys";
+import { useShortcutKeys } from "./hooks/useShortcutKeys";
+import { ShortcutKey } from "./ShortcutKey";
 import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
+import { hasOpenDialog, isInsideOpenDialog } from "./utils/dialog";
+import { mergeRefs } from "./utils/react";
 
 export const buttonVariants = cva(
   [
@@ -122,6 +127,16 @@ export interface ButtonProps
   leftIcon?: ReactElement;
   rightIcon?: ReactElement;
   isRound?: boolean;
+  /**
+   * Keyboard binding(s) that click this button — a react-hotkeys-hook string
+   * like `"mod+s"` or `"enter"` (or a structured `ShortcutDefinition` for
+   * per-platform combos), or an array of alternatives that all trigger the
+   * action; the badge shows the first. Inert while the button is disabled or
+   * loading, and while a dialog the button isn't inside is open.
+   */
+  shortcut?: ShortcutInput | ShortcutInput[];
+  /** Keep the hotkey active but hide the visual key badge. */
+  hideShortcutKey?: boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -137,12 +152,44 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       isRound = false,
       leftIcon,
       rightIcon,
+      shortcut,
+      hideShortcutKey = false,
       children,
       ...props
     },
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
+    const innerRef = useRef<HTMLButtonElement>(null);
+    // The badge shows the first binding; the rest are silent alternatives.
+    const primaryShortcut = Array.isArray(shortcut) ? shortcut[0] : shortcut;
+    const badgeShortcut =
+      !hideShortcutKey && !isIcon && !isLoading ? primaryShortcut : undefined;
+
+    // While any dialog is open, only buttons inside one respond to their
+    // shortcut — a background ⌘S must not fire under a confirmation modal.
+    const dialogGuard = useCallback(
+      () => !hasOpenDialog() || isInsideOpenDialog(innerRef.current),
+      []
+    );
+
+    // Ref-click (not a direct onClick call) so type="submit" buttons submit
+    // their form, and a disabled element's click() stays a native no-op.
+    // preventDefault first: when THIS button has focus, a bare Enter/Space
+    // would also activate it natively — one keypress, two clicks — and for
+    // combos it suppresses browser defaults like ⌘S's save dialog.
+    const clickSelf = useCallback((event: KeyboardEvent) => {
+      event.preventDefault();
+      innerRef.current?.click();
+    }, []);
+
+    useShortcutKeys({
+      shortcut,
+      action: clickSelf,
+      guard: dialogGuard,
+      disabled: Boolean(isDisabled || props.disabled || isLoading)
+    });
+
     return (
       <Comp
         {...props}
@@ -160,7 +207,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={asChild ? undefined : (props.type ?? "button")}
         disabled={isDisabled || props.disabled}
         role={asChild ? undefined : "button"}
-        ref={ref}
+        ref={mergeRefs(ref, innerRef)}
       >
         {isLoading && (
           <Spinner className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")} />
@@ -175,7 +222,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {/* An icon button's icon arrives as children — while loading, the
             spinner must REPLACE it or both clip inside the square hit area. */}
         {isIcon && isLoading ? null : <Slottable>{children}</Slottable>}
-        {rightIcon &&
+        {badgeShortcut && (
+          <ShortcutKey
+            shortcut={badgeShortcut}
+            variant={size === "lg" ? "medium" : "small"}
+          />
+        )}
+        {/* The badge owns the trailing slot — a rightIcon next to it reads
+            cluttered, so the badge wins while it's visible. */}
+        {!badgeShortcut &&
+          rightIcon &&
           cloneElement(rightIcon, {
             className: !rightIcon.props?.size
               ? cn("ml-2 h-4 w-4 flex-shrink-0", rightIcon.props.className)

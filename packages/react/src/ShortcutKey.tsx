@@ -1,26 +1,49 @@
 import { Fragment } from "react";
+import type { IconType } from "react-icons";
 import {
+  LuArrowBigUp,
   LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
-  LuChevronUp
+  LuChevronUp,
+  LuCommand,
+  LuCornerDownLeft,
+  LuDelete,
+  LuOption,
+  LuSpace
 } from "react-icons/lu";
-import type { Modifier, ShortcutDefinition } from "./hooks/useShortcutKeys";
+import type { Modifier, ShortcutInput } from "./hooks/useShortcutKeys";
+import { parseShortcut } from "./hooks/useShortcutKeys";
 
 import { useOperatingSystem } from "./OperatingSystem";
 import { cn } from "./utils/cn";
 
 export const shortcutKeyVariants = {
   small:
-    "text-[0.6rem] font-medium min-w-[17px] rounded-[2px] px-1 ml-1 -mr-0.5 grid place-content-center border border-dimmed/40 text-text-dimmed group-hover:text-text-bright/80 group-hover:border-dimmed/60 transition uppercase",
+    "flex h-4 min-w-4 items-center justify-center gap-0.5 rounded-[3px] border border-current/25 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.65rem] font-medium uppercase text-current/80 shadow-sm backdrop-blur-sm",
   medium:
-    "text-[0.75rem] font-medium min-w-[17px] rounded-[2px] px-1 ml-1 -mr-0.5 grid place-content-center border border-dimmed/40 text-text-dimmed group-hover:text-text-bright/80 group-hover:border-dimmed/60 transition uppercase"
+    "flex h-4.5 min-w-4.5 items-center justify-center gap-0.5 rounded-[3px] border border-current/25 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.75rem] font-medium uppercase text-current/80 shadow-sm backdrop-blur-sm"
 };
 
 export type ShortcutKeyVariant = keyof typeof shortcutKeyVariants;
 
+/**
+ * Keys that render as a centered SVG instead of a letter — an icon beats a
+ * text glyph for optical centering inside the keycap. Anything not listed
+ * falls back to its text form.
+ */
+export const SHORTCUT_KEY_ICON_MAP: Partial<Record<string, IconType>> = {
+  enter: LuCornerDownLeft,
+  space: LuSpace,
+  backspace: LuDelete,
+  arrowup: LuChevronUp,
+  arrowdown: LuChevronDown,
+  arrowleft: LuChevronLeft,
+  arrowright: LuChevronRight
+};
+
 type ShortcutKeyProps = {
-  shortcut: ShortcutDefinition;
+  shortcut: ShortcutInput;
   variant: ShortcutKeyVariant;
   className?: string;
 };
@@ -32,53 +55,70 @@ export const ShortcutKey = ({
 }: ShortcutKeyProps) => {
   const { platform } = useOperatingSystem();
   const isMac = platform === "mac";
-  let relevantShortcut =
-    "mac" in shortcut ? (isMac ? shortcut.mac : shortcut.windows) : shortcut;
+  const relevantShortcut = parseShortcut(shortcut, isMac);
+  if (!relevantShortcut) return null;
   const modifiers = relevantShortcut.modifiers ?? [];
-  const character = keyString(relevantShortcut.key, isMac, variant);
+  const character = keyString(String(relevantShortcut.key), isMac, variant);
 
   return (
     <span className={cn(shortcutKeyVariants[variant], className)}>
       {modifiers.map((k) => (
-        <Fragment key={k}>{modifierString(k, isMac)}</Fragment>
+        <Fragment key={k}>{modifierNode(k, isMac, variant)}</Fragment>
       ))}
       {character}
     </span>
   );
 };
 
-function keyString(key: String, isMac: boolean, size: "small" | "medium") {
+function iconClassName(size: ShortcutKeyVariant) {
+  return size === "small" ? "size-2.5 shrink-0" : "size-3 shrink-0";
+}
+
+function keyString(key: string, isMac: boolean, size: ShortcutKeyVariant) {
   key = key.toLowerCase();
 
-  const className = size === "small" ? "w-2.5 h-4" : "w-3 h-5";
+  const Icon = SHORTCUT_KEY_ICON_MAP[key];
+  if (Icon) {
+    return <Icon className={iconClassName(size)} aria-hidden="true" />;
+  }
 
   switch (key) {
-    case "enter":
-      return isMac ? "↵" : key;
-    case "arrowdown":
-      return <LuChevronDown className={className} />;
-    case "arrowup":
-      return <LuChevronUp className={className} />;
-    case "arrowleft":
-      return <LuChevronLeft className={className} />;
-    case "arrowright":
-      return <LuChevronRight className={className} />;
+    case "escape":
+      return "esc";
     default:
       return key;
   }
 }
 
-function modifierString(modifier: Modifier, isMac: boolean) {
+function modifierNode(
+  modifier: Modifier,
+  isMac: boolean,
+  size: ShortcutKeyVariant
+) {
+  const className = iconClassName(size);
+  if (isMac) {
+    switch (modifier) {
+      case "alt":
+        return <LuOption className={className} aria-hidden="true" />;
+      case "ctrl":
+        return "⌃";
+      case "meta":
+      case "mod":
+        return <LuCommand className={className} aria-hidden="true" />;
+      case "shift":
+        return <LuArrowBigUp className={className} aria-hidden="true" />;
+    }
+  }
   switch (modifier) {
     case "alt":
-      return isMac ? "⌥" : "Alt+";
+      return "Alt+";
     case "ctrl":
-      return isMac ? "⌃" : "Ctrl+";
+      return "Ctrl+";
     case "meta":
-      return isMac ? "⌘" : "⊞+";
+      return "⊞+";
     case "shift":
-      return isMac ? "⇧" : "Shift+";
+      return "Shift+";
     case "mod":
-      return isMac ? "⌘" : "Ctrl+";
+      return "Ctrl+";
   }
 }
