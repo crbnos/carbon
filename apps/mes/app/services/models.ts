@@ -233,7 +233,11 @@ export const completeJobOperationBatchValidator = z.object({
     .array(
       z.object({
         jobOperationId: z.string().min(1),
-        quantity: zfd.numeric(z.number().int().min(0)),
+        // Optional: an excluded ("Not in this run") member's quantity input is
+        // disabled and therefore omitted from FormData. The route forces
+        // excluded members to 0 after validation and coerces an omitted
+        // included quantity to 0, so `undefined` never reaches the edge fn.
+        quantity: zfd.numeric(z.number().int().min(0).optional()),
         scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
         // "Not in this run": the operation was not physically part of the
         // batch run — it detaches back to the schedule instead of being

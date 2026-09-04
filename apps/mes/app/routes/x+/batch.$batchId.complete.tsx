@@ -43,8 +43,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         const excluded = m.excluded === "true";
         return {
           jobOperationId: m.jobOperationId,
-          quantity: excluded ? 0 : m.quantity,
-          scrapQuantity: excluded ? 0 : m.scrapQuantity,
+          quantity: excluded ? 0 : (m.quantity ?? 0),
+          scrapQuantity: excluded ? 0 : (m.scrapQuantity ?? 0),
           excluded
         };
       }),

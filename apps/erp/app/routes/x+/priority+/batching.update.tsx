@@ -58,7 +58,14 @@ export async function action({ request }: ActionFunctionArgs) {
     formData
   );
   if (validation.error) {
-    return validationError(validation.error);
+    // The Kanban drag path submits intent="update" via useSubmit and reads the
+    // result as { success, message } — a validationError has no success key, so
+    // the drag toast would stay silent on a malformed move. Return the shape the
+    // board expects instead.
+    return {
+      success: false,
+      message: "That batch update was invalid and could not be applied"
+    };
   }
 
   const { intent: type, ...rest } = validation.data;

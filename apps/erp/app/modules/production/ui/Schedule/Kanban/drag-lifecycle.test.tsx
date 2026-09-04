@@ -168,6 +168,22 @@ const operationItems = [
   }
 ] as DragItem[];
 
+// A live batch collapses to one draggable card in its work-center column.
+// Dragging it to another column reassigns the whole batch's work center
+// (intent "update" → priorityBatchingUpdate), while a within-column drop is a
+// no-op (member priorities own the card's position).
+const batchItem = {
+  id: "batch:BAT1",
+  columnId: "wc-1",
+  columnType: "Process",
+  priority: 5,
+  title: "Batch BAT0001",
+  batchId: "BAT1",
+  batchReadableId: "BAT0001",
+  batchStatus: "Active",
+  members: []
+} as DragItem;
+
 const dateColumns: Column[] = [
   { id: "2026-08-08", title: "Aug 8", type: ["Job"] },
   { id: "2026-08-15", title: "Aug 15", type: ["Job"] }
@@ -742,6 +758,34 @@ describe("Operations board drag lifecycle", () => {
     });
 
     expect(arrayMove).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("reassigns a batch's work center when dropped on another column", () => {
+    const board = captureOperationsBoard([...operationItems, batchItem]);
+
+    startItemDrag(board, batchItem);
+    board.onDragEnd({
+      active: itemActive(batchItem),
+      over: columnOver(operationColumns[1])
+    });
+
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit).toHaveBeenCalledWith(
+      { intent: "update", batchId: "BAT1", workCenterId: "wc-2" },
+      expect.objectContaining({ action: "/priority/batching/update" })
+    );
+  });
+
+  it("does not reassign a batch dropped within its own column", () => {
+    const board = captureOperationsBoard([...operationItems, batchItem]);
+
+    startItemDrag(board, batchItem);
+    board.onDragEnd({
+      active: itemActive(batchItem),
+      over: itemOver(operationItems[0])
+    });
+
     expect(submit).not.toHaveBeenCalled();
   });
 });

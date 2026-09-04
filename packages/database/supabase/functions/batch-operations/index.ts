@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { Transaction } from "kysely";
 import z from "npm:zod@^3.24.1";
 import { type DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { Database } from "../lib/types.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import {
   assertAllOperationsClaimed,
@@ -81,10 +83,8 @@ const payloadValidator = z.discriminatedUnion("type", [
   })
 ]);
 
-// deno-lint-ignore no-explicit-any
 async function assertEligible(
-  // deno-lint-ignore no-explicit-any
-  trx: any,
+  trx: Transaction<DB>,
   companyId: string,
   jobOperationIds: string[],
   expectedProcessId?: string
@@ -140,8 +140,7 @@ async function assertEligible(
 // composite FKs enforce at the schema level; this gives the caller a named
 // error instead of a constraint violation).
 async function assertCompanyRecord(
-  // deno-lint-ignore no-explicit-any
-  trx: any,
+  trx: Transaction<DB>,
   table: "location" | "workCenter",
   id: string,
   companyId: string,
@@ -161,8 +160,7 @@ async function assertCompanyRecord(
 // entirely when the process has no "must" dimension. Uses ids where the client
 // (BatchBuilder) uses names — mustViolations is value-agnostic, so both agree.
 async function assertMaterialCompatible(
-  // deno-lint-ignore no-explicit-any
-  trx: any,
+  trx: Transaction<DB>,
   companyId: string,
   processId: string,
   jobOperationIds: string[]
@@ -215,6 +213,9 @@ async function assertMaterialCompatible(
     });
   }
   for (const r of rows) {
+    // jobMaterial.jobOperationId is nullable; a null-op row can't attribute to
+    // a member (and byOp is keyed by the passed ids anyway).
+    if (!r.opId) continue;
     const sets = byOp.get(r.opId);
     if (!sets) continue;
     if (r.itemReadableId) sets.item!.push(r.itemReadableId);
@@ -487,7 +488,11 @@ async function completeBatch(
       const inserted = await trx
         .insertInto("productionEvent")
         .values({
-          type: e.type,
+          // The shared plan types `type` as `string | null`; narrow it back to
+          // the column's enum here rather than casting the whole insert object.
+          type: e.type as
+            | Database["public"]["Enums"]["productionEventType"]
+            | null,
           employeeId: e.employeeId,
           workCenterId: e.workCenterId,
           companyId,
@@ -497,8 +502,7 @@ async function completeBatch(
           startTime: e.startTime,
           endTime: e.endTime,
           postedToGL: false
-          // deno-lint-ignore no-explicit-any
-        } as any)
+        })
         .returning("id")
         .executeTakeFirstOrThrow();
       glEvents.push({ id: inserted.id, postedToGL: false });
@@ -508,14 +512,15 @@ async function completeBatch(
       await trx
         .insertInto("productionQuantity")
         .values(
+          // q.type is "Production" | "Scrap", a subset of productionQuantityType,
+          // so the insert types cleanly without a cast.
           plan.quantities.map((q) => ({
             jobOperationId: q.jobOperationId,
             type: q.type,
             quantity: q.quantity,
             companyId,
             createdBy: userId
-            // deno-lint-ignore no-explicit-any
-          })) as any
+          }))
         )
         .execute();
     }
@@ -784,13 +789,16 @@ serve(async (req: Request) => {
               "Cannot remove operations: production has been recorded. Complete the batch instead."
             );
           }
-          await trx
+          // Count actual detaches — an id that isn't a member of this batch
+          // (already removed, or never belonged) must not be reported removed.
+          const removedResult = await trx
             .updateTable("jobOperation")
             .set({ jobOperationBatchId: null, updatedBy: userId })
             .where("id", "in", payload.jobOperationIds)
             .where("jobOperationBatchId", "=", payload.batchId)
             .where("companyId", "=", companyId)
-            .execute();
+            .executeTakeFirst();
+          const removed = Number(removedResult?.numUpdatedRows ?? 0);
 
           const remaining = await trx
             .selectFrom("jobOperation")
@@ -805,9 +813,9 @@ serve(async (req: Request) => {
               .where("id", "=", payload.batchId)
               .where("companyId", "=", companyId)
               .execute();
-            return { removed: payload.jobOperationIds.length, dissolved: true };
+            return { removed, dissolved: true };
           }
-          return { removed: payload.jobOperationIds.length, dissolved: false };
+          return { removed, dissolved: false };
         });
         break;
       }
@@ -858,14 +866,16 @@ serve(async (req: Request) => {
             .where("id", "=", payload.batchId)
             .where("companyId", "=", companyId)
             .execute();
-          if (nextWorkCenterId) {
-            await trx
-              .updateTable("jobOperation")
-              .set({ workCenterId: nextWorkCenterId, updatedBy: userId })
-              .where("jobOperationBatchId", "=", payload.batchId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          // Members mirror the header in BOTH directions: assigning pushes the
+          // work center down, and clearing (nextWorkCenterId === null) clears it
+          // on the members too — otherwise they keep a stale workCenterId the
+          // header no longer has.
+          await trx
+            .updateTable("jobOperation")
+            .set({ workCenterId: nextWorkCenterId, updatedBy: userId })
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
           return { updated: true };
         });
         break;

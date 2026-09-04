@@ -36,12 +36,12 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, EmployeeAvatar, ItemThumbnail } from "~/components";
-import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
 import type {
   JobOperationBatchDetail,
   JobOperationBatchEvent
 } from "../../types";
+import { batchPlanBreakdown } from "./batch-builder-logic";
 
 const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;
 type EventType = (typeof EVENT_TYPES)[number];
@@ -80,28 +80,15 @@ export function BatchDetailDrawer({
   const isLive = batch.status === "Active" || batch.status === "Completing";
 
   // Planned durations, batch semantics (mirrors the MES operation view): ONE
-  // shared setup — the largest member's — plus labor/machine summed.
+  // shared setup — the largest member's — plus labor/machine summed. Missing
+  // units default to Total Minutes (setup) / Minutes/Piece (labor, machine).
   const plan = useMemo(() => {
-    const totals = { Setup: 0, Labor: 0, Machine: 0 };
-    for (const m of batch.members ?? []) {
-      try {
-        const d = makeDurations({
-          setupTime: m.setupTime ?? 0,
-          setupUnit: (m.setupUnit ?? "Total Minutes") as string,
-          laborTime: m.laborTime ?? 0,
-          laborUnit: (m.laborUnit ?? "Minutes/Piece") as string,
-          machineTime: m.machineTime ?? 0,
-          machineUnit: (m.machineUnit ?? "Minutes/Piece") as string,
-          operationQuantity: m.operationQuantity
-        });
-        totals.Setup = Math.max(totals.Setup, d.setupDuration);
-        totals.Labor += d.laborDuration;
-        totals.Machine += d.machineDuration;
-      } catch {
-        // A member without times contributes nothing.
-      }
-    }
-    return totals;
+    const { setup, labor, machine } = batchPlanBreakdown(batch.members ?? [], {
+      setupUnit: "Total Minutes",
+      laborUnit: "Minutes/Piece",
+      machineUnit: "Minutes/Piece"
+    });
+    return { Setup: setup, Labor: labor, Machine: machine };
   }, [batch.members]);
 
   // Actual durations from the batch's events. `duration` is generated SECONDS;

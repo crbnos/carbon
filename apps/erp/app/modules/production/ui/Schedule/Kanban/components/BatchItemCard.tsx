@@ -11,20 +11,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger
+  IconButton
 } from "@carbon/react";
-import {
-  convertDateStringToIsoString,
-  formatDurationMilliseconds
-} from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useLingui } from "@lingui/react/macro";
 import {
-  LuCalendarDays,
   LuCircleCheck,
   LuEllipsisVertical,
   LuGripVertical,
@@ -32,20 +24,19 @@ import {
   LuPlay,
   LuPrinter,
   LuSquareUser,
-  LuTimer,
   LuTrash,
   LuUsers,
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { CustomerAvatar, DateTime, OperationStatusIcon } from "~/components";
+import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { useDateFormatter } from "~/hooks";
-import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import type { BatchItem, OperationItem } from "../types";
 import { useScheduleToday } from "../useScheduleToday";
+import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 // The order a batch summary reports its members' statuses in: the most "live"
 // status wins, so a planner sees the batch is running the moment any member is.
@@ -269,45 +260,15 @@ export function BatchItemCard({
             <span className="text-sm">{status}</span>
           </HStack>
         )}
-        {displaySettings.showDuration && totalDuration > 0 && (
-          <HStack className="justify-start space-x-2">
-            <LuTimer className="text-muted-foreground" />
-            <span className="text-sm">
-              {formatDurationMilliseconds(totalDuration)}
-            </span>
-          </HStack>
-        )}
-        {displaySettings.showDueDate && earliest?.deadlineType && (
-          <HStack className="justify-start space-x-2">
-            {getDeadlineIcon(earliest.deadlineType)}
-            <Tooltip>
-              <TooltipTrigger>
-                <span
-                  className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                >
-                  {["ASAP", "No Deadline"].includes(earliest.deadlineType)
-                    ? earliest.deadlineType
-                    : earliest.dueDate
-                      ? `Due ${formatRelativeTime(
-                          convertDateStringToIsoString(earliest.dueDate)
-                        )}`
-                      : "–"}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {earliest.deadlineType}
-              </TooltipContent>
-            </Tooltip>
-          </HStack>
-        )}
-        {displaySettings.showDueDate && earliest?.dueDate && (
-          <HStack className="justify-start space-x-2">
-            <LuCalendarDays />
-            <span className="text-sm">
-              <DateTime value={earliest.dueDate} variant="date" />
-            </span>
-          </HStack>
-        )}
+        <CardSummaryRows
+          showDuration={displaySettings.showDuration && totalDuration > 0}
+          duration={totalDuration}
+          showDueDate={displaySettings.showDueDate}
+          deadlineType={earliest?.deadlineType}
+          dueDate={earliest?.dueDate}
+          isOverdue={isOverdue}
+          formatRelativeTime={formatRelativeTime}
+        />
         {displaySettings.showCustomer && distinctCustomers.length > 0 && (
           <HStack className="justify-start space-x-2">
             <LuSquareUser className="text-muted-foreground" />
@@ -321,13 +282,7 @@ export function BatchItemCard({
           </HStack>
         )}
         {displaySettings.showMaterial && materialChips.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {materialChips.map((chip) => (
-              <Badge key={chip} variant="secondary" className="text-xs">
-                {chip}
-              </Badge>
-            ))}
-          </div>
+          <CardMaterialChips chips={materialChips} />
         )}
 
         {/* The member jobs in the batch — each still individually removable. */}

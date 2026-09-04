@@ -5,11 +5,13 @@
 
 import {
   BATCH_RULE_DIMENSIONS,
+  type BatchRuleDimension,
   type BatchRules,
   type MemberValueSets,
   mustViolations,
   resolveBatchRules
 } from "@carbon/utils";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import { makeDurations } from "~/utils/duration";
 import type { BatchCandidate, BatchMaterial } from "../../types";
 
@@ -102,26 +104,62 @@ export function groupSetupSaving(members: BatchCandidate[]): number {
   return max > 0 && sum > max ? sum - max : 0;
 }
 
+// One member's duration inputs — the raw setup/labor/machine time + units. The
+// batch-detail drawer's members and the builder's candidates both satisfy it.
+export type BatchDurationMember = {
+  setupTime?: number | null;
+  setupUnit?: string | null;
+  laborTime?: number | null;
+  laborUnit?: string | null;
+  machineTime?: number | null;
+  machineUnit?: string | null;
+  operationQuantity: number | null;
+};
+
+export type BatchPlanBreakdown = {
+  setup: number;
+  labor: number;
+  machine: number;
+};
+
+// The planned batch durations by type: ONE shared setup (the largest member's),
+// labor and machine summed. The single source for the review preview, the
+// setup-saving chip, and the batch-detail Run card. `unitDefaults` supplies a
+// per-type fallback unit when a member's own unit is null (the drawer defaults
+// setup to Total Minutes and labor/machine to Minutes/Piece); the builder passes
+// none, so a missing unit contributes nothing.
+export function batchPlanBreakdown(
+  members: BatchDurationMember[],
+  unitDefaults?: {
+    setupUnit?: string;
+    laborUnit?: string;
+    machineUnit?: string;
+  }
+): BatchPlanBreakdown {
+  let setup = 0;
+  let labor = 0;
+  let machine = 0;
+  for (const m of members) {
+    const d = makeDurations({
+      setupTime: m.setupTime ?? 0,
+      setupUnit: m.setupUnit ?? unitDefaults?.setupUnit,
+      laborTime: m.laborTime ?? 0,
+      laborUnit: m.laborUnit ?? unitDefaults?.laborUnit,
+      machineTime: m.machineTime ?? 0,
+      machineUnit: m.machineUnit ?? unitDefaults?.machineUnit,
+      operationQuantity: m.operationQuantity
+    });
+    setup = Math.max(setup, d.setupDuration);
+    labor += d.laborDuration;
+    machine += d.machineDuration;
+  }
+  return { setup, labor, machine };
+}
+
 // Estimated batch run time: one shared setup (largest), labor and machine summed.
 export function batchEstimateMs(members: BatchCandidate[]): number {
-  let setupMax = 0;
-  let laborSum = 0;
-  let machineSum = 0;
-  for (const c of members) {
-    const d = makeDurations({
-      setupTime: c.setupTime ?? 0,
-      setupUnit: c.setupUnit ?? undefined,
-      laborTime: c.laborTime ?? 0,
-      laborUnit: c.laborUnit ?? undefined,
-      machineTime: c.machineTime ?? 0,
-      machineUnit: c.machineUnit ?? undefined,
-      operationQuantity: c.operationQuantity
-    });
-    setupMax = Math.max(setupMax, d.setupDuration);
-    laborSum += d.laborDuration;
-    machineSum += d.machineDuration;
-  }
-  return setupMax + laborSum + machineSum;
+  const { setup, labor, machine } = batchPlanBreakdown(members);
+  return setup + labor + machine;
 }
 
 export function dueDateOf(candidate: BatchCandidate): string | null {
@@ -252,4 +290,280 @@ export function rankSuggestions(
     })
     .sort((a, b) => b.score - a.score || b.members.length - a.members.length)
     .slice(0, 6);
+}
+
+// --- Facets, filtering, capacity, add-targets ---------------------------------
+// Untested gating/derivation logic lifted out of the BatchBuilder component so
+// it can be exercised without a DOM. No JSX and no lingui — labels are injected.
+
+// The synthetic facet dimension for the material item itself (vs the five
+// normalized properties below).
+export const MATERIAL_FACET_KEY = "material";
+
+// The five normalized material-property dimensions. The builder also derives a
+// `material` dimension (the BOM item itself) — see deriveFacetDimensions.
+export const PROPERTY_FACETS: {
+  key: keyof BatchMaterial;
+  nameKey: keyof BatchMaterial;
+}[] = [
+  { key: "substanceId", nameKey: "substanceName" },
+  { key: "gradeId", nameKey: "gradeName" },
+  { key: "dimensionId", nameKey: "dimensionName" },
+  { key: "formId", nameKey: "formName" },
+  { key: "finishId", nameKey: "finishName" }
+];
+
+export type FacetDimension = {
+  key: string;
+  label: string;
+  options: { value: string; label: string }[];
+};
+
+// Does one BOM line satisfy one facet dimension's selected values?
+export function lineMatchesFacet(
+  line: BatchMaterial,
+  key: string,
+  values: string[]
+): boolean {
+  if (key === MATERIAL_FACET_KEY) {
+    return !!line.itemReadableId && values.includes(line.itemReadableId);
+  }
+  return values.includes(line[key as keyof BatchMaterial] as string);
+}
+
+// Filterable dimensions derived from what the candidates' BOMs actually contain:
+// the material items themselves plus whichever normalized properties are
+// populated. A dimension with no values doesn't appear. `labels` maps each
+// dimension key to its display name (the caller owns lingui).
+export function deriveFacetDimensions(
+  candidates: BatchCandidate[],
+  labels: Record<string, string>
+): FacetDimension[] {
+  const dims: FacetDimension[] = [];
+
+  const materialItems = new Map<string, string>();
+  for (const c of candidates) {
+    for (const m of c.materials ?? []) {
+      if (m.itemReadableId && !materialItems.has(m.itemReadableId)) {
+        materialItems.set(m.itemReadableId, m.itemReadableId);
+      }
+    }
+  }
+  if (materialItems.size > 0) {
+    dims.push({
+      key: MATERIAL_FACET_KEY,
+      label: labels[MATERIAL_FACET_KEY],
+      options: [...materialItems.keys()]
+        .sort((a, b) => a.localeCompare(b))
+        .map((id) => ({ value: id, label: id }))
+    });
+  }
+
+  for (const f of PROPERTY_FACETS) {
+    const seen = new Map<string, string>();
+    for (const c of candidates) {
+      for (const m of c.materials ?? []) {
+        const id = m[f.key] as string | null;
+        const name = m[f.nameKey] as string | null;
+        if (id && name && !seen.has(id)) seen.set(id, name);
+      }
+    }
+    if (seen.size > 0) {
+      dims.push({
+        key: f.key,
+        label: labels[f.key],
+        options: [...seen.entries()]
+          .map(([id, name]) => ({ value: id, label: name }))
+          .sort((a, b) => a.label.localeCompare(b.label))
+      });
+    }
+  }
+  return dims;
+}
+
+// A candidate matches if ANY BOM line satisfies ALL active facets, the search
+// term matches its job/item/op text, and it falls inside the due window. Sorted
+// most-urgent first (due date asc, undated last). `today` is injected so this
+// stays pure and testable.
+export function filterAndSortCandidates(
+  candidates: BatchCandidate[],
+  opts: {
+    activeFacetKeys: string[];
+    facets: Record<string, string[]>;
+    search: string;
+    dueWindow: number | null;
+    today: CalendarDate;
+  }
+): BatchCandidate[] {
+  const { activeFacetKeys, facets, search, dueWindow, today } = opts;
+  const term = search.trim().toLowerCase();
+  const dueLimit = dueWindow !== null ? today.add({ days: dueWindow }) : null;
+  const matches = candidates.filter((c) => {
+    if (activeFacetKeys.length > 0) {
+      const anyLineMatches = (c.materials ?? []).some((m) =>
+        activeFacetKeys.every((key) => lineMatchesFacet(m, key, facets[key]))
+      );
+      if (!anyLineMatches) return false;
+    }
+    if (dueLimit) {
+      const due = dueDateOf(c);
+      if (!due || parseDate(due).compare(dueLimit) > 0) return false;
+    }
+    if (term) {
+      const haystack = [
+        c.jobReadableId,
+        c.itemReadableId,
+        c.itemDescription,
+        c.description
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(term)) return false;
+    }
+    return true;
+  });
+  return matches.sort((a, b) => {
+    const da = dueDateOf(a);
+    const db = dueDateOf(b);
+    if (da && db) return parseDate(da).compare(parseDate(db));
+    if (da) return -1;
+    if (db) return 1;
+    return 0;
+  });
+}
+
+// A representative run size for suggestion scoring. Once a work center is chosen
+// its own batchCapacity is authoritative; before one is chosen, fall back to the
+// largest batchCapacity among the centers that can run this process here.
+export function resolveRepCapacity(
+  workCenters: {
+    id: string;
+    locationId: string | null;
+    processes: string[];
+    batchCapacity: number | null;
+  }[],
+  workCenterId: string | null,
+  locationId: string,
+  processId: string | null
+): number | null {
+  const selected = workCenterId
+    ? workCenters.find((wc) => wc.id === workCenterId)
+    : null;
+  if (selected?.batchCapacity && selected.batchCapacity > 0) {
+    return selected.batchCapacity;
+  }
+  const eligible = workCenters.filter(
+    (wc) =>
+      (!wc.locationId || wc.locationId === locationId) &&
+      (!processId || wc.processes.includes(processId))
+  );
+  const caps = eligible
+    .map((wc) => wc.batchCapacity)
+    .filter((c): c is number => c != null && c > 0);
+  return caps.length ? Math.max(...caps) : null;
+}
+
+export type BatchAddTarget = {
+  batchId: string;
+  readableId: string;
+  memberCount: number;
+};
+
+// Existing Active batches on this process — offered as add targets so a planner
+// extends a batch instead of accidentally creating a duplicate.
+export function deriveAddTargets(
+  allCandidates: BatchCandidate[]
+): BatchAddTarget[] {
+  const targets = new Map<string, BatchAddTarget>();
+  for (const c of allCandidates) {
+    if (!c.jobOperationBatchId || c.batchStatus !== "Active") continue;
+    const entry = targets.get(c.jobOperationBatchId) ?? {
+      batchId: c.jobOperationBatchId,
+      readableId: c.batchReadableId ?? "Batch",
+      memberCount: 0
+    };
+    entry.memberCount += 1;
+    targets.set(c.jobOperationBatchId, entry);
+  }
+  return [...targets.values()].sort((a, b) =>
+    a.readableId.localeCompare(b.readableId)
+  );
+}
+
+// --- Compatibility gating against the current selection -----------------------
+
+// The selection's folded intersection per dimension: only members that carry a
+// value for it contribute, and the result is their shared values (null when no
+// selected member carries one). Drives must-locks and guide-mismatch tags.
+export function computeSelectionDimSets(
+  selectedValueSets: MemberValueSets[]
+): Map<BatchRuleDimension, Set<string> | null> {
+  const folded = new Map<BatchRuleDimension, Set<string> | null>();
+  for (const dim of BATCH_RULE_DIMENSIONS) {
+    let acc: string[] | null = null;
+    for (const sets of selectedValueSets) {
+      const vals = sets[dim];
+      if (!vals || vals.length === 0) continue;
+      if (acc === null) {
+        acc = vals.slice();
+      } else {
+        const current = new Set(vals);
+        acc = acc.filter((v) => current.has(v));
+      }
+    }
+    folded.set(dim, acc === null ? null : new Set(acc));
+  }
+  return folded;
+}
+
+// A candidate is LOCKED when adding it to the current selection would leave a
+// "must" dimension with no shared value — the client mirror of the edge fn's
+// `assertMaterialCompatible`. Empty selection locks nothing; already-selected
+// candidates are never locked.
+export function computeLockedById(
+  candidates: BatchCandidate[],
+  selectedIds: ReadonlySet<string>,
+  selectedValueSets: MemberValueSets[],
+  rules: Required<BatchRules>
+): Map<string, BatchRuleDimension[]> {
+  const map = new Map<string, BatchRuleDimension[]>();
+  if (selectedValueSets.length === 0) return map;
+  for (const c of candidates) {
+    if (selectedIds.has(c.id)) continue;
+    const dims = mustViolations(rules, [
+      ...selectedValueSets,
+      candidateValueSets(c)
+    ]);
+    if (dims.length) map.set(c.id, dims);
+  }
+  return map;
+}
+
+// GUIDE mismatches (advisory): a guide dimension where the selection has a value
+// the candidate can't match. Warned, never blocked.
+export function computeGuideMismatches(
+  candidates: BatchCandidate[],
+  selectedIds: ReadonlySet<string>,
+  selectedValueSets: MemberValueSets[],
+  selectionDimSets: Map<BatchRuleDimension, Set<string> | null>,
+  rules: Required<BatchRules>
+): Map<string, BatchRuleDimension[]> {
+  const map = new Map<string, BatchRuleDimension[]>();
+  if (selectedValueSets.length === 0) return map;
+  for (const c of candidates) {
+    if (selectedIds.has(c.id)) continue;
+    const sets = candidateValueSets(c);
+    const dims: BatchRuleDimension[] = [];
+    for (const dim of BATCH_RULE_DIMENSIONS) {
+      if (rules[dim] !== "guide") continue;
+      const selectionSet = selectionDimSets.get(dim);
+      if (!selectionSet || selectionSet.size === 0) continue;
+      const vals = sets[dim];
+      if (!vals || vals.length === 0) continue;
+      if (!vals.some((v) => selectionSet.has(v))) dims.push(dim);
+    }
+    if (dims.length) map.set(c.id, dims);
+  }
+  return map;
 }

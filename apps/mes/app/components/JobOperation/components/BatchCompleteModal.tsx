@@ -21,12 +21,8 @@ import { useState } from "react";
 import { LuUndo2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { completeJobOperationBatchValidator } from "~/services/models";
-import type { getJobOperationBatch } from "~/services/operations.service";
+import type { JobOperationBatch } from "~/services/operations.service";
 import { path } from "~/utils/path";
-
-type Batch = NonNullable<
-  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
->;
 
 // The batch completion form, opened from the batched operation view. Posts to
 // batch.$batchId.complete (the same action the retired batch page used), which
@@ -39,7 +35,7 @@ export function BatchCompleteModal({
   hasOpenEvent,
   onClose
 }: {
-  batch: Batch;
+  batch: JobOperationBatch;
   isCompleting: boolean;
   hasOpenEvent: boolean;
   onClose: () => void;
@@ -151,6 +147,7 @@ export function BatchCompleteModal({
                         <NumberControlled
                           name={`members[${i}].quantity`}
                           label=""
+                          size="lg"
                           value={isExcluded ? 0 : (rows[i]?.quantity ?? 0)}
                           onChange={(v) => setRow(i, "quantity", v)}
                           minValue={0}
@@ -162,6 +159,7 @@ export function BatchCompleteModal({
                         <NumberControlled
                           name={`members[${i}].scrapQuantity`}
                           label=""
+                          size="lg"
                           value={isExcluded ? 0 : (rows[i]?.scrapQuantity ?? 0)}
                           onChange={(v) => setRow(i, "scrapQuantity", v)}
                           minValue={0}
@@ -179,7 +177,7 @@ export function BatchCompleteModal({
                           }
                           icon={isExcluded ? <LuUndo2 /> : <LuX />}
                           variant="ghost"
-                          size="sm"
+                          size="lg"
                           className="text-muted-foreground"
                           onClick={() => toggleExcluded(i)}
                         />
@@ -212,7 +210,7 @@ export function BatchCompleteModal({
             )}
           </ModalBody>
           <ModalFooter>
-            <Submit isDisabled={hasOpenEvent || allExcluded}>
+            <Submit size="lg" isDisabled={hasOpenEvent || allExcluded}>
               {isCompleting ? t`Retry Completion` : t`Complete Batch`}
             </Submit>
           </ModalFooter>

@@ -18,6 +18,13 @@ export type UsePermissionMatrixOptions = {
   modules: ModuleDefinition;
   /** Initial permission state as a flat boolean map (e.g. { "sales_view": true }) */
   initialState?: Record<string, boolean>;
+  /**
+   * Keys (`${module}_${action}`) that can only be toggled individually. Bulk
+   * toggles ("toggle all" / "toggle row") skip them, and they are excluded from
+   * the aggregate all/some/row checks so the master and row checkboxes ignore
+   * them entirely. Still fully toggleable via `toggleCell`.
+   */
+  optIn?: readonly string[];
 };
 
 export type UsePermissionMatrixReturn = {
@@ -69,7 +76,8 @@ const HIDDEN_MODULES = new Set(["items", "timecards"]);
 
 export function usePermissionMatrix({
   modules,
-  initialState
+  initialState,
+  optIn
 }: UsePermissionMatrixOptions): UsePermissionMatrixReturn {
   const sortedModules = useMemo<[string, readonly PermissionAction[]][]>(
     () =>
@@ -80,6 +88,8 @@ export function usePermissionMatrix({
     [modules]
   );
 
+  const optInKeys = useMemo(() => new Set(optIn ?? []), [optIn]);
+
   const [permissions, setPermissionsRaw] = useState<Record<string, boolean>>(
     () => initialState ?? buildDefaultState(modules)
   );
@@ -89,8 +99,11 @@ export function usePermissionMatrix({
     []
   );
 
-  // Derived state
-  const allKeys = useMemo(() => Object.keys(permissions), [permissions]);
+  // Derived state — opt-in keys are excluded so the master checkbox ignores them
+  const allKeys = useMemo(
+    () => Object.keys(permissions).filter((k) => !optInKeys.has(k)),
+    [permissions, optInKeys]
+  );
   const allChecked = useMemo(
     () => allKeys.length > 0 && allKeys.every((k) => permissions[k]),
     [allKeys, permissions]
@@ -121,7 +134,9 @@ export function usePermissionMatrix({
     (mod: string) => {
       setPermissionsRaw((prev) => {
         const moduleActions = modules[mod] ?? [];
-        const rowKeys = moduleActions.map((a) => `${mod}_${a}`);
+        const rowKeys = moduleActions
+          .map((a) => `${mod}_${a}`)
+          .filter((k) => !optInKeys.has(k));
         const allRowChecked = rowKeys.every((k) => prev[k]);
         const next = { ...prev };
         for (const k of rowKeys) {
@@ -130,40 +145,44 @@ export function usePermissionMatrix({
         return next;
       });
     },
-    [modules]
+    [modules, optInKeys]
   );
 
   const toggleAll = useCallback(() => {
     setPermissionsRaw((prev) => {
-      const keys = Object.keys(prev);
+      const keys = Object.keys(prev).filter((k) => !optInKeys.has(k));
       const currentAllChecked = keys.length > 0 && keys.every((k) => prev[k]);
-      const next: Record<string, boolean> = {};
+      const next = { ...prev };
       for (const k of keys) {
         next[k] = !currentAllChecked;
       }
       return next;
     });
-  }, []);
+  }, [optInKeys]);
 
   const isRowAllChecked = useCallback(
     (mod: string) => {
-      const moduleActions = modules[mod] ?? [];
+      const moduleActions = (modules[mod] ?? []).filter(
+        (a) => !optInKeys.has(`${mod}_${a}`)
+      );
       return (
         moduleActions.length > 0 &&
         moduleActions.every((a) => permissions[`${mod}_${a}`])
       );
     },
-    [modules, permissions]
+    [modules, permissions, optInKeys]
   );
 
   const isRowIndeterminate = useCallback(
     (mod: string) => {
-      const moduleActions = modules[mod] ?? [];
+      const moduleActions = (modules[mod] ?? []).filter(
+        (a) => !optInKeys.has(`${mod}_${a}`)
+      );
       const some = moduleActions.some((a) => permissions[`${mod}_${a}`]);
       const all = moduleActions.every((a) => permissions[`${mod}_${a}`]);
       return some && !all;
     },
-    [modules, permissions]
+    [modules, permissions, optInKeys]
   );
 
   return {

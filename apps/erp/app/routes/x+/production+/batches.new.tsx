@@ -14,8 +14,11 @@ import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // The wizard's mutations submit to batching.update (update: "production") and
+  // the batch-operations edge fn also requires update: "production"; gate the
+  // wizard on the same permission so opening it never dead-ends at submit.
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production"
+    update: "production"
   });
 
   const url = new URL(request.url);

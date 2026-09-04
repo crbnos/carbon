@@ -76,20 +76,18 @@ export async function getJobOperationBatch(
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
-  const events = await client
-    .from("productionEvent")
-    .select("id, type, startTime, endTime")
-    .eq("jobOperationBatchId", batchId)
-    .eq("companyId", companyId);
   return {
     data: {
       ...batch.data,
-      operations: operations.data ?? [],
-      events: events.data ?? []
+      operations: operations.data ?? []
     },
-    error: operations.error ?? events.error
+    error: operations.error
   };
 }
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
+>;
 
 export async function getTrackedEntitiesByJobMakeMethodIds(
   client: SupabaseClient<Database>,

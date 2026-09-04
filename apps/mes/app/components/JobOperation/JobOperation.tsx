@@ -110,7 +110,7 @@ import {
 } from "~/components/Icons";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
-import type { getJobOperationBatch } from "~/services/operations.service";
+import type { JobOperationBatch } from "~/services/operations.service";
 import { getFileType } from "~/services/operations.service";
 import type {
   Job,
@@ -155,10 +155,6 @@ import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
 
 const log = getLogger("mes", "job-operation");
-
-type JobOperationBatch = NonNullable<
-  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
->;
 
 type JobOperationProps = {
   // Present only when the op belongs to an Active/Completing batch; the loader

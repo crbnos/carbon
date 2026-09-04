@@ -34,12 +34,10 @@ import {
   VStack
 } from "@carbon/react";
 import {
-  BATCH_RULE_DIMENSIONS,
   type BatchRuleDimension,
   type BatchRules,
   formatDate,
   formatDurationMilliseconds,
-  mustViolations,
   RoundingMode,
   resolveBatchRules,
   round
@@ -67,18 +65,25 @@ import {
 import { useFetcher, useNavigate } from "react-router";
 import { ItemThumbnail, Table } from "~/components";
 import { path } from "~/utils/path";
-import type { BatchCandidate, BatchMaterial } from "../../types";
+import type { BatchCandidate } from "../../types";
 import {
-  batchEstimateMs,
+  batchPlanBreakdown,
   candidateValueSets,
-  DEFAULT_RESOLVED_RULES,
+  computeGuideMismatches,
+  computeLockedById,
+  computeSelectionDimSets,
+  deriveAddTargets,
+  deriveFacetDimensions,
   dueDateOf,
+  type FacetDimension,
+  filterAndSortCandidates,
   groupingKey,
   groupSetupSaving,
+  MATERIAL_FACET_KEY,
   materialSignature,
   rankSuggestions,
-  type Suggestion,
-  setupDurationOf
+  resolveRepCapacity,
+  type Suggestion
 } from "./batch-builder-logic";
 
 // The candidate list is fetched whole (no server paging) and neither view
@@ -91,39 +96,6 @@ const DUE_SPREAD_WARNING_DAYS = 7;
 
 const DUE_WINDOWS = [7, 14, 30] as const;
 
-// The five normalized material-property dimensions. The builder also derives a
-// `material` dimension (the BOM item itself) — see facetDimensions.
-const PROPERTY_FACETS: {
-  key: keyof BatchMaterial;
-  nameKey: keyof BatchMaterial;
-}[] = [
-  { key: "substanceId", nameKey: "substanceName" },
-  { key: "gradeId", nameKey: "gradeName" },
-  { key: "dimensionId", nameKey: "dimensionName" },
-  { key: "formId", nameKey: "formName" },
-  { key: "finishId", nameKey: "finishName" }
-];
-
-const MATERIAL_FACET_KEY = "material";
-
-type FacetDimension = {
-  key: string;
-  label: string;
-  options: { value: string; label: string }[];
-};
-
-// Does one BOM line satisfy one facet dimension's selected values?
-function lineMatchesFacet(
-  line: BatchMaterial,
-  key: string,
-  values: string[]
-): boolean {
-  if (key === MATERIAL_FACET_KEY) {
-    return !!line.itemReadableId && values.includes(line.itemReadableId);
-  }
-  return values.includes(line[key as keyof BatchMaterial] as string);
-}
-
 // Per-candidate compatibility signals against the current selection, threaded to
 // the list views. `lockedById` = must-blocked (not co-selectable); `guideMismatchById`
 // = advisory guide mismatch; `dimLabel` = translated dimension names for tags.
@@ -132,20 +104,6 @@ type CompatInfo = {
   lockedById: Map<string, BatchRuleDimension[]>;
   guideMismatchById: Map<string, BatchRuleDimension[]>;
   dimLabel: Record<BatchRuleDimension, string>;
-};
-
-const NO_COMPAT: CompatInfo = {
-  rules: DEFAULT_RESOLVED_RULES,
-  lockedById: new Map(),
-  guideMismatchById: new Map(),
-  dimLabel: {
-    item: "material item",
-    substance: "substance",
-    grade: "grade",
-    dimension: "dimension",
-    form: "form",
-    finish: "finish"
-  }
 };
 
 // One quiet tag on a candidate row: a locked "must" mismatch (grey, with lock),
@@ -407,8 +365,14 @@ export function BatchBuilder({
     () => candidatesFetcher.data?.candidates ?? [],
     [candidatesFetcher.data]
   );
-  const workCenterLoad = candidatesFetcher.data?.workCenterLoad ?? {};
-  const hidden = candidatesFetcher.data?.hidden ?? NO_HIDDEN_OPS;
+  const workCenterLoad = useMemo(
+    () => candidatesFetcher.data?.workCenterLoad ?? {},
+    [candidatesFetcher.data]
+  );
+  const hidden = useMemo(
+    () => candidatesFetcher.data?.hidden ?? NO_HIDDEN_OPS,
+    [candidatesFetcher.data]
+  );
 
   // "6 hidden" alone reads as a bug when the list is empty — name the reasons.
   const hiddenParts = [
@@ -432,25 +396,10 @@ export function BatchBuilder({
 
   // Existing Active batches on this process — offered as add targets so a
   // planner extends a batch instead of accidentally creating a duplicate.
-  const addTargets = useMemo(() => {
-    const targets = new Map<
-      string,
-      { batchId: string; readableId: string; memberCount: number }
-    >();
-    for (const c of allCandidates) {
-      if (!c.jobOperationBatchId || c.batchStatus !== "Active") continue;
-      const entry = targets.get(c.jobOperationBatchId) ?? {
-        batchId: c.jobOperationBatchId,
-        readableId: c.batchReadableId ?? "Batch",
-        memberCount: 0
-      };
-      entry.memberCount += 1;
-      targets.set(c.jobOperationBatchId, entry);
-    }
-    return [...targets.values()].sort((a, b) =>
-      a.readableId.localeCompare(b.readableId)
-    );
-  }, [allCandidates]);
+  const addTargets = useMemo(
+    () => deriveAddTargets(allCandidates),
+    [allCandidates]
+  );
 
   // Compatibility rules for the scoped process. Defaults (substance/grade/
   // dimension guide, the rest ignore) reproduce the pre-rules behavior, so an
@@ -482,62 +431,35 @@ export function BatchBuilder({
     () => [...selectedById.values()].map(candidateValueSets),
     [selectedById]
   );
-  const selectionDimSets = useMemo(() => {
-    const folded = new Map<BatchRuleDimension, Set<string> | null>();
-    for (const dim of BATCH_RULE_DIMENSIONS) {
-      let acc: string[] | null = null;
-      for (const sets of selectedValueSets) {
-        const vals = sets[dim];
-        if (!vals || vals.length === 0) continue;
-        if (acc === null) {
-          acc = vals.slice();
-        } else {
-          const current = new Set(vals);
-          acc = acc.filter((v) => current.has(v));
-        }
-      }
-      folded.set(dim, acc === null ? null : new Set(acc));
-    }
-    return folded;
-  }, [selectedValueSets]);
+  const selectedIds = useMemo(
+    () => new Set(selectedById.keys()),
+    [selectedById]
+  );
+  const selectionDimSets = useMemo(
+    () => computeSelectionDimSets(selectedValueSets),
+    [selectedValueSets]
+  );
 
   // A candidate is LOCKED when adding it to the current selection would leave a
   // "must" dimension with no shared value. Empty selection locks nothing.
-  const lockedById = useMemo(() => {
-    const map = new Map<string, BatchRuleDimension[]>();
-    if (selectedValueSets.length === 0) return map;
-    for (const c of candidates) {
-      if (selectedById.has(c.id)) continue;
-      const dims = mustViolations(rules, [
-        ...selectedValueSets,
-        candidateValueSets(c)
-      ]);
-      if (dims.length) map.set(c.id, dims);
-    }
-    return map;
-  }, [candidates, selectedValueSets, selectedById, rules]);
+  const lockedById = useMemo(
+    () => computeLockedById(candidates, selectedIds, selectedValueSets, rules),
+    [candidates, selectedIds, selectedValueSets, rules]
+  );
 
   // GUIDE mismatches (advisory): a guide dimension where the selection has a
   // value the candidate can't match. Warned, never blocked.
-  const guideMismatchById = useMemo(() => {
-    const map = new Map<string, BatchRuleDimension[]>();
-    if (selectedValueSets.length === 0) return map;
-    for (const c of candidates) {
-      if (selectedById.has(c.id)) continue;
-      const sets = candidateValueSets(c);
-      const dims: BatchRuleDimension[] = [];
-      for (const dim of BATCH_RULE_DIMENSIONS) {
-        if (rules[dim] !== "guide") continue;
-        const selectionSet = selectionDimSets.get(dim);
-        if (!selectionSet || selectionSet.size === 0) continue;
-        const vals = sets[dim];
-        if (!vals || vals.length === 0) continue;
-        if (!vals.some((v) => selectionSet.has(v))) dims.push(dim);
-      }
-      if (dims.length) map.set(c.id, dims);
-    }
-    return map;
-  }, [candidates, selectedValueSets, selectionDimSets, selectedById, rules]);
+  const guideMismatchById = useMemo(
+    () =>
+      computeGuideMismatches(
+        candidates,
+        selectedIds,
+        selectedValueSets,
+        selectionDimSets,
+        rules
+      ),
+    [candidates, selectedIds, selectedValueSets, selectionDimSets, rules]
+  );
 
   const compat = useMemo<CompatInfo>(
     () => ({ rules, lockedById, guideMismatchById, dimLabel }),
@@ -556,46 +478,7 @@ export function BatchBuilder({
       formId: t`Form`,
       finishId: t`Finish`
     };
-    const dims: FacetDimension[] = [];
-
-    const materialItems = new Map<string, string>();
-    for (const c of candidates) {
-      for (const m of c.materials ?? []) {
-        if (m.itemReadableId && !materialItems.has(m.itemReadableId)) {
-          materialItems.set(m.itemReadableId, m.itemReadableId);
-        }
-      }
-    }
-    if (materialItems.size > 0) {
-      dims.push({
-        key: MATERIAL_FACET_KEY,
-        label: labels[MATERIAL_FACET_KEY],
-        options: [...materialItems.keys()]
-          .sort((a, b) => a.localeCompare(b))
-          .map((id) => ({ value: id, label: id }))
-      });
-    }
-
-    for (const f of PROPERTY_FACETS) {
-      const seen = new Map<string, string>();
-      for (const c of candidates) {
-        for (const m of c.materials ?? []) {
-          const id = m[f.key] as string | null;
-          const name = m[f.nameKey] as string | null;
-          if (id && name && !seen.has(id)) seen.set(id, name);
-        }
-      }
-      if (seen.size > 0) {
-        dims.push({
-          key: f.key,
-          label: labels[f.key],
-          options: [...seen.entries()]
-            .map(([id, name]) => ({ value: id, label: name }))
-            .sort((a, b) => a.label.localeCompare(b.label))
-        });
-      }
-    }
-    return dims;
+    return deriveFacetDimensions(candidates, labels);
   }, [candidates, t]);
 
   const activeFacetKeys = useMemo(
@@ -606,46 +489,17 @@ export function BatchBuilder({
   // A candidate matches if ANY BOM line satisfies ALL active facets, the search
   // term matches its job/item/op text, and it falls inside the due window.
   // Sorted most-urgent first (due date asc, undated last).
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const dueLimit =
-      dueWindow !== null
-        ? today(getLocalTimeZone()).add({ days: dueWindow })
-        : null;
-    const matches = candidates.filter((c) => {
-      if (activeFacetKeys.length > 0) {
-        const anyLineMatches = (c.materials ?? []).some((m) =>
-          activeFacetKeys.every((key) => lineMatchesFacet(m, key, facets[key]))
-        );
-        if (!anyLineMatches) return false;
-      }
-      if (dueLimit) {
-        const due = dueDateOf(c);
-        if (!due || parseDate(due).compare(dueLimit) > 0) return false;
-      }
-      if (term) {
-        const haystack = [
-          c.jobReadableId,
-          c.itemReadableId,
-          c.itemDescription,
-          c.description
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(term)) return false;
-      }
-      return true;
-    });
-    return matches.sort((a, b) => {
-      const da = dueDateOf(a);
-      const db = dueDateOf(b);
-      if (da && db) return parseDate(da).compare(parseDate(db));
-      if (da) return -1;
-      if (db) return 1;
-      return 0;
-    });
-  }, [candidates, activeFacetKeys, facets, search, dueWindow]);
+  const filtered = useMemo(
+    () =>
+      filterAndSortCandidates(candidates, {
+        activeFacetKeys,
+        facets,
+        search,
+        dueWindow,
+        today: today(getLocalTimeZone())
+      }),
+    [candidates, activeFacetKeys, facets, search, dueWindow]
+  );
 
   const visible = useMemo(() => filtered.slice(0, MAX_VISIBLE), [filtered]);
 
@@ -653,23 +507,10 @@ export function BatchBuilder({
   // chosen its own batchCapacity is authoritative — the "fills a run" chip and
   // the fill bar must agree. Before one is chosen, fall back to the largest
   // batchCapacity among the centers that can run this process here.
-  const repCapacity = useMemo(() => {
-    const selected = workCenterId
-      ? workCenters.find((wc) => wc.id === workCenterId)
-      : null;
-    if (selected?.batchCapacity && selected.batchCapacity > 0) {
-      return selected.batchCapacity;
-    }
-    const eligible = workCenters.filter(
-      (wc) =>
-        (!wc.locationId || wc.locationId === locationId) &&
-        (!processId || wc.processes.includes(processId))
-    );
-    const caps = eligible
-      .map((wc) => wc.batchCapacity)
-      .filter((c): c is number => c != null && c > 0);
-    return caps.length ? Math.max(...caps) : null;
-  }, [workCenters, workCenterId, locationId, processId]);
+  const repCapacity = useMemo(
+    () => resolveRepCapacity(workCenters, workCenterId, locationId, processId),
+    [workCenters, workCenterId, locationId, processId]
+  );
 
   // Suggested batches: groups of ≥2 unselected, co-selectable candidates sharing
   // a material signature, SCORED by setup saved + due urgency + capacity fit +
@@ -1599,7 +1440,7 @@ function CandidateTable({
   allVisibleSelected,
   onToggleAllVisible,
   workCenterNameById,
-  compat = NO_COMPAT
+  compat
 }: {
   isLoading: boolean;
   isFiltered: boolean;
@@ -1610,7 +1451,7 @@ function CandidateTable({
   allVisibleSelected: boolean;
   onToggleAllVisible: () => void;
   workCenterNameById: Map<string, string>;
-  compat?: CompatInfo;
+  compat: CompatInfo;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -1819,7 +1660,7 @@ function GroupedCandidateList({
   onSelectMany,
   onDeselectMany,
   workCenterNameById,
-  compat = NO_COMPAT
+  compat
 }: {
   isLoading: boolean;
   isFiltered: boolean;
@@ -1830,7 +1671,7 @@ function GroupedCandidateList({
   onSelectMany: (cs: BatchCandidate[]) => void;
   onDeselectMany: (cs: BatchCandidate[]) => void;
   workCenterNameById: Map<string, string>;
-  compat?: CompatInfo;
+  compat: CompatInfo;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -1937,7 +1778,7 @@ function CandidateGroup({
   onDeselectMany,
   workCenterNameById,
   locale,
-  compat = NO_COMPAT,
+  compat,
   muted = false
 }: {
   title: string;
@@ -1949,7 +1790,7 @@ function CandidateGroup({
   onDeselectMany: (cs: BatchCandidate[]) => void;
   workCenterNameById: Map<string, string>;
   locale: string;
-  compat?: CompatInfo;
+  compat: CompatInfo;
   muted?: boolean;
 }) {
   const { t } = useLingui();
@@ -2115,7 +1956,7 @@ function ReviewPanel({
   isAddMode,
   existingMembers,
   selected,
-  rules = DEFAULT_RESOLVED_RULES,
+  rules,
   onRemove,
   workCenterId,
   workCenterOptions,
@@ -2128,7 +1969,7 @@ function ReviewPanel({
   isAddMode: boolean;
   existingMembers: BatchBuilderBatch["members"];
   selected: BatchCandidate[];
-  rules?: Required<BatchRules>;
+  rules: Required<BatchRules>;
   onRemove: (c: BatchCandidate) => void;
   workCenterId: string | null;
   workCenterOptions: {
@@ -2144,13 +1985,17 @@ function ReviewPanel({
 }) {
   const { t } = useLingui();
 
-  // Setup saving: one shared setup (the largest member) instead of the sum.
-  const setups = selected.map(setupDurationOf);
-  const setupSum = setups.reduce((acc, s) => acc + s, 0);
-  const setupMax = Math.max(0, ...setups);
-  const showSetupSaving = setupMax > 0 && setupSum > setupMax;
+  // Planned durations for the batch, by type: one shared setup (the largest
+  // member) plus summed labor and machine. The estimate is their sum.
+  const plan = batchPlanBreakdown(selected);
+  const estimateMs = plan.setup + plan.labor + plan.machine;
 
-  const estimateMs = batchEstimateMs(selected);
+  // Setup saving: one shared setup (the largest member) instead of the sum.
+  const setupMax = plan.setup;
+  const setupSaving = groupSetupSaving(selected);
+  const setupSum = setupMax + setupSaving;
+  const showSetupSaving = setupSaving > 0;
+
   const totalQuantity = selected.reduce(
     (s, c) => s + (c.operationQuantity ?? 0),
     0

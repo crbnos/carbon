@@ -21,6 +21,9 @@ const migrations = join(
 );
 const read = (rel: string) => readFileSync(join(migrations, rel), "utf8");
 const migration = read("20260821024449_job-operation-batching.sql");
+const memberFkFix = read(
+  "20260904151137_batch-member-fk-set-null-companyid.sql"
+);
 
 describe("batch candidates are tenant-scoped (AC[0])", () => {
   test("get_batchable_operations runs SECURITY INVOKER so the caller's RLS scopes rows", () => {
@@ -57,6 +60,20 @@ describe("batch membership is pinned to one company via composite FKs", () => {
     );
     expect(migration).toMatch(
       /ADD CONSTRAINT "productionEvent_jobOperationBatchId_fkey"\s*FOREIGN KEY \("jobOperationBatchId", "companyId"\)\s*REFERENCES "jobOperationBatch"\("id", "companyId"\)/s
+    );
+  });
+
+  test("member FKs SET NULL only jobOperationBatchId, not the NOT NULL companyId", () => {
+    // A column-list-less `ON DELETE SET NULL` on a multi-column FK nulls EVERY
+    // referencing column, including the NOT NULL `companyId` — so deleting a
+    // batch (or a `DELETE FROM company` cascade) would raise a not-null
+    // violation. The PG15 column-list form nulls ONLY the batch pointer.
+    // 20260904151137 fixes both member FKs to this form.
+    expect(memberFkFix).toMatch(
+      /ADD CONSTRAINT "jobOperation_jobOperationBatchId_fkey"[\s\S]*?ON DELETE SET NULL \("jobOperationBatchId"\)/
+    );
+    expect(memberFkFix).toMatch(
+      /ADD CONSTRAINT "productionEvent_jobOperationBatchId_fkey"[\s\S]*?ON DELETE SET NULL \("jobOperationBatchId"\)/
     );
   });
 

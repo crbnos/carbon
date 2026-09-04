@@ -1,9 +1,9 @@
 // Proportional time-splitting + completion planning for a job operation batch.
 //
-// Deno-side MIRROR of packages/utils/src/batch-time-split.ts. Deno edge functions
-// cannot import workspace packages, so this pure logic is duplicated here. The
-// canonical version (with the vitest coverage) is the @carbon/utils file — keep
-// the two in sync. See .ai/specs/2026-07-03-job-operation-batching.md.
+// Canonical source (with the vitest coverage in packages/utils). Deno edge
+// functions cannot import workspace packages, so @carbon/utils RE-EXPORTS this
+// file (see packages/utils/src/batch-time-split.ts) — one source of truth, no
+// drift. Dependency-free pure TS. See .ai/specs/2026-08-21-job-operation-batching.md.
 
 export interface BatchMemberWeight {
   id: string;
@@ -188,8 +188,8 @@ export function buildBatchCompletionPlan(
  * membership. The submitted list must match the real membership EXACTLY: a
  * duplicate would double-count quantity/issue, an unknown id would fabricate
  * output, and an omitted real member would silently under-complete the batch.
- * Throws on the first violation; returns nothing on success. Pure — keep in sync
- * with packages/utils/src/batch-time-split.ts (the vitest-covered canonical copy).
+ * Throws on the first violation; returns nothing on success. Pure — this is the
+ * canonical copy; @carbon/utils re-exports it (vitest coverage lives there).
  */
 export function assertBatchCompletionMembership(
   submittedIds: string[],
@@ -225,7 +225,7 @@ export function assertBatchCompletionMembership(
  * overwritten. If the number of rows actually updated falls short of the number
  * of distinct operations requested, another transaction won the race for at
  * least one operation — throw so the whole claim rolls back instead of silently
- * batching a subset. Pure — keep in sync with packages/utils/src/batch-time-split.ts.
+ * batching a subset. Pure — canonical copy; @carbon/utils re-exports it.
  */
 export function assertAllOperationsClaimed(
   requestedIds: string[],
@@ -245,7 +245,7 @@ export function assertAllOperationsClaimed(
  * the work center would rewrite history. Only an Active batch may
  * be re-pointed — and the call site additionally blocks the change once any
  * production event exists (production has started). Pure; the production-event
- * check remains at the DB layer. Keep in sync with packages/utils/src/batch-time-split.ts.
+ * check remains at the DB layer. Canonical copy; @carbon/utils re-exports it.
  */
 export function assertBatchWorkCenterMutable(status: string): void {
   if (status !== "Active") {
@@ -269,8 +269,8 @@ export function assertBatchWorkCenterMutable(status: string): void {
  *                 slice must NOT be repeated.
  *
  * A `Completed` batch is terminal (rejected), as is any other status (e.g.
- * `Cancelled`). Pure — keep in sync with packages/utils/src/batch-time-split.ts
- * (the vitest-covered canonical copy).
+ * `Cancelled`). Pure — this is the canonical copy; @carbon/utils re-exports it
+ * (vitest coverage lives there).
  */
 export function planBatchCompletion(status: string): "slice" | "resume" {
   switch (status) {

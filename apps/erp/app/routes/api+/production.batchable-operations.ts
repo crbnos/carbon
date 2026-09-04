@@ -1,7 +1,16 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getBatchableOperations } from "~/modules/production";
-import type { BatchCandidate } from "~/modules/production/types";
+import type { BatchCandidate, BatchMaterial } from "~/modules/production/types";
+
+// The base candidate row, derived from the RPC wrapper's return so a column
+// drift in get_batchable_operations fails to compile here (the type-chain
+// convention) rather than silently through an `as unknown as` cast. The route
+// enriches each row into a BatchCandidate below (setup/labor/machine time, due
+// date, thumbnail) — fields the RPC does not return.
+type BatchableOperationRow = NonNullable<
+  Awaited<ReturnType<typeof getBatchableOperations>>["data"]
+>[number];
 
 // Statuses that count as "on the floor" for queue-load and hidden-op purposes.
 const ACTIVE_STATUSES = [
@@ -51,14 +60,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     batched: 0
   };
   if (!locationId || !processId) {
-    return Response.json(
-      {
-        candidates: [] as BatchCandidate[],
-        workCenterLoad: {} as Record<string, number>,
-        hidden: emptyHidden
-      },
-      { status: 400 }
-    );
+    // Plain object (not Response.json) per the repo's no-Response.json-in-routes
+    // convention — same shape the success path returns so the client fetcher
+    // (candidatesFetcher.data) degrades gracefully instead of throwing on a 400.
+    return {
+      candidates: [] as BatchCandidate[],
+      workCenterLoad: {} as Record<string, number>,
+      hidden: emptyHidden,
+      error: "A location and process are required"
+    };
   }
 
   const [operations, activeOps, processOps] = await Promise.all([
@@ -89,7 +99,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (workCenterLoad[op.workCenterId] ?? 0) + 1;
   }
 
-  const rows = (operations.data ?? []) as unknown as BatchCandidate[];
+  const rows: BatchableOperationRow[] = operations.data ?? [];
   const rpcIds = new Set(rows.map((r) => r.id));
   const hidden = { ...emptyHidden };
   for (const op of processOps.data ?? []) {
@@ -111,7 +121,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (operations.error || rows.length === 0) {
-    return { candidates: rows, workCenterLoad, hidden };
+    // rows is always empty on this branch (error ⇒ data null ⇒ []), so there is
+    // nothing to enrich into BatchCandidates.
+    return { candidates: [] as BatchCandidate[], workCenterLoad, hidden };
   }
 
   // Enrich with the fields the RPC doesn't return but the wizard needs.
@@ -143,8 +155,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const candidates: BatchCandidate[] = rows.map((r) => {
     const d = detailById.get(r.id);
+    // Only `materials` crosses a real type boundary — the RPC row types it as
+    // Json where BatchCandidate wants BatchMaterial[]; cast just that field so
+    // the outer `as BatchCandidate` still catches drift on every other column.
     return {
       ...r,
+      materials: (r.materials ?? []) as unknown as BatchMaterial[],
       setupTime: d?.setupTime ?? null,
       setupUnit: d?.setupUnit ?? null,
       laborTime: d?.laborTime ?? null,
@@ -153,7 +169,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       machineUnit: d?.machineUnit ?? null,
       dueDate: d?.dueDate ?? null,
       thumbnailPath: thumbnailByJobId.get(r.jobId) ?? null
-    };
+    } as BatchCandidate;
   });
 
   return { candidates, workCenterLoad, hidden };

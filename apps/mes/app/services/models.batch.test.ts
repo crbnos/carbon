@@ -68,6 +68,27 @@ describe("completeJobOperationBatchValidator", () => {
     expect(result.success).toBe(false);
   });
 
+  // An excluded ("Not in this run") member's quantity input is disabled, so its
+  // NumberControlled is omitted from FormData entirely — the member arrives with
+  // NO `quantity` key. The validator must accept that (quantity is optional); the
+  // route then forces the excluded member to 0. This is the revert-guard for
+  // making `quantity` optional.
+  it("accepts an excluded member with no quantity key", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [
+        { jobOperationId: "op_1", quantity: 5 },
+        { jobOperationId: "op_2", excluded: "true" }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.members[1].quantity).toBeUndefined();
+      expect(result.data.members[1].excluded).toBe("true");
+    }
+  });
+
   // "Not in this run" travels as a string flag from a Hidden input (the same
   // idiom as productionEventValidator's `exclusive`); the route maps
   // `excluded === "true"` to a boolean before invoking the edge fn. An empty

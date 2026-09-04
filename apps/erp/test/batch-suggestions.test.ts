@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 // Import the logic module directly — the ERP barrels drag lingui macros vitest
 // does not transform (see batching-migration-guards.test.ts).
 import {
+  candidateValueSets,
+  computeGuideMismatches,
+  computeLockedById,
+  computeSelectionDimSets,
   groupingKey,
   materialSignature,
   rankSuggestions
@@ -244,5 +248,170 @@ describe("rankSuggestions", () => {
       daysUntil
     );
     expect(out).toHaveLength(6);
+  });
+});
+
+// The client mirror of the edge fn's assertMaterialCompatible: a candidate whose
+// "must" dimension can't share a value with the current selection is LOCKED
+// (visible-but-uncheckable). A test that fails if the must-gating is reverted.
+describe("computeLockedById (must-violation gating)", () => {
+  const rules = resolveBatchRules({ substance: "must" });
+
+  it("locks a candidate whose must value can't join the selection", () => {
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const alu = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Aluminum" })]
+    });
+    const locked = computeLockedById(
+      [steel, alu],
+      new Set(["a"]),
+      [candidateValueSets(steel)],
+      rules
+    );
+    expect(locked.has("b")).toBe(true);
+    expect(locked.get("b")).toContain("substance");
+  });
+
+  it("does not lock a candidate that shares the must value", () => {
+    const s1 = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const s2 = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const locked = computeLockedById(
+      [s1, s2],
+      new Set(["a"]),
+      [candidateValueSets(s1)],
+      rules
+    );
+    expect(locked.has("b")).toBe(false);
+  });
+
+  it("locks nothing when the selection is empty", () => {
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const alu = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Aluminum" })]
+    });
+    const locked = computeLockedById([steel, alu], new Set(), [], rules);
+    expect(locked.size).toBe(0);
+  });
+
+  it("never locks an already-selected candidate", () => {
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const alu = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Aluminum" })]
+    });
+    const locked = computeLockedById(
+      [steel, alu],
+      new Set(["a", "b"]),
+      [candidateValueSets(steel), candidateValueSets(alu)],
+      rules
+    );
+    expect(locked.has("b")).toBe(false);
+  });
+
+  it("does not lock on a dimension that is only a guide", () => {
+    // Default rules make substance a GUIDE, not a must — differing substances
+    // are advisory, never locked.
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const alu = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Aluminum" })]
+    });
+    const locked = computeLockedById(
+      [steel, alu],
+      new Set(["a"]),
+      [candidateValueSets(steel)],
+      DEFAULT_RULES
+    );
+    expect(locked.size).toBe(0);
+  });
+});
+
+// Advisory GUIDE mismatch: a guide dimension where the selection has a value the
+// candidate can't match. Warned (amber tag), never blocked.
+describe("computeGuideMismatches (advisory guide mismatch)", () => {
+  // Default rules put substance/grade/dimension on "guide".
+  const rules = DEFAULT_RULES;
+
+  it("flags a candidate whose guide value differs from the selection", () => {
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const alu = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Aluminum" })]
+    });
+    const sets = [candidateValueSets(steel)];
+    const dimSets = computeSelectionDimSets(sets);
+    const mismatches = computeGuideMismatches(
+      [steel, alu],
+      new Set(["a"]),
+      sets,
+      dimSets,
+      rules
+    );
+    expect(mismatches.get("b")).toContain("substance");
+  });
+
+  it("does not flag a candidate matching the selection's guide value", () => {
+    const s1 = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const s2 = makeCandidate("b", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const sets = [candidateValueSets(s1)];
+    const dimSets = computeSelectionDimSets(sets);
+    const mismatches = computeGuideMismatches(
+      [s1, s2],
+      new Set(["a"]),
+      sets,
+      dimSets,
+      rules
+    );
+    expect(mismatches.has("b")).toBe(false);
+  });
+
+  it("flags nothing when the selection is empty", () => {
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const mismatches = computeGuideMismatches(
+      [steel],
+      new Set(),
+      [],
+      computeSelectionDimSets([]),
+      rules
+    );
+    expect(mismatches.size).toBe(0);
+  });
+
+  it("does not flag a dimension the candidate carries no value for", () => {
+    // The selection pins a substance, but the candidate has none — no basis to
+    // warn, so it must not be flagged.
+    const steel = makeCandidate("a", {
+      materials: [makeMaterial({ substanceName: "Steel" })]
+    });
+    const bare = makeCandidate("b", {
+      materials: [makeMaterial({ gradeName: "304" })]
+    });
+    const sets = [candidateValueSets(steel)];
+    const dimSets = computeSelectionDimSets(sets);
+    const mismatches = computeGuideMismatches(
+      [steel, bare],
+      new Set(["a"]),
+      sets,
+      dimSets,
+      rules
+    );
+    expect(mismatches.has("b")).toBe(false);
   });
 });

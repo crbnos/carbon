@@ -52,6 +52,14 @@ export const apiKeyPermissionModules = {
 
 export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
+/**
+ * Scopes (`${module}_${action}`) that must be opted into individually. Bulk
+ * toggles ("select all" / a module row) never enable these, and they stay off
+ * by default — deleting accounting records is destructive enough that granting
+ * it to an API key has to be a deliberate, per-checkbox choice.
+ */
+export const apiKeyOptInScopes = ["accounting_delete"] as const;
+
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),

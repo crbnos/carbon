@@ -18,11 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import {
-  convertDateStringToIsoString,
-  formatDate,
-  formatDurationMilliseconds
-} from "@carbon/utils";
+import { formatDate } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
@@ -30,7 +26,6 @@ import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarClock,
-  LuCalendarDays,
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
@@ -49,23 +44,18 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Link } from "react-router";
 import { z } from "zod";
-import {
-  Assignee,
-  CustomerAvatar,
-  DateTime,
-  EmployeeAvatarGroup
-} from "~/components";
+import { Assignee, CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 import { Tags } from "~/components/Form";
 import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
-import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
-import type { Item } from "../types";
+import type { Item, OperationItem } from "../types";
 import { isBatchItem } from "../types";
 import { useScheduleToday } from "../useScheduleToday";
+import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 interface Progress {
   totalDuration: number;
@@ -340,13 +330,7 @@ function OperationCard({
         {displaySettings.showMaterial &&
           "materialChips" in item &&
           (item.materialChips?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {item.materialChips?.map((chip) => (
-                <Badge key={chip} variant="secondary" className="text-xs">
-                  {chip}
-                </Badge>
-              ))}
-            </div>
+            <CardMaterialChips chips={item.materialChips ?? []} />
           )}
         {displaySettings.showDescription && item.description && (
           <HStack className="justify-start space-x-2">
@@ -368,45 +352,18 @@ function OperationCard({
             <span className="text-sm">{status}</span>
           </HStack>
         )}
-        {/* @ts-expect-error TS2339 */}
-        {displaySettings.showDuration && typeof item.duration === "number" && (
-          <HStack className="justify-start space-x-2">
-            <LuTimer className="text-muted-foreground" />
-            <span className="text-sm">
-              {/* @ts-expect-error TS2339 */}
-              {formatDurationMilliseconds(item.duration)}
-            </span>
-          </HStack>
-        )}
-        {displaySettings.showDueDate && item.deadlineType && (
-          <HStack className="justify-start space-x-2">
-            {getDeadlineIcon(item.deadlineType)}
-            <Tooltip>
-              <TooltipTrigger>
-                <span
-                  className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                >
-                  {["ASAP", "No Deadline"].includes(item.deadlineType)
-                    ? item.deadlineType
-                    : item.dueDate
-                      ? `Due ${formatRelativeTime(
-                          convertDateStringToIsoString(item.dueDate)
-                        )}`
-                      : "–"}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.deadlineType}</TooltipContent>
-            </Tooltip>
-          </HStack>
-        )}
-        {displaySettings.showDueDate && item.dueDate && (
-          <HStack className="justify-start space-x-2">
-            <LuCalendarDays />
-            <span className="text-sm">
-              <DateTime value={item.dueDate} variant="date" />
-            </span>
-          </HStack>
-        )}
+        <CardSummaryRows
+          showDuration={
+            displaySettings.showDuration &&
+            typeof (item as OperationItem).duration === "number"
+          }
+          duration={(item as OperationItem).duration ?? 0}
+          showDueDate={displaySettings.showDueDate}
+          deadlineType={item.deadlineType}
+          dueDate={item.dueDate}
+          isOverdue={isOverdue}
+          formatRelativeTime={formatRelativeTime}
+        />
         {displaySettings.showDueDate && projectedCompletionDate && (
           <HStack className="justify-start space-x-2">
             <LuCalendarClock

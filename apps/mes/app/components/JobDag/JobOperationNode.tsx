@@ -1,4 +1,4 @@
-import { BarProgress, cn } from "@carbon/react";
+import { Badge, BarProgress, cn } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
 import { useNavigate } from "react-router";
@@ -69,9 +69,9 @@ function JobOperationNodeImpl({ data }: NodeProps) {
             </span>
           )}
           {d.batchReadableId && (
-            <span className="shrink-0 text-[10px] font-semibold text-blue-600 bg-blue-100 rounded px-1">
+            <Badge variant="blue" className="shrink-0 px-1 text-[10px]">
               {d.batchReadableId}
-            </span>
+            </Badge>
           )}
         </div>
         <BarProgress

@@ -17,7 +17,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 
 ## Never
 
-- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate exceptions:** `precision.ts` and `batch-time-split.ts` each re-export their namesake under `packages/database/supabase/functions/shared/` by relative path (`math.ts` consumes the former). Those files are dependency-free pure TS and live there because the Supabase edge runtime only mounts `supabase/functions/`; re-exporting rather than duplicating keeps ONE source of truth so the Node and Deno sides never drift. Not package imports and not something to "fix" (same pattern as `packages/database/src/sampling.ts`).
+- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate exceptions:** `precision.ts`, `batch-time-split.ts`, and `batch-compatibility.ts` each re-export their namesake under `packages/database/supabase/functions/shared/` by relative path (`math.ts` consumes the former). Those files are dependency-free pure TS and live there because the Supabase edge runtime only mounts `supabase/functions/`; re-exporting rather than duplicating keeps ONE source of truth so the Node and Deno sides never drift. Not package imports and not something to "fix" (same pattern as `packages/database/src/sampling.ts`).
 - Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers).
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 

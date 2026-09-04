@@ -5803,7 +5803,7 @@ export async function getJobOperationBatches(
 ) {
   let query = client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name)", { count: "exact" })
+    .select("*, process(name), workCenter(name)", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -5817,6 +5817,19 @@ export async function getJobOperationBatches(
   }
 
   return query;
+}
+
+// The members' shared work-center name: null when they disagree (or none are
+// set), the single distinct name when they all agree. The list stats and the
+// detail drawer both fall back to this when the batch has no header work center
+// (a board-created batch has no header WC until its card is dragged), so they
+// must agree on what "shared" means — drop nullish first, then require exactly
+// one distinct name.
+function deriveSharedWorkCenterName(
+  names: (string | null | undefined)[]
+): string | null {
+  const distinct = new Set(names.filter((n): n is string => Boolean(n)));
+  return distinct.size === 1 ? ([...distinct][0] as string) : null;
 }
 
 // Member count + summed quantity per batch, for the batches list. One query for
@@ -5855,7 +5868,9 @@ export async function getJobOperationBatchMemberStats(
       workCenterName: string | null;
     }
   > = {};
-  const mixedWorkCenters = new Set<string>();
+  // Collect each batch's member work-center names, then derive the shared one
+  // once (same rule the detail drawer uses via deriveSharedWorkCenterName).
+  const memberWorkCenterNames: Record<string, (string | null)[]> = {};
   for (const op of result.data ?? []) {
     if (!op.jobOperationBatchId) continue;
     const entry = (stats[op.jobOperationBatchId] ??= {
@@ -5865,14 +5880,14 @@ export async function getJobOperationBatchMemberStats(
     });
     entry.memberCount += 1;
     entry.totalQuantity += op.operationQuantity ?? 0;
-    const wcName = op.workCenter?.name ?? null;
-    if (mixedWorkCenters.has(op.jobOperationBatchId)) continue;
-    if (entry.memberCount === 1) {
-      entry.workCenterName = wcName;
-    } else if (entry.workCenterName !== wcName) {
-      entry.workCenterName = null;
-      mixedWorkCenters.add(op.jobOperationBatchId);
-    }
+    (memberWorkCenterNames[op.jobOperationBatchId] ??= []).push(
+      op.workCenter?.name ?? null
+    );
+  }
+  for (const [batchId, entry] of Object.entries(stats)) {
+    entry.workCenterName = deriveSharedWorkCenterName(
+      memberWorkCenterNames[batchId] ?? []
+    );
   }
   return { data: stats, error: null };
 }
@@ -5897,15 +5912,13 @@ export async function getJobOperationBatchWithMembers(
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
   // Header work center when assigned; else the members' shared one (a
-  // board-created batch has no header WC until its card is dragged).
-  const memberWorkCenters = new Set(
-    (members.data ?? []).map((m) => m.workCenter?.name).filter(Boolean)
-  );
+  // board-created batch has no header WC until its card is dragged). Uses the
+  // same derivation as the list stats so the two never disagree.
   const workCenterName =
     batch.data.workCenter?.name ??
-    (memberWorkCenters.size === 1
-      ? ([...memberWorkCenters][0] as string)
-      : null);
+    deriveSharedWorkCenterName(
+      (members.data ?? []).map((m) => m.workCenter?.name)
+    );
   return {
     data: { ...batch.data, workCenterName, members: members.data ?? [] },
     error: members.error
