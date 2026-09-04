@@ -36,7 +36,11 @@ import {
   toApiKeyScopes,
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
-import { apiKeyPermissionModules, apiKeyValidator } from "~/modules/settings";
+import {
+  apiKeyOptInPermissionKeys,
+  apiKeyPermissionModules,
+  apiKeyValidator
+} from "~/modules/settings";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 
@@ -73,7 +77,8 @@ const ApiKeyForm = ({
 
   const matrix = usePermissionMatrix({
     modules: apiKeyPermissionModules,
-    initialState: initialScopeState
+    initialState: initialScopeState,
+    bulkExcludedKeys: apiKeyOptInPermissionKeys
   });
 
   useEffect(() => {
