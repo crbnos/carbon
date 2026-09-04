@@ -52,6 +52,7 @@ const Processes = (props: ProcessSelectProps) => {
             workCenters: [],
             completeAllOnScan: false,
             batchable: false,
+            batchType: "Sequential" as const,
             requiresAbility: false,
             ...batchRuleInitialValues(null)
           }}

@@ -2756,6 +2756,9 @@ msgstr "बैच ट्रैकिंग"
 msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "बैच योग्य"
 
@@ -14662,6 +14665,9 @@ msgstr "प्रत्येक प्राप्तकर्ता को भ
 msgid "Sequences"
 msgstr "अनुक्रम"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "सीरीज़"
 
@@ -15098,6 +15104,9 @@ msgstr "साइन इन करने के लिए आपके प्र
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "सिंगल साइन-ऑन"

@@ -6002,6 +6002,9 @@ export async function createJobOperationBatch(
     locationId: string;
     workCenterId?: string | null;
     notes?: string | null;
+    // Create & Release: insert the batch already 'Active' (on the floor);
+    // omitted/false creates it 'Planned'.
+    release?: boolean;
     companyId: string;
     userId: string;
   }
@@ -6014,7 +6017,7 @@ export async function createJobOperationBatch(
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
   args: {
-    type: "add" | "remove" | "update" | "dissolve";
+    type: "add" | "remove" | "update" | "dissolve" | "release" | "unrelease";
     batchId: string;
     jobOperationIds?: string[];
     workCenterId?: string | null;
@@ -6025,6 +6028,24 @@ export async function updateJobOperationBatch(
   const { type, ...rest } = args;
   return client.functions.invoke("batch-operations", {
     body: { type, ...rest }
+  });
+}
+
+export async function releaseJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string; userId: string }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "release", ...args }
+  });
+}
+
+export async function unreleaseJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string; userId: string }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "unrelease", ...args }
   });
 }
 

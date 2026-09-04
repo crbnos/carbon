@@ -2756,6 +2756,9 @@ msgstr "Chargenverfolgung"
 msgid "Batch Tracking"
 msgstr "Chargenverfolgung"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "Batchbar"
 
@@ -14662,6 +14665,9 @@ msgstr "Versendet an jeden Empfänger, der E-Mail-Benachrichtigungen aktiviert h
 msgid "Sequences"
 msgstr "Nummernkreise"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "Seriennummer"
 
@@ -15098,6 +15104,9 @@ msgstr "Die Anmeldung erfordert auch einen Einmalcode aus Ihrer Authentifizierun
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Die Anmeldung erfordert keinen Code mehr. Geben Sie den aktuellen 6-stelligen Code aus Ihrer Authentifikator-App ein, um zu bestätigen."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

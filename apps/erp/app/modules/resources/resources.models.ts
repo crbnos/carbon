@@ -338,6 +338,10 @@ export const processValidator = z
       .optional(),
     completeAllOnScan: zfd.checkbox(),
     batchable: zfd.checkbox(),
+    batchType: z
+      .enum(["Sequential", "Simultaneous"])
+      .optional()
+      .default("Sequential"),
     requiresAbility: zfd.checkbox(),
     batchRuleItem: z.enum(batchRuleLevels).optional(),
     batchRuleSubstance: z.enum(batchRuleLevels).optional(),

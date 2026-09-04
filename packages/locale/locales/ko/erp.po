@@ -2756,6 +2756,9 @@ msgstr "배치 추적"
 msgid "Batch Tracking"
 msgstr "배치 추적"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "배치 가능한"
 
@@ -14662,6 +14665,9 @@ msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."
 msgid "Sequences"
 msgstr "채번 규칙"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "일련번호"
 
@@ -15098,6 +15104,9 @@ msgstr "로그인에는 인증자 앱의 일회용 코드도 필요합니다"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "로그인할 때 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱의 현재 6자리 코드를 입력하세요."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

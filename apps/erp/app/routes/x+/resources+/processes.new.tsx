@@ -109,6 +109,7 @@ export default function NewProcessRoute() {
     defaultStandardFactor: "Minutes/Piece" as const,
     completeAllOnScan: false,
     batchable: false,
+    batchType: "Sequential" as const,
     requiresAbility: false,
     ...batchRuleInitialValues(null)
   };

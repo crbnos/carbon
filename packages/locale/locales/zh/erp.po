@@ -2756,6 +2756,9 @@ msgstr "批次追踪"
 msgid "Batch Tracking"
 msgstr "批次追踪"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "可批量的"
 
@@ -14662,6 +14665,9 @@ msgstr "发送给打开了电子邮件通知的每个收件人。"
 msgid "Sequences"
 msgstr "编号规则"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "序列号"
 
@@ -15098,6 +15104,9 @@ msgstr "登录还需要来自您的身份验证器应用的一次性代码"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "单点登录"

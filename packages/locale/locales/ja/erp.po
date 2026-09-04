@@ -2756,6 +2756,9 @@ msgstr "バッチ追跡"
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "バッチ可能"
 
@@ -14662,6 +14665,9 @@ msgstr "メール通知がオンになっている各受信者に送信されま
 msgid "Sequences"
 msgstr "採番"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "シリアル"
 
@@ -15098,6 +15104,9 @@ msgstr "サインインには認証アプリからのワンタイムコードも
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "シングルサインオン"

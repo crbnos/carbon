@@ -33,6 +33,8 @@ const payloadValidator = z.discriminatedUnion("type", [
     locationId: z.string(),
     workCenterId: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
+    // Create straight onto the floor (Active) instead of staging as Planned.
+    release: z.boolean().optional(),
     companyId: z.string(),
     userId: z.string()
   }),
@@ -54,6 +56,18 @@ const payloadValidator = z.discriminatedUnion("type", [
     type: z.literal("update"),
     batchId: z.string(),
     workCenterId: z.string().nullable().optional(),
+    companyId: z.string(),
+    userId: z.string()
+  }),
+  z.object({
+    type: z.literal("release"),
+    batchId: z.string(),
+    companyId: z.string(),
+    userId: z.string()
+  }),
+  z.object({
+    type: z.literal("unrelease"),
+    batchId: z.string(),
     companyId: z.string(),
     userId: z.string()
   }),
@@ -666,6 +680,15 @@ serve(async (req: Request) => {
             (memberWorkCenters.size === 1
               ? ([...memberWorkCenters][0] as string)
               : null);
+          // Creating straight onto the floor (release: true) skips the Planned
+          // staging state, so the release invariant applies at creation time:
+          // the batch must already have a work center — explicit in the
+          // payload, or adopted from the members above.
+          if (payload.release && !workCenterId) {
+            throw new Error(
+              "A batch must have a work center before it can be released"
+            );
+          }
           const readableId = await getNextSequence(
             trx,
             "jobOperationBatch",
@@ -679,7 +702,7 @@ serve(async (req: Request) => {
               processId,
               workCenterId,
               locationId: payload.locationId,
-              status: "Active",
+              status: payload.release ? "Active" : "Planned",
               notes: payload.notes ?? null,
               createdBy: userId
             })
@@ -720,7 +743,14 @@ serve(async (req: Request) => {
             .where("companyId", "=", companyId)
             .executeTakeFirst();
           if (!batch) throw new Error("Batch not found");
-          if (batch.status !== "Active") throw new Error("Batch is not active");
+          // Membership is mutable while the batch is staged (Planned) or on
+          // the floor but unstarted (Active); the production-event check below
+          // is what actually freezes it.
+          if (batch.status !== "Planned" && batch.status !== "Active") {
+            throw new Error(
+              `Cannot add operations to a batch with status ${batch.status}`
+            );
+          }
 
           const batchEvents = await trx
             .selectFrom("productionEvent")
@@ -877,6 +907,108 @@ serve(async (req: Request) => {
             .where("companyId", "=", companyId)
             .execute();
           return { updated: true };
+        });
+        break;
+      }
+
+      case "release": {
+        result = await db.transaction().execute(async (trx) => {
+          // FOR UPDATE serializes against concurrent release/complete/dissolve
+          // on the same batch; the WHERE status='Planned' on the flip below is
+          // the backstop.
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select(["id", "status", "workCenterId"])
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new Error("Batch not found");
+          if (batch.status !== "Planned") {
+            throw new Error(
+              `Cannot release a batch with status ${batch.status}`
+            );
+          }
+          if (!batch.workCenterId) {
+            throw new Error(
+              "A batch must have a work center before it can be released"
+            );
+          }
+          const members = await trx
+            .selectFrom("jobOperation")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (members.length === 0) {
+            throw new Error("Cannot release an empty batch");
+          }
+          const released = await trx
+            .updateTable("jobOperationBatch")
+            .set({
+              status: "Active",
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Planned")
+            .returning("id")
+            .executeTakeFirst();
+          if (!released) {
+            throw new Error("Only a planned batch can be released");
+          }
+          return { success: true };
+        });
+        break;
+      }
+
+      case "unrelease": {
+        result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select(["id", "status"])
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new Error("Batch not found");
+          if (batch.status !== "Active") {
+            throw new Error(
+              `Cannot unrelease a batch with status ${batch.status}`
+            );
+          }
+          // Once anything has run against the batch, pulling it back off the
+          // floor would orphan that recorded time.
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "production has been recorded — complete the batch instead"
+            );
+          }
+          const unreleased = await trx
+            .updateTable("jobOperationBatch")
+            .set({
+              status: "Planned",
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Active")
+            .returning("id")
+            .executeTakeFirst();
+          if (!unreleased) {
+            throw new Error("Only an active batch can be unreleased");
+          }
+          return { success: true };
         });
         break;
       }

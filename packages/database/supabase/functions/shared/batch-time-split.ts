@@ -242,13 +242,14 @@ export function assertAllOperationsClaimed(
 /**
  * Guard for mutating a batch's work center. A Completing or Completed batch's
  * recorded production events are already attributed to a machine, so re-pointing
- * the work center would rewrite history. Only an Active batch may
- * be re-pointed — and the call site additionally blocks the change once any
+ * the work center would rewrite history. Only a pre-floor batch — Planned
+ * (staged, not yet released) or Active (released but unstarted) — may be
+ * re-pointed; the call site additionally blocks the change once any
  * production event exists (production has started). Pure; the production-event
  * check remains at the DB layer. Canonical copy; @carbon/utils re-exports it.
  */
 export function assertBatchWorkCenterMutable(status: string): void {
-  if (status !== "Active") {
+  if (status !== "Planned" && status !== "Active") {
     throw new Error(
       "Cannot change the work center of a batch that is not active"
     );

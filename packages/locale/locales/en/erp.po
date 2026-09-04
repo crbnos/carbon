@@ -2756,6 +2756,9 @@ msgstr "Batch tracking"
 msgid "Batch Tracking"
 msgstr "Batch Tracking"
 
+msgid "Batch type"
+msgstr "Batch type"
+
 msgid "Batchable"
 msgstr "Batchable"
 
@@ -14662,6 +14665,9 @@ msgstr "Sent to each recipient who has email notifications turned on."
 msgid "Sequences"
 msgstr "Sequences"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr "Sequential — parts run one after another (saw, laser table)"
+
 msgid "Serial"
 msgstr "Serial"
 
@@ -15098,6 +15104,9 @@ msgstr "Signing in also requires a one-time code from your authenticator app"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr "Simultaneous — parts run together in one load (furnace, oven, plating)"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

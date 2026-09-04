@@ -203,8 +203,20 @@ describe("assertAllOperationsClaimed", () => {
 });
 
 describe("assertBatchWorkCenterMutable", () => {
+  it("allows changing the work center of a Planned batch", () => {
+    // Planned is the staged, pre-release state — nothing has run, so the
+    // work center is still freely assignable.
+    expect(() => assertBatchWorkCenterMutable("Planned")).not.toThrow();
+  });
+
   it("allows changing the work center of an Active batch", () => {
     expect(() => assertBatchWorkCenterMutable("Active")).not.toThrow();
+  });
+
+  it("rejects changing the work center of a Completing batch", () => {
+    expect(() => assertBatchWorkCenterMutable("Completing")).toThrow(
+      /not active/
+    );
   });
 
   it("rejects changing the work center of a Completed batch", () => {
@@ -221,6 +233,14 @@ describe("assertBatchWorkCenterMutable", () => {
 });
 
 describe("planBatchCompletion", () => {
+  it("rejects a Planned batch (must be released first)", () => {
+    // A Planned batch has never been released to the floor — nothing has run
+    // against it, so there is nothing to complete.
+    expect(() => planBatchCompletion("Planned")).toThrow(
+      /Only an active batch can be completed/
+    );
+  });
+
   it("slices on the first attempt (Active batch)", () => {
     expect(planBatchCompletion("Active")).toBe("slice");
   });

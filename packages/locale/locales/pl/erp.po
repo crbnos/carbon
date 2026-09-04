@@ -2756,6 +2756,9 @@ msgstr "Śledzenie partii"
 msgid "Batch Tracking"
 msgstr "Śledzenie partii"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "Zdatne do partii"
 
@@ -14662,6 +14665,9 @@ msgstr "Wysłane do każdego odbiorcy, który ma włączone powiadomienia e-mail
 msgid "Sequences"
 msgstr "Numeracja"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "Seryjny"
 
@@ -15098,6 +15104,9 @@ msgstr "Logowanie wymaga również kodu jednorazowego z aplikacji authenticator"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Logowanie nie będzie już wymagać kodu. Wpisz bieżący 6-cyfrowy kod z aplikacji Authenticator, aby potwierdzić."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Logowanie jednokrotne"

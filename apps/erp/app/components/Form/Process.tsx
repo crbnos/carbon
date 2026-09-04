@@ -79,6 +79,7 @@ const Process = ({
             defaultStandardFactor: "Minutes/Piece",
             completeAllOnScan: false,
             batchable: false,
+            batchType: "Sequential" as const,
             requiresAbility: false,
             workCenters: [],
             ...batchRuleInitialValues(null)

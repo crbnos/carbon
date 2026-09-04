@@ -2756,6 +2756,9 @@ msgstr "Suivi des lots"
 msgid "Batch Tracking"
 msgstr "Suivi par lot"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "Regroupable"
 
@@ -14662,6 +14665,9 @@ msgstr "Envoyé à chaque destinataire qui a activé les notifications par email
 msgid "Sequences"
 msgstr "Séquences"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "Série"
 
@@ -15098,6 +15104,9 @@ msgstr "La connexion nécessite également un code à usage unique de votre appl
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "La connexion ne nécessitera plus de code. Entrez le code à 6 chiffres actuel de votre application d'authentification pour confirmer."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Authentification unique"

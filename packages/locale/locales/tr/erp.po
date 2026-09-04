@@ -2756,6 +2756,9 @@ msgstr "Batch takibi"
 msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "Toplu İşlemeye Uygun"
 
@@ -14662,6 +14665,9 @@ msgstr "E-posta bildirimleri açık olan her alıcıya gönderilir."
 msgid "Sequences"
 msgstr "Numaralandırmalar"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "Seri"
 
@@ -15098,6 +15104,9 @@ msgstr "Oturum açma ayrıca doğrulayıcı uygulamanızdan bir kerelik kod gere
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Oturum açma artık kod gerektirmez. Onaylamak için kimlik doğrulayıcı uygulamanızdan mevcut 6 haneli kodu girin."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Tekli Oturum Açma"

@@ -1037,6 +1037,7 @@ export const scheduleJobUpdateValidator = z.object({
 // one run. No maximum batch size (product decision). See
 // .ai/specs/2026-08-21-job-operation-batching.md.
 export const jobOperationBatchStatus = [
+  "Planned",
   "Active",
   "Completing",
   "Completed"
@@ -1046,6 +1047,10 @@ export const createJobOperationBatchValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   workCenterId: zfd.text(z.string().optional()),
   notes: zfd.text(z.string().optional()),
+  // Create & Release: insert the batch already on the floor ('Active', shown
+  // as "Released"); unchecked creates it 'Planned' — planner-only, not
+  // dispatched to MES until released.
+  release: zfd.checkbox(),
   // repeatable so a single submitted id still coerces to an array (RVF/zfd)
   jobOperationIds: zfd.repeatable(
     z
@@ -1056,7 +1061,14 @@ export const createJobOperationBatchValidator = z.object({
 
 export const updateJobOperationBatchValidator = z.object({
   batchId: z.string().min(1, { message: "Batch is required" }),
-  intent: z.enum(["add", "remove", "update", "dissolve"]),
+  intent: z.enum([
+    "add",
+    "remove",
+    "update",
+    "dissolve",
+    "release",
+    "unrelease"
+  ]),
   // repeatable so a single submitted id still coerces to an array (RVF/zfd)
   jobOperationIds: zfd.repeatableOfType(z.string().min(1)).optional(),
   workCenterId: zfd.text(z.string().optional())

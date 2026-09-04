@@ -170,6 +170,7 @@ export default function ProcessRoute() {
     ...getCustomFields(process.customFields),
     completeAllOnScan: process.completeAllOnScan ?? false,
     batchable: process.batchable ?? false,
+    batchType: process.batchType ?? ("Sequential" as const),
     requiresAbility: process.requiresAbility ?? false,
     ...batchRuleInitialValues(process.batchRules as BatchRules | null)
   };

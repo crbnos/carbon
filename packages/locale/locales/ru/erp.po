@@ -2756,6 +2756,9 @@ msgstr "Отслеживание партии"
 msgid "Batch Tracking"
 msgstr "Отслеживание партий"
 
+msgid "Batch type"
+msgstr ""
+
 msgid "Batchable"
 msgstr "Допускает группировку"
 
@@ -14662,6 +14665,9 @@ msgstr "Отправляется каждому получателю, у кот�
 msgid "Sequences"
 msgstr "Нумерация"
 
+msgid "Sequential — parts run one after another (saw, laser table)"
+msgstr ""
+
 msgid "Serial"
 msgstr "Серийный"
 
@@ -15098,6 +15104,9 @@ msgstr "При входе также требуется одноразовый �
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
+
+msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

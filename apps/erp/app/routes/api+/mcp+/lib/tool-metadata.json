@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-04T17:23:35.128Z",
-  "totalTools": 1503,
+  "generated": "2026-09-04T21:59:28.534Z",
+  "totalTools": 1505,
   "modules": 15,
   "tools": [
     {
@@ -23071,7 +23071,9 @@
               "add",
               "remove",
               "update",
-              "dissolve"
+              "dissolve",
+              "release",
+              "unrelease"
             ]
           },
           "name": {
@@ -26021,7 +26023,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "create job operation batch",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "args"
@@ -26054,6 +26056,9 @@
               "string",
               "null"
             ]
+          },
+          "release": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -26085,7 +26090,9 @@
               "add",
               "remove",
               "update",
-              "dissolve"
+              "dissolve",
+              "release",
+              "unrelease"
             ]
           },
           "batchId": {
@@ -26106,6 +26113,57 @@
         },
         "required": [
           "type",
+          "batchId"
+        ]
+      }
+    },
+    {
+      "name": "production_releaseJobOperationBatch",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "release job operation batch",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "batchId"
+        ]
+      }
+    },
+    {
+      "name": "production_unreleaseJobOperationBatch",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "unrelease job operation batch",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          }
+        },
+        "required": [
           "batchId"
         ]
       }
