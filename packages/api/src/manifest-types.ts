@@ -5,13 +5,13 @@
 
 export type Classification = "READ" | "WRITE" | "DESTRUCTIVE";
 
-/** Audit/identity fields the dispatcher stamps into a service payload. */
+/** Audit/identity fields the dispatcher stamps into a service payload. Mirrors the
+ *  ERP MCP `AuthField` union — keep the two in lockstep. */
 export type AuthField =
   | "companyId"
-  | "userId"
+  | "companyGroupId"
   | "createdBy"
-  | "updatedBy"
-  | "companyGroupId";
+  | "updatedBy";
 
 export type PermissionAction = "view" | "create" | "update" | "delete";
 

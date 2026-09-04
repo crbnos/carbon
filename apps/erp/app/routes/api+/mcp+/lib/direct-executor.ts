@@ -26,8 +26,9 @@ import type { AuthField } from "./types";
 
 const logger = getLogger("erp", "mcp", "direct-executor");
 
-// Combine all functions into a single registry
-const functionRegistry = {
+// Combine all functions into a single registry. Exported so the oRPC dispatch
+// layer (`api+/v1+/lib/dispatch.server.ts`) resolves service functions the same way.
+export const functionRegistry = {
   account: accountFunctions,
   accounting: accountingFunctions,
   documents: documentsFunctions,
@@ -57,7 +58,7 @@ export type McpOperation = "create" | "update";
 // Stamps auth identity onto typed payloads. Carbon's services expect auth
 // fields inside the payload (predates MCP). `fields` is per-tool from
 // tool-metadata.json so reads stay clean and updates don't overwrite createdBy.
-function enrichWithAuthContext(
+export function enrichWithAuthContext(
   value: unknown,
   context: ExecutorContext,
   fields: AuthField[],
@@ -107,7 +108,7 @@ function enrichWithAuthContext(
 
 // Pulls the MCP-only `_operation` flag out of the args, top level or nested.
 // Returns every value it found so the caller can reject contradictory ones.
-function extractOperation(args: Record<string, any> | undefined): {
+export function extractOperation(args: Record<string, any> | undefined): {
   operations: string[];
   args: Record<string, any> | undefined;
 } {

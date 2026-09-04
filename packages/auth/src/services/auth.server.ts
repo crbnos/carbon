@@ -108,7 +108,7 @@ export function hashOAuthSecret(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
 
-type ApiKeyRecord = {
+export type ApiKeyRecord = {
   id: string;
   companyId: string;
   companyGroupId: string;
@@ -119,7 +119,10 @@ type ApiKeyRecord = {
   expiresAt: string | null;
 };
 
-function getCompanyIdFromAPIKey(apiKey: string) {
+// Exported so the Carbon API v1 surface can read a key's scopes for its per-operation
+// scope gate (the gate lives in oRPC middleware, not in requirePermissions). The
+// carbon-key branch of requirePermissions already covers client/rate-limit/plan/expiry.
+export function getCompanyIdFromAPIKey(apiKey: string) {
   const serviceRole = getCarbonServiceRole();
   const keyHash = hashApiKey(apiKey);
   return serviceRole
