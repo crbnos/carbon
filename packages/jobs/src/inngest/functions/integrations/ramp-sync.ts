@@ -235,10 +235,11 @@ async function getDecimals(ctx: Ctx, currencyCode: string): Promise<number> {
 
 /**
  * Resolve the exchange rate (transaction currency -> company base currency) for a
- * card transaction. Base currency is 1; otherwise the company's stored
- * `currency.exchangeRate` (the same current rate every Carbon document uses — see
- * the quote sync in `paperless-parts.ts`). A non-base transaction with no known
- * rate falls back to 1 rather than blocking the sync.
+ * card transaction, via the shared `get_exchange_rate` RPC — a per-company
+ * override, else the latest platform-global rate (the resolution every Carbon
+ * document uses since the exchange-rate refactor; `currency.exchangeRate` was
+ * removed). Base currency is 1; a non-base transaction with no resolvable rate
+ * (the RPC raises) falls back to 1 rather than blocking the sync.
  */
 async function getExchangeRate(
   ctx: Ctx,
@@ -249,14 +250,13 @@ async function getExchangeRate(
   if (cached !== undefined) return cached;
 
   let rate = 1;
-  if (ctx.companyGroupId) {
-    const { data } = await ctx.client
-      .from("currency")
-      .select("exchangeRate")
-      .eq("companyGroupId", ctx.companyGroupId)
-      .eq("code", currencyCode)
-      .maybeSingle();
-    if (data?.exchangeRate != null) rate = data.exchangeRate;
+  const { data, error } = await ctx.client.rpc("get_exchange_rate", {
+    p_company_id: ctx.companyId,
+    p_currency_code: currencyCode
+  });
+  const resolved = typeof data === "number" ? data : Number(data);
+  if (!error && Number.isFinite(resolved) && resolved > 0) {
+    rate = resolved;
   }
   ctx.exchangeRateCache.set(currencyCode, rate);
   return rate;
