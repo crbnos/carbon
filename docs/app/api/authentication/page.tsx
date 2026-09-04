@@ -14,21 +14,21 @@ import { ContentFooter } from "@/components/api/page-footer";
 import { pageSeo, SEO } from "@/lib/seo";
 
 export const metadata = pageSeo({
-  title: `${SEO.mcp.auth.title} — Carbon`,
-  ogTitle: SEO.mcp.auth.title,
-  description: SEO.mcp.auth.description,
-  path: "/mcp/authentication",
-  eyebrow: "MCP"
+  title: `${SEO.carbonApi.auth.title} — Carbon`,
+  ogTitle: SEO.carbonApi.auth.title,
+  description: SEO.carbonApi.auth.description,
+  path: "/api/authentication",
+  eyebrow: "Carbon API"
 });
 
-export default function McpAuthenticationPage() {
+export default function ApiAuthenticationPage() {
   return (
     <DocPage>
-      <DocEyebrow>MCP</DocEyebrow>
+      <DocEyebrow>Carbon API</DocEyebrow>
       <DocTitle>Authentication</DocTitle>
       <Lead>
-        An MCP client inherits exactly the identity it authenticates as — and
-        can only do what that identity can. There are two flows, by client type.
+        A client inherits exactly the identity it authenticates as — and can
+        only do what that identity can. There are two flows, by client type.
       </Lead>
 
       <H2 id="connector">Connector (OAuth)</H2>
@@ -49,10 +49,9 @@ export default function McpAuthenticationPage() {
 
       <H2 id="permissions">Permissions</H2>
       <P>
-        Either way, the assistant can only do what that identity can — a
-        connector inherits your role and company, a key carries the scopes you
-        granted it. Use a separate key per client, so revoking one doesn't break
-        the rest.
+        Either way, the client can only do what that identity can — a connector
+        inherits your role and company, a key carries the scopes you granted it.
+        Use a separate key per client, so revoking one doesn't break the rest.
       </P>
 
       <H2 id="errors">Errors</H2>
@@ -74,7 +73,10 @@ export default function McpAuthenticationPage() {
         />
       </Table>
 
-      <ContentFooter prev={{ label: "Overview", url: "/mcp" }} />
+      <ContentFooter
+        prev={{ label: "Connect over MCP", url: "/api/mcp" }}
+        next={{ label: "Operations", url: "/api/operations" }}
+      />
     </DocPage>
   );
 }

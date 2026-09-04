@@ -16,7 +16,7 @@ export default function ApiReferenceLayout({
     <div className="min-h-screen w-full bg-ed-paper">
       <ApiConfigProvider>
         <MainHeader
-          active="api"
+          active="data-api"
           mobileNav={
             <>
               <Configurator />

@@ -16,11 +16,11 @@ import { highlight } from "@/lib/highlight";
 import { pageSeo, SEO } from "@/lib/seo";
 
 export const metadata = pageSeo({
-  title: `${SEO.mcp.intro.title} — Carbon`,
-  ogTitle: SEO.mcp.intro.title,
-  description: SEO.mcp.intro.description,
-  path: "/mcp",
-  eyebrow: "MCP"
+  title: `${SEO.carbonApi.mcp.title} — Carbon`,
+  ogTitle: SEO.carbonApi.mcp.title,
+  description: SEO.carbonApi.mcp.description,
+  path: "/api/mcp",
+  eyebrow: "Carbon API"
 });
 
 // Sourced from the config so the samples below stay in lockstep with what
@@ -70,7 +70,7 @@ const FAQ: FaqEntry[] = [
     a: "Carbon doesn't send it anywhere new — your MCP client does, to whatever model provider it runs on, under that provider's terms. Scope keys tightly and prefer a read-only key when you only need to read."
   },
   {
-    q: "Is MCP available on my plan?",
+    q: "Is the Carbon API available on my plan?",
     a: "On Carbon Cloud, API and MCP access is a Business-plan feature — Starter keys are rejected with 403. Self-hosted, it's part of the Enterprise feature set and requires a commercial license. See Licensing for the full picture."
   },
   {
@@ -91,7 +91,7 @@ const FAQ: FaqEntry[] = [
   }
 ];
 
-export default async function McpPage() {
+export default async function ConnectOverMcpPage() {
   const [code, cursor] = await Promise.all([
     highlight(CLAUDE_CODE, "curl"),
     highlight(CURSOR, "json")
@@ -99,12 +99,12 @@ export default async function McpPage() {
 
   return (
     <DocPage>
-      <DocEyebrow>MCP</DocEyebrow>
-      <DocTitle>Model Context Protocol</DocTitle>
+      <DocEyebrow>Carbon API</DocEyebrow>
+      <DocTitle>Connect over MCP</DocTitle>
       <Lead>
         Carbon runs an MCP server, so AI clients — Claude Code, Claude Desktop,
-        Cursor, ChatGPT — can read and write your manufacturing data in plain
-        language.
+        Cursor, ChatGPT — can reach the Carbon API and read or write your
+        manufacturing data in plain language.
       </Lead>
       <P>
         The server lives at <McpEndpoint />. Connect it one of two ways,
@@ -141,16 +141,17 @@ export default async function McpPage() {
         ))}
       </ul>
       <P>
-        Next: <DocLink href="/mcp/authentication">Authentication</DocLink> for
-        the auth flows, and <DocLink href="/mcp/tools">Tools</DocLink> for how
-        the assistant finds what it needs.
+        Next: <DocLink href="/api/authentication">Authentication</DocLink> for
+        the auth flows, and <DocLink href="/api/operations">Operations</DocLink>{" "}
+        for how the assistant finds what it needs.
       </P>
 
       <H2 id="faq">FAQ</H2>
       <Faq items={FAQ} />
 
       <ContentFooter
-        next={{ label: "Authentication", url: "/mcp/authentication" }}
+        prev={{ label: "Overview", url: "/api" }}
+        next={{ label: "Authentication", url: "/api/authentication" }}
       />
     </DocPage>
   );

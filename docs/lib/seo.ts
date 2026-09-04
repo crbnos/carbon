@@ -34,18 +34,23 @@ export const SEO = {
       description: "Create a scoped API key, send it as a bearer token.",
     },
   },
-  mcp: {
+  carbonApi: {
     intro: {
-      title: "MCP server",
+      title: "The Carbon API",
+      description:
+        "Carbon's service layer — the safe way to read and write, with validation and permissions built in.",
+    },
+    mcp: {
+      title: "Connect over MCP",
       description: "Connect Carbon to Claude, Cursor, and other AI clients over MCP.",
     },
     auth: {
-      title: "MCP authentication",
-      description: "Authenticate MCP clients with OAuth or a scoped API key.",
+      title: "Carbon API authentication",
+      description: "Authenticate with OAuth or a scoped API key.",
     },
-    tools: {
-      title: "MCP tools",
-      description: "1,200+ tools, reached through one lean discovery pattern.",
+    operations: {
+      title: "Operations",
+      description: "Every Carbon operation, reached through one lean discovery pattern.",
     },
   },
   // Per-guide blurb, keyed by flow slug — shared by every chapter of that guide.

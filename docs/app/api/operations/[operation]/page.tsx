@@ -7,21 +7,21 @@ import { highlight } from "@/lib/highlight";
 import { pageSeo } from "@/lib/seo";
 import { allToolParams, getTool, type ToolClass } from "@/lib/tools-data";
 
-type Params = { params: Promise<{ tool: string }> };
+type Params = { params: Promise<{ operation: string }> };
 
 export function generateStaticParams() {
-  return allToolParams();
+  return allToolParams().map((p) => ({ operation: p.tool }));
 }
 
 export async function generateMetadata(props: Params): Promise<Metadata> {
-  const { tool } = await props.params;
-  const found = getTool(tool);
+  const { operation } = await props.params;
+  const found = getTool(operation);
   return pageSeo({
-    title: found ? `${found.tool.name} — Carbon MCP` : "Carbon MCP",
-    ogTitle: found?.tool.name ?? "Carbon MCP",
+    title: found ? `${found.tool.name} — Carbon API` : "Carbon API",
+    ogTitle: found?.tool.name ?? "Carbon API",
     description: found?.tool.description,
-    path: `/mcp/tools/${tool}`,
-    eyebrow: found ? `MCP · ${found.module.name}` : "MCP"
+    path: `/api/operations/${operation}`,
+    eyebrow: found ? `Carbon API · ${found.module.name}` : "Carbon API"
   });
 }
 
@@ -49,7 +49,7 @@ function propType(p: JsonProp): string {
   return p.format ?? p.type ?? "any";
 }
 
-/** Render a tool's input schema as a readable parameter list (required first). */
+/** Render an operation's input schema as a readable parameter list (required first). */
 function Parameters({ schema }: { schema: unknown }) {
   const s = (schema ?? {}) as JsonSchema;
   const props = s.properties ?? {};
@@ -57,7 +57,7 @@ function Parameters({ schema }: { schema: unknown }) {
   const names = Object.keys(props).sort(
     (a, b) => Number(required.has(b)) - Number(required.has(a))
   );
-  if (names.length === 0) return <P>This tool takes no arguments.</P>;
+  if (names.length === 0) return <P>This operation takes no arguments.</P>;
 
   return (
     <div className="mt-2.5 divide-y divide-ed-hairline border-t border-ed-hairline">
@@ -123,9 +123,9 @@ function exampleArgs(schema: unknown): Record<string, unknown> {
   return out;
 }
 
-export default async function ToolPage(props: Params) {
-  const { tool } = await props.params;
-  const found = getTool(tool);
+export default async function OperationPage(props: Params) {
+  const { operation } = await props.params;
+  const found = getTool(operation);
   if (!found) notFound();
   const { module: mod, tool: t } = found;
 
@@ -143,7 +143,10 @@ export default async function ToolPage(props: Params) {
   return (
     <DocPage>
       <Breadcrumb
-        items={[{ label: "MCP", href: "/mcp" }, { label: mod.name }]}
+        items={[
+          { label: "Operations", href: "/api/operations" },
+          { label: mod.name }
+        ]}
       />
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <h1 className="m-0 break-all font-mono text-ed-24 font-semibold tracking-tight leading-[120%] text-ed-ink">
@@ -162,13 +165,13 @@ export default async function ToolPage(props: Params) {
 
       <H2 id="call">Call it</H2>
       <P>
-        Invoke it through the <Code>call_tool</Code> meta-tool with its
+        Invoke it over MCP through the <Code>call_tool</Code> meta-tool with its
         arguments:
       </P>
       <CodeBlock html={callHtml} code={callSnippet} label="call_tool" />
 
       <H2 id="schema">Input schema</H2>
-      <P>The raw JSON Schema the tool validates its arguments against.</P>
+      <P>The raw JSON Schema the operation validates its arguments against.</P>
       <CodeBlock html={schemaHtml} code={schemaJson} label="schema" />
     </DocPage>
   );

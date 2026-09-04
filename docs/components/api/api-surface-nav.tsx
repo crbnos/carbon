@@ -11,10 +11,11 @@ const CLASS_DOT: Record<string, string> = {
   DESTRUCTIVE: "bg-ed-red",
 };
 
-const MCP_LINKS = [
-  { label: "Overview", href: "/mcp" },
-  { label: "Authentication", href: "/mcp/authentication" },
-  { label: "Tools", href: "/mcp/tools" },
+const GETTING_STARTED = [
+  { label: "Overview", href: "/api" },
+  { label: "Connect over MCP", href: "/api/mcp" },
+  { label: "Authentication", href: "/api/authentication" },
+  { label: "Operations", href: "/api/operations" },
 ];
 
 const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
@@ -38,8 +39,8 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-/** Tools are grouped under their module, so drop the redundant `<module>_` prefix from the label. */
-function toolLabel(name: string, moduleSlug: string): string {
+/** Operations are grouped under their module, so drop the redundant `<module>_` prefix from the label. */
+function operationLabel(name: string, moduleSlug: string): string {
   return name.startsWith(`${moduleSlug}_`) ? name.slice(moduleSlug.length + 1) : name;
 }
 
@@ -52,23 +53,26 @@ function ClassDot({ c }: { c: string }) {
   );
 }
 
-export function McpNav({ tools }: { tools: ToolNavModule[] }) {
+/** The Carbon API sidebar: getting-started links plus the operation catalog grouped by
+ *  module. Operation slugs are the oRPC operation ids, so each row links to
+ *  `/api/operations/<slug>` — the same surface MCP `call_tool` and (later) HTTP reach. */
+export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
   const pathname = usePathname();
   const parts = pathname.split("/");
-  const activeTool = parts[1] === "mcp" && parts[2] === "tools" ? parts[3] : undefined;
+  const activeOp = parts[1] === "api" && parts[2] === "operations" ? parts[3] : undefined;
 
-  const activeToolModule = useMemo(() => {
-    if (!activeTool) return undefined;
-    return tools.find((m) => m.tools.some((t) => t.slug === activeTool))?.slug;
-  }, [tools, activeTool]);
+  const activeOpModule = useMemo(() => {
+    if (!activeOp) return undefined;
+    return operations.find((m) => m.tools.some((t) => t.slug === activeOp))?.slug;
+  }, [operations, activeOp]);
 
-  const [open, setOpen] = useState<Set<string>>(() => new Set(activeToolModule ? [activeToolModule] : []));
+  const [open, setOpen] = useState<Set<string>>(() => new Set(activeOpModule ? [activeOpModule] : []));
   const activeRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    if (activeToolModule)
-      setOpen((p) => (p.has(activeToolModule) ? p : new Set(p).add(activeToolModule)));
-  }, [activeToolModule]);
+    if (activeOpModule)
+      setOpen((p) => (p.has(activeOpModule) ? p : new Set(p).add(activeOpModule)));
+  }, [activeOpModule]);
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "center" });
   }, []);
@@ -78,7 +82,7 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
       <nav className="flex flex-col gap-0.5">
         <div className="mb-2.5">
           <p className={SECTION_LABEL}>Getting Started</p>
-          {MCP_LINKS.map((item) => (
+          {GETTING_STARTED.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -89,8 +93,8 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
           ))}
         </div>
 
-        <p className={SECTION_LABEL}>Tools</p>
-        {tools.map((m) => {
+        <p className={SECTION_LABEL}>Operations</p>
+        {operations.map((m) => {
           const isOpen = open.has(m.slug);
           return (
             <div key={m.slug}>
@@ -120,12 +124,12 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
               {isOpen && (
                 <ul className="mt-0.5 mb-1.5 ml-[13px] list-none border-l border-ed-warm-150 py-0.5 pl-2">
                   {m.tools.map((t) => {
-                    const isActive = activeTool === t.slug;
+                    const isActive = activeOp === t.slug;
                     return (
                       <li key={t.slug}>
                         <Link
                           ref={isActive ? activeRef : undefined}
-                          href={`/mcp/tools/${t.slug}`}
+                          href={`/api/operations/${t.slug}`}
                           title={`${t.name} · ${t.classification}`}
                           className={`flex items-center gap-2 rounded-md px-2 py-[3.5px] leading-[135%] transition-colors ${
                             isActive ? GS_ACTIVE : GS_IDLE
@@ -133,7 +137,7 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
                         >
                           <ClassDot c={t.classification} />
                           <span className="truncate font-mono text-ed-13">
-                            {toolLabel(t.name, m.slug)}
+                            {operationLabel(t.name, m.slug)}
                           </span>
                         </Link>
                       </li>

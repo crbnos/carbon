@@ -48,6 +48,21 @@ const config = {
         destination: "/docs/platform/self-hosting",
         permanent: true,
       },
+      // MCP folded into the Carbon API surface: MCP is a transport, not a top-level
+      // surface. The old /mcp URLs redirect into /api. Operation slugs are unchanged
+      // (they are the oRPC operation ids), so /mcp/tools/:tool maps 1:1.
+      {
+        source: "/mcp/tools/:tool",
+        destination: "/api/operations/:tool",
+        permanent: true,
+      },
+      { source: "/mcp/tools", destination: "/api/operations", permanent: true },
+      {
+        source: "/mcp/authentication",
+        destination: "/api/authentication",
+        permanent: true,
+      },
+      { source: "/mcp", destination: "/api/mcp", permanent: true },
     ];
   },
 };
