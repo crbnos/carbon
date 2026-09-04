@@ -138,7 +138,7 @@ const Suggestion = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="secondary"
+          variant="outline"
           className="hover:scale-100"
           leftIcon={<LuMegaphone />}
         >

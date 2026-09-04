@@ -25,8 +25,8 @@ import {
 import { createPortal } from "react-dom";
 
 const NAV = [
-  { key: "guides", label: "Guides", href: "/guides/order" },
   { key: "reference", label: "Reference", href: "/docs" },
+  { key: "guides", label: "Guides", href: "/guides/order" },
   { key: "api", label: "API", href: "/api-reference" },
   { key: "mcp", label: "MCP", href: "/mcp" },
 ] as const;

@@ -4,6 +4,7 @@ import {
   HStack,
   IconButton,
   Spinner,
+  Subheading,
   toast,
   VStack
 } from "@carbon/react";
@@ -126,9 +127,9 @@ export default function AttachmentsList({
 
   return (
     <VStack spacing={2} className="w-full">
-      <div className="text-[11px] font-semibold uppercase text-muted-foreground">
+      <Subheading variant="heavy" className="block">
         <Trans>Attachments</Trans>
-      </div>
+      </Subheading>
 
       <VStack spacing={1} className="w-full">
         {pinned.map((p) => (

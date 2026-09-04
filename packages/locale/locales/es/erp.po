@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Considere apuntar esta pieza directamente al sucesor final
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflictos"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# cuenta con saldo} other {# cuentas con saldo}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
@@ -829,6 +832,9 @@ msgstr "El estado de un envío cambia"
 
 msgid "A shipment's tracking number changes"
 msgstr "El número de seguimiento de un envío cambia"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Se contabilizará un apunte equilibrado a la fecha indicada, con la diferencia compensada en Resultados acumulados."
 
 msgid "A step needs a name."
 msgstr "Un paso necesita un nombre."
@@ -2288,6 +2294,9 @@ msgstr "A partir de"
 msgid "As of {0}"
 msgstr "A partir de {0}"
 
+msgid "As of date"
+msgstr "A la fecha"
+
 msgid "As of:"
 msgstr "A partir de:"
 
@@ -2614,6 +2623,9 @@ msgstr "Gastos de bancos y cargos de servicio financiero"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Las barras muestran el flujo de cada semana: <0>suministro</0> empuja el inventario hacia arriba, <1>demanda</1> lo tira hacia abajo. La <2>línea</2> es tu inventario disponible proyectado — cuando desciende por debajo de <3>stock de seguridad</3> estás en riesgo, y por debajo de cero es una <4>rotura de stock</4>."
+
+msgid "Base currency"
+msgstr "Moneda base"
 
 msgid "Base Currency"
 msgstr "Moneda Base"
@@ -3205,6 +3217,9 @@ msgstr "Cambiar esto actualizará el ID de la pieza"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiar el tipo restablece los borradores editados de este elemento."
+
+msgid "Chart"
+msgstr "Gráfico"
 
 msgid "Chart of accounts"
 msgstr "Plan de cuentas"
@@ -5227,9 +5242,6 @@ msgstr "Eliminar Método de Envío"
 msgid "Delete step"
 msgstr "Eliminar paso"
 
-msgid "Delete Step"
-msgstr "Eliminar Paso"
-
 msgid "Delete Stock Transfer"
 msgstr "Eliminar Transferencia de Inventario"
 
@@ -6085,9 +6097,6 @@ msgstr "Editar Método de Envío"
 
 msgid "Edit Size"
 msgstr "Editar Tamaño"
-
-msgid "Edit Step"
-msgstr "Editar Paso"
 
 msgid "Edit Stock Transfer"
 msgstr "Editar Transferencia de Inventario"
@@ -9413,6 +9422,15 @@ msgstr "Marcar como faltante"
 msgid "Mark to delete"
 msgstr "Marcar para eliminar"
 
+msgid "Market rate"
+msgstr "Tipo de cambio de mercado"
+
+msgid "Market rate (per USD)"
+msgstr "Tipo de cambio de mercado (por USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Historial del tipo de cambio de mercado (por USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marca a la persona como ausente para cada día en el rango. No se programarán mientras estén fuera."
 
@@ -9960,6 +9978,9 @@ msgstr "Nuevo Centro de Costos"
 
 msgid "New Credit / Debit Memo"
 msgstr "Nuevo memorando de crédito/débito"
+
+msgid "New Currency"
+msgstr "Nueva Moneda"
 
 msgid "New Custom Field"
 msgstr "Nuevo Campo Personalizado"
@@ -10592,6 +10613,9 @@ msgstr "Motivo sin cotización"
 msgid "No Quote Reasons"
 msgstr "Razones sin cotización"
 
+msgid "No rate"
+msgstr "Sin tipo de cambio"
+
 msgid "No receivables"
 msgstr "Sin cuentas por cobrar"
 
@@ -10684,6 +10708,9 @@ msgstr "Ninguna variable coincide con {query}"
 
 msgid "No variables available"
 msgstr "No hay variables disponibles"
+
+msgid "No versions available"
+msgstr "No hay versiones disponibles"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
@@ -10954,6 +10981,11 @@ msgstr "Entrega a tiempo"
 msgid "Onboard your agent to Carbon"
 msgstr "Integra tu agente en Carbon"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "¿A cuántos {1} equivale 1 {0}?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Una ejecución de un flujo de trabajo, registrada paso a paso con los valores que cada paso usó y produjo, actuando en todo momento con los permisos del propietario del flujo de trabajo."
 
@@ -11116,8 +11148,18 @@ msgstr "Apertura"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Abrir una operación inicia su cronómetro, por lo que el tiempo se registra desde el momento en que comienza el trabajo."
 
+msgid "Opening Balance"
+msgstr "Saldo de apertura"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Saldo de apertura de {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo de apertura de la depreciación ya contabilizada antes de que este activo se agregara a Carbon (use 0 para nuevas adquisiciones)."
+
+msgid "Opening Balances"
+msgstr "Saldos de apertura"
 
 msgid "Operating Expenses"
 msgstr "Gastos Operativos"
@@ -11869,6 +11911,9 @@ msgstr "Registrar Factura"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Registrar asientos de diario con códigos de cuenta y descripción adecuados"
+
+msgid "Post opening balances"
+msgstr "Contabilizar saldos de apertura"
 
 msgid "Post Receipt"
 msgstr "Registrar Recepción"
@@ -12633,8 +12678,14 @@ msgstr "Plantéalo en la llamada de estado semanal"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "plantéalo temprano y plantéalo claramente. Un problema identificado en la semana 2 es una corrección pequeña; el mismo problema en el lanzamiento es un retraso."
 
+msgid "Rate"
+msgstr "Tipo de cambio"
+
 msgid "Rate Limit"
 msgstr "Límite de Velocidad"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Tipo de cambio utilizado para la conversión de cuentas de patrimonio en la consolidación (IAS 21). Déjelo en blanco para usar el tipo de cambio actual."
 
 msgid "Ratio"
 msgstr "Relación"
@@ -13247,6 +13298,9 @@ msgstr "Restablecer PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Restablecer PIN para {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Restablecer al tipo de mercado"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Restablecer Autenticación de Dos Factores"
 
@@ -13783,6 +13837,9 @@ msgstr "Guardar configuración de dimensión"
 msgid "Save Method"
 msgstr "Guardar Método"
 
+msgid "Save Rate"
+msgstr "Guardar tipo de cambio"
+
 msgid "Save view"
 msgstr "Guardar vista"
 
@@ -14040,6 +14097,9 @@ msgstr "Seleccionar"
 
 msgid "Select a assignee"
 msgstr "Seleccionar un asignado"
+
+msgid "Select a completed job"
+msgstr "Selecciona una orden de trabajo completada"
 
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"
@@ -14833,6 +14893,9 @@ msgstr "Documento de origen legible"
 
 msgid "Source Item"
 msgstr "Artículo de origen"
+
+msgid "Source Job"
+msgstr "Orden de origen"
 
 msgid "Source list"
 msgstr "Lista de origen"
@@ -16471,7 +16534,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Estos asientos aún están en Borrador, por lo que sus debe y haber no están en el libro mayor para este período. Contabiliza cada uno, o cambia su fecha a un período abierto posterior."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Estas filas contienen referencias a datos fuera de esta empresa, por lo que no se puede crear una copia de seguridad de los datos actuales. La eliminación de estas filas no se puede deshacer. Si se encuentran compartidas con otras empresas del grupo, nada se eliminará y la restauración no se iniciará."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Estas filas se vinculan a datos fuera de esta empresa, por lo que nunca podrían ser restauradas. Todo lo demás fue respaldado."
@@ -16551,6 +16614,9 @@ msgstr "Este es un entorno controlado por ITAR. El acceso está restringido a pe
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Esto está tomando más tiempo del esperado. Aún puede terminar; si no lo hace, reintenta el reverso para restaurar tus datos."
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Esta es la moneda base. El tipo de cambio siempre es 1."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Este es el mes en que comienza tu ejercicio fiscal."
@@ -17342,6 +17408,9 @@ msgstr "Pedidos no enviados"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo de documento de origen no compatible: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Diagrama sin título"
@@ -18693,6 +18762,9 @@ msgstr "Tu proyecto de principio a fin: el plan, los gates y el go-live"
 
 msgid "Your Project Team"
 msgstr "Tu Equipo de Proyecto"
+
+msgid "Your rate"
+msgstr "Tu tipo de cambio"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Tus datos reales están cargados y has verificado una muestra y la has aprobado."

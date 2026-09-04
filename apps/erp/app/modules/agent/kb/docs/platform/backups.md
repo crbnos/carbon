@@ -1,18 +1,16 @@
 # Backups
 
-> Snapshot a company's data and files, restore it in place with one-click revert, or stand up a new company from a demo template.
+> Snapshot a company's data and files, see at a glance whether each backup can still be restored, and restore in place with one-click revert.
 
-A backup is a single snapshot of one company: its records, and optionally the files it has uploaded. You make one from **Settings → Backups**, and you do two things with it. You **restore** it over the same company to undo a bad change, or you use it as the starting data for a brand-new company at sign-up. Same file, two jobs.
+A backup is a single snapshot of one company, with its records and, optionally, the files it has uploaded. You make one from **Settings → Backups**, and you do two things with it. You **restore** it over the same company to undo a bad change, or you use it as the starting data for a brand-new company at sign-up. Same file, two jobs.
 
-Backups are available to anyone with permission to manage **Settings**.
-
-This is a per-company snapshot for cloning environments and undoing a bad change, not a full database dump, and there is no scheduling or point-in-time recovery. Treat it as a working tool, not your only copy.
+This is a per-company snapshot for cloning environments and undoing a bad change, not a full database dump, and there is no scheduling or point-in-time recovery. A backup exists because a person took one, and it stays until a person deletes it. Treat it as a working tool, not your only copy.
 
 ## What a backup contains
 
-A backup captures the company's business data across the whole app: sales, purchasing, items, production, accounting, quality and people. The **i** button next to "Create a backup" opens a "What's in a backup" summary with a live count per area.
+A backup captures the company's business data across the whole app: sales, purchasing, items, production, accounting, quality and people. The **i** button next to "Create a backup" opens a **"What's in a backup"** summary with a live count per area and a **"Total records"** line at the bottom.
 
-API keys, integration connections and webhooks are deliberately left out of every backup, so a restored or cloned company never carries another company's credentials. Re-connect your integrations after a restore.
+Credentials, integration tokens and webhooks are deliberately left out of every backup, so a restored or cloned company never carries another company's secrets. Re-connect your integrations after a restore.
 
 When you export, **Include** offers two options:
 
@@ -21,25 +19,70 @@ When you export, **Include** offers two options:
 
 ## Create a backup
 
-On **Settings → Backups**, the "Create a backup" card snapshots the company's data. Give it an optional label, choose **Data only** or **Data + files**, and select **Create backup**. It runs in the background and the finished file appears in the list below, where you can download or delete it.
+On **Settings → Backups**, the "Create a backup" card snapshots the company's data. Give it an optional label, choose **"Data only"** or **"Data + files"**, and select **"Create backup"**. A **"Creating backup…"** row appears in the Backups list right away; the export runs in the background, and clicking the row shows its progress. When it finishes, the row becomes the backup itself, with its date, size and a status badge, and you can **"Download"** or **"Delete"** it.
+
+### If the backup fails
+
+A failed export shows a **"Backup failed"** banner above the list, with the reason and a **"Dismiss"** button. The most common cause is corrupted data, meaning rows that link to data outside this company. A backup carrying those rows could never be restored, so the export refuses rather than write one. The banner says how many rows are affected and offers **"Skip corrupted rows and retry"**, which re-runs the same backup without them. A backup made that way is honest about it: its row shows **"N rows excluded"**, with an **i** popover listing exactly what was left out.
+
+## Is it still restorable?
+
+Every backup row carries a status badge, computed against today's schema each time you open the page. There is no stored verdict and no expiry date, because neither could be trusted: the app keeps evolving after a backup is taken, so the only honest answer is the one checked right now.
+
+  - **Ready**: Loads into today's app unchanged.
+  - **Restorable with changes**: Loads, but some things differ from when it was taken. The restore screen spells out what, and asks you to confirm.
+  - **Not restorable**: A hard refusal, with the reason. The restore button never appears for it.
+  - **Incomplete**: The export died partway and never finished. Not restorable.
+
+The badge is the last line, not the first. Every schema change to Carbon is checked, before it ships, against what existing backups contain, so a change that would strand a backup a customer already holds is caught at commit time. A backup going "Not restorable" is rare by design.
 
 ## Restore in place
 
-Restoring replaces the current company's data with a backup. In the "Restore from a backup" card, pick a **Source** backup, choose whether to also restore its files, and select **Restore**.
+Restoring replaces the current company's data with a backup. In the "Restore from a backup" card, pick a **Source** with **"Choose a backup"**, which lists your backups and also offers **"Upload new backup…"** for a downloaded `.carbon.tar.gz` file from another company or environment. Then choose what to **Include**, **"Data + files"** or **"Data only"**, and select **"Restore…"**.
 
-It is safe to try. Before anything is replaced, Carbon automatically snapshots the company's current state, so a restore is always reversible. When it finishes, the "Restored — review" card asks you to decide:
+That opens the **"Restore this company from a backup"** screen, which tells you what this restore will actually change before it runs:
 
-- **Keep** accepts the restored data.
-- **Revert** rolls the company back to the snapshot taken just before the restore.
+- If the backup loads cleanly, you just confirm.
+- If some fields will be **"Filled with a default"**, the screen lists the affected areas, and you confirm.
+- If some records are **"Discarded"**, meaning they won't come back, the screen lists them and asks you to type `restore` to continue.
+- If the backup **"Can't be restored"**, the screen says why, and there is no confirm button at all.
+- An uploaded backup hasn't been checked yet; any differences are found when the restore runs.
+
+Each group names product areas, like Production or Sales, with a **"Details"** expander for the exact fields.
+
+It is safe to try. Before anything is replaced, Carbon saves today's data first, so a restore is always reversible. If the restore can't complete, your data is not changed; it stops before touching anything. When it finishes, the **"Restored — review"** card asks you to decide:
+
+- **"Keep"** accepts the restored data.
+- **"Revert"** rolls the company back to the snapshot taken just before the restore.
 
 A restore stays open for review until you keep or revert it. Starting another beforehand is blocked, so the revert always returns you to the state from just before the last restore.
 
-## Start a company from a template
+### If the restore is blocked by corrupted data
 
-The same backups power onboarding. When you create a new company, the industry step asks how to seed it:
+A restore takes the same safety copy an export does, so the same corrupted rows that fail a backup also fail a restore. The failed restore row explains which rows link to data outside this company and offers **"Remove corrupted data and restore"**. That opens a confirm naming the exact count, **"Permanently delete N rows?"**, and only **"Delete and restore"** proceeds. Deleting them fixes the data instead of hiding it, then the restore runs again. If the rows turn out to be shared with other companies in your group, nothing is deleted and the restore doesn't start.
 
-  - **Use a demo template**: Adds sample customers, suppliers, parts and quotes for the chosen industry, so you can explore Carbon with realistic data.
-  - **Restore from a backup**: Sets the new company up from a Carbon backup of another company.
-  - **I don't need data**: Starts with a clean, empty environment.
+## Start a company from a backup
 
-A demo template is just a ready-made backup, one per industry, imported into the fresh company.
+The same file powers onboarding. When Carbon staff create a new company, the data step asks how to seed it, and **"Restore from a backup"** sets the new company up from an uploaded Carbon backup of another one. The other option, **"Use a demo template"**, doesn't use a backup at all; it seeds a realistic industry story from scratch. See `docs/platform/demo-data`.
+
+Backups require permission to manage Settings. On production deployments the page is currently limited to Carbon staff while the feature is hardened for general availability; on a local development stack it is open to everyone.
+
+## Troubleshooting
+
+### The Backups page isn't in my Settings menu
+On production deployments Backups is currently visible to internal Carbon staff accounts only; on a local development stack it is open to everyone. Its absence for a regular customer account is expected.
+
+### A backup shows "Not restorable" or "Restorable with changes"
+The badge is computed live against today's schema every time the page loads — there is no stored verdict and no expiry. "Restorable with changes" still restores after you confirm the listed differences on the restore screen. "Not restorable" is a hard refusal; the restore screen shows the reason under "Can't be restored" and offers no confirm button.
+
+### A backup shows "Incomplete"
+The export died partway and never finished writing. An incomplete backup cannot be restored — delete it and create a new one.
+
+### "Backup failed" banner with rows that "link to data outside this company"
+Some rows reference data the company doesn't own, so a backup containing them could never be restored. Click "Skip corrupted rows and retry" to back up everything else; the resulting backup's row shows "N rows excluded" with the exact list. To fix the data itself rather than skip it, a blocked restore offers "Remove corrupted data and restore", which permanently deletes those rows behind a confirmation.
+
+### Can't start a restore — told to finish the current one first
+Only one restore can be open per company. Resolve the pending one from the "Restored — review" card (Keep or Revert) before starting another.
+
+### Restore finished but integrations are disconnected
+Expected — credentials, integration tokens and webhooks are never included in a backup, so they don't survive a restore. Re-connect integrations afterward.

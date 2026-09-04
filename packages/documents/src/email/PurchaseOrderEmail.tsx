@@ -18,7 +18,7 @@ import {
   getPurchaseOrderDisplayId,
   getTotal
 } from "../utils/purchase-order";
-import { getMoneyFormatter } from "../utils/shared";
+import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -67,6 +67,14 @@ const PurchaseOrderEmail = ({
   // The DOCUMENT's currency, not the company's — a supplier priced in JPY must
   // not be emailed as "$20.00". Decimals come from that currency's row.
   const formatter = getMoneyFormatter(
+    locale,
+    currencyDecimals,
+    purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
+  );
+  // A unit price is a RATE, not a settlement amount: the currency's
+  // decimals are its FLOOR, not its ceiling, so a sub-cent price does not
+  // print as 0.00. The PDFs already split these two kinds.
+  const rateFormatter = getRateFormatter(
     locale,
     currencyDecimals,
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
@@ -268,8 +276,15 @@ const PurchaseOrderEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.purchaseOrderLineType === "Comment"
                       ? "-"
-                      : line.unitPrice
-                        ? formatter.format(line.unitPrice)
+                      : // `formatter` is the SUPPLIER's currency (above), and
+                        // purchaseOrderLine.unitPrice is the GENERATED BASE
+                        // column -- supplierUnitPrice is what the supplier
+                        // quoted, and it is what getLineTotal already sums.
+                        // A zero unit price is a real price (a no-charge
+                        // line), not a missing one, and getLineTotal already
+                        // sums it as 0 -- so test for absence, not falsiness.
+                        line.supplierUnitPrice != null
+                        ? rateFormatter.format(line.supplierUnitPrice)
                         : "-"}
                   </Text>
                 </Column>

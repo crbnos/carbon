@@ -26,6 +26,7 @@ import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { Procedure } from "../../types";
 import ProcedureForm from "./ProcedureForm";
@@ -43,6 +44,9 @@ const ProcedureHeader = () => {
 
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
+  // Live title from the editor's locked title block (updates before revalidate).
+  const liveTitle = useDocumentStore((s) => s.liveTitle);
+  const displayName = liveTitle ?? routeData?.procedure?.name ?? "";
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
@@ -62,7 +66,7 @@ const ProcedureHeader = () => {
             variant="ghost"
           />
           <Heading size="h4" className="flex items-center gap-2">
-            <span>{routeData?.procedure?.name}</span>
+            <span>{displayName}</span>
             <Badge variant="outline">V{routeData?.procedure?.version}</Badge>
             <ProcedureStatus status={routeData?.procedure?.status} />
           </Heading>

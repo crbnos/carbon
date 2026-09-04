@@ -1,4 +1,9 @@
-import { Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Subheading
+} from "@carbon/react";
 import {
   getLocalTimeZone,
   parseAbsolute,
@@ -150,9 +155,7 @@ export function ExpiryTracePopover({
                 {/* Content */}
                 <div className={"min-w-0 " + (isLast ? "pb-0" : "pb-3")}>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
-                      {step.step}
-                    </span>
+                    <Subheading variant="heavy">{step.step}</Subheading>
                   </div>
                   {step.href ? (
                     <Link

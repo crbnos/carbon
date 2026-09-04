@@ -201,6 +201,9 @@ msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイン
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 個の競合"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残高のある勘定}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
@@ -829,6 +832,9 @@ msgstr "出荷のステータスが変更される"
 
 msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "1 つの仕訳行が以下の日付で転記され、差分が利益剰余金にオフセットされます。"
 
 msgid "A step needs a name."
 msgstr "ステップには名前が必要です。"
@@ -2288,6 +2294,9 @@ msgstr "現在時点で"
 msgid "As of {0}"
 msgstr "{0}時点で"
 
+msgid "As of date"
+msgstr "対象日付"
+
 msgid "As of:"
 msgstr "以下の日付時点:"
 
@@ -2614,6 +2623,9 @@ msgstr "銀行およびサービス料費用"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "棒グラフは毎週の流れを表示します：<0>供給</0>は在庫を増加させ、<1>所要量</1>は減少させます。<2>線</2>は予測在庫です。<3>安全在庫</3>を下回る場合はリスク状態であり、ゼロを下回る場合は<4>欠品</4>です。"
+
+msgid "Base currency"
+msgstr "基本通貨"
 
 msgid "Base Currency"
 msgstr "基本通貨"
@@ -3205,6 +3217,9 @@ msgstr "これを変更するとパーツIDが更新されます"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "タイプを変更すると、この品目の下書き編集がリセットされます。"
+
+msgid "Chart"
+msgstr "チャート"
 
 msgid "Chart of accounts"
 msgstr "勘定科目表"
@@ -5227,9 +5242,6 @@ msgstr "出荷方法を削除"
 msgid "Delete step"
 msgstr "ステップを削除"
 
-msgid "Delete Step"
-msgstr "ステップを削除"
-
 msgid "Delete Stock Transfer"
 msgstr "在庫移動を削除"
 
@@ -6085,9 +6097,6 @@ msgstr "出荷方法を編集"
 
 msgid "Edit Size"
 msgstr "サイズを編集"
-
-msgid "Edit Step"
-msgstr "ステップを編集"
 
 msgid "Edit Stock Transfer"
 msgstr "在庫移動を編集"
@@ -9413,6 +9422,15 @@ msgstr "短い数量をマーク"
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
 
+msgid "Market rate"
+msgstr "市場レート"
+
+msgid "Market rate (per USD)"
+msgstr "市場レート（対USD）"
+
+msgid "Market Rate History (per USD)"
+msgstr "市場レート履歴（対USD）"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "範囲内のすべての日について、その人を休止します。外出中はスケジュール設定されません。"
 
@@ -9960,6 +9978,9 @@ msgstr "新規原価センター"
 
 msgid "New Credit / Debit Memo"
 msgstr "新しい貸方/借方メモ"
+
+msgid "New Currency"
+msgstr "新規通貨"
 
 msgid "New Custom Field"
 msgstr "新しいカスタムフィールド"
@@ -10592,6 +10613,9 @@ msgstr "見積辞退理由"
 msgid "No Quote Reasons"
 msgstr "見積辞退理由"
 
+msgid "No rate"
+msgstr "レートなし"
+
 msgid "No receivables"
 msgstr "売掛金がありません"
 
@@ -10684,6 +10708,9 @@ msgstr "{query}に一致する変数がありません"
 
 msgid "No variables available"
 msgstr "利用可能な変数がありません"
+
+msgid "No versions available"
+msgstr "利用可能なバージョンがありません"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
@@ -10954,6 +10981,11 @@ msgstr "オンタイム配送"
 msgid "Onboard your agent to Carbon"
 msgstr "エージェントを Carbon にオンボード"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} は何 {1} に相当しますか？"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値を含めてステップバイステップで記録され、全体を通じてワークフロー責任者の権限で実行されます。"
 
@@ -11116,8 +11148,18 @@ msgstr "開始残高"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "操作を開くとそのタイマーが開始され、作業開始時点から時間が追跡されます。"
 
+msgid "Opening Balance"
+msgstr "初期残高"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0}の初期残高"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
+
+msgid "Opening Balances"
+msgstr "初期残高"
 
 msgid "Operating Expenses"
 msgstr "営業費用"
@@ -11869,6 +11911,9 @@ msgstr "請求書を転記"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "適切なアカウントと説明コードを使用して仕訳を転記する"
+
+msgid "Post opening balances"
+msgstr "初期残高を転記"
 
 msgid "Post Receipt"
 msgstr "領収書を転記"
@@ -12633,8 +12678,14 @@ msgstr "毎週のステータスミーティングで提起してください"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "早期に報告し、明確に報告してください。2週目に特定された問題は小さな修正で済みますが、本番リリース時の同じ問題は遅延につながります。"
 
+msgid "Rate"
+msgstr "レート"
+
 msgid "Rate Limit"
 msgstr "レート制限"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
 
 msgid "Ratio"
 msgstr "比率"
@@ -13247,6 +13298,9 @@ msgstr "PINをリセット"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}のPINをリセット"
 
+msgid "Reset to market rate"
+msgstr "市場レートにリセット"
+
 msgid "Reset Two-Factor Auth"
 msgstr "2要素認証をリセット"
 
@@ -13783,6 +13837,9 @@ msgstr "ディメンション設定を保存"
 msgid "Save Method"
 msgstr "メソッドを保存"
 
+msgid "Save Rate"
+msgstr "レートを保存"
+
 msgid "Save view"
 msgstr "ビューを保存"
 
@@ -14040,6 +14097,9 @@ msgstr "選択"
 
 msgid "Select a assignee"
 msgstr "担当者を選択"
+
+msgid "Select a completed job"
+msgstr "完了した製造指図を選択してください"
 
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
@@ -14833,6 +14893,9 @@ msgstr "参照伝票判読可能"
 
 msgid "Source Item"
 msgstr "ソースアイテム"
+
+msgid "Source Job"
+msgstr "ソース製造指図"
 
 msgid "Source list"
 msgstr "ソースリスト"
@@ -16471,7 +16534,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"
@@ -16551,6 +16614,9 @@ msgstr "これはITAR管理環境です。アクセスは米国人に限定さ�
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "予想より時間がかかっています。終了する可能性があります。終了しない場合は、リバートを再試行してデータを復元してください。"
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "これは基準通貨です。為替レートは常に1です。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
@@ -17342,6 +17408,9 @@ msgstr "未発送注文"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "無題の図"
@@ -18693,6 +18762,9 @@ msgstr "プロジェクト全体：計画、ゲート、本番稼働"
 
 msgid "Your Project Team"
 msgstr "あなたのプロジェクトチーム"
+
+msgid "Your rate"
+msgstr "カスタムレート"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"

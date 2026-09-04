@@ -619,7 +619,7 @@ export default function ResourceGanttView() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full bg-background">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full bg-background">
       <ForecastHeader
         range={range}
         date={date}

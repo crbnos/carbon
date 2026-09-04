@@ -50,6 +50,11 @@ html.mode-transitioning *::after {
     --topbar-height: 49px;
     --header-height: 50px;
     --filters-height: 38px;
+    /* Vertical space the inset app-shell panel gives up to its gutters
+       (md:mt-2 + md:mb-2 in x+/_layout.tsx). Full-bleed below md → 0.
+       Full-screen pages subtract this from their 100dvh height calcs so
+       bottom-pinned content isn't clipped by the panel. */
+    --content-inset: 0px;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -128,6 +133,13 @@ html.mode-transitioning *::after {
       inset 0px 1px 0px #fff, inset 0px 0px 2px 1px #fff,
       inset 0px 1px 2px rgb(0 0 0 / 0.06),
       inset 0px -4px 8px -4px rgb(0 0 0 / 0.06);
+  }
+
+  /* The inset app-shell panel gains 8px top + 8px bottom gutters at md+. */
+  @media (min-width: 768px) {
+    :root {
+      --content-inset: 1rem;
+    }
   }
 }
 

@@ -145,6 +145,7 @@
   --container-2xl: 1400px;
 }
 
+
 @keyframes accordion-down {
   from {
     height: 0;
@@ -196,5 +197,26 @@
   24%,
   55% {
     opacity: 0.25;
+  }
+}
+
+/*
+ * Full-screen document editor: the locked first block (see the `title` mode of
+ * @carbon/react's Editor) reads as the page title — matching the old borderless
+ * title input (text-2xl / md:text-3xl, font-semibold, tracking-tight).
+ */
+.has-document-title .ProseMirror > :first-child {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .has-document-title .ProseMirror > :first-child {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
   }
 }

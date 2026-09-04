@@ -107,7 +107,7 @@ export default function DepreciationRunDetailRoute() {
     : "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px]";
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height))] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto">
         <Card>
           <CardHeader className="flex-row items-center justify-between">

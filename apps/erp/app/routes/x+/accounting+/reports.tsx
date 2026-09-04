@@ -8,7 +8,8 @@ import {
   IconButton,
   Input,
   InputGroup,
-  InputLeftElement
+  InputLeftElement,
+  Subheading
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -562,7 +563,5 @@ const PinToggle = ({
 );
 
 const SectionHeading = ({ children }: { children: ReactNode }) => (
-  <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-    {children}
-  </div>
+  <Subheading className="mb-3 flex items-center gap-1.5">{children}</Subheading>
 );

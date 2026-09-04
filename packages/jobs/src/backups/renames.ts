@@ -8,9 +8,16 @@
  * was a rename silently discards a customer's rows while reporting success —
  * so an unmapped missing table refuses the restore and names itself.
  *
- * Starts EMPTY on purpose: a wrong historical mapping is worse than none.
+ * Entries are added only with certainty: a wrong historical mapping is worse
+ * than none.
  */
-export const TABLE_RENAMES: Record<string, string | null> = {};
+export const TABLE_RENAMES: Record<string, string | null> = {
+  // Dropped 2026-09 (currency/exchange-rate refactor): the group-scoped daily
+  // rate table never had a writer and held zero rows everywhere; replaced by
+  // the platform-global "exchangeRate" table, which is not tenant-scoped and
+  // therefore never appears in a backup.
+  exchangeRateHistory: null
+};
 
 /**
  * Move a just-read backup's tables onto their CURRENT names. Runs once, right

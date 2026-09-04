@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflicts"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
@@ -829,6 +832,9 @@ msgstr "A shipment's status changes"
 
 msgid "A shipment's tracking number changes"
 msgstr "A shipment's tracking number changes"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 
 msgid "A step needs a name."
 msgstr "A step needs a name."
@@ -2288,6 +2294,9 @@ msgstr "As of"
 msgid "As of {0}"
 msgstr "As of {0}"
 
+msgid "As of date"
+msgstr "As of date"
+
 msgid "As of:"
 msgstr "As of:"
 
@@ -2614,6 +2623,9 @@ msgstr "Bank and financial service charge expenses"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
+
+msgid "Base currency"
+msgstr "Base currency"
 
 msgid "Base Currency"
 msgstr "Base Currency"
@@ -3205,6 +3217,9 @@ msgstr "Changing this will update the part ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
+
+msgid "Chart"
+msgstr "Chart"
 
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
@@ -5227,9 +5242,6 @@ msgstr "Delete Shipping Method"
 msgid "Delete step"
 msgstr "Delete step"
 
-msgid "Delete Step"
-msgstr "Delete Step"
-
 msgid "Delete Stock Transfer"
 msgstr "Delete Stock Transfer"
 
@@ -6085,9 +6097,6 @@ msgstr "Edit Shipping Method"
 
 msgid "Edit Size"
 msgstr "Edit Size"
-
-msgid "Edit Step"
-msgstr "Edit Step"
 
 msgid "Edit Stock Transfer"
 msgstr "Edit Stock Transfer"
@@ -9413,6 +9422,15 @@ msgstr "Mark Short"
 msgid "Mark to delete"
 msgstr "Mark to delete"
 
+msgid "Market rate"
+msgstr "Market rate"
+
+msgid "Market rate (per USD)"
+msgstr "Market rate (per USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Market Rate History (per USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marks the person off for every day in the range. They won't be scheduled while they're away."
 
@@ -9960,6 +9978,9 @@ msgstr "New Cost Center"
 
 msgid "New Credit / Debit Memo"
 msgstr "New Credit / Debit Memo"
+
+msgid "New Currency"
+msgstr "New Currency"
 
 msgid "New Custom Field"
 msgstr "New Custom Field"
@@ -10592,6 +10613,9 @@ msgstr "No Quote Reason"
 msgid "No Quote Reasons"
 msgstr "No Quote Reasons"
 
+msgid "No rate"
+msgstr "No rate"
+
 msgid "No receivables"
 msgstr "No receivables"
 
@@ -10684,6 +10708,9 @@ msgstr "No variable matches {query}"
 
 msgid "No variables available"
 msgstr "No variables available"
+
+msgid "No versions available"
+msgstr "No versions available"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
@@ -10954,6 +10981,11 @@ msgstr "On-time delivery"
 msgid "Onboard your agent to Carbon"
 msgstr "Onboard your agent to Carbon"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "One {0} is equal to how many {1}?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 
@@ -11116,8 +11148,18 @@ msgstr "Opening"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Opening an operation starts its timer, so time is tracked from the moment work begins."
 
+msgid "Opening Balance"
+msgstr "Opening Balance"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Opening balance for {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
+
+msgid "Opening Balances"
+msgstr "Opening Balances"
 
 msgid "Operating Expenses"
 msgstr "Operating Expenses"
@@ -11869,6 +11911,9 @@ msgstr "Post Invoice"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Post journal entries with proper account and description codes"
+
+msgid "Post opening balances"
+msgstr "Post opening balances"
 
 msgid "Post Receipt"
 msgstr "Post Receipt"
@@ -12633,8 +12678,14 @@ msgstr "Raise it at the weekly status call"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 
+msgid "Rate"
+msgstr "Rate"
+
 msgid "Rate Limit"
 msgstr "Rate Limit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 
 msgid "Ratio"
 msgstr "Ratio"
@@ -13247,6 +13298,9 @@ msgstr "Reset PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reset PIN for {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Reset to market rate"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Reset Two-Factor Auth"
 
@@ -13783,6 +13837,9 @@ msgstr "Save dimension settings"
 msgid "Save Method"
 msgstr "Save Method"
 
+msgid "Save Rate"
+msgstr "Save Rate"
+
 msgid "Save view"
 msgstr "Save view"
 
@@ -14040,6 +14097,9 @@ msgstr "Select"
 
 msgid "Select a assignee"
 msgstr "Select a assignee"
+
+msgid "Select a completed job"
+msgstr "Select a completed job"
 
 msgid "Select a default approver"
 msgstr "Select a default approver"
@@ -14833,6 +14893,9 @@ msgstr "Source document readable"
 
 msgid "Source Item"
 msgstr "Source Item"
+
+msgid "Source Job"
+msgstr "Source Job"
 
 msgid "Source list"
 msgstr "Source list"
@@ -16552,6 +16615,9 @@ msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Per
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "This is the base currency. Exchange rate is always 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
 
@@ -17342,6 +17408,9 @@ msgstr "Unshipped orders"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Unsupported source document type: {sourceDocument}"
+
+msgid "Untitled"
+msgstr "Untitled"
 
 msgid "Untitled Diagram"
 msgstr "Untitled Diagram"
@@ -18697,6 +18766,9 @@ msgstr "Your project end to end: the plan, the gates, and go-live"
 
 msgid "Your Project Team"
 msgstr "Your Project Team"
+
+msgid "Your rate"
+msgstr "Your rate"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Your real data is loaded and you have checked a sample and approved it."

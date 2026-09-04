@@ -308,6 +308,16 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // Opening balances are a one-time setup artifact that touches arbitrary
+  // accounts; the external ledger owns its own opening balances (connecting a
+  // provider brings theirs), so Carbon's opening-balance journal NEVER syncs —
+  // same policy as Manual, to avoid double-counting.
+  "Opening Balance": {
+    representation: "journal",
+    syncable: false,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Purchase Receipt": {
     representation: "journal",
     defaultEnabled: true,
@@ -950,7 +960,12 @@ export const SalesInvoiceLineSchema = z.object({
   itemCode: withNullable(z.string()), // readableIdWithRevision
   description: withNullable(z.string()),
   quantity: z.number(),
+  // BASE currency, matching the stored column.
   unitPrice: z.number(),
+  // The document-currency mirror (unitPrice * exchangeRate). Optional because
+  // not every provider selects it; push this to any payload that declares a
+  // currency code, since unitPrice above is base.
+  convertedUnitPrice: withNullable(z.number()).optional(),
   taxPercent: z.number(),
   lineAmount: z.number()
 });
