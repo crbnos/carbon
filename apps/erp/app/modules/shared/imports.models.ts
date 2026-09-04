@@ -32,6 +32,475 @@ const supplierStatusTypes = [
   "Rejected"
 ] as const;
 
+// Chart-of-accounts vocabulary. Mirrors accounting.models.ts; inlined here (like
+// methodType above) because that module imports ~/modules/shared and would
+// otherwise form a cycle.
+const accountTypes = [
+  "Bank",
+  "Cash",
+  "Accounts Receivable",
+  "Accounts Payable",
+  "Inventory",
+  "Fixed Asset",
+  "Accumulated Depreciation",
+  "Other Current Asset",
+  "Other Asset",
+  "Other Current Liability",
+  "Long Term Liability",
+  "Equity - No Close",
+  "Equity - Close",
+  "Retained Earnings",
+  "Income",
+  "Cost of Goods Sold",
+  "Expense",
+  "Other Income",
+  "Other Expense",
+  "Tax",
+  "Investments"
+] as const;
+const accountClasses = [
+  "Asset",
+  "Liability",
+  "Equity",
+  "Revenue",
+  "Expense"
+] as const;
+const accountRowKinds = [
+  "Account",
+  "Group",
+  "Total",
+  "Heading",
+  "Ignore"
+] as const;
+
+// How other accounting systems name Carbon's account types, so the enum step
+// auto-matches a QuickBooks, Xero, NetSuite, Sage, Business Central, Odoo or
+// Rillet export without the user re-mapping every value. Matching is exact
+// after lower-casing and trimming (enumMatch.ts); the first option to claim an
+// alias wins, so nothing below may appear under two types. Values that are
+// genuinely ambiguous in the source system (Xero LIABILITY, an Intacct
+// balance-sheet credit account) are left for the user.
+const accountTypeAliases: Record<(typeof accountTypes)[number], string[]> = {
+  Bank: [
+    "BANK",
+    "Bank Accounts",
+    "Bank Account",
+    "Checking",
+    "Savings",
+    "Money Market",
+    "Bank and Cash",
+    "Bank & Cash",
+    "asset_cash"
+  ],
+  Cash: [
+    "Cash on Hand",
+    "CashOnHand",
+    "Petty Cash",
+    "Cash in Transit",
+    "Cash and Cash Equivalents",
+    "Undeposited Funds"
+  ],
+  "Accounts Receivable": [
+    "AR",
+    "A/R",
+    "AccountsReceivable",
+    "Accounts receivable (A/R)",
+    "Receivable",
+    "Receivables",
+    "Trade Receivables",
+    "Trade Debtors",
+    "Debtors",
+    "asset_receivable"
+  ],
+  "Accounts Payable": [
+    "AP",
+    "A/P",
+    "AccountsPayable",
+    "Accounts payable (A/P)",
+    "Payable",
+    "Payables",
+    "Trade Payables",
+    "Trade Creditors",
+    "Creditors",
+    "liability_payable"
+  ],
+  Inventory: [
+    "INVENTORY",
+    "Inventory Asset",
+    "Stock",
+    "Stock on Hand",
+    "Raw Materials",
+    "Work in Progress",
+    "Work in Process",
+    "WIP",
+    "Finished Goods",
+    "Inventory Reserve"
+  ],
+  "Fixed Asset": [
+    "Fixed Assets",
+    "FixedAsset",
+    "FIXASSET",
+    "FIXED",
+    "asset_fixed",
+    "Property, Plant and Equipment",
+    "Property Plant and Equipment",
+    "PP&E",
+    "PPE",
+    "Machinery and Equipment",
+    "Machinery & Equipment",
+    "MachineryAndEquipment",
+    "Furniture and Fixtures",
+    "Furniture & Fixtures",
+    "Property, Plant & Equipment",
+    "Leasehold Improvements",
+    "Vehicles",
+    "Buildings",
+    "Land",
+    "Right of Use Asset",
+    "Capital Assets"
+  ],
+  "Accumulated Depreciation": [
+    "AccumulatedDepreciation",
+    "Accumulated Amortization",
+    "AccumulatedAmortization",
+    "Accumulated Amortisation",
+    "Accumulated Depreciation and Amortization",
+    "Less Accumulated Depreciation"
+  ],
+  "Other Current Asset": [
+    "Other Current Assets",
+    "OtherCurrentAsset",
+    "OCASSET",
+    "Current Asset",
+    "Current Assets",
+    "CURRENT",
+    "asset_current",
+    "Prepayment",
+    "Prepayments",
+    "PREPAYMENT",
+    "asset_prepayments",
+    "Prepaid Expense",
+    "Prepaid Expenses",
+    "PrepaidExpenses",
+    "Unbilled Revenue",
+    "Unbilled Receivable",
+    "Accrued Revenue",
+    "Contract Asset",
+    "Restricted Cash",
+    "Allowance for Doubtful Accounts",
+    "Deferred Expense",
+    "Employee Cash Advances",
+    "Deposits Paid",
+    "Receivable Retainage"
+  ],
+  "Other Asset": [
+    "Other Assets",
+    "OtherAsset",
+    "OASSET",
+    "NONCURRENT",
+    "Non-current Asset",
+    "Non-current Assets",
+    "Noncurrent Asset",
+    "Other Non Current Assets",
+    "asset_non_current",
+    "Intangible Assets",
+    "Goodwill",
+    "Security Deposits",
+    "Deferred Commissions",
+    "Long-term Assets",
+    "Long Term Assets",
+    "Long-term Asset"
+  ],
+  "Other Current Liability": [
+    "Other Current Liabilities",
+    "OtherCurrentLiability",
+    "OCLIAB",
+    "CURRLIAB",
+    "Current Liability",
+    "Current Liabilities",
+    "liability_current",
+    "Credit Card",
+    "Credit Cards",
+    "CreditCard",
+    "CCARD",
+    "liability_credit_card",
+    "Deferred Revenue",
+    "Unearned Revenue",
+    "Deferred Income",
+    "Contract Liability",
+    "Accrued Expense",
+    "Accrued Expenses",
+    "Accrued Liabilities",
+    "Accruals",
+    "Accrued Payroll",
+    "Customer Deposits",
+    "Customer Deposit",
+    "Customer Credit",
+    "Payroll Liabilities",
+    "Wages Payable",
+    "Due to Related Party",
+    "Payable Retainage"
+  ],
+  "Long Term Liability": [
+    "Long Term Liabilities",
+    "Long-term Liability",
+    "Long-term Liabilities",
+    "LongTermLiability",
+    "LTLIAB",
+    "TERMLIAB",
+    "Non-current Liability",
+    "Non-current Liabilities",
+    "liability_non_current",
+    "Debt",
+    "Loans Payable",
+    "Notes Payable",
+    "Long Term Debt",
+    "Line of Credit",
+    "Term Loan",
+    "Borrowings",
+    "Convertible Notes",
+    "Lease Liability",
+    "Lease Liabilities",
+    "Operating Lease Liability",
+    "Finance Lease Liability"
+  ],
+  Tax: [
+    "Taxes",
+    "Sales Tax",
+    "Sales Tax Payable",
+    "Sales Tax Liability",
+    "SalesTaxPayable",
+    "GlobalTaxPayable",
+    "PayrollTaxPayable",
+    "Tax Payable",
+    "Tax Liabilities",
+    "VAT",
+    "VAT Payable",
+    "GST Payable",
+    "HST Payable",
+    "PAYG Liability",
+    "PAYGLIABILITY",
+    "Income Tax Payable",
+    "Tax Expense"
+  ],
+  "Equity - No Close": [
+    "Equity",
+    "EQUITY",
+    "Capital",
+    "Owners Equity",
+    "Owner's Equity",
+    "Shareholders Equity",
+    "Shareholders' Equity",
+    "Common Stock",
+    "Share Capital",
+    "Preferred Stock",
+    "Capital Stock",
+    "Members Equity",
+    "Partners Equity",
+    "Treasury Stock",
+    "Additional Paid in Capital",
+    "APIC",
+    "Paid in Capital",
+    "Share Premium",
+    "Opening Balance Equity",
+    "OpeningBalanceEquity",
+    "Equity-doesn't close"
+  ],
+  "Equity - Close": [
+    "Equity Close",
+    "Equity-gets closed",
+    "Closing Account",
+    "Accumulated Other Comprehensive Income",
+    "AOCI",
+    "Other Comprehensive Income",
+    "Cumulative Translation Adjustment",
+    "Dividends",
+    "Distributions",
+    "Distributions to Shareholders",
+    "PartnerDistributions",
+    "Owner Draw",
+    "Owner's Draw",
+    "Drawings"
+  ],
+  "Retained Earnings": [
+    "RetainedEarnings",
+    "RETEARNINGS",
+    "Equity-Retained Earnings",
+    "Accumulated Deficit",
+    "Accumulated Earnings",
+    "Net Income Prior Years",
+    "Current Year Earnings",
+    "equity_unaffected"
+  ],
+  Income: [
+    "INC",
+    "Revenue",
+    "REVENUE",
+    "Revenues",
+    "Sales",
+    "SALES",
+    "Sales of Product Income",
+    "Income, Product Sales",
+    "Income Product Sales",
+    "Product Sales",
+    "Income, Service",
+    "Income Service",
+    "Income, Jobs",
+    "Income Jobs",
+    "Service Revenue",
+    "Service Income",
+    "Service/Fee Income",
+    "Product Revenue",
+    "Turnover",
+    "Subscription Revenue",
+    "Operating Revenue",
+    "Sales Revenue",
+    "income"
+  ],
+  "Cost of Goods Sold": [
+    "COGS",
+    "CostofGoodsSold",
+    "Cost of Sales",
+    "Cost of Revenue",
+    "Direct Costs",
+    "DIRECTCOSTS",
+    "Direct Labor",
+    "Direct Labour",
+    "Materials Cost",
+    "Cost of Materials",
+    "Cost of Labor",
+    "Cost of Capacities",
+    "Jobs Cost",
+    "Manufacturing Overhead",
+    "Subcontractor Costs",
+    "Freight In",
+    "Supplies & Materials - COGS",
+    "expense_direct_cost"
+  ],
+  Expense: [
+    "Expenses",
+    "EXP",
+    "EXPENSE",
+    "Operating Expense",
+    "Operating Expenses",
+    "Opex",
+    "Overhead",
+    "Overheads",
+    "OVERHEADS",
+    "General and Administrative",
+    "G&A",
+    "Administrative Expense",
+    "Payroll Expense",
+    "Payroll Expenses",
+    "Salaries",
+    "Salaries and Wages",
+    "Wages",
+    "Wages Expense",
+    "WAGESEXPENSE",
+    "Personnel",
+    "Employee Benefits",
+    "Payroll Taxes",
+    "Compensation",
+    "Office Expenses",
+    "Office Supplies",
+    "Rent Expense",
+    "Rent or Lease",
+    "Rent or Lease of Buildings",
+    "Insurance",
+    "Utilities",
+    "Professional Fees",
+    "Legal and Professional Fees",
+    "Legal & Professional Fees",
+    "Bank Charges",
+    "Software Subscriptions",
+    "Dues and Subscriptions",
+    "Repairs and Maintenance",
+    "Repairs & Maintenance",
+    "Repair & Maintenance",
+    "Repairs and Maintenance Expense",
+    "Advertising",
+    "Advertising Expense",
+    "Advertising and Promotion",
+    "Advertising & Promotion",
+    "Advertising/Promotional",
+    "Marketing",
+    "Sales and Marketing",
+    "Sales & Marketing",
+    "Commissions",
+    "Research and Development",
+    "Research & Development",
+    "Product Development",
+    "Recruiting",
+    "Travel",
+    "Travel Expense",
+    "Travel Meals",
+    "Travel Meals and Entertainment",
+    "Travel, Meals & Entertainment",
+    "Vehicle Expenses",
+    "Fees Expense",
+    "Insurance Expense",
+    "Benefits Expense",
+    "Utilities Expense",
+    "Salaries Expense",
+    "Dues & Subscriptions",
+    "Bad Debt Expense",
+    "Superannuation Expense",
+    "SUPERANNUATIONEXPENSE",
+    "expense"
+  ],
+  "Other Income": [
+    "OtherIncome",
+    "EXINC",
+    "OTHERINCOME",
+    "income_other",
+    "Non Operating Income",
+    "Non-operating Income",
+    "Interest Income",
+    "Interest Earned",
+    "Foreign Exchange Gain",
+    "Gain on Disposal",
+    "Dividend Income",
+    "Other Miscellaneous Income"
+  ],
+  "Other Expense": [
+    "Other Expenses",
+    "OtherExpense",
+    "EXEXP",
+    "OTHEREXPENSE",
+    "Non Operating Expense",
+    "Non-operating Expense",
+    "Interest Expense",
+    "Foreign Exchange Loss",
+    "Loss on Disposal",
+    "Extraordinary Expense",
+    "Depreciation",
+    "DEPRECIATN",
+    "expense_depreciation",
+    "Depreciation Expense",
+    "Amortization",
+    "Amortization Expense",
+    "Penalties & Settlements"
+  ],
+  Investments: ["Investment", "Marketable Securities", "Equity Investments"]
+};
+const accountClassAliases: Record<(typeof accountClasses)[number], string[]> = {
+  Asset: ["Assets", "ASSET"],
+  Liability: ["Liabilities", "LIABILITY"],
+  Equity: ["Capital", "EQUITY"],
+  Revenue: ["Income", "INCOME", "Revenues", "Sales"],
+  Expense: ["Expenses", "EXPENSE", "Cost", "Cost of Goods Sold"]
+};
+const accountRowKindAliases: Record<
+  (typeof accountRowKinds)[number],
+  string[]
+> = {
+  Account: ["Posting", "Detail", "Leaf", "G", "A", "X"],
+  Group: ["Begin-Total", "Begin Total", "H", "Header"],
+  Total: ["End-Total", "End Total", "T"],
+  Heading: [],
+  Ignore: ["S", "Subtotal", "Sub-Total"]
+};
+
 // Name-only lookups that may be created inline during a CSV import. The value
 // doubles as the lookup's table name; the create-lookup route's zod enum, its
 // permission map, and the import modal's types all derive from this list.
@@ -1786,6 +2255,164 @@ export const fieldMappings = {
       required: false,
       type: "boolean"
     }
+  },
+  account: {
+    number: {
+      label: "Account Number",
+      required: false,
+      type: "string",
+      aliases: [
+        "Number",
+        "No.",
+        "No",
+        "Code",
+        "Account Code",
+        "Account No",
+        "Account No.",
+        "Account #",
+        "Acct No",
+        "Acct No.",
+        "Acct",
+        "AcctNum",
+        "ACCNUM",
+        "ACCOUNTNO",
+        "GL Account",
+        "GL Code",
+        "Nominal Code",
+        "Account ID"
+      ]
+    },
+    name: {
+      label: "Account Name",
+      required: true,
+      type: "string",
+      aliases: [
+        "Name",
+        "Account",
+        "Title",
+        "Description",
+        "Account Description",
+        "Account Title",
+        "Full Name",
+        "Account Full Name",
+        "NAME",
+        "TITLE"
+      ]
+    },
+    accountType: {
+      label: "Account Type",
+      required: true,
+      type: "enum",
+      // A finer column wins over "Account Type" when the file has both.
+      preferredAliases: [
+        "Detail Type",
+        "Account Subtype",
+        "Subtype",
+        "Sub Type",
+        "Account Subcategory Descript.",
+        "Account Subcategory"
+      ],
+      aliases: ["Type", "ACCNTTYPE"],
+      enumData: {
+        description:
+          "Map each account type in your file to one of Carbon's account types. Most systems' types match automatically; check anything left blank.",
+        options: accountTypes,
+        optionAliases: accountTypeAliases,
+        default: ""
+      }
+    },
+    class: {
+      label: "Class",
+      required: false,
+      type: "enum",
+      aliases: [
+        "Classification",
+        "Account Class",
+        "Account Category",
+        "Category",
+        "Section",
+        "Account Type"
+      ],
+      enumData: {
+        description:
+          "Optional. Asset, Liability, Equity, Revenue or Expense. Derived from the account type when the file has no class column.",
+        options: accountClasses,
+        optionAliases: accountClassAliases,
+        default: "",
+        skipStepWhenUnmapped: true
+      }
+    },
+    parent: {
+      label: "Parent Account",
+      required: false,
+      type: "string",
+      aliases: [
+        "Parent",
+        "Parent Grouping",
+        "Parent Group",
+        "Parent Name",
+        "Subaccount of",
+        "Sub-account of",
+        "Group",
+        "Group Name",
+        "Grouping",
+        "Account Group",
+        "Rollup"
+      ]
+    },
+    isGroup: {
+      label: "Is Group",
+      required: false,
+      type: "boolean",
+      aliases: ["Summary", "Is Summary", "Header", "Is Header", "Group Account"]
+    },
+    rowKind: {
+      label: "Row Kind",
+      required: false,
+      type: "enum",
+      aliases: [
+        "Row Type",
+        "Line Type",
+        "Account Kind",
+        "Entry Type",
+        "Account Type"
+      ],
+      enumData: {
+        description:
+          "For exports with Begin-Total / End-Total or heading rows (Business Central, Sage 50 Canada): which rows are accounts, which open a group, and which close one.",
+        options: accountRowKinds,
+        optionAliases: accountRowKindAliases,
+        default: "Account",
+        skipStepWhenUnmapped: true
+      }
+    },
+    indent: {
+      label: "Indentation",
+      required: false,
+      type: "number",
+      aliases: ["Indent", "Level", "Depth"]
+    },
+    active: {
+      label: "Active",
+      required: false,
+      type: "boolean",
+      aliases: [
+        "Is Active",
+        "Status",
+        "Inactive",
+        "Is Inactive",
+        "Hidden",
+        "Deprecated",
+        "Blocked",
+        "Archived"
+      ]
+    },
+    externalId: {
+      label: "Source ID",
+      required: false,
+      type: "string",
+      aliases: ["Id", "ID", "External ID", "External Id", "Internal ID"]
+    }
   }
 } as const;
 
@@ -1811,7 +2438,8 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   materialFinish: "parts",
   materialGrade: "parts",
   materialType: "parts",
-  materialDimension: "parts"
+  materialDimension: "parts",
+  account: "accounting"
 };
 
 // Zod fragments for the method imports. Every method cell is an optional string at
@@ -2582,5 +3210,65 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("Whether the dimension is metric (true/false)")
+  }),
+  account: z.object({
+    number: z
+      .string()
+      .optional()
+      .describe(
+        "The account number or code (e.g. 1010). Unique within the chart. Optional for group accounts."
+      ),
+    name: z
+      .string()
+      .min(1, { message: "Account name is required" })
+      .describe(
+        "The account name. May contain a colon-delimited path (Parent:Child) for sub-accounts."
+      ),
+    accountType: z
+      .string()
+      .min(1, { message: "Account type is required" })
+      .describe(
+        "The account type or detail type (e.g. Bank, Accounts Receivable, Cost of Goods Sold, Expense)."
+      ),
+    class: z
+      .string()
+      .optional()
+      .describe(
+        "The account class: Asset, Liability, Equity, Revenue or Expense."
+      ),
+    parent: z
+      .string()
+      .optional()
+      .describe(
+        "The parent account or grouping this account sits under — a number, a 'number name', a group name, or a grouping label."
+      ),
+    isGroup: z
+      .string()
+      .optional()
+      .describe(
+        "Whether the row is a group / summary / header account rather than a posting account (true/false)."
+      ),
+    rowKind: z
+      .string()
+      .optional()
+      .describe(
+        "For Begin-Total / End-Total style exports: Posting, Begin-Total, End-Total, Heading or Total."
+      ),
+    indent: z
+      .string()
+      .optional()
+      .describe("The indentation level of the row in a hierarchical export."),
+    active: z
+      .string()
+      .optional()
+      .describe(
+        "Whether the account is active (true/false), or an inactive/hidden flag."
+      ),
+    externalId: z
+      .string()
+      .optional()
+      .describe(
+        "The account's id in the source system, used to match on re-import."
+      )
   })
 } as const;

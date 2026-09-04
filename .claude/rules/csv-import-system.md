@@ -26,13 +26,25 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
 
 - `ImportCSVModal.tsx` — modal orchestrating the wizard.
 - `UploadCSV.tsx` — drag-drop upload; PapaParse; uploads to `private` bucket (see path above).
-- `FieldMappings.tsx` — column/enum mapping UI; `enumMatch.ts` does fuzzy enum matching;
+- `FieldMappings.tsx` — column/enum mapping UI; `enumMatch.ts` matches enum values exactly
+  after lower-casing/trimming against each option's label and `aliases` (not fuzzy);
   `useCreateLookup.ts` creates missing lookup values inline.
+- `reviewSteps.ts` — per-table review steps rendered after the enum steps and inside the
+  import form (`account` → `ChartOfAccountsReview.tsx`); any hidden input a step renders
+  (e.g. `options`) travels with the final submit.
 - `useCsvContext.tsx` — shared state (`file`, `filePath`, `fileColumns`, `firstRows`).
 
-Mounted from exactly one place: `apps/erp/app/components/Table/components/TableHeader.tsx`
-(the Bulk Import dropdown). A list page opts in by passing `importCSV={[{ table, label }]}`
-to `<Table>` — that prop is the whole UI-side registration.
+Column matching runs in this order per field, first hit wins and a header is never
+claimed twice: `preferredAliases` (a finer column that should beat the label, e.g.
+QuickBooks "Detail type" over "Type"), the label, the field name, then `aliases`. Headers
+are lower-cased, trimmed and stripped of a leading `*` (Xero templates). Exact/alias
+matches survive the LLM pass — the model only fills fields left unmatched.
+
+Mounted from `apps/erp/app/components/Table/components/TableHeader.tsx` (the Bulk Import
+dropdown; a list page opts in by passing `importCSV={[{ table, label }]}` to `<Table>`) and
+from the Chart of Accounts toolbar (`ChartOfAccountsTableFilters.tsx` → `charts.tsx`), which
+is a tree, not a `<Table>`. `ImportCSVModal` takes only `{ table, onClose }`, so any page can
+mount it.
 
 ## Models (`apps/erp/app/modules/shared/imports.models.ts`)
 
@@ -45,12 +57,16 @@ Three exported maps, all keyed by table name:
     required: boolean;
     type: "string" | "boolean" | "number" | "enum";
     default?: string | number;
+    aliases?: string[];            // other systems' header names for this column
+    preferredAliases?: string[];   // headers that beat the label when both are present
     enumData?: {
       description?: string;
       fetcher?: (client, companyId) => Promise<...>;   // dynamic options
       creatableLookup?: "supplierType" | "customerType" | "customerStatus";
       creatableForm?: "paymentTerm" | "shippingMethod";
       options?: readonly string[];                      // static options
+      optionAliases?: Record<string, string[]>;         // other systems' names per option
+      skipStepWhenUnmapped?: boolean;                   // no wizard step if the column is unmapped
     };
   }
   ```
@@ -74,14 +90,58 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension` → `parts`;
 `workCenter`, `process` → `production`; `storageUnit` → `inventory`;
-`fixedAsset` → `accounting`.
+`fixedAsset`, `account` → `accounting`.
 
 The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
 `partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
 `process`, `storageUnit`, `materialSubstance`, `materialForm`, `materialFinish`,
-`materialGrade`, `materialType`, `materialDimension`. Note it does **not** list
+`materialGrade`, `materialType`, `materialDimension`, `account`. Note it does **not** list
 `fixedAsset` (see Gotchas).
+
+### Chart-of-accounts import (planner + review step)
+
+`account` is the only import whose target is a tree scoped by `companyGroupId`. It is
+handled by a pure planner (`import-csv/account-import.ts`, unit-tested with `deno test`)
+plus a writer (`account-import-writer.ts`), and the wizard gains a review step
+(`ChartOfAccountsReview.tsx`) that runs the same edge function with `dryRun: true` and
+renders the returned `plan` before the real submit. Spec:
+`.ai/specs/2026-09-04-chart-of-accounts-import.md`.
+
+- **Scope / auth.** The edge function resolves `companyGroupId` from `company` and
+  throws unless `company.parentCompanyId IS NULL` (RLS only lets a root company write the
+  chart; the Kysely path bypasses RLS). The toolbar button is gated the same way.
+- **Fields.** `number`, `name` (required), `accountType` (required enum, aliases for the
+  QuickBooks / Xero / NetSuite / Sage / Business Central / Odoo / Rillet vocabularies),
+  `class` (optional enum, derived from the type when absent), `parent`, `isGroup`,
+  `rowKind` (Account / Group / Total / Heading / Ignore, for Begin-Total / End-Total
+  exports), `indent`, `active` (inverted when the mapped header is Inactive / Hidden /
+  Deprecated / Blocked / Archived), `externalId`. `incomeBalance` and `consolidatedRate`
+  are derived from the class, never mapped.
+- **Structure** (`options.structure`: `auto` | `file` | `carbon`). `file` builds the tree
+  from, in priority order, Row Kind (a stack of open groups), the Parent column (number,
+  `number name`, group name in the file or in Carbon, else a synthesized group named by the
+  label), or a path in the name split on `options.pathSeparator` (`:`). A row referenced
+  as a parent is promoted to a group. `carbon` ignores file groups and places each leaf
+  under the shallowest active Carbon group with the same `accountType`, else the class
+  group (Expense prefers the group typed like the leaf, then Operating Expenses), else the
+  system root for its `incomeBalance`. A top-level file group named like a Carbon group of
+  the same class links to it instead of creating one.
+- **Identity**, in order: a `link` resolution, `externalId` via the csv mapping, `number`
+  for leaves, `(name, isGroup)` for groups and numberless leaves. A number match updates
+  (rename allowed); a name held by another account of the same kind is a conflict with a
+  `PlanConflict` the review turns into skip / rename / renumber / "same as existing".
+- **Refusals**, per row, never a 500: system roots (adopted as parents only), class change
+  or deactivation on an account with journal lines, deactivation of an
+  `accountDefault` / `fixedAssetClass` account, class disagreeing with the parent, a
+  parent that is not a group, cycles, in-file duplicates. Uniques are pre-checked so the
+  single transaction does not trip `account_number_key` / `account_name_key`.
+- **Write.** One transaction, nodes in plan order (parents first, ids generated up front),
+  then `upsertCsvMappings` for rows with a Source ID. Nothing is ever deleted.
+- **Payload additions** (all importers): `dryRun?: boolean` and
+  `options?: Record<string, unknown>` on `importCsvValidator`, the `importCsv` service and
+  the route (`dryRun` / `options` form fields, `options` as a JSON string); the route
+  returns `plan` when the edge function does.
 
 ### Storage-unit import (natural-key match + two-pass parent linking)
 
@@ -198,3 +258,6 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
   is the only authorization gate.
 - Row-level failures are returned in `errors[]` with `{ row, reason }`; only a thrown
   exception produces a 500.
+- The wizard's modal widens (`xxlarge`) while a review step is showing; the wrapper div in
+  `ImportCSVModal.tsx` carries `min-w-0` so a wide table scrolls inside the modal instead
+  of pushing past it.

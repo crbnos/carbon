@@ -48,6 +48,9 @@ msgstr "「{taskName}」は完了しました — セットアップマップの
 msgid "(excluded for this customer)"
 msgstr "（このお客様向けに除外されています）"
 
+msgid "(group)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。} other {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。}}"
@@ -89,6 +92,11 @@ msgstr "{0}が正常に削除されました"
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
 
+#. placeholder {0}: plan.summary.groupsToCreate
+#. placeholder {1}: plan.summary.accountsToCreate
+msgid "{0} groups, {1} accounts to create"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} 件の製造指図が作成されました"
@@ -96,6 +104,14 @@ msgstr "{0} 件の製造指図が作成されました"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
+
+#. placeholder {0}: plan.summary.linked
+msgid "{0} merged into existing"
+msgstr ""
+
+#. placeholder {0}: plan.summary.errors
+msgid "{0} need attention"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -130,9 +146,18 @@ msgstr "{0} 行"
 msgid "{0} suppliers with a balance"
 msgstr "{0}件の残高のある仕入先"
 
+#. placeholder {0}: plan.summary.updates
+msgid "{0} to update"
+msgstr ""
+
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}個の未サンプリングエンティティが利用可能にリリースされます。サンプリング済みの合格品は利用可能なままで、サンプリング済みの不合格品は却下されたままです。"
+
+#. placeholder {0}: plan.summary.unchanged
+#. placeholder {1}: plan.summary.skipped
+msgid "{0} unchanged, {1} skipped"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -1469,6 +1494,9 @@ msgstr "すべての場所"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
+msgid "All rows"
+msgstr ""
+
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
 
@@ -2431,6 +2459,9 @@ msgstr "添付ファイル"
 msgid "Attempts"
 msgstr "試行"
 
+msgid "Attention"
+msgstr ""
+
 msgid "Attribute"
 msgstr "属性"
 
@@ -2829,6 +2860,9 @@ msgstr "ロールベースの教育訓練教材を構築"
 
 msgid "Build tailored, role-based training materials"
 msgstr "カスタマイズされたロールベースの教育訓練教材を構築"
+
+msgid "Building the plan…"
+msgstr ""
 
 msgid "Built and costed as its own method"
 msgstr "独自の方法として構築および原価計算"
@@ -3232,6 +3266,9 @@ msgstr "チャット"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
+
+msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
+msgstr ""
 
 msgid "Check your email"
 msgstr "メールを確認してください"
@@ -5417,6 +5454,9 @@ msgstr "詳細"
 msgid "Details"
 msgstr "詳細"
 
+msgid "Detect from the file"
+msgstr ""
+
 msgid "Developer"
 msgstr "開発者"
 
@@ -6571,6 +6611,9 @@ msgstr "免除証明書"
 msgid "Exemption Reason"
 msgstr "免除理由"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
@@ -7328,6 +7371,15 @@ msgstr "フォーマット"
 msgid "Forward deployed engineer"
 msgstr "現地配置エンジニア"
 
+msgid "Found a parent column."
+msgstr ""
+
+msgid "Found a path in the account names, e.g. Parent:Child."
+msgstr ""
+
+msgid "Found Begin-Total / End-Total rows."
+msgstr ""
+
 msgid "Foundation"
 msgstr "基礎"
 
@@ -7712,6 +7764,9 @@ msgstr "グループ名"
 msgid "Groups"
 msgstr "グループ"
 
+msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
+msgstr ""
+
 msgid "Guided"
 msgstr "ガイド付き"
 
@@ -7892,6 +7947,9 @@ msgstr "この測定器をどのくらい頻繁に再校正する必要がある
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
 
+msgid "How should the accounts be organised?"
+msgstr ""
+
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "スケジューラーが容量を割り当てるときに製造指図がどのようにランク付けされるか — ASAP が最初に請求し、その後ハード期限、ソフト期限、期限なしが最後です。ランキング信号のみ；期限タイプは配置をブロックまたはゲートしません。"
 
@@ -8012,6 +8070,9 @@ msgstr "何か問題が生じた場合"
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "部品番号を変更したい場合は、[キャンセル]をクリックして、変換する前に各行アイテムの部品を手動で割り当ててください。"
 
+msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
+msgstr ""
+
 msgid "II (normal default)"
 msgstr "II（通常デフォルト）"
 
@@ -8033,11 +8094,20 @@ msgstr "実施ハブ"
 msgid "Implementation Lead"
 msgstr "実施リード"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
 msgid "Import results"
 msgstr "インポート結果"
+
+msgid "Import under a different name"
+msgstr ""
+
+msgid "Import under a different number"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
@@ -8117,6 +8187,9 @@ msgstr "出荷に追加部品を含める"
 
 msgid "Include Inactive"
 msgstr "無効を含める"
+
+msgid "Include this row again"
+msgstr ""
 
 msgid "Included"
 msgstr "含まれています"
@@ -8897,6 +8970,9 @@ msgstr "空白のままにして、次のリビジョンを自動的に使用し
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
+msgid "Leave this account as it is"
+msgstr ""
+
 msgid "Leave this page"
 msgstr "このページを離れる"
 
@@ -8974,6 +9050,9 @@ msgstr "ライツアウト（24/7）"
 
 msgid "Likelihood"
 msgstr "発生可能性"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "行の説明 (オプション)"
@@ -9901,6 +9980,9 @@ msgstr "必要人数は、その日の予定作業時間を{personDayHours}hで�
 msgid "Needs a Business or Partner plan."
 msgstr "ビジネスプランまたはパートナープランが必要です。"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "修理が必要です"
 
@@ -10459,6 +10541,9 @@ msgstr "グループ化された通知がありません"
 
 msgid "No groups assigned"
 msgstr "グループが割り当てられていません"
+
+msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgstr ""
 
 msgid "No image"
 msgstr "画像なし"
@@ -11565,6 +11650,9 @@ msgstr "IDプロバイダーがメタデータURLを公開していない場合�
 msgid "Path"
 msgstr "パス"
 
+msgid "Path separator in account names"
+msgstr ""
+
 msgid "Pay Rate"
 msgstr "支払レート"
 
@@ -11794,6 +11882,9 @@ msgstr "{0}をピン留"
 
 msgid "Pinned"
 msgstr "ピン留め"
+
+msgid "Place accounts under Carbon's existing groups"
+msgstr ""
 
 msgid "Plan"
 msgstr "計画"
@@ -13575,6 +13666,9 @@ msgstr "行"
 msgid "Rows left out of this backup"
 msgstr "このバックアップから除外された行"
 
+msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
+msgstr ""
+
 msgid "Rule"
 msgstr "ルール"
 
@@ -13791,6 +13885,10 @@ msgstr "販売、見積、設定注文"
 
 msgid "Salesperson"
 msgstr "営業担当者"
+
+#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
+msgid "Same as {0}"
+msgstr ""
 
 msgid "Same as Book"
 msgstr "簿価と同じ"
@@ -14815,6 +14913,9 @@ msgstr "会社の休日の定期保全をスキップ"
 
 msgid "Skip the released-but-not-started state — the job starts immediately on scan."
 msgstr "リリースされたが開始していない状態をスキップします。スキャン時にジョブがすぐに開始します。"
+
+msgid "Skip this row"
+msgstr ""
 
 msgid "Skipped"
 msgstr "スキップ済"
@@ -16217,6 +16318,9 @@ msgstr "現金割引のパーセンテージ。割引なしの場合は 0 を使
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "このタイプの新しい従業員が自動的に受け取る権限セット。ここで編集すると、将来の雇用のみがテンプレートを変更します。既存の従業員は、明示的に大量更新されない限り、持っているものを保持します。"
 
+msgid "The plan could not be built"
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサイト"
 
@@ -17259,8 +17363,14 @@ msgstr "未割り当て"
 msgid "Unballoon"
 msgstr "バルーンを削除"
 
+msgid "Unchanged"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"
+
+msgid "Under"
+msgstr ""
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "所要量ベースの再発注では、補給数量を計算する際、計画はこのローリングウィンドウ内の所要量を合計します。"
@@ -17600,6 +17710,12 @@ msgstr "別のメールアドレスを使用"
 
 msgid "Use metric system for default material dimensions."
 msgstr "デフォルト材料ディメンションにメートル法を使用してください。"
+
+msgid "Use the file's parent column, name paths, or total rows when present."
+msgstr ""
+
+msgid "Use the hierarchy in the file"
+msgstr ""
 
 msgid "Used In"
 msgstr "使用されている"

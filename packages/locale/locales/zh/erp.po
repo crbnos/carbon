@@ -48,6 +48,9 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+msgid "(group)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
@@ -89,6 +92,11 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
 
+#. placeholder {0}: plan.summary.groupsToCreate
+#. placeholder {1}: plan.summary.accountsToCreate
+msgid "{0} groups, {1} accounts to create"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
@@ -96,6 +104,14 @@ msgstr "已创建{0}个工单"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
+
+#. placeholder {0}: plan.summary.linked
+msgid "{0} merged into existing"
+msgstr ""
+
+#. placeholder {0}: plan.summary.errors
+msgid "{0} need attention"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -130,9 +146,18 @@ msgstr "{0} 行"
 msgid "{0} suppliers with a balance"
 msgstr "{0}个有余额的供应商"
 
+#. placeholder {0}: plan.summary.updates
+msgid "{0} to update"
+msgstr ""
+
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可用，已采样的不合格品保持已拒绝。"
+
+#. placeholder {0}: plan.summary.unchanged
+#. placeholder {1}: plan.summary.skipped
+msgid "{0} unchanged, {1} skipped"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -1469,6 +1494,9 @@ msgstr "所有位置"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
+msgid "All rows"
+msgstr ""
+
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
 
@@ -2431,6 +2459,9 @@ msgstr "附件"
 msgid "Attempts"
 msgstr "尝试次数"
 
+msgid "Attention"
+msgstr ""
+
 msgid "Attribute"
 msgstr "属性"
 
@@ -2829,6 +2860,9 @@ msgstr "构建基于角色的培训材料"
 
 msgid "Build tailored, role-based training materials"
 msgstr "构建定制的、基于角色的培训材料"
+
+msgid "Building the plan…"
+msgstr ""
 
 msgid "Built and costed as its own method"
 msgstr "作为独立方法构建和计算成本"
@@ -3232,6 +3266,9 @@ msgstr "聊天"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
+
+msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
+msgstr ""
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
@@ -5417,6 +5454,9 @@ msgstr "详情"
 msgid "Details"
 msgstr "详情"
 
+msgid "Detect from the file"
+msgstr ""
+
 msgid "Developer"
 msgstr "开发人员"
 
@@ -6571,6 +6611,9 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项进行重新映射。"
 
@@ -7328,6 +7371,15 @@ msgstr "格式"
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
 
+msgid "Found a parent column."
+msgstr ""
+
+msgid "Found a path in the account names, e.g. Parent:Child."
+msgstr ""
+
+msgid "Found Begin-Total / End-Total rows."
+msgstr ""
+
 msgid "Foundation"
 msgstr "基础"
 
@@ -7712,6 +7764,9 @@ msgstr "组名"
 msgid "Groups"
 msgstr "组"
 
+msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
+msgstr ""
+
 msgid "Guided"
 msgstr "引导式"
 
@@ -7892,6 +7947,9 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
 
+msgid "How should the accounts be organised?"
+msgstr ""
+
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "调度程序分配产能时工单的排名方式——立即执行优先，然后是硬期限、软期限，最后是无期限。仅作为排序信号；任何期限类型都不会阻止或限制安排。"
 
@@ -8012,6 +8070,9 @@ msgstr "如果有什么偏离轨道"
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
 
+msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
+msgstr ""
+
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
 
@@ -8033,11 +8094,20 @@ msgstr "实施中心"
 msgid "Implementation Lead"
 msgstr "实施主管"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
 msgid "Import results"
 msgstr "导入结果"
+
+msgid "Import under a different name"
+msgstr ""
+
+msgid "Import under a different number"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "导入您的BOM"
@@ -8117,6 +8187,9 @@ msgstr "在发货中包含额外零件"
 
 msgid "Include Inactive"
 msgstr "包括已停用"
+
+msgid "Include this row again"
+msgstr ""
 
 msgid "Included"
 msgstr "已包含"
@@ -8897,6 +8970,9 @@ msgstr "留空以自动使用下一个修订版"
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
 
+msgid "Leave this account as it is"
+msgstr ""
+
 msgid "Leave this page"
 msgstr "离开此页面"
 
@@ -8974,6 +9050,9 @@ msgstr "熄灯（24/7）"
 
 msgid "Likelihood"
 msgstr "可能性"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -9901,6 +9980,9 @@ msgstr "需要的是该天的工作小时数除以 {personDayHours} 小时，向
 msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "需要修复"
 
@@ -10459,6 +10541,9 @@ msgstr "没有分组通知"
 
 msgid "No groups assigned"
 msgstr "没有已分配的组"
+
+msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgstr ""
 
 msgid "No image"
 msgstr "没有图像"
@@ -11565,6 +11650,9 @@ msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML
 msgid "Path"
 msgstr "路径"
 
+msgid "Path separator in account names"
+msgstr ""
+
 msgid "Pay Rate"
 msgstr "支付汇率"
 
@@ -11794,6 +11882,9 @@ msgstr "固定{0}"
 
 msgid "Pinned"
 msgstr "已固定"
+
+msgid "Place accounts under Carbon's existing groups"
+msgstr ""
 
 msgid "Plan"
 msgstr "计划"
@@ -13575,6 +13666,9 @@ msgstr "行"
 msgid "Rows left out of this backup"
 msgstr "此备份中遗漏的行"
 
+msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
+msgstr ""
+
 msgid "Rule"
 msgstr "规则"
 
@@ -13791,6 +13885,10 @@ msgstr "销售、报价和按订单配置"
 
 msgid "Salesperson"
 msgstr "销售人员"
+
+#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
+msgid "Same as {0}"
+msgstr ""
 
 msgid "Same as Book"
 msgstr "与账面相同"
@@ -14815,6 +14913,9 @@ msgstr "跳过公司假期的计划维护"
 
 msgid "Skip the released-but-not-started state — the job starts immediately on scan."
 msgstr "跳过已发布但未启动状态 — 扫码时工单立即启动。"
+
+msgid "Skip this row"
+msgstr ""
 
 msgid "Skipped"
 msgstr "已跳过"
@@ -16217,6 +16318,9 @@ msgstr "现金折扣的百分比。使用 0 表示无折扣。"
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "该类型的新员工自动接收的权限集；在此处编辑仅更改模板以供将来雇用 - 现有员工保留他们拥有的内容，除非明确进行批量更新。"
 
+msgid "The plan could not be built"
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "您的工作和库存所在的工厂、仓库和场所"
 
@@ -17259,8 +17363,14 @@ msgstr "未分配"
 msgid "Unballoon"
 msgstr "取消气球标注"
 
+msgid "Unchanged"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
+
+msgid "Under"
+msgstr ""
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "在基于需求的再订购下，计划在计算补货数量时对该滚动窗口内的需求进行求和。"
@@ -17600,6 +17710,12 @@ msgstr "使用不同的电子邮件"
 
 msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"
+
+msgid "Use the file's parent column, name paths, or total rows when present."
+msgstr ""
+
+msgid "Use the hierarchy in the file"
+msgstr ""
 
 msgid "Used In"
 msgstr "用于"

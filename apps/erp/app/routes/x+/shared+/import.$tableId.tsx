@@ -23,7 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const schema = importSchemas[table].extend({
     filePath: z.string().min(1, { message: "Path is required" }),
-    enumMappings: z.string().optional()
+    enumMappings: z.string().optional(),
+    // "true" plans without writing; importers that plan (account) return it.
+    dryRun: z.string().optional(),
+    // JSON from a per-table review step (structure choice, conflict resolutions).
+    options: z.string().optional()
   });
 
   const validation = await validator(schema).validate(await request.formData());
@@ -35,7 +39,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const { filePath, enumMappings, ...columnMappings } = validation.data;
+  const { filePath, enumMappings, dryRun, options, ...columnMappings } =
+    validation.data;
+
+  let parsedOptions: Record<string, unknown> | undefined;
+  if (options) {
+    try {
+      parsedOptions = JSON.parse(options as string);
+    } catch {
+      return { success: false, message: "Invalid import options" };
+    }
+  }
 
   const serviceRole = getCarbonServiceRole();
   const importResult = await importCsv(serviceRole, {
@@ -44,7 +58,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     columnMappings,
     enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined,
     companyId,
-    userId
+    userId,
+    dryRun: dryRun === "true",
+    options: parsedOptions
   });
 
   if (importResult.error) {
@@ -64,14 +80,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updated?: number;
     errors?: RowIssue[];
     skipped?: RowIssue[];
+    plan?: unknown;
   };
 
   return {
     success: true,
-    message: "Import successful",
+    dryRun: dryRun === "true",
+    message: dryRun === "true" ? "Plan ready" : "Import successful",
     inserted: data.inserted ?? 0,
     updated: data.updated ?? 0,
     errors: data.errors ?? [],
-    skipped: data.skipped ?? []
+    skipped: data.skipped ?? [],
+    plan: data.plan
   };
 }

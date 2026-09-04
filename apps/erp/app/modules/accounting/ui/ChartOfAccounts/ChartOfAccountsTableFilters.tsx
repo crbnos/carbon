@@ -6,7 +6,13 @@ import {
   InputLeftElement
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuSearch, LuWallet, LuX } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuSearch,
+  LuUpload,
+  LuWallet,
+  LuX
+} from "react-icons/lu";
 import { New, PeriodSelector } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 
@@ -20,6 +26,9 @@ type ChartOfAccountsTableFiltersProps = {
   onEnterOpeningBalances: () => void;
   onCancelOpeningBalances: () => void;
   onPostOpeningBalances: () => void;
+  // Present only when the current company may bulk-import the chart (root
+  // company of its group); opens the CSV import wizard for `account`.
+  onImport?: () => void;
 };
 
 const ChartOfAccountsTableFilters = ({
@@ -31,7 +40,8 @@ const ChartOfAccountsTableFilters = ({
   hasOpeningBalanceEntries,
   onEnterOpeningBalances,
   onCancelOpeningBalances,
-  onPostOpeningBalances
+  onPostOpeningBalances,
+  onImport
 }: ChartOfAccountsTableFiltersProps) => {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -85,6 +95,15 @@ const ChartOfAccountsTableFilters = ({
           </>
         ) : (
           <>
+            {permissions.can("create", "accounting") && onImport && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUpload />}
+                onClick={onImport}
+              >
+                <Trans>Import</Trans>
+              </Button>
+            )}
             {permissions.can("create", "accounting") && (
               <>
                 <New label={t`Group`} to={`new-group?${params.toString()}`} />

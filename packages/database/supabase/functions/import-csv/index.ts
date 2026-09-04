@@ -8,6 +8,14 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
+import {
+  type AccountImportOptions,
+  type ExistingAccount,
+  type ImportPlan,
+  isInvertedActiveHeader,
+  planChartOfAccounts,
+} from "./account-import.ts";
+import { applyAccountPlan } from "./account-import-writer.ts";
 import { classifyImportRow } from "./classify-import-row.ts";
 import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
@@ -38,12 +46,18 @@ const importCsvValidator = z.object({
     "materialGrade",
     "materialType",
     "materialDimension",
+    "account",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string()),
   enumMappings: z.record(z.record(z.string())).optional(),
   companyId: z.string(),
   userId: z.string(),
+  // Plan without writing; only the importers that build a plan honour it
+  // (account). The response then carries `plan`.
+  dryRun: z.boolean().optional(),
+  // Importer-specific options gathered by the wizard's review step.
+  options: z.record(z.unknown()).optional(),
 });
 
 const EXTERNAL_ID_KEY = "csv";
@@ -115,7 +129,8 @@ type CsvEntityType =
   | "contact"
   | "workCenter"
   | "process"
-  | "storageUnit";
+  | "storageUnit"
+  | "account";
 
 /**
  * Look up the ids that still exist in the entity table. Done as a typed
@@ -174,6 +189,13 @@ async function fetchLiveEntityIds(
     case "storageUnit":
       rows = await db
         .selectFrom("storageUnit")
+        .select(["id"])
+        .where("id", "in", ids)
+        .execute();
+      break;
+    case "account":
+      rows = await db
+        .selectFrom("account")
         .select(["id"])
         .where("id", "in", ids)
         .execute();
@@ -951,6 +973,8 @@ serve(async (req: Request) => {
       enumMappings = {},
       companyId,
       userId,
+      dryRun = false,
+      options,
     } = importCsvValidator.parse(payload);
 
     console.log({
@@ -1002,9 +1026,12 @@ serve(async (req: Request) => {
       return record;
     });
 
-    const missingEnumKeys = Object.keys(enumMappings).filter(
-      (key) => !(key in mappedRecords[0])
-    );
+    const missingEnumKeys =
+      mappedRecords.length === 0
+        ? []
+        : Object.keys(enumMappings).filter(
+            (key) => !(key in mappedRecords[0])
+          );
 
     if (missingEnumKeys.length > 0) {
       mappedRecords = mappedRecords.map((record) => {
@@ -1026,6 +1053,9 @@ serve(async (req: Request) => {
       // Rows intentionally not written (duplicates, already-existing) — informational.
       skipped: [] as Array<{ row: number; reason: string }>,
     };
+    // Set by importers that plan before they write (account). Returned to
+    // the wizard so the user can review it; on a dry run nothing is written.
+    let plan: ImportPlan | undefined;
 
     switch (table) {
       case "customer": {
@@ -2903,6 +2933,188 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "account": {
+        // The chart is scoped by companyGroupId and shared by every company in
+        // the group; RLS only lets the group's ROOT company write it, and this
+        // Kysely path bypasses RLS, so the same rule is enforced here.
+        const company = await db
+          .selectFrom("company")
+          .select(["companyGroupId", "parentCompanyId"])
+          .where("id", "=", companyId)
+          .executeTakeFirst();
+        if (!company?.companyGroupId) {
+          throw new Error("This company does not belong to a company group");
+        }
+        if (company.parentCompanyId) {
+          throw new Error(
+            "The chart of accounts is shared across the company group and can only be imported from the group's root company"
+          );
+        }
+        const companyGroupId = company.companyGroupId;
+
+        const existingRows = await db
+          .selectFrom("account")
+          .select([
+            "id",
+            "number",
+            "name",
+            "isGroup",
+            "isSystem",
+            "parentId",
+            "class",
+            "accountType",
+            "incomeBalance",
+            "active",
+          ])
+          .where("companyGroupId", "=", companyGroupId)
+          .execute();
+        const existing: ExistingAccount[] = existingRows.map((a) => ({
+          id: a.id,
+          number: a.number ?? null,
+          name: a.name,
+          isGroup: !!a.isGroup,
+          isSystem: !!a.isSystem,
+          parentId: a.parentId ?? null,
+          class: (a.class ?? null) as ExistingAccount["class"],
+          accountType: (a.accountType ?? null) as ExistingAccount["accountType"],
+          incomeBalance: a.incomeBalance as ExistingAccount["incomeBalance"],
+          active: a.active ?? true,
+        }));
+        const existingIds = existing.map((a) => a.id);
+
+        const externalIdMap = await getCsvExternalIdMap("account", companyId);
+        const alreadyMappedEntityIds = new Set(externalIdMap.values());
+
+        // Accounts with journal lines: class may not change, may not deactivate.
+        const postedAccountIds = new Set<string>();
+        for (let i = 0; i < existingIds.length; i += 500) {
+          const chunk = existingIds.slice(i, i + 500);
+          const posted = await db
+            .selectFrom("journalLine")
+            .select(["accountId"])
+            .distinct()
+            .where("accountId", "in", chunk)
+            .execute();
+          for (const p of posted) if (p.accountId) postedAccountIds.add(p.accountId);
+        }
+
+        // Accounts the group's posting defaults and asset classes point at:
+        // RESTRICT foreign keys, and deactivating one hides its balance while
+        // postings continue.
+        const protectedAccountIds = new Set<string>();
+        const groupCompanies = await db
+          .selectFrom("company")
+          .select(["id"])
+          .where("companyGroupId", "=", companyGroupId)
+          .execute();
+        const groupCompanyIds = groupCompanies.map((c) => c.id);
+        if (groupCompanyIds.length > 0) {
+          const defaults = await db
+            .selectFrom("accountDefault")
+            .selectAll()
+            .where("companyId", "in", groupCompanyIds)
+            .execute();
+          for (const row of defaults) {
+            for (const [column, value] of Object.entries(row)) {
+              if (/Account(Id)?$/.test(column) && typeof value === "string") {
+                protectedAccountIds.add(value);
+              }
+            }
+          }
+          const assetClasses = await db
+            .selectFrom("fixedAssetClass")
+            .select([
+              "assetAccountId",
+              "accumulatedDepreciationAccountId",
+              "depreciationExpenseAccountId",
+              "gainOnDisposalAccountId",
+              "lossOnDisposalAccountId",
+              "writeDownAccountId",
+              "writeOffAccountId",
+            ])
+            .where("companyId", "in", groupCompanyIds)
+            .execute();
+          for (const row of assetClasses) {
+            for (const value of Object.values(row)) {
+              if (typeof value === "string") protectedAccountIds.add(value);
+            }
+          }
+        }
+
+        const opts = (options ?? {}) as Record<string, unknown>;
+        const structure = String(opts.structure ?? "auto");
+        const planOptions: AccountImportOptions = {
+          structure:
+            structure === "file" || structure === "carbon" ? structure : "auto",
+          pathSeparator:
+            typeof opts.pathSeparator === "string" ? opts.pathSeparator : ":",
+          resolutions:
+            opts.resolutions && typeof opts.resolutions === "object"
+              ? (opts.resolutions as AccountImportOptions["resolutions"])
+              : {},
+          activeInverted: isInvertedActiveHeader(columnMappings.active),
+        };
+
+        const accountPlan = planChartOfAccounts(
+          mappedRecords,
+          { existing, externalIdMap, postedAccountIds, protectedAccountIds },
+          planOptions
+        );
+        plan = accountPlan;
+
+        for (const node of accountPlan.nodes) {
+          if (node.action === "error") {
+            summary.errors.push({
+              row: node.reportRow,
+              reason: node.reason ?? "Could not be imported",
+            });
+          } else if (node.action === "skip") {
+            summary.skipped.push({
+              row: node.reportRow,
+              reason: node.reason ?? "Skipped",
+            });
+          } else if (node.action === "unchanged") {
+            summary.skipped.push({
+              row: node.reportRow,
+              reason: "Already in Carbon, unchanged",
+            });
+          }
+        }
+
+        console.log({
+          totalRecords: mappedRecords.length,
+          dryRun,
+          ...accountPlan.summary,
+        });
+
+        if (dryRun) {
+          summary.inserted =
+            accountPlan.summary.groupsToCreate +
+            accountPlan.summary.accountsToCreate;
+          summary.updated = accountPlan.summary.updates;
+          break;
+        }
+
+        await db.transaction().execute(async (trx) => {
+          const result = await applyAccountPlan(trx, accountPlan, {
+            companyGroupId,
+            userId,
+            alreadyMappedEntityIds,
+          });
+          summary.inserted += result.inserted;
+          summary.updated += result.updated;
+          if (result.csvMappings.length > 0) {
+            await upsertCsvMappings(
+              trx,
+              "account",
+              result.csvMappings,
+              companyId,
+              userId
+            );
+          }
+        });
+        break;
+      }
       default: {
         throw new Error(`Invalid table: ${table}`);
       }
@@ -2921,6 +3133,7 @@ serve(async (req: Request) => {
       updated: summary.updated,
       errors: withValues(summary.errors),
       skipped: withValues(summary.skipped),
+      ...(plan ? { plan } : {}),
     });
   } catch (err) {
     return errorResponse(err, 500);

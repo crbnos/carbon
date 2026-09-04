@@ -998,9 +998,13 @@ export async function importCsv(
     table: string;
     filePath: string;
     columnMappings: Record<string, string>;
-    enumMappings?: Record<string, string[]>;
+    enumMappings?: Record<string, Record<string, string>>;
     companyId: string;
     userId: string;
+    // Plan without writing (importers that plan return `plan`).
+    dryRun?: boolean;
+    // Importer-specific options from the wizard's review step.
+    options?: Record<string, unknown>;
   }
 ) {
   return client.functions.invoke("import-csv", {

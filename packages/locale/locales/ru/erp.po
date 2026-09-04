@@ -48,6 +48,9 @@ msgstr "«{taskName}» готово — все {0} позиций графика
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
+msgid "(group)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.} other {# строк связаны с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.}}"
@@ -89,6 +92,11 @@ msgstr "{0} успешно удален"
 msgid "{0} draft journal entries"
 msgstr "{0} черновых операций"
 
+#. placeholder {0}: plan.summary.groupsToCreate
+#. placeholder {1}: plan.summary.accountsToCreate
+msgid "{0} groups, {1} accounts to create"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} производственных заказов создано"
@@ -96,6 +104,14 @@ msgstr "{0} производственных заказов создано"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
+
+#. placeholder {0}: plan.summary.linked
+msgid "{0} merged into existing"
+msgstr ""
+
+#. placeholder {0}: plan.summary.errors
+msgid "{0} need attention"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -130,9 +146,18 @@ msgstr "{0} строк"
 msgid "{0} suppliers with a balance"
 msgstr "{0} поставщиков с остатком"
 
+#. placeholder {0}: plan.summary.updates
+msgid "{0} to update"
+msgstr ""
+
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} необследованные единицы будут переведены в Доступно. Пройденные образцы остаются в Доступно, отклоненные образцы остаются в Отклонено."
+
+#. placeholder {0}: plan.summary.unchanged
+#. placeholder {1}: plan.summary.skipped
+msgid "{0} unchanged, {1} skipped"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -1469,6 +1494,9 @@ msgstr "Все местоположения"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
 
+msgid "All rows"
+msgstr ""
+
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
 
@@ -2431,6 +2459,9 @@ msgstr "Вложения"
 msgid "Attempts"
 msgstr "Попытки"
 
+msgid "Attention"
+msgstr ""
+
 msgid "Attribute"
 msgstr "Атрибут"
 
@@ -2829,6 +2860,9 @@ msgstr "Создавайте материалы обучения на основ
 
 msgid "Build tailored, role-based training materials"
 msgstr "Создавайте адаптированные материалы обучения на основе ролей"
+
+msgid "Building the plan…"
+msgstr ""
 
 msgid "Built and costed as its own method"
 msgstr "Построен и рассчитан как собственный метод"
@@ -3232,6 +3266,9 @@ msgstr "Чат"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Проверьте реестр номенклатуры на наличие номенклатур с отрицательным количеством на складе на конец периода — обычно это недостающее поступление или неправильно проведённая операция, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
+
+msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
+msgstr ""
 
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
@@ -5417,6 +5454,9 @@ msgstr "Подробности"
 msgid "Details"
 msgstr "Детали"
 
+msgid "Detect from the file"
+msgstr ""
+
 msgid "Developer"
 msgstr "Разработчик"
 
@@ -6571,6 +6611,9 @@ msgstr "Сертификат освобождения"
 msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
 
@@ -7328,6 +7371,15 @@ msgstr "Формат"
 msgid "Forward deployed engineer"
 msgstr "Инженер на месте"
 
+msgid "Found a parent column."
+msgstr ""
+
+msgid "Found a path in the account names, e.g. Parent:Child."
+msgstr ""
+
+msgid "Found Begin-Total / End-Total rows."
+msgstr ""
+
 msgid "Foundation"
 msgstr "Основа"
 
@@ -7712,6 +7764,9 @@ msgstr "Название группы"
 msgid "Groups"
 msgstr "Группы"
 
+msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
+msgstr ""
+
 msgid "Guided"
 msgstr "Управляемый"
 
@@ -7892,6 +7947,9 @@ msgstr "Как часто это средство измерения должн�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
+msgid "How should the accounts be organised?"
+msgstr ""
+
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Как производственный заказ рангируется, когда планировщик распределяет мощность — ASAP занимает первое место, затем Жесткий срок, Мягкий срок и Нет срока в последнюю очередь. Только сигнал ранжирования; ни один тип срока не блокирует и не ограничивает размещение."
 
@@ -8012,6 +8070,9 @@ msgstr "Если что-то идет не по плану"
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Если вы хотите изменить номера деталей, нажмите Отмена и вручную назначьте детали для каждого элемента строки перед преобразованием."
 
+msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
+msgstr ""
+
 msgid "II (normal default)"
 msgstr "II (обычно по умолчанию)"
 
@@ -8033,11 +8094,20 @@ msgstr "Центр внедрения"
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
 
 msgid "Import results"
 msgstr "Импортировать результаты"
+
+msgid "Import under a different name"
+msgstr ""
+
+msgid "Import under a different number"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
@@ -8117,6 +8187,9 @@ msgstr "Включить дополнительные детали в отгру
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
+
+msgid "Include this row again"
+msgstr ""
 
 msgid "Included"
 msgstr "Включено"
@@ -8897,6 +8970,9 @@ msgstr "Оставить пусто, чтобы использовать сле�
 msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
 
+msgid "Leave this account as it is"
+msgstr ""
+
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
@@ -8974,6 +9050,9 @@ msgstr "Темное производство (24/7)"
 
 msgid "Likelihood"
 msgstr "Вероятность"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
@@ -9901,6 +9980,9 @@ msgstr "Необходимо - это рабочие часы, приходящ�
 msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "Требуется исправление"
 
@@ -10459,6 +10541,9 @@ msgstr "Нет сгруппированных уведомлений"
 
 msgid "No groups assigned"
 msgstr "Нет назначенных групп"
+
+msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgstr ""
 
 msgid "No image"
 msgstr "Нет изображения"
@@ -11565,6 +11650,9 @@ msgstr "Вставьте XML метаданных, если ваш постав�
 msgid "Path"
 msgstr "Путь"
 
+msgid "Path separator in account names"
+msgstr ""
+
 msgid "Pay Rate"
 msgstr "Курс платежа"
 
@@ -11794,6 +11882,9 @@ msgstr "Закрепить {0}"
 
 msgid "Pinned"
 msgstr "Закреплено"
+
+msgid "Place accounts under Carbon's existing groups"
+msgstr ""
 
 msgid "Plan"
 msgstr "План"
@@ -13575,6 +13666,9 @@ msgstr "строк"
 msgid "Rows left out of this backup"
 msgstr "Строки, не включенные в эту резервную копию"
 
+msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
+msgstr ""
+
 msgid "Rule"
 msgstr "Правило"
 
@@ -13791,6 +13885,10 @@ msgstr "Продажи, предложения и конфигурировани
 
 msgid "Salesperson"
 msgstr "Продавец"
+
+#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
+msgid "Same as {0}"
+msgstr ""
 
 msgid "Same as Book"
 msgstr "Как в книге"
@@ -14815,6 +14913,9 @@ msgstr "Пропустить плановое техобслуживание в 
 
 msgid "Skip the released-but-not-started state — the job starts immediately on scan."
 msgstr "Пропустить состояние «выпущено, но не начато» — задание начинается сразу при сканировании."
+
+msgid "Skip this row"
+msgstr ""
 
 msgid "Skipped"
 msgstr "Пропущено"
@@ -16217,6 +16318,9 @@ msgstr "Процент скидки при оплате наличными. Ис
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Набор прав доступа, который автоматически получают новые сотрудники этого типа; редактирование здесь изменяет шаблон только для будущих сотрудников — существующие сотрудники сохраняют свои права, пока их явно не обновить массово."
 
+msgid "The plan could not be built"
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Заводы, склады и объекты, где находятся ваша работа и запасы"
 
@@ -17259,8 +17363,14 @@ msgstr "Не назначено"
 msgid "Unballoon"
 msgstr "Удалить выноску"
 
+msgid "Unchanged"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."
+
+msgid "Under"
+msgstr ""
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "При переупорядочении на основе потребности планирование суммирует потребность в этом скользящем окне при расчете количества пополнения"
@@ -17600,6 +17710,12 @@ msgstr "Использовать другой адрес электронной 
 
 msgid "Use metric system for default material dimensions."
 msgstr "Используйте метрическую систему для измерений материала по умолчанию."
+
+msgid "Use the file's parent column, name paths, or total rows when present."
+msgstr ""
+
+msgid "Use the hierarchy in the file"
+msgstr ""
 
 msgid "Used In"
 msgstr "Используется в"

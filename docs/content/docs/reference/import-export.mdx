@@ -33,12 +33,27 @@ Bulk import is deliberately scoped. A **Bulk Import** menu appears in the table 
   <Field name="Parts, Materials, Tools, Consumables, Fixtures">From each item type's list. A single row can optionally create a supplier-part link, set purchasing lead time, and seed unit cost alongside the item.</Field>
   <Field name="Work Centers">From the work centers list, including labor, machine, and overhead rates and a location.</Field>
   <Field name="Processes">From the processes list.</Field>
+  <Field name="Chart of accounts">From Accounting → Chart of Accounts (the **Import** button), for the root company of a company group. Accepts the chart-of-accounts export of QuickBooks, Xero, NetSuite, Sage, Business Central, Odoo, Rillet or a hand-written sheet; see below.</Field>
 </FieldTable>
 
 Beyond these table buttons, the importer also understands three **method** formats used to load bills of materials and operations against parts: a focused BOM file, a focused Operations file, and a combined part-with-method file that creates parts and their full BOM and routing together. These are richer, row-typed CSVs (each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM`) driven from the method-building UI rather than a plain list screen.
 
 <Callout type="warn" title="Fixed assets and BOM components aren't importable here">
 The models list a `fixedAsset` import shape, but the import function's own table list omits it, so a fixed-asset CSV is rejected. Individual BOM material lines (`methodMaterial`) are likewise not wired up. Import the entities above; create assets and one-off BOM lines in the app.
+</Callout>
+
+## Importing a chart of accounts
+
+The chart of accounts is a tree and is shared by every company in a company group, so its import has two extra steps and a few rules of its own.
+
+- Map at least an **Account Name** and an **Account Type** column. Most exports match automatically: QuickBooks (`Account`, `Type`, `Detail type`), Xero (`*Code`, `*Name`, `*Type`), NetSuite (`Number`, `Name`, `Type`, `Subaccount of`), Sage 50 (`Account ID`, `Account Description`, `Account Type`), Business Central (`No.`, `Name`, `Account Type`, `Account Category`, `Account Subcategory Descript.`, `Indentation`), Odoo (`Code`, `Account Name`, `Type`) and Rillet (`Account Number`, `Account Name`, `Account Type`, `Account Subtype`, `Parent Grouping`).
+- On the **Account Type** step, each type in your file is matched to one of Carbon's 21 account types. The class (Asset, Liability, Equity, Revenue, Expense) and the balance-sheet / income-statement placement follow from the type; a **Class** column is only needed to disambiguate (a `Tax` account can be a liability or an expense).
+- The **Review** step shows what will happen before anything is written. Choose how the tree is built — from the file's own hierarchy (a parent column, `Parent:Child` names, or Begin-Total / End-Total rows) or by placing every account under Carbon's existing groups by type — then read the plan: rows are created, updated, merged into an existing account, unchanged, or flagged for attention.
+- A row is flagged when its name is already used by a different account of the same kind, when it would change the class of an account that has journal lines, when it would deactivate a posting-default account, or when its parent cannot be resolved. Resolve it in place — skip it, import it under another name or number, or say it is the same account as the existing one (Carbon's account is then renumbered to yours) — or import the rest now and fix the file for the remainder.
+- Re-importing the same file reports every row unchanged. Accounts are matched by **Source ID** when your file has one, else by number, else by name. Nothing is ever deleted by an import.
+
+<Callout type="note" title="The seeded chart stays">
+Every company starts with Carbon's default chart, and the posting defaults under Accounting → Default Accounts point at it. Importing adds your accounts beside it. After the import, point the defaults at your own accounts where they differ; the review lists collisions with the seeded numbers and names so you can merge or rename them.
 </Callout>
 
 ## The import flow

@@ -48,6 +48,9 @@ msgstr "„{taskName}\" ist erledigt – alle {0} seiner Setup-Map-Elemente sind
 msgid "(excluded for this customer)"
 msgstr "(für diesen Kunden ausgeschlossen)"
 
+msgid "(group)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.}}"
@@ -89,6 +92,11 @@ msgstr "{0} erfolgreich gelöscht"
 msgid "{0} draft journal entries"
 msgstr "{0} Entwurfs-Buchungszeilen"
 
+#. placeholder {0}: plan.summary.groupsToCreate
+#. placeholder {1}: plan.summary.accountsToCreate
+msgid "{0} groups, {1} accounts to create"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} Fertigungsaufträge erstellt"
@@ -96,6 +104,14 @@ msgstr "{0} Fertigungsaufträge erstellt"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} Zeilen zum Zuordnen"
+
+#. placeholder {0}: plan.summary.linked
+msgid "{0} merged into existing"
+msgstr ""
+
+#. placeholder {0}: plan.summary.errors
+msgid "{0} need attention"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -130,9 +146,18 @@ msgstr "{0} Zeilen"
 msgid "{0} suppliers with a balance"
 msgstr "{0} Lieferanten mit einem Saldo"
 
+#. placeholder {0}: plan.summary.updates
+msgid "{0} to update"
+msgstr ""
+
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} nicht beprobte Entitäten werden freigegeben. Beprobte Annahmen bleiben verfügbar und beprobte Fehler bleiben abgelehnt."
+
+#. placeholder {0}: plan.summary.unchanged
+#. placeholder {1}: plan.summary.skipped
+msgid "{0} unchanged, {1} skipped"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -1469,6 +1494,9 @@ msgstr "Alle Standorte"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Alle Mitglieder der ausgewählten Gruppen und ausgewählten Personen können Anfragen genehmigen"
 
+msgid "All rows"
+msgstr ""
+
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Alle Zeilen importiert — {inserted} eingefügt, {updated} aktualisiert."
 
@@ -2431,6 +2459,9 @@ msgstr "Anhänge"
 msgid "Attempts"
 msgstr "Versuche"
 
+msgid "Attention"
+msgstr ""
+
 msgid "Attribute"
 msgstr "Attribut"
 
@@ -2829,6 +2860,9 @@ msgstr "Erstellen Sie rollenbasierte Schulungsmaterialien"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Erstellen Sie maßgeschneiderte, rollenbasierte Schulungsmaterialien"
+
+msgid "Building the plan…"
+msgstr ""
 
 msgid "Built and costed as its own method"
 msgstr "Als eigene Methode aufgebaut und kalkuliert"
@@ -3232,6 +3266,9 @@ msgstr "Chat"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Überprüfen Sie das Artikelledger auf Artikel mit negativer Bestandsmenge am Periodenende – normalerweise ein fehlender Wareneingang oder eine fehlerhafte Buchung, die den Bestandswert und die Umsatzkosten verzerrt. Markieren Sie es als erledigt, nachdem es überprüft wurde, oder überspringen Sie es mit einem Grund."
+
+msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
+msgstr ""
 
 msgid "Check your email"
 msgstr "Überprüfen Sie Ihre E-Mail"
@@ -5417,6 +5454,9 @@ msgstr "Detail"
 msgid "Details"
 msgstr "Details"
 
+msgid "Detect from the file"
+msgstr ""
+
 msgid "Developer"
 msgstr "Entwickler"
 
@@ -6571,6 +6611,9 @@ msgstr "Ausnahmezertifikat"
 msgid "Exemption Reason"
 msgstr "Ausnahmegrunde"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Vorhandene Zuordnungen. Wählen Sie eine andere Provider-Option zum Neu-Zuordnen."
 
@@ -7328,6 +7371,15 @@ msgstr "Format"
 msgid "Forward deployed engineer"
 msgstr "Techniker vor Ort"
 
+msgid "Found a parent column."
+msgstr ""
+
+msgid "Found a path in the account names, e.g. Parent:Child."
+msgstr ""
+
+msgid "Found Begin-Total / End-Total rows."
+msgstr ""
+
 msgid "Foundation"
 msgstr "Grundlagen"
 
@@ -7712,6 +7764,9 @@ msgstr "Gruppenname"
 msgid "Groups"
 msgstr "Gruppen"
 
+msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
+msgstr ""
+
 msgid "Guided"
 msgstr "Geführt"
 
@@ -7892,6 +7947,9 @@ msgstr "Wie oft dieses Prüfmittel kalibriert werden muss; kombiniert mit dem le
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Wie oft diese Instandhaltung wiederkehrt — Täglich, Wöchentlich, Monatlich, Bei Permanenter Inventur; Täglich zeigt die Wähler für Wochentage an, die anderen verwenden einfachere Intervallberechnung."
 
+msgid "How should the accounts be organised?"
+msgstr ""
+
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Wie der Fertigungsauftrag eingestuft wird, wenn der Planer Kapazität verteilt — ASAP beansprucht zuerst, dann Hard Deadline, Soft Deadline und No Deadline zuletzt. Nur ein Ranking-Signal; kein Deadline-Typ blockiert oder sperrt die Platzierung."
 
@@ -8012,6 +8070,9 @@ msgstr "Wenn etwas aus dem Ruder läuft"
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Wenn Sie die Teilenummern ändern möchten, klicken Sie bitte Abbrechen und weisen Sie manuell die Teile für jede Position zu, bevor Sie konvertieren."
 
+msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
+msgstr ""
+
 msgid "II (normal default)"
 msgstr "II (normalstandard)"
 
@@ -8033,11 +8094,20 @@ msgstr "Umsetzungs-Hub"
 msgid "Implementation Lead"
 msgstr "Umsetzungsleiter"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Importiere {label} CSV"
 
 msgid "Import results"
 msgstr "Importergebnisse"
+
+msgid "Import under a different name"
+msgstr ""
+
+msgid "Import under a different number"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre BOM"
@@ -8117,6 +8187,9 @@ msgstr "Zusätzliche Teile zur Lieferung hinzufügen"
 
 msgid "Include Inactive"
 msgstr "Inaktive einschließen"
+
+msgid "Include this row again"
+msgstr ""
 
 msgid "Included"
 msgstr "Enthalten"
@@ -8897,6 +8970,9 @@ msgstr "Lassen Sie das Feld leer, um die nächste Revision automatisch zu verwen
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
 
+msgid "Leave this account as it is"
+msgstr ""
+
 msgid "Leave this page"
 msgstr "Diese Seite verlassen"
 
@@ -8974,6 +9050,9 @@ msgstr "Lichter aus (24/7)"
 
 msgid "Likelihood"
 msgstr "Wahrscheinlichkeit"
+
+msgid "Line"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Zeilenbeschreibung (optional)"
@@ -9901,6 +9980,9 @@ msgstr "Erforderlich sind die für diesen Tag fälligen Arbeitsstunden dividiert
 msgid "Needs a Business or Partner plan."
 msgstr "Benötigt einen Business- oder Partner-Plan."
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "Muss behoben werden"
 
@@ -10459,6 +10541,9 @@ msgstr "Keine gruppierten Benachrichtigungen"
 
 msgid "No groups assigned"
 msgstr "Keine Gruppen zugewiesen"
+
+msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgstr ""
 
 msgid "No image"
 msgstr "Kein Bild"
@@ -11565,6 +11650,9 @@ msgstr "Fügen Sie die Metadaten-XML ein, wenn Ihr Identitätsanbieter keine Met
 msgid "Path"
 msgstr "Pfad"
 
+msgid "Path separator in account names"
+msgstr ""
+
 msgid "Pay Rate"
 msgstr "Zahlungskurs"
 
@@ -11794,6 +11882,9 @@ msgstr "Anheften {0}"
 
 msgid "Pinned"
 msgstr "Angeheftet"
+
+msgid "Place accounts under Carbon's existing groups"
+msgstr ""
 
 msgid "Plan"
 msgstr "Plan"
@@ -13575,6 +13666,9 @@ msgstr "Zeilen"
 msgid "Rows left out of this backup"
 msgstr "Zeilen, die aus dieser Sicherung ausgelassen wurden"
 
+msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
+msgstr ""
+
 msgid "Rule"
 msgstr "Regel"
 
@@ -13791,6 +13885,10 @@ msgstr "Vertrieb, Angebote und Konfigurieren nach Bestellung"
 
 msgid "Salesperson"
 msgstr "Verkaufsvertreter"
+
+#. placeholder {0}: [node.conflict.number, node.conflict.name].filter(Boolean).join(" ")
+msgid "Same as {0}"
+msgstr ""
 
 msgid "Same as Book"
 msgstr "Gleich wie Buch"
@@ -14815,6 +14913,9 @@ msgstr "Geplante Instandhaltung an Betriebsferien überspringen"
 
 msgid "Skip the released-but-not-started state — the job starts immediately on scan."
 msgstr "Überspringen Sie den freigegebenen, aber nicht gestarteten Zustand – der Auftrag startet sofort beim Scannen."
+
+msgid "Skip this row"
+msgstr ""
 
 msgid "Skipped"
 msgstr "Übersprungen"
@@ -16217,6 +16318,9 @@ msgstr "Der Prozentsatz des Kassenrabatts. Verwenden Sie 0 für keinen Rabatt."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Der Berechtigungssatz, den neue Mitarbeiter dieses Typs automatisch erhalten; durch die Bearbeitung hier wird nur die Vorlage für zukünftige Mitarbeiter geändert – vorhandene Mitarbeiter behalten das, was sie haben, es sei denn, es wird explizit in großen Mengen aktualisiert."
 
+msgid "The plan could not be built"
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Die Fabriken, Lagerhäuser und Standorte, an denen sich Ihre Arbeit und Bestände befinden"
 
@@ -17259,8 +17363,14 @@ msgstr "Nicht zugewiesen"
 msgid "Unballoon"
 msgstr "Ballon entfernen"
 
+msgid "Unchanged"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Nicht gezählte Zeilen bleiben beim Buchen unverändert — sie werden nicht auf Null gesetzt."
+
+msgid "Under"
+msgstr ""
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Unter Demand-Based Reorder summiert die Planung den Bedarf in diesem rollierenden Fenster beim Berechnen einer Auffüllungsmenge."
@@ -17600,6 +17710,12 @@ msgstr "Verwenden Sie eine andere E-Mail"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Metrisches System für Standard-Materialdimensionen verwenden."
+
+msgid "Use the file's parent column, name paths, or total rows when present."
+msgstr ""
+
+msgid "Use the hierarchy in the file"
+msgstr ""
 
 msgid "Used In"
 msgstr "Verwendet in"

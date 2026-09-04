@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Outlet, redirect, useLoaderData } from "react-router";
+import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { usePermissions, useSettings } from "~/hooks";
 import type { Chart } from "~/modules/accounting";
 import {
@@ -22,6 +23,7 @@ import OpeningBalancePostModal from "~/modules/accounting/ui/ChartOfAccounts/Ope
 import { months } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { accountsQuery, getCompanyId } from "~/utils/react-query";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";
 
 export const handle: Handle = {
@@ -47,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
 
-  const [chartOfAccounts, fiscalYearSettings, existingOpeningBalance] =
+  const [chartOfAccounts, fiscalYearSettings, existingOpeningBalance, company] =
     await Promise.all([
       getChartOfAccounts(client, companyGroupId, {
         incomeBalance: null,
@@ -55,7 +57,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
         endDate
       }),
       getFiscalYearSettings(client, companyId),
-      getExistingOpeningBalanceEntry(client, companyId)
+      getExistingOpeningBalanceEntry(client, companyId),
+      // The chart is shared by the company group and only its root company
+      // may write it (RLS: get_company_groups_for_root_permission), so the
+      // import action is offered only there.
+      client
+        .from("company")
+        .select("parentCompanyId")
+        .eq("id", companyId)
+        .single()
     ]);
 
   if (chartOfAccounts.error) {
@@ -72,7 +82,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     chartOfAccounts: (chartOfAccounts.data ?? []) as Chart[],
     fiscalStartMonth:
       months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1,
-    hasOpeningBalance: existingOpeningBalance.data !== null
+    hasOpeningBalance: existingOpeningBalance.data !== null,
+    canImport: company.data?.parentCompanyId === null
   };
 }
 
@@ -120,7 +131,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function ChartOfAccountsRoute() {
-  const { chartOfAccounts, fiscalStartMonth, hasOpeningBalance } =
+  const { chartOfAccounts, fiscalStartMonth, hasOpeningBalance, canImport } =
     useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const settings = useSettings();
@@ -131,6 +142,7 @@ export default function ChartOfAccountsRoute() {
   const [openingBalanceMode, setOpeningBalanceMode] = useState(false);
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const [postModalOpen, setPostModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const canEnterOpeningBalances =
     Boolean(accountingEnabled) &&
@@ -170,6 +182,11 @@ export default function ChartOfAccountsRoute() {
         onEnterOpeningBalances={() => setOpeningBalanceMode(true)}
         onCancelOpeningBalances={exitOpeningBalanceMode}
         onPostOpeningBalances={() => setPostModalOpen(true)}
+        onImport={
+          canImport && !openingBalanceMode
+            ? () => setImportOpen(true)
+            : undefined
+        }
       />
       <ChartOfAccountsTree
         data={chartOfAccounts}
@@ -187,6 +204,20 @@ export default function ChartOfAccountsRoute() {
         linesJson={linesJson}
         count={enteredCount}
       />
+      {importOpen && (
+        <ImportCSVModal
+          table="account"
+          onClose={() => {
+            setImportOpen(false);
+            // Account pickers cache the chart; the loader revalidates on its
+            // own after the import's POST.
+            window.clientCache?.setQueryData(
+              accountsQuery(getCompanyId()).queryKey,
+              null
+            );
+          }}
+        />
+      )}
     </VStack>
   );
 }

@@ -40,6 +40,9 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
   const [firstRows, setFirstRows] = useState<Record<string, string>[] | null>(
     null
   );
+  // A per-table review step (see FieldMappings) renders a plan table that
+  // needs the wide modal.
+  const [wide, setWide] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -99,8 +102,14 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
         }
       }}
     >
-      <ModalContent onInteractOutside={(e) => e.preventDefault()}>
-        <div className="relative">
+      <ModalContent
+        size={wide ? "xxlarge" : "medium"}
+        className={wide ? "min-w-0" : undefined}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        {/* min-w-0: a grid item otherwise grows to its content's width, and a
+            wide review table would push the wizard past the modal's edge. */}
+        <div className="relative min-w-0">
           <AnimatedSizeContainer height>
             <ImportCsvContext.Provider
               value={{
@@ -124,7 +133,9 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
                     filePath: z
                       .string()
                       .min(1, { message: "Path is required" }),
-                    enumMappings: z.string().optional()
+                    enumMappings: z.string().optional(),
+                    dryRun: z.string().optional(),
+                    options: z.string().optional()
                   })}
                   id={formId}
                   onSubmit={() => {
@@ -132,6 +143,7 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
                   }}
                 >
                   <Hidden name="filePath" value={filePath ?? ""} />
+                  <Hidden name="dryRun" value="false" />
                   {page === ImportCSVPage.UploadCSV && (
                     <UploadCSV table={table} />
                   )}
@@ -139,6 +151,7 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
                     <FieldMapping
                       formId={formId}
                       table={table}
+                      onReviewStepChange={setWide}
                       onReset={() => {
                         flushSync(() => {
                           setFile(null);

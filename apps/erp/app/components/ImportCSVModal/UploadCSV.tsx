@@ -35,7 +35,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
     const fields = Object.values(mapping) as Array<{
       label: string;
       required?: boolean;
-      type: "string" | "boolean" | "enum" | "numeric";
+      type: "string" | "boolean" | "enum" | "number";
       enumData?: {
         description?: string;
         options?: readonly string[];
@@ -55,7 +55,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
         return `${prefix} — ${f.enumData.description ?? "see your configured options"}`;
       }
       if (f.type === "boolean") return `${prefix} — true | false`;
-      if (f.type === "numeric") return `${prefix} — number`;
+      if (f.type === "number") return `${prefix} — number`;
       return prefix;
     });
     const csv = Papa.unparse({ fields: headers, data: [hints] });

@@ -54,6 +54,7 @@ import {
   matchCsvValue,
   toMatchableOption
 } from "./enumMatch";
+import { importReviewSteps } from "./reviewSteps";
 import { useCreateLookup } from "./useCreateLookup";
 import { useCsvContext } from "./useCsvContext";
 
@@ -64,29 +65,49 @@ type EnumData =
       creatableLookup?: CreatableLookup;
       creatableForm?: CreatableForm;
       options: readonly string[];
+      // Other systems' names for each option, matched exactly after
+      // normalisation (see enumMatch.ts).
+      optionAliases?: Record<string, readonly string[]>;
+      // Omit this enum's wizard step when its column is not mapped, for
+      // fields that are optional refinements rather than requirements.
+      skipStepWhenUnmapped?: boolean;
     }
   | {
       default: string;
       description: string;
       creatableLookup?: CreatableLookup;
       creatableForm?: CreatableForm;
+      skipStepWhenUnmapped?: boolean;
       fetcher: (
         client: SupabaseClient<Database>,
         companyId: string
       ) => Promise<PostgrestResponse<ListItem>>;
     };
 
+// Header text as compared for the exact column match: lower-cased, trimmed,
+// and without the leading asterisk some templates use to mark required
+// columns (Xero: *Code, *Name, *Type).
+const normalizeHeader = (header: string) =>
+  header.trim().replace(/^\*+/, "").trim().toLowerCase();
+
 export function FieldMapping({
   formId,
   table,
-  onReset
+  onReset,
+  onReviewStepChange
 }: {
   formId: string;
   table: keyof typeof importSchemas;
   onReset: () => void;
+  // Fires when the wizard enters or leaves a per-table review step, so the
+  // modal can widen for it.
+  onReviewStepChange?: (isReviewStep: boolean) => void;
 }) {
   const { t } = useLingui();
   const initialized = useRef(false);
+  // The client's exact/alias column matches. Kept so they survive the LLM
+  // pass, which only needs to fill in what did not match.
+  const exactMatchesRef = useRef<Record<string, string>>({});
   const { validate } = useFormContext(formId);
   const { fileColumns, filePath, firstRows } = useCsvContext();
   const fetcher = useFetcher<typeof action>();
@@ -112,30 +133,63 @@ export function FieldMapping({
   useEffect(() => {
     if (!fileColumns || !firstRows || initialized.current) return;
 
-    // Try exact matching by label and field name before calling the LLM
-    const fileColumnsLower = fileColumns.map((c) => c.toLowerCase().trim());
+    // Try exact matching by label, field name and aliases before calling the LLM
+    const fileColumnsLower = fileColumns.map(normalizeHeader);
     const exactMatches: Record<string, string> = {};
+    const claimed = new Set<number>();
+    const claim = (fieldName: string, idx: number) => {
+      exactMatches[fieldName] = fileColumns[idx];
+      claimed.add(idx);
+    };
 
     for (const [fieldName, fieldDef] of Object.entries(mappableFields)) {
+      // A more specific column beats the label when both are present (e.g.
+      // QuickBooks "Detail type" over "Type", Rillet "Account Subtype" over
+      // "Account Type"), so a coarse column stays free for another field.
+      const preferred: readonly string[] =
+        "preferredAliases" in fieldDef
+          ? (fieldDef.preferredAliases as readonly string[])
+          : [];
+      const preferredIdx = preferred
+        .map((alias) => fileColumnsLower.indexOf(normalizeHeader(alias)))
+        .find((idx) => idx !== -1 && !claimed.has(idx));
+      if (preferredIdx !== undefined) {
+        claim(fieldName, preferredIdx);
+        continue;
+      }
       // Match by label (e.g., "Process Type" === "Process Type")
       const labelIdx = fileColumnsLower.indexOf(fieldDef.label.toLowerCase());
       if (labelIdx !== -1) {
-        exactMatches[fieldName] = fileColumns[labelIdx];
+        claim(fieldName, labelIdx);
         continue;
       }
       // Match by field name (e.g., "processType" === "processtype")
       const nameIdx = fileColumnsLower.indexOf(fieldName.toLowerCase());
       if (nameIdx !== -1) {
-        exactMatches[fieldName] = fileColumns[nameIdx];
+        claim(fieldName, nameIdx);
+        continue;
+      }
+      // Match by alias (e.g., "Subaccount of" → parent). A header already
+      // claimed by a label/name match is never reassigned to an alias.
+      const aliases: readonly string[] =
+        "aliases" in fieldDef ? (fieldDef.aliases as readonly string[]) : [];
+      for (const alias of aliases) {
+        const aliasIdx = fileColumnsLower.indexOf(normalizeHeader(alias));
+        if (aliasIdx !== -1 && !claimed.has(aliasIdx)) {
+          claim(fieldName, aliasIdx);
+          break;
+        }
       }
     }
+
+    exactMatchesRef.current = exactMatches;
+    setColumnMappings(exactMatches);
 
     // If all fields matched exactly, skip the LLM call
     if (
       Object.keys(exactMatches).length === Object.keys(mappableFields).length
     ) {
       initialized.current = true;
-      setColumnMappings(exactMatches);
       return;
     }
 
@@ -162,7 +216,7 @@ export function FieldMapping({
       setColumnMappings((prevMappings) => {
         if (!fetcher.data || !fileColumns) return prevMappings;
 
-        return Object.entries(fetcher.data).reduce(
+        const fromModel = Object.entries(fetcher.data).reduce(
           (acc, [key, value]) => {
             if (fileColumns.includes(value)) {
               acc[key] = value;
@@ -171,6 +225,8 @@ export function FieldMapping({
           },
           {} as Record<string, string>
         );
+        // An exact or alias match beats the model's guess for the same field.
+        return { ...fromModel, ...exactMatchesRef.current };
       });
     }
   }, [fetcher.data]);
@@ -181,11 +237,27 @@ export function FieldMapping({
       label: string;
       enumData: EnumData;
     }
-  ][] = Object.entries(mappableFields).filter(
-    ([_, { type }]) => type === "enum"
-  );
+  ][] = Object.entries(mappableFields).filter(([name, field]) => {
+    if (field.type !== "enum") return false;
+    const enumData = (field as { enumData: EnumData }).enumData;
+    if (!enumData.skipStepWhenUnmapped) return true;
+    const mapped = columnMappings[name];
+    return !!mapped && mapped !== "None" && mapped !== "N/A";
+  });
 
-  const steps = enumFields.length > 0 ? enumFields.length + 1 : 1;
+  // A per-table review step (e.g. the chart-of-accounts plan) sits after the
+  // enum steps and before the submit.
+  const ReviewStep = importReviewSteps[table];
+  const steps = enumFields.length + 1 + (ReviewStep ? 1 : 0);
+  const isReviewStep = !!ReviewStep && currentStep === steps - 1;
+  const enumStepIndex = currentStep - 1;
+  const enumStep =
+    !isReviewStep && enumStepIndex >= 0 ? enumFields[enumStepIndex] : undefined;
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: notify only on change
+  useEffect(() => {
+    onReviewStepChange?.(isReviewStep);
+  }, [isReviewStep]);
 
   const onNext = () => {
     if (currentStep < steps - 1) {
@@ -221,7 +293,9 @@ export function FieldMapping({
           <ModalTitle className="m-0 p-0">
             {currentStep === 0
               ? t`Field Mapping`
-              : enumFields[currentStep - 1][1].label}
+              : isReviewStep
+                ? t`Review`
+                : enumStep?.[1].label}
           </ModalTitle>
           {steps > 1 && (
             <span className="ml-auto text-sm text-muted-foreground whitespace-nowrap">
@@ -233,7 +307,9 @@ export function FieldMapping({
         <ModalDescription>
           {currentStep === 0
             ? t`We auto-matched each column. Review the values below before continuing.`
-            : enumFields[currentStep - 1][1].enumData.description}
+            : isReviewStep
+              ? t`Check what will be created and changed before importing. Nothing is written until you confirm.`
+              : enumStep?.[1].enumData.description}
         </ModalDescription>
       </ModalHeader>
       <ModalBody>
@@ -275,6 +351,7 @@ export function FieldMapping({
           )}
           {enumFields.map(
             ([name, { enumData }], index) =>
+              !isReviewStep &&
               currentStep === index + 1 && (
                 <EnumMappingStep
                   key={name}
@@ -286,6 +363,13 @@ export function FieldMapping({
                   onEnumMappingChange={onEnumMappingChange}
                 />
               )
+          )}
+          {isReviewStep && ReviewStep && (
+            <ReviewStep
+              table={table}
+              columnMappings={columnMappings}
+              enumMappings={enumMappings}
+            />
           )}
         </div>
 
@@ -445,7 +529,10 @@ function EnumMappingStep({
       return (
         enumData.options.map((option) => ({
           label: option,
-          value: option
+          value: option,
+          aliases: enumData.optionAliases?.[option]
+            ? [...enumData.optionAliases[option]]
+            : undefined
         })) || []
       );
     } else {
