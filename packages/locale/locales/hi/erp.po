@@ -17270,6 +17270,10 @@ msgstr "को स्थानांतरित करें"
 msgid "Trash"
 msgstr "ट्रैश"
 
+#. placeholder {0}: mergeable.length
+msgid "Treat {0} same-name matches as the same account"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "परीक्षण शेष"
 

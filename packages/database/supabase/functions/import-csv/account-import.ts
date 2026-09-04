@@ -595,28 +595,36 @@ export function planChartOfAccounts(
       const ref = r.parentRef;
       if (!ref) return null;
       const key = norm(ref);
-      const byRow =
-        rowByNumber.get(key) ??
-        rowByNumberName.get(key) ??
-        rowByName.get(key);
-      if (byRow) {
-        if (byRow.index === r.index) {
-          r.errorReason = "An account cannot be its own parent";
-          return null;
-        }
-        if (!byRow.isGroup) promoted.add(byRow.index);
-        return { kind: "row", index: byRow.index };
+      // A number or "number name" reference names an account: a file row
+      // first, then Carbon.
+      const byNumber = rowByNumber.get(key) ?? rowByNumberName.get(key);
+      if (byNumber && byNumber.index !== r.index) {
+        if (!byNumber.isGroup) promoted.add(byNumber.index);
+        return { kind: "row", index: byNumber.index };
       }
-      const byExisting =
-        existingByNumber.get(key) ??
-        existingByNumberName.get(key) ??
-        existingGroupByName.get(key);
-      if (byExisting) {
-        if (!byExisting.isGroup) {
+      const existingByNum =
+        existingByNumber.get(key) ?? existingByNumberName.get(key);
+      if (!byNumber && existingByNum) {
+        if (!existingByNum.isGroup) {
           r.errorReason = `Parent "${ref}" is a posting account in Carbon, not a group`;
           return null;
         }
-        return { kind: "existing", id: byExisting.id };
+        return { kind: "existing", id: existingByNum.id };
+      }
+      // A name-only reference is a grouping label. A file row that is itself
+      // a group wins, then a Carbon group of that name, and only then a file
+      // posting account of that name (promoted to a group, as QuickBooks
+      // sub-accounts need). A label equal to the row's own name is never a
+      // self-reference: a source group often holds one account named after it.
+      const byName = rowByName.get(key);
+      if (byName && byName.index !== r.index && byName.isGroup) {
+        return { kind: "row", index: byName.index };
+      }
+      const existingGroup = existingGroupByName.get(key);
+      if (existingGroup) return { kind: "existing", id: existingGroup.id };
+      if (byName && byName.index !== r.index) {
+        promoted.add(byName.index);
+        return { kind: "row", index: byName.index };
       }
       return ensureSynth(ref, null, r.index);
     };

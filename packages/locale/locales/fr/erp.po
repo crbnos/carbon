@@ -17270,6 +17270,10 @@ msgstr "Transférer vers"
 msgid "Trash"
 msgstr "Corbeille"
 
+#. placeholder {0}: mergeable.length
+msgid "Treat {0} same-name matches as the same account"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "Balance de vérification"
 

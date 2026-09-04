@@ -17270,6 +17270,10 @@ msgstr "转移至"
 msgid "Trash"
 msgstr "垃圾桶"
 
+#. placeholder {0}: mergeable.length
+msgid "Treat {0} same-name matches as the same account"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "试算平衡表"
 

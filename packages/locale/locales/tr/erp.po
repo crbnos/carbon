@@ -17270,6 +17270,10 @@ msgstr "Aktarılacak Lokasyon"
 msgid "Trash"
 msgstr "Çöp Kutusu"
 
+#. placeholder {0}: mergeable.length
+msgid "Treat {0} same-name matches as the same account"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "Mizan"
 

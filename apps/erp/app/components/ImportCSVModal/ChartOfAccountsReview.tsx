@@ -148,6 +148,28 @@ export function ChartOfAccountsReview({
 
   const attention = plan?.nodes.filter((n) => n.action === "error") ?? [];
   const rows = bucket === "attention" ? attention : (plan?.nodes ?? []);
+  // Rows whose only problem is a name already used by a same-kind account in
+  // Carbon — usually the same account (Accounts Receivable, Retained Earnings,
+  // the variance accounts) under the customer's own number.
+  const mergeable = attention.filter(
+    (n) =>
+      n.row !== null &&
+      n.conflict?.linkable &&
+      resolutions[String(n.row)] === undefined
+  );
+  const mergeAll = () =>
+    setResolutions((prev) => {
+      const next = { ...prev };
+      for (const n of mergeable) {
+        if (n.row !== null && n.conflict) {
+          next[String(n.row)] = {
+            action: "link",
+            accountId: n.conflict.existingId
+          };
+        }
+      }
+      return next;
+    });
 
   const setResolution = (row: number, resolution: Resolution | null) => {
     setResolutions((prev) => {
@@ -267,12 +289,21 @@ export function ChartOfAccountsReview({
       )}
 
       {plan && plan.summary.errors > 0 && (
-        <p className="text-sm text-muted-foreground">
-          <Trans>
-            Rows that need attention are not imported. Resolve them here, fix
-            the file, or import the rest now and the remainder later.
-          </Trans>
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Rows that need attention are not imported. Resolve them here, fix
+              the file, or import the rest now and the remainder later.
+            </Trans>
+          </p>
+          {mergeable.length > 0 && (
+            <Button variant="secondary" size="sm" onClick={mergeAll}>
+              <Trans>
+                Treat {mergeable.length} same-name matches as the same account
+              </Trans>
+            </Button>
+          )}
+        </div>
       )}
 
       {plan && (

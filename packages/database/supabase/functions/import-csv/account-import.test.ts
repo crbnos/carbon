@@ -58,7 +58,7 @@ const seed = (): ExistingAccount[] => {
     a("1010", "1010", "Bank - Cash", false, "cash", "Asset", "Bank"),
     a("1110", "1110", "Accounts Receivable", false, "recv", "Asset", "Accounts Receivable"),
     a("4010", "4010", "Sales", false, "rev", "Revenue", "Income"),
-    a("5010", "5010", "Cost of Goods Sold", false, "cogs", "Expense", "Cost of Goods Sold"),
+    a("5010", "5010", "Cost of Goods Sold - Direct", false, "cogs", "Expense", "Cost of Goods Sold"),
     a("6010", "6010", "Maintenance", false, "opex", "Expense", "Expense"),
   ];
 };
@@ -112,6 +112,58 @@ Deno.test("grouping labels synthesize groups under the class anchor; a label mat
   assertEquals(plan.summary.errors, 0);
   assertEquals(plan.summary.groupsToCreate, 2);
   assertEquals(plan.summary.accountsToCreate, 4);
+});
+
+Deno.test("a grouping label equal to the row's own name is a group, not a self-reference", () => {
+  const plan = planChartOfAccounts(
+    rows(
+      { number: "11000", name: "Accounts Receivable", accountType: "Accounts Receivable", parent: "Accounts Receivable" },
+      { number: "22000", name: "Deferred Revenue", accountType: "Other Current Liability", parent: "Deferred Revenue" }
+    ),
+    ctx()
+  );
+  // No Carbon group is named "Accounts Receivable" (the seed has "Receivables"), so
+  // a group is synthesized and anchored by type; the leaf collides with 1110.
+  const arGroup = plan.nodes.find((n) => n.kind === "group" && n.name === "Accounts Receivable");
+  assert(arGroup);
+  assertEquals(arGroup.action, "create");
+  assertEquals(arGroup.parentId, "recv");
+  const ar = plan.nodes.find((n) => n.kind === "account" && n.name === "Accounts Receivable");
+  assertEquals(ar?.parentKey, arGroup.key);
+  assertEquals(ar?.conflict?.existingId, "1110");
+  const dr = byName(plan, "Deferred Revenue");
+  assertEquals(dr.action, "create");
+  assert(plan.nodes.every((n) => !(n.reason ?? "").includes("own parent")));
+});
+
+Deno.test("a grouping label that is also a member account's name resolves to Carbon's group, not the member", () => {
+  const plan = planChartOfAccounts(
+    rows(
+      { number: "50000", name: "Cost of Goods Sold", accountType: "Cost of Goods Sold", parent: "Cost of Goods Sold" },
+      { number: "50100", name: "Absorption (MFG)", accountType: "Cost of Goods Sold", parent: "Cost of Goods Sold" }
+    ),
+    ctx()
+  );
+  const cogs = plan.nodes.find((n) => n.number === "50000");
+  assertEquals(cogs?.kind, "account");
+  assertEquals(cogs?.action, "create");
+  assertEquals(cogs?.parentId, "cogs");
+  assertEquals(plan.nodes.find((n) => n.number === "50100")?.parentId, "cogs");
+  assertEquals(plan.summary.errors, 0);
+
+  // Without a Carbon group of that name, a file posting account named like
+  // the label is still promoted (QuickBooks-style sub-accounts).
+  const promotedPlan = planChartOfAccounts(
+    rows(
+      { number: "1000", name: "Bank Accounts", accountType: "Bank" },
+      { number: "1010", name: "Operating", accountType: "Bank", parent: "Bank Accounts" }
+    ),
+    ctx()
+  );
+  const bank = byName(promotedPlan, "Bank Accounts");
+  assertEquals(bank.kind, "group");
+  assertEquals(bank.promoted, true);
+  assertEquals(byName(promotedPlan, "Operating").parentKey, bank.key);
 });
 
 Deno.test("colon paths split into groups; a parent that is also a row is promoted", () => {
