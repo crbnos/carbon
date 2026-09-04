@@ -1,19 +1,23 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
+import type { BomItemAttributes } from "~/modules/items";
+import { getBomItemAttributes } from "~/modules/items";
 import type { JobOperation } from "~/modules/production";
 import { getJobMethodTree } from "~/modules/production";
 import type { BomOperation } from "~/utils/bom";
 import {
   calculateMadePartCosts,
   calculateTotalQuantity,
-  generateBomIds
+  generateBomIds,
+  stripCsvFormulaPrefix
 } from "~/utils/bom";
 import { makeDurations } from "~/utils/duration";
 
 const bomHeaders = [
   "ID",
   "Item ID",
+  "Revision",
   "Description",
   "Quantity",
   "Total",
@@ -22,6 +26,11 @@ const bomHeaders = [
   "UOM",
   "Method Type",
   "Item Type",
+  "Tracking Type",
+  "Replenishment",
+  "Item Group",
+  "Batch Size",
+  "Lead Time",
   "Level",
   "Version"
 ];
@@ -83,22 +92,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...new Set(methods.map((method) => method.data.jobMakeMethodId))
   ];
 
+  const itemIds = [...new Set(methods.map((method) => method.data.itemId))];
+
   // Get the job quantity for batch size calculation
   const rootNode = methods[0];
   const jobId = rootNode?.data.jobId;
 
-  const [methodOperations, jobResult] = await Promise.all([
-    client
-      .from("jobOperation")
-      .select(
-        "*, ...process(processName:name), ...workCenter(workCenterName:name), ...jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
-      )
-      .in("jobMakeMethodId", makeMethodIds)
-      .eq("companyId", companyId),
-    jobId
-      ? client.from("job").select("quantity").eq("id", jobId).single()
-      : null
-  ]);
+  const [methodOperations, jobResult, itemAttributesResult] = await Promise.all(
+    [
+      client
+        .from("jobOperation")
+        .select(
+          "*, ...process(processName:name), ...workCenter(workCenterName:name), ...jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+        )
+        .in("jobMakeMethodId", makeMethodIds)
+        .eq("companyId", companyId),
+      jobId
+        ? client.from("job").select("quantity").eq("id", jobId).single()
+        : null,
+      getBomItemAttributes(client, companyId, itemIds)
+    ]
+  );
+
+  const itemAttributes =
+    itemAttributesResult.data ?? new Map<string, BomItemAttributes>();
 
   const batchSizesByItemId = new Map<string, number>();
   if (rootNode && jobResult?.data?.quantity) {
@@ -173,12 +190,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const unitCost = computedCosts.get(node.id) ?? node.data.unitCost ?? 0;
     const totalCost = total * unitCost;
 
+    const attrs = itemAttributes.get(node.data.itemId);
+    const revision = attrs?.revision || "0";
+    const itemGroup = stripCsvFormulaPrefix(
+      attrs?.itemPostingGroup ?? ""
+    ).replace(/"/g, '""');
+
     csv += `${bomIds[index]},${
-      node.data.itemReadableId
-    },"${node.data.description?.replace(/"/g, '""')}",${
+      attrs?.readableId ?? node.data.itemReadableId
+    },${revision},"${node.data.description?.replace(/"/g, '""')}",${
       node.data.quantity
     },${total},${unitCost},${totalCost},,${node.data.methodType},${
       node.data.itemType
+    },${attrs?.itemTrackingType ?? ""},${
+      attrs?.replenishmentSystem ?? ""
+    },"${itemGroup}",${attrs?.lotSize ?? ""},${
+      attrs?.leadTime ?? ""
     },${node.level},${node.data.version || ""}\n`;
 
     if (withOperations) {

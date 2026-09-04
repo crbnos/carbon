@@ -16534,6 +16534,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Estes lançamentos de diário ainda estão em Rascunho, portanto seus débitos e créditos não estão no livro-razão para este período. Lance cada um, ou redatē-o para um período aberto posterior."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
+msgstr "Esses registros estão vinculados a dados fora desta empresa, portanto um backup de seus dados atuais não pode ser criado. A exclusão deles não pode ser desfeita. Se eles forem compartilhados com outras empresas deste grupo, nenhum dado será excluído e a restauração não será iniciada."
 msgstr "Essas linhas estão vinculadas a dados fora desta empresa, portanto não é possível criar uma cópia de segurança dos seus dados atuais. A exclusão dessas linhas não pode ser desfeita. Se forem compartilhadas com outras empresas neste grupo, nada será excluído e a restauração não será iniciada."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."

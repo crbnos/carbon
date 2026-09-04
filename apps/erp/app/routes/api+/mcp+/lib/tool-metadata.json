@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-03T15:31:57.926Z",
-  "totalTools": 1495,
+  "generated": "2026-09-04T14:30:02.106Z",
+  "totalTools": 1496,
   "modules": 15,
   "tools": [
     {
@@ -13907,6 +13907,35 @@
         },
         "required": [
           "makeMethodId"
+        ]
+      }
+    },
+    {
+      "name": "items_getBomItemAttributes",
+      "module": "items",
+      "classification": "READ",
+      "description": "get bom item attributes",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "itemIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "itemIds"
         ]
       }
     },

@@ -835,8 +835,8 @@ importers:
         specifier: 'catalog:'
         version: 5.1.37
       json-2-csv:
-        specifier: 5.5.10
-        version: 5.5.10
+        specifier: 5.6.0
+        version: 5.6.0
       konva:
         specifier: ^9.3.22
         version: 9.3.22
@@ -11591,8 +11591,8 @@ packages:
       babel-plugin-macros:
         optional: true
 
-  deeks@3.1.0:
-    resolution: {integrity: sha512-e7oWH1LzIdv/prMQ7pmlDlaVoL64glqzvNgkgQNgyec9ORPHrT2jaOqMtRyqJuwWjtfb6v+2rk9pmaHj+F137A==}
+  deeks@3.2.1:
+    resolution: {integrity: sha512-D/o0k3pCG1aI1cxb/dDiWmtMc4Rh7ZQBybXpfMsw9Rbtqwg8kUA9SpYkWcw0pAUjZSnPm8MluctiS0o68r69jQ==}
     engines: {node: '>= 16'}
 
   deep-equal@2.2.3:
@@ -11662,8 +11662,8 @@ packages:
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
 
-  doc-path@4.1.1:
-    resolution: {integrity: sha512-h1ErTglQAVv2gCnOpD3sFS6uolDbOKHDU1BZq+Kl3npPqroU3dYL42lUgMfd5UimlwtRgp7C9dLGwqQ5D2HYgQ==}
+  doc-path@4.1.4:
+    resolution: {integrity: sha512-yw5D++UCIB6a033PvQaUvSpW2QuKW0+DOId763n0Q4z3brxS7G8oQr8yBQ1nQFkognKrAVrV6I55TLeU9cfXTg==}
     engines: {node: '>=16'}
 
   dom-accessibility-api@0.5.16:
@@ -13068,10 +13068,9 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  json-2-csv@5.5.10:
-    resolution: {integrity: sha512-Dep8wO3Fr5wNjQevO2Z8Y7yeee/nYSGRsi7q6zJDKEVHxXkXT+v21vxHmDX923UzmCXXkSo62HaTz6eTWzFLaw==}
+  json-2-csv@5.6.0:
+    resolution: {integrity: sha512-EOEkcWooN2FYMZLV1TM7BrHJEfV6/7Eexh+xmr72FADjZGuFwAlfzPdkMx2YxIldHGWkTtoL1QJGknzhJCln/w==}
     engines: {node: '>= 16'}
-    deprecated: A security vulnerability has been reported with the preventCsvInjection option which has been fixed in version 5.5.11. Please upgrade as soon as possible.
 
   json-bigint@1.0.0:
     resolution: {integrity: sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==}
@@ -25822,7 +25821,7 @@ snapshots:
     optionalDependencies:
       babel-plugin-macros: 3.1.0
 
-  deeks@3.1.0: {}
+  deeks@3.2.1: {}
 
   deep-equal@2.2.3:
     dependencies:
@@ -25897,7 +25896,7 @@ snapshots:
 
   dlv@1.1.3: {}
 
-  doc-path@4.1.1: {}
+  doc-path@4.1.4: {}
 
   dom-accessibility-api@0.5.16: {}
 
@@ -27644,10 +27643,10 @@ snapshots:
 
   jsesc@3.1.0: {}
 
-  json-2-csv@5.5.10:
+  json-2-csv@5.6.0:
     dependencies:
-      deeks: 3.1.0
-      doc-path: 4.1.1
+      deeks: 3.2.1
+      doc-path: 4.1.4
 
   json-bigint@1.0.0:
     dependencies:

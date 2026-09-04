@@ -83,7 +83,7 @@
     "inngest": "^3.52.7",
     "intl-parse-accept-language": "catalog:",
     "isbot": "catalog:",
-    "json-2-csv": "5.5.10",
+    "json-2-csv": "5.6.0",
     "konva": "^9.3.22",
     "kysely": "catalog:",
     "localforage": "1.10.0",

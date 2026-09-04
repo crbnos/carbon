@@ -87,7 +87,7 @@ import {
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
-  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
+  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const MATERIALS_LIST_COLUMNS =
   "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
@@ -1700,6 +1700,67 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   }
 
   return rootItems.map((item) => traverseAndRenameIds(item));
+}
+
+export type BomItemAttributes = {
+  readableId: string;
+  revision: string;
+  itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
+  itemPostingGroup: string | null;
+  lotSize: number | null;
+  leadTime: number | null;
+};
+
+export async function getBomItemAttributes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+) {
+  const [items, costs, replenishments] = await Promise.all([
+    client
+      .from("item")
+      .select("id, readableId, revision, itemTrackingType, replenishmentSystem")
+      .in("id", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("itemCost")
+      .select("itemId, ...itemPostingGroup(itemPostingGroup:name)")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("itemReplenishment")
+      .select("itemId, lotSize, leadTime")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId)
+  ]);
+
+  const error = items.error ?? costs.error ?? replenishments.error;
+  if (error) return { data: null, error };
+
+  const postingGroupByItemId = new Map(
+    (costs.data ?? []).map((c) => [c.itemId, c.itemPostingGroup])
+  );
+  const replenishmentByItemId = new Map(
+    (replenishments.data ?? []).map((r) => [r.itemId, r])
+  );
+
+  const data = new Map<string, BomItemAttributes>(
+    (items.data ?? []).map((item) => [
+      item.id,
+      {
+        readableId: item.readableId,
+        revision: item.revision ?? "",
+        itemTrackingType: item.itemTrackingType,
+        replenishmentSystem: item.replenishmentSystem,
+        itemPostingGroup: postingGroupByItemId.get(item.id) ?? null,
+        lotSize: replenishmentByItemId.get(item.id)?.lotSize ?? null,
+        leadTime: replenishmentByItemId.get(item.id)?.leadTime ?? null
+      }
+    ])
+  );
+
+  return { data, error: null };
 }
 
 export async function getOpenJobMaterials(
