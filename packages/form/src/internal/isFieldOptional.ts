@@ -106,14 +106,19 @@ function getChildSchema(
   schema: ZodSchema,
   segment: string | number
 ): ZodSchema | null {
+  // Read the schema def the same v3/v4-agnostic way `unwrapSchema` does — v4 moved
+  // tuple items / record value onto `_zod.def` and changed the element/value types
+  // to the `$ZodType` core interface, so go through `def` and cast to `ZodSchema`.
+  const def: any = (schema as any)._zod?.def ?? (schema as any)._def;
+
   if (schema instanceof z.ZodObject) {
-    const shape = schema.shape;
+    const shape = schema.shape as Record<string, ZodSchema>;
     if (typeof segment !== "string") return null;
     return shape[segment] ?? null;
   }
 
   if (schema instanceof z.ZodArray) {
-    return schema.element;
+    return (schema.element as unknown as ZodSchema) ?? null;
   }
 
   if (schema instanceof z.ZodTuple) {
@@ -124,11 +129,11 @@ function getChildSchema(
           ? null
           : Number(segment);
     if (index === null) return null;
-    return schema.items[index] ?? null;
+    return (def?.items?.[index] as ZodSchema) ?? null;
   }
 
   if (schema instanceof z.ZodRecord) {
-    return schema._def.valueType;
+    return (def?.valueType as ZodSchema) ?? null;
   }
 
   return null;
