@@ -1,9 +1,36 @@
 import Link from "next/link";
 
 /**
+ * Rendered at the top of every table resource page: the Data API can write
+ * straight to this table, but doing so skips the service layer, so derived
+ * values aren't recalculated. Steer writes to the Carbon API.
+ */
+export function WriteSteerCallout() {
+  return (
+    <div className="my-5 rounded-xl border border-ed-amber-stroke/70 bg-ed-amber-fill px-4 py-3.5">
+      <p className="m-0 text-ed-14 font-semi text-ed-amber-text">
+        Writes belong on the Carbon API
+      </p>
+      <p className="m-0 mt-1 text-ed-14 leading-[155%] text-ed-ink/78">
+        Writing to this table over the Data API skips the service layer, so
+        Carbon won't recalculate the values that depend on it — totals,
+        statuses, ledger entries. For creates and updates use the{" "}
+        <Link
+          href="/api"
+          className="font-medium text-ed-brand-ink underline decoration-ed-blue-border underline-offset-2 hover:decoration-ed-brand-ink"
+        >
+          Carbon API
+        </Link>
+        ; treat the Data API as read-mostly.
+      </p>
+    </div>
+  );
+}
+
+/**
  * Rendered on table resource pages that have a companion view with computed
- * columns (e.g. salesInvoice → salesInvoices). Tells the reader to use the
- * view for reads and the table for writes.
+ * columns (e.g. salesInvoice → salesInvoices). Tells the reader to read from
+ * the view for accurate computed values.
  */
 export function ViewCallout({
   tableName,
@@ -29,8 +56,7 @@ export function ViewCallout({
         >
           {viewName}
         </Link>{" "}
-        view instead. Use this table for <strong>create</strong>, <strong>update</strong>,
-        and <strong>delete</strong> operations.
+        view instead.
       </p>
     </div>
   );

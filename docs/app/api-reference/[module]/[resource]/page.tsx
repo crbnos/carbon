@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { BaseUrl } from "@/components/api/base-url";
 import { Breadcrumb } from "@/components/api/breadcrumb";
 import { EndpointSection } from "@/components/api/endpoint-section";
-import { ViewCallout, TableCallout } from "@/components/api/view-callout";
+import { TableCallout, ViewCallout, WriteSteerCallout } from "@/components/api/view-callout";
 import { allResourceParams, apiBase, getResource } from "@/lib/api-data";
 import { TABLE_VIEW_COMPANIONS, VIEW_TABLE_COMPANIONS } from "@/lib/api-companion-views";
 import { pageSeo } from "@/lib/seo";
@@ -48,6 +48,7 @@ export default async function ResourcePage(props: Params) {
       </p>
       <BaseUrl path={r.endpoints[0]?.path ?? ""} />
 
+      {r.kind === "table" && <WriteSteerCallout />}
       {r.kind === "table" && TABLE_VIEW_COMPANIONS[r.table] && (
         <ViewCallout
           tableName={r.table}

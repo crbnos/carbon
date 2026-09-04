@@ -31,7 +31,7 @@ Carbon hashes the incoming key, looks up the matching record, and checks two thi
 - **Expiry.** If the key has an `expiresAt` in the past, the request is rejected.
 - **Rate limit.** The request is counted against the key's window; if the window is full, the request is rejected.
 
-There is no separate login step and no token to refresh. The header is the whole handshake. The same `carbon-key` header works for the REST API, the edge functions, and (rewritten from a `Bearer` token) the MCP endpoint.
+There is no separate login step and no token to refresh. The header is the whole handshake. The same `carbon-key` header works for the Data API, the edge functions, and (rewritten from a `Bearer` token) the MCP endpoint that fronts the Carbon API.
 
 ## Permission scoping
 
@@ -54,15 +54,21 @@ The limit is counted per key, not per company, so one integration burning its al
 
 A rejected request comes back `429` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` (`packages/auth/src/services/auth.server.ts:255`). Read `Retry-After` and wait it out rather than hammering through the rejection.
 
-## The REST and OpenAPI surface
+## What the key unlocks
 
-The key unlocks Carbon's auto-generated REST API. Every table Carbon exposes is reachable at a PostgREST endpoint (`/rest/v1/<table>`), and the same row-level security that governs the app governs these calls — a request carrying a `carbon-key` is scoped to that key's company and permissions by the database itself, not just the application layer. That means the key can only ever touch data its scopes allow, the same rules the UI enforces.
+One key unlocks two surfaces. Reach for the Carbon API first; drop to the Data API only when you need raw table access.
 
-The full endpoint catalogue, with request and response shapes per resource, lives in the generated [API reference](/api-reference). Point your client at those endpoints, send the `carbon-key` header, and you have programmatic read/write across the modules your key is scoped for.
+### The Carbon API
 
-## The MCP endpoint
+The [Carbon API](/api) is Carbon's service layer — the safe way to read and write, running the same validation, recalculation, and permission checks the app itself uses. Today you reach it over MCP: the creation dialog hands you a ready-to-paste command that registers the key with an AI assistant, passing it as an `Authorization: Bearer` token that Carbon resolves the same way as the `carbon-key` header. The assistant then operates strictly within the key's scopes. See [Connect over MCP](/api/mcp).
 
-Carbon also exposes an MCP endpoint (`/api/mcp`) so an AI assistant can call Carbon's tools with your key. The creation dialog gives you the exact command to register it, passing the key as an `Authorization: Bearer` token that Carbon resolves the same way as the `carbon-key` header. The assistant then operates strictly within the key's scopes — the same permission boundary as any other API call.
+### The Data API
+
+The same key also unlocks the [Data API](/api-reference) — direct PostgREST access to every table and view at `/rest/v1/<table>`. The same row-level security that governs the app governs these calls: a request carrying a `carbon-key` is scoped to the key's company and permissions by the database itself, not just the application layer, so the key can only ever touch data its scopes allow.
+
+The Data API writes straight to tables, so Carbon does not recalculate the derived values — totals, statuses, ledger entries — that it maintains when you write through the Carbon API. Treat it as read-mostly: bulk reads, analytics, exports. For creates and updates, prefer the Carbon API.
+
+The full endpoint catalogue, with request and response shapes per resource, lives in the generated [Data API reference](/api-reference).
 
 ## Keys versus webhooks
 
@@ -74,7 +80,7 @@ API keys and `docs/building/webhooks` are two halves of an integration, pulling 
 They are independent: a webhook is not authenticated with an API key (Carbon does not sign webhook payloads at all), and an API key does not subscribe to anything. The common pattern is to use both together: let a webhook tell you *that* a record changed, then use your API key to fetch the full, current record from the REST API.
 
   - Webhooks Get an HTTP callback when a Carbon record changes, then pull the detail with your key.
-  - API reference The generated endpoint catalogue for every table and resource.
+  - Data API The generated endpoint catalogue for every table and view.
 
 ## Troubleshooting
 

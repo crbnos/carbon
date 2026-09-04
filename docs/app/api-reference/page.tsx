@@ -53,12 +53,18 @@ export default async function ApiIntroPage() {
         Every table and view is an endpoint.
       </Lead>
       <P>
-        It's built for reads — bulk exports, analytics, dashboards. For writes,
-        reach for the <DocLink href="/api">Carbon API</DocLink> instead: writing
-        a row here skips the service layer, so derived totals and statuses are
-        not recalculated. Start by creating an{" "}
+        It's built for reads — bulk exports, analytics, dashboards. Start by
+        creating an{" "}
         <DocLink href="/api-reference/authentication">API key</DocLink>.
       </P>
+
+      <Warn title="Writes belong on the Carbon API">
+        Writing through the Data API goes straight to the tables, skipping the
+        service layer — so Carbon never recalculates the values that depend on
+        your write (order totals, statuses, ledger entries). Treat the Data API
+        as read-mostly: bulk reads, analytics, exports. For creates and updates,
+        use the <DocLink href="/api">Carbon API</DocLink>.
+      </Warn>
 
       <H2 id="client-libraries">Client libraries</H2>
       <P>
