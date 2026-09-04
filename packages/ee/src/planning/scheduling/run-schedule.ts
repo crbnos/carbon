@@ -60,7 +60,8 @@ const asMs = (value: unknown): number | null =>
   value == null ? null : toInstantMs(value as Date | string);
 
 /**
- * The location's open jobs, ordered deadline class FIRST (so a no-due-date ASAP
+ * The location's open jobs — widened with members of Active/Completing
+ * operation batches — ordered deadline class FIRST (so a no-due-date ASAP
  * order leads the queue instead of trailing on NULLS LAST), then due date ASC
  * NULLS LAST, priority ASC, createdAt ASC. Sorted in TS.
  */
@@ -76,6 +77,37 @@ async function loadOrderedBatch(
     .where("companyId", "=", companyId)
     .where("status", "in", ["Ready", "In Progress", "Paused"])
     .execute();
+
+  // Widen with jobs holding operations in an Active/Completing batch: a batch
+  // reservation spans member jobs, so every member must regen in the same
+  // wave regardless of its own status. Deduped below and merged BEFORE the
+  // sort so widened jobs take their natural place in the deadline order.
+  const batchMemberRows = await db
+    .selectFrom("job")
+    .select(["id", "dueDate", "deadlineType", "priority", "createdAt"])
+    .where("locationId", "=", locationId)
+    .where("companyId", "=", companyId)
+    .where("id", "in", (eb) =>
+      eb
+        .selectFrom("jobOperation as jo")
+        .innerJoin("jobOperationBatch as b", (join) =>
+          join
+            .onRef("b.id", "=", "jo.jobOperationBatchId")
+            .onRef("b.companyId", "=", "jo.companyId")
+        )
+        .select("jo.jobId")
+        .where("jo.companyId", "=", companyId)
+        .where("b.status", "in", ["Active", "Completing"])
+    )
+    .execute();
+
+  const seenJobIds = new Set(jobRows.map((j) => j.id));
+  for (const row of batchMemberRows) {
+    if (!seenJobIds.has(row.id)) {
+      seenJobIds.add(row.id);
+      jobRows.push(row);
+    }
+  }
 
   jobRows.sort((a, b) => {
     const dr = deadlineRank(a.deadlineType) - deadlineRank(b.deadlineType);

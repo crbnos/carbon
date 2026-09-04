@@ -494,8 +494,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .where("cr.endAt", ">", msToInstantIso(fromDate));
     // Exclude the whole batch: each engine run sees only non-batch reservations
     // plus the in-run placements of already-run batch jobs (no pre-clear step).
+    // Rows tagged with a jobOperationBatchId are never excluded: a batch
+    // reservation is already placed and must stay visible to member jobs' runs.
     if (excludeJobIds.length > 0) {
-      query = query.where("cr.jobId", "not in", excludeJobIds);
+      query = query.where((eb) =>
+        eb.or([
+          eb("cr.jobId", "not in", excludeJobIds),
+          eb("cr.jobOperationBatchId", "is not", null)
+        ])
+      );
     }
     const rows = await query
       // Reservations are only deleted when their job is rescheduled, so

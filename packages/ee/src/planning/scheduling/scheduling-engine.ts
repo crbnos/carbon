@@ -1196,12 +1196,15 @@ export class SchedulingEngine {
       }
 
       // Rebuild this job's live capacity reservations from this run's
-      // placements (reservations are authoritative across jobs and runs)
+      // placements (reservations are authoritative across jobs and runs).
+      // Batch-tagged rows are spared: a member job's regen must never destroy
+      // the batch's coalesced reservation.
       await trx
         .deleteFrom("capacityReservation")
         .where("jobId", "=", this.jobId)
         .where("companyId", "=", this.companyId)
         .where("scenarioId", "is", null)
+        .where("jobOperationBatchId", "is", null)
         .execute();
 
       if (planned.length > 0) {
