@@ -7,9 +7,15 @@ import {
   splitSecrets
 } from "@carbon/ee";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import {
+  connectionsHealthy,
+  needsReconnect,
+  readConnections
+} from "@carbon/ee/integrations/connections";
+import { PIECE_ALLOWLIST, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { Integration } from "~/modules/settings/types";
 import { sanitize } from "~/utils/supabase";
@@ -245,51 +251,6 @@ export async function getCompanyIntegration(
   );
 }
 
-export async function getSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<{ token: string; channelId?: string } | null> {
-  // The Redis cache (getCompanyIntegration) no longer holds secret material, so
-  // read the row directly with a service-role client — required both to resolve
-  // the vaulted access_token and, in the transitional window, to see the plaintext
-  // still in the column.
-  const serviceRole = getCarbonServiceRole();
-  const { data: integration } = await serviceRole
-    .from("companyIntegration")
-    .select("metadata, secretRef, active")
-    .eq("companyId", companyId)
-    .eq("id", "slack")
-    .maybeSingle();
-
-  if (!integration?.active || !integration.metadata) {
-    return null;
-  }
-
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    "slack",
-    integration.metadata,
-    integration.secretRef
-  )) as any;
-
-  if (!metadata.access_token) {
-    return null;
-  }
-
-  return {
-    token: metadata.access_token,
-    channelId: metadata.channel_id || metadata.default_channel_id
-  };
-}
-
-export async function hasSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<boolean> {
-  return hasIntegration(client, companyId, "slack");
-}
-
 export async function upsertCompanyIntegration(
   client: SupabaseClient<Database>,
   update: {
@@ -339,6 +300,45 @@ export async function upsertCompanyIntegration(
   await clearCompanyIntegrationCache(update.companyId);
 
   return result;
+}
+
+/**
+ * Flip an integration to installed without touching anything else on the row. The
+ * piece callback marks its card installed after a connection is saved; an upsert
+ * with empty metadata would wipe whatever settings the row already holds.
+ */
+export async function markIntegrationInstalled(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; updatedBy: string }
+): Promise<{ error: PostgrestError | null }> {
+  // Read the row directly: `getCompanyIntegration` is Redis-cached and drops
+  // inactive rows, and both matter here.
+  const existing = await client
+    .from("companyIntegration")
+    .select("active")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (existing.error) return { error: existing.error };
+
+  let error: PostgrestError | null = null;
+  if (existing.data === null) {
+    ({ error } = await client.from("companyIntegration").insert({
+      id: args.id,
+      companyId: args.companyId,
+      active: true,
+      metadata: {},
+      updatedBy: args.updatedBy
+    }));
+  } else if (existing.data.active !== true) {
+    ({ error } = await client
+      .from("companyIntegration")
+      .update({ active: true, updatedBy: args.updatedBy })
+      .eq("id", args.id)
+      .eq("companyId", args.companyId));
+  }
+  if (error === null) await clearCompanyIntegrationCache(args.companyId);
+  return { error };
 }
 
 export async function upsertCustomField(
@@ -412,6 +412,47 @@ export async function getIntegrationHealth(
     };
   }
 
+  const key = `integrations:${companyId}:${integration.id}:health`;
+
+  // A workflow-piece card's health is its accounts: none revoked/expired, and none
+  // predating a scope the piece now needs (its steps would fail with
+  // `missing_scope`). One read serves both questions. Decided here rather than in
+  // an ee hook because only this side can see the allowlist's required list, and
+  // an ee hook would read the same rows a second time.
+  if (PIECE_ALLOWLIST[integration.id!] !== undefined) {
+    const cached = await redis.get(key);
+    if (cached === "1") return { ...integration, health: "healthy" };
+    if (cached === "0") return { ...integration, health: "unhealthy" };
+
+    // A failed read is one unhealthy card, never a crashed Settings page —
+    // `getIntegrationsWithHealth` runs these in a Promise.all with no catch. It
+    // is not cached: the next load should re-ask rather than pin a transient
+    // failure for the TTL.
+    let healthy: boolean;
+    try {
+      const [rows, required] = await Promise.all([
+        readConnections(getCarbonServiceRole(), companyId, integration.id!),
+        requiredScopesFor(integration.id!)
+      ]);
+      healthy =
+        connectionsHealthy(rows) &&
+        !rows.some((row) => needsReconnect(row, required));
+    } catch {
+      return { ...integration, health: "unhealthy" };
+    }
+    // An unhealthy piece card stays unhealthy until someone reconnects, and every
+    // path that changes that (callback, disconnect, uninstall) invalidates this
+    // key — so a short negative cache is safe and stops the Settings grid from
+    // re-reading the rows on every load.
+    await redis.set(
+      key,
+      healthy ? "1" : "0",
+      "EX",
+      healthy ? INTEGRATION_CACHE_TTL * 5 : 60
+    );
+    return { ...integration, health: healthy ? "healthy" : "unhealthy" };
+  }
+
   const serverHooks = getIntegrationServerHooks(integration.id!);
   const config = getIntegrationConfigById(integration.id as IntegrationID);
   const healthcheck = serverHooks?.onHealthcheck ?? config?.onHealthcheck;
@@ -422,8 +463,6 @@ export async function getIntegrationHealth(
       health: "healthy"
     };
   }
-
-  const key = `integrations:${companyId}:${integration.id}:health`;
 
   const cached = await redis.get(key);
 

@@ -60,6 +60,8 @@ type Options = {
    * not offered; drilling into it still is, which is where its name lives. */
   textOnly?: boolean;
   inLoop?: boolean;
+  /** The operation card an inserted item ref should be scoped to (data-node chains). */
+  itemCard?: string;
   /** The action runs once per item, so a list may fill a single-value input. */
   batching?: boolean;
   /** Resolves a catalog label key to display text. Defaults to the fallback, which is what
@@ -113,6 +115,7 @@ export function variableMenuItems(
     accepts,
     textOnly,
     inLoop,
+    itemCard,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
@@ -142,7 +145,22 @@ export function variableMenuItems(
     };
 
     const expand = (type: ValueType, path: string[], labels: string[]) => {
-      if (path.length >= MAX_PATH || type.kind !== "entity") return;
+      if (path.length >= MAX_PATH) return;
+
+      // An object carries its own fields, so it needs no catalog lookup — and its
+      // field names are the vendor's own data, never translated, exactly as a
+      // customer's custom field names are not.
+      if (type.kind === "record") {
+        for (const [field, fieldType] of Object.entries(type.fields)) {
+          const nextPath = [...path, field];
+          const nextLabels = [...labels, field];
+          add(nextPath, nextLabels, fieldType);
+          expand(fieldType, nextPath, nextLabels);
+        }
+        return;
+      }
+
+      if (type.kind !== "entity") return;
       const entity = catalog.getEntity(type.of);
       if (!entity) return;
       for (const [property, propertyType] of Object.entries(
@@ -163,7 +181,11 @@ export function variableMenuItems(
   }
 
   if (inLoop) {
-    const ref = { kind: "item" as const, path: [] };
+    const ref = {
+      kind: "item" as const,
+      path: [],
+      ...(itemCard ? { card: itemCard } : {})
+    };
     items.push({
       id: encodeTokenId(ref),
       label: refLabel(ref),
@@ -184,6 +206,7 @@ export function variableTree(
     accepts,
     textOnly,
     inLoop,
+    itemCard,
     batching,
     labelFor = (_key, fallback) => fallback
   }: Options = {}
@@ -227,6 +250,24 @@ export function variableTree(
           }
         : undefined
     };
+
+    // An object's fields are on the type itself; there is nothing to look up, and
+    // the field name IS the label — it is the vendor's word, not ours to translate.
+    if (path.length < MAX_PATH && type.kind === "record") {
+      const children = Object.entries(type.fields)
+        .map(([field, fieldType]) =>
+          build(
+            variable,
+            fieldType,
+            [...path, field],
+            [...pathLabels, field],
+            field
+          )
+        )
+        .filter((child): child is VariableTreeNode => child !== null);
+      if (children.length) node.children = children;
+      if (!node.item && !children.length) return null;
+    }
 
     if (path.length < MAX_PATH && type.kind === "entity") {
       const entity = catalog.getEntity(type.of);
@@ -290,7 +331,11 @@ export function variableTree(
   );
 
   if (inLoop) {
-    const ref = { kind: "item" as const, path: [] };
+    const ref = {
+      kind: "item" as const,
+      path: [],
+      ...(itemCard ? { card: itemCard } : {})
+    };
     roots.push({
       key: "item",
       label: "Current item",

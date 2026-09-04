@@ -23,7 +23,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 export const SECRET_KEYS: Record<string, string[]> = {
   linear: ["apiKey"],
-  slack: ["access_token"],
+  // slack: none — its token lives on integrationConnection (piece "slack").
   jira: ["credentials.accessToken", "credentials.refreshToken"],
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
   xero: ["credentials.accessToken", "credentials.refreshToken"],

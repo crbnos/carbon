@@ -28,6 +28,7 @@ import { createWorkflowServices } from "../actions";
 import {
   claimStep,
   failInterruptedSteps,
+  INTERRUPTED,
   type RunLedger,
   settleStep
 } from "./ledger";
@@ -105,6 +106,11 @@ interface StepOutcome {
   status: NodeResult["status"];
   handle: string | null;
   outputs: Record<string, RuntimeValue> | null;
+  /** Why this step failed, carried up so the RUN can say it too. The step row has
+   * it either way, but the run page leads with the run's own `error` — without
+   * this a failed run read "Failed at <step>." with no reason anywhere above the
+   * fold, which is exactly the case someone opens the page to understand. */
+  error?: string | null;
   /** Items that failed inside a batch whose node still succeeded. */
   failedItems?: number;
 }
@@ -135,7 +141,7 @@ async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
     outputs: args.outputs,
     // The one place a workflow value becomes a URL. `/api/link` performs the company
     // switch before redirecting, so a recipient whose active company differs still
-    // lands on the right record. Only inputs the catalog marks `linkify` use this.
+    // lands on the right record. Only inputs the catalog declares `links` on use this.
     linkFor: (of: string, id: string) =>
       buildNotificationLink(
         NotificationEvent.Workflow,
@@ -246,7 +252,8 @@ async function recordStep(
   return {
     status: result.status,
     handle: result.status === "Skipped" ? null : (result.handle ?? null),
-    outputs: result.status === "Succeeded" ? result.outputs : null
+    outputs: result.status === "Succeeded" ? result.outputs : null,
+    error: result.status === "Failed" ? result.error : null
   };
 }
 
@@ -565,6 +572,10 @@ export async function walkWorkflow(params: {
   let executions = 0;
   let failed = false;
   let capped = false;
+  /** The FIRST failure's message. First rather than last: the graph continues past
+   * a failed step down its failure handle, so a later failure is usually a
+   * consequence of this one, and the cause is what the reader needs. */
+  let firstError: string | null = null;
 
   for (
     let nodeId = nextNode(state);
@@ -605,6 +616,7 @@ export async function walkWorkflow(params: {
     executions += 1;
     if (outcome.status === "Failed" || (outcome.failedItems ?? 0) > 0) {
       failed = true;
+      if (firstError === null && outcome.error) firstError = outcome.error;
     }
     if (outcome.outputs !== null) outputs[nodeId] = outcome.outputs;
     advance(state, definition, nodeId, outcome.handle);
@@ -616,7 +628,13 @@ export async function walkWorkflow(params: {
       failed || capped || interrupted > 0
         ? ("Failed" as const)
         : ("Succeeded" as const);
-    const error = capped ? TOO_MANY_STEPS : null;
+    // The cap is about the run as a whole, so it outranks any one step. Otherwise
+    // the run reports what actually broke: `error` was hard-coded null here, so
+    // every ordinary failure — the common case — reached the run page as "Failed
+    // at <step>." with the reason sitting unread in the step row.
+    const error = capped
+      ? TOO_MANY_STEPS
+      : (firstError ?? (interrupted > 0 ? INTERRUPTED : null));
 
     await ledger.finishRun({ status: settled, error, startedAt });
     return { status: settled, error };

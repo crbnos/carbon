@@ -40,6 +40,50 @@ describe("compactForLog", () => {
     expect(result["…"]).toContain("5 more keys");
   });
 
+  it("shrinks a record by its fields and drops the declared type", () => {
+    const record = {
+      kind: "record",
+      // `of` is the declared TYPE, not data — keeping it would roughly double the
+      // stored payload and bury the values a reader actually wants.
+      of: {
+        kind: "record",
+        fields: { summary: { kind: "primitive", of: "string" } }
+      },
+      fields: {
+        summary: { kind: "primitive", of: "string", value: "Standup" },
+        organizer: {
+          kind: "record",
+          of: { kind: "record", fields: {} },
+          fields: {
+            email: { kind: "primitive", of: "string", value: "a@b.co" }
+          }
+        }
+      }
+    };
+    const result = compactForLog(record) as Record<string, unknown>;
+    expect(result.of).toBeUndefined();
+    const fields = result.fields as Record<string, unknown>;
+    expect(fields.summary).toEqual({
+      kind: "primitive",
+      of: "string",
+      value: "Standup"
+    });
+    // Nested records shrink the same way, so `of` cannot survive one level down.
+    expect((fields.organizer as Record<string, unknown>).of).toBeUndefined();
+  });
+
+  it("caps a record at 20 fields and marks the remainder", () => {
+    const fields: Record<string, unknown> = {};
+    for (let i = 0; i < 25; i++) {
+      fields[`f${i}`] = { kind: "primitive", of: "number", value: i };
+    }
+    const result = compactForLog({ kind: "record", of: {}, fields }) as {
+      fields: Record<string, unknown>;
+    };
+    expect(Object.keys(result.fields)).toHaveLength(21);
+    expect(result.fields["…"]).toContain("5 more keys");
+  });
+
   it("strips the inline row from an entity RuntimeValue", () => {
     const entity = {
       kind: "entity",

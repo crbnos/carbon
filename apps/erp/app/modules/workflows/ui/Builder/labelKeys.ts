@@ -78,10 +78,15 @@ export function describeValueType(
     // "record", not "object" — an ERP user thinks in records.
     return `${entityLabel ?? type.of} record`;
   }
+  // "object", never "record" — a Carbon record is an entity, and calling a
+  // vendor's JSON one would collide with the word above.
+  if (type.kind === "record") return "an object";
   if (type.kind === "list") {
-    return type.of.kind === "entity"
-      ? `a list of ${entityLabel ?? type.of.of} records`
-      : `a list of ${type.of.of}`;
+    if (type.of.kind === "entity") {
+      return `a list of ${entityLabel ?? type.of.of} records`;
+    }
+    if (type.of.kind === "record") return "a list of objects";
+    return `a list of ${type.of.of}`;
   }
   // primitive
   switch (type.of) {
@@ -102,9 +107,12 @@ export function describeValueType(
  * A name the user never changed carries no meaning, so callers fall back instead.
  * `entity` is the old spelling of `compute` and stays here forever: a node's name is an
  * identifier other nodes reference, so the rename left already-saved `entity_0` names
- * alone. Drop it and every one of them starts rendering as "Entity 0". */
+ * alone. Drop it and every one of them starts rendering as "Entity 0". `filter` is the
+ * same story from the other side — it is still the stored TYPE of the data node, so
+ * older nodes carry `filter_0` while new ones are named `data_0`. Both must read as
+ * "never renamed". */
 const DEFAULT_NODE_NAME =
-  /^(trigger|action|condition|compute|entity|lookup|filter)_\d+$/;
+  /^(trigger|action|integration|condition|compute|entity|lookup|filter|data)_\d+$/;
 
 export function isDefaultNodeName(name: string): boolean {
   return DEFAULT_NODE_NAME.test(name);

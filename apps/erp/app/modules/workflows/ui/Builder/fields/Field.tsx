@@ -7,8 +7,12 @@ type FieldProps = {
   required?: boolean;
   /** Glossary term for the ⓘ hover. Absent => no icon, same layout. */
   helpTermId?: TermId;
+  /** Free-text ⓘ hover — a vendor's own field description. `helpTermId` wins. */
+  help?: string;
   /** Message from a validation issue whose `field` path resolves here. */
   issue?: string;
+  /** Advisory one-liner, muted. An issue outranks it — one line under a field. */
+  hint?: string;
   children: ReactNode;
 };
 
@@ -17,14 +21,16 @@ export function Field({
   label,
   required,
   helpTermId,
+  help,
   issue,
+  hint,
   children
 }: FieldProps) {
   return (
     <div className="flex w-full min-w-0 flex-col gap-1">
       {/* Still rendered when hidden: an `aria-label` on a plain div is ignored. */}
       <label className={cn("text-sm font-medium text-foreground")}>
-        <LabelWithHelp termId={helpTermId}>
+        <LabelWithHelp termId={helpTermId} text={help}>
           {label}
           {required && <span className="ml-0.5 text-destructive">*</span>}
         </LabelWithHelp>
@@ -33,6 +39,9 @@ export function Field({
           together read as a thick red slab. */}
       <div className="flex items-center gap-1">{children}</div>
       {issue && <p className="text-xs text-destructive">{issue}</p>}
+      {hint && !issue && (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
     </div>
   );
 }

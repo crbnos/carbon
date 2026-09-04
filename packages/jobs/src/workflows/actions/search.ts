@@ -16,7 +16,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /** The scalar a criterion filters by; a list has no single value to compare. */
 function scalarOf(value: RuntimeValue): string | number | boolean | undefined {
   if (value.kind === "entity") return value.id;
-  if (value.kind === "list" || value.kind === "pairs") return undefined;
+  if (
+    value.kind === "list" ||
+    value.kind === "pairs" ||
+    value.kind === "record"
+  ) {
+    return undefined;
+  }
   return value.value === null ? undefined : value.value;
 }
 

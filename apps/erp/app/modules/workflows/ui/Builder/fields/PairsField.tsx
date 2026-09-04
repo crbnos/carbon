@@ -21,6 +21,7 @@ export function PairsField({
   label,
   required,
   helpTermId,
+  help,
   value,
   onChange,
   context,
@@ -56,13 +57,13 @@ export function PairsField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
     >
       <div className="flex w-full min-w-0 flex-col gap-2">
         {entries.map((entry, index) => {
           const rowIssue = partIssues?.[index];
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id
             <div key={index} className="flex w-full min-w-0 flex-col gap-1">
               <div className="flex w-full min-w-0 items-start gap-1">
                 <Input

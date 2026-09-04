@@ -175,8 +175,8 @@ describe("actionExecutor", () => {
 });
 
 // The webhook-body guarantee: a markdown link shipped to someone else's API would be
-// literal text there, so only an input the catalog marks `linkify` may be wrapped.
-describe("actionExecutor and linkify", () => {
+// literal text there, so only an input the catalog declares `links` for may be wrapped.
+describe("actionExecutor and links", () => {
   const orderRef = {
     kind: "template" as const,
     parts: [
@@ -198,7 +198,7 @@ describe("actionExecutor and linkify", () => {
       linkFor: (of: string, id: string) => `https://erp.test/${of}/${id}`
     });
 
-  it("leaves an input without linkify plain, even with a resolver present", async () => {
+  it("leaves an input without links plain, even with a resolver present", async () => {
     let seen: Record<string, RuntimeValue> = {};
     const ctx = withOrder(async (_id, inputs) => {
       seen = inputs;
@@ -209,5 +209,41 @@ describe("actionExecutor and linkify", () => {
     await actionExecutor.execute(node("createIssue", { title: orderRef }), ctx);
 
     expect(seen.title).toEqual(primitiveValue("string", "Check PO000123"));
+  });
+
+  it("wraps a record on an input that declares links, in the declared format", async () => {
+    let seen: Record<string, RuntimeValue> = {};
+    const ctx = withOrder(async (_id, inputs) => {
+      seen = inputs;
+      return { ok: true, outputs: {} };
+    });
+    const base = ctx.catalog.getAction("createIssue");
+    if (base === undefined) throw new Error("fixture action missing");
+    const linked = {
+      ...base,
+      inputs: {
+        ...base.inputs,
+        title: {
+          ...base.inputs.title!,
+          links: { format: "markdown" as const }
+        }
+      }
+    };
+
+    await actionExecutor.execute(node("createIssue", { title: orderRef }), {
+      ...ctx,
+      catalog: {
+        ...ctx.catalog,
+        getAction: (id) =>
+          id === "createIssue" ? linked : ctx.catalog.getAction(id)
+      }
+    });
+
+    expect(seen.title).toEqual(
+      primitiveValue(
+        "string",
+        "Check [PO000123](https://erp.test/purchaseOrder/po_1)"
+      )
+    );
   });
 });

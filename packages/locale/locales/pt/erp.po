@@ -89,6 +89,10 @@ msgstr "{0} eliminado com sucesso"
 msgid "{0} draft journal entries"
 msgstr "{0} lançamentos de diário em rascunho"
 
+#. placeholder {0}: integration.name
+msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
+msgstr "{0} ainda não está instalado. Não há nada para configurar — instale-o para conectar uma conta."
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} ordens de produção criadas"
@@ -191,6 +195,12 @@ msgstr "{alreadyPlannedItemCount} peças ignoradas — elas já têm ordens de p
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% de contas a pagar"
+
+msgid "{appName} is connected, but needs to be reconnected before workflow steps can use it."
+msgstr "{appName} está conectado, mas precisa ser reconectado antes que as etapas do fluxo de trabalho possam usá-lo."
+
+msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
+msgstr "{appName} ainda não está conectado. Conecte uma conta antes que esta etapa possa fazer algo."
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% de contas a receber"
@@ -902,6 +912,9 @@ msgstr "Sobre"
 msgid "About (notification)"
 msgstr "Sobre (notificação)"
 
+msgid "About this field"
+msgstr "Sobre este campo"
+
 msgid "Absent"
 msgstr "Ausente"
 
@@ -1022,6 +1035,9 @@ msgstr "Contas a receber"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Contas a receber para valores devidos pelos clientes."
+
+msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
+msgstr "Contas que suas automações podem usar. Adicione uma para cada conta que uma etapa de automação deve usar."
 
 msgid "Accumulated Depreciation"
 msgstr "Depreciação acumulada"
@@ -1161,6 +1177,9 @@ msgstr "Adicionar uma etapa"
 msgid "Add Ability"
 msgstr "Adicionar Capacidade"
 
+msgid "Add account"
+msgstr "Adicionar conta"
+
 msgid "Add Account"
 msgstr "Adicionar Conta"
 
@@ -1238,6 +1257,9 @@ msgstr "Adicionar correspondência"
 
 msgid "Add Note"
 msgstr "Adicionar Observação"
+
+msgid "Add operation"
+msgstr "Adicionar operação"
 
 msgid "Add Operation"
 msgstr "Adicionar Operação"
@@ -1390,6 +1412,9 @@ msgstr "Avançar para {nextStatus}"
 msgid "Advanced"
 msgstr "Avançado"
 
+msgid "Advanced properties"
+msgstr "Propriedades avançadas"
+
 msgid "Affected item not found."
 msgstr "Item afetado não encontrado."
 
@@ -1536,6 +1561,12 @@ msgstr "Valor a aplicar para {0}"
 msgid "Amount Type"
 msgstr "Tipo de Valor"
 
+msgid "An account is already called that — pick a different name."
+msgstr "Uma conta já tem esse nome — escolha um nome diferente."
+
+msgid "An account is missing from this list until it is reconnected."
+msgstr "Uma conta está ausente desta lista até que seja reconectada."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Um grupo contábil que agrupa despesas por departamento ou função para que a Razão possa relatar gasto por grupo, não apenas por conta."
 
@@ -1644,6 +1675,9 @@ msgstr "A posição de uma operação na fila de seu centro de trabalho — a or
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Ocorreu um erro inesperado ao conectar ao Onshape. Tente conectar novamente."
 
+msgid "An unexpected error occurred while connecting. Try connecting again."
+msgstr "Ocorreu um erro inesperado ao conectar. Tente conectar novamente."
+
 msgid "Analytics"
 msgstr "Análises"
 
@@ -1656,9 +1690,6 @@ msgstr "E"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "E {0} mais — resolva estes para ver o resto."
-
-msgid "and {hidden} more"
-msgstr "e {hidden} mais"
 
 msgid "and {remaining} more"
 msgstr "e {remaining} mais"
@@ -1677,6 +1708,9 @@ msgstr "O texto da anotação é obrigatório"
 
 msgid "Annotation updated"
 msgstr "Anotação atualizada"
+
+msgid "Another connection to this integration already has that name. Choose a different one."
+msgstr "Outra conexão para esta integração já tem esse nome. Escolha um diferente."
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Outro centro de custo ao qual este agrega, permitindo aninhar um subcentro de custo sob seu pai para relatórios de custo hierárquicos."
@@ -1731,6 +1765,9 @@ msgstr "Chaves de API para acesso programático aos seus dados do Carbon."
 
 msgid "API, webhooks, and integrations"
 msgstr "API, webhooks e integrações"
+
+msgid "App"
+msgstr "App"
 
 msgid "Applied"
 msgstr "Aplicado"
@@ -2431,6 +2468,9 @@ msgstr "Anexos"
 msgid "Attempts"
 msgstr "Tentativas"
 
+msgid "Attendees"
+msgstr "Participantes"
+
 msgid "Attribute"
 msgstr "Atributo"
 
@@ -2472,6 +2512,9 @@ msgstr "Aplicação Autenticadora"
 
 msgid "Authenticator QR code"
 msgstr "Código QR do autenticador"
+
+msgid "Authorization was refused. Try connecting again."
+msgstr "A autorização foi recusada. Tente conectar novamente."
 
 msgid "Authorized overtime on top of the shift"
 msgstr "Horas extras autorizadas além do turno"
@@ -2526,6 +2569,9 @@ msgstr "Atualizações automáticas e backups"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consumo automático e rateado de materiais não rastreados de um trabalho quando a saída é relatada — os materiais rastreados são emitidos manualmente."
+
+msgid "Automatically create a Google Meet video conference link for this event"
+msgstr "Criar automaticamente um link de videoconferência do Google Meet para este evento"
 
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Liberar automaticamente o trabalho quando o kanban é digitalizado"
@@ -2666,6 +2712,9 @@ msgstr "Rastreamento de lote"
 msgid "Batch Tracking"
 msgstr "Rastreamento em Lote"
 
+msgid "BCC Email"
+msgstr "Email com cópia oculta"
+
 msgid "Beginning"
 msgstr "Início"
 
@@ -2755,6 +2804,9 @@ msgstr "Quadro"
 msgid "Body"
 msgstr "Corpo"
 
+msgid "Body for the email you want to send"
+msgstr "Corpo do email que você deseja enviar"
+
 msgid "BoM"
 msgstr "BoM"
 
@@ -2796,6 +2848,9 @@ msgstr "Migalha de pão"
 
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "Traga suas peças, BOMs, listas de operações e custeio — com as ferramentas de importação do Carbon, CSV ou ajuda de LLM."
+
+msgid "Broadcast reply to channel"
+msgstr "Transmitir resposta para o canal"
 
 msgid "Browse library"
 msgstr "Procurar biblioteca"
@@ -2863,6 +2918,9 @@ msgstr "por {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Ao aceitar o convite, você concorda com os <0>Termos de Serviço</0> e a <1>Política de Privacidade</1>."
 
+msgid "By default it'll be 30 min post start time"
+msgstr "Por padrão, será 30 minutos após o horário de início"
+
 msgid "By dimension"
 msgstr "Por dimensão"
 
@@ -2898,6 +2956,9 @@ msgstr "Calculando melhor caso…"
 
 msgid "Calculation Method"
 msgstr "Método de Cálculo"
+
+msgid "Calendar"
+msgstr "Calendário"
 
 msgid "Calibration"
 msgstr "Calibração"
@@ -3134,6 +3195,9 @@ msgstr "Execução causadora: "
 msgid "CC"
 msgstr "CC"
 
+msgid "CC Email"
+msgstr "Email com cópia"
+
 msgid "Centralized Billing Address"
 msgstr "Endereço de Cobrança Centralizado"
 
@@ -3218,6 +3282,12 @@ msgstr "Alterar isto atualizará o ID da peça"
 msgid "Changing type resets this item's draft edits."
 msgstr "Mudar tipo redefine as edições de rascunho deste item."
 
+msgid "Channel"
+msgstr "Canal"
+
+msgid "Channel Name"
+msgstr "Nome do canal"
+
 msgid "Chart"
 msgstr "Gráfico"
 
@@ -3244,6 +3314,9 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Pontos de Verificação"
+
+msgid "Choose {named} first."
+msgstr "Escolha {named} primeiro."
 
 msgid "Choose a batch number"
 msgstr "Escolha um número de lote"
@@ -3403,6 +3476,9 @@ msgstr "Recolher Configuração"
 
 msgid "Collapse subtree"
 msgstr "Recolher subárvore"
+
+msgid "Color"
+msgstr "Cor"
 
 msgid "Column dimension"
 msgstr "Dimensão da coluna"
@@ -3585,6 +3661,9 @@ msgstr "Configure as contas padrão usadas para vários tipos de transação em 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Configurar os meses iniciais para seus anos fiscais e de impostos"
 
+msgid "Configure the steps above first."
+msgstr "Configure as etapas acima primeiro."
+
 msgid "Configure when purchased item costs should be updated from supplier transactions."
 msgstr "Configure quando os custos dos itens comprados devem ser atualizados a partir das transações do fornecedor."
 
@@ -3670,6 +3749,9 @@ msgstr "Motivo do conflito"
 msgid "Connect"
 msgstr "Conectar"
 
+msgid "Connect {appName}"
+msgstr "Conectar {appName}"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Conecte o Carbon às suas ferramentas de contabilidade, gerenciamento de projetos, CAD e muito mais."
 
@@ -3691,8 +3773,17 @@ msgstr "Conecte as ferramentas externas que sua empresa já utiliza"
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Conecte seu provedor de identidade colando seu URL de metadados ou seu XML de metadados brutos — exatamente um dos dois."
 
+msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
+msgstr "Conectado antes de fluxos de trabalho precisarem de permissões extras. Reconecte para concedê-las — tudo o mais continua funcionando enquanto isso."
+
 msgid "Connected to"
 msgstr "Conectado a"
+
+msgid "Connection"
+msgstr "Conexão"
+
+msgid "Connection name"
+msgstr "Nome da conexão"
 
 msgid "Console Mode"
 msgstr "Modo Console"
@@ -4101,6 +4192,9 @@ msgstr "Não foi possível ler o documento: {0}"
 msgid "Could not save"
 msgstr "Não foi possível salvar"
 
+msgid "Couldn't complete the connection"
+msgstr "Não foi possível concluir a conexão"
+
 msgid "Couldn't complete the Onshape connection"
 msgstr "Não foi possível concluir a conexão com o Onshape"
 
@@ -4110,11 +4204,17 @@ msgstr "Não foi possível carregar documentos"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Não foi possível carregar os documentos relacionados. Atualize antes de criar um novo para evitar duplicatas."
 
+msgid "Couldn't load the choices for this field."
+msgstr "Não foi possível carregar as opções para este campo."
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Não foi possível carregar os alvos de dimensão do provedor — verifique a conexão e recarregue."
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Não foi possível reagendar o trabalho. Por favor, tente novamente."
+
+msgid "Couldn't save the connection"
+msgstr "Não foi possível salvar a conexão"
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Não foi possível salvar a conexão com o Onshape"
@@ -4127,6 +4227,9 @@ msgstr "Histórico de Contagem"
 
 msgid "Count ID"
 msgstr "ID de Contagem"
+
+msgid "Count items"
+msgstr "Contar itens"
 
 msgid "Counted Qty"
 msgstr "Qtd. Contada"
@@ -4217,6 +4320,9 @@ msgstr "Criar Aviso de alteração"
 
 msgid "Create Forecast"
 msgstr "Criar Previsão"
+
+msgid "Create Google Meet Link"
+msgstr "Criar link do Google Meet"
 
 msgid "Create Issue"
 msgstr "Criar Problema"
@@ -4731,6 +4837,9 @@ msgstr "Data"
 msgid "Date Acquired"
 msgstr "Data de Aquisição"
 
+msgid "Date and time"
+msgstr ""
+
 msgid "Date Calibrated"
 msgstr "Data Calibrada"
 
@@ -4739,6 +4848,9 @@ msgstr "Data de vencimento"
 
 msgid "Date Due"
 msgstr "Data de Vencimento"
+
+msgid "Date from"
+msgstr "Data de"
 
 msgid "Date issued"
 msgstr "Data de emissão"
@@ -4751,6 +4863,9 @@ msgstr "Data de pagamento"
 
 msgid "Date Paid"
 msgstr "Data de Pagamento"
+
+msgid "Date to"
+msgstr "Data até"
 
 msgid "Dates"
 msgstr "Datas"
@@ -5410,6 +5525,9 @@ msgstr "Descrição da Alteração"
 
 msgid "Description of Issue"
 msgstr "Descrição do Problema"
+
+msgid "Description of the event. You can use HTML tags here."
+msgstr "Descrição do evento. Você pode usar tags HTML aqui."
 
 msgid "Detail"
 msgstr "Detalhe"
@@ -6173,6 +6291,9 @@ msgstr "Email"
 msgid "Email Address"
 msgstr "Endereço de Email"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr "Endereço de email para definir como cabeçalho \"Responder para\""
+
 msgid "Email Domains"
 msgstr "Domínios de Email"
 
@@ -6184,6 +6305,9 @@ msgstr "Notificações de email não configuradas"
 
 msgid "Emails"
 msgstr "E-mails"
+
+msgid "Emails of the attendees (guests)"
+msgstr "Emails dos participantes (convidados)"
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -6233,6 +6357,9 @@ msgstr "Ativar contabilidade de regime de competência completo com lançamentos
 msgid "Enable in Settings"
 msgstr "Ativar nas Configurações"
 
+msgid "Enable link unfurling for this message"
+msgstr "Ativar expansão de links para esta mensagem"
+
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Ativar notificações quando um RFQ é marcado como pronto para orçamento."
 
@@ -6274,6 +6401,9 @@ msgstr "Ativado"
 
 msgid "End Date"
 msgstr "Data Final"
+
+msgid "End date time of the event"
+msgstr "Hora da data de término do evento"
 
 msgid "End of Last Fiscal Year"
 msgstr "Fim do Último Ano Fiscal"
@@ -7276,6 +7406,9 @@ msgstr "Ajustar visualização"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Corrija os problemas com este fluxo de trabalho antes de testá-lo"
 
+msgid "Fix this"
+msgstr "Corrija isto"
+
 msgid "Fixed"
 msgstr "Fixo"
 
@@ -7627,6 +7760,12 @@ msgstr "Reconciliação da Razão"
 msgid "GL Tie-Out"
 msgstr "Reconciliação da Razão"
 
+msgid "Gmail"
+msgstr "Gmail"
+
+msgid "Gmail: Send Email"
+msgstr "Gmail: Enviar email"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Ative-se corretamente na primeira vez — com nossa equipe ao seu lado"
 
@@ -7666,6 +7805,15 @@ msgstr "Boa noite, {name}."
 
 msgid "Good morning, {name}."
 msgstr "Bom dia, {name}."
+
+msgid "Google Calendar"
+msgstr "Google Agenda"
+
+msgid "Google Calendar: Create Event"
+msgstr "Google Calendar: Criar Evento"
+
+msgid "Google Calendar: Get all Events"
+msgstr "Google Calendar: Obter todos os Eventos"
 
 msgid "Google Places API key not configured"
 msgstr "Chave da API do Google Places não configurada"
@@ -7711,6 +7859,15 @@ msgstr "Nome do Grupo"
 
 msgid "Groups"
 msgstr "Grupos"
+
+msgid "Guests can invite others"
+msgstr "Convidados podem convidar outros"
+
+msgid "Guests can modify"
+msgstr "Convidados podem modificar"
+
+msgid "Guests can see other guests"
+msgstr "Convidados podem ver outros convidados"
 
 msgid "Guided"
 msgstr "Orientado"
@@ -7960,6 +8117,9 @@ msgstr "Tenho uma base razoável para acreditar que este indivíduo é uma pesso
 
 msgid "I'm Still Working"
 msgstr "Ainda estou trabalhando"
+
+msgid "Icon Emoji"
+msgstr "Emoji de ícone"
 
 msgid "Id"
 msgstr "Id"
@@ -8475,6 +8635,9 @@ msgstr "É grupo de tipo de funcionário"
 msgid "Is identity group"
 msgstr "É grupo de identidade"
 
+msgid "Is Private?"
+msgstr "É privado?"
+
 msgid "Is supplier org group"
 msgstr "É grupo de organização de fornecedor"
 
@@ -8683,6 +8846,9 @@ msgstr "Ordens de produção que têm este item em sua lista de materiais"
 msgid "Join {0}"
 msgstr "Juntar-se a {0}"
 
+msgid "Join into text"
+msgstr "Unir ao texto"
+
 msgid "Journal"
 msgstr "Diário"
 
@@ -8724,6 +8890,9 @@ msgstr "Manter Atual"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Manter precificação existente, apenas adicionar itens novos"
+
+msgid "Keep matching items"
+msgstr "Manter itens correspondentes"
 
 msgid "Keep only items where…"
 msgstr "Manter apenas itens onde…"
@@ -10297,6 +10466,9 @@ msgstr "Nenhuma habilidade adicionada"
 msgid "No Access"
 msgstr "Sem Acesso"
 
+msgid "No accounts connected yet."
+msgstr "Nenhuma conta conectada ainda."
+
 msgid "No accounts match your search"
 msgstr "Nenhuma conta corresponde à sua pesquisa"
 
@@ -10336,6 +10508,9 @@ msgstr "Nenhum registro arquivado ainda. Registros com mais de {0} dias serão a
 
 msgid "No attachments."
 msgstr "Sem anexos."
+
+msgid "No authorization code was returned"
+msgstr "Nenhum código de autorização foi retornado"
 
 msgid "No available filters"
 msgstr "Nenhum filtro disponível"
@@ -10833,6 +11008,9 @@ msgstr "Nada"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nada neste local corresponde a \"{0}\"."
 
+msgid "Nothing can work on this result."
+msgstr "Nada pode trabalhar neste resultado."
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nada mais neste local tem estoque para puxar."
 
@@ -10841,6 +11019,9 @@ msgstr "Nada no arquivo"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nada agendado — adicione uma estação abaixo."
+
+msgid "Nothing to choose yet - <0>set one up in Settings</0>."
+msgstr "Nada para escolher ainda - <0>configure um nas Configurações</0>."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nada ainda. Uma etapa só oferece valores após ser configurada."
@@ -10989,6 +11170,9 @@ msgstr "1 {0} equivale a quantos {1}?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Uma execução de um fluxo de trabalho, registrada passo a passo com os valores que cada etapa usou e produziu, agindo sempre com as permissões do proprietário do fluxo de trabalho."
 
+msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
+msgstr "Uma das suas contas {appName} precisa ser reconectada antes que as etapas do fluxo de trabalho possam usá-la."
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Uma unidade serial ou um lote que Carbon acompanha individualmente, carregando seu próprio status e atributos como data de validade."
 
@@ -11036,6 +11220,9 @@ msgstr "Oops! O link que está tentando acessar não é válido."
 
 msgid "Open"
 msgstr "Abrir"
+
+msgid "Open {appName} accounts"
+msgstr "Abrir contas do {appName}"
 
 msgid "Open a change notice"
 msgstr "Abrir um aviso de alteração"
@@ -11721,6 +11908,9 @@ msgstr "Escolha um cliente ou tipo de cliente para visualizar seus preços."
 msgid "Pick a date or leave blank to clear it."
 msgstr "Escolha uma data ou deixe em branco para limpar."
 
+msgid "Pick a field…"
+msgstr "Selecione um campo…"
+
 msgid "Pick a list variable…"
 msgstr "Escolha uma variável de lista…"
 
@@ -12188,6 +12378,9 @@ msgstr "Produção: app de chão de fábrica e agendamento"
 msgid "Profile"
 msgstr "Perfil"
 
+msgid "Profile Picture"
+msgstr "Foto de perfil"
+
 msgid "Progress"
 msgstr "Progresso"
 
@@ -12281,6 +12474,9 @@ msgstr "Comprove a propriedade de cada domínio de email com um registro TXT de 
 
 msgid "Provide process knowledge and inputs"
 msgstr "Forneça conhecimento do processo e entradas"
+
+msgid "Provide the ts (timestamp) or link value of the **parent** message to make this message a reply. Do not use the ts value of the reply itself; use its parent instead. For example '1710304378.475129'.Alternatively, you can easily obtain the message link by clicking on the three dots next to the parent message and selecting the 'Copy link' option."
+msgstr "Forneça o valor de ts (timestamp) ou link da mensagem **pai** para fazer desta mensagem uma resposta. Não use o valor de ts da resposta em si; use seu pai em vez disso. Por exemplo, \"1710304378.475129\". Como alternativa, você pode obter facilmente o link da mensagem clicando nos três pontos ao lado da mensagem pai e selecionando a opção \"Copiar link\"."
 
 msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
 msgstr "Forneça esses URLs ao seu provedor de identidade (Okta, Entra ID, Google Workspace, etc.) ao registrar o Carbon como uma aplicação SAML."
@@ -12853,6 +13049,9 @@ msgstr "Recebido Por"
 msgid "Received Qty"
 msgstr "Qtd. Recebida"
 
+msgid "Receiver Email (To)"
+msgstr "Email do destinatário (Para)"
+
 msgid "Receiving Location"
 msgstr "Local de Recebimento"
 
@@ -12876,6 +13075,18 @@ msgstr "A reconciliação encontrou discrepâncias com o provedor"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Reconciliação de um pedido de compra contra o que foi recebido e faturado — implícito no Carbon, através das quantidades das linhas e do saldo GR/IR."
+
+msgid "Reconnect"
+msgstr "Reconectar"
+
+msgid "Reconnect {appName}"
+msgstr "Reconectar {appName}"
+
+msgid "Reconnect it"
+msgstr "Reconectá-lo"
+
+msgid "Reconnect needed"
+msgstr "Reconexão necessária"
 
 msgid "Record"
 msgstr "Gravar"
@@ -12906,6 +13117,13 @@ msgstr "Registrado que o instrumento de medição foi ajustado durante esta cali
 
 msgid "Records"
 msgstr "Registros"
+
+msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
+msgstr "Os registros aqui aparecem como texto simples — {appLabel} não oferece suporte a links neste campo."
+
+#. placeholder {0}: notice.params.equals
+msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
+msgstr "Os registros serão texto simples. Defina {siblingLabel} como {0} (em Avançado) para convertê-los em links."
 
 msgid "Recovery Period"
 msgstr "Registrar"
@@ -13085,6 +13303,9 @@ msgstr "Remover ordenação por coluna"
 msgid "Remove station"
 msgstr "Remover estação"
 
+msgid "Remove this operation"
+msgstr "Remover esta operação"
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Remova este tipo de armazenamento de todas as unidades de armazenamento que o referenciam e o exclua. Isto não pode ser desfeito."
 
@@ -13175,6 +13396,12 @@ msgstr "Sistema de reposição"
 
 msgid "Replenishment System"
 msgstr "Sistema de reposição"
+
+msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr "Responder ao Tópico (Link/Carimbo de Data e Hora da Mensagem do Tópico)"
+
+msgid "Reply-To Email"
+msgstr "Email de Resposta"
 
 msgid "Report"
 msgstr "Relatório"
@@ -14056,6 +14283,9 @@ msgstr "Pesquisar itens relacionados..."
 msgid "Search suppliers..."
 msgstr "Pesquisar fornecedores..."
 
+msgid "Search Term"
+msgstr "Termo de Pesquisa"
+
 msgid "Search tools..."
 msgstr "Pesquisar ferramentas..."
 
@@ -14141,6 +14371,9 @@ msgstr "Selecione um motivo pelo qual a cotação não foi criada."
 msgid "Select a shape first to see available options"
 msgstr "Selecione uma forma primeiro para ver as opções disponíveis"
 
+msgid "Select a step…"
+msgstr "Selecione uma etapa…"
+
 msgid "Select a substance and shape first to see available options"
 msgstr "Selecione uma substância e forma primeiro para ver as opções disponíveis"
 
@@ -14158,6 +14391,9 @@ msgstr "Selecionar tudo"
 
 msgid "Select an action…"
 msgstr "Selecionar uma ação…"
+
+msgid "Select an app…"
+msgstr "Selecione um aplicativo…"
 
 msgid "Select an assignee"
 msgstr "Selecione um designado"
@@ -14182,6 +14418,9 @@ msgstr "Selecionar uma operação…"
 
 msgid "Select an option"
 msgstr "Selecione uma opção"
+
+msgid "Select an option…"
+msgstr "Selecione uma opção…"
 
 msgid "Select at least one line to convert"
 msgstr "Selecione pelo menos uma linha para converter"
@@ -14333,6 +14572,12 @@ msgstr "Enviar para Carbon"
 
 msgid "Send Via"
 msgstr "Enviar Via"
+
+msgid "Sender Email"
+msgstr "Email do Remetente"
+
+msgid "Sender Name"
+msgstr "Nome do Remetente"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Envio de unidades com defeito de volta para uma operação anterior para correção em vez de sucata."
@@ -14822,6 +15067,18 @@ msgstr "Ignorado"
 msgid "Slack"
 msgstr "Slack"
 
+msgid "Slack: Create Channel"
+msgstr "Slack: Criar Canal"
+
+msgid "Slack: Find User by Email"
+msgstr "Slack: Encontrar Usuário por Email"
+
+msgid "Slack: Send Message To A Channel"
+msgstr "Slack: Enviar Mensagem para um Canal"
+
+msgid "Slack: Send Message To A User"
+msgstr "Slack: Enviar Mensagem para um Usuário"
+
 msgid "Slice asset activity by location, item, or any dimension"
 msgstr "Dividir atividade de ativos por localização, item ou qualquer dimensão"
 
@@ -15005,6 +15262,9 @@ msgstr "Data de início"
 
 msgid "Start Date"
 msgstr "Data de Início"
+
+msgid "Start date time of the event"
+msgstr "Data e hora de início do evento"
 
 msgid "Start Expiration"
 msgstr "Iniciar Expiração"
@@ -15197,7 +15457,7 @@ msgid "Stripe Due Date"
 msgstr "Data de Vencimento Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "O Stripe envia a fatura por e-mail ao cliente, portanto, um endereço é necessário. Isso também será salvo no contato no Carbon."
+msgstr "O Stripe envia a fatura por e-mail para o cliente, portanto um endereço é necessário. Isso também será salvo no contato no Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe ainda não tem um cliente para este cliente do Carbon. A Contabilização criará um na sua conta conectada."
@@ -15533,6 +15793,15 @@ msgstr "Etiquetas"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Personalize este hub para o cliente. As alterações são aplicadas em tempo real para todos que o visualizam. Nunca é mostrado ao cliente aqui."
 
+msgid "Take one field from every item"
+msgstr "Pegar um campo de cada item"
+
+msgid "Take the first item"
+msgstr "Pegar o primeiro item"
+
+msgid "Take the last item"
+msgstr "Pegar o último item"
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Usar a vida de prateleira restante mais curta entre os materiais consumidos para fabricar este item. Use quando a validade do produto depende de seus ingredientes."
 
@@ -15713,6 +15982,15 @@ msgstr "Valor de Teste"
 msgid "Text size"
 msgstr "Tamanho do texto"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr "Essa conta ainda está sendo reconectada. Tente novamente em um momento."
+
+msgid "That connection name is already used"
+msgstr "Esse nome de conexão já está em uso"
+
+msgid "That field holds several values, so they are combined into one list."
+msgstr "Esse campo contém vários valores, então eles são combinados em uma lista."
+
 msgid "That name is already used by another step."
 msgstr "Esse nome já está sendo usado por outra etapa."
 
@@ -15729,6 +16007,9 @@ msgstr "A fase \"{0}\" está concluída — seu ponto de verificação \"{1}\" f
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "Os {0} fases para entrar em produção, cada uma terminando em um ponto de verificação. Marque cada tarefa conforme a concluir."
 
+msgid "The {appName} account this step uses is not available — it was disconnected or needs to be reconnected."
+msgstr "A conta {appName} que esta etapa usa não está disponível — foi desconectada ou precisa ser reconectada."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "A dimensão contábil que categoriza itens para relatórios e análises."
 
@@ -15737,6 +16018,9 @@ msgstr "As contas que o Carbon publica automaticamente"
 
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "A ação que copia um método salvo (seus materiais, operações e instruções de trabalho) para uma ordem de produção ou linha do orçamento."
+
+msgid "The address must be listed in your GMail account's settings"
+msgstr "O endereço deve estar listado nas configurações de sua conta Gmail"
 
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "Os valores permitidos para um atributo do tipo lista; os usuários escolhem entre eles em vez de digitar livremente."
@@ -15753,8 +16037,14 @@ msgstr "A quantidade de dias após o método de cálculo em que o pagamento é d
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "O registro de adição ao final de cada movimento de estoque; a quantidade disponível é a soma de suas entradas assinadas e a fonte confiável."
 
+msgid "The authorization took too long or came back altered. Start the connection again from this page."
+msgstr "A autorização demorou muito ou retornou alterada. Inicie a conexão novamente nesta página."
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "A autorização foi recusada no Onshape. Tente conectar novamente."
+
+msgid "The authorization was rejected"
+msgstr "A autorização foi rejeitada"
 
 msgid "The backup job reported this error."
 msgstr "O trabalho de backup informou este erro."
@@ -15830,6 +16120,12 @@ msgstr "A categoria a que este fornecedor pertence (matéria-prima, serviços, f
 
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "O código impresso no cartão kanban que os operadores escaneiam para marcar a ordem de produção como concluída; gerado automaticamente quando deixado em branco."
+
+msgid "The connection could not be verified"
+msgstr "A conexão não pôde ser verificada"
+
+msgid "The connection was refused"
+msgstr "A conexão foi recusada"
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "A disponibilidade semanal esperada do terceirizado; o agendamento usa isso como o limite superior ao atribuir este terceirizado a operações ao longo da semana."
@@ -16005,6 +16301,9 @@ msgstr "O endereço https para o qual uma etapa webhook de fluxo de trabalho pub
 msgid "The human-readable document number (like J000001 or ECO-000001) minted from a sequence and stored on the record, distinct from its internal id."
 msgstr "O número de documento legível (como J000001 ou ECO-000001) criado a partir de uma sequência e armazenado no registro, distinto de sua id interna."
 
+msgid "The icon emoji of the bot"
+msgstr "O emoji de ícone do bot"
+
 msgid "The identifier the customer uses for this part on their POs; Carbon resolves it to our internal Part ID on order import."
 msgstr "O identificador que o cliente usa para essa parte nos POs; Carbon o resolve para nosso ID de parte interno na importação de pedidos."
 
@@ -16026,11 +16325,17 @@ msgstr "A regra Incoterm (FOB, DAP, EXW, CIF, …) que governa quem paga o frete
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "A regra Incoterm (FOB, DAP, EXW, CIF, …) que governa quem paga o frete, quem assume o risco e onde ocorre a transferência de propriedade em remessas para este cliente."
 
+msgid "The integration authorized the connection but saving it failed. Try connecting again."
+msgstr "A integração autorizou a conexão, mas falhou ao salvá-la. Tente conectar novamente."
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "O custo de inventário reconhecido quando uma remessa é registrada, avaliado pelo método de custeio do item."
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "A classe de período de recuperação IRS para este ativo sob MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 anos)."
+
+msgid "The items in that list have no fields to take."
+msgstr "Os itens nessa lista não têm campos para pegar."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "as horas de trabalho devidas naquele dia (com base na data de vencimento, não no dia em que o trabalho é executado), com trabalho atrasado em Vencido."
@@ -16235,6 +16540,9 @@ msgstr "O procedimento que os técnicos seguem quando essa manutenção é execu
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Os processos que este centro de trabalho pode executar; aparece em seletores de processo ao agendar operações e limita quais trabalhos podem rotear por este centro de trabalho."
 
+msgid "The profile picture of the bot"
+msgstr "A foto de perfil do bot"
+
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "O provedor não oferece alvos de dimensão. Habilite o recurso no provedor primeiro (por exemplo, categorias de rastreamento, rastreamento de classe ou campos)."
 
@@ -16292,6 +16600,9 @@ msgstr "O produto em processo residual que uma ordem de produção deixa ao fech
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "A resposta do Onshape não incluía os parâmetros necessários. Tente conectar novamente."
+
+msgid "The response was missing required parameters. Try connecting again."
+msgstr "A resposta estava faltando parâmetros obrigatórios. Tente conectar novamente."
 
 msgid "The restore job reported this error."
 msgstr "O trabalho de restauração informou este erro."
@@ -16413,6 +16724,9 @@ msgstr "O sistema que uma empresa usa para gerenciar o acesso de seus usuários 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "O sistema passa em todos os testes de aceitação no escopo do seu sistema configurado, com seus dados; os dados são validados; e você assina. Depois, entre em operação."
 
+msgid "The text of your message. When using Block Kit blocks, this is used as a fallback for notifications."
+msgstr "O texto da sua mensagem. Ao usar blocos do Block Kit, isso é usado como fallback para notificações."
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "A ligação conectando um RFQ de vendas, seu orçamento e o pedido de venda resultante — uma conexão, não um documento com seu próprio status."
 
@@ -16460,6 +16774,9 @@ msgstr "As unidades de medida que você compra, estoca e vende"
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "O sistema de depreciação fiscal dos EUA com tabelas de classe de propriedade do IRS, executado como um calendário fiscal separado ao lado do calendário contábil."
+
+msgid "The username of the bot"
+msgstr "O nome de usuário do bot"
 
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Os usuários neste grupo; permissões e notificações com escopo de grupo se aplicam a cada membro, e usuários podem pertencer a vários grupos (permissões efetivas são a união)."
@@ -16542,11 +16859,20 @@ msgstr "Essas linhas estão vinculadas a dados fora desta empresa, portanto nunc
 msgid "this ability"
 msgstr "esta capacidade"
 
+msgid "This account has stopped working. Reconnect it — workflow steps using it will fail until you do."
+msgstr "Esta conta parou de funcionar. Reconecte-a — as etapas de fluxo de trabalho que a usam falharão até que você faça isso."
+
+msgid "This account needs to be reconnected."
+msgstr "Esta conta precisa ser reconectada."
+
 msgid "This backup could not be completed."
 msgstr "Este backup não pôde ser concluído."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Este backup ainda não foi verificado. As diferenças são encontradas quando a restauração é executada."
+
+msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
+msgstr "Esta instância do Carbon está faltando as credenciais OAuth para esta integração. Peça a um administrador para configurá-las."
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instância do Carbon não tem credenciais OAuth do Onshape. Peça a um administrador para configurá-las."
@@ -16587,12 +16913,15 @@ msgstr "Esta informação será usada nos cabeçalhos de documentos"
 msgid "this inspection plan"
 msgstr "este plano de inspeção"
 
+msgid "This integration isn't configured"
+msgstr "Esta integração não está configurada"
+
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "Este convite para participar de {0} expirou. Você pode solicitar que um novo convite seja enviado para seu e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Esta fatura não tem uma data de vencimento utilizável — escolha uma para o Stripe."
+msgstr "Esta fatura não tem uma data de vencimento utilizável — escolha uma para Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta fatura será cobrada do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-o no painel Stripe."
@@ -16759,7 +17088,7 @@ msgid "This version cannot be opened"
 msgstr "Esta versão não pode ser aberta"
 
 msgid "This version is published"
-msgstr "Esta versão é publicada."
+msgstr "Esta versão foi publicada"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versão está publicada. Crie uma nova versão para editar."
@@ -16880,6 +17209,9 @@ msgstr "Fuso Horário"
 
 msgid "Title"
 msgstr "Título"
+
+msgid "Title of the event"
+msgstr "Título do evento"
 
 msgid "To"
 msgstr "Para"
@@ -17181,6 +17513,9 @@ msgstr "Acionado por"
 msgid "Triggers"
 msgstr "Acionadores"
 
+msgid "Try again"
+msgstr "Tente novamente"
+
 msgid "Tuesday"
 msgstr "Terça-feira"
 
@@ -17219,6 +17554,9 @@ msgstr "Digite {TRIGGER} para inserir uma variável"
 
 msgid "Type a message..."
 msgstr "Digite uma mensagem..."
+
+msgid "Type a value and press Enter…"
+msgstr "Digite um valor e pressione Enter…"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Digite um email e pressione Enter para adicionar um destinatário externo"
@@ -17273,6 +17611,9 @@ msgstr "Sob política de quantidade máxima, o planejamento pede até este níve
 
 msgid "Undo"
 msgstr "Desfazer"
+
+msgid "Unfurl Links"
+msgstr "Desdobrar Links"
 
 msgid "Uninstall"
 msgstr "Desinstalar"
@@ -17380,7 +17721,7 @@ msgid "Unposted Documents"
 msgstr "Documentos Não Lançados"
 
 msgid "Unpublish"
-msgstr "Cancelar publicação"
+msgstr "Remover publicação"
 
 msgid "Unpublish {name}?"
 msgstr "Cancelar Publicação de {name}?"
@@ -17636,6 +17977,9 @@ msgstr "Usuário"
 
 msgid "User roles"
 msgstr "Funções do usuário"
+
+msgid "Username"
+msgstr "Nome de usuário"
 
 msgid "users"
 msgstr "usuários"
@@ -18267,6 +18611,9 @@ msgstr "Quando ativado, esta sobrescrita de preço se aplica aos pedidos corresp
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Quando ativado, esta regra é acionada para cada alvo do seu tipo. As linhas de atribuição são ignoradas, mas preservadas."
 
+msgid "When replying to a thread, also make the message visible to everyone in the channel (only applicable when Thread Timestamp is provided)"
+msgstr "Ao responder a um tópico, também tornar a mensagem visível para todos no canal (aplicável apenas quando o Carimbo de Data e Hora do Tópico é fornecido)"
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem esta data no portal RFQ e a Carbon para de aceitar respostas tardias depois dela (configurável)."
 
@@ -18635,6 +18982,9 @@ msgstr "Você pertence a mais de uma empresa. Escolha onde trabalhar."
 
 msgid "You can change the UI style any time through the theme setting"
 msgstr "Você pode alterar o estilo da interface a qualquer momento através da configuração de tema"
+
+msgid "You can get the Channel ID by right-clicking on the channel and selecting 'View Channel Details.'"
+msgstr "Você pode obter o ID do Canal clicando com o botão direito no canal e selecionando \"Visualizar Detalhes do Canal\"."
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Você só pode ver esta chave uma vez. Guarde-a com segurança."

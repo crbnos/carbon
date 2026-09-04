@@ -29,6 +29,7 @@ export function useVariableMenuData(
       accepts,
       textOnly,
       inLoop: context.inLoop,
+      itemCard: context.itemCard,
       batching: context.batching,
       labelFor: (key: string, fallback: string) =>
         labelRef.current(key, fallback)
@@ -45,6 +46,7 @@ export function useVariableMenuData(
     accepts,
     textOnly,
     context.inLoop,
+    context.itemCard,
     context.batching,
     catalog
   ]);

@@ -9,7 +9,7 @@ export const conditionExecutor: NodeExecutor<ConditionNode> = {
   permission: () => undefined,
 
   execute: async (node, ctx) => {
-    const paths: NodeDetail["paths"] = [];
+    const paths: Extract<NodeDetail, { kind: "condition" }>["paths"] = [];
 
     for (const path of node.data.paths) {
       if (path.kind === "else") {

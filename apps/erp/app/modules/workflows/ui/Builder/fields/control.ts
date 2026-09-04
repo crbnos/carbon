@@ -4,10 +4,22 @@ import { hasRecordPicker } from "./recordPickers";
 /** Which control a value field renders. */
 export type ControlKind = "inline" | "chip" | "pick" | "literal";
 
-/** A value there is no way to write down: a list, or a record with no searchable
- * picker behind it. The only honest source for one is an earlier step. */
+/** A list of plain text — email recipients, calendar attendees — that a person
+ * can write down one entry at a time. Every other list (records, numbers, dates)
+ * has no honest source but an earlier step. */
+export function isWritableList(type: ValueType): boolean {
+  return (
+    type.kind === "list" &&
+    type.of.kind === "primitive" &&
+    type.of.of === "string"
+  );
+}
+
+/** A value there is no way to write down: a list that is not plain text, or a
+ * record with no searchable picker behind it. The only honest source for one is
+ * an earlier step. */
 function variableOnly(type: ValueType): boolean {
-  if (type.kind === "list") return true;
+  if (type.kind === "list") return !isWritableList(type);
   return type.kind === "entity" && !hasRecordPicker(type.of);
 }
 

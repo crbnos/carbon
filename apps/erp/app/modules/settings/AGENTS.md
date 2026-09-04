@@ -72,7 +72,7 @@ pnpm run lint
 - `getDocumentSections` / `getDocumentSectionsByIds` / `upsertDocumentSection` / `deleteDocumentSection` / `resolveSections` — sections; `resolveSections` seeds built-ins first, then lets a stored row of the same id override
 - `getTerms` — company terms fallback for the Terms block; `getAccountsPayableBillingAddress` / `getAccountsReceivableBillingAddress` (+ `update*`) — addresses printed on documents
 - `getCustomField(s)` / `getCustomFieldsTables`, plus `upsertCustomField` / `deleteCustomField` / `updateCustomFieldsSortOrder` (`settings.server.ts`, cache-clearing)
-- `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `deactivateIntegration` / `getIntegrationsWithHealth`
+- `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `markIntegrationInstalled` (installed flag only — never overwrites metadata) / `deactivateIntegration` / `getIntegrationsWithHealth`
 - `upsertApiKey` / `deleteApiKey`; `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` / `getWebhookTables`
 - `insertCompany` / `insertSubsidiary` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan`
 - `updateLogoLight|LightIcon|Dark|DarkIcon|Watermark` — store the storage path on `company`, not a URL (readers prefix it)

@@ -8,14 +8,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  cn,
-  useRouteData
+  cn
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuLock } from "react-icons/lu";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
+import { InstallButton } from "./InstallButton";
 
 export type IntegrationHealth = {
   id: string;
@@ -31,45 +31,9 @@ export function IntegrationCard({
   installed: IntegrationHealth | null;
 }) {
   const fetcher = useFetcher<{}>();
-  const navigate = useNavigate();
-  const routeData = useRouteData<{ state: string }>(path.to.integrations);
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
-
-  const getOauthUrl = (integration: Integration) => {
-    if ("oauth" in integration && !!integration.oauth) {
-      const { clientId, redirectUri, scopes } = integration.oauth;
-      const encodedRedirectUri = encodeURIComponent(
-        `${window.location.origin}${redirectUri}`
-      );
-      const encodedScopes = encodeURIComponent(scopes.join(" "));
-      const encodedState = encodeURIComponent(
-        routeData?.state ?? Math.random().toString(36).substring(2, 15)
-      );
-
-      return `${integration.oauth.authUrl}?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=code&state=${encodedState}&scope=${encodedScopes}`;
-    }
-    return null;
-  };
-
-  const handleInstall = async () => {
-    const oauthUrl = getOauthUrl(integration);
-
-    if (oauthUrl) {
-      window.open(oauthUrl);
-    } else if (integration.settings.some((setting) => setting.required)) {
-      navigate(path.to.integration(integration.id));
-    } else if (integration.onClientInstall) {
-      await integration.onClientInstall?.();
-    } else {
-      const formData = new FormData();
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.integration(integration.id)
-      });
-    }
-  };
 
   const handleUninstall = async () => {
     await integration?.onClientUninstall?.();
@@ -141,13 +105,7 @@ export function IntegrationCard({
                 </Button>
               </fetcher.Form>
             ) : (
-              <Button
-                isDisabled={!integration.active || fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
-                onClick={handleInstall}
-              >
-                <Trans>Install</Trans>
-              </Button>
+              <InstallButton integration={integration} />
             )}
           </>
         )}

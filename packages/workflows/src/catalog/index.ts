@@ -1,16 +1,19 @@
 export type {
   ActionDeclarationLike,
-  ActionInputLike
+  ActionInputLike,
+  IntegrationDeclarationLike
 } from "./actions";
 export { WORKFLOW_ACTIONS } from "./actions";
 export {
   WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_INTEGRATION_CATALOG,
   WORKFLOW_OPERATION_CATALOG
 } from "./actions.generated";
 export {
   createWorkflowCatalog,
   getActionRoute,
-  getCatalogEvent
+  getCatalogEvent,
+  integrationStepId
 } from "./catalog";
 export type { CatalogOverlay, CustomFieldDef } from "./custom-fields";
 export {

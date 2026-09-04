@@ -66,6 +66,9 @@ msgstr "+{overflow} ещё"
 msgid "About"
 msgstr "О системе"
 
+msgid "About this field"
+msgstr "О данном поле"
+
 msgid "Accept"
 msgstr "Принять"
 

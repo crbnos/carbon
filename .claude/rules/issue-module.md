@@ -165,7 +165,9 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
   longer exists; treat the `type: "investigation"` UI path as vestigial.
 - The module is `quality`, not `issue`; permission key is `quality`. Routes are split
   (`x+/quality+/` for list/types/workflows, `x+/issue+/` for the detail + actions).
-- Slack NC notifications are config on the `integration` row (`20250810203046`):
-  `nonconformance_channel_id`, `nonconformance_notifications_enabled` — no extra tables.
+- Slack NC notifications post to the channel picked at Slack install, read off the company's
+  Slack connection (`getSlackWorkspace().channelId`, `integrationConnection` metadata) — the old
+  `nonconformance_channel_id` / `nonconformance_notifications_enabled` jsonschema fields were
+  dropped in `20260901173100` (they had no readers).
 - Filename `20251114222648_supplier_id.sql` is non-conformance work (supplier links +
   disposition enum), not a generic "supplier" change.

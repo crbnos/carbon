@@ -8,6 +8,8 @@ export function TemplateField({
   label,
   required,
   helpTermId,
+  help,
+  hint,
   value,
   onChange,
   context,
@@ -20,7 +22,9 @@ export function TemplateField({
       label={label}
       required={required}
       helpTermId={helpTermId}
+      help={help}
       issue={issue}
+      hint={hint}
     >
       {/* These are the prose inputs — a subject, a message body, a webhook payload.
           They open at a few rows and take line breaks, so a JSON payload can be

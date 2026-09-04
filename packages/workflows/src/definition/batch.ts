@@ -1,7 +1,16 @@
-import type { CatalogAction } from "./catalog";
+import type { CatalogInput } from "./catalog";
 import type { ValueOrRef, ValueType } from "./types";
 
 type ListType = Extract<ValueType, { kind: "list" }>;
+
+/** All batching needs of a step — an action or an integration step alike. */
+export type BatchableStep = {
+  inputs: Record<string, CatalogInput>;
+  /** Hidden behind the form's Advanced section, but written into the same `inputs`
+   * bag — so every check the visible ones get, these need too. */
+  advancedInputs?: Record<string, CatalogInput>;
+  batchable: boolean;
+};
 
 /**
  * Whether an action step repeats, and over what. Derived from the wiring rather than
@@ -21,15 +30,19 @@ export type BatchPlan =
  * resolving it would recurse into the loop it helps define.
  */
 export function batchCandidates(
-  action: CatalogAction,
+  action: BatchableStep,
   inputs: Record<string, ValueOrRef>
 ): string[] {
   if (!action.batchable) return [];
+  // Advanced inputs share the stored bag, so they are candidates like any other —
+  // reading only the visible map would let a list wired into an Advanced scalar
+  // slot run the step once instead of once per item.
+  const declared = { ...action.inputs, ...action.advancedInputs };
   // Declaration order, so the validator and the engine always agree on "the first one".
-  return Object.keys(action.inputs).filter((name) => {
-    if (action.inputs[name]?.type.kind === "list") return false;
+  return Object.keys(declared).filter((name) => {
+    if (declared[name]?.type.kind === "list") return false;
     // Rows are never the list a step repeats over.
-    if (action.inputs[name]?.pairs) return false;
+    if (declared[name]?.pairs) return false;
     const supplied = inputs[name];
     return supplied !== undefined && supplied.kind !== "item";
   });
@@ -37,7 +50,7 @@ export function batchCandidates(
 
 /** The same rule the engine follows, resolved through whatever knows an input's type. */
 export function batchPlan(
-  action: CatalogAction,
+  action: BatchableStep,
   inputs: Record<string, ValueOrRef>,
   typeOfInput: (name: string) => ValueType | undefined
 ): BatchPlan {

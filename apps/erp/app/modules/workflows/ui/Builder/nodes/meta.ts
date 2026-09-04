@@ -1,11 +1,13 @@
 import { OPERATOR_LABELS } from "@carbon/utils";
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
+import { cardsOf, DATA_OPERATIONS, integrationStepId } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
   LuCalculator,
   LuFilter,
   LuPlay,
+  LuPlug,
   LuSearch,
   LuSplit,
   LuZap
@@ -101,6 +103,23 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
       return labelText(node.data.action) ?? node.data.action;
     }
   },
+  integration: {
+    name: "Integration",
+    Icon: LuPlug,
+    description: "Runs a step in a connected app",
+    defaultTitle: "Use an integration",
+    hasTarget: NODE_ACCEPTS_INCOMING.integration,
+    catalogId: (node) =>
+      node.type === "integration" && node.data.piece && node.data.action
+        ? integrationStepId(node.data.piece, node.data.action)
+        : undefined,
+    summary: (node) => {
+      if (node.type !== "integration" || !node.data.piece) return undefined;
+      if (!node.data.action) return undefined;
+      const id = integrationStepId(node.data.piece, node.data.action);
+      return labelText(id) ?? id;
+    }
+  },
   compute: {
     name: "Compute",
     Icon: LuCalculator,
@@ -134,15 +153,30 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
         : `Find ${entity}`;
     }
   },
+  // Stored type stays `filter` — every saved workflow holds that literal. Only the
+  // name a person reads widened, along with what the node can do.
   filter: {
-    name: "Filter",
+    name: "Data",
     Icon: LuFilter,
-    description: "Keeps only the items that match",
-    defaultTitle: "Narrow a list",
+    description: "Works through a list — filter, count, pick or combine",
+    defaultTitle: "Work through a list",
     hasTarget: NODE_ACCEPTS_INCOMING.filter,
     summary: (node) => {
       if (node.type !== "filter") return undefined;
-      const n = node.data.clauses?.length ?? 0;
+      // The same normalizer the form, validator and runtime read, so the card
+      // cannot describe a different chain than the one that runs.
+      const cards = cardsOf(node);
+      if (cards.length > 1) {
+        return cards
+          .map((card) => DATA_OPERATIONS[card.operation].label)
+          .join(" → ");
+      }
+      const [card] = cards;
+      if (card === undefined) return undefined;
+      if (card.operation !== "filter") {
+        return DATA_OPERATIONS[card.operation].label;
+      }
+      const n = card.clauses.length;
       return n > 0
         ? `Keep items matching ${count(n, "rule", "rules")}`
         : undefined;
@@ -155,6 +189,7 @@ export const NODE_KIND_ORDER: WorkflowNodeType[] = [
   "trigger",
   "condition",
   "action",
+  "integration",
   "compute",
   "lookup",
   "filter"

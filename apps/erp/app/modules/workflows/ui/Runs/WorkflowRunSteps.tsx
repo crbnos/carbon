@@ -16,6 +16,7 @@ import {
   NODE_KIND_META
 } from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
+import { DataDetail } from "./DataDetail";
 import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
 import { useNodeLabel } from "./useNodeLabel";
@@ -269,10 +270,12 @@ function StepRow({
               )}
               {step.detail !== null && (
                 <ExpandedSection label={t`Why`}>
+                  {/* Each answers only for its own detail kind. */}
                   <ConditionDetail
                     detail={step.detail}
                     node={node?.type === "condition" ? node : undefined}
                   />
+                  <DataDetail detail={step.detail} />
                 </ExpandedSection>
               )}
             </>

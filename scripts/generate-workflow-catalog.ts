@@ -1,7 +1,8 @@
 /**
  * Builds events.generated.ts, actions.generated.ts, labels.generated.ts and
- * help.generated.ts from entities.ts, moments.ts, actions.ts, operations.ts and
- * the database swagger schema. Run: pnpm run generate:workflow-catalog
+ * help.generated.ts from entities.ts, moments.ts, actions.ts, operations.ts, the
+ * integration piece allowlist and the database swagger schema.
+ * Run: pnpm run generate:workflow-catalog
  *
  * Labels are a separate file because `msg` is a build-time macro that throws when
  * plain Node imports it. Emitted source is unformatted; the script pipes it
@@ -9,6 +10,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { buildPieceActionDeclarations } from "../packages/jobs/src/workflows/integrations/catalog";
 import schema from "../packages/database/src/swagger-docs-schema";
 import { WORKFLOW_ACTIONS } from "../packages/workflows/src/catalog/actions";
 import { buildCatalog } from "../packages/workflows/src/catalog/build";
@@ -32,72 +34,85 @@ function sorted<T>(record: Record<string, T>): Record<string, T> {
   );
 }
 
-const built = buildCatalog(
-  WORKFLOW_ENTITY_REGISTRY,
-  WORKFLOW_MOMENTS,
-  WORKFLOW_ACTIONS,
-  WORKFLOW_OPERATIONS,
-  schema
-);
+async function main(): Promise<void> {
+  // An UnmappablePropertyError here is deliberate: it exits non-zero, naming the
+  // piece, action and property, and writes no files.
+  const integrationSteps = await buildPieceActionDeclarations();
 
-const events = [
-  HEADER,
-  `import type { BuiltEvent } from "./build";`,
-  `import type { ValueType } from "../definition/types";`,
-  ``,
-  `export type { BuiltEvent as GeneratedEvent };`,
-  ``,
-  `export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = ${JSON.stringify(sorted(built.events))};`,
-  ``,
-  `export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = ${JSON.stringify(sorted(built.entities))};`,
-  ``,
-  `export const WORKFLOW_ENTITY_ENUMS: Record<string, Record<string, readonly string[]>> = ${JSON.stringify(sorted(built.enums))};`,
-  ``
-].join("\n");
+  const built = buildCatalog(
+    WORKFLOW_ENTITY_REGISTRY,
+    WORKFLOW_MOMENTS,
+    WORKFLOW_ACTIONS,
+    WORKFLOW_OPERATIONS,
+    schema,
+    integrationSteps
+  );
 
-const actions = [
-  HEADER,
-  `import type { BuiltAction, BuiltOperation } from "./build";`,
-  ``,
-  `export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = ${JSON.stringify(sorted(built.actions))};`,
-  ``,
-  `export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = ${JSON.stringify(sorted(built.operations))};`,
-  ``
-].join("\n");
+  const events = [
+    HEADER,
+    `import type { BuiltEvent } from "./build";`,
+    `import type { ValueType } from "../definition/types";`,
+    ``,
+    `export type { BuiltEvent as GeneratedEvent };`,
+    ``,
+    `export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = ${JSON.stringify(sorted(built.events))};`,
+    ``,
+    `export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = ${JSON.stringify(sorted(built.entities))};`,
+    ``,
+    `export const WORKFLOW_ENTITY_ENUMS: Record<string, Record<string, readonly string[]>> = ${JSON.stringify(sorted(built.enums))};`,
+    ``
+  ].join("\n");
 
-const labels = [
-  HEADER,
-  `import type { MessageDescriptor } from "@lingui/core";`,
-  `import { msg } from "@lingui/core/macro";`,
-  ``,
-  `export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {`,
-  // A literal template per id, so Lingui's extractor sees each message.
-  Object.entries(sorted(built.labels))
-    .map(([id, label]) => `  ${JSON.stringify(id)}: msg\`${label}\``)
-    .join(",\n"),
-  `};`,
-  ``
-].join("\n");
+  const actions = [
+    HEADER,
+    `import type { BuiltAction, BuiltIntegration, BuiltOperation } from "./build";`,
+    ``,
+    `export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = ${JSON.stringify(sorted(built.actions))};`,
+    ``,
+    `export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = ${JSON.stringify(sorted(built.integrations))};`,
+    ``,
+    `export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = ${JSON.stringify(sorted(built.operations))};`,
+    ``
+  ].join("\n");
 
-// A plain object, not a macro file — so unlike labels this one is safe to import
-// from plain Node, which check-workflow-catalog.ts relies on.
-const help = [
-  HEADER,
-  `import type { TermId } from "@carbon/glossary";`,
-  ``,
-  `export const WORKFLOW_FIELD_HELP: Record<string, TermId> = ${JSON.stringify(sorted(built.help))};`,
-  ``
-].join("\n");
+  const labels = [
+    HEADER,
+    `import type { MessageDescriptor } from "@lingui/core";`,
+    `import { msg } from "@lingui/core/macro";`,
+    ``,
+    `export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {`,
+    // A literal template per id, so Lingui's extractor sees each message.
+    Object.entries(sorted(built.labels))
+      .map(([id, label]) => `  ${JSON.stringify(id)}: msg\`${label}\``)
+      .join(",\n"),
+    `};`,
+    ``
+  ].join("\n");
 
-fs.writeFileSync(path.join(CATALOG_DIR, "events.generated.ts"), events);
-fs.writeFileSync(path.join(CATALOG_DIR, "actions.generated.ts"), actions);
-fs.writeFileSync(path.join(CATALOG_DIR, "labels.generated.ts"), labels);
-fs.writeFileSync(path.join(CATALOG_DIR, "help.generated.ts"), help);
+  // A plain object, not a macro file — so unlike labels this one is safe to import
+  // from plain Node, which check-workflow-catalog.ts relies on.
+  const help = [
+    HEADER,
+    `import type { TermId } from "@carbon/glossary";`,
+    ``,
+    `export const WORKFLOW_FIELD_HELP: Record<string, TermId> = ${JSON.stringify(sorted(built.help))};`,
+    ``
+  ].join("\n");
 
-console.log(
-  `generate-workflow-catalog: ${Object.keys(built.events).length} events, ${
-    Object.keys(built.entities).length
-  } entities, ${Object.keys(built.actions).length} actions, ${
-    Object.keys(built.operations).length
-  } operations, ${Object.keys(built.help).length} help terms`
-);
+  fs.writeFileSync(path.join(CATALOG_DIR, "events.generated.ts"), events);
+  fs.writeFileSync(path.join(CATALOG_DIR, "actions.generated.ts"), actions);
+  fs.writeFileSync(path.join(CATALOG_DIR, "labels.generated.ts"), labels);
+  fs.writeFileSync(path.join(CATALOG_DIR, "help.generated.ts"), help);
+
+  console.log(
+    `generate-workflow-catalog: ${Object.keys(built.events).length} events, ${
+      Object.keys(built.entities).length
+    } entities, ${Object.keys(built.actions).length} actions, ${
+      Object.keys(built.integrations).length
+    } integration steps, ${Object.keys(built.operations).length} operations, ${
+      Object.keys(built.help).length
+    } help terms`
+  );
+}
+
+void main();

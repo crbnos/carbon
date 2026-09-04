@@ -3,10 +3,12 @@ import type {
   RequiredPermission,
   WorkflowCatalog
 } from "../definition/catalog";
+import type { DataOperation } from "../definition/data-operations";
 import type { WorkflowNode } from "../definition/schema";
 import type {
   Combinator,
   PrimitiveKind,
+  RecordType,
   ScalarType
 } from "../definition/types";
 
@@ -20,6 +22,10 @@ export type RuntimeValue =
   // `row` holds a snapshot the loader cannot produce: "before" shares its id with "after".
   | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
   | { kind: "list"; of: ScalarType; items: RuntimeValue[] }
+  /** An object, with its data in hand. Carries `of` so a walk knows each field's
+   * declared type without a catalog lookup — records are structural and registered
+   * nowhere. Reading a field never touches the loader. */
+  | { kind: "record"; of: RecordType; fields: Record<string, RuntimeValue> }
   /** Named rows, resolved. Runtime only — nothing declares it as a `ValueType`, so it is
    * never compared, looped over, or produced as a step output. It exists so a resolved
    * header set stays recognisable to the log redactor. */
@@ -60,6 +66,12 @@ export interface WorkflowServices {
     actionId: string,
     inputs: Record<string, RuntimeValue>
   ): Promise<ActionOutcome>;
+  /** One step of a third-party integration. Takes the piece and its action off the
+   * catalog entry rather than an id, so nothing job-side parses an id's shape. */
+  runIntegration(
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome>;
   runOperation(
     operationId: string,
     inputs: Record<string, RuntimeValue>
@@ -83,7 +95,7 @@ export interface RuntimeContext {
   /** Called as each input resolves, so a step can report the values it used even
    * when the work it hands them to throws. The engine supplies it; tests may omit it. */
   record?: (key: string, value: RuntimeValue) => void;
-  /** Turns a record into an absolute URL, for the inputs the catalog marks `linkify`.
+  /** Turns a record into an absolute URL, for the inputs the catalog declares `links` on.
    * Supplied by the engine, which may read ERP_URL — this package never builds a URL,
    * because it is bundled for the browser and has four runtime dependencies. */
   linkFor?: (of: string, id: string) => string | null;
@@ -99,15 +111,26 @@ export type ClauseEvaluation = {
 };
 
 /** Why a node did what it did. Diagnostics, never node data. */
-export type NodeDetail = {
-  kind: "condition";
-  paths: Array<{
-    pathId: string;
-    combinator: Combinator;
-    evaluations: ClauseEvaluation[];
-    taken: boolean;
-  }>;
-};
+export type NodeDetail =
+  | {
+      kind: "condition";
+      paths: Array<{
+        pathId: string;
+        combinator: Combinator;
+        evaluations: ClauseEvaluation[];
+        taken: boolean;
+      }>;
+    }
+  | {
+      /** A data node's chain, one row per operation card, in run order. */
+      kind: "data";
+      cards: Array<{
+        id: string;
+        operation: DataOperation;
+        summary: string;
+        status: "Succeeded" | "Skipped";
+      }>;
+    };
 
 export type NodeResult =
   | {

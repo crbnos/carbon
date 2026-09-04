@@ -1,0 +1,58 @@
+# Workflow apps
+
+> Connect Google Calendar, Gmail, and Slack accounts that workflow steps can act as.
+
+A workflow can take steps in outside apps: put an event on a Google Calendar, send an email from Gmail, post a Slack message. Each app is an ordinary card under **Settings → Integrations**, and what you connect is an **account** — a specific Google account or Slack workspace that authorized Carbon. A workflow step then names which account it acts as.
+
+## Connecting an account
+
+Install the app's card and a consent popup opens with the vendor. Approve it and Carbon stores the connection; there are no keys to paste and no settings form. The card's **"Accounts"** tab lists every connected account, where you can rename one, use **"Disconnect"**, or **"Add account"** to connect another.
+
+You can connect several accounts to the same app — two Google accounts, say — and different workflow steps can act as different ones. An email sent by a workflow comes from the connected Google account itself, so "orders@" and "quality@" can each be a connection.
+
+The consent screen asks only for what the available steps use. Gmail is the clearest case: Carbon asks for permission to **send** email, never to read the mailbox.
+
+## When an account says "Reconnect needed"
+
+An account records what the vendor granted when it was connected. If a later version of Carbon needs a permission that account never granted, the account shows **"Reconnect needed"** on the Accounts tab, the builder offers a reconnect link instead of the account, and a step that tries to run with it fails with instructions rather than a cryptic vendor error. **"Reconnect"** simply re-runs the consent for the same account; nothing else changes.
+
+Disconnecting works the same way in reverse: the account stops working but is not erased, so a workflow step that referenced it says clearly that its account needs reconnecting instead of silently pointing at nothing.
+
+## Google Calendar
+
+Connect a Google account to work with its calendars. Two steps:
+
+| Step | What it does |
+| --- | --- |
+| **"Google Calendar: Create Event"** | Puts an event on a calendar you pick, with title, times, and guests. |
+| **"Google Calendar: Get all Events"** | Reads the events in a time window, in chronological order, ready for a **Filter** step or a repeating step. |
+
+Recurring events are expanded into their individual occurrences, so "events tomorrow" includes tomorrow's instance of a weekly meeting.
+
+## Gmail
+
+Connect a Google account to send email as that account, with **"Gmail: Send Email"**. The same Google consent covers Calendar and Gmail, but each card connects its own accounts.
+
+Carbon never asks Google for permission to read or search the mailbox — only to send. There is no read-inbox or reply-to-thread step, and the recipient sees the mail come from the connected account like any other message it sends.
+
+Emails are sent as HTML, so a record you drop into the body arrives as a clickable link back to that record in Carbon.
+
+## Slack
+
+One Slack install serves two purposes: it puts the `docs/integrations/assistant` in your workspace, and it gives workflows four steps.
+
+| Step | What it does |
+| --- | --- |
+| **"Slack: Send Message To A Channel"** | Posts to a channel you pick. |
+| **"Slack: Send Message To A User"** | Sends a direct message. |
+| **"Slack: Find User by Email"** | Looks a workspace member up, so a later step can DM them. |
+| **"Slack: Create Channel"** | Creates a channel, such as one per issue. |
+
+Records dropped into a message render as links back to Carbon. As with Google, you can connect more than one workspace and pick per step which one posts.
+
+Slack is hidden in controlled (ITAR) environments — when Carbon runs in a controlled deployment, the card doesn't appear at all.
+
+## Related
+
+  - Workflows The builder these accounts are used from — triggers, steps, publishing.
+  - Assistant The other half of the Slack install.

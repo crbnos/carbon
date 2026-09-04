@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dataOperationSchema } from "./data-operations";
 import {
   clauseSchema,
   combinatorSchema,
@@ -83,13 +84,42 @@ const lookupNode = z.object({
   })
 });
 
+/** One step of the data node's chain. Identity is load-bearing: React keys,
+ * issue field paths (`operations.{id}.…`) and run-detail rows all key on it. */
+const operationCardSchema = z.object({
+  id: z.string(),
+  operation: dataOperationSchema.default("filter"),
+  combinator: combinatorSchema.default("and"),
+  clauses: z.array(clauseSchema).default([]),
+  /** `pluck` only: a dotted path to the field projected off each item. */
+  field: z.string().optional(),
+  /** `pluck` only: flatten a list-valued field into ONE list, since
+   * `list<list<T>>` is unrepresentable. Off by default so a card never stores a
+   * flag that means nothing; the builder sets it when the field is a list. */
+  flatten: z.boolean().default(false)
+});
+export type OperationCard = z.infer<typeof operationCardSchema>;
+
+/** The data node. Still typed `"filter"`: every saved workflow holds that literal,
+ * and `operation` defaults to `"filter"`, so a node stored before this existed
+ * parses and behaves exactly as it did — no format bump, no migration. */
 const filterNode = z.object({
   ...nodeBase,
   type: z.literal("filter"),
   data: z.object({
     source: variableRefSchema.optional(),
     combinator: combinatorSchema.default("and"),
-    clauses: z.array(clauseSchema).default([])
+    clauses: z.array(clauseSchema).default([]),
+    operation: dataOperationSchema.default("filter"),
+    /** `pluck` only: a dotted path to the field projected off each item. */
+    field: z.string().optional(),
+    /** `pluck` only: flatten a list-valued field into ONE list, since
+     * `list<list<T>>` is unrepresentable. Off by default so a node never stores a
+     * flag that means nothing; the builder sets it when the field is a list. */
+    flatten: z.boolean().default(false),
+    /** The chain. Absent on every pre-chain definition — `cardsOf` synthesizes
+     * one card from the flat fields above, which stay for exactly that reason. */
+    operations: z.array(operationCardSchema).max(20).optional()
   })
 });
 
@@ -103,13 +133,32 @@ const actionNode = z.object({
   })
 });
 
+/**
+ * A step run by a third-party integration. Its own kind rather than an action, so
+ * the action path carries no notion of a vendor: `piece` names the integration and
+ * `action` the step within it, both drawn from `WORKFLOW_INTEGRATION_CATALOG`.
+ *
+ * Which account it acts as is an ordinary input (`connectionId`), not a field here
+ * — that is what lets the generic options provider fill it like any other list.
+ */
+const integrationNode = z.object({
+  ...nodeBase,
+  type: z.literal("integration"),
+  data: z.object({
+    piece: z.string(),
+    action: z.string(),
+    inputs: z.record(valueOrRefSchema).default({})
+  })
+});
+
 export const nodeSchema = z.discriminatedUnion("type", [
   triggerNode,
   conditionNode,
   computeNode,
   lookupNode,
   filterNode,
-  actionNode
+  actionNode,
+  integrationNode
 ]);
 export type WorkflowNode = z.infer<typeof nodeSchema>;
 export type WorkflowNodeType = WorkflowNode["type"];
@@ -120,6 +169,7 @@ export type ComputeNode = Extract<WorkflowNode, { type: "compute" }>;
 export type LookupNode = Extract<WorkflowNode, { type: "lookup" }>;
 export type FilterNode = Extract<WorkflowNode, { type: "filter" }>;
 export type ActionNode = Extract<WorkflowNode, { type: "action" }>;
+export type IntegrationNode = Extract<WorkflowNode, { type: "integration" }>;
 
 export const edgeSchema = z.object({
   id: z.string().min(1),

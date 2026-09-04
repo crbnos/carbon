@@ -5,7 +5,11 @@ import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
 import { isUrl } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveIntegrationSecrets } from "../../integrations/secrets";
+import type { IntegrationConnection } from "../../integrations/connections";
+import {
+  readConnectionAccessToken,
+  readConnections
+} from "../../integrations/connections";
 import { createSlackWebClient } from "./client";
 
 const logger = getLogger("ee", "slack");
@@ -199,48 +203,121 @@ export async function getIssueSlackThread(
   );
 }
 
+export interface SlackWorkspace {
+  connectionId: string;
+  companyId: string;
+  token: string;
+  teamId?: string;
+  channelId?: string;
+  botUserId?: string;
+}
+
+function workspaceFacts(connection: IntegrationConnection) {
+  const m = connection.metadata;
+  const str = (v: unknown) =>
+    typeof v === "string" && v.length > 0 ? v : undefined;
+  return {
+    teamId: str(m.team_id),
+    channelId: str(m.channel_id),
+    botUserId: str(m.bot_user_id)
+  };
+}
+
+/**
+ * The Slack workspace the Assistant acts as for a company: the OLDEST Active
+ * connection for piece `slack` that carries a webhook channel, falling back to the
+ * oldest Active one (`readConnections` orders by createdAt). The channel preference
+ * lives HERE so every Assistant surface picks the same workspace — without it, an
+ * oldest connection made without the webhook picker hid a later, complete one.
+ * Credentials and workspace facts live on the connection alone —
+ * `companyIntegration.slack` is only the installed flag. Service-role client
+ * required (vault).
+ */
+export async function getSlackWorkspace(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string
+): Promise<SlackWorkspace | null> {
+  const active = (
+    await readConnections(serviceRole, companyId, "slack")
+  ).filter((c) => c.status === "Active");
+  const connection =
+    active.find((c) => workspaceFacts(c).channelId !== undefined) ?? active[0];
+  if (connection === undefined) return null;
+  const token = await readConnectionAccessToken(
+    serviceRole,
+    companyId,
+    connection.id
+  );
+  return {
+    connectionId: connection.id,
+    companyId,
+    token,
+    ...workspaceFacts(connection)
+  };
+}
+
+/** One Slack app serves every tenant, so two Carbon companies can connect the same
+ * workspace. An inbound event cannot be routed then — refusing beats acting in the
+ * wrong company. */
+export class AmbiguousSlackWorkspaceError extends Error {
+  constructor(public readonly teamId: string) {
+    super(`Slack workspace ${teamId} is connected to more than one company.`);
+    this.name = "AmbiguousSlackWorkspaceError";
+  }
+}
+
+/** Inbound: a slash command or interaction names its workspace, so match on team_id. */
+export async function getSlackWorkspaceByTeamId(
+  serviceRole: SupabaseClient<Database>,
+  teamId: string
+): Promise<SlackWorkspace | null> {
+  const { data } = await serviceRole
+    .from("integrationConnection")
+    .select(
+      "id, companyId, pieceName, name, authType, accountLabel, metadata, expiresAt, status, lastError"
+    )
+    .eq("pieceName", "slack")
+    .eq("status", "Active")
+    .eq("metadata->>team_id", teamId)
+    .order("createdAt", { ascending: true });
+  const rows = (data ?? []) as unknown as IntegrationConnection[];
+  const connection = rows[0];
+  if (connection === undefined) return null;
+  if (rows.some((row) => row.companyId !== connection.companyId)) {
+    throw new AmbiguousSlackWorkspaceError(teamId);
+  }
+  const token = await readConnectionAccessToken(
+    serviceRole,
+    connection.companyId,
+    connection.id
+  );
+  return {
+    connectionId: connection.id,
+    companyId: connection.companyId,
+    token,
+    ...workspaceFacts(connection)
+  };
+}
+
 export async function getSlackAuth(
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string
 ): Promise<SlackAuth | null> {
-  const companyIntegration = await client
-    .from("companyIntegration")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("id", "slack")
-    .maybeSingle();
-  if (companyIntegration.error || !companyIntegration.data?.active) {
-    return null;
-  }
-
-  // Secret material (access_token) lives in Supabase Vault; merge it back so we
-  // read the same shape as before. Vault RPCs require the service-role client.
-  const serviceRole = getCarbonServiceRole();
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    "slack",
-    companyIntegration.data.metadata,
-    companyIntegration.data.secretRef
-  )) as {
-    access_token: string;
-    channel_id: string;
-  };
-
-  if (!metadata) {
-    return null;
-  }
+  const workspace = await getSlackWorkspace(getCarbonServiceRole(), companyId);
+  // A workspace connected without the webhook picker has no channel; the Assistant
+  // treats that as not connected, as it did when `channel_id` was missing.
+  if (workspace === null || workspace.channelId === undefined) return null;
 
   const slackUserId = await getSlackUserIdByCarbonId(
     client,
-    metadata.access_token,
+    workspace.token,
     userId
   );
 
   return {
-    slackToken: metadata.access_token,
-    channelId: metadata.channel_id,
+    slackToken: workspace.token,
+    channelId: workspace.channelId,
     slackUserId: slackUserId || undefined
   };
 }
@@ -293,17 +370,6 @@ export async function getSlackDocumentThread(
     .eq("documentId", documentId)
     .eq("companyId", companyId)
     .single();
-}
-
-export async function getSlackIntegrationByTeamId(
-  client: SupabaseClient<Database>,
-  teamId: string
-) {
-  return await client
-    .from("companyIntegration")
-    .select("*")
-    .eq("metadata->>team_id", teamId)
-    .eq("id", "slack");
 }
 
 export async function getCarbonEmployeeFromSlackId(

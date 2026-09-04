@@ -66,6 +66,9 @@ msgstr "+{overflow} 더 보기"
 msgid "About"
 msgstr "정보"
 
+msgid "About this field"
+msgstr "이 필드에 대해"
+
 msgid "Accept"
 msgstr "수락"
 

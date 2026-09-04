@@ -2,11 +2,13 @@ import type {
   CatalogAction,
   CatalogEntity,
   CatalogEvent,
+  CatalogIntegration,
   CatalogOperation,
   WorkflowCatalog
 } from "../definition/catalog";
 import {
   WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_INTEGRATION_CATALOG,
   WORKFLOW_OPERATION_CATALOG
 } from "./actions.generated";
 import {
@@ -42,6 +44,13 @@ const ACTIONS: Map<string, CatalogAction> = new Map(
   Object.entries(WORKFLOW_ACTION_CATALOG).map(([id, action]) => [
     id,
     { id, ...action }
+  ])
+);
+
+const INTEGRATIONS: Map<string, CatalogIntegration> = new Map(
+  Object.entries(WORKFLOW_INTEGRATION_CATALOG).map(([id, integration]) => [
+    id,
+    { id, ...integration }
   ])
 );
 
@@ -101,6 +110,8 @@ export function createWorkflowCatalog(
       if (base === undefined || extra === undefined) return base;
       return { ...base, inputs: merge(base.inputs, extra) };
     },
+    // No overlay: a custom field belongs to a Carbon entity, never to a vendor's form.
+    getIntegration: (id) => INTEGRATIONS.get(id),
     getOperation: (id) => OPERATIONS.get(id),
     getEnum: (entity, property) =>
       ENUMS.get(entity)?.[property] ?? overlay.enums[entity]?.[property],
@@ -114,9 +125,12 @@ export function createWorkflowCatalog(
 }
 
 /** How a job-side action is actually run. Kept off `CatalogAction`, which the validator reads. */
-export function getActionRoute(
-  id: string
-): { call?: string; update?: { entity: string } } | undefined {
+export function getActionRoute(id: string):
+  | {
+      call?: string;
+      update?: { entity: string };
+    }
+  | undefined {
   const action = WORKFLOW_ACTION_CATALOG[id];
   if (action === undefined) return undefined;
   return {
@@ -124,3 +138,5 @@ export function getActionRoute(
     ...(action.update === undefined ? {} : { update: action.update })
   };
 }
+
+export { integrationStepId } from "../definition/catalog";

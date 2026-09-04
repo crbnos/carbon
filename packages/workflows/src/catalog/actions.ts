@@ -1,5 +1,9 @@
 import type { TermId } from "@carbon/glossary";
-import type { RequiredPermission } from "../definition/catalog";
+import type {
+  LinksDeclaration,
+  OptionsSource,
+  RequiredPermission
+} from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 
 export interface ActionInputLike {
@@ -7,20 +11,33 @@ export interface ActionInputLike {
   required: boolean;
   label: string;
   template?: boolean;
-  /** Prose a person reads: a record dropped in renders as a link. Not for webhook bodies,
-   * where a markdown link would ship to someone else's API as literal text. */
-  linkify?: boolean;
+  /** The input is a moment, not a calendar day: the builder renders a date AND
+   * time picker and stores a full ISO instant. Set from a vendor's `DATE_TIME`
+   * property. Never set on a Carbon business date (`dueDate`, `orderDate`,
+   * `postingDate`), which is a day on the company's calendar and has no time. */
+  precision?: "datetime";
+  /** Prose that can carry a link, in the destination's own dialect. Not for webhook
+   * bodies, where a link would ship to someone else's API as literal text. */
+  links?: LinksDeclaration;
   /** Allowed literal values. The generated side infers these from the database schema;
    * a hand-written action is not a schema entity, so it must say so here. */
   choices?: readonly string[];
-  /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string | readonly string[];
+  /** The vendor's own explanation of the field, shown as an ⓘ tooltip. Free
+   * text (translated through the label catalog), unlike `help`, which names a
+   * Carbon glossary term. */
+  description?: string;
+  /** What the builder seeds a new node with. Nothing reads it at run time.
+   * Booleans and numbers are real members: a checkbox's `false` is a value, and
+   * dropping it by truthiness made an OFF toggle mean "vendor decides". */
+  defaultValue?: string | number | boolean | readonly string[];
   /** The value is a set of name/value rows. */
   pairs?: boolean;
   /** Only shown, and only required, while `input` holds one of `equals`. */
   showWhen?: { input: string; equals: readonly string[] };
   /** Glossary term whose definition explains this field. Rendered as the ⓘ hover. */
   help?: TermId;
+  /** Choices are fetched while editing, from a registered options provider. */
+  options?: OptionsSource;
 }
 
 export interface ActionDeclarationLike {
@@ -34,6 +51,21 @@ export interface ActionDeclarationLike {
   call?: string;
   /** Set by the generator for the expanded update family; never hand-written. */
   update?: { entity: string };
+}
+
+/**
+ * One step of a third-party integration, declared by the generator from the piece
+ * allowlist and never by hand. Inputs work exactly as an action's — only how the
+ * step RUNS differs, which is why `piece` is required here and absent above.
+ */
+export interface IntegrationDeclarationLike
+  extends Omit<ActionDeclarationLike, "call" | "update"> {
+  /** `label` is the APP's own name — see `integrationAppLabelKey`. */
+  piece: { name: string; action: string; label: string };
+  /** Inputs a person does not see by default — vendor API trivia, or a value we
+   * pin. Kept apart from `inputs` so the validator never demands one; the builder
+   * renders them under Advanced, so a hidden field is demoted, never lost. */
+  advancedInputs?: ActionDeclarationLike["inputs"];
 }
 
 /** Identity helper, so each entry's shape is checked where it is written. */
@@ -173,7 +205,8 @@ export const WORKFLOW_ACTIONS = {
         required: false,
         label: "message",
         template: true,
-        linkify: true
+        // Markdown: the dialect the in-app notification renderer reads.
+        links: { format: "markdown" }
       },
       // The value model has no "any record" type, so the record is named in two parts.
       aboutId: {

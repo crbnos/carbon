@@ -485,7 +485,11 @@ export async function getWorkflowVersionOwnership(
 ) {
   return client
     .from("workflowVersion")
-    .select("workflowId, workflow(publishedVersionId)")
+    .select(
+      // Two FKs join these tables — this one and workflow."publishedVersionId" —
+      // so the embed must name which, or PostgREST refuses it (PGRST201).
+      "workflowId, workflow!workflowVersion_workflowId_companyId_fkey(publishedVersionId)"
+    )
     .eq("id", versionId)
     .eq("companyId", companyId)
     .maybeSingle();

@@ -1,4 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
+import { revokeConnectionsForPiece } from "./integrations/connections";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
@@ -33,6 +35,17 @@ import {
 } from "./xero/hooks.server";
 
 /**
+ * A workflow integration is healthy when it has at least one usable account.
+ *
+ * Its credentials live per CONNECTION rather than on the integration row, so the
+ * secret-based check the other integrations use cannot see them — and without a
+ * check of its own the card reports "Healthy" unconditionally (`resolveHealth`
+ * defaults to healthy when none is declared), so a revoked account read as fine
+ * while every workflow step using it failed.
+ *
+ * Shared rather than written per vendor: nothing here is Google-specific.
+ */
+/**
  * Server-side hooks registry for integrations.
  *
  * Hooks that depend on server-only modules (like getCarbonServiceRole)
@@ -50,8 +63,31 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   linear: {
     onHealthcheck: linearHealthcheck
   },
+  // A workflow-integration card's whole uninstall behaviour is "revoke the accounts
+  // it connected", and its `id` IS the piece name — so a new piece is this one line,
+  // not a hooks file of its own.
+  // Health for a piece card is decided in erp's `getIntegrationHealth` (it needs
+  // the allowlist's required scopes, which ee cannot see); only uninstall lives here.
+  "google-calendar": {
+    onUninstall: (companyId) =>
+      revokeConnectionsForPiece(
+        getCarbonServiceRole(),
+        "google-calendar",
+        companyId
+      )
+  },
+  gmail: {
+    onUninstall: (companyId) =>
+      revokeConnectionsForPiece(getCarbonServiceRole(), "gmail", companyId)
+  },
   onshape: {
     onUninstall: onshapeOnUninstall
+  },
+  // One Slack card serves the Carbon Assistant and workflow steps; uninstalling it
+  // revokes every connected workspace.
+  slack: {
+    onUninstall: (companyId) =>
+      revokeConnectionsForPiece(getCarbonServiceRole(), "slack", companyId)
   },
   // The accounting providers' onUpdate re-runs the same subscription
   // convergence as onInstall: a settings save on an existing install

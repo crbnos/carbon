@@ -125,6 +125,7 @@ beforeEach(() => {
   vi.mocked(claimStep).mockResolvedValue({ claimed: true, stepRunId: "s1" });
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search: async () => ({ ok: false, error: "not stubbed" })
   });
@@ -187,5 +188,47 @@ describe("a second delivery of the same event", () => {
     expect(ids).toEqual(["load"]);
     expect(claimStep).not.toHaveBeenCalled();
     expect(runAction).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The run row's `error` was hard-coded `null` unless the step CAP was hit, so every
+ * ordinary failure — the common case — reached the run page as a bare
+ * "Failed at <step>." The reason was sitting in the step row the whole time.
+ * A real report: a Google Calendar step failed with "Cannot read properties of
+ * undefined (reading 'length')" and the run page showed nothing at all.
+ */
+describe("a failed run says WHY it failed", () => {
+  const VENDOR_ERROR =
+    "Google Calendar rejected this: Cannot read properties of undefined (reading 'length')";
+
+  it("carries the failing step's error onto the run", async () => {
+    const { step } = harness();
+    runAction.mockResolvedValueOnce({
+      ok: false,
+      error: VENDOR_ERROR
+    } as never);
+
+    const result = await executeWorkflowRun({ payload, step, logger });
+
+    expect(result.status).toBe("Failed");
+    // The run row is what the run page leads with — not the step row.
+    expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
+      status: "Failed",
+      error: VENDOR_ERROR
+    });
+  });
+
+  // A run that genuinely succeeded must not acquire an error from a previous one.
+  it("leaves the error null when nothing failed", async () => {
+    const { step } = harness();
+
+    const result = await executeWorkflowRun({ payload, step, logger });
+
+    expect(result.status).toBe("Succeeded");
+    expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
+      status: "Succeeded",
+      error: null
+    });
   });
 });

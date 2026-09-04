@@ -27,7 +27,11 @@ const dueBefore: Clause[] = [
   }
 ];
 
-const node = (clauses: Clause[], source = true): FilterNode => ({
+const node = (
+  clauses: Clause[],
+  source = true,
+  data: Partial<FilterNode["data"]> = {}
+): FilterNode => ({
   id: "f1",
   name: "f1",
   type: "filter",
@@ -37,7 +41,10 @@ const node = (clauses: Clause[], source = true): FilterNode => ({
       ? { kind: "ref", nodeId: "find", output: "result", path: [] }
       : undefined,
     combinator: "and",
-    clauses
+    clauses,
+    operation: "filter",
+    flatten: false,
+    ...data
   }
 });
 
@@ -98,7 +105,7 @@ describe("filterExecutor", () => {
   it("skips when no list was chosen", async () => {
     expect(
       await filterExecutor.execute(node([], false), createRuntimeContext())
-    ).toEqual({ status: "Skipped", reason: "No list was chosen to filter." });
+    ).toEqual({ status: "Skipped", reason: "No list was chosen." });
   });
 });
 

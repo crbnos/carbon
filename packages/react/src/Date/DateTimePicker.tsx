@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../Tooltip";
 import { FieldButton } from "./components/Button";
 import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
-import TimeField from "./TimePicker";
+import { TimeCombobox } from "./TimeCombobox";
 
 const dateTimePickerFieldVariants = cva("flex w-full px-4", {
   variants: {
@@ -45,13 +45,32 @@ const DateTimePicker = (
     helperText?: string;
   }
 ) => {
+  // `granularity` is pinned, `hourCycle` is the caller's choice.
+  //
+  // react-stately DERIVES granularity from the value, so an EMPTY picker falls
+  // back to "day" and its `hasTime` is false — picking a date then commits a
+  // bare CalendarDate, silently discarding a time already entered. Pinning
+  // "minute" is a bug fix and applies to every caller (see
+  // `__tests__/DateTimePickerState.test.tsx`).
+  //
+  // The clock is NOT a bug fix: a timecard or a maintenance start time is an
+  // ordinary local-habit field where an en-US user expects AM/PM. Only callers
+  // that need an unambiguous wall clock ask for `hourCycle={24}`.
+  const timeOptions = {
+    granularity: "minute",
+    ...(props.hourCycle ? { hourCycle: props.hourCycle } : {})
+  } as const;
+
   const state = useDatePickerState({
     ...props,
+    ...timeOptions,
     shouldCloseOnSelect: false
   });
   const ref = useRef<HTMLDivElement>(null);
+  // The same options must reach `useDatePicker`, not just the state: it builds
+  // `fieldProps`, so without them the visible field ignores what the state says.
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker(props, state, ref);
+    useDatePicker({ ...props, ...timeOptions }, state, ref);
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -124,15 +143,15 @@ const DateTimePicker = (
         </HStack>
         <PopoverContent align="end" {...dialogProps}>
           <Calendar {...calendarProps} />
-          <TimeField
-            label="Time"
-            value={state.timeValue}
-            onChange={
-              state.setTimeValue as (
-                value: import("@react-types/datepicker").TimeValue | null
-              ) => void
-            }
-          />
+          <div className="pt-3">
+            <TimeCombobox
+              value={state.timeValue}
+              onChange={state.setTimeValue}
+              isDisabled={props.isDisabled}
+              hour24={props.hourCycle === 24}
+              aria-label="Time"
+            />
+          </div>
           {props.inline && (
             <PopoverFooter>
               <Button onClick={() => state.setValue(null)} variant="secondary">

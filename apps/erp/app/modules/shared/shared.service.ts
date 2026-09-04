@@ -1,5 +1,6 @@
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { TEMPLATE_ASSET_PREFIX } from "@carbon/database/dataset-assets";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
@@ -708,6 +709,13 @@ export async function getBase64ImageFromSupabase(
 ) {
   function arrayBufferToBase64(buffer: ArrayBuffer): string {
     return Buffer.from(buffer).toString("base64");
+  }
+
+  // Demo-template artwork is bundled with the app, not uploaded — there is no
+  // storage object to download. It is also SVG, which react-pdf's <Image>
+  // cannot decode (JPG/PNG only), so there is nothing to hand a PDF either.
+  if (path.startsWith(TEMPLATE_ASSET_PREFIX)) {
+    return null;
   }
 
   const { data, error } = await client.storage.from("private").download(path);

@@ -1,11 +1,17 @@
 import type { TermId } from "@carbon/glossary";
 import {
   type EventMatch,
+  integrationAppLabelKey,
   isMultiSelect,
+  type LinksDeclaration,
+  type OptionsSource,
   type RequiredPermission
 } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
-import type { ActionDeclarationLike } from "./actions";
+import type {
+  ActionDeclarationLike,
+  IntegrationDeclarationLike
+} from "./actions";
 import type { OperationDeclarationLike } from "./operations";
 
 /** The slice of `swagger-docs-schema.ts` the builder reads. */
@@ -79,11 +85,18 @@ export interface BuiltActionInput {
   required: boolean;
   choices?: readonly string[];
   /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string | readonly string[];
+  defaultValue?: string | number | boolean | readonly string[];
+  /** Vendor prose for the ⓘ tooltip; rendered through the label catalog. */
+  description?: string;
   template?: boolean;
+  /** The input is a moment, not a calendar day: the builder renders a date AND
+   * time picker and stores a full ISO instant. Set from a vendor's `DATE_TIME`
+   * property. Never set on a Carbon business date (`dueDate`, `orderDate`,
+   * `postingDate`), which is a day on the company's calendar and has no time. */
+  precision?: "datetime";
   /** Prose a person reads: a record dropped in renders as a link when the caller
    * supplies a resolver. Not set on webhook bodies. */
-  linkify?: boolean;
+  links?: LinksDeclaration;
   /** Table a non-entity foreign key points at, so the update executor can scope the
    * value to the company. Resolved here so a dropped fk note fails CI rather than
    * silently disabling that check at run time. */
@@ -94,6 +107,8 @@ export interface BuiltActionInput {
   pairs?: boolean;
   /** Only shown, and only required, while `input` holds one of `equals`. */
   showWhen?: { input: string; equals: readonly string[] };
+  /** Choices are fetched while editing, from a registered options provider. */
+  options?: OptionsSource;
 }
 
 export interface BuiltAction {
@@ -104,6 +119,20 @@ export interface BuiltAction {
   requireOneOf?: string[][];
   call?: string;
   update?: { entity: string };
+}
+
+/**
+ * A step run by a third-party integration. Deliberately NOT a `BuiltAction`: the
+ * action path has no notion of a vendor, so the two cannot be confused at a call
+ * site or routed through the same dispatcher.
+ */
+export interface BuiltIntegration
+  extends Omit<BuiltAction, "call" | "update" | "requireOneOf"> {
+  /** Which piece, and which of its actions. The app's display name lives in the
+   * label map instead, so it is not repeated on every step. */
+  piece: { name: string; action: string };
+  /** Hidden inputs, rendered only under the node's Advanced section. */
+  advancedInputs?: Record<string, BuiltActionInput>;
 }
 
 export interface BuiltOperation {
@@ -123,11 +152,78 @@ export interface BuiltCatalog {
   /** Allowed values per entity + property, only for enum columns. */
   enums: Record<string, Record<string, readonly string[]>>;
   actions: Record<string, BuiltAction>;
+  integrations: Record<string, BuiltIntegration>;
   operations: Record<string, BuiltOperation>;
 }
 
 /** A hand-written action with neither of these has no way to run. */
 const BUILT_IN_ACTIONS = new Set(["notify", "webhook"]);
+
+/** Declared inputs → built inputs. Shared by actions and integration steps: they
+ * describe their inputs identically, and only differ in how the step is run. */
+function buildDeclaredInputs(
+  id: string,
+  declaration: ActionDeclarationLike,
+  registry: Record<string, RegistryEntry>,
+  schema: SwaggerSchema
+): Record<string, BuiltActionInput> {
+  const inputs: Record<string, BuiltActionInput> = {};
+  for (const [input, spec] of Object.entries(declaration.inputs)) {
+    inputs[input] = {
+      type: spec.type,
+      required: spec.required,
+      ...(spec.choices ? { choices: spec.choices } : {}),
+      // `!== undefined`, never truthiness: `false` and `0` are real defaults.
+      ...(spec.defaultValue !== undefined
+        ? { defaultValue: spec.defaultValue }
+        : {}),
+      ...(spec.description !== undefined
+        ? { description: spec.description }
+        : {}),
+      ...(spec.template ? { template: true } : {}),
+      ...(spec.precision ? { precision: spec.precision } : {}),
+      ...(spec.links ? { links: spec.links } : {}),
+      ...(spec.pairs ? { pairs: true } : {}),
+      ...(spec.showWhen ? { showWhen: spec.showWhen } : {}),
+      ...(spec.options ? { options: spec.options } : {})
+    };
+    // An `<entity>.<verb>` id inherits its entity's enum columns; an integration
+    // id has no registry entry, so this simply does not fire for one.
+    const [entityPrefix] = id.split(".");
+    const table =
+      entityPrefix !== undefined ? registry[entityPrefix]?.table : undefined;
+    if (table !== undefined) {
+      const values = enumFor(schema, table, input);
+      if (values !== undefined && values.length > 0) {
+        inputs[input].choices = values;
+      }
+    }
+  }
+  return inputs;
+}
+
+/** The English label for a declaration and each of its inputs. Key shape is shared
+ * with actions so one lookup serves both kinds in the builder. */
+function labelDeclaration(
+  id: string,
+  declaration: ActionDeclarationLike,
+  labels: Record<string, string>,
+  help: Record<string, string>
+): void {
+  labels[id] = declaration.label;
+  for (const [input, spec] of Object.entries(declaration.inputs)) {
+    const key = `action.${id}.input.${input}`;
+    const label = spec.label.charAt(0).toUpperCase() + spec.label.slice(1);
+    assertLabelIsSafe(key, label);
+    labels[key] = label;
+    if (spec.help !== undefined) help[key] = spec.help;
+    // The tooltip rides the label catalog so it is translated like the label.
+    if (spec.description !== undefined) {
+      assertLabelIsSafe(`${key}.description`, spec.description);
+      labels[`${key}.description`] = spec.description;
+    }
+  }
+}
 
 /** Tenancy, extensibility and audit columns, hidden from every entity. */
 const DROPPED_COLUMNS = new Set([
@@ -255,7 +351,8 @@ export function validateCatalogInputs(
   moments: Record<string, MomentDeclarationLike>,
   actions: Record<string, ActionDeclarationLike>,
   operations: Record<string, OperationDeclarationLike>,
-  schema: SwaggerSchema
+  schema: SwaggerSchema,
+  integrations: Record<string, IntegrationDeclarationLike> = {}
 ): string[] {
   const problems: string[] = [];
   const byTable = indexByTable(registry);
@@ -364,20 +461,80 @@ export function validateCatalogInputs(
     }
   };
 
-  for (const [id, declaration] of Object.entries(actions)) {
+  // Actions and integration steps declare their inputs identically, so the same
+  // rules apply to both — only how each one is RUN differs.
+  const declarations: [string, string, ActionDeclarationLike][] = [
+    ...Object.entries(actions).map(
+      ([id, declaration]) =>
+        ["Action", id, declaration] as [string, string, ActionDeclarationLike]
+    ),
+    ...Object.entries(integrations).map(
+      ([id, declaration]) =>
+        ["Integration step", id, declaration] as [
+          string,
+          string,
+          ActionDeclarationLike
+        ]
+    )
+  ];
+
+  for (const [kind, id, declaration] of declarations) {
     if (declaration.label.trim().length === 0) {
-      problems.push(`Action "${id}" has no label.`);
+      problems.push(`${kind} "${id}" has no label.`);
     }
-    if (declaration.call === undefined && !BUILT_IN_ACTIONS.has(id)) {
+    if (
+      kind === "Action" &&
+      declaration.call === undefined &&
+      !BUILT_IN_ACTIONS.has(id)
+    ) {
       problems.push(`Action "${id}" has no implementation route.`);
     }
-    for (const [input, spec] of Object.entries(declaration.inputs)) {
-      checkEntityType(`Action "${id}"`, `input "${input}"`, spec.type);
+    // Advanced inputs are hidden in the form but land in the same `inputs` bag at
+    // run time, so they get every structural check the visible ones get. Only the
+    // required/`requireOneOf` rules are inapplicable — and this loop has none.
+    const declaredInputs: Record<
+      string,
+      ActionDeclarationLike["inputs"][string]
+    > = {
+      ...declaration.inputs,
+      ...(declaration as IntegrationDeclarationLike).advancedInputs
+    };
+    for (const [input, spec] of Object.entries(declaredInputs)) {
+      checkEntityType(`${kind} "${id}"`, `input "${input}"`, spec.type);
+      // An object is a step's OUTPUT, never something a person fills in: there is
+      // no field that could edit one, and no literal that could hold one. Refusing
+      // it here is what keeps every existing form, template and condition free of
+      // a record case.
+      if (
+        spec.type.kind === "record" ||
+        (spec.type.kind === "list" && spec.type.of.kind === "record")
+      ) {
+        problems.push(
+          `${id}.${input} is an object, which cannot be filled in by a person.`
+        );
+      }
       if (
         spec.template === true &&
         !(spec.type.kind === "primitive" && spec.type.of === "string")
       ) {
         problems.push(`${id}.${input} is a template but is not a string.`);
+      }
+      if (
+        spec.precision !== undefined &&
+        !(spec.type.kind === "primitive" && spec.type.of === "date")
+      ) {
+        problems.push(`${id}.${input} declares precision but is not a date.`);
+      }
+      if (spec.links !== undefined) {
+        if (!(spec.type.kind === "primitive" && spec.type.of === "string")) {
+          problems.push(`${id}.${input} declares links but is not a string.`);
+        }
+        const gate = spec.links.when;
+        if (gate !== undefined && declaredInputs[gate.input] === undefined) {
+          problems.push(
+            `${id}.${input} gates links on "${gate.input}", which the step does not have.`
+          );
+        }
       }
       // A fixed set of values on a list is what MAKES it a multi-select (`isMultiSelect`),
       // so a list of anything else has no reading in the builder.
@@ -392,10 +549,13 @@ export function validateCatalogInputs(
       }
       if (spec.defaultValue !== undefined && spec.choices !== undefined) {
         // One default or a set of them — a multi-select seeds several at once.
+        // A boolean or number default has no choices to be a member of.
         const defaults =
           typeof spec.defaultValue === "string"
             ? [spec.defaultValue]
-            : spec.defaultValue;
+            : Array.isArray(spec.defaultValue)
+              ? spec.defaultValue
+              : [];
         for (const value of defaults) {
           if (spec.choices.includes(value)) continue;
           problems.push(
@@ -413,9 +573,21 @@ export function validateCatalogInputs(
           `${id}.${input} defaults to one value but holds a set of them.`
         );
       }
+      // A fetched list and a fixed one are two answers to the same question.
+      if (spec.options !== undefined && spec.choices !== undefined) {
+        problems.push(
+          `${id}.${input} both fetches its values and lists them; it can only do one.`
+        );
+      }
+      for (const dependency of spec.options?.dependsOn ?? []) {
+        if (declaredInputs[dependency] !== undefined) continue;
+        problems.push(
+          `${id}.${input} fetches its values using "${dependency}", which is not an input of "${id}".`
+        );
+      }
       const gate = spec.showWhen;
       if (gate !== undefined) {
-        const target = declaration.inputs[gate.input];
+        const target = declaredInputs[gate.input];
         if (target === undefined) {
           problems.push(
             `${id}.${input} is shown when "${gate.input}" is set, but that is not an input of "${id}".`
@@ -442,7 +614,7 @@ export function validateCatalogInputs(
       }
     }
     for (const [output, type] of Object.entries(declaration.outputs)) {
-      checkEntityType(`Action "${id}"`, `output "${output}"`, type);
+      checkEntityType(`${kind} "${id}"`, `output "${output}"`, type);
     }
   }
 
@@ -495,14 +667,16 @@ export function buildCatalog(
   moments: Record<string, MomentDeclarationLike>,
   handWrittenActions: Record<string, ActionDeclarationLike>,
   handWrittenOperations: Record<string, OperationDeclarationLike>,
-  schema: SwaggerSchema
+  schema: SwaggerSchema,
+  integrationSteps: Record<string, IntegrationDeclarationLike> = {}
 ): BuiltCatalog {
   const problems = validateCatalogInputs(
     registry,
     moments,
     handWrittenActions,
     handWrittenOperations,
-    schema
+    schema,
+    integrationSteps
   );
   if (problems.length > 0) throw new Error(problems.join("\n"));
 
@@ -513,6 +687,7 @@ export function buildCatalog(
   const entities: Record<string, Record<string, ValueType>> = {};
   const enums: Record<string, Record<string, readonly string[]>> = {};
   const actions: Record<string, BuiltAction> = {};
+  const integrations: Record<string, BuiltIntegration> = {};
   const operations: Record<string, BuiltOperation> = {};
 
   for (const [name, entry] of Object.entries(registry)) {
@@ -645,28 +820,7 @@ export function buildCatalog(
         `Action "${id}" is declared by hand and also generated from the entity registry.`
       );
     }
-    const inputs: Record<string, BuiltActionInput> = {};
-    for (const [input, spec] of Object.entries(declaration.inputs)) {
-      inputs[input] = {
-        type: spec.type,
-        required: spec.required,
-        ...(spec.choices ? { choices: spec.choices } : {}),
-        ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
-        ...(spec.template ? { template: true } : {}),
-        ...(spec.linkify ? { linkify: true } : {}),
-        ...(spec.pairs ? { pairs: true } : {}),
-        ...(spec.showWhen ? { showWhen: spec.showWhen } : {})
-      };
-      const [entityPrefix] = id.split(".");
-      const table =
-        entityPrefix !== undefined ? registry[entityPrefix]?.table : undefined;
-      if (table !== undefined) {
-        const values = enumFor(schema, table, input);
-        if (values !== undefined && values.length > 0) {
-          inputs[input].choices = values;
-        }
-      }
-    }
+    const inputs = buildDeclaredInputs(id, declaration, registry, schema);
     actions[id] = {
       inputs,
       outputs: declaration.outputs,
@@ -677,14 +831,41 @@ export function buildCatalog(
         : { requireOneOf: declaration.requireOneOf }),
       ...(declaration.call === undefined ? {} : { call: declaration.call })
     };
-    labels[id] = declaration.label;
-    for (const [input, spec] of Object.entries(declaration.inputs)) {
-      const key = `action.${id}.input.${input}`;
-      const label = spec.label.charAt(0).toUpperCase() + spec.label.slice(1);
-      assertLabelIsSafe(key, label);
-      labels[key] = label;
-      if (spec.help !== undefined) help[key] = spec.help;
+    labelDeclaration(id, declaration, labels, help);
+  }
+
+  // Same input handling, a different map: an integration step never reaches the
+  // action dispatcher, and an action never carries a piece.
+  for (const [id, declaration] of Object.entries(integrationSteps)) {
+    if (actions[id] !== undefined) {
+      throw new Error(
+        `"${id}" is declared as both an action and an integration step.`
+      );
     }
+    const { name, action, label: appLabel } = declaration.piece;
+    integrations[id] = {
+      inputs: buildDeclaredInputs(id, declaration, registry, schema),
+      ...(declaration.advancedInputs === undefined
+        ? {}
+        : {
+            advancedInputs: buildDeclaredInputs(
+              id,
+              { ...declaration, inputs: declaration.advancedInputs },
+              registry,
+              schema
+            )
+          }),
+      outputs: declaration.outputs,
+      batchable: declaration.batchable,
+      permission: declaration.permission,
+      piece: { name, action }
+    };
+    labelDeclaration(id, declaration, labels, help);
+    // Written once per step of the app, to the same key — the builder needs the app's
+    // own name to offer it before any step has been picked.
+    const appKey = integrationAppLabelKey(name);
+    assertLabelIsSafe(appKey, appLabel);
+    labels[appKey] = appLabel;
   }
 
   for (const [id, declaration] of Object.entries(handWrittenOperations)) {
@@ -715,5 +896,14 @@ export function buildCatalog(
     }
   }
 
-  return { events, labels, help, entities, enums, actions, operations };
+  return {
+    events,
+    labels,
+    help,
+    entities,
+    enums,
+    actions,
+    integrations,
+    operations
+  };
 }

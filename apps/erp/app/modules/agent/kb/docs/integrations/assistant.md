@@ -6,6 +6,9 @@
 
 Connect **Slack** over **OAuth** to put the **Carbon Assistant** in your workspace and receive
 **nonconformance notifications** where your team already talks. There are no fields to fill in.
+The same install also gives `docs/reference/workflows` their Slack steps — sending messages,
+finding users, creating channels — as any workspace listed on the card's **"Accounts"** tab; see
+`docs/integrations/workflow-apps`.
 
   
   ### Start the Slack install

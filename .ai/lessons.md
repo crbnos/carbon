@@ -1201,6 +1201,31 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
 
+## Secret material is read through ONE reader — never off a column
+
+**Context:** After `20260817132607` moved integration tokens into the Vault, three readers kept
+reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
+`notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
+slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
+(`20260901173100`), the same class of miss happened again with `notify.ts` because the consumer map
+was built from module exports, not from a grep of the column.
+
+**Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,
+`readConnectionAccessToken` / `resolveConnectionAuth` for `integrationConnection`). Before changing
+where a secret lives, grep for the *column and id* (`"companyIntegration"` + `"slack"`,
+`metadata.access_token`, `secretRef`) across `apps/` and `packages/`, not for function names — and
+make the old path fail loudly (throw) rather than return `undefined`.
+
+**Applies to:** every `companyIntegration` / `integrationConnection` reader; any future secret move.
+
+## `.po` catalogs are committed only after `lingui:clean`
+
+**Context:** `pnpm run lingui:extract` alone leaves `#: path:line` origin comments and a
+`POT-Creation-Date` header in all 26 catalogs — 170k diff lines for ~30 real strings.
+
+**Rule:** always `pnpm run lingui:extract && pnpm run lingui:clean` (or `pnpm run translate`);
+the commit hook normalises, but the working tree should never carry the noise.
+
 ## Kysely builds ONE column list per multi-row insert — a conditionally-set key writes NULL into its siblings
 
 **Context:** `get-method`'s `quoteLineToJob` builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
@@ -1240,6 +1265,27 @@ canvas hosting Radix popovers/selects.
 **Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## Compare OAuth scopes the way the vendor REPORTS them, not the way you asked
+
+**Context:** The Gmail allowlist row requested `["…/auth/gmail.send", "email"]`, the spelling
+the Activepieces piece uses. Google's token response came back with
+`openid …/auth/gmail.send …/auth/userinfo.email` — the alias canonicalised, an unrequested
+`openid` added. `missingScopes(granted, required)` reported `email` missing and the account
+showed "Reconnect needed" the second it connected. Google Calendar's piece has the same alias
+and was never caught only because its first connections predate scope recording.
+
+**Rule:** Every scope in an allowlist row (and anything else that feeds `requiredScopesFor`)
+is spelled exactly as the vendor echoes it in the token response — for Google the full
+`https://www.googleapis.com/auth/…` URL. When a piece's own list uses an alias, override
+`oauth.scope` with the canonical form (same set of permissions). `oauth.test.ts` refuses
+`email` / `profile` / `openid` on any row. When a "reconnect needed" appears on a freshly
+connected account, diff `metadata.scopes` against `requiredScopesFor` before anything else.
+
+**Applies to:** `packages/jobs/src/workflows/integrations/allowlist.ts` `oauth.scope`,
+`packages/ee/src/integrations/connections.ts` `missingScopes`, any future vendor whose token
+response normalises scope names (Microsoft returns short names for Graph scopes too).
+
 
 ## A "did my job finish?" baseline must include the rows a FAILED run left behind
 

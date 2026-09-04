@@ -196,6 +196,58 @@ describe("renderTemplate with a link resolver", () => {
     });
   });
 
+  it("renders a slack link, and the label cannot break out of it", async () => {
+    const ctx = createRuntimeContext({
+      outputs: {
+        n1: {
+          record: entityValue("purchaseOrder", "po_1", {
+            purchaseOrderId: "A|B<C>&D"
+          })
+        }
+      }
+    });
+    const result = await renderTemplate(
+      template(text("See "), ref("record")),
+      ctx,
+      {
+        linkFor: () => "https://erp.test/link",
+        format: "slack"
+      }
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue(
+        "string",
+        "See <https://erp.test/link|AB&lt;C&gt;&amp;D>"
+      )
+    });
+  });
+
+  it("renders an html anchor with both slots escaped", async () => {
+    const ctx = createRuntimeContext({
+      outputs: {
+        n1: {
+          record: entityValue("purchaseOrder", "po_1", {
+            purchaseOrderId: 'PO<b>"1"</b>'
+          })
+        }
+      }
+    });
+    const result = await renderTemplate(template(ref("record")), ctx, {
+      linkFor: () => 'https://erp.test/link?a=1&b="2"',
+      format: "html"
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue(
+        "string",
+        '<a href="https://erp.test/link?a=1&amp;b=&quot;2&quot;">PO&lt;b&gt;&quot;1&quot;&lt;/b&gt;</a>'
+      )
+    });
+  });
+
   // An entity with no page in the app: the id still reads, it just is not clickable.
   it("falls back to the plain id when the resolver returns null", async () => {
     const ctx = createRuntimeContext({

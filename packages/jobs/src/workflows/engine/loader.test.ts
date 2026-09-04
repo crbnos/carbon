@@ -21,6 +21,7 @@ const trigger = {
 
 const noServices = {
   runAction: async () => ({ ok: false as const, error: "not stubbed" }),
+  runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
   runOperation: async () => ({ ok: false as const, error: "not stubbed" }),
   search: async () => ({ ok: false as const, error: "not stubbed" })
 };

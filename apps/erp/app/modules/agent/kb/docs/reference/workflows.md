@@ -44,13 +44,14 @@ The time is stored as wall-clock time plus a zone, so 09:00 stays 09:00 across d
 
 ## The steps you can add
 
-Six kinds, in palette order.
+Seven kinds, in palette order.
 
 | Step | What it does |
 | --- | --- |
 | **Trigger** | Starts the workflow. One per workflow, and nothing can connect into it. |
 | **Condition** | Sends the run down one path. Each path is a set of clauses, with an optional **"Otherwise"**. |
 | **Action** | Does the work — notifies, creates, updates, or calls out. Has separate **Success** and **Failure** handles. |
+| **Integration** | Runs a step in a connected app — Google Calendar, Gmail, or Slack — acting as an account you connected. |
 | **Compute** | Works out a number from a record, such as an order total or a scrap percentage. |
 | **Find** | Looks a record up so later steps can use it. |
 | **Filter** | Keeps only the items in a list that match your rules. |
@@ -72,6 +73,22 @@ Most fields take either a value you type or a value from an earlier step. Type `
 Only steps that are *guaranteed* to have run before this one are offered. A value from the other side of a condition is not on the menu, and referring to one is rejected when you publish: *"This uses a value from a step that does not always run before it."*
 
 **Repeating steps.** There is no repeat checkbox. Wire a list into a field that expects a single value and the step runs once per item, which the form confirms in place: *"A list is wired into … so this step runs once for each item in it — up to 100."* Wiring two lists into the same step is an error at publish time rather than a guess about which one to loop over.
+
+## Steps in connected apps
+
+An **Integration** step acts in an outside app. Drop one on the canvas, pick the **"App"**, then the **"Step"** — **"Gmail: Send Email"**, **"Slack: Send Message To A Channel"**, **"Google Calendar: Create Event"**, and so on. The apps themselves, and the accounts they act as, are set up under **Settings → Integrations**; see `docs/integrations/workflow-apps`.
+
+An app you haven't connected offers no steps. The form says so — *"… isn't connected yet. Connect an account before this step can use it."* — with a **"Connect"** button that opens the app's card in a new tab, so the canvas survives the detour.
+
+**Which account acts.** Every step of an app carries an account choice. With exactly one account connected the field doesn't render, but the account is still stored on the step — so connecting a second account later never silently repoints existing workflows. If a step's stored account was disconnected or needs reconnecting, the form shows a banner with an **"Open … accounts"** link rather than failing quietly at run time.
+
+**Advanced properties.** Fields the vendor requires but you rarely change sit in a collapsed **"Advanced properties"** section, pre-filled with sensible values. A value you set there wins over the default.
+
+**Records become links where the app can show them.** Drop a record into a Slack message or a Gmail body and the recipient gets a clickable link back to that record in Carbon. Where the destination can't render a link — or a setting has turned it off, such as switching Gmail's body to plain text — the record appears as its plain name, and the builder says so under the field: *"Records here appear as plain text …"*.
+
+An integration step runs as the connected account, not as the workflow's owner, on the vendor's side. If the vendor refuses, the step fails with the vendor's own message in run history; if the account is missing a permission, the message instead points you to the fix — reconnect the account under the app's **"Accounts"** tab.
+
+Everything else works like an action: variables, the **Success** and **Failure** handles, and repeating — wire a list into a single-value field and the step runs once per item.
 
 ## Calling an outside URL
 
@@ -116,5 +133,6 @@ Every step reads and writes with the owner's permissions, re-checked at each ste
 Run history is read-only in the database itself — the engine writes it privately, and no user, however privileged, can edit or forge a run log.
 
   - Workflow runs What happened on each run, why a step was skipped, and how long history is kept.
+  - Workflow apps Connecting the Google Calendar, Gmail, and Slack accounts integration steps act as.
   - Notifications Where a workflow's "Notify someone" step lands, and how people mute topics.
   - Permissions and access How employee types map to module permissions.

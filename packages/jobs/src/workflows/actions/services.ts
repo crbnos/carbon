@@ -12,6 +12,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { runCreateAction } from "./create";
 import { getWorkflowDispatch } from "./dispatcher";
+import { runIntegrationAction } from "./integration";
 import { runNotifyAction } from "./notify";
 import { runOperation } from "./operations";
 import { runSearch } from "./search";
@@ -41,6 +42,21 @@ export function createWorkflowServices(params: {
     runId,
     workflowId
   } = params;
+
+  /** An integration step names its piece on its own catalog entry, so this never
+   * parses an id and the action path above never learns what a piece is. */
+  async function runIntegration(
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome> {
+    return runIntegrationAction({
+      client,
+      companyId,
+      pieceName: piece.name,
+      actionName: piece.action,
+      inputs
+    });
+  }
 
   async function runAction(
     actionId: string,
@@ -95,6 +111,7 @@ export function createWorkflowServices(params: {
 
   return {
     runAction,
+    runIntegration,
     runOperation: (
       operationId: string,
       inputs: Record<string, RuntimeValue>

@@ -2,10 +2,11 @@ import { ERP_URL } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
+  AmbiguousSlackWorkspaceError,
   createIssueSlackThread,
   createSlackWebClient,
   getCarbonEmployeeFromSlackId,
-  getSlackIntegrationByTeamId
+  getSlackWorkspaceByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -86,14 +87,28 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const integration = await getSlackIntegrationByTeamId(
-      serviceRole,
-      payload.data.team.id
-    );
+    let workspace: Awaited<ReturnType<typeof getSlackWorkspaceByTeamId>>;
+    try {
+      workspace = await getSlackWorkspaceByTeamId(
+        serviceRole,
+        payload.data.team.id
+      );
+    } catch (err) {
+      if (err instanceof AmbiguousSlackWorkspaceError) {
+        logger.error("Slack workspace linked to more than one company", {
+          teamId: payload.data.team.id
+        });
+        return {
+          response_type: "ephemeral",
+          text: "This Slack workspace is connected to more than one Carbon company, so Carbon cannot tell which one you mean. Ask an admin to disconnect it from all but one."
+        };
+      }
+      throw err;
+    }
 
-    if (!integration.data?.[0] || integration.error) {
-      logger.error("Failed to get Slack integration", {
-        error: integration.error
+    if (workspace === null) {
+      logger.error("No Slack connection for workspace", {
+        teamId: payload.data.team.id
       });
       return {
         response_type: "ephemeral",
@@ -101,16 +116,7 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const { companyId, metadata } = integration.data?.[0];
-    const slackToken = (metadata as any)?.access_token as string;
-
-    if (!slackToken) {
-      logger.error("Slack token not found");
-      return {
-        response_type: "ephemeral",
-        text: "Slack token not found. Please reconfigure the integration."
-      };
-    }
+    const { companyId, token: slackToken } = workspace;
 
     switch (payload.data.type) {
       case "shortcut":
@@ -125,7 +131,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId,
           slackToken,
           serviceRole,
-          integration.data?.[0]
+          workspace.channelId
         );
 
       case "view_closed":
@@ -372,7 +378,9 @@ async function handleViewSubmission(
   companyId: string,
   slackToken: string,
   serviceRole: SupabaseClient<Database>,
-  integration: Database["public"]["Tables"]["companyIntegration"]["Row"]
+  // The channel picked at install (the connection's webhook channel), not the
+  // channel the shortcut was triggered from.
+  configuredChannelId: string | undefined
 ) {
   const view = payload.view;
 
@@ -391,10 +399,6 @@ async function handleViewSubmission(
 
     const modalMetadata = JSON.parse(view.private_metadata);
     const { user_id } = modalMetadata;
-
-    // Use the configured channel from integration metadata, not the trigger channel
-    const integrationMetadata = integration.metadata as any;
-    const configuredChannelId = integrationMetadata?.channel_id;
 
     if (!configuredChannelId) {
       throw new Error("No channel configured for Slack integration");

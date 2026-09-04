@@ -86,8 +86,8 @@ endpoint (`/api/webhook/stripe`, billing) and the Connect endpoint
 `DISABLE_RESEND` (short-circuits sends), optional `RESEND_AUDIENCE_ID`.
 
 **Integrations (all optional)** — Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
-`SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
-`SLACK_OAUTH_REDIRECT_URL`), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
+`SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`,
+`SLACK_OAUTH_REDIRECT_URL` — one Slack app serves the Assistant and workflow steps; the value may still name the legacy `/api/integrations/slack/oauth` path, which forwards to the connections callback), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
 `ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.

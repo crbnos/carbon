@@ -1,11 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
   type CompanyIntegration,
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
 import { companyHasPlan } from "@carbon/ee/plan.server";
-import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
+import {
+  getSlackUserIdByCarbonId,
+  getSlackWorkspace
+} from "@carbon/ee/slack.server";
 import { ERP_URL } from "@carbon/env";
 import type { Events } from "@carbon/lib/events";
 import {
@@ -647,29 +649,17 @@ export const notifyFunction = inngest.createFunction(
       const slackEvents = await step.run(
         "resolve-slack-recipients",
         async () => {
-          const { data: integration, error } = await client
-            .from("companyIntegration")
-            .select("active, metadata, secretRef")
-            .eq("companyId", payload.companyId)
-            .eq("id", "slack")
-            .maybeSingle();
-
-          if (error) {
-            console.error("Failed to resolve Slack integration", error);
+          // The company's Slack connection (oldest Active); the token comes
+          // from the vault through the one sanctioned reader. A workspace that
+          // cannot be read is "no Slack", exactly as an uninstalled one was.
+          let accessToken: string | undefined;
+          try {
+            accessToken = (await getSlackWorkspace(client, payload.companyId))
+              ?.token;
+          } catch (error) {
+            console.error("Failed to resolve Slack workspace", error);
             return [];
           }
-          if (!integration?.active) return [];
-
-          // Secret material (access_token) lives in Supabase Vault; merge it
-          // back so we read the same shape as before. `client` is service-role.
-          const metadata = (await resolveIntegrationSecrets(
-            client,
-            payload.companyId,
-            "slack",
-            integration.metadata,
-            integration.secretRef
-          )) as { access_token?: string } | null;
-          const accessToken = metadata?.access_token;
           if (!accessToken) return [];
 
           const ctaUrl = buildNotificationLink(

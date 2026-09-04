@@ -10,6 +10,9 @@ const DOCS_BASE_URL = "https://docs.carbon.ms";
 
 type LabelWithHelpProps = {
   termId: TermId | undefined;
+  /** Free-text fallback for the ⓘ hover when no glossary term exists — e.g. a
+   * third-party vendor's own field description. Ignored when `termId` is set. */
+  text?: string;
   children: ReactNode;
   className?: string;
   /** Delay (ms) before the help popup opens on hover. */
@@ -25,6 +28,7 @@ type LabelWithHelpProps = {
 
 export function LabelWithHelp({
   termId,
+  text,
   children,
   className,
   tooltipDelayDuration = 200,
@@ -32,12 +36,13 @@ export function LabelWithHelp({
 }: LabelWithHelpProps) {
   // Hooks must run unconditionally — call useLingui before any early return.
   const { t, i18n } = useLingui();
-  if (termId === undefined) return <>{children}</>;
-  const entry = getEntry(termId);
+  if (termId === undefined && text === undefined) return <>{children}</>;
+  const entry = termId === undefined ? undefined : getEntry(termId);
 
-  const translatedTerm = i18n._(entry.term);
-  const translatedDefinition = i18n._(entry.definition);
-  const showLearnMore = entry.href !== undefined;
+  const translatedTerm = entry === undefined ? "" : i18n._(entry.term);
+  const translatedDefinition =
+    entry === undefined ? (text ?? "") : i18n._(entry.definition);
+  const showLearnMore = entry?.href !== undefined;
   const isInline = variant === "inline";
 
   // HoverCard (not Tooltip): the popup contains an interactive "Learn more"
@@ -50,7 +55,11 @@ export function LabelWithHelp({
         <button
           type="button"
           tabIndex={-1}
-          aria-label={t`What is ${translatedTerm}?`}
+          aria-label={
+            entry === undefined
+              ? t`About this field`
+              : t`What is ${translatedTerm}?`
+          }
           className={cn(
             "inline-flex items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             // Stacked labels sit above a form control: the 20px button is 4px
@@ -78,7 +87,7 @@ export function LabelWithHelp({
           <>
             {" "}
             <a
-              href={`${DOCS_BASE_URL}${entry.href}`}
+              href={`${DOCS_BASE_URL}${entry?.href}`}
               target="_blank"
               rel="noreferrer"
               className="text-primary font-medium underline decoration-dashed underline-offset-4 hover:decoration-solid"

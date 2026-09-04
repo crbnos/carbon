@@ -104,4 +104,12 @@ describe("leafOfLabel", () => {
   it("returns a single-segment label unchanged", () => {
     expect(leafOfLabel("record")).toBe("record");
   });
+
+  it("round-trips an item ref's card scope", () => {
+    const ref = { kind: "item" as const, path: ["v"], card: "c2" };
+    expect(decodeTokenId(encodeTokenId(ref))).toEqual(ref);
+    // ...and an unscoped one stays unscoped rather than gaining a key.
+    const bare = { kind: "item" as const, path: [] };
+    expect(decodeTokenId(encodeTokenId(bare))).toEqual(bare);
+  });
 });

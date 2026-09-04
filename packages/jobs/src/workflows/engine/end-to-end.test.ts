@@ -108,6 +108,10 @@ interface Stubs {
     actionId: string,
     inputs: Record<string, RuntimeValue>
   ) => ActionOutcome;
+  runIntegration?: (
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ) => ActionOutcome;
   runOperation?: (
     operationId: string,
     inputs: Record<string, RuntimeValue>
@@ -133,6 +137,16 @@ function withServices(stubs: Stubs) {
         error: "not stubbed"
       }
   );
+  const runIntegration = vi.fn(
+    async (
+      piece: { name: string; action: string },
+      inputs: Record<string, RuntimeValue>
+    ): Promise<ActionOutcome> =>
+      stubs.runIntegration?.(piece, inputs) ?? {
+        ok: false,
+        error: "not stubbed"
+      }
+  );
   const search = vi.fn(
     async (): Promise<SearchOutcome> =>
       stubs.search?.() ?? { ok: false, error: "not stubbed" }
@@ -140,10 +154,11 @@ function withServices(stubs: Stubs) {
 
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration,
     runOperation,
     search
   });
-  return { runAction, runOperation, search };
+  return { runAction, runIntegration, runOperation, search };
 }
 
 function callTo(

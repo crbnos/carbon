@@ -62,6 +62,7 @@ field for one script. That is exactly why the catalog/compatibility logic lives 
 | `./backups` | `src/backups/schema.ts` — catalog introspection + backup-compatibility diff (`getCompanyTableCatalog`, `reportBackupCompatibility`, `compatibilityStatus`, types), plus the re-exported `src/backups/scope.ts` — scope predicates, the export closure guard (`findExportScopeViolations`, `ExportScopeViolationError`) and the opt-in exclusion/purge (`computeScopeExclusions`, `purgeScopeViolations`). No Inngest, no logger; the ERP Backups loader computes the live restore verdict through it and the purge action deletes through it. Server-side only (runs `information_schema` SQL) |
 | `./events` | `Events` type (re-export from `@carbon/lib`) |
 | `./inngest` | Inngest client + function registrations, plus `setWorkflowDispatch` and its `WorkflowDispatch` / `DispatchContext` / `DispatchResult` types (server-only) |
+| `./integrations` | **Server-only.** The integration-piece allowlist, registry, property mapping and `buildPieceActionDeclarations` (the catalog generator's fifth input). Piece packages bundle Node vendor SDKs — never import this from browser code. See `.claude/rules/workflow-integrations.md` |
 | `./worker` | Worker entry point for Inngest serve |
 
 ## Event System Handlers
@@ -143,13 +144,14 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 
 | File | What it does |
 |------|--------------|
-| `services.ts` | `createWorkflowServices` — routes an action id to `notify`, `webhook`, the update path or the create path; the only export the engine uses |
+| `services.ts` | `createWorkflowServices` — routes an action id to `notify`, `webhook`, the integration path, the update path or the create path; the only export the engine uses |
 | `dispatcher.ts` | The `setWorkflowDispatch` seam (below) |
 | `create.ts` | `runCreateAction` — creates through the ERP's own `upsert*` service function via the dispatcher, so sequence numbers, defaults and required-field logic are the app's; digs the new row's id out of the returned envelope |
 | `update.ts` | `runUpdateAction` — writes the catalog's allowlisted columns on one record. Checks the target and **every entity-typed value** exists in this company before writing, and rejects a value outside a column's enum. A custom field is written separately, through the `workflow_merge_custom_fields` RPC, so setting one cannot erase the others |
 | `notify.ts` | `runNotifyAction` — one `trigger("notify", …)` with `NotificationEvent.Workflow`. A role IS a group and every user has an identity group whose id is their user id, so both recipient inputs collapse to `groupIds` |
 | `search.ts` | `runSearch` — one Lookup node's search, translated to PostgREST filters that mean exactly what `runtime/compare.ts` says (`contains`/`startsWith`/`endsWith` → `ilike`). Reads `MAX_LIST_ITEMS + 1` so an over-cap list is detectable |
 | `operations.ts` | `runOperation` — the 15 read-only computations, one `COMPUTATIONS` entry per catalog operation id. An id with no implementation refuses rather than falls through; a throw becomes a failed node, never a thrown walk |
+| `integration.ts` | `runIntegrationAction` — one allowlisted Activepieces piece action. Verifies the connection is this company's through the OWNER's client, then reads its token through the vault with a service-role client (the vault RPCs are service_role only), maps inputs to the piece's `propsValue` and calls its `run()` |
 | `webhook.ts` | `runWebhookAction` — the chosen method (POST when unset) to the configured URL with the customer's headers, SSRF-guarded, `redirect: "manual"`, 10s timeout, 2 KB response excerpt for the step summary. Only POST/PUT/PATCH carry a body; eight framing header names are refused |
 | `url-guard.ts` | `checkOutboundUrl` — https only, DNS-resolves the host and rejects if **any** returned address is private/loopback/link-local (169.254.0.0/16 covers cloud metadata). Plus `outboundDispatcher`, an undici `Agent` running the same check as the socket's own `connect.lookup` — that, not the pre-check, is what closes DNS rebinding |
 | `index.ts` | Barrel; `engine/execute.ts` imports `createWorkflowServices` from here |
@@ -177,6 +179,7 @@ pool inline.
 
 - `.claude/rules/workflow-actions.md` — the actions/operations implementations, the dispatch seam,
   the tenancy and SSRF guards
+- `.claude/rules/workflow-integrations.md` — the piece allowlist, connections, OAuth and the host shim
 - `.claude/rules/workflow-engine.md` — the run walk, step ledger, batching, acting as the owner
 - `.claude/rules/workflow-matcher.md` — announcement → catalog event ids → queued runs
 - `.claude/rules/event-system.md` — full event architecture, PGMQ, triggers, handler details

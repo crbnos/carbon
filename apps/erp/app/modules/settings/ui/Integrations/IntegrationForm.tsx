@@ -46,6 +46,7 @@ import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
+import { InstallButton } from "./InstallButton";
 
 function IntegrationActionButton({
   action,
@@ -687,6 +688,11 @@ export function IntegrationForm({
   const integrationActions =
     (integration as { actions?: IntegrationAction[] })?.actions ?? [];
 
+  // An integration with no settings has no form to submit, so Install is a button rather
+  // than a Submit — the same one the card offers, so the drawer is never a dead end when
+  // it is opened by URL on something that isn't installed yet.
+  const canInstallHere = !installed && integration?.settings.length === 0;
+
   if (!integrationId) {
     throw new Error("Integration ID is required");
   }
@@ -767,6 +773,15 @@ export function IntegrationForm({
             <p className="text-xs leading-relaxed text-muted-foreground">
               {integration.description}
             </p>
+
+            {canInstallHere && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  {integration.name} isn't installed yet. There's nothing to
+                  configure — install it to connect an account.
+                </Trans>
+              </p>
+            )}
 
             {/* @ts-expect-error TS2339 */}
             {integration.setupInstructions && (
@@ -857,6 +872,8 @@ export function IntegrationForm({
                 <Trans>Install</Trans>
               </Submit>
             )
+          ) : canInstallHere ? (
+            <InstallButton integration={integration} isDisabled={isDisabled} />
           ) : null}
 
           <Button variant="solid" onClick={onClose}>

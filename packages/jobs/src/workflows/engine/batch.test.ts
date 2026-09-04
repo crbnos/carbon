@@ -160,6 +160,7 @@ function withServices(params: {
   );
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search
   });
@@ -383,6 +384,10 @@ describe("batch mode", () => {
           ? { ok: false, error: "This turn had no item." }
           : { ok: true, outputs: { record: job } };
       },
+      runIntegration: async () => ({
+        ok: false as const,
+        error: "not stubbed"
+      }),
       runOperation: async () => ({ ok: false, error: "not stubbed" }),
       search: async () => ({
         ok: true,

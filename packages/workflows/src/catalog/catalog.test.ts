@@ -5,7 +5,11 @@ import {
 } from "../definition/schema";
 import { t } from "../definition/types";
 import { validateDefinition } from "../definition/validate";
-import { createWorkflowCatalog, getActionRoute } from "./catalog";
+import {
+  createWorkflowCatalog,
+  getActionRoute,
+  integrationStepId
+} from "./catalog";
 import { buildCatalogOverlay } from "./custom-fields";
 
 const catalog = createWorkflowCatalog();
@@ -127,6 +131,27 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
       update: { entity: "purchaseOrder" }
     });
     expect(getActionRoute("ghost")).toBeUndefined();
+  });
+
+  it("keeps integration steps out of the action catalog entirely", () => {
+    const id = "integration.google-calendar.create_google_calendar_event";
+    // Not an action at all: an integration step is its own node kind, so nothing on
+    // the action path can reach one by accident.
+    expect(catalog.getAction(id)).toBeUndefined();
+    expect(getActionRoute(id)).toBeUndefined();
+
+    const step = need(catalog.getIntegration(id), id);
+    expect(step.piece).toEqual({
+      name: "google-calendar",
+      action: "create_google_calendar_event"
+    });
+    expect(step.inputs.connectionId?.required).toBe(true);
+  });
+
+  it("builds an integration step id without parsing one", () => {
+    expect(
+      integrationStepId("google-calendar", "create_google_calendar_event")
+    ).toBe("integration.google-calendar.create_google_calendar_event");
   });
 
   it("answers with an operation and the entity it works on", () => {
