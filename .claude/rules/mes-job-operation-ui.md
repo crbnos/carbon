@@ -70,6 +70,20 @@ redirects kinds it does not serve (no loops).
 
 ## Batch mode (operation batching)
 
+**Floor gate (membership handoff), enforced server-side.** An operation is
+floor-visible iff — in a batch → the batch is Released (`Active`/`Completing`),
+even when its job is Draft/Planned; in no batch → its job is in
+`activeJobStatuses` (the pre-batching rule). The operation loader
+(`operation.$operationId.tsx`) redirects with a flash for a `Planned`-batch
+member ("part of a batch that has not been released") and for an unbatched op
+on an unreleased job; `start.$operationId.tsx` runs the same two checks BEFORE
+its timer-reopen update. `end.$operationId.tsx` is deliberately ungated —
+closing a timer is never blocked. `getOpenJobs` widens with Released-batch
+member jobs via a two-step `.or(status.in…, id.in…)` (quoted statuses — "In
+Progress" has a space). List visibility alone was the leak: nothing else gated
+a direct operation URL.
+
+
 There is **no separate batch page** — the operation view IS the batch UI. When an
 operation belongs to a batch that is still `Active`/`Completing`, the loader
 (`operation.$operationId.tsx`) reads `jobOperationBatch` (via

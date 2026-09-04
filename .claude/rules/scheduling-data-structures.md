@@ -107,6 +107,42 @@ Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
   hard-coded sample `trace` data in its loader — not wired to the engine.
   MES `dispatch.*.tsx` routes are **maintenance dispatch** (machine breakdowns), unrelated.
 
+## Batch pre-pass (Released operation batches schedule as ONE unit)
+
+`batch-scheduler.ts` (`placeReleasedBatches` + pure `planBatchPlacements`, unit
+tested). Runs inside `runLocationSchedule` AFTER `loadOrderedBatch` and BEFORE
+the per-job loop; `runExpediteWhatIf` calls it with `persist: false`, which
+REUSES the existing batch rows instead of recomputing (the sim must agree with
+its own snapshot). A pre-pass throw degrades to per-member placement (logged),
+never abandons the location run.
+
+- **One reservation per Released (`Active`/`Completing`) batch**, tagged
+  `capacityReservation.jobOperationBatchId`; `operationId`/`jobId` stay NOT
+  NULL by anchoring on the min member op id. Placeholder semantics mirror
+  unplaceable ops (`isPlaceholder = true` when no slot; never blocks).
+- **Duration** = `@carbon/utils` `batchDuration`: `setup(max, zero once any
+  batch event exists) + Σ run` (Sequential) or `+ max run` (Simultaneous) per
+  `process.batchType`, run_i = `max(labor, machine)` net of remaining fraction.
+- **Anchor** = `max(now, member predecessors' PERSISTED projectedCompletionAt)`
+  (same-method lower-`"order"` ops; same-batch members never self-anchor).
+  Stale-by-one-wave by design: a predecessor freshly placed past the batch
+  start gets `composeBatchPredecessorConflict` on the member and the next wave
+  re-anchors.
+- **Members pin to the window** in `work-center-selector.ts` (a
+  `batchPlacements` map threaded engine→selector; the branch generalizes the
+  pinned Outside-Processing path): no per-member placement, NO per-member
+  reservation, successors chain after the batch end, `priority: 0` like OSP.
+- **Three predicate rules keep the coalesced row alive**: the per-job regen
+  delete adds `AND "jobOperationBatchId" IS NULL`; the snapshot's
+  `excludeJobIds` filter never excludes batch-tagged rows; and the snapshot's
+  job-STATUS filter (`capacityHoldingJobStatuses`) also spares batch-tagged
+  rows — a Released batch may legitimately anchor a Draft job (membership
+  handoff pulls members ahead of their jobs). `loadOrderedBatch` widens job
+  loading with Released-batch member jobs so they regen in the same wave.
+- `Planned` batches are NOT coalesced — members place per-op exactly as before
+  release (bounded residual over-book, gone at release). Employee finiteness
+  for batches is deliberately absent in v1 (WC reservation only).
+
 ## Trigger chain (verified)
 
 Rescheduling is **no longer a single-job event** — the old per-job reschedule

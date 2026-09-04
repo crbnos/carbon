@@ -14,17 +14,17 @@ Core rule being implemented (memorize before any task):
 > duration `setup(max) + Σ|max(run)` by `process.batchType`).
 
 ## Progress
-- [ ] Task 1: Migration A — `Planned` enum value, `batchType`, reservation tag
-- [ ] Task 2: Migration B — default flip + both RPC predicate forks
-- [ ] Task 3: Apply migrations + regenerate types
-- [ ] Task 4: `batchDuration` in `@carbon/utils` (+ tests)
-- [ ] Task 5: Model/validator additions (production + resources)
-- [ ] Task 6: `batch-operations` edge fn — `release`/`unrelease`, Planned-aware guards
-- [ ] Task 7: ERP service wrappers + `batching.update` intents (recalc + notify)
-- [ ] Task 8: Scheduler plumbing — snapshot, regen delete, job loading
-- [ ] Task 9: Scheduler batch pre-pass + pinned members (+ tests)
-- [ ] Task 10: MES floor guards + `getOpenJobs` widening
-- [ ] Task 11: Process form — Batch type selector
+- [x] Task 1: Migration A — `Planned` enum value, `batchType`, reservation tag
+- [x] Task 2: Migration B — default flip + both RPC predicate forks
+- [x] Task 3: Apply migrations + regenerate types
+- [x] Task 4: `batchDuration` in `@carbon/utils` (+ tests)
+- [x] Task 5: Model/validator additions (production + resources)
+- [x] Task 6: `batch-operations` edge fn — `release`/`unrelease`, Planned-aware guards
+- [x] Task 7: ERP service wrappers + `batching.update` intents (recalc + notify)
+- [x] Task 8: Scheduler plumbing — snapshot, regen delete, job loading
+- [x] Task 9: Scheduler batch pre-pass + pinned members (+ tests)
+- [x] Task 10: MES floor guards + `getOpenJobs` widening
+- [x] Task 11: Process form — Batch type selector
 - [ ] Task 12: Batch builder — Create vs Create & Release, job-status chips, duration
 - [ ] Task 13: Batches list/drawer/board — Planned state, Release/Unrelease actions
 - [ ] Task 14: Job detail — "operations awaiting batching" notice
