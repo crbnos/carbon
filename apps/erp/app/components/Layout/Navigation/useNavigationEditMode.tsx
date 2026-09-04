@@ -1,7 +1,7 @@
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useCallback, useMemo, useState } from "react";
-import { useRevalidator } from "react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 import { useAllModules } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
@@ -13,11 +13,17 @@ export type DraftModule = Authenticated<NavItem> & {
 
 export function useNavigationEditMode() {
   const allModules = useAllModules();
-  const revalidator = useRevalidator();
+  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
 
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<DraftModule[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+
+  // The rail reads `modulePreferences` from the app-shell loader
+  // (`x+/_layout.tsx`), whose `shouldRevalidate` skips same-pathname GETs — so a
+  // bare `revalidator.revalidate()` after save never re-ran it and the rail
+  // reverted until a hard refresh. A fetcher POST presents as `formMethod:
+  // "POST"`, which defeats that skip, so the shell reloads and the rail updates.
+  const isSaving = fetcher.state !== "idle";
 
   const originalRef = useMemo(() => {
     return allModules.map((m, i) => ({
@@ -85,32 +91,41 @@ export function useNavigationEditMode() {
     });
   }, []);
 
-  const save = useCallback(async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch("/api/module-preferences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          preferences: draft.map((m) => ({
-            module: m.key,
-            position: m.position,
-            hidden: m.hidden
-          }))
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save preferences");
+  const save = useCallback(() => {
+    fetcher.submit(
+      {
+        preferences: draft.map((m) => ({
+          module: m.key,
+          position: m.position,
+          hidden: m.hidden
+        }))
+      },
+      {
+        method: "post",
+        action: "/api/module-preferences",
+        encType: "application/json"
       }
+    );
+  }, [draft, fetcher]);
 
-      setIsEditing(false);
-      setDraft([]);
-      revalidator.revalidate();
-    } finally {
-      setIsSaving(false);
+  // Leave edit mode only once the save has actually landed (state returned to
+  // idle after being in-flight) and succeeded — so a failed save keeps the
+  // draft open to retry, and re-entering edit mode later never trips this off a
+  // stale `fetcher.data`.
+  const wasSaving = useRef(false);
+  useEffect(() => {
+    if (fetcher.state !== "idle") {
+      wasSaving.current = true;
+      return;
     }
-  }, [draft, revalidator]);
+    if (wasSaving.current) {
+      wasSaving.current = false;
+      if (fetcher.data?.success) {
+        setIsEditing(false);
+        setDraft([]);
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
 
   return {
     isEditing,

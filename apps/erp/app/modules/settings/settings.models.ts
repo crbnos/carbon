@@ -35,7 +35,7 @@ export const purchasePriceUpdateTimingTypes = [
 
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update"],
+  accounting: ["view", "create", "update", "delete"],
   documents: ["view", "create", "update", "delete"],
   inventory: ["view", "create", "update", "delete"],
   invoicing: ["view", "create", "update", "delete"],

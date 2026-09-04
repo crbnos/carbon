@@ -90,13 +90,22 @@ const PrimaryNavigation = () => {
   const isOpen = navigationPanel.isOpen || editMode.isEditing;
 
   return (
-    <div className="w-14 h-full flex-col z-50 hidden md:flex">
+    // The wrapper (not just the inner nav) grows on expand, so the rail pushes
+    // the rest of the layout right instead of floating over it. The inner nav is
+    // `w-full` and follows the wrapper's animated width.
+    <div
+      data-state={isOpen ? "expanded" : "collapsed"}
+      className={cn(
+        "h-full flex-col z-50 hidden md:flex shrink-0",
+        "w-14 data-[state=expanded]:w-[13rem]",
+        "transition-[width] duration-200"
+      )}
+    >
       <nav
         data-state={isOpen ? "expanded" : "collapsed"}
         className={cn(
-          "bg-background py-2 group z-10 h-full w-14 data-[state=expanded]:w-[13rem]",
-          "flex flex-col justify-between data-[state=expanded]:shadow-xl data-[state=expanded]:border-r data-[state=expanded]:border-border",
-          "transition-width duration-200",
+          "bg-background py-2 group z-10 h-full w-full",
+          "flex flex-col justify-between data-[state=expanded]:border-r data-[state=expanded]:border-border",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onMouseEnter={
@@ -300,7 +309,7 @@ const NavigationIconLink = forwardRef<
   ];
 
   const classes = [
-    "relative",
+    "relative text-foreground/70 hover:text-foreground",
     "h-10 w-10 group-data-[state=expanded]:w-full",
     "flex items-center rounded-md",
     "group-data-[state=collapsed]:justify-center",
@@ -310,7 +319,7 @@ const NavigationIconLink = forwardRef<
     "transition-[background-color,color,width] duration-100 ease-out",
     "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
     "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
-    !isActive && "hover:bg-accent hover:text-accent-foreground",
+    !isActive && "hover:bg-active/60 hover:text-active-foreground",
     isActive && "bg-active text-active-foreground dark:shadow-button-base",
     "group/item"
   ];
