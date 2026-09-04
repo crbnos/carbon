@@ -339,10 +339,14 @@ rate limits are platform-controlled (`api-keys.mdx` is RIGHT, the MCP FAQ is WRO
       `/api/operations` pages route through `toolCounts()`; "1,200+" was already removed in B1.)
 - [x] Rate-limit copy: fix the MCP FAQ entry ("each key has its own limit, 60/min default, shown —
       not settable — in Settings → API Keys"); align `/api-reference/authentication` line.
-- [ ] **BLOCKED (Open Question #1).** Bearer-vs-`carbon-key` + path shape (`/rest/v1/<table>` vs
-      bare `/table` on `rest.carbon.ms`): **needs the user to say what the proxy accepts** (infra,
-      not in repo). Then converge both pages to one canonical convention + a self-hosted note.
-- [ ] **DECISION PENDING.** Shard the docs generated data — finding: the "tsserver choking"
+- [x] Bearer-vs-`carbon-key` + path shape — **RESOLVED** (committed baf3063). The user supplied
+      the Cloudflare worker: client sends `Authorization: Bearer crbn_…` over **bare** table paths
+      (`https://rest.carbon.ms/<table>`), the worker translates to `carbon-key` internally. The
+      auth page was already canonical; converged `api-keys.mdx` onto it and added a self-hosted
+      note (direct PostgREST → `carbon-key` + `/rest/v1/<table>`). See
+      [[reference_rest_carbon_ms_proxy]].
+- [ ] **DECISION PENDING — RECOMMEND SKIP (proceeding without it).** Shard the docs generated
+      data. Finding: the "tsserver choking"
       rationale is already mitigated by the generator (`@ts-nocheck` + `JSON.parse(<string
       literal>)`, so tsc never infers over the data); the build-speed win is marginal for these
       statically-generated server components (webpack dedupes the shared module — imported once);
