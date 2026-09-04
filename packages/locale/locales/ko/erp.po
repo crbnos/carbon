@@ -17762,6 +17762,9 @@ msgstr "게시 취소 {name}?"
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"
 
+msgid "Unrelease"
+msgstr ""
+
 msgid "Unrelease Batch"
 msgstr ""
 

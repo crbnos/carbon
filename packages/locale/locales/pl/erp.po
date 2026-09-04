@@ -17762,6 +17762,9 @@ msgstr "Cofnąć publikację {name}?"
 msgid "Unreceived POs"
 msgstr "Nieprzyjęte zamówienia"
 
+msgid "Unrelease"
+msgstr ""
+
 msgid "Unrelease Batch"
 msgstr ""
 

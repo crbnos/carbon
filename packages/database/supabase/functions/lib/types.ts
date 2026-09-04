@@ -5146,6 +5146,7 @@ export type Database = {
           id: string
           isPlaceholder: boolean
           jobId: string
+          jobOperationBatchId: string | null
           operationId: string
           resourceId: string
           resourceKind: Database["public"]["Enums"]["capacityResourceKind"]
@@ -5165,6 +5166,7 @@ export type Database = {
           id?: string
           isPlaceholder?: boolean
           jobId: string
+          jobOperationBatchId?: string | null
           operationId: string
           resourceId: string
           resourceKind: Database["public"]["Enums"]["capacityResourceKind"]
@@ -5184,6 +5186,7 @@ export type Database = {
           id?: string
           isPlaceholder?: boolean
           jobId?: string
+          jobOperationBatchId?: string | null
           operationId?: string
           resourceId?: string
           resourceKind?: Database["public"]["Enums"]["capacityResourceKind"]
@@ -5278,6 +5281,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "openProductionOrders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "capacityReservation_jobOperationBatchId_fkey"
+            columns: ["jobOperationBatchId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationBatch"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "capacityReservation_operationId_fkey"
@@ -38680,6 +38690,7 @@ export type Database = {
           active: boolean
           batchable: boolean
           batchRules: Json | null
+          batchType: Database["public"]["Enums"]["batchType"]
           companyId: string
           completeAllOnScan: boolean
           createdAt: string
@@ -38698,6 +38709,7 @@ export type Database = {
           active?: boolean
           batchable?: boolean
           batchRules?: Json | null
+          batchType?: Database["public"]["Enums"]["batchType"]
           companyId: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -38716,6 +38728,7 @@ export type Database = {
           active?: boolean
           batchable?: boolean
           batchRules?: Json | null
+          batchType?: Database["public"]["Enums"]["batchType"]
           companyId?: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -69151,6 +69164,7 @@ export type Database = {
           active: boolean | null
           batchable: boolean | null
           batchRules: Json | null
+          batchType: Database["public"]["Enums"]["batchType"] | null
           companyId: string | null
           completeAllOnScan: boolean | null
           createdAt: string | null
@@ -74301,14 +74315,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -80426,6 +80440,7 @@ export type Database = {
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
+      batchType: "Sequential" | "Simultaneous"
       capacityResourceKind: "WorkCenter" | "OperatorPool" | "Employee"
       changeOrderChangeType:
         | "Version"
@@ -80682,7 +80697,7 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
-      jobOperationBatchStatus: "Active" | "Completing" | "Completed"
+      jobOperationBatchStatus: "Planned" | "Active" | "Completing" | "Completed"
       jobOperationStatus:
         | "Canceled"
         | "Done"
@@ -81804,6 +81819,7 @@ export const Constants = {
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],
+      batchType: ["Sequential", "Simultaneous"],
       capacityResourceKind: ["WorkCenter", "OperatorPool", "Employee"],
       changeOrderChangeType: [
         "Version",
@@ -82086,7 +82102,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
-      jobOperationBatchStatus: ["Active", "Completing", "Completed"],
+      jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",
         "Done",

@@ -17762,6 +17762,9 @@ msgstr "{name} को प्रकाशन रद्द करें?"
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
 
+msgid "Unrelease"
+msgstr ""
+
 msgid "Unrelease Batch"
 msgstr ""
 

@@ -17762,6 +17762,9 @@ msgstr "{name}の公開を取り消しますか?"
 msgid "Unreceived POs"
 msgstr "未受領PO"
 
+msgid "Unrelease"
+msgstr ""
+
 msgid "Unrelease Batch"
 msgstr ""
 

@@ -17762,6 +17762,9 @@ msgstr "{name} yayınlaması kaldırılsın mı?"
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
 
+msgid "Unrelease"
+msgstr ""
+
 msgid "Unrelease Batch"
 msgstr ""
 

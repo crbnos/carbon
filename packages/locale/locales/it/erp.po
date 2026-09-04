@@ -17762,6 +17762,9 @@ msgstr "Annullare la pubblicazione di {name}?"
 msgid "Unreceived POs"
 msgstr "PO non ricevuti"
 
+msgid "Unrelease"
+msgstr ""
+
 msgid "Unrelease Batch"
 msgstr ""
 
