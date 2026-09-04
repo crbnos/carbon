@@ -12,7 +12,7 @@ import {
 } from "@/components/api/doc";
 import { ContentFooter } from "@/components/api/page-footer";
 import { pageSeo, SEO } from "@/lib/seo";
-import { toolModules } from "@/lib/tools-data";
+import { toolCounts } from "@/lib/tools-data";
 
 export const metadata = pageSeo({
   title: `${SEO.carbonApi.intro.title} — Carbon`,
@@ -23,8 +23,7 @@ export const metadata = pageSeo({
 });
 
 // Counts are read from the generated catalog so the copy can never go stale.
-const MODULE_COUNT = toolModules.length;
-const OPERATION_COUNT = toolModules.reduce((n, m) => n + m.tools.length, 0);
+const { total: OPERATION_COUNT, modules: MODULE_COUNT } = toolCounts();
 
 export default function ApiOverviewPage() {
   return (

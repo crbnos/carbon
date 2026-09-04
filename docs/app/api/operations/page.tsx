@@ -11,7 +11,7 @@ import {
 } from "@/components/api/doc";
 import { ContentFooter } from "@/components/api/page-footer";
 import { pageSeo, SEO } from "@/lib/seo";
-import { type ToolClass, toolModules } from "@/lib/tools-data";
+import { toolCounts } from "@/lib/tools-data";
 
 export const metadata = pageSeo({
   title: `${SEO.carbonApi.operations.title} — Carbon`,
@@ -21,17 +21,10 @@ export const metadata = pageSeo({
   eyebrow: "Carbon API"
 });
 
-// Everything below is derived from the generated catalog, so the counts never drift
-// from what the server actually exposes.
-const MODULES: [string, number][] = toolModules
-  .map((m) => [m.name, m.tools.length] as [string, number])
-  .sort((a, b) => b[1] - a[1]);
-
-const OPERATION_COUNT = toolModules.reduce((n, m) => n + m.tools.length, 0);
-
-const CLASS_COUNT: Record<ToolClass, number> = { READ: 0, WRITE: 0, DESTRUCTIVE: 0 };
-for (const m of toolModules)
-  for (const t of m.tools) CLASS_COUNT[t.classification] += 1;
+// Counts are derived from the generated catalog, so they never drift from what the
+// server actually exposes.
+const { total: OPERATION_COUNT, modules: MODULE_COUNT, byClass: CLASS_COUNT, perModule: MODULES } =
+  toolCounts();
 
 export default function ApiOperationsPage() {
   return (
@@ -40,7 +33,7 @@ export default function ApiOperationsPage() {
       <DocTitle>Operations</DocTitle>
       <Lead>
         The Carbon API is {OPERATION_COUNT.toLocaleString()} operations across{" "}
-        {MODULES.length} modules — reached through one lean discovery pattern, so
+        {MODULE_COUNT} modules — reached through one lean discovery pattern, so
         an assistant never has to load them all at once.
       </Lead>
 
@@ -107,7 +100,7 @@ export default function ApiOperationsPage() {
 
       <H2 id="modules">Modules</H2>
       <P>
-        The catalog is grouped into {MODULES.length} modules — browse them in
+        The catalog is grouped into {MODULE_COUNT} modules — browse them in
         the sidebar:
       </P>
       <Table>

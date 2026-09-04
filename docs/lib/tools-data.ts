@@ -33,6 +33,31 @@ export function allToolParams(): { tool: string }[] {
   return toolModules.flatMap((m) => m.tools.map((t) => ({ tool: t.slug })));
 }
 
+export interface ToolCounts {
+  /** Total number of operations across every module. */
+  total: number;
+  /** Number of modules. */
+  modules: number;
+  /** Operation count per classification. */
+  byClass: Record<ToolClass, number>;
+  /** `[module name, operation count]`, sorted by count descending. */
+  perModule: [string, number][];
+}
+
+/** Counts derived from the generated catalog, so the docs copy can never go stale. */
+export function toolCounts(): ToolCounts {
+  const byClass: Record<ToolClass, number> = { READ: 0, WRITE: 0, DESTRUCTIVE: 0 };
+  let total = 0;
+  const perModule: [string, number][] = [];
+  for (const m of toolModules) {
+    total += m.tools.length;
+    perModule.push([m.name, m.tools.length]);
+    for (const t of m.tools) byClass[t.classification] += 1;
+  }
+  perModule.sort((a, b) => b[1] - a[1]);
+  return { total, modules: toolModules.length, byClass, perModule };
+}
+
 // Slim nav tree (no schemas) for the sidebar.
 export interface ToolNavItem {
   name: string;
