@@ -118,10 +118,6 @@ msgstr "{0} 件/{1} 件の転記勘定がマップされました"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}個の{maxSlots}プロバイダースロットが使用されています"
 
-#. placeholder {0}: hidden.unreleased
-msgid "{0} on jobs not yet released"
-msgstr "{0}はまだリリースされていないジョブにあります"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}件の作業 · {totalQuantity}部品"
@@ -332,6 +328,12 @@ msgstr "{totalQuantity} / {batchCapacity} 個 · 1ラン内に収まります"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 個 · 容量超過 — {loads} ロード（{batchCapacity} 個）"
 
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr ""
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr ""
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
@@ -380,6 +382,9 @@ msgstr "0 件の工程"
 
 msgid "0-4 weeks"
 msgstr "0～4週間"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr ""
 
 msgid "1 can't be scheduled"
 msgstr "1はスケジュール化できません"
@@ -2458,6 +2463,9 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign a work center first"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -4289,6 +4297,9 @@ msgstr "{0}を作成"
 msgid "Create {0} values"
 msgstr "{0}個の値を作成"
 
+msgid "Create & Release"
+msgstr ""
+
 msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
 
@@ -4340,9 +4351,8 @@ msgstr "発注書を作成して承認"
 msgid "Create audit trail entries"
 msgstr "監査証跡エントリを作成"
 
-#. placeholder {0}: selected.length
-msgid "Create batch ({0})"
-msgstr "バッチを作成({0})"
+msgid "Create batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
@@ -5694,7 +5704,7 @@ msgstr "処置"
 msgid "Dissolve"
 msgstr "解散"
 
-#. placeholder {0}: active.length
+#. placeholder {0}: dissolvable.length
 msgid "Dissolve {0} batches"
 msgstr "バッチ {0} を解散"
 
@@ -11039,6 +11049,9 @@ msgstr "未設定"
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
+msgid "Not on the shop floor — release to dispatch"
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到達"
 
@@ -11264,6 +11277,9 @@ msgstr "1つの数字セット"
 
 msgid "One shared setup instead of one per operation"
 msgstr "工程ごとではなく1回の段取りで共有"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr ""
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "1つの共有セットアップと合計labor時間およびmachine時間"
@@ -13273,6 +13289,9 @@ msgstr "相対的なタイムライン · 確認待ちの日付"
 msgid "Release"
 msgstr "リリース"
 
+msgid "Release Batch"
+msgstr ""
+
 msgid "Release change notice"
 msgstr "変更通知をリリース"
 
@@ -14456,6 +14475,9 @@ msgstr "物質を先に選択すると、利用可能なオプションが表示
 
 msgid "Select a team"
 msgstr "チームを選択"
+
+msgid "Select a work center to release"
+msgstr ""
 
 msgid "Select account"
 msgstr "アカウントを選択"
@@ -17739,6 +17761,9 @@ msgstr "{name}の公開を取り消しますか?"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
+
+msgid "Unrelease Batch"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"

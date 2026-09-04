@@ -118,10 +118,6 @@ msgstr "{0} / {1} 个过账科目已映射"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 
-#. placeholder {0}: hidden.unreleased
-msgid "{0} on jobs not yet released"
-msgstr "{0} 个未发布工作单上的项"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工序 · {totalQuantity} 零件"
@@ -332,6 +328,12 @@ msgstr "{totalQuantity} / {batchCapacity} 件 · 适合单批"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 件 · 超出容量 — {loads} 批 {batchCapacity} 件"
 
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr ""
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr ""
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
@@ -380,6 +382,9 @@ msgstr "0个工序"
 
 msgid "0-4 weeks"
 msgstr "0-4 周"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr ""
 
 msgid "1 can't be scheduled"
 msgstr "1无法排程"
@@ -2458,6 +2463,9 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign a work center first"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
@@ -4289,6 +4297,9 @@ msgstr "创建 {0}"
 msgid "Create {0} values"
 msgstr "创建 {0} 个值"
 
+msgid "Create & Release"
+msgstr ""
+
 msgid "Create & Snapshot"
 msgstr "创建并快照"
 
@@ -4340,9 +4351,8 @@ msgstr "创建并审批采购订单"
 msgid "Create audit trail entries"
 msgstr "创建审计跟踪条目"
 
-#. placeholder {0}: selected.length
-msgid "Create batch ({0})"
-msgstr "创建批次 ({0})"
+msgid "Create batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "创建变更通知"
@@ -5694,7 +5704,7 @@ msgstr "处置"
 msgid "Dissolve"
 msgstr "解散"
 
-#. placeholder {0}: active.length
+#. placeholder {0}: dissolvable.length
 msgid "Dissolve {0} batches"
 msgstr "解散 {0} 批次"
 
@@ -11039,6 +11049,9 @@ msgstr "未配置"
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
+msgid "Not on the shop floor — release to dispatch"
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -11264,6 +11277,9 @@ msgstr "一套数字"
 
 msgid "One shared setup instead of one per operation"
 msgstr "共享一次设置，而非每道工序一次"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr ""
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "一个共享设置加上汇总的劳动和机器时间"
@@ -13273,6 +13289,9 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
+msgid "Release Batch"
+msgstr ""
+
 msgid "Release change notice"
 msgstr "下达变更通知"
 
@@ -14456,6 +14475,9 @@ msgstr "请先选择物质以查看可用选项"
 
 msgid "Select a team"
 msgstr "选择班组"
+
+msgid "Select a work center to release"
+msgstr ""
 
 msgid "Select account"
 msgstr "选择账户"
@@ -17739,6 +17761,9 @@ msgstr "取消发布 {name}？"
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
+
+msgid "Unrelease Batch"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"

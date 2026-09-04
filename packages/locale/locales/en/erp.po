@@ -118,10 +118,6 @@ msgstr "{0} of {1} posting accounts mapped"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} of {maxSlots} provider slots used"
 
-#. placeholder {0}: hidden.unreleased
-msgid "{0} on jobs not yet released"
-msgstr "{0} on jobs not yet released"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operations · {totalQuantity} parts"
@@ -332,6 +328,12 @@ msgstr "{totalQuantity} / {batchCapacity} pcs · fits in one run"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr "{unbatchedBatchableOperations} awaiting batching"
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
@@ -380,6 +382,9 @@ msgstr "0 operations"
 
 msgid "0-4 weeks"
 msgstr "0-4 weeks"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr "1 batchable operation is not in a batch — it runs individually until batched"
 
 msgid "1 can't be scheduled"
 msgstr "1 can't be scheduled"
@@ -2458,6 +2463,9 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
+msgid "Assign a work center first"
+msgstr "Assign a work center first"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
@@ -4289,6 +4297,9 @@ msgstr "Create {0}"
 msgid "Create {0} values"
 msgstr "Create {0} values"
 
+msgid "Create & Release"
+msgstr "Create & Release"
+
 msgid "Create & Snapshot"
 msgstr "Create & Snapshot"
 
@@ -4340,9 +4351,8 @@ msgstr "Create and approve purchase orders"
 msgid "Create audit trail entries"
 msgstr "Create audit trail entries"
 
-#. placeholder {0}: selected.length
-msgid "Create batch ({0})"
-msgstr "Create batch ({0})"
+msgid "Create batch"
+msgstr "Create batch"
 
 msgid "Create Change Notice"
 msgstr "Create Change Notice"
@@ -5694,7 +5704,7 @@ msgstr "Dispositions"
 msgid "Dissolve"
 msgstr "Dissolve"
 
-#. placeholder {0}: active.length
+#. placeholder {0}: dissolvable.length
 msgid "Dissolve {0} batches"
 msgstr "Dissolve {0} batches"
 
@@ -11039,6 +11049,9 @@ msgstr "Not configured"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
+msgid "Not on the shop floor — release to dispatch"
+msgstr "Not on the shop floor — release to dispatch"
+
 msgid "Not reached"
 msgstr "Not reached"
 
@@ -11264,6 +11277,9 @@ msgstr "One set of numbers"
 
 msgid "One shared setup instead of one per operation"
 msgstr "One shared setup instead of one per operation"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr "One shared setup plus the longest labor and machine time — the members run together"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "One shared setup plus the summed labor and machine time"
@@ -13273,6 +13289,9 @@ msgstr "Relative timeline · dates to be confirmed"
 msgid "Release"
 msgstr "Release"
 
+msgid "Release Batch"
+msgstr "Release Batch"
+
 msgid "Release change notice"
 msgstr "Release change notice"
 
@@ -14456,6 +14475,9 @@ msgstr "Select a substance first to see available options"
 
 msgid "Select a team"
 msgstr "Select a team"
+
+msgid "Select a work center to release"
+msgstr "Select a work center to release"
 
 msgid "Select account"
 msgstr "Select account"
@@ -17739,6 +17761,9 @@ msgstr "Unpublish {name}?"
 
 msgid "Unreceived POs"
 msgstr "Unreceived POs"
+
+msgid "Unrelease Batch"
+msgstr "Unrelease Batch"
 
 msgid "Unsaved changes"
 msgstr "Unsaved changes"

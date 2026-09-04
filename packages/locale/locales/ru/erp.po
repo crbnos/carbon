@@ -118,10 +118,6 @@ msgstr "{0} из {1} счетов проведения отображено"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} из {maxSlots} слотов провайдера используется"
 
-#. placeholder {0}: hidden.unreleased
-msgid "{0} on jobs not yet released"
-msgstr "{0} в работах, которые еще не выпущены"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} операций · {totalQuantity} деталей"
@@ -332,6 +328,12 @@ msgstr "{totalQuantity} / {batchCapacity} шт · умещается в один
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} шт · превышает мощность — {loads} циклов по {batchCapacity}"
 
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr ""
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr ""
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
@@ -380,6 +382,9 @@ msgstr "0 операций"
 
 msgid "0-4 weeks"
 msgstr "0-4 недели"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr ""
 
 msgid "1 can't be scheduled"
 msgstr "1 не может быть спланировано"
@@ -2458,6 +2463,9 @@ msgstr "Активы"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
+msgid "Assign a work center first"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
@@ -4289,6 +4297,9 @@ msgstr "Создать {0}"
 msgid "Create {0} values"
 msgstr "Создать {0} значений"
 
+msgid "Create & Release"
+msgstr ""
+
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
@@ -4340,9 +4351,8 @@ msgstr "Создавать и утверждать заказы поставщи
 msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
 
-#. placeholder {0}: selected.length
-msgid "Create batch ({0})"
-msgstr "Создать пакет ({0})"
+msgid "Create batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "Создать извещение об изменении"
@@ -5694,7 +5704,7 @@ msgstr "Решения"
 msgid "Dissolve"
 msgstr "Распустить"
 
-#. placeholder {0}: active.length
+#. placeholder {0}: dissolvable.length
 msgid "Dissolve {0} batches"
 msgstr "Растворить {0} партий"
 
@@ -11039,6 +11049,9 @@ msgstr "Не настроено"
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
+msgid "Not on the shop floor — release to dispatch"
+msgstr ""
+
 msgid "Not reached"
 msgstr "Не достигнуто"
 
@@ -11264,6 +11277,9 @@ msgstr "Один набор цифр"
 
 msgid "One shared setup instead of one per operation"
 msgstr "Одна общая наладка вместо наладки на каждую операцию"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr ""
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
@@ -13273,6 +13289,9 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
+msgid "Release Batch"
+msgstr ""
+
 msgid "Release change notice"
 msgstr "Запустить в работу извещение об изменении"
 
@@ -14456,6 +14475,9 @@ msgstr "Сначала выберите вещество, чтобы увиде�
 
 msgid "Select a team"
 msgstr "Выберите команду"
+
+msgid "Select a work center to release"
+msgstr ""
 
 msgid "Select account"
 msgstr "Выберите счёт"
@@ -17739,6 +17761,9 @@ msgstr "Отменить публикацию {name}?"
 
 msgid "Unreceived POs"
 msgstr "Неполученные ПО"
+
+msgid "Unrelease Batch"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"

@@ -118,10 +118,6 @@ msgstr "{0} sur {1} comptes de comptabilisation mappés"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} sur {maxSlots} emplacements de fournisseur utilisés"
 
-#. placeholder {0}: hidden.unreleased
-msgid "{0} on jobs not yet released"
-msgstr "{0} sur les travaux non encore libérés"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} opérations · {totalQuantity} pièces"
@@ -332,6 +328,12 @@ msgstr "{totalQuantity} / {batchCapacity} pcs · tient en une seule passe"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} pcs · dépasse la capacité — {loads} passages de {batchCapacity}"
 
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr ""
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr ""
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non comptabilisées}}"
 
@@ -380,6 +382,9 @@ msgstr "0 opération"
 
 msgid "0-4 weeks"
 msgstr "0-4 semaines"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr ""
 
 msgid "1 can't be scheduled"
 msgstr "1 ne peut pas être planifié"
@@ -2458,6 +2463,9 @@ msgstr "Actifs"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Actifs, passifs et capitaux propres à une date"
 
+msgid "Assign a work center first"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Attribuer des imprimantes aux sites. L'expédition, la réception et les postes de travail héritent du paramètre par défaut du site sauf s'ils sont remplacés."
 
@@ -4289,6 +4297,9 @@ msgstr "Créer {0}"
 msgid "Create {0} values"
 msgstr "Créer {0} valeurs"
 
+msgid "Create & Release"
+msgstr ""
+
 msgid "Create & Snapshot"
 msgstr "Créer et capturer"
 
@@ -4340,9 +4351,8 @@ msgstr "Créer et approuver les bons de commande"
 msgid "Create audit trail entries"
 msgstr "Créer des entrées de piste d'audit"
 
-#. placeholder {0}: selected.length
-msgid "Create batch ({0})"
-msgstr "Créer un lot ({0})"
+msgid "Create batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "Créer un avis de modification"
@@ -5694,7 +5704,7 @@ msgstr "Traitements"
 msgid "Dissolve"
 msgstr "Dissoudre"
 
-#. placeholder {0}: active.length
+#. placeholder {0}: dissolvable.length
 msgid "Dissolve {0} batches"
 msgstr "Dissoudre {0} lots"
 
@@ -11039,6 +11049,9 @@ msgstr "Non configuré"
 msgid "Not enough jobs to cover quantity"
 msgstr "Pas assez d'ordres de fabrication pour couvrir la quantité"
 
+msgid "Not on the shop floor — release to dispatch"
+msgstr ""
+
 msgid "Not reached"
 msgstr "Non atteint"
 
@@ -11264,6 +11277,9 @@ msgstr "Un seul ensemble de chiffres"
 
 msgid "One shared setup instead of one per operation"
 msgstr "Un seul réglage partagé au lieu d'un par opération"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr ""
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Une configuration partagée plus le temps total de main-d'œuvre et de machine"
@@ -13273,6 +13289,9 @@ msgstr "Chronologie relative · dates à confirmer"
 msgid "Release"
 msgstr "Lancer"
 
+msgid "Release Batch"
+msgstr ""
+
 msgid "Release change notice"
 msgstr "Lancer l'avis de modification"
 
@@ -14456,6 +14475,9 @@ msgstr "Sélectionnez d'abord une substance pour voir les options disponibles"
 
 msgid "Select a team"
 msgstr "Sélectionner une équipe"
+
+msgid "Select a work center to release"
+msgstr ""
 
 msgid "Select account"
 msgstr "Sélectionner un compte"
@@ -17739,6 +17761,9 @@ msgstr "Dépublier {name} ?"
 
 msgid "Unreceived POs"
 msgstr "Bons de commande non reçus"
+
+msgid "Unrelease Batch"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "Modifications non enregistrées"

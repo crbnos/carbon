@@ -118,10 +118,6 @@ msgstr "{0}개의 {1}개 전기 계정 매핑됨"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
 
-#. placeholder {0}: hidden.unreleased
-msgid "{0} on jobs not yet released"
-msgstr "출시되지 않은 작업의 {0}"
-
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}개 작업 · {totalQuantity}개 부품"
@@ -332,6 +328,12 @@ msgstr "{totalQuantity} / {batchCapacity} 개 · 한 번 실행에 맞음"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 개 · 용량 초과 — {batchCapacity}의 {loads}개 로드"
 
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr ""
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr ""
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
 
@@ -380,6 +382,9 @@ msgstr "0개 공정"
 
 msgid "0-4 weeks"
 msgstr "0-4주"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr ""
 
 msgid "1 can't be scheduled"
 msgstr "1개는 일정을 짤 수 없습니다"
@@ -2458,6 +2463,9 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
+msgid "Assign a work center first"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
@@ -4289,6 +4297,9 @@ msgstr "{0} 생성"
 msgid "Create {0} values"
 msgstr "{0} 값 생성"
 
+msgid "Create & Release"
+msgstr ""
+
 msgid "Create & Snapshot"
 msgstr "생성 및 스냅샷"
 
@@ -4340,9 +4351,8 @@ msgstr "발주서를 생성하고 승인합니다."
 msgid "Create audit trail entries"
 msgstr "감사 추적 항목 생성"
 
-#. placeholder {0}: selected.length
-msgid "Create batch ({0})"
-msgstr "배치 생성 ({0})"
+msgid "Create batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "변경 통지 생성"
@@ -5694,7 +5704,7 @@ msgstr "처분 결정"
 msgid "Dissolve"
 msgstr "해체"
 
-#. placeholder {0}: active.length
+#. placeholder {0}: dissolvable.length
 msgid "Dissolve {0} batches"
 msgstr "{0} 배치 해제"
 
@@ -11039,6 +11049,9 @@ msgstr "구성되지 않음"
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
+msgid "Not on the shop floor — release to dispatch"
+msgstr ""
+
 msgid "Not reached"
 msgstr "도달하지 않음"
 
@@ -11264,6 +11277,9 @@ msgstr "하나의 번호 집합"
 
 msgid "One shared setup instead of one per operation"
 msgstr "공정마다가 아닌 한 번의 공용 셋업"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr ""
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "공유 설정 1개 + 누계 노동력 및 기계 시간"
@@ -13273,6 +13289,9 @@ msgstr "상대적 일정 · 확인할 날짜"
 msgid "Release"
 msgstr "릴리스"
 
+msgid "Release Batch"
+msgstr ""
+
 msgid "Release change notice"
 msgstr "변경 통지 릴리스"
 
@@ -14456,6 +14475,9 @@ msgstr "먼저 재질을 선택하여 가용 옵션을 확인하세요."
 
 msgid "Select a team"
 msgstr "팀 선택"
+
+msgid "Select a work center to release"
+msgstr ""
 
 msgid "Select account"
 msgstr "계정 선택"
@@ -17739,6 +17761,9 @@ msgstr "게시 취소 {name}?"
 
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"
+
+msgid "Unrelease Batch"
+msgstr ""
 
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
