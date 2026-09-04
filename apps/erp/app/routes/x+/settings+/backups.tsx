@@ -608,7 +608,7 @@ export default function BackupsRoute() {
   }, [fetcher.data, knownBackupNames]);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4">
         <Heading size="h3">Backups</Heading>
 

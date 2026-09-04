@@ -2624,6 +2624,9 @@ msgstr "बैंक और वित्तीय सेवा शुल्क �
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "बार प्रत्येक सप्ताह के प्रवाह को दिखाते हैं: &lt;0&gt;आपूर्ति&lt;/0&gt; इन्वेंटरी को ऊपर धकेलती है, &lt;1&gt;मांग&lt;/1&gt; इसे नीचे खींचती है। &lt;2&gt;लाइन&lt;/2&gt; आपकी अनुमानित उपलब्ध इन्वेंटरी है — जब यह &lt;3&gt;सुरक्षा स्टॉक&lt;/3&gt; के नीचे गिरती है तो आप जोखिम में हैं, और शून्य से नीचे एक &lt;4&gt;स्टॉकआउट&lt;/4&gt; है।"
 
+msgid "Base currency"
+msgstr "आधार मुद्रा"
+
 msgid "Base Currency"
 msgstr "आधार मुद्रा"
 
@@ -3214,6 +3217,9 @@ msgstr "इसे बदलने से पार्ट ID अपडेट ह�
 
 msgid "Changing type resets this item's draft edits."
 msgstr "प्रकार बदलने से इस आइटम के ड्राफ्ट संपादन रीसेट हो जाते हैं।"
+
+msgid "Chart"
+msgstr "चार्ट"
 
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
@@ -5236,9 +5242,6 @@ msgstr "शिपिंग विधि हटाएं"
 msgid "Delete step"
 msgstr "चरण हटाएं"
 
-msgid "Delete Step"
-msgstr "चरण हटाएँ"
-
 msgid "Delete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर हटाएं"
 
@@ -6094,9 +6097,6 @@ msgstr "शिपिंग विधि संपादित करें"
 
 msgid "Edit Size"
 msgstr "आकार संपादित करें"
-
-msgid "Edit Step"
-msgstr "चरण संपादित करें"
 
 msgid "Edit Stock Transfer"
 msgstr "स्टॉक ट्रांसफर संपादित करें"
@@ -9422,6 +9422,15 @@ msgstr "कम चिह्नित करें"
 msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
 
+msgid "Market rate"
+msgstr "बाज़ार दर"
+
+msgid "Market rate (per USD)"
+msgstr "बाज़ार दर (प्रति USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "बाज़ार दर इतिहास (प्रति USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "रेंज में प्रत्येक दिन व्यक्ति को चिह्नित करता है। वे दूर रहते हुए शेड्यूल नहीं किए जाएंगे।"
 
@@ -9969,6 +9978,9 @@ msgstr "नया लागत केंद्र"
 
 msgid "New Credit / Debit Memo"
 msgstr "नया जमा / नामे मेमो"
+
+msgid "New Currency"
+msgstr "नई मुद्रा"
 
 msgid "New Custom Field"
 msgstr "नया कस्टम फील्ड"
@@ -10601,6 +10613,9 @@ msgstr "कोई कोटेशन कारण नहीं"
 msgid "No Quote Reasons"
 msgstr "कोई कोटेशन कारण नहीं"
 
+msgid "No rate"
+msgstr "कोई दर नहीं"
+
 msgid "No receivables"
 msgstr "कोई प्राप्य राशि नहीं"
 
@@ -10965,6 +10980,11 @@ msgstr "समय पर डिलीवरी"
 
 msgid "Onboard your agent to Carbon"
 msgstr "अपने एजेंट को Carbon पर ऑनबोर्ड करें"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} कितने {1} के बराबर है?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "एक वर्कफ़्लो का एक निष्पादन, चरण दर चरण रिकॉर्ड किया गया जिसमें प्रत्येक चरण द्वारा उपयोग किए गए और उत्पादित मान शामिल हैं, वर्कफ़्लो के स्वामी की अनुमतियों के साथ पूरे समय कार्य करते हुए।"
@@ -12658,8 +12678,14 @@ msgstr "इसे साप्ताहिक स्थिति कॉल म�
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "इसे जल्दी उठाएं और स्पष्ट रूप से उठाएं। सप्ताह 2 में नामित समस्या एक छोटी सी मरम्मत है; go-live पर वही समस्या एक देरी है।"
 
+msgid "Rate"
+msgstr "दर"
+
 msgid "Rate Limit"
 msgstr "दर सीमा"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "समेकन में इक्विटी खातों के रूपांतरण के लिए उपयोग की जाने वाली दर (IAS 21)। वर्तमान विनिमय दर का उपयोग करने के लिए खाली छोड़ें।"
 
 msgid "Ratio"
 msgstr "अनुपात"
@@ -13272,6 +13298,9 @@ msgstr "PIN रीसेट करें"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1} के लिए PIN रीसेट करें"
 
+msgid "Reset to market rate"
+msgstr "बाज़ार दर पर रीसेट करें"
+
 msgid "Reset Two-Factor Auth"
 msgstr "दो-कारक प्रमाणीकरण रीसेट करें"
 
@@ -13807,6 +13836,9 @@ msgstr "आयाम सेटिंग्स सहेजें"
 
 msgid "Save Method"
 msgstr "विधि सहेजें"
+
+msgid "Save Rate"
+msgstr "दर सहेजें"
 
 msgid "Save view"
 msgstr "दृश्य सहेजें"
@@ -16583,6 +16615,9 @@ msgstr "यह एक ITAR-नियंत्रित वातावरण ह
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "यह अपेक्षा से अधिक समय ले रहा है। यह अभी भी समाप्त हो सकता है — यदि नहीं होता, तो अपना डेटा वापस करने के लिए पूर्ववत् करने का पुन: प्रयास करें।"
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "यह आधार मुद्रा है। विनिमय दर हमेशा 1 होती है।"
+
 msgid "This is the month your fiscal year starts."
 msgstr "यह वह महीना है जब आपका वित्तीय वर्ष शुरू होता है।"
 
@@ -17373,6 +17408,9 @@ msgstr "अभी भेजे जाने वाले ऑर्डर"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "बिना शीर्षक वाला आरेख"
@@ -18728,6 +18766,9 @@ msgstr "आपकी परियोजना शुरू से अंत त�
 
 msgid "Your Project Team"
 msgstr "आपकी प्रोजेक्ट टीम"
+
+msgid "Your rate"
+msgstr "आपकी दर"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "आपका वास्तविक डेटा लोड हो गया है और आपने एक नमूना जांचा है और इसे मंजूरी दे दी है।"

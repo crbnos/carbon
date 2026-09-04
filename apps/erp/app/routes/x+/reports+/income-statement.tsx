@@ -107,6 +107,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { buckets }
     );
 
+    if (consolidated.error || !consolidated.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            consolidated.error,
+            "Failed to translate a subsidiary's balances"
+          )
+        )
+      );
+    }
+
     return {
       incomeStatement: consolidated.data.filter(
         (a) => a.incomeBalance === "Income Statement"

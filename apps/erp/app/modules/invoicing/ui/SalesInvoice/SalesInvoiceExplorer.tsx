@@ -117,7 +117,7 @@ export default function SalesInvoiceExplorer() {
 
   return (
     <>
-      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height))] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <VStack
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}

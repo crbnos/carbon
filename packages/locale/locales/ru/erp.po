@@ -2624,6 +2624,9 @@ msgstr "Расходы банка и сервисного сбора финан�
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Столбцы показывают поток каждой недели: <0>обеспечение</0> увеличивает запасы, <1>потребность</1> снижает их. <2>Строка</2> — это ваши прогнозируемые запасы на складе — когда она падает ниже <3>страхового запаса</3>, вы в зоне риска, а ниже нуля — <4>дефицит</4>."
 
+msgid "Base currency"
+msgstr "Базовая валюта"
+
 msgid "Base Currency"
 msgstr "Базовая валюта"
 
@@ -3214,6 +3217,9 @@ msgstr "Изменение этого обновит ID детали"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
+
+msgid "Chart"
+msgstr "График"
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -5236,9 +5242,6 @@ msgstr "Удалить способ доставки"
 msgid "Delete step"
 msgstr "Удалить шаг"
 
-msgid "Delete Step"
-msgstr "Удалить шаг"
-
 msgid "Delete Stock Transfer"
 msgstr "Удалить передачу запасов"
 
@@ -6094,9 +6097,6 @@ msgstr "Изменить Способ доставки"
 
 msgid "Edit Size"
 msgstr "Изменить Размер"
-
-msgid "Edit Step"
-msgstr "Изменить Шаг"
 
 msgid "Edit Stock Transfer"
 msgstr "Изменить Перемещение запаса"
@@ -9422,6 +9422,15 @@ msgstr "Отметить как недостача"
 msgid "Mark to delete"
 msgstr "Отметить к удалению"
 
+msgid "Market rate"
+msgstr "Рыночный курс"
+
+msgid "Market rate (per USD)"
+msgstr "Рыночный курс (за USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "История рыночного курса (за USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Отмечает человека как отсутствующего на каждый день в диапазоне. Его не будут планировать, пока он отсутствует."
 
@@ -9969,6 +9978,9 @@ msgstr "Новый центр затрат"
 
 msgid "New Credit / Debit Memo"
 msgstr "Новый кредит-нота / дебет-нота"
+
+msgid "New Currency"
+msgstr "Новая валюта"
 
 msgid "New Custom Field"
 msgstr "Новое пользовательское поле"
@@ -10601,6 +10613,9 @@ msgstr "Причина отказа от предложения"
 msgid "No Quote Reasons"
 msgstr "Причины отказа от предложения"
 
+msgid "No rate"
+msgstr "Курс отсутствует"
+
 msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
 
@@ -10965,6 +10980,11 @@ msgstr "Своевременная доставка"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Подключите вашего агента к Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} — это сколько {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
@@ -12658,8 +12678,14 @@ msgstr "Поднимите это на еженедельном статус-з�
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "поднимайте проблемы рано и говорите о них прямо. Проблема, выявленная на 2-й неделе, — это небольшое исправление; та же проблема при запуске — это задержка."
 
+msgid "Rate"
+msgstr "Курс"
+
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."
 
 msgid "Ratio"
 msgstr "Коэффициент"
@@ -13272,6 +13298,9 @@ msgstr "Сброс PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Сброс PIN для {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Сбросить к рыночному курсу"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Сбросить двухфакторную аутентификацию"
 
@@ -13807,6 +13836,9 @@ msgstr "Сохранить настройки измерений"
 
 msgid "Save Method"
 msgstr "Сохранить метод"
+
+msgid "Save Rate"
+msgstr "Сохранить курс"
 
 msgid "Save view"
 msgstr "Сохранить представление"
@@ -16583,6 +16615,9 @@ msgstr "Это среда, контролируемая ITAR. Доступ ог�
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Это занимает больше времени, чем ожидалось. Процесс может все еще завершиться — если нет, повторите восстановление, чтобы вернуть ваши данные."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Это базовая валюта. Валютный курс всегда равен 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
 
@@ -17373,6 +17408,9 @@ msgstr "Невыполненные заказы"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Безымянная диаграмма"
@@ -18724,6 +18762,9 @@ msgstr "Ваш проект от начала до конца: план, эта�
 
 msgid "Your Project Team"
 msgstr "Ваша команда проекта"
+
+msgid "Your rate"
+msgstr "Ваш курс"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."

@@ -2624,6 +2624,9 @@ msgstr "Aufwendungen für Bank- und Finanzservicegebühren"
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Balken zeigen den wöchentlichen Fluss: <0>Deckung</0> erhöht den Bestand, <1>Bedarf</1> senkt ihn. Die <2>Linie</2> ist Ihr geplanter verfügbarer Bestand — wenn er unter <3>Sicherheitsbestand</3> fällt, sind Sie gefährdet, und unter Null ist ein <4>Fehlbestand</4>."
 
+msgid "Base currency"
+msgstr "Basiswährung"
+
 msgid "Base Currency"
 msgstr "Basiswährung"
 
@@ -3214,6 +3217,9 @@ msgstr "Das Ändern aktualisiert die Teile-ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Das Ändern des Typs setzt die Entwurfsbearbeitungen dieses Elements zurück."
+
+msgid "Chart"
+msgstr "Diagramm"
 
 msgid "Chart of accounts"
 msgstr "Kontenplan"
@@ -5236,9 +5242,6 @@ msgstr "Versandmethode löschen"
 msgid "Delete step"
 msgstr "Schritt löschen"
 
-msgid "Delete Step"
-msgstr "Schritt löschen"
-
 msgid "Delete Stock Transfer"
 msgstr "Bestandsübertragung löschen"
 
@@ -6094,9 +6097,6 @@ msgstr "Versandmethode bearbeiten"
 
 msgid "Edit Size"
 msgstr "Größe bearbeiten"
-
-msgid "Edit Step"
-msgstr "Schritt bearbeiten"
 
 msgid "Edit Stock Transfer"
 msgstr "Lagertransfer bearbeiten"
@@ -9422,6 +9422,15 @@ msgstr "Als kurz markieren"
 msgid "Mark to delete"
 msgstr "Zum Löschen markieren"
 
+msgid "Market rate"
+msgstr "Marktkurs"
+
+msgid "Market rate (per USD)"
+msgstr "Marktkurs (pro USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Marktkursverlauf (pro USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Markiert die Person für jeden Tag im Bereich als frei. Sie werden nicht eingeplant, während sie weg sind."
 
@@ -9969,6 +9978,9 @@ msgstr "Neue Kostenstelle"
 
 msgid "New Credit / Debit Memo"
 msgstr "Neue Haben-/Soll-Buchung"
+
+msgid "New Currency"
+msgstr "Neue Währung"
 
 msgid "New Custom Field"
 msgstr "Neues benutzerdefiniertes Feld"
@@ -10601,6 +10613,9 @@ msgstr "Kein Angebotgrund"
 msgid "No Quote Reasons"
 msgstr "Keine Angebotsgründe"
 
+msgid "No rate"
+msgstr "Kein Kurs"
+
 msgid "No receivables"
 msgstr "Keine Forderungen"
 
@@ -10965,6 +10980,11 @@ msgstr "Pünktliche Lieferung"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Ihren Agenten bei Carbon registrieren"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} entspricht wie vielen {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Ein Workflow-Durchlauf, aufgezeichnet Schritt für Schritt mit den Werten, die jeder Schritt verwendet und erzeugt, ausgeführt mit den Berechtigungen des Verantwortlichen des Workflows."
@@ -12658,8 +12678,14 @@ msgstr "Bringen Sie es beim wöchentlichen Statusgespräch zur Sprache"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "Sprechen Sie es früh an und sprechen Sie es deutlich an. Ein Problem, das in Woche 2 benannt wird, ist eine kleine Reparatur; das gleiche Problem beim Go-Live ist eine Verzögerung."
 
+msgid "Rate"
+msgstr "Kurs"
+
 msgid "Rate Limit"
 msgstr "Ratenlimit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Kurs für die Umrechnung von Eigenkapitalkonten in der Konsolidierung (IAS 21). Leer lassen, um den aktuellen Wechselkurs zu verwenden."
 
 msgid "Ratio"
 msgstr "Verhältnis"
@@ -13272,6 +13298,9 @@ msgstr "PIN zurücksetzen"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN zurücksetzen für {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Auf Marktkurs zurücksetzen"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Zwei-Faktor-Authentifizierung zurücksetzen"
 
@@ -13807,6 +13836,9 @@ msgstr "Dimensionseinstellungen speichern"
 
 msgid "Save Method"
 msgstr "Methode speichern"
+
+msgid "Save Rate"
+msgstr "Kurs speichern"
 
 msgid "Save view"
 msgstr "Ansicht speichern"
@@ -16583,6 +16615,9 @@ msgstr "Dies ist eine ITAR-kontrollierte Umgebung. Der Zugriff ist auf U.S. Pers
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Dies dauert länger als erwartet. Es kann trotzdem noch beendet werden – wenn nicht, versuchen Sie das Zurücksetzen erneut, um Ihre Daten wiederherzustellen."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Dies ist die Basiswährung. Der Wechselkurs ist immer 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Dies ist der Monat, in dem Ihr Geschäftsjahr beginnt."
 
@@ -17373,6 +17408,9 @@ msgstr "Nicht versendete Bestellungen"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Unbenanntes Diagramm"
@@ -18724,6 +18762,9 @@ msgstr "Ihr Projekt von Anfang bis Ende: die Planung, die Meilensteine und der G
 
 msgid "Your Project Team"
 msgstr "Ihr Projektteam"
+
+msgid "Your rate"
+msgstr "Ihr Kurs"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ihre echten Daten sind geladen und Sie haben eine Stichprobe überprüft und genehmigt."
