@@ -338,10 +338,6 @@ function SsoDomainRow({
   );
 }
 
-// Temporarily hide the Single Sign-On section from Settings → Security.
-// Set to true to restore it — the loader, action, and SSO UI remain intact.
-const SHOW_SSO_SETTINGS = false;
-
 export default function Security() {
   const { ssoEnabled, connection, domains, acsUrl, metadataUrl } =
     useLoaderData<typeof loader>();
@@ -422,7 +418,7 @@ export default function Security() {
   );
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-8"
@@ -434,6 +430,17 @@ export default function Security() {
           <p className="text-sm text-muted-foreground text-pretty">
             <Trans>
               Manage authentication and sign-in requirements for your company.
+            </Trans>
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1 w-full">
+          <Heading size="h3">
+            <Trans>MFA</Trans>
+          </Heading>
+          <p className="text-sm text-muted-foreground text-pretty max-w-xl">
+            <Trans>
+              Require a second factor when members sign in to this company.
             </Trans>
           </p>
         </div>
@@ -454,7 +461,7 @@ export default function Security() {
           twoFactorCard
         )}
 
-        {SHOW_SSO_SETTINGS && ssoEnabled && (
+        {ssoEnabled && (
           <>
             <div className="flex items-end justify-between gap-4 w-full">
               <div className="flex flex-col gap-1">
@@ -629,7 +636,7 @@ export default function Security() {
                       resetAfterSubmit
                     >
                       <Hidden name="intent" value="addDomain" />
-                      <HStack className="w-full items-end">
+                      <div className="flex w-full items-end gap-2">
                         <div className="flex-1">
                           <Input
                             name="domain"
@@ -640,7 +647,7 @@ export default function Security() {
                         <Submit isDisabled={!canEdit} withBlocker={false}>
                           <Trans>Add</Trans>
                         </Submit>
-                      </HStack>
+                      </div>
                     </ValidatedForm>
                   </VStack>
                 </CardContent>

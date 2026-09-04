@@ -2,7 +2,7 @@ import type { Database } from "@carbon/database";
 import { withRevisionSuffix } from "@carbon/documents/utils";
 import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
+import { getPaymentTermsList } from "~/modules/accounting";
 import {
   getShippingMethodsList,
   getStockTransfer,
@@ -121,7 +121,6 @@ const emptyThumbnails: Record<string, string | null> = {};
 export async function buildPreviewProps(
   client: Client,
   companyId: string,
-  companyGroupId: string,
   documentType: string,
   id: string,
   locale: string
@@ -247,16 +246,10 @@ export async function buildPreviewProps(
         getShippingMethodsList(client, companyId)
       ]);
       if (!quote.data) return null;
-      let exchangeRate = 1;
-      if (quote.data.currencyCode) {
-        const currency = await getCurrencyByCode(
-          client,
-          companyGroupId,
-          quote.data.currencyCode
-        );
-        if (currency.data?.exchangeRate)
-          exchangeRate = currency.data.exchangeRate;
-      }
+      // The document's own stamped rate — never a live lookup, so a reprint
+      // can't silently change. Legacy pre-stamping quotes (null) render at 1,
+      // consistent with their line snapshots' default.
+      const exchangeRate = quote.data.exchangeRate ?? 1;
       return {
         ...base,
         exchangeRate,

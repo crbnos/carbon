@@ -70,6 +70,180 @@ export async function linkSsoIdentityToUser(
   }
 }
 
+// --- Pre-seeded SSO identities (provider-agnostic account linking) ----------
+// Carbon runs GoTrue with GOTRUE_DISABLE_SIGNUP=true, so a SAML sign-in that
+// resolves to "create a new user" is rejected (422). Pre-seeding an
+// auth.identities row for an existing user makes GoTrue take the
+// LinkAccount/AccountExists branch instead — no signup, the existing UUID is
+// kept, and password/Google/magic-link all keep working.
+//
+// The match that carries the load is the GENERATED `email` column
+// (lower(identity_data->>'email')), NOT provider_id: GoTrue v2.177.0 marks every
+// SAML assertion email Verified and hard-rejects an emailless assertion, so its
+// email-column fallback in DetermineAccountLinking fires for EVERY successful
+// SAML sign-in — for any IdP (Okta, Entra, OneLogin, Ping, Google, JumpCloud,
+// ADFS). Keying on provider_id would only work for IdPs whose NameID is the
+// email (Okta); Entra's default is an opaque persistent pairwise id. `provider_id`
+// here is just a readable placeholder. GoTrue self-heals on the next login by
+// creating a row keyed on the real NameID, which then resolves via AccountExists.
+
+/** The auth.identities.provider value for a GoTrue SSO provider id. */
+export function ssoProviderColumn(providerId: string): string {
+  return `sso:${providerId}`;
+}
+
+/** The lowercased domain of an email, or null (mirrors uncoveredSsoDomainError). */
+export function emailDomain(email: string): string | null {
+  return email.split("@")[1]?.trim().toLowerCase() ?? null;
+}
+
+/**
+ * Pre-seed one SSO identity so a single existing/invited user links on their
+ * next SAML sign-in. Idempotent (ON CONFLICT DO NOTHING). Off-Enterprise callers
+ * must gate on isSsoEnabled() before calling — this writes the auth schema
+ * unconditionally.
+ */
+export async function seedSsoIdentityForUser(
+  db: Kysely<KyselyDatabase>,
+  {
+    userId,
+    email,
+    providerId
+  }: {
+    userId: string;
+    email: string;
+    providerId: string;
+  }
+): Promise<{ data: { seeded: boolean } | null; error: string | null }> {
+  const lowerEmail = email.toLowerCase();
+  const provider = ssoProviderColumn(providerId);
+  try {
+    const result = await sql`
+      INSERT INTO auth.identities
+        (provider_id, user_id, identity_data, provider, created_at, updated_at)
+      VALUES (
+        ${lowerEmail},
+        ${userId}::uuid,
+        jsonb_build_object('sub', ${lowerEmail}::text, 'email', ${lowerEmail}::text),
+        ${provider},
+        now(),
+        now()
+      )
+      ON CONFLICT (provider_id, provider) DO NOTHING
+    `.execute(db);
+    return {
+      data: { seeded: Number(result.numAffectedRows ?? 0) > 0 },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to seed SSO identity", {
+      userId,
+      providerId,
+      error: err
+    });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : "Failed to seed SSO identity"
+    };
+  }
+}
+
+/**
+ * Backfill SSO identities for EVERY existing non-SSO user whose email is on the
+ * domain — run when a domain is verified. Not company-scoped: the adopted policy
+ * is that the verified domain owner controls identity for that domain
+ * instance-wide (GoTrue keys linking on domain, not company). Returns the linked
+ * user ids so the caller can write an audit record. Idempotent.
+ */
+export async function backfillSsoIdentitiesForDomain(
+  db: Kysely<KyselyDatabase>,
+  {
+    providerId,
+    domain
+  }: {
+    providerId: string;
+    domain: string;
+  }
+): Promise<{ data: { linkedUserIds: string[] } | null; error: string | null }> {
+  const lowerDomain = domain.toLowerCase();
+  const provider = ssoProviderColumn(providerId);
+  try {
+    const result = await sql<{ user_id: string }>`
+      INSERT INTO auth.identities
+        (provider_id, user_id, identity_data, provider, created_at, updated_at)
+      SELECT
+        lower(u.email),
+        u.id,
+        jsonb_build_object('sub', lower(u.email), 'email', lower(u.email)),
+        ${provider},
+        now(),
+        now()
+      FROM auth.users u
+      WHERE u.email IS NOT NULL
+        AND u.is_sso_user = false
+        AND lower(split_part(u.email, '@', 2)) = ${lowerDomain}
+      ON CONFLICT (provider_id, provider) DO NOTHING
+      RETURNING user_id
+    `.execute(db);
+    return {
+      data: { linkedUserIds: result.rows.map((r) => r.user_id) },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to backfill SSO identities", {
+      providerId,
+      domain,
+      error: err
+    });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to backfill SSO identities"
+    };
+  }
+}
+
+/**
+ * Remove this domain's SSO identities when the domain is unregistered. Keyed on
+ * the GENERATED `email` column, not provider_id, so it also catches the rows
+ * GoTrue self-heals with the IdP's real (possibly opaque) NameID.
+ */
+export async function removeSsoIdentitiesForDomain(
+  db: Kysely<KyselyDatabase>,
+  {
+    providerId,
+    domain
+  }: {
+    providerId: string;
+    domain: string;
+  }
+): Promise<{ data: { removed: number } | null; error: string | null }> {
+  const lowerDomain = domain.toLowerCase();
+  const provider = ssoProviderColumn(providerId);
+  try {
+    const result = await sql`
+      DELETE FROM auth.identities
+      WHERE provider = ${provider}
+        AND lower(split_part(email, '@', 2)) = ${lowerDomain}
+    `.execute(db);
+    return {
+      data: { removed: Number(result.numAffectedRows ?? 0) },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to remove SSO identities", {
+      providerId,
+      domain,
+      error: err
+    });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to remove SSO identities"
+    };
+  }
+}
+
 /**
  * Remove a throwaway JIT SSO auth user COMPLETELY — the auth user AND the
  * `public."user"` / `userPermission` rows the `on_auth_user_created` trigger

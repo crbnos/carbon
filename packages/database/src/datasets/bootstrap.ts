@@ -299,9 +299,9 @@ export async function seedCompanyReferenceData(
 
   for (const c of currencies) {
     await client.query(
-      `INSERT INTO currency (code, "exchangeRate", "decimalPlaces", "companyGroupId", "createdBy")
-       VALUES ($1, $2, $3, $4, 'system')`,
-      [c.code, c.exchangeRate, c.decimalPlaces, companyGroupId]
+      `INSERT INTO currency (code, "decimalPlaces", "companyGroupId", "createdBy")
+       VALUES ($1, $2, $3, 'system')`,
+      [c.code, c.decimalPlaces, companyGroupId]
     );
   }
 

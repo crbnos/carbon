@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-28T17:37:13.495Z",
-  "totalTools": 1449,
+  "generated": "2026-09-03T15:31:57.926Z",
+  "totalTools": 1495,
   "modules": 15,
   "tools": [
     {
@@ -1373,6 +1373,107 @@
       }
     },
     {
+      "name": "accounting_getExchangeRate",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get exchange rate",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "currencyCode"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currencyCode"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getExchangeRates",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get exchange rates",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_upsertExchangeRateOverride",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert exchange rate override",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "override"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "currencyCode",
+          "rate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteExchangeRateOverride",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete exchange rate override",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "currencyCode"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currencyCode"
+        ]
+      }
+    },
+    {
       "name": "accounting_getCurrencies",
       "module": "accounting",
       "classification": "READ",
@@ -2485,7 +2586,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "upsert currency",
-      "paramCount": 5,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "currency"
@@ -2505,9 +2606,6 @@
             "type": "string"
           },
           "decimalPlaces": {
-            "type": "number"
-          },
-          "exchangeRate": {
             "type": "number"
           },
           "historicalExchangeRate": {
@@ -3208,7 +3306,6 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyGroupId",
         "currencyCode"
       ],
       "injectAuth": [
@@ -3610,6 +3707,53 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getExistingOpeningBalanceEntry",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get existing opening balance entry",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_createOpeningBalanceJournal",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "create opening balance journal",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "postingDate": {
+            "type": "string"
+          },
+          "balances": {}
+        },
+        "required": [
+          "postingDate",
+          "balances"
         ]
       }
     },
@@ -18648,6 +18792,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "companyId",
         "locationId"
       ],
       "injectAuth": [
@@ -18661,6 +18806,68 @@
               "string",
               "null"
             ]
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "people_getEmployeeShifts",
+      "module": "people",
+      "classification": "READ",
+      "description": "get employee shifts",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "people_getEmployeeDepartments",
+      "module": "people",
+      "classification": "READ",
+      "description": "get employee departments",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "people_getShiftsWithTimes",
+      "module": "people",
+      "classification": "READ",
+      "description": "get shifts with times",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
           }
         },
         "required": [
@@ -18897,11 +19104,11 @@
     {
       "name": "people_updateEmployeeJob",
       "module": "people",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update employee job",
       "paramCount": 2,
       "serviceParams": [
-        "client",
+        "db",
         "employeeId",
         "employeeJob"
       ],
@@ -20422,6 +20629,34 @@
       }
     },
     {
+      "name": "production_getJobExpediteForecast",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job expedite forecast",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "jobId",
+        "companyId",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
       "name": "production_getJobByOperationId",
       "module": "production",
       "classification": "READ",
@@ -20451,6 +20686,132 @@
       "module": "production",
       "classification": "READ",
       "description": "get job purchase order lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationsForTimeline",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operations for timeline",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_getCapacityReservationsByJob",
+      "module": "production",
+      "classification": "READ",
+      "description": "get capacity reservations by job",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_getCapacityReservationsForResources",
+      "module": "production",
+      "classification": "READ",
+      "description": "get capacity reservations for resources",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId",
+        "/**\n   * Explicit [from, to"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "/**\n   * Explicit [from, to": {}
+        },
+        "required": [
+          "/**\n   * Explicit [from, to"
+        ]
+      }
+    },
+    {
+      "name": "production_getMaintenanceDowntimeForResources",
+      "module": "production",
+      "classification": "READ",
+      "description": "get maintenance downtime for resources",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "production_getProductionEventsByJob",
+      "module": "production",
+      "classification": "READ",
+      "description": "get production events by job",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -20537,17 +20898,23 @@
       "module": "production",
       "classification": "READ",
       "description": "get jobs list",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyId"
+        "companyId",
+        "statuses"
       ],
       "injectAuth": [
         "companyId"
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "statuses": {
+            "type": "array",
+            "items": {}
+          }
+        }
       }
     },
     {
@@ -22116,6 +22483,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "db",
         "params"
       ],
       "injectAuth": [
@@ -22194,6 +22562,7 @@
       "paramCount": 2,
       "serviceParams": [
         "client",
+        "db",
         "params"
       ],
       "injectAuth": [
@@ -22635,7 +23004,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert production event",
-      "paramCount": 49,
+      "paramCount": 55,
       "serviceParams": [
         "client",
         "productionEvent"
@@ -22783,20 +23152,38 @@
           "sortOrder": {
             "type": "number"
           },
-          "partId": {
+          "employeeId": {
             "type": "string"
           },
-          "drawingNumber": {
+          "date": {
             "type": "string"
           },
-          "pdfUrl": {
+          "note": {
             "type": "string"
           },
-          "annotations": {
+          "shiftId": {
             "type": "string"
           },
-          "features": {
+          "fromDate": {
             "type": "string"
+          },
+          "toDate": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "fromWorkCenterId": {
+            "type": "string"
+          },
+          "fromWeekStart": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "number"
+          },
+          "hours": {
+            "type": "number"
           },
           "_operation": {
             "type": "string",
@@ -22829,7 +23216,13 @@
           "componentNodeIds",
           "updates",
           "stepId",
-          "partId",
+          "employeeId",
+          "date",
+          "fromDate",
+          "toDate",
+          "weekStart",
+          "fromWorkCenterId",
+          "fromWeekStart",
           "_operation"
         ]
       }
@@ -23402,6 +23795,32 @@
       }
     },
     {
+      "name": "production_getJobPromiseDate",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job promise date",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
       "name": "production_upsertJobOperationTool",
       "module": "production",
       "classification": "WRITE",
@@ -23569,7 +23988,8 @@
             "type": "string",
             "enum": [
               "itemToJob",
-              "quoteLineToJob"
+              "quoteLineToJob",
+              "jobToJob"
             ]
           },
           "jobMethod": {
@@ -23582,6 +24002,9 @@
                 "type": "string"
               },
               "configuration": {},
+              "versionId": {
+                "type": "string"
+              },
               "parts": {
                 "type": "object",
                 "properties": {
@@ -23631,7 +24054,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job material make method",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "jobMaterial"
@@ -23651,6 +24074,9 @@
             "type": "string"
           },
           "configuration": {},
+          "versionId": {
+            "type": "string"
+          },
           "parts": {
             "type": "object",
             "properties": {
@@ -24493,6 +24919,915 @@
         },
         "required": [
           "forecasts"
+        ]
+      }
+    },
+    {
+      "name": "production_getPeopleAssignments",
+      "module": "production",
+      "classification": "READ",
+      "description": "get people assignments",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "date"
+        ]
+      }
+    },
+    {
+      "name": "production_getPeopleAbsences",
+      "module": "production",
+      "classification": "READ",
+      "description": "get people absences",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "date"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date"
+        ]
+      }
+    },
+    {
+      "name": "production_getPeopleAssignmentsRange",
+      "module": "production",
+      "classification": "READ",
+      "description": "get people assignments range",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getPeopleAbsencesRange",
+      "module": "production",
+      "classification": "READ",
+      "description": "get people absences range",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getPeopleCapacityOperations",
+      "module": "production",
+      "classification": "READ",
+      "description": "get people capacity operations",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "startDate",
+          "endDate"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterShifts",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center shifts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "workCenterIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "workCenterIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "workCenterIds"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterReservationsRange",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center reservations range",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string"
+          },
+          "endAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startAt",
+          "endAt"
+        ]
+      }
+    },
+    {
+      "name": "production_getLocationEmployees",
+      "module": "production",
+      "classification": "READ",
+      "description": "get location employees",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterRequiredAbilities",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center required abilities",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getActiveEmployeeAbilities",
+      "module": "production",
+      "classification": "READ",
+      "description": "get active employee abilities",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "production_upsertPeopleAssignment",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "upsert people assignment",
+      "paramCount": 7,
+      "serviceParams": [
+        "db",
+        "assignment"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "undefined = whole shift (replaces other rows) */\n    hours": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "locationId",
+          "workCenterId",
+          "employeeId",
+          "date",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_deletePeopleAssignment",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete people assignment",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_setPeopleAbsence",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set people absence",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "absence"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "date",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_clearPeopleAbsence",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "clear people absence",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_movePeopleAssignment",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "move people assignment",
+      "paramCount": 2,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workCenterId"
+        ]
+      }
+    },
+    {
+      "name": "production_setPeopleDay",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "set people day",
+      "paramCount": 7,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "/** day-scoped note, written to every surviving row of the day */\n    note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "/**\n     * Day-scoped overtime, written to every surviving row of the day. The\n     * scheduler reads the MAX across a day's rows (never the sum), so 2h of\n     * overtime stays 2h however many stations the person splits across.\n     */\n    overtimeHours": {
+            "type": "number"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "workCenterId": {
+                  "type": "string"
+                },
+                "hours": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "workCenterId",
+                "hours"
+              ]
+            }
+          }
+        },
+        "required": [
+          "locationId",
+          "employeeId",
+          "date",
+          "shiftId",
+          "/** day-scoped note, written to every surviving row of the day */\n    note",
+          "/**\n     * Day-scoped overtime, written to every surviving row of the day. The\n     * scheduler reads the MAX across a day's rows (never the sum), so 2h of\n     * overtime stays 2h however many stations the person splits across.\n     */\n    overtimeHours",
+          "rows"
+        ]
+      }
+    },
+    {
+      "name": "production_setPeopleAssignmentHours",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set people assignment hours",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "hours": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "hours"
+        ]
+      }
+    },
+    {
+      "name": "production_setPeopleOvertimeBulk",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set people overtime bulk",
+      "paramCount": 6,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "omitted = the single `date` only */\n    toDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hours": {
+            "type": "number"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "departmentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "date",
+          "hours"
+        ]
+      }
+    },
+    {
+      "name": "production_copyPeopleBoard",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy people board",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "fromDate": {
+            "type": "string"
+          },
+          "toDate": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "fromDate",
+          "toDate",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_assignPeopleWeek",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "assign people week",
+      "paramCount": 5,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "employeeId",
+          "workCenterId",
+          "weekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_unassignPeopleWeek",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "unassign people week",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "employeeId",
+          "workCenterId",
+          "weekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_movePeopleWeek",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "move people week",
+      "paramCount": 5,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "fromWorkCenterId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "employeeId",
+          "fromWorkCenterId",
+          "workCenterId",
+          "weekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_copyPeopleWeek",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "copy people week",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "fromWeekStart": {
+            "type": "string"
+          },
+          "toWeekStart": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locationId",
+          "fromWeekStart",
+          "toWeekStart",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_setPeopleAbsenceRange",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "set people absence range",
+      "paramCount": 5,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "fromDate": {
+            "type": "string"
+          },
+          "toDate": {
+            "type": "string"
+          },
+          "shiftId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "fromDate",
+          "toDate",
+          "shiftId"
+        ]
+      }
+    },
+    {
+      "name": "production_notifyScheduleInputsChanged",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "notify schedule inputs changed",
+      "paramCount": 3,
+      "serviceParams": [
+        "companyId",
+        "kind",
+        "reason",
+        "entityId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "kind": {},
+          "reason": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "reason"
         ]
       }
     },
@@ -26558,7 +27893,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "schedule job",
-      "paramCount": 3,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "companyId",
@@ -26573,20 +27908,6 @@
         "properties": {
           "jobId": {
             "type": "string"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "initial",
-              "reschedule"
-            ]
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "backward",
-              "forward"
-            ]
           }
         },
         "required": [
@@ -28734,8 +30055,7 @@
       "paramCount": 11,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -29164,8 +30484,7 @@
       "paramCount": 8,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -33654,7 +34973,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "employeeId"
+        "employeeId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -33668,6 +34988,31 @@
         },
         "required": [
           "employeeId"
+        ]
+      }
+    },
+    {
+      "name": "resources_getEmployeeAbility",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get employee ability",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "employeeAbilityId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeAbilityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeAbilityId"
         ]
       }
     },
@@ -34222,6 +35567,32 @@
       "module": "resources",
       "classification": "READ",
       "description": "get outstanding trainings for user",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "employeeId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId"
+        ]
+      }
+    },
+    {
+      "name": "resources_getTrainingAssignmentStatusForEmployee",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get training assignment status for employee",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -34840,7 +36211,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "insert ability",
-      "paramCount": 3,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "ability"
@@ -34856,76 +36227,15 @@
           "name": {
             "type": "string"
           },
-          "curve": {
-            "type": "object",
-            "properties": {
-              "data": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "week": {
-                      "type": "number"
-                    },
-                    "value": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "week",
-                    "value"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "data"
+          "recertifyEveryDays": {
+            "type": [
+              "number",
+              "null"
             ]
-          },
-          "shadowWeeks": {
-            "type": "number"
           }
         },
         "required": [
-          "name",
-          "curve",
-          "shadowWeeks"
-        ]
-      }
-    },
-    {
-      "name": "resources_insertEmployeeAbilities",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "insert employee abilities",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "abilityId",
-        "employeeIds",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "abilityId": {
-            "type": "string"
-          },
-          "employeeIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "abilityId",
-          "employeeIds"
+          "name"
         ]
       }
     },
@@ -34972,6 +36282,32 @@
       }
     },
     {
+      "name": "resources_getTrainingGrantedAbilityId",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get training granted ability id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "trainingAssignmentId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "trainingAssignmentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "trainingAssignmentId"
+        ]
+      }
+    },
+    {
       "name": "resources_updateAbility",
       "module": "resources",
       "classification": "WRITE",
@@ -34997,6 +36333,121 @@
         "required": [
           "id",
           "ability"
+        ]
+      }
+    },
+    {
+      "name": "resources_resolveEmployeeAbilityExpiresAt",
+      "module": "resources",
+      "classification": "WRITE",
+      "description": "resolve employee ability expires at",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "abilityId",
+        "lastTrainingDate",
+        "expiresAt"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "abilityId": {
+            "type": "string"
+          },
+          "lastTrainingDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "abilityId",
+          "lastTrainingDate",
+          "expiresAt"
+        ]
+      }
+    },
+    {
+      "name": "resources_upsertEmployeeAbilityCell",
+      "module": "resources",
+      "classification": "WRITE",
+      "description": "upsert employee ability cell",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "cell"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "abilityId": {
+            "type": "string"
+          },
+          "lastTrainingDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "employeeId",
+          "abilityId",
+          "lastTrainingDate",
+          "expiresAt"
+        ]
+      }
+    },
+    {
+      "name": "resources_ensureProcessAbility",
+      "module": "resources",
+      "classification": "WRITE",
+      "description": "ensure process ability",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "processId": {
+            "type": "string"
+          },
+          "processName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "processId",
+          "processName"
         ]
       }
     },
@@ -35141,47 +36592,6 @@
       }
     },
     {
-      "name": "resources_upsertEmployeeAbility",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "upsert employee ability",
-      "paramCount": 5,
-      "serviceParams": [
-        "client",
-        "employeeAbility"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "abilityId": {
-            "type": "string"
-          },
-          "employeeId": {
-            "type": "string"
-          },
-          "trainingCompleted": {
-            "type": "boolean"
-          },
-          "trainingDays": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "abilityId",
-          "employeeId",
-          "trainingCompleted"
-        ]
-      }
-    },
-    {
       "name": "resources_upsertFailureMode",
       "module": "resources",
       "classification": "WRITE",
@@ -35254,7 +36664,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "insert maintenance dispatch",
-      "paramCount": 13,
+      "paramCount": 14,
       "serviceParams": [
         "client",
         "input"
@@ -35312,6 +36722,9 @@
           "plannedEndTime": {
             "type": "string"
           },
+          "takesWorkCenterOffline": {
+            "type": "boolean"
+          },
           "content": {}
         },
         "required": [
@@ -35324,7 +36737,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "update maintenance dispatch",
-      "paramCount": 17,
+      "paramCount": 18,
       "serviceParams": [
         "client",
         "input"
@@ -35414,6 +36827,9 @@
               "null"
             ]
           },
+          "takesWorkCenterOffline": {
+            "type": "boolean"
+          },
           "content": {}
         },
         "required": [
@@ -35426,7 +36842,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance dispatch",
-      "paramCount": 13,
+      "paramCount": 14,
       "serviceParams": [
         "client",
         "dispatch"
@@ -35472,6 +36888,9 @@
           "plannedEndTime": {
             "type": "string"
           },
+          "takesWorkCenterOffline": {
+            "type": "string"
+          },
           "assignee": {
             "type": "string"
           },
@@ -35491,6 +36910,7 @@
           "status",
           "priority",
           "locationId",
+          "takesWorkCenterOffline",
           "_operation"
         ]
       }
@@ -35604,6 +37024,9 @@
           "plannedEndTime": {
             "type": "string"
           },
+          "takesWorkCenterOffline": {
+            "type": "string"
+          },
           "assignee": {
             "type": "string"
           },
@@ -35629,42 +37052,6 @@
           "maintenanceScheduleId": {
             "type": "string"
           },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "frequency": {
-            "type": "string"
-          },
-          "estimatedDuration": {
-            "type": "number"
-          },
-          "nextDueAt": {
-            "type": "string"
-          },
-          "active": {
-            "type": "string"
-          },
-          "tuesday": {
-            "type": "string"
-          },
-          "wednesday": {
-            "type": "string"
-          },
-          "thursday": {
-            "type": "string"
-          },
-          "friday": {
-            "type": "string"
-          },
-          "saturday": {
-            "type": "string"
-          },
-          "sunday": {
-            "type": "string"
-          },
           "supplierId": {
             "type": "string"
           },
@@ -35686,6 +37073,42 @@
           "period": {
             "type": "string"
           },
+          "name": {
+            "type": "string"
+          },
+          "grantsAbilityId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "defaultStandardFactor": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "laborRate": {
+            "type": "number"
+          },
+          "machineRate": {
+            "type": "number"
+          },
+          "overheadRate": {
+            "type": "number"
+          },
+          "processes": {
+            "type": "string"
+          },
+          "shifts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alwaysOn": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -35702,25 +37125,21 @@
           "status",
           "priority",
           "locationId",
+          "takesWorkCenterOffline",
           "workCenterId",
           "maintenanceDispatchItemId",
           "adjustmentType",
           "children",
           "maintenanceScheduleId",
-          "name",
-          "frequency",
-          "active",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
           "id",
           "trainingId",
           "groupIds",
           "trainingAssignmentId",
           "employeeId",
+          "name",
+          "description",
+          "defaultStandardFactor",
+          "alwaysOn",
           "_operation"
         ]
       }
@@ -35826,7 +37245,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance schedule",
-      "paramCount": 16,
+      "paramCount": 8,
       "serviceParams": [
         "client",
         "schedule"
@@ -35842,49 +37261,25 @@
           "id": {
             "type": "string"
           },
-          "name": {
+          "supplierId": {
             "type": "string"
           },
-          "description": {
-            "type": "string"
-          },
-          "workCenterId": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "frequency": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "string"
-          },
-          "estimatedDuration": {
+          "hoursPerWeek": {
             "type": "number"
           },
-          "nextDueAt": {
+          "trainingId": {
             "type": "string"
           },
-          "active": {
+          "groupIds": {
             "type": "string"
           },
-          "tuesday": {
+          "trainingAssignmentId": {
             "type": "string"
           },
-          "wednesday": {
+          "employeeId": {
             "type": "string"
           },
-          "thursday": {
-            "type": "string"
-          },
-          "friday": {
-            "type": "string"
-          },
-          "saturday": {
-            "type": "string"
-          },
-          "sunday": {
+          "period": {
             "type": "string"
           },
           "_operation": {
@@ -35897,18 +37292,11 @@
           }
         },
         "required": [
-          "name",
-          "workCenterId",
-          "locationId",
-          "frequency",
-          "priority",
-          "active",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
+          "id",
+          "trainingId",
+          "groupIds",
+          "trainingAssignmentId",
+          "employeeId",
           "_operation"
         ]
       }
@@ -36035,7 +37423,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert training",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "training"
@@ -36055,6 +37443,9 @@
             "type": "string"
           },
           "content": {
+            "type": "string"
+          },
+          "grantsAbilityId": {
             "type": "string"
           }
         },
@@ -36130,7 +37521,7 @@
       "module": "resources",
       "classification": "DESTRUCTIVE",
       "description": "upsert work center",
-      "paramCount": 10,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "workCenter"
@@ -36173,6 +37564,15 @@
           "processes": {
             "type": "string"
           },
+          "shifts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alwaysOn": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -36187,6 +37587,7 @@
           "description",
           "defaultStandardFactor",
           "locationId",
+          "alwaysOn",
           "_operation"
         ]
       }
@@ -40801,8 +42202,7 @@
       "paramCount": 17,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -42031,8 +43431,7 @@
       "paramCount": 9,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -44069,6 +45468,31 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "companyId",
+        "company"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "company": {}
+        },
+        "required": [
+          "company"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateCompanyWithBaseCurrencyChange",
+      "module": "settings",
+      "classification": "DESTRUCTIVE",
+      "description": "update company with base currency change",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
         "companyId",
         "company"
       ],

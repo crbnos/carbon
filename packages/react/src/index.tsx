@@ -105,6 +105,7 @@ import { CreatableCombobox } from "./CreateableCombobox";
 import type { CreatableMultiSelectProps } from "./CreateableMultiSelect";
 import { CreatableMultiSelect } from "./CreateableMultiSelect";
 import {
+  Calendar,
   DatePicker,
   DateRangePicker,
   DateTimePicker,
@@ -312,6 +313,8 @@ import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
 import { SplitButton } from "./SplitButton";
 import { Status } from "./Status";
+import type { SubheadingProps } from "./Subheading";
+import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
@@ -428,6 +431,7 @@ export {
   Count,
   CreatableCombobox,
   CreatableMultiSelect,
+  Calendar,
   DatePicker,
   DateRangePicker,
   DateTime,
@@ -594,6 +598,7 @@ export {
   Spinner,
   SplitButton,
   Status,
+  Subheading,
   Switch,
   Table,
   TableCaption,
@@ -657,6 +662,7 @@ export type {
   OperatingSystemPlatform,
   Shortcut,
   ShortcutDefinition,
+  SubheadingProps,
   TextareaProps,
   ExpiredEntityPolicy,
   TrackedEntityOption,

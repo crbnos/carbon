@@ -1,6 +1,8 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
+import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
 import type { Catalog, CompanyBackup, JobProgress } from "./company-backup";
@@ -12,13 +14,14 @@ import {
   backupNameFromSource,
   bindValue,
   canSetReplicationRole,
+  ExportScopeViolationError,
   getCompanyTableCatalog,
   isUserScopedIdentityTable,
-  newIdForTable,
   RESTORE_INTEGRATION,
   readBackup,
   removeStoragePrefix,
   restoreAssetsFromBackup,
+  type ScopeViolation,
   selectWipeableTables,
   throttleProgress,
   wipeScopedData,
@@ -26,6 +29,7 @@ import {
 } from "./company-backup";
 import {
   assertReferentiallyClosed,
+  buildIdMaps,
   buildRowTransforms,
   loadSubstrateIds
 } from "./company-backup.transforms";
@@ -97,24 +101,14 @@ export async function wipeAndLoad(
     backup.manifest.tables.map((t) => [t.name, new Set(t.columns)])
   );
 
-  // Foreign: assign a fresh id to every id-keyed row up front so FKs (and the
-  // ids embedded in storage paths) can be rewritten in a single pass. Only remap
-  // string ids (text/uuid) — integer/serial ids (e.g. `journal`) can't take a
-  // nanoid, and since the table is wiped first their original ids are free to
-  // reuse verbatim (FKs to them stay valid by keeping the original value).
-  const idMaps = new Map<string, Map<string, string>>();
+  // Foreign: assign a fresh id to every id-bearing row up front so FKs (and the
+  // ids embedded in storage paths) can be rewritten in a single pass. See
+  // `buildIdMaps` for what qualifies and why.
+  const idMaps = remap
+    ? buildIdMaps(loadTables, backup.data)
+    : new Map<string, Map<string, string>>();
   const idRewrite = new Map<string, string>();
   if (remap) {
-    for (const t of loadTables) {
-      if (!t.hasId) continue;
-      const idType = t.columns.find((c) => c.name === "id")?.udtName;
-      if (idType !== "uuid" && idType !== "text") continue;
-      const map = new Map<string, string>();
-      for (const row of backup.data[t.name]!) {
-        if (typeof row.id === "string") map.set(row.id, newIdForTable(t));
-      }
-      idMaps.set(t.name, map);
-    }
     for (const map of idMaps.values()) {
       for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
     }
@@ -233,6 +227,17 @@ type RestoreMeta = {
    *  dimensions) — only when this company is its group's sole member. A revert
    *  must wipe + reload the same scope. */
   includeGroup?: boolean;
+  /** The backup being restored + file choice — kept so a recovery action can
+   *  restart the same restore. */
+  filePath?: string;
+  includeStorage?: "none" | "all";
+  /** Set when the pre-restore snapshot refused because the LIVE data has rows
+   *  whose NOT-NULL FK escapes company scope. */
+  reason?: "scope-violations";
+  /** Per FK EDGE — the breakdown, never summable into a row count. */
+  violations?: ScopeViolation[];
+  /** DISTINCT rows involved, per table — what the user is told. */
+  violationRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
 /** Exported: also used by `company-template.ts` when reverting a demo template. */
@@ -408,6 +413,8 @@ export const companyRestoreFunction = inngest.createFunction(
         patch: {
           status: "running",
           label: label ?? null,
+          filePath,
+          includeStorage,
           startedAt: existing?.metadata.startedAt ?? new Date().toISOString()
         }
       });
@@ -415,7 +422,7 @@ export const companyRestoreFunction = inngest.createFunction(
 
       try {
         const name = backupNameFromSource(filePath);
-        const backup = await readBackup(client, companyId, name);
+        const raw = await readBackup(client, companyId, name);
         const { targetGroupId, includeGroup } = await resolveRestoreScope(
           client,
           companyId
@@ -423,7 +430,7 @@ export const companyRestoreFunction = inngest.createFunction(
 
         // A backup from ANOTHER company must re-stamp the chart of accounts onto
         // this group, so it's only allowed when the group is this company's alone.
-        const foreign = backup.manifest.sourceCompanyId !== companyId;
+        const foreign = raw.manifest.sourceCompanyId !== companyId;
         if (foreign && !includeGroup) {
           throw new Error(
             !targetGroupId
@@ -437,6 +444,10 @@ export const companyRestoreFunction = inngest.createFunction(
         }
 
         const catalog = await getCompanyTableCatalog(db);
+        // Move renamed tables onto their current names BEFORE the gate, so the
+        // gate, the closure preflight and the load all agree on what this backup
+        // contains. An unmapped missing table survives this and the gate refuses it.
+        const backup = applyTableRenames(catalog, raw);
         const compatibility = assertBackupImportable(catalog, backup);
         if (!compatibility.ok) {
           throw new Error(
@@ -566,13 +577,28 @@ export const companyRestoreFunction = inngest.createFunction(
           companyId,
           userId,
           restoreRunId,
-          patch: { status: "failed", error: message }
+          patch: {
+            status: "failed",
+            error: message,
+            ...(err instanceof ExportScopeViolationError
+              ? {
+                  reason: "scope-violations",
+                  violations: err.violations,
+                  violationRowsByTable: err.rowsByTable
+                }
+              : {})
+          }
         });
         logger.error("Company restore failed", {
           companyId,
           restoreRunId,
           error: message
         });
+        // The snapshot guard's verdict is deterministic; a retry re-fails and
+        // flickers the marker running → failed under the user's recovery button.
+        if (err instanceof ExportScopeViolationError) {
+          throw new NonRetriableError(message, { cause: err });
+        }
         throw err;
       }
     });
@@ -656,9 +682,11 @@ export const companyRestoreRevertFunction = inngest.createFunction(
         // check). Wipe + reload the SAME scope the forward restore touched so the
         // undo is exact — including group data (chart of accounts) when the
         // forward run covered it.
-        const snapshot = await readBackup(client, companyId, snapshotPath);
+        const rawSnapshot = await readBackup(client, companyId, snapshotPath);
         const targetGroupId = await getCompanyGroupId(client, companyId);
         const catalog = await getCompanyTableCatalog(db);
+        // A snapshot predates any migration deployed since the restore it undoes.
+        const snapshot = applyTableRenames(catalog, rawSnapshot);
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
           companyId,
           userId: "",

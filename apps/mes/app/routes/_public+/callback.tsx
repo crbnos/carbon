@@ -271,7 +271,7 @@ export default function AuthCallback() {
   return (
     <div className="flex flex-col items-center justify-center">
       {error ? (
-        <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 mt-8 w-[380px]">
+        <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
             <Alert variant="destructive">
               <LuTriangleAlert className="h-4 w-4" />

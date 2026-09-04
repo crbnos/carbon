@@ -62,6 +62,7 @@ const baseItemValidator = z.object({
   link: z.string().optional(),
   priority: z.number(),
   progress: z.number().optional(), // miliseconds
+  projectedCompletionAt: z.string().nullable().optional(), // forecast finish (timestamptz)
   reworkId: z.string().nullable().optional(),
   targetQuantity: z.number().optional(),
   quantity: z.number().optional(),
@@ -74,7 +75,10 @@ const baseItemValidator = z.object({
   subtitle: z.string().optional(),
   tags: z.array(z.string()).optional(),
   thumbnailPath: z.string().optional(),
-  title: z.string()
+  title: z.string(),
+  hasConflict: z.boolean().optional(),
+  scheduleOutdatedReason: z.string().nullable().optional(),
+  conflictReason: z.string().optional()
 });
 
 // Operation item with operation-level status
@@ -90,7 +94,6 @@ const operationItemValidator = baseItemValidator.extend({
 const jobItemValidator = baseItemValidator.extend({
   status: z.enum(jobStatus).optional(),
   completedDate: z.string().optional(),
-  hasConflict: z.boolean().optional(),
   jobMakeMethodId: z.string()
 });
 

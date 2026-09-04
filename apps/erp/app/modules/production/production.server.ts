@@ -1,5 +1,4 @@
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { trigger } from "@carbon/jobs";
 
 // The geometry (assembler) service backs model conversion and motion planning.
 // When it's unreachable those actions can't run, so loaders probe its health and
@@ -48,37 +47,4 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
       now + (healthy ? ASSEMBLER_HEALTHY_TTL_MS : ASSEMBLER_UNHEALTHY_TTL_MS)
   };
   return healthy;
-}
-
-/**
- * Triggers a job scheduling task via inngest.
- * Supports both initial scheduling and rescheduling.
- */
-export async function triggerJobSchedule(
-  jobId: string,
-  companyId: string,
-  userId: string,
-  mode: "initial" | "reschedule" = "reschedule",
-  direction: "backward" | "forward" = "backward"
-) {
-  const result = await trigger("schedule-job", {
-    jobId,
-    companyId,
-    userId,
-    mode,
-    direction
-  });
-
-  return { success: true, runId: result.ids[0] };
-}
-
-/**
- * @deprecated Use triggerJobSchedule with mode="reschedule" instead.
- */
-export async function triggerJobReschedule(
-  jobId: string,
-  companyId: string,
-  userId: string
-) {
-  return triggerJobSchedule(jobId, companyId, userId, "reschedule", "backward");
 }

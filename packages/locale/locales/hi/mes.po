@@ -169,6 +169,9 @@ msgstr "बैच नंबर {0}"
 msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
@@ -214,6 +217,9 @@ msgstr "फ़िल्टर साफ़ करें"
 
 msgid "Clear Search"
 msgstr "खोज साफ करें"
+
+msgid "Clear station default"
+msgstr "स्टेशन डिफ़ॉल्ट को साफ़ करें"
 
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
@@ -1043,6 +1049,11 @@ msgstr "प्रक्रियाएं"
 msgid "Progress"
 msgstr "प्रगति"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "प्रोज. {0}"
+
 msgid "Quality Issue"
 msgstr "गुणवत्ता समस्या"
 
@@ -1142,6 +1153,9 @@ msgstr "इस लॉट से एक ट्रैक की गई इका�
 
 msgid "Schedule"
 msgstr "शेड्यूल"
+
+msgid "Scheduling conflict"
+msgstr "शेड्यूलिंग संघर्ष"
 
 msgid "Scrap"
 msgstr "स्क्रैप"
@@ -1520,3 +1534,7 @@ msgstr "आपके संगठन को एक ऑथेंटिकेट�
 
 msgid "Your session was locked after inactivity."
 msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "आपका स्टेशन: {0}"

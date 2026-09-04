@@ -18,6 +18,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./datetime": "./src/datetime.ts",
+    "./fetch-all": "./src/fetch-all.ts",
+    "./logging": "./src/logging.ts",
+    "./methods": "./src/methods.ts",
+    "./mrp-engine": "./src/mrp-engine.ts",
+    "./supersession-pick": "./src/supersession-pick.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./quality": "./src/quality.ts",
@@ -48,6 +54,8 @@
   "version": "0.0.0",
   "dependencies": {
     "@internationalized/date": "catalog:",
+    "@logtape/logtape": "catalog:",
+    "@logtape/redaction": "catalog:",
     "@supabase/postgrest-js": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",

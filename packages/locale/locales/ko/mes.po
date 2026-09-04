@@ -169,6 +169,9 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "목표에서 {daysBehindTarget}일 뒤짐"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
@@ -214,6 +217,9 @@ msgstr "필터 지우기"
 
 msgid "Clear Search"
 msgstr "검색 지우기"
+
+msgid "Clear station default"
+msgstr "스테이션 기본값 초기화"
 
 msgid "Clock In"
 msgstr "작업 시작"
@@ -1043,6 +1049,11 @@ msgstr "공정"
 msgid "Progress"
 msgstr "진행 상황"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "예상. {0}"
+
 msgid "Quality Issue"
 msgstr "품질 이슈"
 
@@ -1142,6 +1153,9 @@ msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 샘플 �
 
 msgid "Schedule"
 msgstr "일정"
+
+msgid "Scheduling conflict"
+msgstr "일정 충돌"
 
 msgid "Scrap"
 msgstr "스크랩"
@@ -1519,4 +1533,8 @@ msgid "Your organization requires an authenticator app. Set it up in Carbon, the
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
 
 msgid "Your session was locked after inactivity."
+msgstr "세션이 비활성 후 잠겼습니다."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
 msgstr "비활성으로 인해 세션이 잠겼습니다."

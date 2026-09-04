@@ -14,17 +14,17 @@ export default function ApiReferenceLayout({
 }) {
   return (
     <div className="min-h-screen w-full bg-ed-paper">
-      <MainHeader
-        active="api"
-        mobileNav={
-          <>
-            <Configurator />
-            <ApiNav tree={navTree} />
-          </>
-        }
-      />
-
       <ApiConfigProvider>
+        <MainHeader
+          active="api"
+          mobileNav={
+            <>
+              <Configurator />
+              <ApiNav tree={navTree} />
+            </>
+          }
+        />
+
         <div className="mx-auto flex w-full max-w-370 pt-16">
           <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] w-70 shrink-0 overflow-y-auto border-r border-ed-hairline px-5 py-7 scrollbar-hidden-until-scroll nav-scroll-fade lg:block">
             <Configurator />

@@ -168,6 +168,7 @@ export const path = {
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
+    peopleOverride: `${x}/people-override`,
     picking: `${x}/picking`,
     pickingDetail: (id: string) => generatePath(`${x}/picking/${id}`),
     pickingLineQuantity: (id: string) =>

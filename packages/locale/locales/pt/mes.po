@@ -169,6 +169,9 @@ msgstr "Número do Lote {0}"
 msgid "Batch number is required"
 msgstr "Número do lote é obrigatório"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "Atraso de {daysBehindTarget} dia(s)"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloqueado por {0}"
@@ -214,6 +217,9 @@ msgstr "Limpar Filtros"
 
 msgid "Clear Search"
 msgstr "Limpar Pesquisa"
+
+msgid "Clear station default"
+msgstr "Limpar padrão da estação"
 
 msgid "Clock In"
 msgstr "Apontar início"
@@ -1043,6 +1049,11 @@ msgstr "Processos"
 msgid "Progress"
 msgstr "Progresso"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "Proj. {0}"
+
 msgid "Quality Issue"
 msgstr "Problema de Qualidade"
 
@@ -1142,6 +1153,9 @@ msgstr "Escanear ou selecionar uma entidade rastreada deste lote para adicioná-
 
 msgid "Schedule"
 msgstr "Cronograma"
+
+msgid "Scheduling conflict"
+msgstr "Conflito de agendamento"
 
 msgid "Scrap"
 msgstr "Refugo"
@@ -1520,3 +1534,7 @@ msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carb
 
 msgid "Your session was locked after inactivity."
 msgstr "Sua sessão foi bloqueada após inatividade."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "Sua estação: {0}"

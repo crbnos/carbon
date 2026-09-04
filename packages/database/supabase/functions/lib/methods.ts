@@ -60,9 +60,9 @@ function getJobMethodTreeArrayToTree(
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    lookup[itemId]["data"] = item;
+    lookup[itemId]!["data"] = item;
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
@@ -72,7 +72,7 @@ function getJobMethodTreeArrayToTree(
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      lookup[parentId]["children"].push(treeItem);
+      lookup[parentId]!["children"].push(treeItem);
     }
   }
   return rootItems;
@@ -87,6 +87,24 @@ export function traverseJobMethod(
   if (node.children) {
     for (const child of node.children) {
       traverseJobMethod(child, callback);
+    }
+  }
+}
+
+// Async twin of traverseJobMethod, mirroring traverseQuoteMethod: each node's
+// callback is awaited before its children are visited, so a parent's cascade
+// state (quantities, id maps) is in place when a child reads it. The sync
+// version cannot be reused — an async callback passed to it would fire
+// unawaited and the parent-before-child ordering would be lost.
+export async function traverseJobMethodAsync(
+  node: JobMethodTreeItem,
+  callback: (node: JobMethodTreeItem) => void | Promise<void>
+) {
+  await callback(node);
+
+  if (node.children) {
+    for (const child of node.children) {
+      await traverseJobMethodAsync(child, callback);
     }
   }
 }
@@ -139,10 +157,10 @@ function getQuoteMethodTreeArrayToTree(
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
       lookup[itemId] = { id: itemId, children: [], data: item };
     } else {
-      lookup[itemId].data = item;
+      lookup[itemId]!.data = item;
     }
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
@@ -155,7 +173,7 @@ function getQuoteMethodTreeArrayToTree(
         };
       }
 
-      lookup[parentId].children.push(treeItem);
+      lookup[parentId]!.children.push(treeItem);
     }
   }
   return rootItems;
@@ -357,9 +375,9 @@ async function getSupplierPriceBreaksForItems(
     if (!result[sp.itemId]) {
       result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
     }
-    const current = result[sp.itemId].fallbackUnitPrice;
+    const current = result[sp.itemId]!.fallbackUnitPrice;
     if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
+      result[sp.itemId]!.fallbackUnitPrice = sp.unitPrice;
     }
   }
 

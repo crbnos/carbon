@@ -1,4 +1,9 @@
-import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import {
+  CARBON_API_URL,
+  getAppUrl,
+  getMESUrl,
+  SUPABASE_URL
+} from "@carbon/auth";
 import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
@@ -11,10 +16,27 @@ const selectCompany = "/select-company"; // from ~/routes/select-company+ folder
 export const MES_URL = getMESUrl();
 export const ERP_URL = getAppUrl();
 
+/** Append this deployment's origins to a docs link, so the docs site can show the
+ *  reader their own hosts rather than assuming Carbon Cloud. Both are sent because
+ *  they are configured independently (`CARBON_API_URL` serves the REST API, ERP_URL
+ *  the app) and need not share a domain, so neither can be derived from the other.
+ *  Purely additive: with neither set the plain URL is returned and the docs fall back
+ *  to their `<your-host>` placeholder. Safe when signed out — both values are public
+ *  config already exposed on `window.env`. */
+function withDocsHost(url: string): string {
+  const params = new URLSearchParams();
+  if (CARBON_API_URL) params.set("host", CARBON_API_URL);
+  if (ERP_URL) params.set("app", ERP_URL);
+  const qs = params.toString();
+  return qs ? `${url}?${qs}` : url;
+}
+
 export const path = {
   to: {
     abilities: `${x}/resources/abilities`,
     ability: (id: string) => generatePath(`${x}/resources/ability/${id}`),
+    abilityDetails: (id: string) =>
+      generatePath(`${x}/resources/ability/${id}/details`),
     account: `${x}/account`,
     accounting: `${x}/accounting`,
     accountingDefaults: `${x}/accounting/defaults`,
@@ -144,6 +166,8 @@ export const path = {
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
       link: (companyId: string) => `${api}/link?companyId=${companyId}`,
+      locationEmployees: (locationId: string) =>
+        generatePath(`${api}/people/employees/${locationId}`),
       locations: `${api}/resources/locations`,
       maintenanceDispatches: `${api}/resources/maintenance`,
       maintenanceSchedules: `${api}/resources/scheduled-maintenance`,
@@ -231,6 +255,10 @@ export const path = {
       salesOrders: `${api}/sales/orders`,
       salesResolvePrice: `${api}/sales/resolve-price`,
       salesRfq: (id: string) => generatePath(`${api}/sales-rfq/${id}`),
+      schedule: (locationId?: string) =>
+        generatePath(
+          `${api}/schedule${locationId ? `?location=${locationId}` : ""}`
+        ),
       scrapReasons: `${api}/production/scrap-reasons`,
       search: `${api}/search`,
       seedQualityDocuments: `${api}/quality/documents/seed`,
@@ -309,7 +337,10 @@ export const path = {
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`)
     },
-    apiDocs: "https://docs.carbon.ms/api-reference",
+    // The docs render every endpoint against a host. Hand them this deployment's
+    // REST origin so a self-hosted or non-default-region reader sees their own
+    // host instead of rest.carbon.ms; with none set the docs show `<your-host>`.
+    apiDocs: withDocsHost("https://docs.carbon.ms/api-reference"),
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     approvalRule: (id: string) =>
@@ -636,7 +667,7 @@ export const path = {
       generatePath(`${x}/settings/custom-fields/${tableId}/delete/${id}`),
     deleteDemandProjections: (itemId: string, locationId: string) =>
       generatePath(
-        `${x}/production/projections/delete/${itemId}/${locationId}`
+        `${x}/production/demand-forecasts/delete/${itemId}/${locationId}`
       ),
     deleteDepartment: (id: string) =>
       generatePath(`${x}/people/departments/delete/${id}`),
@@ -772,8 +803,6 @@ export const path = {
       generatePath(`${x}/purchasing-rfq/${id}/${lineId}/delete`),
     deleteQualityDocument: (id: string) =>
       generatePath(`${x}/quality-document/delete/${id}`),
-    deleteQualityDocumentStep: (id: string, stepId: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/delete/${stepId}`),
     deleteQuote: (id: string) => generatePath(`${x}/quote/${id}/delete`),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
@@ -863,8 +892,8 @@ export const path = {
     deleteWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/delete/${id}`),
     demandProjection: (itemId: string, locationId: string) =>
-      generatePath(`${x}/production/projections/${itemId}/${locationId}`),
-    demandProjections: `${x}/production/projections`,
+      generatePath(`${x}/production/demand-forecasts/${itemId}/${locationId}`),
+    demandProjections: `${x}/production/demand-forecasts`,
     demoData: `${x}/settings/demo-data`,
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
@@ -1252,6 +1281,7 @@ export const path = {
     jobConfigure: (id: string) => generatePath(`${x}/job/${id}/configure`),
     jobDag: (id: string) => generatePath(`${x}/job/${id}/dag`),
     jobDetails: (id: string) => generatePath(`${x}/job/${id}/details`),
+    jobExpedite: (id: string) => generatePath(`${x}/job/${id}/expedite`),
     jobInspectionSteps: (id: string) =>
       generatePath(`${x}/job/${id}/steps?filter=type:eq:Inspection`),
     jobMakeMethod: (jobId: string, makeMethodId: string) =>
@@ -1371,7 +1401,7 @@ export const path = {
     materials: `${x}/items/materials`,
     materialType: (id: string) => generatePath(`${x}/items/types/${id}`),
     materialTypes: `${x}/items/types`,
-    mcpDocs: "https://docs.carbon.ms/mcp",
+    mcpDocs: withDocsHost("https://docs.carbon.ms/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
     // list lives in the invoicing nav beside Payments; details mirror payments.
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
@@ -1463,7 +1493,7 @@ export const path = {
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
-    newDemandProjection: `${x}/production/projections/new`,
+    newDemandProjection: `${x}/production/demand-forecasts/new`,
     newDepartment: `${x}/people/departments/new`,
     newDepreciationRun: `${x}/accounting/depreciation-runs/new`,
     newDimension: `${x}/accounting/dimensions/new`,
@@ -1535,6 +1565,8 @@ export const path = {
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/purchasing/new`),
     newPaymentTerm: `${x}/accounting/payment-terms/new`,
+    newPersonAbility: (personId: string) =>
+      generatePath(`${x}/resources/person/${personId}/ability/new`),
     newPickingList: `${x}/picking-list/new`,
     newPriceOverride: `${x}/sales/price-list/new`,
     newPricingRule: `${x}/sales/pricing-rules/new`,
@@ -1554,8 +1586,6 @@ export const path = {
     newPurchasingRFQLine: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/new`),
     newQualityDocument: `${x}/quality/documents/new`,
-    newQualityDocumentStep: (id: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/new`),
     newQuote: `${x}/quote/new`,
     newQuoteLine: (id: string) => generatePath(`${x}/quote/${id}/new`),
     newQuoteLineCost: (id: string, lineId: string) =>
@@ -1682,6 +1712,8 @@ export const path = {
     peopleSettings: `${x}/settings/people`,
     peopleTimecard: `${x}/people/timecard`,
     person: (id: string) => generatePath(`${x}/person/${id}`),
+    personAbilities: (id: string) =>
+      generatePath(`${x}/person/${id}/abilities`),
     personAttributeCategory: (personId: string, categoryId: string) =>
       generatePath(`${x}/person/${personId}/attributes/${categoryId}`),
     personDetails: (id: string) => generatePath(`${x}/person/${id}/details`),
@@ -1709,6 +1741,12 @@ export const path = {
     pricingRule: (id: string) => generatePath(`${x}/sales/pricing-rules/${id}`),
     printingSettings: `${x}/settings/printing`,
     printingSettingsJobs: `${x}/settings/printing/jobs`,
+    priorityDates: `${x}/priority/dates`,
+    priorityDatesUpdate: `${x}/priority/dates/update`,
+    priorityOperation: `${x}/priority/operations`,
+    priorityOperationUpdate: `${x}/priority/operations/update`,
+    priorityPeople: `${x}/priority/people`,
+    priorityPeopleUpdate: `${x}/priority/people/update`,
     procedure: (id: string) => generatePath(`${x}/procedure/${id}`),
     procedureParameter: (id: string, parameterId: string) =>
       generatePath(`${x}/procedure/${id}/parameters/${parameterId}`),
@@ -1806,10 +1844,6 @@ export const path = {
     qualityActions: `${x}/quality/actions`,
     qualityDocument: (id: string) =>
       generatePath(`${x}/quality-document/${id}`),
-    qualityDocumentStep: (id: string, attributeId: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/${attributeId}`),
-    qualityDocumentStepOrder: (id: string) =>
-      generatePath(`${x}/quality-document/${id}/steps/order`),
     qualityDocuments: `${x}/quality/documents`,
     qualitySettings: `${x}/settings/quality`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
@@ -1972,10 +2006,7 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
-    scheduleDates: `${x}/schedule/dates`,
-    scheduleDatesUpdate: `${x}/schedule/dates/update`,
-    scheduleOperation: `${x}/schedule/operations`,
-    scheduleOperationUpdate: `${x}/schedule/operations/update`,
+    scheduleForecast: `${x}/scheduling/forecast`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,
@@ -2219,12 +2250,28 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
+/**
+ * The Referer header, reduced to a SAME-ORIGIN relative path (or null). Many
+ * actions redirect back here — returning the raw header would let a crafted
+ * request bounce the user to an attacker origin (CWE-601 open redirect), so a
+ * cross-origin or unparsable referer yields null and callers fall back to
+ * their fixed route.
+ */
 export const requestReferrer = (request: Request, withParams = true) => {
-  return request.headers.get("referer");
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  try {
+    const requestUrl = new URL(request.url);
+    const url = new URL(referer, requestUrl.origin);
+    if (url.origin !== requestUrl.origin) return null;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return null;
+  }
 };
 
 export const getParams = (request: Request) => {
-  const url = new URL(requestReferrer(request) ?? "");
+  const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };

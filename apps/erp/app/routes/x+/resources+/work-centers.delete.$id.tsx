@@ -6,12 +6,13 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import { deleteWorkCenter } from "~/modules/resources";
 import { path } from "~/utils/path";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -33,6 +34,13 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+
+  await notifyScheduleInputsChanged(
+    companyId,
+    "work-center",
+    "Work center deactivated",
+    id
+  );
 
   throw redirect(
     path.to.workCenters,

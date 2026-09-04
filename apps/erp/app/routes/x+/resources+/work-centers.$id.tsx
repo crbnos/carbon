@@ -8,6 +8,7 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   getWorkCenter,
   upsertWorkCenter,
@@ -74,6 +75,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  await notifyScheduleInputsChanged(
+    companyId,
+    "work-center",
+    "Work center hours changed",
+    id
+  );
+
   throw redirect(
     path.to.workCenters,
     await flash(request, success("Updated work center "))
@@ -95,6 +103,7 @@ export default function WorkCenterRoute() {
 
   const initialValues = {
     id: workCenter?.id ?? undefined,
+    alwaysOn: workCenter?.alwaysOn ?? false,
     defaultStandardFactor: workCenter?.defaultStandardFactor ?? "Minutes/Piece",
     departmentId: workCenter?.departmentId ?? undefined,
     description: workCenter?.description ?? "",
@@ -104,7 +113,7 @@ export default function WorkCenterRoute() {
     name: workCenter?.name ?? "",
     overheadRate: workCenter?.overheadRate ?? 0,
     processes: workCenter?.processes ?? [],
-    requiredAbilityId: workCenter?.requiredAbilityId ?? undefined,
+    shifts: workCenter?.shifts ?? [],
     ...getCustomFields(workCenter?.customFields)
   };
 

@@ -21,11 +21,16 @@ export {
   updateGoTrueSsoProvider
 } from "./provider.server";
 export {
+  backfillSsoIdentitiesForDomain,
   buildArchivedEmail,
   deleteJitSsoUser,
+  emailDomain,
   linkSsoIdentityToUser,
   mergeInvitePermissions,
   migrateUserToSso,
+  removeSsoIdentitiesForDomain,
+  seedSsoIdentityForUser,
+  ssoProviderColumn,
   uncoveredSsoDomainError
 } from "./provisioning.server";
 export {

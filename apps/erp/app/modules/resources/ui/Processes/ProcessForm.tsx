@@ -148,9 +148,15 @@ const ProcessForm = ({
                 />
                 <SupplierProcesses processId={initialValues.id} />
                 <Boolean
+                  name="requiresAbility"
+                  label={t`Requires Ability`}
+                  description={t`Only qualified employees can be scheduled for and run this process`}
+                  bordered
+                />
+                <Boolean
                   name="completeAllOnScan"
                   label={t`Complete all quantities on barcode scan`}
-                  termId="process-complete-all-on-scan"
+                  description={t`When using kanbans, the complete barcode will complete all quantities of an operation instead of just one`}
                   bordered
                 />
                 <CustomFormFields table="process" />

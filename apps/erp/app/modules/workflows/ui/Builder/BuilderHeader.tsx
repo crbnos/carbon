@@ -175,7 +175,7 @@ export function BuilderHeader({
   };
 
   return (
-    <header className="flex h-[49px] shrink-0 items-center gap-3 border-b px-4">
+    <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4">
       <WorkflowTitle workflow={workflow} />
 
       {isReadOnly && (

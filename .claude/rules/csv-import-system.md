@@ -30,8 +30,9 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
   `useCreateLookup.ts` creates missing lookup values inline.
 - `useCsvContext.tsx` — shared state (`file`, `filePath`, `fileColumns`, `firstRows`).
 
-Used from `apps/erp/app/components/Table/components/TableHeader.tsx` (table import button)
-and `apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx`.
+Mounted from exactly one place: `apps/erp/app/components/Table/components/TableHeader.tsx`
+(the Bulk Import dropdown). A list page opts in by passing `importCSV={[{ table, label }]}`
+to `<Table>` — that prop is the whole UI-side registration.
 
 ## Models (`apps/erp/app/modules/shared/imports.models.ts`)
 
@@ -58,10 +59,18 @@ Three exported maps, all keyed by table name:
 
 Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 
+> **Every field in `fieldMappings[table]` must also be declared in `importSchemas[table]`.**
+> The route builds `columnMappings` from the zod parse result, and a zod object strips
+> keys it does not declare — so a field the wizard offers but the schema omits is mapped
+> by the user, submitted, and silently dropped before the edge function sees it. That is
+> what made every CSV-imported item land at revision `"0"` while the wizard marked the
+> Revision column required. `apps/erp/app/modules/shared/imports.models.test.ts` asserts
+> the invariant per table; add the field to BOTH maps when adding one.
+
 ### Tables & permissions
 
 `customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
-`part`, `material`, `tool`, `fixture`, `consumable`, `methodMaterial`, `bom`,
+`part`, `material`, `tool`, `fixture`, `consumable`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension` → `parts`;
 `workCenter`, `process` → `production`; `storageUnit` → `inventory`;
@@ -72,7 +81,7 @@ The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumabl
 `partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
 `process`, `storageUnit`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension`. Note it does **not** list
-`fixedAsset` or `methodMaterial` (see Gotchas).
+`fixedAsset` (see Gotchas).
 
 ### Storage-unit import (natural-key match + two-pass parent linking)
 
@@ -172,7 +181,9 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
 
 ## Gotchas
 
-- **`methodMaterial` is not implemented** — its edge-function case `throw new Error("Not implemented")`.
+- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and the edge
+  function's enum, but `Fixture` was dropped from the app's item-type enum
+  (`items.models.ts`) and there is no Fixtures list page, so nothing surfaces it.
 - **`fixedAsset`** has models/permissions (`fieldMappings`, `importPermissions`) but is
   **confirmed absent** from the edge function's `table` enum, so the edge function
   **rejects it** — the zod `table` enum fails to parse and it errors out (effectively
