@@ -51,6 +51,27 @@ msgstr "(excluido para este cliente)"
 msgid "(group)"
 msgstr ""
 
+#. placeholder {0}: s.linked
+msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
+msgstr ""
+
+#. placeholder {0}: s.accountsToCreate
+msgid "{0, plural, one {# account to create} other {# accounts to create}}"
+msgstr ""
+
+#. placeholder {0}: s.updates
+msgid "{0, plural, one {# account to update} other {# accounts to update}}"
+msgstr ""
+
+#. placeholder {0}: s.unchanged
+msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
+msgstr ""
+
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo que no se puede hacer una copia de seguridad de sus datos actuales.} other {# filas vinculan a datos fuera de esta empresa, por lo que no se puede hacer una copia de seguridad de sus datos actuales.}}"
@@ -59,6 +80,18 @@ msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo qu
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo que no se puede hacer backup. Omitirla permite hacer backup del resto.} other {# filas vinculan a datos fuera de esta empresa, por lo que no se pueden hacer backup. Omitirlas permite hacer backup del resto.}}"
 
+#. placeholder {0}: s.errors
+msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
+msgstr ""
+
+#. placeholder {0}: s.skipped
+msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
+#. placeholder {0}: plan.nodes.length
+msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Este artículo está en 1 aviso de cambio abierto} other {Este artículo está en # avisos de cambio abiertos}}"
@@ -66,10 +99,6 @@ msgstr "{0, plural, one {Este artículo está en 1 aviso de cambio abierto} othe
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} cuentas"
-
-#. placeholder {0}: s.accountsToCreate
-msgid "{0} accounts to create"
-msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -96,11 +125,6 @@ msgstr "{0} eliminado correctamente"
 msgid "{0} draft journal entries"
 msgstr "{0} asientos de diario en borrador"
 
-#. placeholder {0}: s.groupsToCreate
-#. placeholder {1}: s.accountsToCreate
-msgid "{0} groups and {1} accounts to create"
-msgstr ""
-
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} órdenes de trabajo creadas"
@@ -111,14 +135,6 @@ msgstr "{0} líneas para mapear"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
-
-#. placeholder {0}: s.linked
-msgid "{0} merged into existing"
-msgstr ""
-
-#. placeholder {0}: s.errors
-msgid "{0} need attention"
 msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
@@ -150,25 +166,13 @@ msgstr "{0} registrado"
 msgid "{0} rows"
 msgstr "{0} filas"
 
-#. placeholder {0}: s.skipped
-msgid "{0} skipped"
-msgstr ""
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} proveedores con saldo"
 
-#. placeholder {0}: s.updates
-msgid "{0} to update"
-msgstr ""
-
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entidades no muestreadas serán liberadas a Disponible. Los pases muestreados permanecen Disponibles y los fallos muestreados permanecen Rechazados."
-
-#. placeholder {0}: s.unchanged
-msgid "{0} unchanged"
-msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -249,7 +253,7 @@ msgstr "{done} de {total} fases completadas"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
 
-msgid "{fileCount} matching accounts take the file's numbers."
+msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
 msgstr ""
 
 msgid "{from}–{to} of {count}"
@@ -266,7 +270,7 @@ msgstr "{hiddenCount} más: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección, {1} omitidos."
 
-msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
 msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
@@ -297,7 +301,7 @@ msgstr "{noDemandItemCount} piezas omitidas — no hay nada que fabricar"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} se reabrirá para edición como revisión {0}. El documento ya enviado al proveedor permanece sin cambios hasta que finalices y reenvíes la orden."
 
-msgid "{pendingCount} decision(s) not in the plan yet"
+msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -324,7 +328,7 @@ msgstr "{totalQuantity, plural, one {# unidad} other {# unidades}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# línea sin contar} other {# líneas sin contar}}"
 
-msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
 msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
@@ -14831,10 +14835,6 @@ msgstr "Mostrar una columna de ID de cliente legible en la lista de clientes, fo
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Mostrar una columna de ID de Proveedor legible en la lista de proveedores, formularios de proveedores y menús desplegables. Los proveedores se identifican internamente de cualquier forma."
-
-#. placeholder {0}: plan.nodes.length
-msgid "Show all {0} rows"
-msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Mostrar IDs de Cliente"

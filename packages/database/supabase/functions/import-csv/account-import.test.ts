@@ -335,6 +335,40 @@ Deno.test("keepNumber keeps Carbon's number on a linked or matched account", () 
   assertEquals(namedAr.action, "unchanged");
 });
 
+Deno.test("a parent chain that loops back on itself fails those rows instead of recursing", () => {
+  const plan = planChartOfAccounts(
+    rows(
+      { number: "100", name: "A", accountType: "Cash", parent: "200" },
+      { number: "200", name: "B", accountType: "Cash", parent: "100" },
+      { number: "300", name: "C", accountType: "Cash", parent: "100" },
+      { number: "1015", name: "Petty Cash", accountType: "Cash" }
+    ),
+    ctx()
+  );
+  for (const name of ["A", "B"]) {
+    const n = byName(plan, name);
+    assertEquals(n.action, "error");
+    assert(n.reason?.includes("loops back"), n.reason);
+  }
+  // Under the loop, so not importable either; the rest of the file is.
+  assertEquals(byName(plan, "C").action, "error");
+  assertEquals(byName(plan, "Petty Cash").action, "create");
+  assertEquals(plan.summary.errors, 3);
+});
+
+Deno.test("a blank cell in a mapped Active column leaves the account's status alone", () => {
+  const inactive = seed().map((a) => (a.id === "1010" ? { ...a, active: false } : a));
+  const plan = planChartOfAccounts(
+    rows(
+      { number: "1010", name: "Bank - Cash", accountType: "Bank", active: "" },
+      { number: "1110", name: "Accounts Receivable", accountType: "Accounts Receivable", active: "true" }
+    ),
+    ctx({ existing: inactive })
+  );
+  assertEquals(byName(plan, "Bank - Cash").action, "unchanged");
+  assertEquals(byName(plan, "Accounts Receivable").action, "unchanged");
+});
+
 Deno.test("system roots are adopted, never written", () => {
   const plan = planChartOfAccounts(
     rows(

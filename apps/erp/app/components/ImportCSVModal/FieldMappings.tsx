@@ -158,13 +158,18 @@ export function FieldMapping({
         continue;
       }
       // Match by label (e.g., "Process Type" === "Process Type")
-      const labelIdx = fileColumnsLower.indexOf(fieldDef.label.toLowerCase());
+      const labelIdx = fileColumnsLower.findIndex(
+        (header, idx) =>
+          header === fieldDef.label.toLowerCase() && !claimed.has(idx)
+      );
       if (labelIdx !== -1) {
         claim(fieldName, labelIdx);
         continue;
       }
       // Match by field name (e.g., "processType" === "processtype")
-      const nameIdx = fileColumnsLower.indexOf(fieldName.toLowerCase());
+      const nameIdx = fileColumnsLower.findIndex(
+        (header, idx) => header === fieldName.toLowerCase() && !claimed.has(idx)
+      );
       if (nameIdx !== -1) {
         claim(fieldName, nameIdx);
         continue;

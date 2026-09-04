@@ -12,8 +12,15 @@ import {
   RadioGroupItem,
   Spinner
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { LuFolder, LuRefreshCw, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { action } from "~/routes/x+/shared+/import.$tableId";
@@ -293,12 +300,15 @@ export function ChartOfAccountsReview({
   const fileCount = matching.filter((n) => choice(n) === "file").length;
   const undecided = linkable.filter((n) => !pending[String(n.row)]).length;
 
-  const pendingCount = Object.keys(pending).filter(
+  // Keys from both sides: an undone resolution is a change too.
+  const pendingCount = [
+    ...new Set([...Object.keys(pending), ...Object.keys(applied)])
+  ].filter(
     (row) => JSON.stringify(pending[row]) !== JSON.stringify(applied[row])
   ).length;
   const updatePlan = () => setApplied(pending);
 
-  const summary = useSummary(plan);
+  const summary = plan ? summarise(plan) : [];
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -345,7 +355,13 @@ export function ChartOfAccountsReview({
               <div className="flex flex-col gap-1 text-sm">
                 <p>
                   {summary.length > 0 ? (
-                    summary.join(" · ")
+                    summary.map((part, i) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: fixed order
+                      <Fragment key={i}>
+                        {i > 0 && " · "}
+                        {part}
+                      </Fragment>
+                    ))
                   ) : (
                     <Trans>Nothing to import.</Trans>
                   )}
@@ -394,18 +410,23 @@ export function ChartOfAccountsReview({
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
                   <span className="text-pretty">
                     {undecided > 0 ? (
-                      <Trans>
-                        {undecided} accounts already exist in Carbon under other
-                        numbers.
-                      </Trans>
+                      <Plural
+                        value={undecided}
+                        one="# account already exists in Carbon under another number."
+                        other="# accounts already exist in Carbon under other numbers."
+                      />
                     ) : keepCount === matching.length ? (
-                      <Trans>
-                        {keepCount} matching accounts keep their Carbon numbers.
-                      </Trans>
+                      <Plural
+                        value={keepCount}
+                        one="# matching account keeps its Carbon number."
+                        other="# matching accounts keep their Carbon numbers."
+                      />
                     ) : fileCount === matching.length ? (
-                      <Trans>
-                        {fileCount} matching accounts take the file's numbers.
-                      </Trans>
+                      <Plural
+                        value={fileCount}
+                        one="# matching account takes the file's number."
+                        other="# matching accounts take the file's numbers."
+                      />
                     ) : (
                       <Trans>
                         {matching.length} matching accounts: {fileCount} take
@@ -440,9 +461,11 @@ export function ChartOfAccountsReview({
                 <Alert variant="info">
                   <LuRefreshCw className="h-4 w-4" />
                   <AlertTitle>
-                    <Trans>
-                      {pendingCount} decision(s) not in the plan yet
-                    </Trans>
+                    <Plural
+                      value={pendingCount}
+                      one="# decision not in the plan yet"
+                      other="# decisions not in the plan yet"
+                    />
                   </AlertTitle>
                   <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
                     <span>
@@ -494,7 +517,11 @@ export function ChartOfAccountsReview({
                   {showAll ? (
                     <Trans>Hide the full list</Trans>
                   ) : (
-                    <Trans>Show all {plan.nodes.length} rows</Trans>
+                    <Plural
+                      value={plan.nodes.length}
+                      one="Show the only row"
+                      other="Show all # rows"
+                    />
                   )}
                 </Button>
                 {showAll && (
@@ -514,25 +541,68 @@ export function ChartOfAccountsReview({
   );
 }
 
-// One phrase per non-zero count. A hook so the Lingui macro sees `t` from
-// useLingui() in the same scope.
-function useSummary(plan: ImportPlan | undefined): string[] {
-  const { t } = useLingui();
-  if (!plan) return [];
+// One phrase per non-zero count, each with its own plural form.
+function summarise(plan: ImportPlan): ReactNode[] {
   const s = plan.summary;
-  const parts: string[] = [];
-  if (s.groupsToCreate > 0 || s.accountsToCreate > 0) {
+  const parts: ReactNode[] = [];
+  if (s.groupsToCreate > 0) {
     parts.push(
-      s.groupsToCreate > 0
-        ? t`${s.groupsToCreate} groups and ${s.accountsToCreate} accounts to create`
-        : t`${s.accountsToCreate} accounts to create`
+      <Trans>
+        <Plural value={s.groupsToCreate} one="# group" other="# groups" /> and{" "}
+        <Plural value={s.accountsToCreate} one="# account" other="# accounts" />{" "}
+        to create
+      </Trans>
+    );
+  } else if (s.accountsToCreate > 0) {
+    parts.push(
+      <Plural
+        value={s.accountsToCreate}
+        one="# account to create"
+        other="# accounts to create"
+      />
     );
   }
-  if (s.updates > 0) parts.push(t`${s.updates} to update`);
-  if (s.linked > 0) parts.push(t`${s.linked} merged into existing`);
-  if (s.unchanged > 0) parts.push(t`${s.unchanged} unchanged`);
-  if (s.skipped > 0) parts.push(t`${s.skipped} skipped`);
-  if (s.errors > 0) parts.push(t`${s.errors} need attention`);
+  if (s.updates > 0) {
+    parts.push(
+      <Plural
+        value={s.updates}
+        one="# account to update"
+        other="# accounts to update"
+      />
+    );
+  }
+  if (s.linked > 0) {
+    parts.push(
+      <Plural
+        value={s.linked}
+        one="# account merged into an existing one"
+        other="# accounts merged into existing ones"
+      />
+    );
+  }
+  if (s.unchanged > 0) {
+    parts.push(
+      <Plural
+        value={s.unchanged}
+        one="# account unchanged"
+        other="# accounts unchanged"
+      />
+    );
+  }
+  if (s.skipped > 0) {
+    parts.push(
+      <Plural value={s.skipped} one="# row skipped" other="# rows skipped" />
+    );
+  }
+  if (s.errors > 0) {
+    parts.push(
+      <Plural
+        value={s.errors}
+        one="# row needs attention"
+        other="# rows need attention"
+      />
+    );
+  }
   return parts;
 }
 

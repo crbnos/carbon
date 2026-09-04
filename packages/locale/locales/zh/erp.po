@@ -51,6 +51,27 @@ msgstr "(已为此客户排除)"
 msgid "(group)"
 msgstr ""
 
+#. placeholder {0}: s.linked
+msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
+msgstr ""
+
+#. placeholder {0}: s.accountsToCreate
+msgid "{0, plural, one {# account to create} other {# accounts to create}}"
+msgstr ""
+
+#. placeholder {0}: s.updates
+msgid "{0, plural, one {# account to update} other {# accounts to update}}"
+msgstr ""
+
+#. placeholder {0}: s.unchanged
+msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
+msgstr ""
+
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
@@ -59,6 +80,18 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
 
+#. placeholder {0}: s.errors
+msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
+msgstr ""
+
+#. placeholder {0}: s.skipped
+msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
+#. placeholder {0}: plan.nodes.length
+msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
@@ -66,10 +99,6 @@ msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 个账户"
-
-#. placeholder {0}: s.accountsToCreate
-msgid "{0} accounts to create"
-msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -96,11 +125,6 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
 
-#. placeholder {0}: s.groupsToCreate
-#. placeholder {1}: s.accountsToCreate
-msgid "{0} groups and {1} accounts to create"
-msgstr ""
-
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
@@ -111,14 +135,6 @@ msgstr "{0} 行待映射"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
-
-#. placeholder {0}: s.linked
-msgid "{0} merged into existing"
-msgstr ""
-
-#. placeholder {0}: s.errors
-msgid "{0} need attention"
 msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
@@ -150,25 +166,13 @@ msgstr "{0}已登记"
 msgid "{0} rows"
 msgstr "{0} 行"
 
-#. placeholder {0}: s.skipped
-msgid "{0} skipped"
-msgstr ""
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0}个有余额的供应商"
 
-#. placeholder {0}: s.updates
-msgid "{0} to update"
-msgstr ""
-
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可用，已采样的不合格品保持已拒绝。"
-
-#. placeholder {0}: s.unchanged
-msgid "{0} unchanged"
-msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -249,7 +253,7 @@ msgstr "{done}个/{total}个阶段已完成"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
-msgid "{fileCount} matching accounts take the file's numbers."
+msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
 msgstr ""
 
 msgid "{from}–{to} of {count}"
@@ -266,7 +270,7 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
-msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
 msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
@@ -297,7 +301,7 @@ msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
 
-msgid "{pendingCount} decision(s) not in the plan yet"
+msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -324,7 +328,7 @@ msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
-msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
 msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
@@ -14831,10 +14835,6 @@ msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
-
-#. placeholder {0}: plan.nodes.length
-msgid "Show all {0} rows"
-msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"

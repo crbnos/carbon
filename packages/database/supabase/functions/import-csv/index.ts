@@ -23,6 +23,21 @@ import { importMethods } from "./method-import.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
+// What the chart-of-accounts review may send back for a row; the planner
+// reads these fields without further checks.
+const accountResolutionValidator = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("skip") }),
+  z.object({ action: z.literal("rename"), name: z.string() }),
+  z.object({ action: z.literal("renumber"), number: z.string() }),
+  z.object({
+    action: z.literal("link"),
+    accountId: z.string(),
+    keepNumber: z.boolean().optional(),
+  }),
+  z.object({ action: z.literal("keepNumber") }),
+]);
+const accountResolutionsValidator = z.record(accountResolutionValidator);
+
 const importCsvValidator = z.object({
   table: z.enum([
     "consumable",
@@ -3043,15 +3058,18 @@ serve(async (req: Request) => {
 
         const opts = (options ?? {}) as Record<string, unknown>;
         const structure = String(opts.structure ?? "auto");
+        const resolutions = accountResolutionsValidator.safeParse(
+          opts.resolutions ?? {}
+        );
+        if (!resolutions.success) {
+          throw new Error("Invalid resolutions in the import options");
+        }
         const planOptions: AccountImportOptions = {
           structure:
             structure === "file" || structure === "carbon" ? structure : "auto",
           pathSeparator:
             typeof opts.pathSeparator === "string" ? opts.pathSeparator : ":",
-          resolutions:
-            opts.resolutions && typeof opts.resolutions === "object"
-              ? (opts.resolutions as AccountImportOptions["resolutions"])
-              : {},
+          resolutions: resolutions.data,
           activeInverted: isInvertedActiveHeader(columnMappings.active),
         };
 

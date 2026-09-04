@@ -25,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     filePath: z.string().min(1, { message: "Path is required" }),
     enumMappings: z.string().optional(),
     // "true" plans without writing; importers that plan (account) return it.
-    dryRun: z.string().optional(),
+    dryRun: z.enum(["true", "false"]).optional(),
     // JSON from a per-table review step (structure choice, conflict resolutions).
     options: z.string().optional()
   });

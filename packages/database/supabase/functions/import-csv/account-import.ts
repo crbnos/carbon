@@ -437,7 +437,8 @@ export function planChartOfAccounts(
         options.activeInverted && (record.active ?? "").trim() !== ""
           ? !parseBoolean(record.active, false)
           : activeFromFile,
-      activeSpecified: record.active !== undefined,
+      // A blank cell in a mapped Active column says nothing about the account.
+      activeSpecified: (record.active ?? "").trim() !== "",
       externalId: (record.externalId ?? "").trim() || null,
       linkAccountId: null,
       keepNumber: false,
@@ -785,6 +786,27 @@ export function planChartOfAccounts(
     node.reason = reason;
   };
 
+  // A parent chain that comes back to itself (row A under B, B under A) can
+  // only be written by the file. Fail every row on the loop here, before any
+  // walk below follows `children` into it.
+  for (const node of nodes.values()) {
+    const seen = new Set<string>();
+    let cur: PlanNode | undefined = node;
+    while (cur?.parentKey && !seen.has(cur.key)) {
+      seen.add(cur.key);
+      cur = nodes.get(cur.parentKey);
+    }
+    if (!cur?.parentKey || !seen.has(cur.key)) continue;
+    const loop: PlanNode[] = [];
+    let member: PlanNode | undefined = cur;
+    do {
+      loop.push(member);
+      member = member.parentKey ? nodes.get(member.parentKey) : undefined;
+    } while (member && member !== cur && loop.length <= seen.size);
+    const chain = [...loop, cur].map((n) => `"${n.name}"`).join(" → ");
+    for (const n of loop) fail(n, `Parent chain loops back on itself: ${chain}`);
+  }
+
   // -- 5. leaf typing --------------------------------------------------------------
   for (const node of nodes.values()) {
     if (node.action === "skip" || node.action === "error") continue;
@@ -816,26 +838,30 @@ export function planChartOfAccounts(
   }
 
   // -- 6. group class: own column, else majority of descendant leaves, else parent -----
-  const descendantLeafClasses = (node: PlanNode): AccountClass[] => {
+  const descendantLeafClasses = (node: PlanNode, seen = new Set<string>()): AccountClass[] => {
     const out: AccountClass[] = [];
+    if (seen.has(node.key)) return out;
+    seen.add(node.key);
     for (const child of children.get(node.key) ?? []) {
       if (child.action === "skip" || child.action === "error") continue;
       if (child.kind === "account") {
         if (child.class) out.push(child.class);
       } else {
-        out.push(...descendantLeafClasses(child));
+        out.push(...descendantLeafClasses(child, seen));
       }
     }
     return out;
   };
-  const descendantLeafTypes = (node: PlanNode): AccountType[] => {
+  const descendantLeafTypes = (node: PlanNode, seen = new Set<string>()): AccountType[] => {
     const out: AccountType[] = [];
+    if (seen.has(node.key)) return out;
+    seen.add(node.key);
     for (const child of children.get(node.key) ?? []) {
       if (child.action === "skip" || child.action === "error") continue;
       if (child.kind === "account") {
         if (child.accountType) out.push(child.accountType);
       } else {
-        out.push(...descendantLeafTypes(child));
+        out.push(...descendantLeafTypes(child, seen));
       }
     }
     return out;
@@ -1212,7 +1238,10 @@ export function planChartOfAccounts(
 
   // -- 9. order: depth-first so parents precede children and siblings keep file order --
   const output: PlanNode[] = [];
+  const emitted = new Set<string>();
   const visit = (node: PlanNode) => {
+    if (emitted.has(node.key)) return;
+    emitted.add(node.key);
     output.push(node);
     const kids = (children.get(node.key) ?? []).sort((a, b) => a.reportRow - b.reportRow);
     for (const kid of kids) visit(kid);
@@ -1221,7 +1250,7 @@ export function planChartOfAccounts(
     if (!node.parentKey) visit(node);
   }
   // Nodes whose parent chain was broken (parentKey to a missing node) — append.
-  for (const node of ordered) if (!output.includes(node)) output.push(node);
+  for (const node of ordered) if (!emitted.has(node.key)) output.push(node);
 
   const summary = {
     groupsToCreate: output.filter((n) => n.action === "create" && n.kind === "group").length,

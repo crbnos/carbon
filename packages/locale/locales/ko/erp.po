@@ -51,6 +51,27 @@ msgstr "(이 고객에게는 제외됨)"
 msgid "(group)"
 msgstr ""
 
+#. placeholder {0}: s.linked
+msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
+msgstr ""
+
+#. placeholder {0}: s.accountsToCreate
+msgid "{0, plural, one {# account to create} other {# accounts to create}}"
+msgstr ""
+
+#. placeholder {0}: s.updates
+msgid "{0, plural, one {# account to update} other {# accounts to update}}"
+msgstr ""
+
+#. placeholder {0}: s.unchanged
+msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
+msgstr ""
+
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.}}"
@@ -59,6 +80,18 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.}}"
 
+#. placeholder {0}: s.errors
+msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
+msgstr ""
+
+#. placeholder {0}: s.skipped
+msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
+#. placeholder {0}: plan.nodes.length
+msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되어 있습니다} other {이 품목은 # 개의 미결 변경 통지에 포함되어 있습니다}}"
@@ -66,10 +99,6 @@ msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 계정"
-
-#. placeholder {0}: s.accountsToCreate
-msgid "{0} accounts to create"
-msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -96,11 +125,6 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 분개"
 
-#. placeholder {0}: s.groupsToCreate
-#. placeholder {1}: s.accountsToCreate
-msgid "{0} groups and {1} accounts to create"
-msgstr ""
-
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
@@ -111,14 +135,6 @@ msgstr "매핑할 라인 {0}개"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
-
-#. placeholder {0}: s.linked
-msgid "{0} merged into existing"
-msgstr ""
-
-#. placeholder {0}: s.errors
-msgid "{0} need attention"
 msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
@@ -150,25 +166,13 @@ msgstr "{0} 등록됨"
 msgid "{0} rows"
 msgstr "{0} 행"
 
-#. placeholder {0}: s.skipped
-msgid "{0} skipped"
-msgstr ""
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "잔액이 있는 공급업체 {0}곳"
 
-#. placeholder {0}: s.updates
-msgid "{0} to update"
-msgstr ""
-
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}개의 미검사 항목이 가용으로 릴리스됩니다. 검사 합격 항목은 가용으로 유지되고 검사 불합격 항목은 거부됨으로 유지됩니다."
-
-#. placeholder {0}: s.unchanged
-msgid "{0} unchanged"
-msgstr ""
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -249,7 +253,7 @@ msgstr "{done}개 중 {total}개 단계 완료"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
-msgid "{fileCount} matching accounts take the file's numbers."
+msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
 msgstr ""
 
 msgid "{from}–{to} of {count}"
@@ -266,7 +270,7 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
-msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
 msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
@@ -297,7 +301,7 @@ msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
 
-msgid "{pendingCount} decision(s) not in the plan yet"
+msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -324,7 +328,7 @@ msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
 
-msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
 msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
@@ -14831,10 +14835,6 @@ msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID �
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
-
-#. placeholder {0}: plan.nodes.length
-msgid "Show all {0} rows"
-msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
