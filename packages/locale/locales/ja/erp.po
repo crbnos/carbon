@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} 個 · 容量超過 — {loads} ロード（{batchCapacity} 個）"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} がバッチ化を待機中です"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} バッチ対象の工程はバッチに含まれていません — それらはバッチ化されるまで個別に実行されます"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0～4週間"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 つのバッチ対象の工程はバッチに含まれていません — それはバッチ化されるまで個別に実行されます"
 
 msgid "1 can't be scheduled"
 msgstr "1はスケジュール化できません"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "最初に作業区を割り当ててください"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
 msgid "Batch type"
-msgstr ""
+msgstr "バッチタイプ"
 
 msgid "Batchable"
 msgstr "バッチ可能"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "{0}個の値を作成"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "作成 & リリース"
 
 msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "監査証跡エントリを作成"
 
 msgid "Create batch"
-msgstr ""
+msgstr "バッチを作成"
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "製造現場に配置されていません — 配分にリリースしてください"
 
 msgid "Not reached"
 msgstr "未到達"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "工程ごとではなく1回の段取りで共有"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "共有の段取り 1 つと最長の労務と機械時間 — メンバーは一緒に実行されます"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "1つの共有セットアップと合計labor時間およびmachine時間"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "リリース"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "バッチをリリース"
 
 msgid "Release change notice"
 msgstr "変更通知をリリース"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "チームを選択"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "リリースする作業区を選択してください"
 
 msgid "Select account"
 msgstr "アカウントを選択"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "採番"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "順次 — 部品が次々と実行されます (ノコギリ、レーザーテーブル)"
 
 msgid "Serial"
 msgstr "シリアル"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "同時 — 部品が 1 つのロットで実行されます (炉、オーブン、メッキ)"
 
 msgid "Single Sign-On"
 msgstr "シングルサインオン"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "未受領PO"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "リリース解除"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "バッチのリリース解除"
 
 msgid "Unsaved changes"
 msgstr "未保存の変更"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "無題"
 
 msgid "Untitled Diagram"
 msgstr "無題の図"

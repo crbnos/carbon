@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} पीसेस · क्षमता से अधिक — {loads} लोड्स {batchCapacity} का"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} बैचिंग की प्रतीक्षा में"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} बैचेबल ऑपरेशन बैच में नहीं हैं — जब तक बैच न हो जाएं, वे अलग-अलग चलते हैं"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 बैचेबल ऑपरेशन बैच में नहीं है — जब तक बैच न हो जाए, यह अलग-अलग चलता है"
 
 msgid "1 can't be scheduled"
 msgstr "1 को शेड्यूल नहीं किया जा सकता"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "पहले एक वर्क सेंटर असाइन करें"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
 msgid "Batch type"
-msgstr ""
+msgstr "बैच प्रकार"
 
 msgid "Batchable"
 msgstr "बैच योग्य"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "{0} मान बनाएं"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "बनाएँ और जारी करें"
 
 msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "ऑडिट ट्रेल प्रविष्टियां बनाएं"
 
 msgid "Create batch"
-msgstr ""
+msgstr "बैच बनाएँ"
 
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "शॉप फ्लोर पर नहीं — प्रेषण के लिए जारी करें"
 
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "हर प्रक्रिया के बजाय एक साझा सेटअप"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "एक साझा सेटअप प्लस सबसे लंबा श्रम और मशीन समय — सदस्य एक साथ चलते हैं"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "एक साझा सेटअप जमा श्रम और मशीन समय के साथ"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "जारी करें"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "बैच जारी करें"
 
 msgid "Release change notice"
 msgstr "परिवर्तन सूचना जारी करें"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "एक टीम चुनें"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "जारी करने के लिए एक वर्क सेंटर चुनें"
 
 msgid "Select account"
 msgstr "खाता चुनें"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "अनुक्रम"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "क्रमिक — पार्ट्स एक के बाद एक चलते हैं (आरी, लेजर टेबल)"
 
 msgid "Serial"
 msgstr "सीरीज़"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "समकालिक — पार्ट्स एक लोड में एक साथ चलते हैं (भट्ठी, ओवन, मढ़ाई)"
 
 msgid "Single Sign-On"
 msgstr "सिंगल साइन-ऑन"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "रिलीज़ वापस लें"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "बैच रिलीज़ वापस लें"
 
 msgid "Unsaved changes"
 msgstr "असहेजे परिवर्तन"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "बिना शीर्षक"
 
 msgid "Untitled Diagram"
 msgstr "बिना शीर्षक वाला आरेख"

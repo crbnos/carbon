@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} parça · kapasite aşıldı — {loads} yükleme {batchCapacity}"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} partiye alınmayı bekliyor"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} partiye alınabilir operasyon partide değil — partiye alınıncaya kadar tek tek çalışırlar"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4 hafta"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 partiye alınabilir operasyon partide değil — partiye alınıncaya kadar tek tek çalışır"
 
 msgid "1 can't be scheduled"
 msgstr "1 planlanmıyor"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "Önce bir iş merkezi atayın"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
 msgid "Batch type"
-msgstr ""
+msgstr "Parti türü"
 
 msgid "Batchable"
 msgstr "Toplu İşlemeye Uygun"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "{0} değerleri oluştur"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "Oluştur ve Serbest Bırak"
 
 msgid "Create & Snapshot"
 msgstr "Oluştur & Anlık Görüntü"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "Denetim izi girdileri oluştur"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Parti Oluştur"
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli iş emri yok"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "Atölyede değil — çalışmaya serbest bırak"
 
 msgid "Not reached"
 msgstr "Ulaşılmadı"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "Operasyon başına değil, tek ortak hazırlık"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "Bir paylaşılan hazırlık artı en uzun işçilik ve makine süresi — üyeler birlikte çalışır"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Bir ortak kurulum artı toplam işçilik ve makine süresi"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "Serbest Bırakma"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "Partiyi Serbest Bırak"
 
 msgid "Release change notice"
 msgstr "Değişiklik bildirimi serbest bırak"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "Bir ekip seçin"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "Serbest bırakmak için bir iş merkezi seçin"
 
 msgid "Select account"
 msgstr "Hesap Seç"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "Numaralandırmalar"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "Ardışık — parçalar birbiri ardına çalışır (testere, lazer tezgahı)"
 
 msgid "Serial"
 msgstr "Seri"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "Oturum açma artık kod gerektirmez. Onaylamak için kimlik doğrulayıcı uygulamanızdan mevcut 6 haneli kodu girin."
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "Eş zamanlı — parçalar bir yükle birlikte çalışır (fırın, etüv, kaplama)"
 
 msgid "Single Sign-On"
 msgstr "Tekli Oturum Açma"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "Serbest Bırakmayı Geri Al"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "Partiyi Serbest Bırakmayı Geri Al"
 
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Başlıksız"
 
 msgid "Untitled Diagram"
 msgstr "Başlıksız Diyagram"

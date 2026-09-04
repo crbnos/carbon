@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} 件 · 超出容量 — {loads} 批 {batchCapacity} 件"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} 等待分组"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} 个可分组的工序不在生产批次中 — 它们单独运行，直到被分组"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4 周"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 个可分组的工序不在生产批次中 — 它单独运行，直到被分组"
 
 msgid "1 can't be scheduled"
 msgstr "1无法排程"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "先分配一个工作中心"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "批次追踪"
 
 msgid "Batch type"
-msgstr ""
+msgstr "生产批次类型"
 
 msgid "Batchable"
 msgstr "可批量的"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "创建 {0} 个值"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "创建并下达"
 
 msgid "Create & Snapshot"
 msgstr "创建并快照"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "创建审计跟踪条目"
 
 msgid "Create batch"
-msgstr ""
+msgstr "创建生产批次"
 
 msgid "Create Change Notice"
 msgstr "创建变更通知"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "不在车间 — 下达以分派"
 
 msgid "Not reached"
 msgstr "未到达"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "共享一次设置，而非每道工序一次"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "一次共享换型加上最长的人工和机器工时 — 成员一起运行"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "一个共享设置加上汇总的劳动和机器时间"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "下达"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "下达生产批次"
 
 msgid "Release change notice"
 msgstr "下达变更通知"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "选择班组"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "选择工作中心以下达"
 
 msgid "Select account"
 msgstr "选择账户"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "编号规则"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "顺序 — 零件一个接一个地运行（锯床、激光工作台）"
 
 msgid "Serial"
 msgstr "序列号"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "同时 — 零件在一个炉次中一起运行（炉、烤箱、电镀）"
 
 msgid "Single Sign-On"
 msgstr "单点登录"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "未收到的采购订单"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "取消下达"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "取消下达生产批次"
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "无标题"
 
 msgid "Untitled Diagram"
 msgstr "未命名图表"

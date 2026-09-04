@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} szt. · przekracza pojemność — {loads} cykli po {batchCapacity}"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} oczekujących na tworzenie partii"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} operacji możliwych do tworzenia partii nie należy do partii — uruchamiają się indywidualnie do czasu ich pogrupowania"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# niepoliczony wiersz} other {# niepoliczone wiersze}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4 tygodnie"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 operacja możliwa do tworzenia partii nie należy do partii — uruchamia się indywidualnie do czasu jej pogrupowania"
 
 msgid "1 can't be scheduled"
 msgstr "Nie można zaplanować 1"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Aktywa, pasywa i kapitał własny na określony dzień"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "Najpierw przypisz stanowisko robocze"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Przypisz drukarki do lokalizacji. Wysyłka, otrzymywanie i stanowiska robocze dziedziczą domyślne lokalizacje, chyba że nastąpi nadpisanie."
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "Śledzenie partii"
 
 msgid "Batch type"
-msgstr ""
+msgstr "Typ partii"
 
 msgid "Batchable"
 msgstr "Zdatne do partii"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "Utwórz {0} wartości"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "Utwórz i zwolnij"
 
 msgid "Create & Snapshot"
 msgstr "Utwórz i Snapshot"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "Utwórz wpisy dziennika audytu"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Utwórz partię produkcyjną"
 
 msgid "Create Change Notice"
 msgstr "Utwórz zawiadomienie o zmianie"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "Nie na hali produkcyjnej — zwolnij do zlecenia"
 
 msgid "Not reached"
 msgstr "Nieosiągnięty"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "Jedno wspólne przezbrojenie zamiast osobnego dla każdej operacji"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "Jedno wspólne przezbrojenie oraz najdłuższy czas robocizny i czas maszynowy — członkowie działają razem"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Jedna wspólna konfiguracja plus łączny czas pracy i maszyny"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "Zwolnienie"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "Zwolnij partię produkcyjną"
 
 msgid "Release change notice"
 msgstr "Zwolnij zawiadomienie o zmianie"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "Wybierz zespół"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "Wybierz stanowisko robocze do zwolnienia"
 
 msgid "Select account"
 msgstr "Wybierz konto"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "Numeracja"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "Sekwencyjnie — części uruchamiają się jedna za drugą (piła, stół laserowy)"
 
 msgid "Serial"
 msgstr "Seryjny"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "Logowanie nie będzie już wymagać kodu. Wpisz bieżący 6-cyfrowy kod z aplikacji Authenticator, aby potwierdzić."
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "Jednocześnie — części uruchamiają się razem w jednym załadunku (piec, piekarnik, powlekanie)"
 
 msgid "Single Sign-On"
 msgstr "Logowanie jednokrotne"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "Nieprzyjęte zamówienia"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "Cofnij zwolnienie"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "Cofnij zwolnienie partii produkcyjnej"
 
 msgid "Unsaved changes"
 msgstr "Niezapisane zmiany"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Nieobsługiwany typ dokumentu źródłowego: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Bez tytułu"
 
 msgid "Untitled Diagram"
 msgstr "Diagram bez tytułu"

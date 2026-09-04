@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} Stk · Kapazitätsüberschuss — {loads} Ladungen à {batchCapacity}"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} wartet auf Losbündlung"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} Los-fähige Arbeitsgänge sind nicht in einem Los — sie laufen einzeln, bis sie gebündelt werden"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# nicht gezählte Zeile} other {# nicht gezählte Zeilen}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4 Wochen"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 Los-fähiger Arbeitsgang ist nicht in einem Los — er läuft einzeln, bis er gebündelt wird"
 
 msgid "1 can't be scheduled"
 msgstr "1 kann nicht eingeplant werden"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "Weisen Sie zuerst einen Arbeitsplatz zu"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Drucker den Standorten zuweisen. Versand, Empfang und Arbeitplätze erben den Standort-Standard, wenn nicht anders vorgegeben."
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "Chargenverfolgung"
 
 msgid "Batch type"
-msgstr ""
+msgstr "Lostyp"
 
 msgid "Batchable"
 msgstr "Batchbar"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "Erstelle {0} Werte"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "Erstellen & Freigeben"
 
 msgid "Create & Snapshot"
 msgstr "Erstellen & Snapshot"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "Audit-Trail-Einträge erstellen"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Los erstellen"
 
 msgid "Create Change Notice"
 msgstr "Änderungsmitteilung erstellen"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "Nicht in der Werkstatt — zum Versand freigeben"
 
 msgid "Not reached"
 msgstr "Nicht erreicht"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "Eine gemeinsame Rüstung statt einer pro Arbeitsgang"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "Ein gemeinsames Rüsten plus die längste Personal- und Maschinenzeit — die Mitglieder laufen zusammen"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Eine gemeinsame Einrichtung plus die Summe der Arbeits- und Maschinenzeit"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "Freigeben"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "Los freigeben"
 
 msgid "Release change notice"
 msgstr "Änderungsmitteilung freigeben"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "Wählen Sie ein Team"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "Wählen Sie einen Arbeitsplatz zum Freigeben"
 
 msgid "Select account"
 msgstr "Konto auswählen"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "Nummernkreise"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "Sequenziell — Teile laufen nacheinander (Säge, Lasertisch)"
 
 msgid "Serial"
 msgstr "Seriennummer"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "Die Anmeldung erfordert keinen Code mehr. Geben Sie den aktuellen 6-stelligen Code aus Ihrer Authentifikator-App ein, um zu bestätigen."
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "Gleichzeitig — Teile laufen zusammen in einer Ladung (Ofen, Backofen, Galvanisierung)"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "Nicht eingegangene Bestellungen"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "Freigabe zurücknehmen"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "Losfreigabe zurücknehmen"
 
 msgid "Unsaved changes"
 msgstr "Nicht gespeicherte Änderungen"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Ohne Titel"
 
 msgid "Untitled Diagram"
 msgstr "Unbenanntes Diagramm"

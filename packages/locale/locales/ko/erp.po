@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} 개 · 용량 초과 — {batchCapacity}의 {loads}개 로드"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} 배치 대기 중"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations}개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4주"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
 
 msgid "1 can't be scheduled"
 msgstr "1개는 일정을 짤 수 없습니다"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "먼저 작업장을 할당하세요"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "배치 추적"
 
 msgid "Batch type"
-msgstr ""
+msgstr "배치 유형"
 
 msgid "Batchable"
 msgstr "배치 가능한"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "{0} 값 생성"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "생성 & 릴리스"
 
 msgid "Create & Snapshot"
 msgstr "생성 및 스냅샷"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "감사 추적 항목 생성"
 
 msgid "Create batch"
-msgstr ""
+msgstr "배치 생성"
 
 msgid "Create Change Notice"
 msgstr "변경 통지 생성"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "현장에 없음 — 공정 지시로 릴리스하세요"
 
 msgid "Not reached"
 msgstr "도달하지 않음"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "공정마다가 아닌 한 번의 공용 셋업"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "공유된 셋업 하나와 가장 긴 노무 및 기계 시간 — 멤버들이 함께 실행됨"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "공유 설정 1개 + 누계 노동력 및 기계 시간"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "릴리스"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "배치 릴리스"
 
 msgid "Release change notice"
 msgstr "변경 통지 릴리스"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "팀 선택"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "릴리스할 작업장을 선택하세요"
 
 msgid "Select account"
 msgstr "계정 선택"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "채번 규칙"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "순차적 — 부품이 차례대로 실행됨 (톱, 레이저 테이블)"
 
 msgid "Serial"
 msgstr "일련번호"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "로그인할 때 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱의 현재 6자리 코드를 입력하세요."
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "동시적 — 부품이 한 로드에서 함께 실행됨 (용광로, 오븐, 도금)"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "미입고 구매주문"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "릴리스 취소"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "배치 릴리스 취소"
 
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "제목 없음"
 
 msgid "Untitled Diagram"
 msgstr "제목 없는 다이어그램"

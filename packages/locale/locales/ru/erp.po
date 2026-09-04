@@ -329,10 +329,10 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} шт · превышает мощность — {loads} циклов по {batchCapacity}"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} ожидают группировки"
 
 msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
-msgstr ""
+msgstr "{unbatchedBatchableOperations} группируемые операции не входят в серию — они выполняются отдельно до группировки"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
@@ -384,7 +384,7 @@ msgid "0-4 weeks"
 msgstr "0-4 недели"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
-msgstr ""
+msgstr "1 группируемая операция не входит в серию — она выполняется отдельно до группировки"
 
 msgid "1 can't be scheduled"
 msgstr "1 не может быть спланировано"
@@ -2464,7 +2464,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
 msgid "Assign a work center first"
-msgstr ""
+msgstr "Сначала назначьте рабочий центр"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
@@ -2765,7 +2765,7 @@ msgid "Batch Tracking"
 msgstr "Отслеживание партий"
 
 msgid "Batch type"
-msgstr ""
+msgstr "Тип серии"
 
 msgid "Batchable"
 msgstr "Допускает группировку"
@@ -4298,7 +4298,7 @@ msgid "Create {0} values"
 msgstr "Создать {0} значений"
 
 msgid "Create & Release"
-msgstr ""
+msgstr "Создать и запустить в работу"
 
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
@@ -4352,7 +4352,7 @@ msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Создать серию"
 
 msgid "Create Change Notice"
 msgstr "Создать извещение об изменении"
@@ -11050,7 +11050,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
 msgid "Not on the shop floor — release to dispatch"
-msgstr ""
+msgstr "Не на цехе — запустите в диспетчеризацию"
 
 msgid "Not reached"
 msgstr "Не достигнуто"
@@ -11279,7 +11279,7 @@ msgid "One shared setup instead of one per operation"
 msgstr "Одна общая наладка вместо наладки на каждую операцию"
 
 msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr ""
+msgstr "Одна общая наладка плюс наибольший труд и машинное время — все детали выполняются вместе"
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
@@ -13290,7 +13290,7 @@ msgid "Release"
 msgstr "Запустить в работу"
 
 msgid "Release Batch"
-msgstr ""
+msgstr "Запустить серию в работу"
 
 msgid "Release change notice"
 msgstr "Запустить в работу извещение об изменении"
@@ -14477,7 +14477,7 @@ msgid "Select a team"
 msgstr "Выберите команду"
 
 msgid "Select a work center to release"
-msgstr ""
+msgstr "Выберите рабочий центр для запуска в работу"
 
 msgid "Select account"
 msgstr "Выберите счёт"
@@ -14688,7 +14688,7 @@ msgid "Sequences"
 msgstr "Нумерация"
 
 msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr ""
+msgstr "Последовательно — детали выполняются одна за другой (пила, лазерный стол)"
 
 msgid "Serial"
 msgstr "Серийный"
@@ -15128,7 +15128,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
 msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr ""
+msgstr "Одновременно — детали выполняются вместе в одной загрузке (печь, духовка, гальваника)"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
@@ -17763,10 +17763,10 @@ msgid "Unreceived POs"
 msgstr "Неполученные ПО"
 
 msgid "Unrelease"
-msgstr ""
+msgstr "Отозвать"
 
 msgid "Unrelease Batch"
-msgstr ""
+msgstr "Отозвать серию"
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
@@ -17790,7 +17790,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Без названия"
 
 msgid "Untitled Diagram"
 msgstr "Безымянная диаграмма"
