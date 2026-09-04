@@ -960,7 +960,12 @@ export const SalesInvoiceLineSchema = z.object({
   itemCode: withNullable(z.string()), // readableIdWithRevision
   description: withNullable(z.string()),
   quantity: z.number(),
+  // BASE currency, matching the stored column.
   unitPrice: z.number(),
+  // The document-currency mirror (unitPrice * exchangeRate). Optional because
+  // not every provider selects it; push this to any payload that declares a
+  // currency code, since unitPrice above is base.
+  convertedUnitPrice: withNullable(z.number()).optional(),
   taxPercent: z.number(),
   lineAmount: z.number()
 });

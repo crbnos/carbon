@@ -1174,6 +1174,27 @@ export function IssueMaterialModal({
 
   const hasTrackedInputs = trackedInputs.length > 0;
 
+  // Scrapping a tracked entity is attributed to a job material: the scrap
+  // action requires a materialId, and it relieves that material's WIP /
+  // reopens its requirement. The generic "Issue Material" button opens this
+  // modal with no material, so there is nothing to scrap against — and building
+  // the scrap URL with an empty materialId 404s (generatePath collapses the
+  // empty segment to `/x/entity/:id/scrap`, which matches no route). Only offer
+  // the Scrap tab when a material is in context.
+  const canScrap = !!material?.id;
+
+  // The tracked (Serial/Batch) tabs are: Scan + Select, plus Scrap when there's
+  // a material, plus Unconsume when there are consumed inputs. Compute the grid
+  // column count from what's actually rendered so the triggers stay evenly
+  // spaced (Tailwind needs the literal class name).
+  const trackedTabCount = 2 + (canScrap ? 1 : 0) + (hasTrackedInputs ? 1 : 0);
+  const trackedTabsListClass = cn(
+    "grid w-full mb-4",
+    trackedTabCount === 2 && "grid-cols-2",
+    trackedTabCount === 3 && "grid-cols-3",
+    trackedTabCount === 4 && "grid-cols-4"
+  );
+
   return (
     <>
       <Modal open onOpenChange={onClose}>
@@ -1359,12 +1380,7 @@ export function IssueMaterialModal({
 
                   {showContent && trackingType === "Serial" && (
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList
-                        className={cn(
-                          "grid w-full grid-cols-3 mb-4",
-                          hasTrackedInputs && "grid-cols-4"
-                        )}
-                      >
+                      <TabsList className={trackedTabsListClass}>
                         <TabsTrigger value="scan">
                           <LuQrCode className="mr-2" />
                           Scan
@@ -1373,10 +1389,12 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
-                        <TabsTrigger value="scrap">
-                          <LuTrash2 className="mr-2" />
-                          Scrap
-                        </TabsTrigger>
+                        {canScrap && (
+                          <TabsTrigger value="scrap">
+                            <LuTrash2 className="mr-2" />
+                            Scrap
+                          </TabsTrigger>
+                        )}
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1385,17 +1403,19 @@ export function IssueMaterialModal({
                         )}
                       </TabsList>
 
-                      <TabsContent value="scrap">
-                        <ScrapTab
-                          entities={scrappableEntities}
-                          onScrap={(entity) =>
-                            setScrapEntityTarget({
-                              id: entity.id,
-                              readableId: entity.readableId
-                            })
-                          }
-                        />
-                      </TabsContent>
+                      {canScrap && (
+                        <TabsContent value="scrap">
+                          <ScrapTab
+                            entities={scrappableEntities}
+                            onScrap={(entity) =>
+                              setScrapEntityTarget({
+                                id: entity.id,
+                                readableId: entity.readableId
+                              })
+                            }
+                          />
+                        </TabsContent>
+                      )}
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1628,12 +1648,7 @@ export function IssueMaterialModal({
 
                   {showContent && trackingType === "Batch" && (
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList
-                        className={cn(
-                          "grid w-full grid-cols-3 mb-4",
-                          hasTrackedInputs && "grid-cols-4"
-                        )}
-                      >
+                      <TabsList className={trackedTabsListClass}>
                         <TabsTrigger value="scan">
                           <LuQrCode className="mr-2" />
                           Scan
@@ -1642,10 +1657,12 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
-                        <TabsTrigger value="scrap">
-                          <LuTrash2 className="mr-2" />
-                          Scrap
-                        </TabsTrigger>
+                        {canScrap && (
+                          <TabsTrigger value="scrap">
+                            <LuTrash2 className="mr-2" />
+                            Scrap
+                          </TabsTrigger>
+                        )}
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1654,17 +1671,19 @@ export function IssueMaterialModal({
                         )}
                       </TabsList>
 
-                      <TabsContent value="scrap">
-                        <ScrapTab
-                          entities={scrappableEntities}
-                          onScrap={(entity) =>
-                            setScrapEntityTarget({
-                              id: entity.id,
-                              readableId: entity.readableId
-                            })
-                          }
-                        />
-                      </TabsContent>
+                      {canScrap && (
+                        <TabsContent value="scrap">
+                          <ScrapTab
+                            entities={scrappableEntities}
+                            onScrap={(entity) =>
+                              setScrapEntityTarget({
+                                id: entity.id,
+                                readableId: entity.readableId
+                              })
+                            }
+                          />
+                        </TabsContent>
+                      )}
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
