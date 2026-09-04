@@ -17410,7 +17410,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo de documento de origem não suportado: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Sem título"
 
 msgid "Untitled Diagram"
 msgstr "Diagrama sem título"
