@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { activeJobStatuses } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
@@ -106,6 +107,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       batchId,
       companyId
     );
+    // Floor rule: a batched operation is only floor-visible once its batch
+    // has been released (Active/Completing). A Planned batch stays off the
+    // floor regardless of its members' job statuses.
+    if (batchResult.data?.status === "Planned") {
+      throw redirect(
+        path.to.operations,
+        await flash(
+          request,
+          error(
+            null,
+            "This operation is part of a batch that has not been released to the floor"
+          )
+        )
+      );
+    }
     if (
       batchResult.data &&
       (batchResult.data.status === "Active" ||
@@ -115,6 +131,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // Read the batch's events (all members' timers) instead of this op's.
       events = await getProductionEventsForBatch(serviceRole, batchId);
     }
+  } else if (
+    !job.data.status ||
+    !(activeJobStatuses as readonly string[]).includes(job.data.status)
+  ) {
+    // Floor rule: an unbatched operation is only floor-visible while its job
+    // is released (Ready/In Progress/Paused).
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(null, "This operation's job has not been released to the floor")
+      )
+    );
   }
 
   const [

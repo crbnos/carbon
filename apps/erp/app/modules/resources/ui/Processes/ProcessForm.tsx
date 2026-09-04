@@ -188,7 +188,9 @@ const ProcessForm = ({
 
 export default ProcessForm;
 
-// Per-dimension batch compatibility. Only shown once a process is Batchable.
+// Batch settings — only shown once a process is Batchable. The batch type
+// selector (sequential vs simultaneous) rides the same conditional as the
+// per-dimension compatibility card.
 // "Must match" blocks incompatible ops from sharing a batch; "Guide" warns and
 // splits suggestion groups; "Ignore" never considers the dimension. Defaults
 // (substance/grade/dimension = Guide, the rest = Ignore) reproduce today's
@@ -198,6 +200,17 @@ function BatchCompatibilityRules() {
   const [batchable] = useControlField<boolean>("batchable");
 
   if (!batchable) return null;
+
+  const batchTypeOptions = [
+    {
+      value: "Sequential",
+      label: t`Sequential — parts run one after another (saw, laser table)`
+    },
+    {
+      value: "Simultaneous",
+      label: t`Simultaneous — parts run together in one load (furnace, oven, plating)`
+    }
+  ];
 
   const levelOptions = [
     { value: "must", label: t`Require Match` },
@@ -239,38 +252,45 @@ function BatchCompatibilityRules() {
   ];
 
   return (
-    <div className="flex flex-col gap-3 w-full rounded-md border border-border p-3">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-medium">
-          <Trans>Compatibility rules</Trans>
-        </span>
-        <span className="text-xs text-muted-foreground text-pretty">
-          <Trans>
-            How strictly each material property must match for operations to
-            share a batch on this process.
-          </Trans>
-        </span>
-      </div>
-      {rules.map((rule) => (
-        <div
-          key={rule.name}
-          className="grid grid-cols-[1fr_10rem] items-center gap-4"
-        >
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-sm">{rule.label}</span>
-            <span className="text-xs text-muted-foreground text-pretty">
-              {rule.description}
-            </span>
-          </div>
-          <Select
-            name={rule.name}
-            label=""
-            options={levelOptions}
-            isOptional={false}
-          />
+    <>
+      <Select
+        name="batchType"
+        label={t`Batch type`}
+        options={batchTypeOptions}
+      />
+      <div className="flex flex-col gap-3 w-full rounded-md border border-border p-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">
+            <Trans>Compatibility rules</Trans>
+          </span>
+          <span className="text-xs text-muted-foreground text-pretty">
+            <Trans>
+              How strictly each material property must match for operations to
+              share a batch on this process.
+            </Trans>
+          </span>
         </div>
-      ))}
-    </div>
+        {rules.map((rule) => (
+          <div
+            key={rule.name}
+            className="grid grid-cols-[1fr_10rem] items-center gap-4"
+          >
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-sm">{rule.label}</span>
+              <span className="text-xs text-muted-foreground text-pretty">
+                {rule.description}
+              </span>
+            </div>
+            <Select
+              name={rule.name}
+              label=""
+              options={levelOptions}
+              isOptional={false}
+            />
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

@@ -43,15 +43,38 @@ export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
 ) {
-  return client
+  // Floor rule: an operation in a Released (Active/Completing) batch is
+  // floor-visible even when its own job is not released yet, so the jobs
+  // list widens to include those member jobs alongside the released ones.
+  const memberJobs = await client
+    .from("jobOperation")
+    .select("jobId, jobOperationBatch!inner(status)")
+    .eq("companyId", args.companyId)
+    .in("jobOperationBatch.status", ["Active", "Completing"]);
+
+  const memberJobIds = [
+    ...new Set((memberJobs.data ?? []).map((op) => op.jobId))
+  ];
+
+  let query = client
     .from("jobs")
     .select(
       "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
     )
     .eq("companyId", args.companyId)
-    .eq("locationId", args.locationId)
-    .in("status", [...activeJobStatuses])
-    .order("jobId", { ascending: true });
+    .eq("locationId", args.locationId);
+
+  if (memberJobIds.length > 0) {
+    // PostgREST `in` lists inside `.or()` quote each value — "In Progress"
+    // contains a space.
+    const statuses = activeJobStatuses.map((s) => `"${s}"`).join(",");
+    const ids = memberJobIds.map((id) => `"${id}"`).join(",");
+    query = query.or(`status.in.(${statuses}),id.in.(${ids})`);
+  } else {
+    query = query.in("status", [...activeJobStatuses]);
+  }
+
+  return query.order("jobId", { ascending: true });
 }
 
 export async function getJobOperationBatch(

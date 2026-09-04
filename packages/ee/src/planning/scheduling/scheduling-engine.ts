@@ -15,6 +15,7 @@ import {
   AssemblyHandler,
   buildMakeMethodDependencies
 } from "./assembly-handler.ts";
+import type { BatchPlacement } from "./batch-scheduler.ts";
 import {
   type CalendarShiftRow,
   type CalendarWindow,
@@ -77,7 +78,7 @@ import {
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
-const SCHEDULING_HORIZON_DAYS = 365;
+export const SCHEDULING_HORIZON_DAYS = 365;
 
 const log = getFunctionLogger("schedule");
 
@@ -122,6 +123,7 @@ export class SchedulingEngine {
    * placements of already-run batch jobs. Defaults to just this job.
    */
   private excludeJobIds: string[];
+  private batchPlacements: Map<string, BatchPlacement> | null = null;
   /** Forecast finish (max placed end) — set after placement, persisted. */
   private projectedCompletionAt: string | null = null;
   /** True when this regen flipped the job from on-time (or unforecast) to late. */
@@ -167,6 +169,12 @@ export class SchedulingEngine {
       persist?: boolean;
       /** Batch job ids to exclude from the reservation snapshot. */
       excludeJobIds?: string[];
+      /**
+       * Pre-placed windows for RELEASED-batch member operations (from the
+       * batch pre-pass in run-schedule). Members take the window verbatim;
+       * their reservations are the pre-pass's coalesced batch rows.
+       */
+      batchPlacements?: Map<string, BatchPlacement> | null;
     }
   ) {
     this.client = options.client;
@@ -176,6 +184,7 @@ export class SchedulingEngine {
     this.userId = options.userId;
     this.now = options.now ?? Date.now();
     this.persist = options.persist ?? true;
+    this.batchPlacements = options.batchPlacements ?? null;
     this.excludeJobIds =
       options.excludeJobIds && options.excludeJobIds.length > 0
         ? options.excludeJobIds
@@ -900,7 +909,8 @@ export class SchedulingEngine {
     const operations = Array.from(this.scheduledOperations.values());
     const selections =
       await this.workCenterSelector.selectWorkCentersForOperations(operations, {
-        jobDueDate: this.job?.dueDate ?? null
+        jobDueDate: this.job?.dueDate ?? null,
+        batchPlacements: this.batchPlacements
       });
 
     // Apply selections (placed timestamps → factory-day date columns)

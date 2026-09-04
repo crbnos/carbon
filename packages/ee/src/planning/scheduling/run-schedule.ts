@@ -3,10 +3,15 @@ import type { DB } from "@carbon/database/client";
 import { getFunctionLogger } from "@carbon/database/logging";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
+import type { BatchPlacement } from "./batch-scheduler.ts";
+import { placeReleasedBatches } from "./batch-scheduler.ts";
 import { toInstantMs } from "./date-utils.ts";
 import { KyselyMasterDataProvider } from "./master-data-provider.ts";
 import { DEADLINE_PRIORITY } from "./priority-calculator.ts";
-import { SchedulingEngine } from "./scheduling-engine.ts";
+import {
+  SCHEDULING_HORIZON_DAYS,
+  SchedulingEngine
+} from "./scheduling-engine.ts";
 
 /**
  * Whole-location forecast-first finite scheduling, extracted from the `schedule`
@@ -151,6 +156,32 @@ export async function runLocationSchedule(
     cacheCompanyData: batch.length > 1
   });
 
+  // Batch pre-pass: place every RELEASED operation batch as ONE unit (a
+  // single coalesced, batch-tagged reservation; members pinned to its window)
+  // BEFORE the per-job passes, so member jobs see the batch as fixed
+  // capacity. A pre-pass failure degrades to per-member placement (the
+  // pre-feature behavior) rather than abandoning the location run.
+  let batchPlacements: Map<string, BatchPlacement> | null = null;
+  try {
+    batchPlacements = await placeReleasedBatches({
+      db,
+      provider,
+      companyId,
+      locationId,
+      now,
+      userId,
+      orderedJobIds: batch,
+      horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
+      persist: true
+    });
+  } catch (err) {
+    log.error("Batch pre-pass failed; members place individually", {
+      locationId,
+      companyId,
+      error: err instanceof Error ? err.message : String(err)
+    });
+  }
+
   let conflictsDetected = 0;
   const failedJobIds: string[] = [];
   const newlyLate: NewlyLateJob[] = [];
@@ -166,7 +197,8 @@ export async function runLocationSchedule(
       userId,
       now,
       persist: true,
-      excludeJobIds: batch.slice(i)
+      excludeJobIds: batch.slice(i),
+      batchPlacements
     });
     // One job's failure must not abandon the rest of the batch — its stale
     // stamp only clears inside the persist transaction, so a failed job stays
@@ -220,6 +252,26 @@ export async function runExpediteWhatIf(
     cacheCompanyData: batch.length > 1
   });
 
+  // Simulate-only: mirror the EXISTING batch reservations (persist: false
+  // reads them back instead of recomputing) so the what-if agrees with the
+  // rows already in its snapshot.
+  let batchPlacements: Map<string, BatchPlacement> | null = null;
+  try {
+    batchPlacements = await placeReleasedBatches({
+      db,
+      provider,
+      companyId,
+      locationId,
+      now,
+      userId,
+      orderedJobIds: batch,
+      horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
+      persist: false
+    });
+  } catch {
+    // fall through — the sim runs with per-member placement
+  }
+
   const engine = new SchedulingEngine({
     client,
     db,
@@ -229,7 +281,8 @@ export async function runExpediteWhatIf(
     userId,
     now,
     persist: false,
-    excludeJobIds: batch
+    excludeJobIds: batch,
+    batchPlacements
   });
   await engine.run();
 
