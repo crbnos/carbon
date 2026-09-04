@@ -3,6 +3,7 @@ import {
   parseAbsolute,
   parseDate,
   parseTime,
+  Time,
   toZoned
 } from "@internationalized/date";
 
@@ -204,15 +205,23 @@ export function formatRelativeCalendarDays(
 // as a localized short time ("8:00 AM"). These carry no date or timezone, so
 // there is nothing to convert — the value is anchored to a fixed UTC instant
 // purely so `Intl` can format it, and formatted back in UTC to avoid any shift.
-export function formatTimeOfDay(value?: string | null, locale?: string) {
+export function formatTimeOfDay(
+  value?: string | null,
+  locale?: string,
+  /** Force a 24-hour clock ("15:30") regardless of what the locale prefers.
+   * For fields where an unambiguous wall clock matters more than local habit —
+   * an en-US locale would otherwise render "3:30 PM". */
+  hour24?: boolean
+) {
   if (!value) return "";
   try {
     const t = parseTime(value);
     const anchor = new Date(Date.UTC(2000, 0, 1, t.hour, t.minute, t.second));
     return new Intl.DateTimeFormat(locale || DEFAULT_LOCALE, {
-      hour: "numeric",
+      hour: "2-digit",
       minute: "2-digit",
-      timeZone: "UTC"
+      timeZone: "UTC",
+      ...(hour24 ? { hour12: false } : { hour: "numeric" })
     }).format(anchor);
   } catch {
     return value;
@@ -261,4 +270,65 @@ export function formatPreciseDuration(
     type: "unit"
   }).format(segments);
   return { text, direction };
+}
+
+/**
+ * A time a person typed, read leniently. Returns a `Time`, or `null` when the
+ * text is not a time at all — the caller reverts rather than storing a guess.
+ *
+ * Deliberately generous about what it accepts, because the whole point is that
+ * someone can type rather than tab through segments: `3`, `3p`, `3 pm`, `3:07pm`,
+ * `15:30`, `1530` and `9.45` all land. It is strict about what it REJECTS —
+ * `25:00`, `3:75` and `abc` are null, never silently clamped, since a clamped
+ * time is a wrong meeting nobody notices.
+ *
+ * 12-hour is inferred only from an explicit am/pm marker. A bare `3` is 03:00,
+ * matching what the ISO-ish text says; `3p` is what a person types for 3 PM.
+ */
+export function parseTypedTime(input: string): Time | null {
+  const text = input.trim().toLowerCase();
+  if (!text) return null;
+
+  // The am/pm marker may be attached ("3pm"), spaced ("3 pm") or dotted ("3 p.m.").
+  // Captured as its own group so the hour digits are never eaten with it.
+  const meridiem = /^(.*?)\s*([ap])\.?\s*m?\.?$/.exec(text);
+  const marker = meridiem?.[2];
+  const body = (meridiem ? meridiem[1]! : text).replace(/[.\s]+$/, "").trim();
+  if (!body) return null;
+
+  let hour: number;
+  let minute = 0;
+
+  // "3:07" / "3.07" / "3 07" — an explicit separator.
+  const separated = /^(\d{1,2})[:.\s](\d{1,2})$/.exec(body);
+  // "1530" / "930" — a bare digit run, read from the right so "930" is 9:30.
+  const packed = /^(\d{3,4})$/.exec(body);
+  const bare = /^(\d{1,2})$/.exec(body);
+
+  if (separated) {
+    hour = Number(separated[1]);
+    minute = Number(separated[2]);
+  } else if (packed) {
+    const digits = packed[1]!;
+    hour = Number(digits.slice(0, digits.length - 2));
+    minute = Number(digits.slice(-2));
+  } else if (bare) {
+    hour = Number(bare[1]);
+  } else {
+    return null;
+  }
+
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
+  if (minute > 59) return null;
+
+  if (marker) {
+    // A 12-hour clock has no hour 0 and no hour 13+: "0pm" and "13pm" are typos,
+    // not times, so they are refused rather than wrapped into something plausible.
+    if (hour < 1 || hour > 12) return null;
+    if (marker === "p" && hour !== 12) hour += 12;
+    if (marker === "a" && hour === 12) hour = 0;
+  }
+
+  if (hour > 23) return null;
+  return new Time(hour, minute);
 }

@@ -4,7 +4,8 @@ import {
   formatPreciseDuration,
   formatRelativeCalendarDays,
   formatTimeOfDay,
-  getTimeZoneOffsetLabel
+  getTimeZoneOffsetLabel,
+  parseTypedTime
 } from "./date";
 
 describe("formatRelativeCalendarDays", () => {
@@ -60,6 +61,17 @@ describe("formatTimeOfDay", () => {
     expect(formatTimeOfDay("")).toBe("");
     expect(formatTimeOfDay(null)).toBe("");
     expect(formatTimeOfDay("not-a-time", "en-US")).toBe("not-a-time");
+  });
+
+  // Opt-in: a field where a dropped AM/PM would be a wrong meeting reads "15:30".
+  it("forces a 24-hour clock when asked", () => {
+    expect(formatTimeOfDay("15:30:00", "en-US", true)).toBe("15:30");
+    expect(formatTimeOfDay("08:00:00", "en-US", true)).toBe("08:00");
+    expect(formatTimeOfDay("00:00", "en-US", true)).toBe("00:00");
+    expect(formatTimeOfDay("12:00", "en-US", true)).toBe("12:00");
+    expect(formatTimeOfDay("23:59", "en-US", true)).toBe("23:59");
+    // Unchanged without the flag.
+    expect(formatTimeOfDay("15:30:00", "en-US")).toBe("3:30 PM");
   });
 });
 
@@ -168,5 +180,62 @@ describe("formatPreciseDuration", () => {
       now
     );
     expect(text).toBe("0 seconds");
+  });
+});
+
+describe("parseTypedTime", () => {
+  const hhmm = (input: string) => {
+    const time = parseTypedTime(input);
+    return time ? `${time.hour}:${String(time.minute).padStart(2, "0")}` : null;
+  };
+
+  it("reads a bare hour as 24-hour", () => {
+    expect(hhmm("3")).toBe("3:00");
+    expect(hhmm("15")).toBe("15:00");
+    expect(hhmm("0")).toBe("0:00");
+  });
+
+  it("reads an am/pm marker however it is written", () => {
+    expect(hhmm("3p")).toBe("15:00");
+    expect(hhmm("3pm")).toBe("15:00");
+    expect(hhmm("3 pm")).toBe("15:00");
+    expect(hhmm("3 p.m.")).toBe("15:00");
+    expect(hhmm("3PM")).toBe("15:00");
+    expect(hhmm("3am")).toBe("3:00");
+  });
+
+  // Midnight and noon are where 12-hour clocks are most often gotten wrong.
+  it("handles the 12 o'clock hours", () => {
+    expect(hhmm("12am")).toBe("0:00");
+    expect(hhmm("12pm")).toBe("12:00");
+    expect(hhmm("12:30am")).toBe("0:30");
+    expect(hhmm("12:30pm")).toBe("12:30");
+  });
+
+  it("reads separated and packed digits", () => {
+    expect(hhmm("3:07")).toBe("3:07");
+    expect(hhmm("3.07")).toBe("3:07");
+    expect(hhmm("15:30")).toBe("15:30");
+    expect(hhmm("1530")).toBe("15:30");
+    expect(hhmm("930")).toBe("9:30");
+    expect(hhmm("3:07pm")).toBe("15:07");
+  });
+
+  it("ignores surrounding whitespace", () => {
+    expect(hhmm("  3:07 pm  ")).toBe("15:07");
+  });
+
+  // Refused, never clamped: a silently corrected time is a wrong meeting.
+  it("refuses what is not a time", () => {
+    expect(parseTypedTime("25:00")).toBeNull();
+    expect(parseTypedTime("3:75")).toBeNull();
+    expect(parseTypedTime("24:00")).toBeNull();
+    expect(parseTypedTime("13pm")).toBeNull();
+    expect(parseTypedTime("0pm")).toBeNull();
+    expect(parseTypedTime("abc")).toBeNull();
+    expect(parseTypedTime("")).toBeNull();
+    expect(parseTypedTime("   ")).toBeNull();
+    expect(parseTypedTime("3:")).toBeNull();
+    expect(parseTypedTime("12345")).toBeNull();
   });
 });
