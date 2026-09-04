@@ -133,10 +133,6 @@ msgstr "{0} zleceń produkcyjnych utworzonych"
 msgid "{0} lines to map"
 msgstr "{0} linii do mapowania"
 
-#. placeholder {0}: matching.length
-msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr "{0} pasujących kont: {fileCount} przyjmuje numery z pliku, {keepCount} zachowuje numery z Carbon."
-
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -9586,6 +9582,10 @@ msgstr "Dopasowane"
 
 msgid "matches"
 msgstr "pasuje do"
+
+#. placeholder {0}: matching.length
+msgid "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
+msgstr "Pasujące konta: {0}. Numery z pliku: {fileCount}, numery z Carbon: {keepCount}."
 
 msgid "Matching Pairs"
 msgstr "Pary dopasowań"

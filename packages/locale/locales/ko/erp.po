@@ -133,10 +133,6 @@ msgstr "{0}개의 작업 지시 생성됨"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
-#. placeholder {0}: matching.length
-msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr "일치하는 계정 {0}개: {fileCount}개는 파일의 번호를 사용하고 {keepCount}개는 Carbon의 번호를 유지합니다."
-
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -9586,6 +9582,10 @@ msgstr "일치함"
 
 msgid "matches"
 msgstr "일치"
+
+#. placeholder {0}: matching.length
+msgid "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
+msgstr "일치하는 계정: {0}. 파일의 번호: {fileCount}, Carbon의 번호: {keepCount}."
 
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"

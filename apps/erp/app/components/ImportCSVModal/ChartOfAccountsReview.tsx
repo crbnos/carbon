@@ -429,8 +429,8 @@ export function ChartOfAccountsReview({
                       />
                     ) : (
                       <Trans>
-                        {matching.length} matching accounts: {fileCount} take
-                        the file's numbers, {keepCount} keep Carbon's.
+                        Matching accounts: {matching.length}. File's numbers:{" "}
+                        {fileCount}, Carbon's numbers: {keepCount}.
                       </Trans>
                     )}
                   </span>

@@ -133,10 +133,6 @@ msgstr "已创建{0}个工单"
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
 
-#. placeholder {0}: matching.length
-msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr "{0} 个匹配的科目：{fileCount} 个采用文件中的编号，{keepCount} 个保留 Carbon 中的编号。"
-
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -9586,6 +9582,10 @@ msgstr "已匹配"
 
 msgid "matches"
 msgstr "匹配"
+
+#. placeholder {0}: matching.length
+msgid "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
+msgstr "匹配的科目：{0}。文件中的编号：{fileCount}，Carbon 中的编号：{keepCount}。"
 
 msgid "Matching Pairs"
 msgstr "匹配对"

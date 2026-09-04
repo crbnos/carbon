@@ -133,10 +133,6 @@ msgstr "{0} जॉब बनाए गए"
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
-#. placeholder {0}: matching.length
-msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr "{0} मिलते-जुलते खाते: {fileCount} फ़ाइल की संख्याएँ लेंगे, {keepCount} Carbon की संख्याएँ रखेंगे।"
-
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -9586,6 +9582,10 @@ msgstr "मेल खाया"
 
 msgid "matches"
 msgstr "मेल खाता है"
+
+#. placeholder {0}: matching.length
+msgid "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
+msgstr "मिलते-जुलते खाते: {0}। फ़ाइल की संख्याएँ: {fileCount}, Carbon की संख्याएँ: {keepCount}।"
 
 msgid "Matching Pairs"
 msgstr "मिलान जोड़े"

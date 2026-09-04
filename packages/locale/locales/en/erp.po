@@ -133,10 +133,6 @@ msgstr "{0} jobs created"
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
-#. placeholder {0}: matching.length
-msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -9586,6 +9582,10 @@ msgstr "Matched"
 
 msgid "matches"
 msgstr "matches"
+
+#. placeholder {0}: matching.length
+msgid "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
+msgstr "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
 
 msgid "Matching Pairs"
 msgstr "Matching Pairs"

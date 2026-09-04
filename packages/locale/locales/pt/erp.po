@@ -53,7 +53,7 @@ msgstr "(grupo)"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr "{0, plural, one {# conta mesclada com uma existente} other {# contas mescladas com existentes}}"
+msgstr "{0, plural, one {# conta mesclada com uma existente} other {# contas mescladas com contas existentes}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
@@ -132,10 +132,6 @@ msgstr "{0} ordens de produção criadas"
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
-
-#. placeholder {0}: matching.length
-msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr "{0} contas correspondentes: {fileCount} recebem os números do arquivo, {keepCount} mantêm os do Carbon."
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -9586,6 +9582,10 @@ msgstr "Correspondido"
 
 msgid "matches"
 msgstr "corresponde"
+
+#. placeholder {0}: matching.length
+msgid "Matching accounts: {0}. File's numbers: {fileCount}, Carbon's numbers: {keepCount}."
+msgstr "Contas correspondentes: {0}. Números do arquivo: {fileCount}, números do Carbon: {keepCount}."
 
 msgid "Matching Pairs"
 msgstr "Pares Correspondentes"
