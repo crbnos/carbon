@@ -283,58 +283,73 @@ Follow `.claude/skills/carbon-docs/SKILL.md` throughout. Grounding corrections a
 rate limits are platform-controlled (`api-keys.mdx` is RIGHT, the MCP FAQ is WRONG — fix the FAQ);
 `CARBON_API_URL` platform var is out of docs scope (only rename reader-facing snippet vars).
 
-### B1 — IA restructure (`/mcp` → `/api`)
+### B1 — IA restructure (`/mcp` → `/api`)  ✅ committed 964fe09
 
-- [ ] Header nav (`docs/components/main-header.tsx`, `docs/components/mobile-nav.tsx`):
+- [x] Header nav (`docs/components/main-header.tsx`, `docs/components/mobile-nav.tsx`):
       **Reference · Guides · API (/api) · Data API (/api-reference)**. MCP folds INTO the API
       surface — one catalog, two transports; no top-level MCP item.
-- [ ] Create `docs/app/api/{page,authentication/page,mcp/page,operations/page,operations/[operation]/page}.tsx`
+- [x] Create `docs/app/api/{page,authentication/page,mcp/page,operations/page,operations/[operation]/page}.tsx`
       + `layout.tsx` (clone `docs/app/mcp/layout.tsx`): `/api` overview (Phase 1 documents ONLY
       the MCP transport — no vaporware about HTTP until it ships), `/api/authentication` (from
       `mcp/authentication`), `/api/mcp` "Connect over MCP" (snippets + FAQ from `mcp/page.tsx`),
       `/api/operations[/…]` (from `mcp/tools[/…]`; slug = tool name = future oRPC operation id).
-      Rework `docs/components/api/mcp-nav.tsx` → `ApiSurfaceNav`.
-- [ ] Permanent redirects in `docs/next.config.mjs`: `/mcp`→`/api/mcp`, `/mcp/authentication`→
+      Rework `docs/components/api/mcp-nav.tsx` → `ApiSurfaceNav`. (New pages compute counts live
+      from the generated catalog, so no stale literals were reintroduced.)
+- [x] Permanent redirects in `docs/next.config.mjs`: `/mcp`→`/api/mcp`, `/mcp/authentication`→
       `/api/authentication`, `/mcp/tools`→`/api/operations`, `/mcp/tools/:tool`→
       `/api/operations/:tool`. Delete `docs/app/mcp/` after.
-- [ ] Paired ERP change: `mcpDocs` in `apps/erp/app/utils/path.ts` (~1404) → `/api/mcp`.
+- [x] Paired ERP change: `mcpDocs` in `apps/erp/app/utils/path.ts` (~1404) → `/api/mcp`.
+      (Also updated the same doc URLs in `agent-setup-prompt.md`, and set the Data API layout's
+      `active` to the new `data-api` nav key — the nav-key rename made both necessary.)
 
-### B2 — renaming sweep (PostgREST → "Data API")
+### B2 — renaming sweep (PostgREST → "Data API")  ✅ committed b1ca4ac
 
-- [ ] `docs/app/api-reference/page.tsx`: eyebrow → `Data API`; lead → "direct REST access to
+- [x] `docs/app/api-reference/page.tsx`: eyebrow → `Data API`; lead → "direct REST access to
       Carbon's tables and views — the raw data plane under the [Carbon API](/api)"; drop
       "three ways to call it"; snippet env vars → `CARBON_DATA_API_URL`/`CARBON_DATA_API_KEY`.
-- [ ] `api-reference/authentication/page.tsx` (eyebrow), `[module]/[resource]/page.tsx`
+- [x] `api-reference/authentication/page.tsx` (eyebrow), `[module]/[resource]/page.tsx`
       (title suffix `— Carbon Data API`, breadcrumb `Data API`), `docs/components/api/api-nav.tsx`
       (section label), `docs/components/api/sdk-cards.tsx` (reframe as Data API clients).
-- [ ] `docs/lib/seo.ts`: `SEO.api.*` → Data API wording; add `SEO.carbonApi.*`; purge "1,200+".
-- [ ] `docs/components/search/search-command.tsx`: facets All/Guide/Reference/API/Data API;
-      `surfaceOf()` remap. `docs/lib/search-index.ts`: resource breadcrumbs `["Data API",…]`;
-      tool breadcrumbs `["API",…]` with `/api/operations/…` URLs.
-- [ ] `docs/app/sitemap.ts` (new /api entries: hub 0.7, ops 0.5; demote Data API resources 0.4,
+- [x] `docs/lib/seo.ts`: `SEO.api.*` → Data API wording; `SEO.carbonApi.*` added in B1;
+      "1,200+" was removed with the old `SEO.mcp.tools` block in B1 (none remains).
+- [x] `docs/components/search/search-command.tsx`: facets All/Guide/Reference/API/Data API;
+      `surfaceOf()` remap (check `/api-reference` before `/api`; new `data-api` tone key).
+      `docs/lib/search-index.ts`: resource breadcrumbs `["Data API",…]`; tool breadcrumbs
+      `["API",…]` with `/api/operations/…` URLs.
+- [x] `docs/app/sitemap.ts` (new /api entries: hub 0.7, ops 0.5; demote Data API resources 0.4,
       `/api-reference` 0.5; drop /mcp), `docs/app/not-found.tsx`, `docs/app/layout.tsx` keywords.
 
-### B3 — steering copy
+### B3 — steering copy  ✅ committed efc1704
 
-- [ ] Data API overview: `<Warn title="Writes belong on the Carbon API">` — direct writes skip
+- [x] Data API overview: `<Warn title="Writes belong on the Carbon API">` — direct writes skip
       the service layer, derived state is not recalculated; treat Data API as read-mostly (bulk
       reads, analytics, exports). Keep "Always read from the view" as the concrete evidence.
-- [ ] Per-resource TABLE pages: one steering line via a `WriteSteerCallout` sibling of
+- [x] Per-resource TABLE pages: one steering line via a `WriteSteerCallout` sibling of
       `docs/components/api/view-callout.tsx`, rendered from the page component (not baked into
-      the generator).
-- [ ] `api-keys.mdx`: restructure into "The Carbon API" (primary) / "The Data API" (advanced +
-      warning); one key unlocks both.
+      the generator). (Also trimmed ViewCallout's old "use this table for writes" line, which
+      now contradicts the steer.)
+- [x] `api-keys.mdx`: restructure into "The Carbon API" (primary) / "The Data API" (advanced +
+      warning); one key unlocks both. (Regenerated agent KB; incidentally fixed pre-existing
+      `inspections.md` kb drift.)
 
-### B4 — inconsistency fixes
+### B4 — inconsistency fixes  (1,2 ✅ committed a69a3ce · 3 BLOCKED · 4 DECISION PENDING)
 
-- [ ] Stale counts on the operations page: compute from generated data — add `toolCounts()` to
-      `docs/lib/tools-data.ts`; kill every hardcoded literal (page + seo.ts).
-- [ ] Rate-limit copy: fix the MCP FAQ entry ("each key has its own limit, 60/min default, shown —
+- [x] Stale counts on the operations page: compute from generated data — add `toolCounts()` to
+      `docs/lib/tools-data.ts`; kill every hardcoded literal (page + seo.ts). (The `/api` and
+      `/api/operations` pages route through `toolCounts()`; "1,200+" was already removed in B1.)
+- [x] Rate-limit copy: fix the MCP FAQ entry ("each key has its own limit, 60/min default, shown —
       not settable — in Settings → API Keys"); align `/api-reference/authentication` line.
-- [ ] Bearer-vs-`carbon-key` + path shape (`/rest/v1/<table>` vs bare `/table` on
-      `rest.carbon.ms`): **BLOCKED on user answering what the proxy accepts** (infra, not in
-      repo). Then converge both pages to one canonical convention + a self-hosted note.
-- [ ] **Shard the docs generated data** (promoted from backlog, user decision):
+- [ ] **BLOCKED (Open Question #1).** Bearer-vs-`carbon-key` + path shape (`/rest/v1/<table>` vs
+      bare `/table` on `rest.carbon.ms`): **needs the user to say what the proxy accepts** (infra,
+      not in repo). Then converge both pages to one canonical convention + a self-hosted note.
+- [ ] **DECISION PENDING.** Shard the docs generated data — finding: the "tsserver choking"
+      rationale is already mitigated by the generator (`@ts-nocheck` + `JSON.parse(<string
+      literal>)`, so tsc never infers over the data); the build-speed win is marginal for these
+      statically-generated server components (webpack dedupes the shared module — imported once);
+      and `search-index.ts` needs ALL resource data (field-level index), so the largest consumer
+      can't shard. Blast radius is the generator + `api-data.ts`/`tools-data.ts` + every Data
+      API/search/sitemap consumer. Awaiting the user's call: do the full per-module refactor, or
+      accept the existing mitigation. Original text:
       `docs/scripts/generate-api-docs.mjs` currently emits one 5.2MB
       `docs/lib/api-data.generated.ts` — split it per module
       (`docs/lib/generated/api/{module}.ts` + a small index), and the per-resource page
@@ -342,16 +357,17 @@ rate limits are platform-controlled (`api-keys.mdx` is RIGHT, the MCP FAQ is WRO
       Speeds the docs build and stops editors/tsserver choking on the monoliths. Never
       hand-edit generated output (repo rule); verify with `pnpm --filter docs build`.
 
-### B5 — landing + Building section
+### B5 — landing + Building section  ✅ committed c64487f
 
-- [ ] `docs/content/docs/index.mdx`: add "Build on Carbon" `<Cards>` — Carbon API (/api),
+- [x] `docs/content/docs/index.mdx`: add "Build on Carbon" `<Cards>` — Carbon API (/api),
       Data API (/api-reference), API keys, Webhooks.
-- [ ] Move `reference/api-keys.mdx` → `building/api-keys.mdx`; `building/meta.json` →
+- [x] Move `reference/api-keys.mdx` → `building/api-keys.mdx`; `building/meta.json` →
       `{"title": "Building on Carbon", "pages": ["api-keys", "webhooks", "local-development"]}`;
       remove from `reference/meta.json`; redirect `/docs/reference/api-keys` →
-      `/docs/building/api-keys`; sweep inbound links (`company-settings.mdx:107`,
-      `building/webhooks.mdx:77`, glossary `packages/glossary/src/terms.ts:~1972`).
-- [ ] Regenerate agent KB (`pnpm run generate:agent-kb`) and commit `apps/erp/app/modules/agent/kb/**`
+      `/docs/building/api-keys`; sweep inbound links (permissions ×3, two-factor,
+      `company-settings.mdx`, `building/webhooks.mdx` Related card, glossary
+      `packages/glossary/src/terms.ts`). The plan's line-number list was partial; swept all.
+- [x] Regenerate agent KB (`pnpm run generate:agent-kb`) and commit `apps/erp/app/modules/agent/kb/**`
       in the same commit as MDX changes.
 
 ### Docs Phase 2 (after the Carbon API ships)
