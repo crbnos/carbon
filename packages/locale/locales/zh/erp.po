@@ -5477,6 +5477,12 @@ msgstr "已禁用"
 msgid "Discard"
 msgstr "丢弃"
 
+msgid "Discard import"
+msgstr ""
+
+msgid "Discard this import?"
+msgstr ""
+
 msgid "Discarded"
 msgstr "已放弃"
 
@@ -8721,6 +8727,9 @@ msgstr "保留"
 
 msgid "Keep Current"
 msgstr "保持当前"
+
+msgid "Keep editing"
+msgstr ""
 
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新物料"
@@ -15938,6 +15947,9 @@ msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "此间接支出行过账至的费用科目；因为间接行没有物料分类账条目来推导科目，所以这是必需的。"
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr ""
 
 msgid "the first 3 to 4 weeks"
 msgstr "前3到4周"

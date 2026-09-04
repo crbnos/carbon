@@ -5477,6 +5477,12 @@ msgstr "Deshabilitado"
 msgid "Discard"
 msgstr "Descartar"
 
+msgid "Discard import"
+msgstr ""
+
+msgid "Discard this import?"
+msgstr ""
+
 msgid "Discarded"
 msgstr "Descartado"
 
@@ -8721,6 +8727,9 @@ msgstr "Mantener"
 
 msgid "Keep Current"
 msgstr "Mantener Actual"
+
+msgid "Keep editing"
+msgstr ""
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Mantener fijación de precios existente, solo agregar artículos nuevos"
@@ -15938,6 +15947,9 @@ msgstr "El porcentaje esperado de la producción de este artículo perdido duran
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "La cuenta de gastos en la que se contabiliza esta línea de gasto indirecto; es obligatoria porque las líneas indirectas no tienen un asiento de mayor de inventario del cual derivar la cuenta."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr ""
 
 msgid "the first 3 to 4 weeks"
 msgstr "las primeras 3 a 4 semanas"

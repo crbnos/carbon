@@ -5477,6 +5477,12 @@ msgstr "無効"
 msgid "Discard"
 msgstr "破棄"
 
+msgid "Discard import"
+msgstr ""
+
+msgid "Discard this import?"
+msgstr ""
+
 msgid "Discarded"
 msgstr "破棄されました"
 
@@ -8721,6 +8727,9 @@ msgstr "保持"
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
+
+msgid "Keep editing"
+msgstr ""
 
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格設定を保持し、新しい品目のみを追加"
@@ -15938,6 +15947,9 @@ msgstr "生産中にこの品目の出力の失われると予想される割合
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr ""
 
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"

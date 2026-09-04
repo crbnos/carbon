@@ -5477,6 +5477,12 @@ msgstr "Disabled"
 msgid "Discard"
 msgstr "Discard"
 
+msgid "Discard import"
+msgstr "Discard import"
+
+msgid "Discard this import?"
+msgstr "Discard this import?"
+
 msgid "Discarded"
 msgstr "Discarded"
 
@@ -8721,6 +8727,9 @@ msgstr "Keep"
 
 msgid "Keep Current"
 msgstr "Keep Current"
+
+msgid "Keep editing"
+msgstr "Keep editing"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Keep existing pricing, only add new items"
@@ -15938,6 +15947,9 @@ msgstr "The expected percentage of this item's output lost during production; pl
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "The file you uploaded and the mappings you've made will be lost."
 
 msgid "the first 3 to 4 weeks"
 msgstr "the first 3 to 4 weeks"

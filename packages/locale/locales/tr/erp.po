@@ -5477,6 +5477,12 @@ msgstr "Devre Dışı"
 msgid "Discard"
 msgstr "Atıkla"
 
+msgid "Discard import"
+msgstr ""
+
+msgid "Discard this import?"
+msgstr ""
+
 msgid "Discarded"
 msgstr "İptal edildi"
 
@@ -8721,6 +8727,9 @@ msgstr "Tut"
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
+
+msgid "Keep editing"
+msgstr ""
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
@@ -15938,6 +15947,9 @@ msgstr "Bu stok kartının üretim sırasında kaybettiği beklenen yüzde; plan
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı satırlar hesabı türetmek için bir envanter defter girişine sahip olmadığından gereklidir."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr ""
 
 msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"

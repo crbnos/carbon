@@ -5477,6 +5477,12 @@ msgstr "비활성화됨"
 msgid "Discard"
 msgstr "폐기"
 
+msgid "Discard import"
+msgstr ""
+
+msgid "Discard this import?"
+msgstr ""
+
 msgid "Discarded"
 msgstr "폐기됨"
 
@@ -8721,6 +8727,9 @@ msgstr "유지"
 
 msgid "Keep Current"
 msgstr "현재 값 유지"
+
+msgid "Keep editing"
+msgstr ""
 
 msgid "Keep existing pricing, only add new items"
 msgstr "기존 가격 책정을 유지하고 새 품목만 추가합니다."
@@ -15938,6 +15947,9 @@ msgstr "생산 중 이 품목의 출력량 손실의 예상 비율로, 계획에
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "이 간접비 지출 라인이 계상되는 비용 계정입니다. 간접비 라인은 계정을 도출할 품목 원장 항목이 없으므로 필수입니다."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr ""
 
 msgid "the first 3 to 4 weeks"
 msgstr "처음 3~4주"
