@@ -4,28 +4,17 @@ import { stringToPathArray } from "./utils";
 import { createValidator } from "./validation/createValidator";
 import type { FieldErrors, Validator } from "./validation/types";
 
-// Minimal issue shape we depend on — decoupled from zod's internal issue type,
-// which changed between v3 and v4 (`path` is now `PropertyKey[]`, and a union
-// issue carries `errors: Issue[][]` in v4 instead of `unionErrors: ZodError[]`).
-type MinimalIssue = { path: PropertyKey[]; message: string; code?: string };
-
-// Flatten a ZodError's issues, recursing into union issues (both v4 `errors`
-// and v3 `unionErrors` shapes) so a nested field error surfaces at its own path.
-const getIssuesForError = (err: z.ZodError): MinimalIssue[] => {
-  const collect = (issues: readonly MinimalIssue[]): MinimalIssue[] =>
-    issues.flatMap((issue) => {
-      const u = issue as MinimalIssue & {
-        errors?: MinimalIssue[][];
-        unionErrors?: { issues: MinimalIssue[] }[];
-      };
-      if (u.code === "invalid_union") {
-        if (Array.isArray(u.errors)) return collect(u.errors.flat());
-        if (Array.isArray(u.unionErrors))
-          return collect(u.unionErrors.flatMap((e) => e.issues));
-      }
-      return [issue];
-    });
-  return collect(err.issues as unknown as MinimalIssue[]);
+// Flatten a ZodError's issues, recursing into union issues (`invalid_union`
+// carries `errors: $ZodIssue[][]`) so a nested field error surfaces at its own
+// path. A union issue with no sub-errors is kept as-is so a message survives.
+const getIssuesForError = (err: z.ZodError): z.core.$ZodIssue[] => {
+  const collect = (issues: readonly z.core.$ZodIssue[]): z.core.$ZodIssue[] =>
+    issues.flatMap((issue) =>
+      issue.code === "invalid_union" && issue.errors.length > 0
+        ? collect(issue.errors.flat())
+        : [issue]
+    );
+  return collect(err.issues);
 };
 
 function pathToString(array: PropertyKey[]): string {

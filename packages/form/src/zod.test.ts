@@ -1,13 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { validator } from "./zod";
 
-// Runtime coverage for the zod adapter under zod v4 — the paths typecheck can't
-// prove: `.default()` output semantics, ZodError -> FieldErrors mapping, dotted
-// nested paths, and the v4 union-issue shape (`issue.errors`, replacing v3's
-// `issue.unionErrors`) that getIssuesForError recurses into.
+// Runtime coverage for the zod adapter — the paths typecheck can't prove:
+// `.default()` output semantics, ZodError -> FieldErrors mapping, dotted and
+// array-indexed paths, the union-issue shape (`issue.errors`) that
+// getIssuesForError recurses into, and the FormData -> object preprocessing a
+// route action's `validator(schema).validate(formData)` relies on.
 
-describe("validator (zod v4 adapter)", () => {
+describe("validator (zod adapter)", () => {
   it("parses a valid value and applies a default", async () => {
     const schema = z.object({
       name: z.string().min(1),
@@ -37,7 +39,19 @@ describe("validator (zod v4 adapter)", () => {
     expect(result.error?.fieldErrors?.["user.email"]).toBe("Bad email");
   });
 
-  it("recurses into a v4 union issue's sub-errors without crashing", async () => {
+  it("keys an array element error with an index path", async () => {
+    const schema = z.object({
+      items: z.array(
+        z.object({ name: z.string().min(1, { message: "Required" }) })
+      )
+    });
+    const result = await validator(schema).validate({
+      items: [{ name: "ok" }, { name: "" }]
+    });
+    expect(result.error?.fieldErrors?.["items[1].name"]).toBe("Required");
+  });
+
+  it("recurses into a union issue's sub-errors without crashing", async () => {
     const schema = z.object({
       val: z.union([z.string().min(3), z.number()])
     });
@@ -49,13 +63,91 @@ describe("validator (zod v4 adapter)", () => {
     );
   });
 
+  it("surfaces a discriminated-union branch error at its own path", async () => {
+    const schema = z.object({
+      op: z.discriminatedUnion("kind", [
+        z.object({ kind: z.literal("email"), address: z.email() }),
+        z.object({ kind: z.literal("phone"), number: z.string().min(7) })
+      ])
+    });
+    const result = await validator(schema).validate({
+      op: { kind: "email", address: "nope" }
+    });
+    expect(result.data).toBeUndefined();
+    expect(result.error?.fieldErrors?.["op.address"]).toBeDefined();
+  });
+
   it("validateField returns the message for one field only", async () => {
     const schema = z.object({
       name: z.string().min(1, { message: "Name is required" }),
       age: z.number()
     });
     const v = validator(schema);
+    assert(v.validateField);
     const nameErr = await v.validateField({ name: "", age: 1 }, "name");
     expect(nameErr.error).toBe("Name is required");
+  });
+
+  it("validateField resolves a nested dotted path", async () => {
+    const schema = z.object({
+      user: z.object({ email: z.email({ message: "Bad email" }) }),
+      name: z.string()
+    });
+    const v = validator(schema);
+    assert(v.validateField);
+    const err = await v.validateField(
+      { user: { email: "nope" }, name: "ok" },
+      "user.email"
+    );
+    expect(err.error).toBe("Bad email");
+    const clean = await v.validateField(
+      { user: { email: "nope" }, name: "ok" },
+      "name"
+    );
+    expect(clean.error).toBeUndefined();
+  });
+});
+
+describe("validator with FormData (the route-action path)", () => {
+  const schema = z.object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().min(1, { message: "Name is required" }),
+    quantity: zfd.numeric(z.number().min(0)),
+    isActive: zfd.checkbox(),
+    tags: zfd.repeatableOfType(z.string()).optional()
+  });
+
+  it("coerces zfd fields from a real FormData submission", async () => {
+    const fd = new FormData();
+    fd.append("name", "Widget");
+    fd.append("quantity", "42");
+    fd.append("tags", "a");
+    fd.append("tags", "b");
+    // id omitted, isActive unchecked (absent)
+    const result = await validator(schema).validate(fd);
+    expect(result.error).toBeUndefined();
+    expect(result.data).toEqual({
+      name: "Widget",
+      quantity: 42,
+      isActive: false,
+      tags: ["a", "b"]
+    });
+  });
+
+  it("treats a checked checkbox's 'on' as true", async () => {
+    const fd = new FormData();
+    fd.append("name", "Widget");
+    fd.append("quantity", "1");
+    fd.append("isActive", "on");
+    const result = await validator(schema).validate(fd);
+    expect(result.data?.isActive).toBe(true);
+  });
+
+  it("maps an empty required text field to its error", async () => {
+    const fd = new FormData();
+    fd.append("name", "");
+    fd.append("quantity", "1");
+    const result = await validator(schema).validate(fd);
+    expect(result.error?.fieldErrors?.name).toBe("Name is required");
   });
 });
