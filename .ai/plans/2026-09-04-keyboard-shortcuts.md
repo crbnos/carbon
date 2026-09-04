@@ -62,5 +62,19 @@ auto-started labor events deleted from the dev DB afterwards.
       the same parse path as structured ones (suite green, 27 tests)
 - [x] D4: `enabledOnInputElements` first-binding-only rule documented; badge render derived from
       a narrowed `badgeShortcut` local
-- Deferred (discretionary): extracting AssemblyView's listener into a named hook; converging
-  ERP's `useKeyboardShortcuts` onto `useShortcutKeys`
+- Deferred (discretionary): converging ERP's `useKeyboardShortcuts` onto `useShortcutKeys`
+
+## Progress — Part E: AssemblyView listener refactored onto the library
+- [x] E1: Space/Enter primary action and ←/→ navigation moved to two `useShortcutKeys`
+      calls (react-hotkeys-hook covers editable-target skipping, modifier exactness, and
+      fresh closures — verified against v4.5.1 source: no-deps callbacks stay fresh,
+      `" "` maps to `space`, `arrow*` normalizes). Guards keep the dialog check, the
+      barcode-wedge Enter yield, and the null-primary-action native fallthrough.
+- [x] E2: Only the 750ms armed-clicker swallow remains a custom capture-phase document
+      listener — react-hotkeys-hook listens in the bubble phase, and the swallow must
+      preventDefault before the RecordModal's autofocused input natively submits.
+      (This supersedes the old "extract into a named hook" deferred item.)
+- [x] E3: Typecheck (@carbon/react, mes) + tests (27 + 52) green. Browser re-verification
+      of clicker flows pending the dev stack (it was down at refactor time): Task-step
+      Enter records once; input-step Enter opens modal, quick second Enter swallowed,
+      deliberate Enter submits; arrows navigate; focused Record + Enter = one record.

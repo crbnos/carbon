@@ -41,7 +41,8 @@ import {
   useKeyboardWedge,
   useMode,
   useRealtimeChannel,
-  useRouteData
+  useRouteData,
+  useShortcutKeys
 } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import type {
@@ -1185,79 +1186,85 @@ export function AssemblyView({
 
   // ── Keyboard shortcuts (Bluetooth clicker / pedal friendly) ────────────────
   // Space/Enter fire the current step's primary action (Mark done, or open the
-  // RecordModal for input steps); ←/→ navigate steps (→ ≡ Skip). Bound on
-  // document in the CAPTURE phase so preventDefault lands before a focused
-  // button's native click (Space clicks on keyup only if keydown wasn't
-  // prevented; Enter clicks on keydown) — otherwise one press could both
-  // record and re-trigger the focused button.
-  // For a short window after the shortcut opens a modal, the action keys stay
-  // swallowed — the RecordModal autofocuses (and selects) its input, so a
-  // clicker DOUBLE-press would otherwise natively submit the form's DEFAULT
-  // value (a 0 measurement). After the window a deliberate Enter submits
-  // normally (the selected default is a valid thing to accept), and any other
-  // key or a pointer tap ends the window early.
+  // RecordModal for input steps); ←/→ navigate steps (→ ≡ Skip). Bound via
+  // useShortcutKeys (react-hotkeys-hook), which already skips editable targets
+  // (inputs, textareas, contenteditable/ProseMirror) and modifier combos.
+  // preventDefault in the action stops a focused button's native click (Space
+  // clicks on keyup only if keydown wasn't prevented; Enter's click is the
+  // keydown's default action) — otherwise one press could both record and
+  // re-trigger the focused button.
   const ARMED_SWALLOW_MS = 750;
   const shortcutArmedAtRef = useRef<number | null>(null);
-  useEffect(() => {
-    function handleShortcutKeyDown(event: KeyboardEvent) {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      const isAction = event.key === " " || event.key === "Enter";
-      const isNext = event.key === "ArrowRight";
-      const isPrev = event.key === "ArrowLeft";
 
+  useShortcutKeys({
+    shortcut: ["enter", "space"],
+    action: (event) => {
+      event.preventDefault();
+      shortcutArmedAtRef.current = Date.now();
+      primaryStepActionRef.current?.();
+    },
+    guard: (event) =>
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
-      // key semantics — except the armed clicker swallow described above.
-      if (hasOpenDialog()) {
-        const armedAt = shortcutArmedAtRef.current;
-        if (
-          isAction &&
-          armedAt !== null &&
-          Date.now() - armedAt < ARMED_SWALLOW_MS
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-        } else {
-          shortcutArmedAtRef.current = null;
-        }
-        return;
-      }
-      shortcutArmedAtRef.current = null;
-      if (!isAction && !isNext && !isPrev) return;
-
+      // key semantics — the armed-clicker swallow below is the one exception.
+      !hasOpenDialog() &&
       // A barcode wedge scan terminates with Enter — yield it to
       // useKeyboardWedge while a scan burst is buffered.
-      if (event.key === "Enter" && wedgeBuffer !== "") return;
-
-      const target = event.target;
-      if (target instanceof Element) {
-        if (["INPUT", "TEXTAREA", "SELECT"].includes(target.nodeName)) return;
-        if (target.closest('[contenteditable="true"], .ProseMirror')) return;
-      }
-
+      !(event.key === "Enter" && wedgeBuffer !== "") &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
-      if (isAction && !primaryStepActionRef.current) return;
+      primaryStepActionRef.current !== null
+  });
 
+  useShortcutKeys({
+    shortcut: ["arrowright", "arrowleft"],
+    action: (event) => {
+      // Always claimed (even at the ends) so an arrow press never falls
+      // through to page scroll.
       event.preventDefault();
-      event.stopPropagation();
+      if (event.key === "ArrowRight" && !isLastStep) goToStep(currentStep + 1);
+      else if (event.key === "ArrowLeft" && currentStep > 0)
+        goToStep(currentStep - 1);
+    },
+    guard: () => !hasOpenDialog()
+  });
 
-      if (isAction) {
-        shortcutArmedAtRef.current = Date.now();
-        primaryStepActionRef.current?.();
-      } else if (isNext && !isLastStep) goToStep(currentStep + 1);
-      else if (isPrev && currentStep > 0) goToStep(currentStep - 1);
+  // The one piece the library can't do: for a short window after the shortcut
+  // opens a modal, the action keys stay swallowed — the RecordModal autofocuses
+  // (and selects) its input, so a clicker DOUBLE-press would otherwise natively
+  // submit the form's DEFAULT value (a 0 measurement). That interception must
+  // run in the CAPTURE phase, before the autofocused input (and the modal's own
+  // Enter hotkey) ever sees the key — react-hotkeys-hook only listens in the
+  // bubble phase. After the window a deliberate Enter submits normally (the
+  // selected default is a valid thing to accept), and any other key or a
+  // pointer tap ends the window early.
+  useEffect(() => {
+    function swallowArmedClicker(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const isAction = event.key === " " || event.key === "Enter";
+      const armedAt = shortcutArmedAtRef.current;
+      if (
+        hasOpenDialog() &&
+        isAction &&
+        armedAt !== null &&
+        Date.now() - armedAt < ARMED_SWALLOW_MS
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else {
+        shortcutArmedAtRef.current = null;
+      }
     }
     function handlePointerDown() {
       shortcutArmedAtRef.current = null;
     }
-    document.addEventListener("keydown", handleShortcutKeyDown, true);
+    document.addEventListener("keydown", swallowArmedClicker, true);
     document.addEventListener("pointerdown", handlePointerDown, true);
     return () => {
-      document.removeEventListener("keydown", handleShortcutKeyDown, true);
+      document.removeEventListener("keydown", swallowArmedClicker, true);
       document.removeEventListener("pointerdown", handlePointerDown, true);
     };
-  }, [currentStep, isLastStep, wedgeBuffer]);
+  }, []);
 
   // Stop the labor clock automatically once every step is recorded for this unit.
   const allDoneRef = useRef(allStepsRecorded);
@@ -3051,12 +3058,13 @@ function StepCompleteAction({
   // freshest closure; cleared on unmount so a stale action can't fire.
   useEffect(() => {
     if (!actionRef) return;
-    actionRef.current =
-      done || disabled || busy
-        ? null
-        : type === "Task"
-          ? markTaskDone
-          : recordModal.onOpen;
+    if (done || disabled || busy) {
+      actionRef.current = null;
+    } else if (type === "Task") {
+      actionRef.current = markTaskDone;
+    } else {
+      actionRef.current = recordModal.onOpen;
+    }
     return () => {
       actionRef.current = null;
     };
