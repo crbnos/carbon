@@ -7,11 +7,20 @@ export function hasOpenDialog(): boolean {
   return document.querySelector(OPEN_DIALOG_SELECTOR) !== null;
 }
 
-// Portals mount in stacking order, so the last open dialog in the DOM is the
-// one on top.
+// Dialog layers are not uniform (BottomSheetContent is z-[70], Modal/Drawer
+// are z-50), so DOM order alone can pick a covered dialog. Highest computed
+// z-index wins; later-mounted wins ties (portals append in stacking order).
 export function topmostOpenDialog(): Element | null {
-  const dialogs = document.querySelectorAll(OPEN_DIALOG_SELECTOR);
-  return dialogs[dialogs.length - 1] ?? null;
+  let topmost: Element | null = null;
+  let topmostZ = Number.NEGATIVE_INFINITY;
+  for (const dialog of document.querySelectorAll(OPEN_DIALOG_SELECTOR)) {
+    const z = Number.parseInt(getComputedStyle(dialog).zIndex, 10) || 0;
+    if (z >= topmostZ) {
+      topmost = dialog;
+      topmostZ = z;
+    }
+  }
+  return topmost;
 }
 
 /**
