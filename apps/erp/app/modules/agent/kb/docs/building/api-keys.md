@@ -18,12 +18,12 @@ The full format is `crbn_` followed by a random token. The same dialog also hand
 
 ## How a key authenticates a request
 
-Send the key in the **`carbon-key`** HTTP header on every request:
+Send the key as a bearer token on every request. The hosted Data API lives at `rest.carbon.ms`:
 
 ```http
-GET /rest/v1/salesOrder?select=id,salesOrderId,status
-Host: your-carbon-host
-carbon-key: crbn_your_key_here
+GET /salesOrder?select=id,salesOrderId,status
+Host: rest.carbon.ms
+Authorization: Bearer crbn_your_key_here
 ```
 
 Carbon hashes the incoming key, looks up the matching record, and checks two things before it lets the request through:
@@ -31,7 +31,9 @@ Carbon hashes the incoming key, looks up the matching record, and checks two thi
 - **Expiry.** If the key has an `expiresAt` in the past, the request is rejected.
 - **Rate limit.** The request is counted against the key's window; if the window is full, the request is rejected.
 
-There is no separate login step and no token to refresh. The header is the whole handshake. The same `carbon-key` header works for the Data API, the edge functions, and (rewritten from a `Bearer` token) the MCP endpoint that fronts the Carbon API.
+There is no separate login step and no token to refresh. The header is the whole handshake.
+
+`rest.carbon.ms` takes the key as `Authorization: Bearer crbn_…` and forwards it internally as the `carbon-key` header that the database reads. If you run Carbon yourself and call PostgREST directly, send `carbon-key: crbn_…` against `/rest/v1/<table>` instead. The MCP endpoint that fronts the Carbon API takes the same `Bearer` token either way.
 
 ## Permission scoping
 
@@ -64,7 +66,7 @@ The [Carbon API](/api) is Carbon's service layer — the safe way to read and wr
 
 ### The Data API
 
-The same key also unlocks the [Data API](/api-reference) — direct PostgREST access to every table and view at `/rest/v1/<table>`. The same row-level security that governs the app governs these calls: a request carrying a `carbon-key` is scoped to the key's company and permissions by the database itself, not just the application layer, so the key can only ever touch data its scopes allow.
+The same key also unlocks the [Data API](/api-reference) — direct REST access to every table and view, hosted at `rest.carbon.ms` (the full endpoint catalogue is generated in the [reference](/api-reference)). The same row-level security that governs the app governs these calls: the key is scoped to its company and permissions by the database itself, not just the application layer, so it can only ever touch data its scopes allow.
 
 The Data API writes straight to tables, so Carbon does not recalculate the derived values — totals, statuses, ledger entries — that it maintains when you write through the Carbon API. Treat it as read-mostly: bulk reads, analytics, exports. For creates and updates, prefer the Carbon API.
 

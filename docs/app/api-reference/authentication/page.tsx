@@ -81,6 +81,13 @@ export default async function AuthenticationPage() {
         <Code>Authorization: Bearer &lt;api-key&gt;</Code>.
       </P>
       <CodeBlock html={html} code={REQUEST} label="Example request" />
+      <P>
+        That's the hosted Data API at <Code>rest.carbon.ms</Code>, which takes
+        the key as a bearer token and forwards it as the <Code>carbon-key</Code>{" "}
+        header internally. If you run Carbon yourself and call PostgREST
+        directly, send <Code>carbon-key: crbn_…</Code> against{" "}
+        <Code>/rest/v1/&lt;table&gt;</Code> instead.
+      </P>
 
       <H2 id="creating-a-key">Creating a key</H2>
       <P>
