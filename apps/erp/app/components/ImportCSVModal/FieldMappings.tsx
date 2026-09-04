@@ -248,6 +248,7 @@ export function FieldMapping({
   // A per-table review step (e.g. the chart-of-accounts plan) sits after the
   // enum steps and before the submit.
   const ReviewStep = importReviewSteps[table];
+  const [reviewReady, setReviewReady] = useState(true);
   const steps = enumFields.length + 1 + (ReviewStep ? 1 : 0);
   const isReviewStep = !!ReviewStep && currentStep === steps - 1;
   const enumStepIndex = currentStep - 1;
@@ -369,6 +370,7 @@ export function FieldMapping({
               table={table}
               columnMappings={columnMappings}
               enumMappings={enumMappings}
+              onReadyChange={setReviewReady}
             />
           )}
         </div>
@@ -376,7 +378,11 @@ export function FieldMapping({
         <div className="flex flex-col w-full gap-2 mt-4">
           {currentStep === steps - 1 && (
             <Submit
-              isDisabled={!filePath || fetcher.state !== "idle"}
+              isDisabled={
+                !filePath ||
+                fetcher.state !== "idle" ||
+                (isReviewStep && !reviewReady)
+              }
               type="submit"
             >
               <Trans>Confirm Import</Trans>

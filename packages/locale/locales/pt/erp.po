@@ -67,6 +67,10 @@ msgstr "{0, plural, one {Este item está em 1 aviso de alteração aberto} other
 msgid "{0} accounts"
 msgstr "{0} contas"
 
+#. placeholder {0}: s.accountsToCreate
+msgid "{0} accounts to create"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} atrás"
@@ -92,9 +96,9 @@ msgstr "{0} eliminado com sucesso"
 msgid "{0} draft journal entries"
 msgstr "{0} lançamentos de diário em rascunho"
 
-#. placeholder {0}: plan.summary.groupsToCreate
-#. placeholder {1}: plan.summary.accountsToCreate
-msgid "{0} groups, {1} accounts to create"
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0} groups and {1} accounts to create"
 msgstr ""
 
 #. placeholder {0}: jobs.length
@@ -105,11 +109,15 @@ msgstr "{0} ordens de produção criadas"
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
-#. placeholder {0}: plan.summary.linked
+#. placeholder {0}: matching.length
+msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
+msgstr ""
+
+#. placeholder {0}: s.linked
 msgid "{0} merged into existing"
 msgstr ""
 
-#. placeholder {0}: plan.summary.errors
+#. placeholder {0}: s.errors
 msgid "{0} need attention"
 msgstr ""
 
@@ -142,11 +150,15 @@ msgstr "{0} registado"
 msgid "{0} rows"
 msgstr "{0} linhas"
 
+#. placeholder {0}: s.skipped
+msgid "{0} skipped"
+msgstr ""
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} fornecedores com saldo"
 
-#. placeholder {0}: plan.summary.updates
+#. placeholder {0}: s.updates
 msgid "{0} to update"
 msgstr ""
 
@@ -154,9 +166,8 @@ msgstr ""
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entidades não amostradas serão liberadas para Disponível. Passes amostradas permanecem Disponível e falhas amostradas permanecem Rejeitadas."
 
-#. placeholder {0}: plan.summary.unchanged
-#. placeholder {1}: plan.summary.skipped
-msgid "{0} unchanged, {1} skipped"
+#. placeholder {0}: s.unchanged
+msgid "{0} unchanged"
 msgstr ""
 
 #. placeholder {0}: unmapped.length
@@ -238,6 +249,9 @@ msgstr "{done} de {total} fases concluídas"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# linha excluída} other {# linhas excluídas}}"
 
+msgid "{fileCount} matching accounts take the file's numbers."
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} de {count}"
 
@@ -251,6 +265,9 @@ msgstr "{hiddenCount} mais: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseridos, {updated} atualizados, {0} precisam de correção, {1} ignorados."
+
+msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linha} other {# linhas}}"
@@ -280,7 +297,7 @@ msgstr "{noDemandItemCount} peças ignoradas — nada para fabricar"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} será reaberto para edição como revisão {0}. O documento já enviado ao fornecedor permanece inalterado até que você finalize e reenvie o pedido."
 
-msgid "{pendingCount} change(s) not yet in the plan"
+msgid "{pendingCount} decision(s) not in the plan yet"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -306,6 +323,9 @@ msgstr "{totalQuantity, plural, one {# unidade} other {# unidades}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# linha não contada} other {# linhas não contadas}}"
+
+msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} não podem ser programadas"
@@ -1496,9 +1516,6 @@ msgstr "Todos os Locais"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Todos os membros dos grupos selecionados e indivíduos selecionados poderão aprovar solicitações"
-
-msgid "All rows"
-msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Todas as linhas importadas — {inserted} inseridas, {updated} atualizadas."
@@ -2864,9 +2881,6 @@ msgstr "Criar materiais de treinamento baseados em funções"
 msgid "Build tailored, role-based training materials"
 msgstr "Criar materiais de treinamento personalizados baseados em funções"
 
-msgid "Building the plan…"
-msgstr ""
-
 msgid "Built and costed as its own method"
 msgstr "Construído e calculado como seu próprio método"
 
@@ -3278,6 +3292,9 @@ msgstr "Verifique seu email"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Verificando Stripe para este cliente…"
+
+msgid "Checking the file against your chart of accounts…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -7374,15 +7391,6 @@ msgstr "Formato"
 msgid "Forward deployed engineer"
 msgstr "Engenheiro de campo"
 
-msgid "Found a parent column."
-msgstr ""
-
-msgid "Found a path in the account names, e.g. Parent:Child."
-msgstr ""
-
-msgid "Found Begin-Total / End-Total rows."
-msgstr ""
-
 msgid "Foundation"
 msgstr "Fundação"
 
@@ -7809,8 +7817,20 @@ msgstr "Ocultar bruto"
 msgid "Hide system quantities until the review step"
 msgstr "Ocultar quantidades do sistema até a etapa de revisão"
 
+msgid "Hide the full list"
+msgstr ""
+
 msgid "Hide, pin and reorder columns"
 msgstr "Ocultar, fixar e reordenar colunas"
+
+msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
+msgstr ""
+
+msgid "Hierarchy taken from the file's parent column."
+msgstr ""
+
+msgid "Hierarchy taken from the paths in the account names."
+msgstr ""
 
 msgid "High"
 msgstr "Alto"
@@ -8824,9 +8844,6 @@ msgstr "Manter Aberto"
 msgid "Keep picking"
 msgstr "Manter separação"
 
-msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
-msgstr ""
-
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Mantém pedidos, cotações e configurações atrás de uma segunda verificação"
 
@@ -9565,9 +9582,6 @@ msgstr "Correspondido"
 
 msgid "matches"
 msgstr "corresponde"
-
-msgid "Matching accounts are updated in place; choose whose numbers they keep."
-msgstr ""
 
 msgid "Matching Pairs"
 msgstr "Pares Correspondentes"
@@ -10562,7 +10576,7 @@ msgstr "Sem notificações agrupadas"
 msgid "No groups assigned"
 msgstr "Nenhum grupo atribuído"
 
-msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
 msgstr ""
 
 msgid "No image"
@@ -10663,6 +10677,9 @@ msgstr "Nenhum treinamento pendente"
 
 msgid "No overtime scheduled"
 msgstr "Nenhuma hora extra agendada"
+
+msgid "No parent column, row kinds, or paths in the names were found in the file."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Nenhuma fonte pai registrada ainda. Clique em Recalcular na página de planejamento para atualizar a atribuição."
@@ -10946,6 +10963,9 @@ msgstr "Nada no arquivo"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nada agendado — adicione uma estação abaixo."
+
+msgid "Nothing to import."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nada ainda. Uma etapa só oferece valores após ser configurada."
@@ -13689,9 +13709,6 @@ msgstr "linhas"
 msgid "Rows left out of this backup"
 msgstr "Linhas deixadas de fora deste backup"
 
-msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
-msgstr ""
-
 msgid "Rule"
 msgstr "Regra"
 
@@ -14815,6 +14832,10 @@ msgstr "Mostrar uma coluna de ID de Cliente legível na lista de clientes, formu
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Mostrar uma coluna de ID de Fornecedor legível na lista de fornecedores, formulários de fornecedor e menus suspensos. Os fornecedores ainda são identificados internamente de qualquer forma."
 
+#. placeholder {0}: plan.nodes.length
+msgid "Show all {0} rows"
+msgstr ""
+
 msgid "Show Customer IDs"
 msgstr "Mostrar IDs de Cliente"
 
@@ -15091,6 +15112,9 @@ msgstr "Dividir linha de recebimento"
 
 msgid "Split shipment line"
 msgstr "Dividir linha da remessa"
+
+msgid "Split the account names on a separator, e.g. Parent:Child."
+msgstr ""
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16668,6 +16692,9 @@ msgstr "Estas ordens de produção têm operações atribuídas a este centro de
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Estes lançamentos de diário ainda estão em Rascunho, portanto seus débitos e créditos não estão no livro-razão para este período. Lance cada um, ou redatē-o para um período aberto posterior."
 
+msgid "These rows are not imported until they are resolved; everything else imports on confirm."
+msgstr ""
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Essas linhas estão vinculadas a dados fora desta empresa, portanto não é possível criar uma cópia de segurança dos seus dados atuais. A exclusão dessas linhas não pode ser desfeita. Se forem compartilhadas com outras empresas neste grupo, nada será excluído e a restauração não será iniciada."
 
@@ -17640,6 +17667,9 @@ msgstr "Atualizar quantidades do documento de origem"
 msgid "Update the kanban information for scan-based replenishment."
 msgstr "Atualize as informações do kanban para reabastecimento baseado em varredura."
 
+msgid "Update the plan to see the result. Confirming the import applies them all."
+msgstr ""
+
 msgid "Update the purchase order quantities"
 msgstr "Atualizar as quantidades do pedido de compra"
 
@@ -17657,6 +17687,9 @@ msgstr "Atualizado por"
 
 msgid "Updated successfully"
 msgstr "Atualizado com sucesso"
+
+msgid "Updating the plan…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Atualizar"
@@ -17745,7 +17778,7 @@ msgstr "Usar um email diferente"
 msgid "Use metric system for default material dimensions."
 msgstr "Utilize o sistema métrico para dimensões padrão de materiais."
 
-msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgid "Use the file's numbers"
 msgstr ""
 
 msgid "Use the file's parent column, name paths, or total rows when present."

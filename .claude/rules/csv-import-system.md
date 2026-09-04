@@ -137,6 +137,11 @@ renders the returned `plan` before the real submit. Spec:
   "Update plan" (or the final submit, which sends the pending set as `options`) re-runs the
   dry run. The two bulk buttons set `link` / `link + keepNumber` on every linkable conflict
   and toggle `keepNumber` on every matched row without dropping the row's link.
+- **Review screens.** `ChartOfAccountsReview` shows one screen at a time: preparing (the
+  dry run is running, or the plan on hand is for stale inputs — `plannedKey !== inputsKey`),
+  the hierarchy question (`StructureScreen`, once when `plan.structure === "carbon"` under
+  `auto`, or via "Change"), or the plan. `ReviewStepProps.onReadyChange` tells `FieldMappings`
+  to disable Confirm while the step is not on the plan screen.
 - **Refusals**, per row, never a 500: system roots (adopted as parents only), class change
   or deactivation on an account with journal lines, deactivation of an
   `accountDefault` / `fixedAssetClass` account, class disagreeing with the parent, a

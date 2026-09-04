@@ -67,6 +67,10 @@ msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되
 msgid "{0} accounts"
 msgstr "{0} 계정"
 
+#. placeholder {0}: s.accountsToCreate
+msgid "{0} accounts to create"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} 전"
@@ -92,9 +96,9 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 분개"
 
-#. placeholder {0}: plan.summary.groupsToCreate
-#. placeholder {1}: plan.summary.accountsToCreate
-msgid "{0} groups, {1} accounts to create"
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0} groups and {1} accounts to create"
 msgstr ""
 
 #. placeholder {0}: jobs.length
@@ -105,11 +109,15 @@ msgstr "{0}개의 작업 지시 생성됨"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
-#. placeholder {0}: plan.summary.linked
+#. placeholder {0}: matching.length
+msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
+msgstr ""
+
+#. placeholder {0}: s.linked
 msgid "{0} merged into existing"
 msgstr ""
 
-#. placeholder {0}: plan.summary.errors
+#. placeholder {0}: s.errors
 msgid "{0} need attention"
 msgstr ""
 
@@ -142,11 +150,15 @@ msgstr "{0} 등록됨"
 msgid "{0} rows"
 msgstr "{0} 행"
 
+#. placeholder {0}: s.skipped
+msgid "{0} skipped"
+msgstr ""
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "잔액이 있는 공급업체 {0}곳"
 
-#. placeholder {0}: plan.summary.updates
+#. placeholder {0}: s.updates
 msgid "{0} to update"
 msgstr ""
 
@@ -154,9 +166,8 @@ msgstr ""
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}개의 미검사 항목이 가용으로 릴리스됩니다. 검사 합격 항목은 가용으로 유지되고 검사 불합격 항목은 거부됨으로 유지됩니다."
 
-#. placeholder {0}: plan.summary.unchanged
-#. placeholder {1}: plan.summary.skipped
-msgid "{0} unchanged, {1} skipped"
+#. placeholder {0}: s.unchanged
+msgid "{0} unchanged"
 msgstr ""
 
 #. placeholder {0}: unmapped.length
@@ -238,6 +249,9 @@ msgstr "{done}개 중 {total}개 단계 완료"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
+msgid "{fileCount} matching accounts take the file's numbers."
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
 
@@ -251,6 +265,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
+
+msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
@@ -280,7 +297,7 @@ msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
 
-msgid "{pendingCount} change(s) not yet in the plan"
+msgid "{pendingCount} decision(s) not in the plan yet"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -306,6 +323,9 @@ msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
+
+msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
@@ -1496,9 +1516,6 @@ msgstr "모든 위치"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
-
-msgid "All rows"
-msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
@@ -2864,9 +2881,6 @@ msgstr "역할 기반 교육 자료 제작"
 msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
 
-msgid "Building the plan…"
-msgstr ""
-
 msgid "Built and costed as its own method"
 msgstr "독립적인 방법으로 구성되고 원가가 산정됨"
 
@@ -3278,6 +3292,9 @@ msgstr "이메일을 확인하세요"
 
 msgid "Checking Stripe for this customer…"
 msgstr "이 고객의 Stripe 확인 중…"
+
+msgid "Checking the file against your chart of accounts…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "체크포인트 ·"
@@ -7374,15 +7391,6 @@ msgstr "형식"
 msgid "Forward deployed engineer"
 msgstr "현장 배치 엔지니어"
 
-msgid "Found a parent column."
-msgstr ""
-
-msgid "Found a path in the account names, e.g. Parent:Child."
-msgstr ""
-
-msgid "Found Begin-Total / End-Total rows."
-msgstr ""
-
 msgid "Foundation"
 msgstr "파운데이션"
 
@@ -7809,8 +7817,20 @@ msgstr "원본 숨기기"
 msgid "Hide system quantities until the review step"
 msgstr "검토 단계 전까지 시스템 수량 숨기기"
 
+msgid "Hide the full list"
+msgstr ""
+
 msgid "Hide, pin and reorder columns"
 msgstr "열 숨기기, 고정, 순서 변경"
+
+msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
+msgstr ""
+
+msgid "Hierarchy taken from the file's parent column."
+msgstr ""
+
+msgid "Hierarchy taken from the paths in the account names."
+msgstr ""
 
 msgid "High"
 msgstr "높음"
@@ -8824,9 +8844,6 @@ msgstr "열린 상태 유지"
 msgid "Keep picking"
 msgstr "피킹 유지"
 
-msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
-msgstr ""
-
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
 
@@ -9565,9 +9582,6 @@ msgstr "일치함"
 
 msgid "matches"
 msgstr "일치"
-
-msgid "Matching accounts are updated in place; choose whose numbers they keep."
-msgstr ""
 
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"
@@ -10562,7 +10576,7 @@ msgstr "그룹화된 알림이 없습니다"
 msgid "No groups assigned"
 msgstr "배정된 그룹이 없습니다"
 
-msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
 msgstr ""
 
 msgid "No image"
@@ -10663,6 +10677,9 @@ msgstr "미완료 교육이 없습니다"
 
 msgid "No overtime scheduled"
 msgstr "예정된 초과근무가 없습니다"
+
+msgid "No parent column, row kinds, or paths in the names were found in the file."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "아직 기록된 상위 소스가 없습니다. 계획 페이지에서 재계산을 클릭하여 귀속 정보를 새로고침하세요."
@@ -10946,6 +10963,9 @@ msgstr "보관함이 비어 있습니다"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
+
+msgid "Nothing to import."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -13689,9 +13709,6 @@ msgstr "행"
 msgid "Rows left out of this backup"
 msgstr "이 백업에서 제외된 행"
 
-msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
-msgstr ""
-
 msgid "Rule"
 msgstr "규칙"
 
@@ -14815,6 +14832,10 @@ msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID �
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
 
+#. placeholder {0}: plan.nodes.length
+msgid "Show all {0} rows"
+msgstr ""
+
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
 
@@ -15091,6 +15112,9 @@ msgstr "입고 라인 분할"
 
 msgid "Split shipment line"
 msgstr "출하 라인 분할"
+
+msgid "Split the account names on a separator, e.g. Parent:Child."
+msgstr ""
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16668,6 +16692,9 @@ msgstr "이 작업장에 할당된 공정이 있는 작업 지시:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 대변이 원장에 없습니다. 각 전표를 전기하거나 이후 미결 기간으로 다시 날짜를 지정하십시오."
 
+msgid "These rows are not imported until they are resolved; everything else imports on confirm."
+msgstr ""
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있으므로 현재 데이터의 안전한 사본을 만들 수 없습니다. 이들을 삭제하면 되돌릴 수 없습니다. 이들이 이 그룹의 다른 회사와 공유되는 경우, 아무것도 삭제되지 않고 복원이 시작되지 않습니다."
 
@@ -17640,6 +17667,9 @@ msgstr "원본 문서 수량 업데이트"
 msgid "Update the kanban information for scan-based replenishment."
 msgstr "스캔 기반 보충을 위한 칸반 정보를 업데이트합니다."
 
+msgid "Update the plan to see the result. Confirming the import applies them all."
+msgstr ""
+
 msgid "Update the purchase order quantities"
 msgstr "발주서 수량 업데이트"
 
@@ -17657,6 +17687,9 @@ msgstr "업데이트한 사람"
 
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"
+
+msgid "Updating the plan…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "업그레이드"
@@ -17745,7 +17778,7 @@ msgstr "다른 이메일 사용"
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법을 사용합니다."
 
-msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgid "Use the file's numbers"
 msgstr ""
 
 msgid "Use the file's parent column, name paths, or total rows when present."

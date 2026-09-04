@@ -67,6 +67,10 @@ msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyo
 msgid "{0} accounts"
 msgstr "{0} hesaplar"
 
+#. placeholder {0}: s.accountsToCreate
+msgid "{0} accounts to create"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} önce"
@@ -92,9 +96,9 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe fişi"
 
-#. placeholder {0}: plan.summary.groupsToCreate
-#. placeholder {1}: plan.summary.accountsToCreate
-msgid "{0} groups, {1} accounts to create"
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0} groups and {1} accounts to create"
 msgstr ""
 
 #. placeholder {0}: jobs.length
@@ -105,11 +109,15 @@ msgstr "{0} iş emri oluşturuldu"
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
-#. placeholder {0}: plan.summary.linked
+#. placeholder {0}: matching.length
+msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
+msgstr ""
+
+#. placeholder {0}: s.linked
 msgid "{0} merged into existing"
 msgstr ""
 
-#. placeholder {0}: plan.summary.errors
+#. placeholder {0}: s.errors
 msgid "{0} need attention"
 msgstr ""
 
@@ -142,11 +150,15 @@ msgstr "{0} kaydedildi"
 msgid "{0} rows"
 msgstr "{0} satır"
 
+#. placeholder {0}: s.skipped
+msgid "{0} skipped"
+msgstr ""
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} bakiyesi olan tedarikçi"
 
-#. placeholder {0}: plan.summary.updates
+#. placeholder {0}: s.updates
 msgid "{0} to update"
 msgstr ""
 
@@ -154,9 +166,8 @@ msgstr ""
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örneklenen başarılılar Kullanılabilir ve örneklenen başarısızlar Reddedilmiş olarak kalır."
 
-#. placeholder {0}: plan.summary.unchanged
-#. placeholder {1}: plan.summary.skipped
-msgid "{0} unchanged, {1} skipped"
+#. placeholder {0}: s.unchanged
+msgid "{0} unchanged"
 msgstr ""
 
 #. placeholder {0}: unmapped.length
@@ -238,6 +249,9 @@ msgstr "{done} / {total} aşama tamamlandı"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
+msgid "{fileCount} matching accounts take the file's numbers."
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -251,6 +265,9 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
+
+msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
@@ -280,7 +297,7 @@ msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
 
-msgid "{pendingCount} change(s) not yet in the plan"
+msgid "{pendingCount} decision(s) not in the plan yet"
 msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -306,6 +323,9 @@ msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
+
+msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} planlanmıyor"
@@ -1496,9 +1516,6 @@ msgstr "Tüm Konumlar"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
-
-msgid "All rows"
-msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
@@ -2864,9 +2881,6 @@ msgstr "Rol tabanlı eğitim materyalleri oluşturun"
 msgid "Build tailored, role-based training materials"
 msgstr "Özelleştirilmiş, rol tabanlı eğitim materyalleri oluşturun"
 
-msgid "Building the plan…"
-msgstr ""
-
 msgid "Built and costed as its own method"
 msgstr "Kendi yöntemi olarak oluşturulmuş ve maliyetlendirilmiş"
 
@@ -3278,6 +3292,9 @@ msgstr "E-postanızı kontrol edin"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Bu müşteri için Stripe kontrol ediliyor…"
+
+msgid "Checking the file against your chart of accounts…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
@@ -7374,15 +7391,6 @@ msgstr "Biçim"
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
 
-msgid "Found a parent column."
-msgstr ""
-
-msgid "Found a path in the account names, e.g. Parent:Child."
-msgstr ""
-
-msgid "Found Begin-Total / End-Total rows."
-msgstr ""
-
 msgid "Foundation"
 msgstr "Temel"
 
@@ -7809,8 +7817,20 @@ msgstr "Ham verileri gizle"
 msgid "Hide system quantities until the review step"
 msgstr "Sistem miktarlarını inceleme adımına kadar gizle"
 
+msgid "Hide the full list"
+msgstr ""
+
 msgid "Hide, pin and reorder columns"
 msgstr "Sütunları gizle, sabitle ve yeniden sırala"
+
+msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
+msgstr ""
+
+msgid "Hierarchy taken from the file's parent column."
+msgstr ""
+
+msgid "Hierarchy taken from the paths in the account names."
+msgstr ""
 
 msgid "High"
 msgstr "Yüksek"
@@ -8824,9 +8844,6 @@ msgstr "Açık Tut"
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
 
-msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
-msgstr ""
-
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
 
@@ -9565,9 +9582,6 @@ msgstr "Eşleştirildi"
 
 msgid "matches"
 msgstr "eşleşir"
-
-msgid "Matching accounts are updated in place; choose whose numbers they keep."
-msgstr ""
 
 msgid "Matching Pairs"
 msgstr "Eşleştirme Çiftleri"
@@ -10562,7 +10576,7 @@ msgstr "Gruplanmış bildirim yok"
 msgid "No groups assigned"
 msgstr "Atanmış grup yok"
 
-msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
 msgstr ""
 
 msgid "No image"
@@ -10663,6 +10677,9 @@ msgstr "Bekleyen eğitim yok"
 
 msgid "No overtime scheduled"
 msgstr "Planlanmış fazla mesai yok"
+
+msgid "No parent column, row kinds, or paths in the names were found in the file."
+msgstr ""
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Henüz üst kaynaklar kaydedilmedi. Atıfı yenilemek için planlama sayfasındaki Yeniden Hesapla düğmesine tıklayın."
@@ -10946,6 +10963,9 @@ msgstr "Arşivde hiçbir şey yok"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
+
+msgid "Nothing to import."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -13689,9 +13709,6 @@ msgstr "satırlar"
 msgid "Rows left out of this backup"
 msgstr "Bu yedeklemeden hariç tutulan satırlar"
 
-msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
-msgstr ""
-
 msgid "Rule"
 msgstr "Kural"
 
@@ -14815,6 +14832,10 @@ msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde oku
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde okunabilir bir Tedarikçi Kimliği sütunu gösterir. Tedarikçiler her iki durumda da dahili olarak tanımlanmaya devam eder."
 
+#. placeholder {0}: plan.nodes.length
+msgid "Show all {0} rows"
+msgstr ""
+
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
 
@@ -15091,6 +15112,9 @@ msgstr "Fiş hattını böl"
 
 msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
+
+msgid "Split the account names on a separator, e.g. Parent:Child."
+msgstr ""
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16668,6 +16692,9 @@ msgstr "Bu iş emirlerinin bu iş merkezine atanmış operasyonları vardır:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
+msgid "These rows are not imported until they are resolved; everything else imports on confirm."
+msgstr ""
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
 
@@ -17640,6 +17667,9 @@ msgstr "Kaynak belge miktarlarını güncelle"
 msgid "Update the kanban information for scan-based replenishment."
 msgstr "Tarama tabanlı ikmal için kanban bilgilerini güncelleyin."
 
+msgid "Update the plan to see the result. Confirming the import applies them all."
+msgstr ""
+
 msgid "Update the purchase order quantities"
 msgstr "Satın alma siparişi miktarlarını güncelle"
 
@@ -17657,6 +17687,9 @@ msgstr "Güncellendiği Kişi"
 
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
+
+msgid "Updating the plan…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Yükselt"
@@ -17745,7 +17778,7 @@ msgstr "Farklı bir e-posta kullan"
 msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
 
-msgid "Use the file's numbers for {matchingCount} matching accounts"
+msgid "Use the file's numbers"
 msgstr ""
 
 msgid "Use the file's parent column, name paths, or total rows when present."

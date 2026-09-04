@@ -231,3 +231,13 @@ implemented), and what is specific to the chart-of-accounts review step
   name-only match for a numbered row) and reports the matched account's
   number and name so the badge can name it. Verified in the browser: keep →
   27 updates / 7 unchanged / 0 attention; file's numbers → 34 updates.
+- One screen at a time (afternoon follow-up): the step is either Preparing
+  (spinner, Confirm disabled — shown on entry and after every "Update
+  plan"), the hierarchy question (asked once when the file has none, or via
+  a "Change" link), or the plan. The plan screen is a one-line summary, the
+  hierarchy sentence, one decision box for matching accounts (the two bulk
+  buttons, the current choice shown active), the pending banner, the
+  attention rows, and a collapsed "Show all N rows". The structure radios,
+  count badges and All rows / Needs attention tabs are gone. "Loading" is
+  keyed on the plan inputs, not the fetcher, so the stale plan never shows
+  between a change and its request.

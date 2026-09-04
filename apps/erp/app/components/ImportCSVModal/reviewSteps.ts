@@ -6,6 +6,9 @@ export type ReviewStepProps = {
   table: keyof typeof fieldMappings;
   columnMappings: Record<string, string>;
   enumMappings: Record<string, Record<string, string>>;
+  // Whether the step is showing something the user can confirm; the wizard
+  // disables Confirm while it is false (e.g. while a plan is being built).
+  onReadyChange?: (ready: boolean) => void;
 };
 
 // Per-table review steps. A table listed here gets one extra wizard page after

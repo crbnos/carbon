@@ -67,6 +67,10 @@ msgstr "{0, plural, one {This item is on 1 open change notice} other {This item 
 msgid "{0} accounts"
 msgstr "{0} accounts"
 
+#. placeholder {0}: s.accountsToCreate
+msgid "{0} accounts to create"
+msgstr "{0} accounts to create"
+
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} ago"
@@ -92,10 +96,10 @@ msgstr "{0} deleted successfully"
 msgid "{0} draft journal entries"
 msgstr "{0} draft journal entries"
 
-#. placeholder {0}: plan.summary.groupsToCreate
-#. placeholder {1}: plan.summary.accountsToCreate
-msgid "{0} groups, {1} accounts to create"
-msgstr "{0} groups, {1} accounts to create"
+#. placeholder {0}: s.groupsToCreate
+#. placeholder {1}: s.accountsToCreate
+msgid "{0} groups and {1} accounts to create"
+msgstr "{0} groups and {1} accounts to create"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -105,11 +109,15 @@ msgstr "{0} jobs created"
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
-#. placeholder {0}: plan.summary.linked
+#. placeholder {0}: matching.length
+msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
+msgstr "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
+
+#. placeholder {0}: s.linked
 msgid "{0} merged into existing"
 msgstr "{0} merged into existing"
 
-#. placeholder {0}: plan.summary.errors
+#. placeholder {0}: s.errors
 msgid "{0} need attention"
 msgstr "{0} need attention"
 
@@ -142,11 +150,15 @@ msgstr "{0} registered"
 msgid "{0} rows"
 msgstr "{0} rows"
 
+#. placeholder {0}: s.skipped
+msgid "{0} skipped"
+msgstr "{0} skipped"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} suppliers with a balance"
 
-#. placeholder {0}: plan.summary.updates
+#. placeholder {0}: s.updates
 msgid "{0} to update"
 msgstr "{0} to update"
 
@@ -154,10 +166,9 @@ msgstr "{0} to update"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 
-#. placeholder {0}: plan.summary.unchanged
-#. placeholder {1}: plan.summary.skipped
-msgid "{0} unchanged, {1} skipped"
-msgstr "{0} unchanged, {1} skipped"
+#. placeholder {0}: s.unchanged
+msgid "{0} unchanged"
+msgstr "{0} unchanged"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -238,6 +249,9 @@ msgstr "{done} of {total} phases complete"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 
+msgid "{fileCount} matching accounts take the file's numbers."
+msgstr "{fileCount} matching accounts take the file's numbers."
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
 
@@ -251,6 +265,9 @@ msgstr "{hiddenCount} more: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+
+msgid "{keepCount} matching accounts keep their Carbon numbers."
+msgstr "{keepCount} matching accounts keep their Carbon numbers."
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# line} other {# lines}}"
@@ -280,8 +297,8 @@ msgstr "{noDemandItemCount} parts skipped — nothing to make"
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
-msgid "{pendingCount} change(s) not yet in the plan"
-msgstr "{pendingCount} change(s) not yet in the plan"
+msgid "{pendingCount} decision(s) not in the plan yet"
+msgstr "{pendingCount} decision(s) not in the plan yet"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -306,6 +323,9 @@ msgstr "{totalQuantity, plural, one {# unit} other {# units}}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+
+msgid "{undecided} accounts already exist in Carbon under other numbers."
+msgstr "{undecided} accounts already exist in Carbon under other numbers."
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} can't be scheduled"
@@ -1496,9 +1516,6 @@ msgstr "All Locations"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
-
-msgid "All rows"
-msgstr "All rows"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "All rows imported — {inserted} inserted, {updated} updated."
@@ -2864,9 +2881,6 @@ msgstr "Build role-based training materials"
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
 
-msgid "Building the plan…"
-msgstr "Building the plan…"
-
 msgid "Built and costed as its own method"
 msgstr "Built and costed as its own method"
 
@@ -3278,6 +3292,9 @@ msgstr "Check your email"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Checking Stripe for this customer…"
+
+msgid "Checking the file against your chart of accounts…"
+msgstr "Checking the file against your chart of accounts…"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -7374,15 +7391,6 @@ msgstr "Format"
 msgid "Forward deployed engineer"
 msgstr "Forward deployed engineer"
 
-msgid "Found a parent column."
-msgstr "Found a parent column."
-
-msgid "Found a path in the account names, e.g. Parent:Child."
-msgstr "Found a path in the account names, e.g. Parent:Child."
-
-msgid "Found Begin-Total / End-Total rows."
-msgstr "Found Begin-Total / End-Total rows."
-
 msgid "Foundation"
 msgstr "Foundation"
 
@@ -7809,8 +7817,20 @@ msgstr "Hide raw"
 msgid "Hide system quantities until the review step"
 msgstr "Hide system quantities until the review step"
 
+msgid "Hide the full list"
+msgstr "Hide the full list"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Hide, pin and reorder columns"
+
+msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
+msgstr "Hierarchy taken from the file's Begin-Total / End-Total rows."
+
+msgid "Hierarchy taken from the file's parent column."
+msgstr "Hierarchy taken from the file's parent column."
+
+msgid "Hierarchy taken from the paths in the account names."
+msgstr "Hierarchy taken from the paths in the account names."
 
 msgid "High"
 msgstr "High"
@@ -8824,9 +8844,6 @@ msgstr "Keep Open"
 msgid "Keep picking"
 msgstr "Keep picking"
 
-msgid "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
-msgstr "Keep resolving rows, then update the plan to see the result. Confirming the import applies them all."
-
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Keeps orders, quotes, and settings behind a second check"
 
@@ -9565,9 +9582,6 @@ msgstr "Matched"
 
 msgid "matches"
 msgstr "matches"
-
-msgid "Matching accounts are updated in place; choose whose numbers they keep."
-msgstr "Matching accounts are updated in place; choose whose numbers they keep."
 
 msgid "Matching Pairs"
 msgstr "Matching Pairs"
@@ -10562,8 +10576,8 @@ msgstr "No grouped notifications"
 msgid "No groups assigned"
 msgstr "No groups assigned"
 
-msgid "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
-msgstr "No hierarchy in the file; accounts go under Carbon's existing groups by account type."
+msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
+msgstr "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
 
 msgid "No image"
 msgstr "No image"
@@ -10663,6 +10677,9 @@ msgstr "No outstanding trainings"
 
 msgid "No overtime scheduled"
 msgstr "No overtime scheduled"
+
+msgid "No parent column, row kinds, or paths in the names were found in the file."
+msgstr "No parent column, row kinds, or paths in the names were found in the file."
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
@@ -10946,6 +10963,9 @@ msgstr "Nothing in the archive"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
+
+msgid "Nothing to import."
+msgstr "Nothing to import."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -13689,9 +13709,6 @@ msgstr "rows"
 msgid "Rows left out of this backup"
 msgstr "Rows left out of this backup"
 
-msgid "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
-msgstr "Rows that need attention are not imported. Resolve them here, fix the file, or import the rest now and the remainder later."
-
 msgid "Rule"
 msgstr "Rule"
 
@@ -14815,6 +14832,10 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 
+#. placeholder {0}: plan.nodes.length
+msgid "Show all {0} rows"
+msgstr "Show all {0} rows"
+
 msgid "Show Customer IDs"
 msgstr "Show Customer IDs"
 
@@ -15091,6 +15112,9 @@ msgstr "Split receipt line"
 
 msgid "Split shipment line"
 msgstr "Split shipment line"
+
+msgid "Split the account names on a separator, e.g. Parent:Child."
+msgstr "Split the account names on a separator, e.g. Parent:Child."
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16668,6 +16692,9 @@ msgstr "These jobs have operations assigned to this work center:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 
+msgid "These rows are not imported until they are resolved; everything else imports on confirm."
+msgstr "These rows are not imported until they are resolved; everything else imports on confirm."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 
@@ -17640,6 +17667,9 @@ msgstr "Update source document quantities"
 msgid "Update the kanban information for scan-based replenishment."
 msgstr "Update the kanban information for scan-based replenishment."
 
+msgid "Update the plan to see the result. Confirming the import applies them all."
+msgstr "Update the plan to see the result. Confirming the import applies them all."
+
 msgid "Update the purchase order quantities"
 msgstr "Update the purchase order quantities"
 
@@ -17657,6 +17687,9 @@ msgstr "Updated By"
 
 msgid "Updated successfully"
 msgstr "Updated successfully"
+
+msgid "Updating the plan…"
+msgstr "Updating the plan…"
 
 msgid "Upgrade"
 msgstr "Upgrade"
@@ -17745,8 +17778,8 @@ msgstr "Use a different email"
 msgid "Use metric system for default material dimensions."
 msgstr "Use metric system for default material dimensions."
 
-msgid "Use the file's numbers for {matchingCount} matching accounts"
-msgstr "Use the file's numbers for {matchingCount} matching accounts"
+msgid "Use the file's numbers"
+msgstr "Use the file's numbers"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
 msgstr "Use the file's parent column, name paths, or total rows when present."
