@@ -4837,6 +4837,9 @@ msgstr "Fecha"
 msgid "Date Acquired"
 msgstr "Fecha de Adquisición"
 
+msgid "Date and time"
+msgstr ""
+
 msgid "Date Calibrated"
 msgstr "Fecha Calibrada"
 

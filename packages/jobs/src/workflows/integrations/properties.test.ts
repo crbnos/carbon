@@ -53,6 +53,11 @@ describe("toValueType", () => {
       kind: "primitive",
       of: "date"
     });
+    // A DateTime is a moment: the builder renders a date AND time picker and
+    // stores a full ISO instant, so the piece is not left to read a bare day in
+    // the worker's timezone.
+    expect(map({ type: "DATE_TIME" }).precision).toBe("datetime");
+    expect(map({ type: "SHORT_TEXT" }).precision).toBeUndefined();
     expect(map({ type: "ARRAY" }).type).toEqual({
       kind: "list",
       of: { kind: "primitive", of: "string" }

@@ -4837,6 +4837,9 @@ msgstr "날짜"
 msgid "Date Acquired"
 msgstr "취득일"
 
+msgid "Date and time"
+msgstr ""
+
 msgid "Date Calibrated"
 msgstr "교정일"
 

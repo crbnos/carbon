@@ -32,6 +32,9 @@ export type ValueFieldProps = {
    * a boolean control especially must display what the run will actually send. */
   defaultValue?: unknown;
   choices?: readonly string[];
+  /** The input is a moment, not a calendar day: render a date AND time picker
+   * and store a full ISO instant, resolved against the company's timezone. */
+  precision?: "datetime";
   value: ValueOrRef | undefined;
   onChange: (next: ValueOrRef | undefined) => void;
   context: FieldContext;

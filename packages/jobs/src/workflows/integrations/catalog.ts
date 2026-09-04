@@ -82,6 +82,9 @@ export async function buildPieceActionDeclarations(): Promise<
           ...(mapped.template === true || override?.template === true
             ? { template: true }
             : {}),
+          ...(mapped.precision === undefined
+            ? {}
+            : { precision: mapped.precision }),
           ...(override?.links === undefined
             ? {}
             : {

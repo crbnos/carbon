@@ -21,6 +21,7 @@ export function ValueField({
   hint,
   defaultValue,
   choices,
+  precision,
   value,
   onChange,
   context,
@@ -119,6 +120,7 @@ export function ValueField({
             <LiteralControl
               type={type}
               choices={choices}
+              precision={precision}
               defaultValue={defaultValue}
               value={
                 value?.kind === "literal"

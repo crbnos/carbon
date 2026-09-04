@@ -420,12 +420,14 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       title: { type: { kind: "primitive", of: "string" }, required: true },
       start_date_time: {
         type: { kind: "primitive", of: "date" },
-        required: true
+        required: true,
+        precision: "datetime"
       },
       end_date_time: {
         type: { kind: "primitive", of: "date" },
         required: false,
-        description: "By default it'll be 30 min post start time"
+        description: "By default it'll be 30 min post start time",
+        precision: "datetime"
       },
       location: { type: { kind: "primitive", of: "string" }, required: false },
       description: {
@@ -545,8 +547,16 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
         }
       },
       search: { type: { kind: "primitive", of: "string" }, required: false },
-      start_date: { type: { kind: "primitive", of: "date" }, required: false },
-      end_date: { type: { kind: "primitive", of: "date" }, required: false }
+      start_date: {
+        type: { kind: "primitive", of: "date" },
+        required: false,
+        precision: "datetime"
+      },
+      end_date: {
+        type: { kind: "primitive", of: "date" },
+        required: false,
+        precision: "datetime"
+      }
     },
     advancedInputs: {
       event_types: {

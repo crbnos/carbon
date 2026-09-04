@@ -39,6 +39,9 @@ export interface MappedProperty {
   /** Prose — a message body, a description. The builder renders the multiline
    * editor that takes line breaks and inline variables, not a one-line box. */
   template?: boolean;
+  /** The vendor declared a moment, not a day. The builder renders a date and time
+   * picker; the stored value is a full ISO instant. */
+  precision?: "datetime";
 }
 
 function staticChoices(property: PieceProperty): readonly string[] | undefined {
@@ -89,8 +92,12 @@ export function toValueType(
       return { ...base, type: NUMBER };
     case "CHECKBOX":
       return { ...base, type: BOOLEAN };
+    // The vendor said DATE_TIME, not DATE. Dropping the time here is what left
+    // Google Calendar's "Start date time of the event" with a date-only picker,
+    // and made the value an underspecified instant the piece then read in the
+    // WORKER's timezone.
     case "DATE_TIME":
-      return { ...base, type: DATE };
+      return { ...base, type: DATE, precision: "datetime" };
     case "ARRAY":
       return { ...base, type: STRING_LIST };
     case "STATIC_DROPDOWN":

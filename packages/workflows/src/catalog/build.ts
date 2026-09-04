@@ -89,6 +89,11 @@ export interface BuiltActionInput {
   /** Vendor prose for the ⓘ tooltip; rendered through the label catalog. */
   description?: string;
   template?: boolean;
+  /** The input is a moment, not a calendar day: the builder renders a date AND
+   * time picker and stores a full ISO instant. Set from a vendor's `DATE_TIME`
+   * property. Never set on a Carbon business date (`dueDate`, `orderDate`,
+   * `postingDate`), which is a day on the company's calendar and has no time. */
+  precision?: "datetime";
   /** Prose a person reads: a record dropped in renders as a link when the caller
    * supplies a resolver. Not set on webhook bodies. */
   links?: LinksDeclaration;
@@ -176,6 +181,7 @@ function buildDeclaredInputs(
         ? { description: spec.description }
         : {}),
       ...(spec.template ? { template: true } : {}),
+      ...(spec.precision ? { precision: spec.precision } : {}),
       ...(spec.links ? { links: spec.links } : {}),
       ...(spec.pairs ? { pairs: true } : {}),
       ...(spec.showWhen ? { showWhen: spec.showWhen } : {}),
@@ -512,6 +518,12 @@ export function validateCatalogInputs(
         !(spec.type.kind === "primitive" && spec.type.of === "string")
       ) {
         problems.push(`${id}.${input} is a template but is not a string.`);
+      }
+      if (
+        spec.precision !== undefined &&
+        !(spec.type.kind === "primitive" && spec.type.of === "date")
+      ) {
+        problems.push(`${id}.${input} declares precision but is not a date.`);
       }
       if (spec.links !== undefined) {
         if (!(spec.type.kind === "primitive" && spec.type.of === "string")) {

@@ -63,6 +63,11 @@ export interface CatalogInput {
   description?: string;
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
+  /** The input is a moment, not a calendar day: the builder renders a date AND
+   * time picker and stores a full ISO instant. Set from a vendor's `DATE_TIME`
+   * property. Never set on a Carbon business date (`dueDate`, `orderDate`,
+   * `postingDate`), which is a day on the company's calendar and has no time. */
+  precision?: "datetime";
   links?: LinksDeclaration;
   /** Table a non-entity foreign key points at, so the write can be scoped to the company. */
   scopeTable?: string;

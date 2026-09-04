@@ -11,6 +11,11 @@ export interface ActionInputLike {
   required: boolean;
   label: string;
   template?: boolean;
+  /** The input is a moment, not a calendar day: the builder renders a date AND
+   * time picker and stores a full ISO instant. Set from a vendor's `DATE_TIME`
+   * property. Never set on a Carbon business date (`dueDate`, `orderDate`,
+   * `postingDate`), which is a day on the company's calendar and has no time. */
+  precision?: "datetime";
   /** Prose that can carry a link, in the destination's own dialect. Not for webhook
    * bodies, where a link would ship to someone else's API as literal text. */
   links?: LinksDeclaration;

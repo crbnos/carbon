@@ -169,6 +169,7 @@ export function renderStepInput({
       type={inputDef.type}
       required={inputDef.required}
       choices={inputDef.choices}
+      precision={inputDef.precision}
       value={inputs[name]}
       onChange={(v) => onChange(name, v)}
       context={fieldContext}

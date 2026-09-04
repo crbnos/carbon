@@ -4837,6 +4837,9 @@ msgstr "तारीख"
 msgid "Date Acquired"
 msgstr "अधिग्रहण की तारीख"
 
+msgid "Date and time"
+msgstr ""
+
 msgid "Date Calibrated"
 msgstr "अंशांकन की तारीख"
 
