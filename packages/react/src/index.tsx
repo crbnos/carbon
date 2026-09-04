@@ -346,7 +346,7 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideOpenDialog } from "./utils/dialog";
+import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 import { VStack } from "./VStack";
@@ -575,7 +575,7 @@ export {
   KeyboardKeys,
   ShortcutKey,
   hasOpenDialog,
-  isInsideOpenDialog,
+  isInsideTopmostDialog,
   Sidebar,
   SidebarContent,
   SidebarFooter,

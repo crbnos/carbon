@@ -59,13 +59,21 @@ export const ShortcutKey = ({
   if (!relevantShortcut) return null;
   const modifiers = relevantShortcut.modifiers ?? [];
   const character = keyString(String(relevantShortcut.key), isMac, variant);
+  // Glyphs/SVGs carry no accessible name, so announce the combo as text and
+  // hide the visual keycap content from the accessibility tree.
+  const readableShortcut = [...modifiers, String(relevantShortcut.key)].join(
+    "+"
+  );
 
   return (
     <span className={cn(shortcutKeyVariants[variant], className)}>
-      {modifiers.map((k) => (
-        <Fragment key={k}>{modifierNode(k, isMac, variant)}</Fragment>
-      ))}
-      {character}
+      <span className="sr-only">{readableShortcut}</span>
+      <span aria-hidden="true" className="contents">
+        {modifiers.map((k) => (
+          <Fragment key={k}>{modifierNode(k, isMac, variant)}</Fragment>
+        ))}
+        {character}
+      </span>
     </span>
   );
 };

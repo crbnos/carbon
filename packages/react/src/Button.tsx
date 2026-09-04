@@ -8,7 +8,7 @@ import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { ShortcutKey } from "./ShortcutKey";
 import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideOpenDialog } from "./utils/dialog";
+import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { mergeRefs } from "./utils/react";
 
 export const buttonVariants = cva(
@@ -166,10 +166,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const badgeShortcut =
       !hideShortcutKey && !isIcon && !isLoading ? primaryShortcut : undefined;
 
-    // While any dialog is open, only buttons inside one respond to their
-    // shortcut — a background ⌘S must not fire under a confirmation modal.
+    // While any dialog is open, only buttons inside the TOPMOST one respond
+    // to their shortcut — a background (or outer-dialog) ⌘S must not fire
+    // under a confirmation modal stacked on top.
     const dialogGuard = useCallback(
-      () => !hasOpenDialog() || isInsideOpenDialog(innerRef.current),
+      () => !hasOpenDialog() || isInsideTopmostDialog(innerRef.current),
       []
     );
 

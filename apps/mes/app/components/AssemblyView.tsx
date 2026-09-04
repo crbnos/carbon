@@ -1234,6 +1234,11 @@ export function AssemblyView({
         if (target.closest('[contenteditable="true"], .ProseMirror')) return;
       }
 
+      // No primary action (step done, gated, or submitting) → leave the
+      // action keys native, so a keyboard user who focused Skip can still
+      // activate it with Space/Enter.
+      if (isAction && !primaryStepActionRef.current) return;
+
       event.preventDefault();
       event.stopPropagation();
 
