@@ -149,6 +149,23 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
 
 ## Part A tasks — API
 
+> **STATUS (in progress).** Phase 0 + Phase 1 + the Phase 2 HTTP transport are DONE and
+> committed (`fd525fc` foundation, `43de680` HTTP transport). oRPC pinned 1.15.0.
+> Verified: 7-test oRPC mechanics suite (prefix match, `call()`, scope-gate 403, custom
+> converter → spec); the REAL booted ERP app serves `GET /api/v1/openapi.json` as a valid
+> 1495-path spec (route registration + runtime router build + OpenAPIGenerator all work);
+> no-key → 401; full typecheck (erp + @carbon/api + @carbon/auth). The service-dispatch
+> **happy path is NOT live-verified**: this checkout's `.env.local` is stale (dead Supabase
+> domain + JWT keys that don't match the reachable stack), so the app can't reach its DB —
+> an environment issue, not a code defect (the key row existed with a matching hash + clean
+> FK; the 302 was requirePermissions falling to the session path on an unreachable Supabase).
+> A `crbn up` env is needed to run the live smoke tests.
+> **NOT DONE:** MCP `call_tool` + agent migration onto `call()` (a production auth/MCP
+> behavior change — needs live verification before shipping), the API-key auth cache, and
+> parity tests. Decision-7's build-time manifest relocation is deferred to Docs Phase 2
+> (tool-metadata.json is also consumed by the workflow-catalog generator — wider blast radius
+> than the plan assumed; the committed manifest now carries the `permission` field).
+
 ### Phase 0 — spike (½ day, throwaway branch ok)
 
 - [ ] Add `@orpc/server @orpc/contract @orpc/openapi @orpc/client @orpc/openapi-client` at
@@ -345,7 +362,7 @@ rate limits are platform-controlled (`api-keys.mdx` is RIGHT, the MCP FAQ is WRO
       auth page was already canonical; converged `api-keys.mdx` onto it and added a self-hosted
       note (direct PostgREST → `carbon-key` + `/rest/v1/<table>`). See
       [[reference_rest_carbon_ms_proxy]].
-- [ ] **DECISION PENDING — RECOMMEND SKIP (proceeding without it).** Shard the docs generated
+- [~] **SKIPPED (user: "keep going", accepted the recommendation).** Shard the docs generated
       data. Finding: the "tsserver choking"
       rationale is already mitigated by the generator (`@ts-nocheck` + `JSON.parse(<string
       literal>)`, so tsc never infers over the data); the build-speed win is marginal for these
