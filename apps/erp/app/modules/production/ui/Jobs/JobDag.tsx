@@ -4,6 +4,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Subheading,
   VStack
 } from "@carbon/react";
 import Dagre from "@dagrejs/dagre";
@@ -255,9 +256,9 @@ function DagLegend() {
           align="start"
           className="w-auto p-3 border-border"
         >
-          <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+          <Subheading variant="heavy" className="block mb-2">
             Operation Status
-          </span>
+          </Subheading>
           <VStack spacing={2}>
             {entries.map((entry) => (
               <HStack key={entry.label} spacing={3} className="items-center">

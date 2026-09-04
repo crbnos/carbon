@@ -201,6 +201,9 @@ msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al succ
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflitti"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# conto con saldo} other {# conti con saldo}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
@@ -829,6 +832,9 @@ msgstr "Lo stato della spedizione cambia"
 
 msgid "A shipment's tracking number changes"
 msgstr "Il numero di tracciamento di una spedizione cambia"
+
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "Una singola riga di registrazione bilanciata sarà registrata alla data indicata di seguito, con la differenza compensata agli Utili non distribuiti."
 
 msgid "A step needs a name."
 msgstr "Un passaggio ha bisogno di un nome."
@@ -2288,6 +2294,9 @@ msgstr "Al"
 msgid "As of {0}"
 msgstr "Al {0}"
 
+msgid "As of date"
+msgstr "Data al"
+
 msgid "As of:"
 msgstr "A partire da:"
 
@@ -2614,6 +2623,9 @@ msgstr "Spese per commissioni di servizi bancari e finanziari."
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "I grafici mostrano il flusso di ogni settimana: <0>copertura</0> spinge il magazzino verso l'alto, <1>fabbisogno</1> lo tira verso il basso. La <2>riga</2> è il tuo magazzino disponibile previsto — quando scende al di sotto della <3>scorta di sicurezza</3> sei a rischio, e al di sotto di zero è una <4>rottura di stock</4>."
+
+msgid "Base currency"
+msgstr "Valuta base"
 
 msgid "Base Currency"
 msgstr "Valuta di Base"
@@ -3205,6 +3217,9 @@ msgstr "Modificare questo aggiornerà l'ID della parte"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
+
+msgid "Chart"
+msgstr "Grafico"
 
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
@@ -5227,9 +5242,6 @@ msgstr "Elimina Metodo di Spedizione"
 msgid "Delete step"
 msgstr "Elimina passaggio"
 
-msgid "Delete Step"
-msgstr "Elimina Passaggio"
-
 msgid "Delete Stock Transfer"
 msgstr "Elimina Trasferimento Magazzino"
 
@@ -6085,9 +6097,6 @@ msgstr "Modifica Metodo di Spedizione"
 
 msgid "Edit Size"
 msgstr "Modifica Dimensione"
-
-msgid "Edit Step"
-msgstr "Modifica Passaggio"
 
 msgid "Edit Stock Transfer"
 msgstr "Modifica Trasferimento Magazzino"
@@ -9413,6 +9422,15 @@ msgstr "Segna come incompleto"
 msgid "Mark to delete"
 msgstr "Segna per eliminare"
 
+msgid "Market rate"
+msgstr "Tasso di mercato"
+
+msgid "Market rate (per USD)"
+msgstr "Tasso di mercato (per USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Storico del tasso di mercato (per USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Segna la persona come assente per ogni giorno nell'intervallo. Non verranno programmati mentre sono via."
 
@@ -9960,6 +9978,9 @@ msgstr "Nuovo Centro di Costo"
 
 msgid "New Credit / Debit Memo"
 msgstr "Nuova nota di credito / debito"
+
+msgid "New Currency"
+msgstr "Nuova Valuta"
 
 msgid "New Custom Field"
 msgstr "Nuovo Campo Personalizzato"
@@ -10592,6 +10613,9 @@ msgstr "Nessun motivo dell'offerta"
 msgid "No Quote Reasons"
 msgstr "Nessun motivo di mancata offerta"
 
+msgid "No rate"
+msgstr "Nessun tasso"
+
 msgid "No receivables"
 msgstr "Nessun credito"
 
@@ -10684,6 +10708,9 @@ msgstr "Nessuna variabile corrisponde a {query}"
 
 msgid "No variables available"
 msgstr "Nessuna variabile disponibile"
+
+msgid "No versions available"
+msgstr "Nessuna versione disponibile"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nessuna giacenza di magazzino è registrata per questo articolo. Puoi comunque prelevarlo — la giacenza disponibile diventerà negativa fino al riconciliamento del conteggio."
@@ -10954,6 +10981,11 @@ msgstr "Consegna puntuale"
 msgid "Onboard your agent to Carbon"
 msgstr "Integra il tuo agente in Carbon"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} equivale a quanti {1}?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Un'esecuzione di un flusso di lavoro, registrata passo per passo con i valori che ogni passo ha utilizzato e prodotto, agendo sempre con i permessi del proprietario del flusso di lavoro."
 
@@ -11116,8 +11148,18 @@ msgstr "Apertura"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "L'apertura di un'operazione avvia il suo timer, quindi il tempo viene tracciato dal momento in cui inizia il lavoro."
 
+msgid "Opening Balance"
+msgstr "Saldo iniziale"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Saldo iniziale per {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo di apertura dell'ammortamento già contabilizzato prima dell'aggiunta di questo asset a Carbon (utilizzare 0 per le nuove acquisizioni)."
+
+msgid "Opening Balances"
+msgstr "Saldi iniziali"
 
 msgid "Operating Expenses"
 msgstr "Spese Operative"
@@ -11869,6 +11911,9 @@ msgstr "Registra Fattura"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Registra inserimenti della prima nota con codici di conto e descrizione appropriati"
+
+msgid "Post opening balances"
+msgstr "Registra saldi iniziali"
 
 msgid "Post Receipt"
 msgstr "Registra Ricevuta"
@@ -12633,8 +12678,14 @@ msgstr "Segnalalo nella riunione di stato settimanale"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "segnalalo presto e segnalalo chiaramente. Un problema identificato nella settimana 2 è una piccola correzione; lo stesso problema al lancio è un ritardo."
 
+msgid "Rate"
+msgstr "Tasso"
+
 msgid "Rate Limit"
 msgstr "Limite di Velocità"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel consolidamento (IAS 21). Lasciare vuoto per usare il tasso di cambio corrente."
 
 msgid "Ratio"
 msgstr "Rapporto"
@@ -13247,6 +13298,9 @@ msgstr "Ripristina PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reimposta PIN per {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Ripristina al tasso di mercato"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Ripristina autenticazione a due fattori"
 
@@ -13783,6 +13837,9 @@ msgstr "Salva impostazioni dimensionali"
 msgid "Save Method"
 msgstr "Salva Metodo"
 
+msgid "Save Rate"
+msgstr "Salva tasso"
+
 msgid "Save view"
 msgstr "Salva vista"
 
@@ -14040,6 +14097,9 @@ msgstr "Seleziona"
 
 msgid "Select a assignee"
 msgstr "Seleziona un assegnatario"
+
+msgid "Select a completed job"
+msgstr "Seleziona un ordine di produzione completato"
 
 msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"
@@ -14833,6 +14893,9 @@ msgstr "Documento di origine leggibile"
 
 msgid "Source Item"
 msgstr "Articolo Sorgente"
+
+msgid "Source Job"
+msgstr "Ordine di produzione di origine"
 
 msgid "Source list"
 msgstr "Elenco di origine"
@@ -16472,6 +16535,7 @@ msgstr "Queste voci di prima nota sono ancora Bozza, quindi i loro dare e avere 
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Queste righe sono collegate a dati al di fuori di questa Azienda, quindi non è possibile creare una copia di sicurezza dei dati attuali. L'eliminazione non può essere annullata. Se risultassero condivise con altre Aziende in questo gruppo, nulla viene eliminato e il ripristino non si avvia."
+msgstr "Queste righe sono collegate a dati esterni a questa azienda, pertanto non è possibile effettuare una copia di sicurezza dei dati attuali. La loro eliminazione non può essere annullata. Se risultano condivise con altre aziende del gruppo, nulla viene eliminato e il ripristino non si avvierà."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Queste righe collegano i dati al di fuori di questa azienda, quindi non potrebbero mai essere ripristinate. Tutto il resto è stato sottoposto a backup."
@@ -16551,6 +16615,9 @@ msgstr "Questo è un ambiente controllato ITAR. L'accesso è limitato alle Perso
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Sta richiedendo più tempo del previsto. Potrebbe comunque finire - se non finisce, riprova il ripristino per ripristinare i tuoi dati."
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Questa è la valuta base. Il tasso di cambio è sempre 1."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Questo è il mese in cui inizia il tuo esercizio fiscale."
@@ -17342,6 +17409,9 @@ msgstr "Ordini non spediti"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo di documento di origine non supportato: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Diagramma senza titolo"
@@ -18697,6 +18767,9 @@ msgstr "Il tuo progetto da inizio a fine: il piano, i gate e il go-live"
 
 msgid "Your Project Team"
 msgstr "Il tuo team di progetto"
+
+msgid "Your rate"
+msgstr "Il tuo tasso"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "I tuoi dati reali sono caricati e hai controllato un campione e lo hai approvato."

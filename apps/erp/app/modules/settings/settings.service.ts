@@ -1,6 +1,7 @@
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type {
   DocumentBlock,
   DocumentSectionPlacement,
@@ -901,6 +902,33 @@ export async function updateCompany(
   }
 ) {
   return client.from("company").update(sanitize(company)).eq("id", companyId);
+}
+
+/**
+ * Company update for a BASE-CURRENCY change: exchange-rate overrides are
+ * denominated in the old base, so they must be cleared in the SAME transaction
+ * — a committed base flip with surviving old-base pins silently mis-rates
+ * every new document, and a non-atomic cleanup can race a freshly created
+ * new-base override. Kysely throws on rollback; the route try/catches.
+ */
+export async function updateCompanyWithBaseCurrencyChange(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  company: Partial<z.infer<typeof companyValidator>> & {
+    updatedBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("company")
+      .set(sanitize(company))
+      .where("id", "=", companyId)
+      .execute();
+    await trx
+      .deleteFrom("exchangeRateOverride")
+      .where("companyId", "=", companyId)
+      .execute();
+  });
 }
 
 export async function updateShelfLifeSettings(

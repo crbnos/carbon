@@ -128,7 +128,7 @@ export function ResizablePanels({
   // full-width and float the explorer / properties as overlay drawers instead.
   if (isMobile) {
     return (
-      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] w-full overflow-hidden">
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full overflow-hidden">
         {content}
         {explorer && (
           <Drawer
@@ -172,24 +172,31 @@ export function ResizablePanels({
     );
   }
 
+  // A layout with no explorer renders no left panel at all -- an always-present
+  // `ResizablePanel` would leave an empty column and a drag handle with nothing
+  // behind it.
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel
-        ref={panelRef}
-        order={1}
-        minSize={10}
-        className="bg-card shadow-lg"
-        collapsible
-        defaultSize={isExplorerCollapsed ? 0 : 20}
-        collapsedSize={0}
-        onCollapse={() => setIsExplorerCollapsed(true)}
-        onExpand={() => setIsExplorerCollapsed(false)}
-      >
-        {!isExplorerCollapsed && explorer}
-      </ResizablePanel>
-      <ResizableHandle withHandle />
+      {explorer && (
+        <>
+          <ResizablePanel
+            ref={panelRef}
+            order={1}
+            minSize={10}
+            className="bg-card shadow-lg"
+            collapsible
+            defaultSize={isExplorerCollapsed ? 0 : 20}
+            collapsedSize={0}
+            onCollapse={() => setIsExplorerCollapsed(true)}
+            onExpand={() => setIsExplorerCollapsed(false)}
+          >
+            {!isExplorerCollapsed && explorer}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+        </>
+      )}
       <ResizablePanel order={2} className="z-1 relative">
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           {content}
           {!isPropertiesCollapsed && properties}
         </div>

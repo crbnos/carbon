@@ -1,5 +1,5 @@
 import { Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
-import { Badge, HStack, IconButton, VStack } from "@carbon/react";
+import { Badge, HStack, IconButton, Subheading, VStack } from "@carbon/react";
 import { useEffect, useState } from "react";
 import { LuCirclePlus, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -39,9 +39,9 @@ export default function AssemblyStepTools({
 
   return (
     <VStack spacing={2} className="w-full">
-      <h4 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+      <Subheading as="h4" variant="light">
         Tools
-      </h4>
+      </Subheading>
       {tools.length === 0 ? (
         <p className="text-xs text-muted-foreground">No tools to display</p>
       ) : (

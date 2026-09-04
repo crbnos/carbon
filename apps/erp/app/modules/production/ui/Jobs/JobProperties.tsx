@@ -17,6 +17,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -190,9 +191,9 @@ const JobProperties = () => {
     >
       <VStack spacing={4}>
         <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
-          </h3>
+          </Subheading>
           <HStack spacing={1}>
             <Tooltip>
               <TooltipTrigger asChild>

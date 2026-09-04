@@ -308,6 +308,16 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // Opening balances are a one-time setup artifact that touches arbitrary
+  // accounts; the external ledger owns its own opening balances (connecting a
+  // provider brings theirs), so Carbon's opening-balance journal NEVER syncs —
+  // same policy as Manual, to avoid double-counting.
+  "Opening Balance": {
+    representation: "journal",
+    syncable: false,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Purchase Receipt": {
     representation: "journal",
     defaultEnabled: true,

@@ -1,4 +1,4 @@
-import { Button, cn, Heading, IconButton } from "@carbon/react";
+import { Button, cn, Heading, IconButton, Subheading } from "@carbon/react";
 import {
   formatDateTimeInZone,
   formatDurationMilliseconds,
@@ -216,9 +216,7 @@ export function TimelineDetail({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
-            {kindLabel[detail.kind]}
-          </span>
+          <Subheading variant="heavy">{kindLabel[detail.kind]}</Subheading>
           <Heading size="h3" className="truncate">
             {detail.title}
           </Heading>
@@ -291,10 +289,10 @@ export function TimelineDetail({
                 key={stat.label}
                 className="flex flex-1 flex-col gap-1 px-3 py-2.5"
               >
-                <span className="flex items-center gap-1 font-mono text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
+                <Subheading variant="heavy" className="flex items-center gap-1">
                   {stat.icon}
                   {stat.label}
-                </span>
+                </Subheading>
                 <span className="text-lg font-semibold tabular-nums leading-none text-foreground">
                   {stat.value}
                 </span>
