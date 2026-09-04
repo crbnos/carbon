@@ -3206,6 +3206,12 @@ msgstr "更改类型"
 msgid "Changed By"
 msgstr "更改者"
 
+msgid "Changelog"
+msgstr "更新日志"
+
+msgid "Changelog newsletter"
+msgstr "更新日志通讯"
+
 msgid "Changes"
 msgstr "更改"
 
@@ -17410,7 +17416,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "无标题"
 
 msgid "Untitled Diagram"
 msgstr "未命名图表"

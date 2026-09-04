@@ -71,6 +71,17 @@ export type Events = {
     };
   };
 
+  // Changelog subscriptions (platform-level — no companyId; the docs-site
+  // changelog is not tenant data). See .ai/plans/2026-09-05-changelog-subscriptions.md
+  "changelog/entry.merged": {
+    data: {
+      // Slugs the triggering push added, when known (sent by the GitHub
+      // workflow). The dispatcher diffs the live feed either way; this only
+      // feeds logging.
+      slugs?: string[];
+    };
+  };
+
   // Assembly model conversion (CAD → GLB + assembly graph)
   "carbon/assembly-convert": {
     data: {

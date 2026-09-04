@@ -3206,6 +3206,12 @@ msgstr "प्रकार बदलें"
 msgid "Changed By"
 msgstr "द्वारा परिवर्तित"
 
+msgid "Changelog"
+msgstr "परिवर्तन लॉग"
+
+msgid "Changelog newsletter"
+msgstr "परिवर्तन न्यूजलेटर"
+
 msgid "Changes"
 msgstr "परिवर्तन"
 
@@ -17410,7 +17416,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "बिना शीर्षक"
 
 msgid "Untitled Diagram"
 msgstr "बिना शीर्षक वाला आरेख"

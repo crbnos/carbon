@@ -3206,6 +3206,12 @@ msgstr "Typ ändern"
 msgid "Changed By"
 msgstr "Geändert von"
 
+msgid "Changelog"
+msgstr "Änderungslog"
+
+msgid "Changelog newsletter"
+msgstr "Änderungslog-Newsletter"
+
 msgid "Changes"
 msgstr "Änderungen"
 
@@ -17410,7 +17416,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Ohne Titel"
 
 msgid "Untitled Diagram"
 msgstr "Unbenanntes Diagramm"

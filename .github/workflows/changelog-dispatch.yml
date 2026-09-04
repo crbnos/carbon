@@ -1,0 +1,30 @@
+name: Changelog Dispatch
+
+# Fast path for changelog subscriptions: a merge that touches an entry fires
+# `changelog/entry.merged`, and the changelog-dispatch Inngest function polls
+# the live RSS feed until the Vercel deploy surfaces the new entry, then fans
+# it out to subscribers. The function's hourly cron is the safety net if this
+# workflow fails — a missed event means "sent within the hour", never "never
+# sent". See .ai/plans/2026-09-05-changelog-subscriptions.md.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/content/changelog/**"
+  workflow_dispatch:
+
+jobs:
+  notify:
+    name: Fire changelog/entry.merged
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Inngest event
+        run: |
+          curl --fail -sS -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"name":"changelog/entry.merged","data":{}}' \
+            "https://inn.gs/e/${INNGEST_EVENT_KEY}"
+        env:
+          INNGEST_EVENT_KEY: ${{ secrets.INNGEST_EVENT_KEY }}

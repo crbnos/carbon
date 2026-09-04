@@ -3206,6 +3206,12 @@ msgstr "タイプを変更"
 msgid "Changed By"
 msgstr "変更者"
 
+msgid "Changelog"
+msgstr "変更ログ"
+
+msgid "Changelog newsletter"
+msgstr "変更ログニュースレター"
+
 msgid "Changes"
 msgstr "変更"
 
@@ -17410,7 +17416,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "無題"
 
 msgid "Untitled Diagram"
 msgstr "無題の図"

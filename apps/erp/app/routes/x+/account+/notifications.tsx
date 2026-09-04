@@ -14,7 +14,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Switch
+  Switch,
+  VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -32,6 +33,8 @@ export const handle: Handle = {
   breadcrumb: msg`Notifications`,
   to: path.to.notificationSettings
 };
+
+type Channel = "email" | "slack";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {});
@@ -99,6 +102,7 @@ export default function AccountNotifications() {
   // Labels live here rather than @carbon/notifications so Lingui extracts them.
   const topicLabels: Record<NotificationTopic, string> = {
     [NotificationTopic.Approval]: t`Approvals`,
+    [NotificationTopic.Changelog]: t`Changelog`,
     [NotificationTopic.General]: t`General`,
     [NotificationTopic.Inventory]: t`Inventory`,
     [NotificationTopic.Items]: t`Items`,
@@ -112,8 +116,13 @@ export default function AccountNotifications() {
     [NotificationTopic.Training]: t`Training`
   };
 
-  // Absence of a row = enabled; in-flight toggles win over loader data.
-  const isEnabled = (topic: NotificationTopic, channel: "email" | "slack") => {
+  // Absence of a row = `fallback` (enabled, except the opt-in newsletter);
+  // in-flight toggles win over loader data.
+  const isEnabled = (
+    topic: NotificationTopic,
+    channel: Channel,
+    fallback = true
+  ) => {
     let pending: boolean | undefined;
     for (const fetcher of fetchers) {
       if (
@@ -127,12 +136,12 @@ export default function AccountNotifications() {
     const row = preferences.find(
       (p) => p.topic === topic && p.channel === channel
     );
-    return row ? row.enabled : true;
+    return row ? row.enabled : fallback;
   };
 
   // A cell with a submission in flight is disabled: overlapping upserts for
   // the same (topic, channel) would race and last-write-wins in the database.
-  const isPending = (topic: NotificationTopic, channel: "email" | "slack") =>
+  const isPending = (topic: NotificationTopic, channel: Channel) =>
     fetchers.some(
       (fetcher) =>
         fetcher.state !== "idle" &&
@@ -142,7 +151,7 @@ export default function AccountNotifications() {
 
   const toggle = (
     topic: NotificationTopic,
-    channel: "email" | "slack",
+    channel: Channel,
     next: boolean
   ) => {
     submit(
@@ -152,85 +161,114 @@ export default function AccountNotifications() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <Trans>Notifications</Trans>
-        </CardTitle>
-        <CardDescription>
-          {slackActive ? (
-            <Trans>
-              In-app notifications are always delivered. Choose which topics
-              also reach you by email or Slack.
-            </Trans>
-          ) : (
-            <Trans>
-              In-app notifications are always delivered. Choose which topics
-              also reach you by email.
-            </Trans>
+    <VStack spacing={4} className="pb-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Notifications</Trans>
+          </CardTitle>
+          <CardDescription>
+            {slackActive ? (
+              <Trans>
+                In-app notifications are always delivered. Choose which topics
+                also reach you by email or Slack.
+              </Trans>
+            ) : (
+              <Trans>
+                In-app notifications are always delivered. Choose which topics
+                also reach you by email.
+              </Trans>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!emailPlanEnabled && (
+            <p className="text-sm text-muted-foreground mb-4">
+              <Trans>
+                Email notifications are not included in your company&apos;s
+                current plan; email preferences will apply if they are enabled.
+              </Trans>
+            </p>
           )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {!emailPlanEnabled && (
-          <p className="text-sm text-muted-foreground mb-4">
-            <Trans>
-              Email notifications are not included in your company&apos;s
-              current plan; email preferences will apply if they are enabled.
-            </Trans>
-          </p>
-        )}
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="text-left text-sm font-medium py-2">
-                <Trans>Topic</Trans>
-              </th>
-              <th className="text-center text-sm font-medium py-2 w-24">
-                <Trans>Email</Trans>
-              </th>
-              {slackActive && (
-                <th className="text-center text-sm font-medium py-2 w-24">
-                  <Trans>Slack</Trans>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left text-sm font-medium py-2">
+                  <Trans>Topic</Trans>
                 </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {USER_FACING_NOTIFICATION_TOPICS.map((topic) => (
-              <tr key={topic} className="border-b border-border last:border-0">
-                <td className="text-sm py-3">{topicLabels[topic]}</td>
-                <td className="py-3 w-24">
-                  <div className="flex justify-center">
-                    <Switch
-                      checked={isEnabled(topic, "email")}
-                      disabled={isPending(topic, "email")}
-                      onCheckedChange={(checked) =>
-                        toggle(topic, "email", checked)
-                      }
-                      aria-label={`${topicLabels[topic]} ${t`email`}`}
-                    />
-                  </div>
-                </td>
+                <th className="text-center text-sm font-medium py-2 w-24">
+                  <Trans>Email</Trans>
+                </th>
                 {slackActive && (
+                  <th className="text-center text-sm font-medium py-2 w-24">
+                    <Trans>Slack</Trans>
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {USER_FACING_NOTIFICATION_TOPICS.map((topic) => (
+                <tr
+                  key={topic}
+                  className="border-b border-border last:border-0"
+                >
+                  <td className="text-sm py-3">{topicLabels[topic]}</td>
                   <td className="py-3 w-24">
                     <div className="flex justify-center">
                       <Switch
-                        checked={isEnabled(topic, "slack")}
-                        disabled={isPending(topic, "slack")}
+                        checked={isEnabled(topic, "email")}
+                        disabled={isPending(topic, "email")}
                         onCheckedChange={(checked) =>
-                          toggle(topic, "slack", checked)
+                          toggle(topic, "email", checked)
                         }
-                        aria-label={`${topicLabels[topic]} ${t`Slack`}`}
+                        aria-label={`${topicLabels[topic]} ${t`email`}`}
                       />
                     </div>
                   </td>
-                )}
+                  {slackActive && (
+                    <td className="py-3 w-24">
+                      <div className="flex justify-center">
+                        <Switch
+                          checked={isEnabled(topic, "slack")}
+                          disabled={isPending(topic, "slack")}
+                          onCheckedChange={(checked) =>
+                            toggle(topic, "slack", checked)
+                          }
+                          aria-label={`${topicLabels[topic]} ${t`Slack`}`}
+                        />
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+              {/* The changelog newsletter is a row like any topic, but opt-in
+                  (no row = off) and email-only — there is no Slack delivery. */}
+              <tr className="border-b border-border last:border-0">
+                <td className="text-sm py-3">
+                  <Trans>Changelog newsletter</Trans>
+                </td>
+                <td className="py-3 w-24">
+                  <div className="flex justify-center">
+                    <Switch
+                      checked={isEnabled(
+                        NotificationTopic.Changelog,
+                        "email",
+                        false
+                      )}
+                      disabled={isPending(NotificationTopic.Changelog, "email")}
+                      onCheckedChange={(checked) =>
+                        toggle(NotificationTopic.Changelog, "email", checked)
+                      }
+                      aria-label={t`Changelog newsletter`}
+                    />
+                  </div>
+                </td>
+                {slackActive && <td className="py-3 w-24" />}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </CardContent>
-    </Card>
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </VStack>
   );
 }

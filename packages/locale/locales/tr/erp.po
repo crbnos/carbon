@@ -3206,6 +3206,12 @@ msgstr "Tipi Değiştir"
 msgid "Changed By"
 msgstr "Değiştiren"
 
+msgid "Changelog"
+msgstr "Değişiklik Günlüğü"
+
+msgid "Changelog newsletter"
+msgstr "Değişiklik Günlüğü Haber Bülteni"
+
 msgid "Changes"
 msgstr "Değişiklikler"
 
@@ -17410,7 +17416,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Başlıksız"
 
 msgid "Untitled Diagram"
 msgstr "Başlıksız Diyagram"

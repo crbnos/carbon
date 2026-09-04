@@ -5,6 +5,7 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
 import type { ComponentProps } from "react";
 import { Checklist, Check } from "@/components/checklist";
+import { Accordion } from "@/components/editorial/accordion";
 import { Field, FieldTable } from "@/components/editorial/field-table";
 import { Glossary } from "@/components/editorial/glossary";
 // Figure/Screenshot + the shared Zoomable island so the Reference gets the same
@@ -51,6 +52,7 @@ export function getMDXComponents(components?: MDXComponents) {
         <img {...props} alt={alt ?? ""} className="block w-full rounded-xl border border-ed-hairline" />
       </Zoomable>
     ),
+    Accordion,
     Card,
     Cards,
     Callout,

@@ -1,0 +1,28 @@
+# Finite-capacity scheduling
+
+> The scheduler now plans against real work-center capacity, with ability-gated operators and an explainable Gantt.
+
+The `docs/reference/scheduling` now plans against real capacity instead of assuming infinite machines and people. Scheduling an operation reserves capacity on its work center, operators are gated by the abilities a job operation requires, and the Gantt explains its placements — you can see why an operation landed where it did instead of guessing.
+
+## Enterprise SAML SSO
+
+Carbon now supports SAML single sign-on, so your team can sign in through your identity provider. Account linking is provider-agnostic, and the configuration lives in Settings → Security. Two-factor enforcement is also now available on the Business plan.
+
+## Platform exchange rates with per-company overrides
+
+Currency exchange rates are now managed platform-globally, with per-company overrides when your company needs to pin its own rate. The chart of accounts also gained an opening-balances tool for bringing existing books into Carbon.
+
+- Jobs can copy their method from another job, with a version picker for choosing which method revision to source.
+- A BOM-level replenishment system and purchasing units of measure.
+- API keys can opt in to an accounting delete scope.
+- A refreshed app shell for ERP and MES — an inset, floating layout — plus responsive mobile navigation.
+- CSV import for storage units, with validation that rejects cross-location and name-colliding rows.
+- Item IDs may now be lowercase, and chart-of-accounts account mapping covers the full chart.
+- Purchase order PDFs show the company EORI number below the VAT number.
+- Onboarding now presents the Starter, Business, and Enterprise plans.
+
+- Item supersession swaps now resolve correctly across every job-creation flow, so a phased-out part's successor is substituted consistently.
+- The schedule no longer reopens finished operations when a location's schedule is regenerated.
+- Items with inventory or cost history can no longer be deleted out from under their records.
+- Posting a purchase invoice no longer marks it paid.
+- MES shows the item revision in the operation header, and an unconverted 3D model renders as a slide instead of a load error.

@@ -1,8 +1,30 @@
 {
-  "generated": "2026-09-03T15:31:57.926Z",
-  "totalTools": 1495,
+  "generated": "2026-09-04T23:57:22.665Z",
+  "totalTools": 1496,
   "modules": 15,
   "tools": [
+    {
+      "name": "account_getChangelogPanelEntry",
+      "module": "account",
+      "classification": "READ",
+      "description": "get changelog panel entry",
+      "paramCount": 1,
+      "serviceParams": [
+        "serviceRole"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "serviceRole": {}
+        },
+        "required": [
+          "serviceRole"
+        ]
+      }
+    },
     {
       "name": "account_getNotificationPreferences",
       "module": "account",

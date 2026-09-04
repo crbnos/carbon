@@ -2,6 +2,42 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
 
+export type ChangelogPanelEntry = {
+  guid: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  dispatchedAt: string;
+};
+
+/**
+ * The newest published changelog entry for the in-app "What's new" panel.
+ * From the `changelogDispatch` ledger the newsletter dispatcher maintains
+ * (platform table, service-role only). The guid IS the entry's permalink on
+ * docs.carbon.ms; `slug` is its last path segment, the key of the user flag
+ * (`changelog:<slug>`) that records a dismissal — see useChangelogPanel.
+ */
+export async function getChangelogPanelEntry(
+  serviceRole: SupabaseClient<Database>
+): Promise<ChangelogPanelEntry | null> {
+  const latest = await serviceRole
+    .from("changelogDispatch")
+    .select("guid, title, description, dispatchedAt")
+    .order("dispatchedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!latest.data?.title) return null;
+  const slug = latest.data.guid.split("/").filter(Boolean).pop() ?? "";
+  if (!slug) return null;
+  return {
+    guid: latest.data.guid,
+    slug,
+    title: latest.data.title,
+    description: latest.data.description,
+    dispatchedAt: latest.data.dispatchedAt
+  };
+}
+
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,
   userId: string,

@@ -3206,6 +3206,12 @@ msgstr "변경 유형"
 msgid "Changed By"
 msgstr "변경자"
 
+msgid "Changelog"
+msgstr "변경 로그"
+
+msgid "Changelog newsletter"
+msgstr "변경 로그 뉴스레터"
+
 msgid "Changes"
 msgstr "변경 사항"
 
@@ -17410,7 +17416,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "제목 없음"
 
 msgid "Untitled Diagram"
 msgstr "제목 없는 다이어그램"

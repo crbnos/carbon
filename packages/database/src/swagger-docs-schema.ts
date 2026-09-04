@@ -6303,6 +6303,141 @@ export default {
         tags: ["workflow"]
       }
     },
+    "/changelogDispatch": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changelogDispatch"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changelogDispatch"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/body.changelogDispatch"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      }
+    },
     "/approvalRequests": {
       get: {
         parameters: [
@@ -103229,6 +103364,35 @@ export default {
       },
       type: "object"
     },
+    changelogDispatch: {
+      required: ["guid", "dispatchedAt", "emailsSent"],
+      properties: {
+        guid: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        title: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        dispatchedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        emailsSent: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        }
+      },
+      type: "object"
+    },
     approvalRequests: {
       properties: {
         id: {
@@ -106592,7 +106756,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -106641,7 +106805,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -145787,6 +145951,45 @@ export default {
     },
     "rowFilter.workflow.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.changelogDispatch": {
+      name: "changelogDispatch",
+      description: "changelogDispatch",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changelogDispatch"
+      }
+    },
+    "rowFilter.changelogDispatch.guid": {
+      name: "guid",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.dispatchedAt": {
+      name: "dispatchedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.emailsSent": {
+      name: "emailsSent",
       required: false,
       in: "query",
       type: "string"

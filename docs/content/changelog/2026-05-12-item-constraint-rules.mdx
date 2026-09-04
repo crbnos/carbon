@@ -1,0 +1,38 @@
+---
+title: "Multi-entity accounting, storage rules, and shelf life"
+description: "Run several legal entities in one company group, guard inventory transactions with storage rules, and track shelf life."
+date: "2026-05-12"
+tags: ["accounting", "inventory", "items"]
+---
+
+Multi-entity accounting lets a company group run several legal entities with their own books. A [storage rule](/docs/reference/storage-rules) runs when an inventory transaction posts: it checks the line against a condition you define and either blocks the transaction or warns and lets the user continue; rules attach to items or work centers. Shelf life is tracked on items and batches.
+
+## Traceability explorer, rebuilt
+
+The traceability explorer has been rebuilt for large genealogies, and dates across the app now follow your locale.
+
+<Accordion title="Improvements">
+
+- Incoterms and EORI numbers.
+- An Accounting settings page; supplier approval moved out of company settings.
+- Job materials can be backflushed.
+- Plan upgrade banners show where a feature needs the Business plan.
+- The configurator can eliminate a part or process with an empty value.
+- Language selection moved to the avatar menu.
+- Stripe invoice notifications, including invoice sent.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Files can be uploaded and dates changed on documents in any status.
+- Supplier approval no longer fails.
+- RFQ-to-quote flow fixes.
+- Shipment lines validate batch input, check expiry, and no longer go stale.
+- Receipts, shipments, and stock transfers only list Draft items when filtering by tracking status.
+- Shelf-life inventory adjustments follow the right path.
+- Traceability paths resolve correctly.
+- Risks for a source entity are matched with AND logic.
+- Job completion handles a split-duplicated tracked entity and surfaces the real error.
+
+</Accordion>

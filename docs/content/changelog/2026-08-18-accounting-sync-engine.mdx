@@ -1,0 +1,45 @@
+---
+title: "Automation workflows"
+description: "Build automations on a canvas — a trigger, conditions, and steps that notify people, update records, or call an outside service. Plus accounting sync for Xero, QuickBooks Online, and Rillet, financial reports, and scrap."
+date: "2026-08-18"
+tags: ["workflows", "accounting", "mes"]
+---
+
+A [workflow](/docs/reference/workflows) watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted. You build one on a canvas under Automate → Workflows — steps are cards you connect by their handles, so one trigger can fan out into branches — and press Publish. Every run is recorded step by step in [workflow runs](/docs/reference/workflow-runs).
+
+## Accounting sync and financial reports
+
+Carbon can sync accounting data to Xero, QuickBooks Online, and Rillet through one multi-provider sync engine. A financial reports module arrives with it. Multi-entity companies get a capture-driven intercompany elimination engine: intercompany invoices are posted, matched, and eliminated automatically, and consolidated reports show the group without double-counted internal trade.
+
+## Scrap and unscrap
+
+Scrap serials and subcomponents from MES or stock from the ERP, with a scrap-reason dimension; unscrap restores a scrapped part at its original cost.
+
+<Accordion title="Improvements">
+
+- TOTP two-factor authentication, with org-level enforcement.
+- MES work center displays, and board and list views for the assigned-to-me page.
+- Business dates follow the company and location timezones, with a shared date-time control and a searchable timezone picker.
+- Picked-material return timing (at job or operation), and batch splits keep the parent's identity.
+- An ITAR certification system covers entity and user certifications, with hardened invites.
+- A platform-wide numeric precision and formatting standard — per-unit prices keep the digits they were typed with.
+- Search modal filter chips are ordered by likely use.
+- The guides carry real product screenshots.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Quote line prices are rewritten in a transaction, preserve shipping cost, and an empty rewrite is a no-op.
+- Base-currency pricing shows in the base currency on quotes and sales order lines; supplier quotes compare in the base currency.
+- Sales order totals no longer collapse equal line amounts.
+- Invoice due dates handle End of Month and Day of Month payment terms and populate from the payment term on posting.
+- Picking lists honor item supersession, and the default bin is read for the right item.
+- Item quantities update in real time, alongside MRP correctness fixes; planning scrap math and MRP double-netting corrected.
+- Schedule board updates commit on drop, and pre-assigned work centers survive a reschedule.
+- MES: the serial picker only shows for serial parts, multiple batches can be unconsumed, and job operation files are reachable on mobile.
+- Issues appear in global search; duplicate issue type names are prevented.
+- Change notice notifications go to assignees instead of the whole company.
+- Audit log diffs show display names instead of raw ids.
+
+</Accordion>
