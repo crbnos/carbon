@@ -2624,6 +2624,9 @@ msgstr "은행 및 금융 서비스 요금 비용"
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "막대는 매주의 흐름을 보여줍니다: <0>공급</0>은 재고를 올리고, <1>소요량</1>은 내립니다. <2>라인</2>은 예상 현재고 — <3>안전 재고</3> 아래로 떨어지면 위험에 처해 있고, 0 아래는 <4>재고 부족</4>입니다."
 
+msgid "Base currency"
+msgstr "기준 통화"
+
 msgid "Base Currency"
 msgstr "기준 통화"
 
@@ -3220,6 +3223,9 @@ msgstr "이를 변경하면 품목 ID가 업데이트됩니다"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
+
+msgid "Chart"
+msgstr "차트"
 
 msgid "Chart of accounts"
 msgstr "계정과목표"
@@ -5242,9 +5248,6 @@ msgstr "배송 방법 삭제"
 msgid "Delete step"
 msgstr "단계 삭제"
 
-msgid "Delete Step"
-msgstr "단계 삭제"
-
 msgid "Delete Stock Transfer"
 msgstr "재고 이동 삭제"
 
@@ -6100,9 +6103,6 @@ msgstr "배송 방법 편집"
 
 msgid "Edit Size"
 msgstr "크기 편집"
-
-msgid "Edit Step"
-msgstr "단계 편집"
 
 msgid "Edit Stock Transfer"
 msgstr "재고 이송 편집"
@@ -9428,6 +9428,15 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
+msgid "Market rate"
+msgstr "시장 환율"
+
+msgid "Market rate (per USD)"
+msgstr "시장 환율 (USD당)"
+
+msgid "Market Rate History (per USD)"
+msgstr "시장 환율 기록 (USD당)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "범위 내의 모든 날짜에 대해 해당 사람을 표시합니다. 그들은 휴무 중에 스케줄되지 않습니다."
 
@@ -9978,6 +9987,9 @@ msgstr "신규 원가 센터"
 
 msgid "New Credit / Debit Memo"
 msgstr "신규 대변/차변 메모"
+
+msgid "New Currency"
+msgstr "신규 통화"
 
 msgid "New Custom Field"
 msgstr "신규 사용자 정의 필드"
@@ -10613,6 +10625,9 @@ msgstr "견적 거절 사유"
 msgid "No Quote Reasons"
 msgstr "견적 거절 사유"
 
+msgid "No rate"
+msgstr "환율 없음"
+
 msgid "No receivables"
 msgstr "매출채권이 없습니다"
 
@@ -10977,6 +10992,11 @@ msgstr "정시 납품"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Carbon에 에이전트 등록"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0}은(는) 몇 {1}입니까?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로의 한 번 실행으로, 각 단계가 사용하고 생성한 값을 단계별로 기록하며 워크플로 책임자의 권한으로 전체적으로 작동합니다."
@@ -12673,8 +12693,14 @@ msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 �
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Rate"
+msgstr "환율"
+
 msgid "Rate Limit"
 msgstr "요청 제한"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "연결 시 자본 계정 환산에 사용되는 환율(IAS 21)입니다. 비워 두면 현재 환율이 사용됩니다."
 
 msgid "Ratio"
 msgstr "비율"
@@ -13287,6 +13313,9 @@ msgstr "PIN 재설정"
 msgid "Reset PIN for {0} {1}"
 msgstr "{0} {1}의 PIN 재설정"
 
+msgid "Reset to market rate"
+msgstr "시장 환율로 재설정"
+
 msgid "Reset Two-Factor Auth"
 msgstr "2단계 인증 재설정"
 
@@ -13822,6 +13851,9 @@ msgstr "차원 설정 저장"
 
 msgid "Save Method"
 msgstr "저장 방법"
+
+msgid "Save Rate"
+msgstr "환율 저장"
 
 msgid "Save view"
 msgstr "보기 저장"
@@ -16598,6 +16630,9 @@ msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제�
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "예상보다 오래 걸리고 있습니다. 계속 진행될 수 있습니다 — 진행되지 않으면 복원을 다시 시도하여 데이터를 복구하세요."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "기준 통화입니다. 환율은 항상 1입니다."
+
 msgid "This is the month your fiscal year starts."
 msgstr "회계연도가 시작되는 월입니다."
 
@@ -17394,6 +17429,9 @@ msgstr "미출하 주문"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "제목 없는 다이어그램"
@@ -18745,6 +18783,9 @@ msgstr "프로젝트 전체: 계획, 단계별 게이트, 도입"
 
 msgid "Your Project Team"
 msgstr "프로젝트 팀"
+
+msgid "Your rate"
+msgstr "사용자 환율"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습니다."

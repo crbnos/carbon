@@ -128,6 +128,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { buckets, includeCurrentYearEarnings: true }
     );
 
+    if (consolidated.error || !consolidated.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            consolidated.error,
+            "Failed to translate a subsidiary's balances"
+          )
+        )
+      );
+    }
+
     const balanceSheetAccounts = consolidated.data.filter(
       (a) => a.incomeBalance === "Balance Sheet"
     );

@@ -2624,6 +2624,9 @@ msgstr "Spese per commissioni di servizi bancari e finanziari."
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "I grafici mostrano il flusso di ogni settimana: <0>copertura</0> spinge il magazzino verso l'alto, <1>fabbisogno</1> lo tira verso il basso. La <2>riga</2> è il tuo magazzino disponibile previsto — quando scende al di sotto della <3>scorta di sicurezza</3> sei a rischio, e al di sotto di zero è una <4>rottura di stock</4>."
 
+msgid "Base currency"
+msgstr "Valuta base"
+
 msgid "Base Currency"
 msgstr "Valuta di Base"
 
@@ -3220,6 +3223,9 @@ msgstr "Modificare questo aggiornerà l'ID della parte"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
+
+msgid "Chart"
+msgstr "Grafico"
 
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
@@ -5242,9 +5248,6 @@ msgstr "Elimina Metodo di Spedizione"
 msgid "Delete step"
 msgstr "Elimina passaggio"
 
-msgid "Delete Step"
-msgstr "Elimina Passaggio"
-
 msgid "Delete Stock Transfer"
 msgstr "Elimina Trasferimento Magazzino"
 
@@ -6100,9 +6103,6 @@ msgstr "Modifica Metodo di Spedizione"
 
 msgid "Edit Size"
 msgstr "Modifica Dimensione"
-
-msgid "Edit Step"
-msgstr "Modifica Passaggio"
 
 msgid "Edit Stock Transfer"
 msgstr "Modifica Trasferimento Magazzino"
@@ -9428,6 +9428,15 @@ msgstr "Segna come incompleto"
 msgid "Mark to delete"
 msgstr "Segna per eliminare"
 
+msgid "Market rate"
+msgstr "Tasso di mercato"
+
+msgid "Market rate (per USD)"
+msgstr "Tasso di mercato (per USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Storico del tasso di mercato (per USD)"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Segna la persona come assente per ogni giorno nell'intervallo. Non verranno programmati mentre sono via."
 
@@ -9978,6 +9987,9 @@ msgstr "Nuovo Centro di Costo"
 
 msgid "New Credit / Debit Memo"
 msgstr "Nuova nota di credito / debito"
+
+msgid "New Currency"
+msgstr "Nuova Valuta"
 
 msgid "New Custom Field"
 msgstr "Nuovo Campo Personalizzato"
@@ -10613,6 +10625,9 @@ msgstr "Nessun motivo dell'offerta"
 msgid "No Quote Reasons"
 msgstr "Nessun motivo di mancata offerta"
 
+msgid "No rate"
+msgstr "Nessun tasso"
+
 msgid "No receivables"
 msgstr "Nessun credito"
 
@@ -10977,6 +10992,11 @@ msgstr "Consegna puntuale"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Integra il tuo agente in Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} equivale a quanti {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Un'esecuzione di un flusso di lavoro, registrata passo per passo con i valori che ogni passo ha utilizzato e prodotto, agendo sempre con i permessi del proprietario del flusso di lavoro."
@@ -12673,8 +12693,14 @@ msgstr "segnalalo presto e segnalalo chiaramente. Un problema identificato nella
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Rate"
+msgstr "Tasso"
+
 msgid "Rate Limit"
 msgstr "Limite di Velocità"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel consolidamento (IAS 21). Lasciare vuoto per usare il tasso di cambio corrente."
 
 msgid "Ratio"
 msgstr "Rapporto"
@@ -13287,6 +13313,9 @@ msgstr "Ripristina PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reimposta PIN per {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Ripristina al tasso di mercato"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Ripristina autenticazione a due fattori"
 
@@ -13822,6 +13851,9 @@ msgstr "Salva impostazioni dimensionali"
 
 msgid "Save Method"
 msgstr "Salva Metodo"
+
+msgid "Save Rate"
+msgstr "Salva tasso"
 
 msgid "Save view"
 msgstr "Salva vista"
@@ -16598,6 +16630,9 @@ msgstr "Questo è un ambiente controllato ITAR. L'accesso è limitato alle Perso
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "Sta richiedendo più tempo del previsto. Potrebbe comunque finire - se non finisce, riprova il ripristino per ripristinare i tuoi dati."
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "Questa è la valuta base. Il tasso di cambio è sempre 1."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Questo è il mese in cui inizia il tuo esercizio fiscale."
 
@@ -17394,6 +17429,9 @@ msgstr "Ordini non spediti"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo di documento di origine non supportato: {sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "Diagramma senza titolo"
@@ -18749,6 +18787,9 @@ msgstr "Il tuo progetto da inizio a fine: il piano, i gate e il go-live"
 
 msgid "Your Project Team"
 msgstr "Il tuo team di progetto"
+
+msgid "Your rate"
+msgstr "Il tuo tasso"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "I tuoi dati reali sono caricati e hai controllato un campione e lo hai approvato."

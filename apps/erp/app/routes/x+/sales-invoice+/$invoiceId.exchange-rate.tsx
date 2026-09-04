@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import {
   getSalesInvoice,
   isSalesInvoiceLocked,
@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -41,21 +41,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const formData = await request.formData();
-  const currencyCode = formData.get("currencyCode") as string;
+  const currencyCode = invoice.data?.currencyCode;
   if (!currencyCode) throw new Error("Could not find currencyCode");
 
-  const currency = await getCurrencyByCode(
-    client,
-    companyGroupId,
-    currencyCode
-  );
-  if (currency.error || !currency.data.exchangeRate)
-    throw new Error("Could not find currency");
+  const exchangeRate = await getExchangeRate(client, companyId, currencyCode);
+  if (exchangeRate.error) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.salesInvoiceDetails(invoiceId),
+      await flash(
+        request,
+        error(exchangeRate.error, "Failed to get exchange rate")
+      )
+    );
+  }
 
   const update = await updateSalesInvoiceExchangeRate(client, {
     id: invoiceId,
-    exchangeRate: currency.data.exchangeRate,
+    exchangeRate: exchangeRate.data,
     updatedBy: userId
   });
 

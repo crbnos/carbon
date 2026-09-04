@@ -6959,7 +6959,14 @@ serve(async (req: Request) => {
                     quantity: l.quantity ?? 0,
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
-                    exchangeRate: l.exchangeRate ?? 0,
+                    // Never 0: a zero rate is not a valid snapshot (DB CHECK
+                    // "exchangeRate" > 0) and zeroes every converted* generated
+                    // column. A legacy null line rate falls back to the SOURCE
+                    // QUOTE's own stamped header rate; 1 only when the source
+                    // header predates stamping too (base-consistent with its
+                    // line snapshots' old default).
+                    exchangeRate:
+                      l.exchangeRate ?? sourceQuote.data?.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
                     // stays protected on the new quote/revision.

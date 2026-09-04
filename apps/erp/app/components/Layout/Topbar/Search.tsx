@@ -9,6 +9,7 @@ import {
   cn,
   Modal,
   ModalContent,
+  Subheading,
   useDebounce,
   VStack
 } from "@carbon/react";
@@ -261,10 +262,13 @@ export const SearchModal = () => {
                   <>
                     <CommandGroup
                       heading={
-                        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        <Subheading
+                          variant="heavy"
+                          className="flex items-center gap-1.5"
+                        >
                           <LuClock className="w-3 h-3" />
                           <Trans>Recent</Trans>
-                        </span>
+                        </Subheading>
                       }
                       key="recent"
                     >
@@ -376,9 +380,9 @@ export const SearchModal = () => {
                 {searchResults.length > 0 && (
                   <CommandGroup
                     heading={
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Subheading variant="heavy">
                         <Trans>Results</Trans>
-                      </span>
+                      </Subheading>
                     }
                     key="search"
                   >
