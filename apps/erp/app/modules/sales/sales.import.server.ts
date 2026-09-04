@@ -3,6 +3,7 @@ import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Papa from "papaparse";
+import { itemType as sellableItemTypes } from "~/modules/shared/shared.models";
 import {
   insertQuote,
   upsertQuoteLine,
@@ -244,6 +245,7 @@ export async function importQuotes(
     await importLinesIntoExistingQuotes(client, {
       db,
       records,
+      raws: rawRows,
       refs,
       companyId,
       userId,
@@ -254,6 +256,7 @@ export async function importQuotes(
       db,
       table,
       records,
+      raws: rawRows,
       refs,
       companyId,
       companyGroupId,
@@ -269,10 +272,25 @@ export async function importQuotes(
 // reference resolution
 // ---------------------------------------------------------------------------
 
+// `type` is narrowed to the item table's own enum (not `string`) so the
+// quoteLine payload below can be type-checked without a cast.
+type ItemType = Database["public"]["Tables"]["item"]["Row"]["type"];
+
+// `item.type` is wider than what may appear on a quote line — a Fixture is
+// stocked but never sold (see `itemType` in shared.models). Reject it by name
+// instead of sending a value the line validator does not accept.
+type SellableItemType = (typeof sellableItemTypes)[number];
+
+function toSellableItemType(value: ItemType): SellableItemType | null {
+  return (sellableItemTypes as readonly string[]).includes(value)
+    ? (value as SellableItemType)
+    : null;
+}
+
 type ItemInfo = {
   id: string;
   readableId: string;
-  type: string;
+  type: ItemType;
   defaultMethodType: string | null;
   unitOfMeasureCode: string | null;
 };
@@ -432,7 +450,11 @@ async function loadReferences(
 // mode: quote / quoteWithLines (grouped by Quote Group)
 // ---------------------------------------------------------------------------
 
-type Entry = { record: Rec; index: number };
+// `raw` is the ORIGINAL csv row, keyed by CSV HEADER. The results modal renders
+// `values[<csv header>]` (it is handed `fileColumns`), so reporting the mapped
+// record instead leaves every data cell blank and makes the "download rows to
+// fix" export contain nothing but reasons.
+type Entry = { record: Rec; raw: Rec; index: number };
 
 async function importQuoteGroups(
   client: SupabaseClient<Database>,
@@ -440,6 +462,7 @@ async function importQuoteGroups(
     db: Kysely<KyselyDatabase>;
     table: QuoteImportTable;
     records: Rec[];
+    raws: Rec[];
     refs: References;
     companyId: string;
     companyGroupId: string;
@@ -451,6 +474,7 @@ async function importQuoteGroups(
     db,
     table,
     records,
+    raws,
     refs,
     companyId,
     companyGroupId,
@@ -466,6 +490,7 @@ async function importQuoteGroups(
   const groupOrder: string[] = [];
 
   records.forEach((record, index) => {
+    const raw = raws[index] ?? record;
     const externalId = text(record.externalId);
     const rowType = resolveRowType(record, table);
 
@@ -473,7 +498,7 @@ async function importQuoteGroups(
       summary.errors.push({
         row: index,
         reason: "Quote Group is required",
-        values: record
+        values: raw
       });
       return;
     }
@@ -483,8 +508,8 @@ async function importQuoteGroups(
       groupOrder.push(externalId);
     }
     const group = groups.get(externalId)!;
-    if (rowType === "QUOTE") group.headers.push({ record, index });
-    else group.lines.push({ record, index });
+    if (rowType === "QUOTE") group.headers.push({ record, raw, index });
+    else group.lines.push({ record, raw, index });
   });
 
   for (const externalId of groupOrder) {
@@ -496,7 +521,7 @@ async function importQuoteGroups(
         summary.skipped.push({
           row: entry.index,
           reason: `Quote Group "${externalId}" was already imported`,
-          values: entry.record
+          values: entry.raw
         });
       }
       continue;
@@ -509,7 +534,7 @@ async function importQuoteGroups(
         summary.errors.push({
           row: entry.index,
           reason: `No header (QUOTE) row for Quote Group "${externalId}"`,
-          values: entry.record
+          values: entry.raw
         });
       }
       continue;
@@ -520,7 +545,7 @@ async function importQuoteGroups(
       summary.skipped.push({
         row: dup.index,
         reason: `Duplicate header for Quote Group "${externalId}"`,
-        values: dup.record
+        values: dup.raw
       });
     }
 
@@ -530,7 +555,7 @@ async function importQuoteGroups(
       summary.errors.push({
         row: header.index,
         reason: "Customer is required",
-        values: header.record
+        values: header.raw
       });
       failLines(group.lines, "Parent quote could not be created", summary);
       continue;
@@ -539,7 +564,7 @@ async function importQuoteGroups(
       summary.errors.push({
         row: header.index,
         reason: `Customer "${text(header.record.customerId)}" is ambiguous`,
-        values: header.record
+        values: header.raw
       });
       failLines(group.lines, "Parent quote could not be created", summary);
       continue;
@@ -549,7 +574,7 @@ async function importQuoteGroups(
       summary.errors.push({
         row: header.index,
         reason: `Customer "${text(header.record.customerId)}" not found`,
-        values: header.record
+        values: header.raw
       });
       failLines(group.lines, "Parent quote could not be created", summary);
       continue;
@@ -570,7 +595,7 @@ async function importQuoteGroups(
       summary.errors.push({
         row: header.index,
         reason: created.error?.message ?? "Failed to create quote",
-        values: header.record
+        values: header.raw
       });
       failLines(group.lines, "Parent quote could not be created", summary);
       continue;
@@ -596,7 +621,7 @@ async function importQuoteGroups(
       summary.errors.push({
         row: header.index,
         reason: `Quote created, but recording its import mapping failed (a re-import may duplicate it): ${mappingInsert.error.message}`,
-        values: header.record
+        values: header.raw
       });
     }
 
@@ -621,27 +646,29 @@ async function importLinesIntoExistingQuotes(
   ctx: {
     db: Kysely<KyselyDatabase>;
     records: Rec[];
+    raws: Rec[];
     refs: References;
     companyId: string;
     userId: string;
     summary: Summary;
   }
 ): Promise<void> {
-  const { db, records, refs, companyId, userId, summary } = ctx;
+  const { db, records, raws, refs, companyId, userId, summary } = ctx;
 
   const byQuote = new Map<string, Entry[]>();
   records.forEach((record, index) => {
+    const raw = raws[index] ?? record;
     const quoteNumber = text(record.quoteId);
     if (!quoteNumber) {
       summary.errors.push({
         row: index,
         reason: "Quote Number is required",
-        values: record
+        values: raw
       });
       return;
     }
     if (!byQuote.has(quoteNumber)) byQuote.set(quoteNumber, []);
-    byQuote.get(quoteNumber)!.push({ record, index });
+    byQuote.get(quoteNumber)!.push({ record, raw, index });
   });
 
   for (const [quoteNumber, lines] of byQuote) {
@@ -681,13 +708,13 @@ async function createLines(
   const { db, quoteInternalId, lines, refs, companyId, userId, summary } = ctx;
   const seen = new Set<string>(); // `${partNumber}|${quantity}` within this quote
 
-  for (const { record, index } of lines) {
+  for (const { record, raw, index } of lines) {
     const partNumber = text(record.itemReadableId);
     if (!partNumber) {
       summary.errors.push({
         row: index,
         reason: "Part Number is required",
-        values: record
+        values: raw
       });
       continue;
     }
@@ -696,7 +723,17 @@ async function createLines(
       summary.errors.push({
         row: index,
         reason: `Part "${partNumber}" not found`,
-        values: record
+        values: raw
+      });
+      continue;
+    }
+
+    const lineItemType = toSellableItemType(item.type);
+    if (!lineItemType) {
+      summary.errors.push({
+        row: index,
+        reason: `Part "${partNumber}" is a ${item.type} and cannot be quoted`,
+        values: raw
       });
       continue;
     }
@@ -707,7 +744,7 @@ async function createLines(
       summary.errors.push({
         row: index,
         reason: "Quantity is required",
-        values: record
+        values: raw
       });
       continue;
     }
@@ -716,7 +753,7 @@ async function createLines(
       summary.errors.push({
         row: index,
         reason: "Quantity must be a positive number",
-        values: record
+        values: raw
       });
       continue;
     }
@@ -726,7 +763,7 @@ async function createLines(
       summary.skipped.push({
         row: index,
         reason: `Duplicate line (${partNumber} @ qty ${quantity})`,
-        values: record
+        values: raw
       });
       continue;
     }
@@ -738,7 +775,7 @@ async function createLines(
         row: index,
         reason:
           "Discount Percent must be a fraction 0–1 (e.g. 0.10) or a whole percent 0–100 (e.g. 10)",
-        values: record
+        values: raw
       });
       continue;
     }
@@ -751,11 +788,14 @@ async function createLines(
     const unitOfMeasureCode =
       text(record.unitOfMeasureCode) || item.unitOfMeasureCode || "EA";
 
+    // NOTE: `quoteLine` has no `itemReadableId` column — the readable id lives
+    // on `item` and is joined in by the `quoteLines` view. Sending it makes
+    // PostgREST reject the whole insert ("could not find the column ... in the
+    // schema cache"), so every line silently fails while the header succeeds.
     const linePayload = {
       quoteId: quoteInternalId,
       itemId: item.id,
-      itemReadableId: item.readableId,
-      itemType: item.type,
+      itemType: lineItemType,
       description,
       methodType,
       unitOfMeasureCode,
@@ -767,16 +807,13 @@ async function createLines(
       createdBy: userId
     };
 
-    const line = await upsertQuoteLine(
-      client,
-      linePayload as Parameters<typeof upsertQuoteLine>[1]
-    );
+    const line = await upsertQuoteLine(client, linePayload);
 
     if (line.error || !line.data) {
       summary.errors.push({
         row: index,
         reason: line.error?.message ?? "Failed to create quote line",
-        values: record
+        values: raw
       });
       continue;
     }
@@ -798,13 +835,13 @@ async function createLines(
           row: index,
           reason:
             "Line created but Unit Price must be a number of 0 or greater",
-          values: record
+          values: raw
         });
       } else if (leadTimeRaw && (leadTime === undefined || leadTime < 0)) {
         summary.errors.push({
           row: index,
           reason: "Line created but Lead Time must be a number of 0 or greater",
-          values: record
+          values: raw
         });
       } else {
         // Kysely transaction — it throws rather than returning an error.
@@ -824,7 +861,7 @@ async function createLines(
           summary.errors.push({
             row: index,
             reason: `Line created but pricing failed: ${(err as Error).message}`,
-            values: record
+            values: raw
           });
         }
       }
@@ -833,7 +870,7 @@ async function createLines(
 }
 
 function failLines(lines: Entry[], reason: string, summary: Summary): void {
-  for (const { record, index } of lines) {
-    summary.errors.push({ row: index, reason, values: record });
+  for (const { raw, index } of lines) {
+    summary.errors.push({ row: index, reason, values: raw });
   }
 }
