@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="foil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="copper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6d3a22"/>
+      <stop offset="0.2" stop-color="#c07a4d"/>
+      <stop offset="0.45" stop-color="#e0a071"/>
+      <stop offset="0.72" stop-color="#96593a"/>
+      <stop offset="1" stop-color="#5a2f1c"/>
+    </linearGradient>
+    <linearGradient id="endface" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#1a1d20"/>
+      <stop offset="1" stop-color="#0b0d0e"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="490" cy="588" rx="418" ry="95" fill="url(#shadow)"/>
+
+  <!-- tail running out of the coil -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M300 430 C240 520 250 630 340 690 C420 742 540 748 656 742" stroke="#0b0d0e" stroke-width="46"/>
+    <path d="M300 430 C240 520 250 630 340 690 C420 742 540 748 656 742" stroke="#22262a" stroke-width="28"/>
+    <path d="M300 430 C240 520 250 630 340 690 C420 742 540 748 656 742" stroke="#353b40" stroke-width="11"/>
+    <path d="M300 424 C236 514 246 624 338 684 C418 736 540 742 656 736" stroke="#5e666c" stroke-width="4" opacity="0.4"/>
+  </g>
+
+  <!-- coil: four loose loops of matte black polyurethane jacket -->
+  <g fill="none">
+    <g stroke="#0b0d0e" stroke-width="46">
+      <ellipse cx="420" cy="372" rx="282" ry="107.2"/>
+      <ellipse cx="420" cy="372" rx="238" ry="90.4"/>
+      <ellipse cx="420" cy="372" rx="194" ry="73.7"/>
+      <ellipse cx="420" cy="372" rx="150" ry="57.0"/>
+    </g>
+    <g stroke="#23272b" stroke-width="28">
+      <ellipse cx="420" cy="366" rx="282" ry="107.2"/>
+      <ellipse cx="420" cy="366" rx="238" ry="90.4"/>
+      <ellipse cx="420" cy="366" rx="194" ry="73.7"/>
+      <ellipse cx="420" cy="366" rx="150" ry="57.0"/>
+    </g>
+    <g stroke="#373d42" stroke-width="11" opacity="0.9">
+      <ellipse cx="420" cy="361" rx="282" ry="107.2"/>
+      <ellipse cx="420" cy="361" rx="238" ry="90.4"/>
+      <ellipse cx="420" cy="361" rx="194" ry="73.7"/>
+      <ellipse cx="420" cy="361" rx="150" ry="57.0"/>
+    </g>
+    <g stroke="#636b71" stroke-width="4" opacity="0.42">
+      <ellipse cx="420" cy="358" rx="282" ry="107.2"/>
+      <ellipse cx="420" cy="358" rx="238" ry="90.4"/>
+      <ellipse cx="420" cy="358" rx="194" ry="73.7"/>
+      <ellipse cx="420" cy="358" rx="150" ry="57.0"/>
+    </g>
+  </g>
+
+  <!-- hook and loop strap wrapping the bundle -->
+  <g>
+    <rect x="566" y="336" width="176" height="58" rx="14" fill="#101214" stroke="#000000" stroke-width="2.5"/>
+    <rect x="566" y="336" width="176" height="26" rx="12" fill="#2a2f33" opacity="0.75"/>
+    <g stroke="#3d4348" stroke-width="2" opacity="0.55">
+      <path d="M580 344 L580 388"/><path d="M600 342 L600 390"/><path d="M620 341 L620 391"/>
+      <path d="M640 340 L640 391"/><path d="M660 340 L660 391"/><path d="M680 341 L680 390"/>
+      <path d="M700 342 L700 389"/><path d="M720 344 L720 387"/>
+    </g>
+    <!-- folded-over strap end -->
+    <path d="M742 344 C784 340 796 366 770 386 C756 396 744 392 740 386 Z" fill="#15181a" stroke="#000000" stroke-width="2.5"/>
+    <path d="M746 350 C778 348 784 366 766 378" fill="none" stroke="#3a4045" stroke-width="3" opacity="0.6"/>
+  </g>
+
+  <!-- dressed cut end: jacket cut face -->
+  <g>
+    <ellipse cx="656" cy="740" rx="10" ry="24" fill="url(#endface)" stroke="#000000" stroke-width="2"/>
+  </g>
+
+  <!-- tinned copper braid combed outward -->
+  <g fill="none" stroke="#aab3ba" stroke-width="3.2" opacity="0.95" stroke-linecap="round">
+      <path d="M704 742 Q689 770 662 792"/>
+      <path d="M704 742 Q687 775 655 801"/>
+      <path d="M704 742 Q685 777 647 806"/>
+      <path d="M704 742 Q683 777 639 805"/>
+      <path d="M704 742 Q680 774 631 800"/>
+      <path d="M704 742 Q679 768 624 790"/>
+      <path d="M704 742 Q677 761 619 776"/>
+      <path d="M704 742 Q676 752 615 760"/>
+      <path d="M704 742 Q676 742 614 742"/>
+      <path d="M704 742 Q676 732 615 724"/>
+      <path d="M704 742 Q677 723 619 708"/>
+      <path d="M704 742 Q679 716 624 694"/>
+      <path d="M704 742 Q680 710 631 684"/>
+      <path d="M704 742 Q683 707 639 679"/>
+      <path d="M704 742 Q685 707 647 678"/>
+      <path d="M704 742 Q687 709 655 683"/>
+      <path d="M704 742 Q689 714 662 692"/>
+  </g>
+  <g fill="none" stroke="#e6ecef" stroke-width="1.5" opacity="0.7" stroke-linecap="round">
+      <path d="M700 738 Q684 766 660 786"/>
+      <path d="M700 738 Q672 748 616 754"/>
+      <path d="M700 738 Q673 728 617 718"/>
+      <path d="M700 738 Q680 706 636 682"/>
+  </g>
+
+  <!-- silver foil beneath the braid -->
+  <g>
+    <path d="M660 720 L724 722 L724 762 L660 764 Z" fill="url(#foil)" stroke="#7d858b" stroke-width="2"/>
+    <g stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.6" fill="none">
+      <path d="M670 721 L668 763"/><path d="M684 721 L687 763"/><path d="M700 722 L697 763"/><path d="M713 722 L715 763"/>
+    </g>
+    <ellipse cx="724" cy="742" rx="8" ry="21" fill="#c7cfd4" stroke="#7d858b" stroke-width="2"/>
+  </g>
+
+  <!-- four colour coded conductors fanned apart with stripped copper tips -->
+  <g fill="none" stroke-linecap="round">
+    <!-- red -->
+    <path d="M722 736 C778 700 812 676 848 662" stroke="#141618" stroke-width="21"/>
+    <path d="M722 736 C778 700 812 676 848 662" stroke="#b8302c" stroke-width="17"/>
+    <path d="M722 731 C776 696 810 672 846 658" stroke="#e0605a" stroke-width="4" opacity="0.55"/>
+    <path d="M848 662 L892 646" stroke="url(#copper)" stroke-width="10"/>
+    <g stroke="#e8b98f" stroke-width="1.4" opacity="0.8">
+      <path d="M852 656 L892 641"/><path d="M853 663 L893 648"/>
+    </g>
+    <!-- black -->
+    <path d="M722 740 C782 730 818 718 852 710" stroke="#000000" stroke-width="21"/>
+    <path d="M722 740 C782 730 818 718 852 710" stroke="#17191b" stroke-width="17"/>
+    <path d="M722 735 C780 725 816 713 850 705" stroke="#4a5055" stroke-width="4" opacity="0.55"/>
+    <path d="M852 710 L896 700" stroke="url(#copper)" stroke-width="10"/>
+    <g stroke="#e8b98f" stroke-width="1.4" opacity="0.8">
+      <path d="M855 705 L896 695"/><path d="M856 712 L897 702"/>
+    </g>
+    <!-- white -->
+    <path d="M722 746 C782 754 818 758 850 760" stroke="#8b9096" stroke-width="21"/>
+    <path d="M722 746 C782 754 818 758 850 760" stroke="#e6e9ea" stroke-width="17"/>
+    <path d="M722 741 C780 749 816 753 848 755" stroke="#ffffff" stroke-width="4" opacity="0.7"/>
+    <path d="M850 760 L894 764" stroke="url(#copper)" stroke-width="10"/>
+    <g stroke="#e8b98f" stroke-width="1.4" opacity="0.8">
+      <path d="M853 756 L894 759"/><path d="M853 763 L894 767"/>
+    </g>
+    <!-- green -->
+    <path d="M722 750 C776 780 806 796 836 806" stroke="#12301b" stroke-width="21"/>
+    <path d="M722 750 C776 780 806 796 836 806" stroke="#2f7a3f" stroke-width="17"/>
+    <path d="M722 745 C774 775 804 791 834 801" stroke="#5aa96a" stroke-width="4" opacity="0.55"/>
+    <path d="M836 806 L876 820" stroke="url(#copper)" stroke-width="10"/>
+    <g stroke="#e8b98f" stroke-width="1.4" opacity="0.8">
+      <path d="M839 801 L876 815"/><path d="M837 808 L874 822"/>
+    </g>
+  </g>
+</svg>

@@ -6,9 +6,11 @@
     "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
+    "@carbon/workflows": "workspace:*",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",
+    "nanoid": "catalog:",
     "resend": "3.5.0",
     "sst": "catalog:",
     "supabase": "catalog:",
@@ -21,23 +23,30 @@
     "rimraf": "catalog:",
     "tsup": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "exports": {
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/client.ts",
     "./resend.server": "./src/resend.server.ts",
+    "./shims": "./src/shims.ts",
     "./slack.server": "./src/slack.server.ts",
+    "./telemetry": "./src/telemetry/capture.ts",
     "./trigger": "./src/trigger.ts",
-    "./twenty.server": "./src/twenty.server.ts"
+    "./twenty.server": "./src/twenty.server.ts",
+    "./workflows": "./src/workflows/raise-moment.ts"
   },
   "private": true,
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup --watch",
     "lint": "biome lint --write ",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/shims.ts"
+  ],
   "version": "0.0.0"
 }

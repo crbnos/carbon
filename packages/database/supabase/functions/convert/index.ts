@@ -1,18 +1,15 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import {
-  getLocalTimeZone,
-  now,
-  toCalendarDate,
-} from "npm:@internationalized/date";
 import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { deriveRate } from "../shared/precision.ts";
 import { getRemainingQuantityToInvoice } from "../shared/short-close.ts";
 
 const pool = getConnectionPool(2);
@@ -112,6 +109,10 @@ const payloadValidator = z.discriminatedUnion("type", [
         supplierShippingCost: z.number(),
         supplierUnitPrice: z.number(),
         supplierTaxAmount: z.number(),
+        // Mirrors selectedLineSchema in purchasing.models.ts — a 0..1 fraction.
+        // Left optional so existing clients keep working; resolveTaxPercent
+        // derives it from the amount rather than storing 0 beside a real one.
+        taxPercent: z.number().min(0).max(1).optional().default(0),
         unitPrice: z.number(),
       })
     ),
@@ -130,10 +131,31 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
 ]);
 
+/**
+ * taxPercent and the tax amount are one value pair — a write that sets one sets
+ * both. The payload's rate is optional for client compatibility, so when a
+ * client sends a real amount without a rate, derive the rate once from the
+ * canonical denominator (unit price x quantity + shipping) instead of storing 0
+ * next to it, which the form would then treat as "no tax" and zero out.
+ */
+function resolveTaxPercent(line: {
+  taxPercent?: number;
+  supplierTaxAmount: number;
+  supplierUnitPrice: number;
+  quantity: number;
+  supplierShippingCost: number;
+}): number {
+  if (line.taxPercent) return line.taxPercent;
+  if (!line.supplierTaxAmount) return 0;
+  return deriveRate(
+    line.supplierTaxAmount,
+    line.supplierUnitPrice * line.quantity + line.supplierShippingCost
+  );
+}
+
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
   let convertedId = "";
   try {
@@ -372,7 +394,7 @@ serve(async (req: Request) => {
               locationId: purchaseOrderDelivery.data.locationId,
               paymentTermId: purchaseOrderPayment.data.paymentTermId,
               currencyCode: purchaseOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: purchaseOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               supplierInteractionId: purchaseOrder.data.supplierInteractionId,
@@ -425,6 +447,8 @@ serve(async (req: Request) => {
                 (line.supplierShippingCost ?? 0) * uninvoicedFraction(line),
               supplierTaxAmount:
                 (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
+              // The rate is invariant under proration; only the amount scales
+              taxPercent: line.taxPercent ?? 0,
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
               conversionFactor: line.conversionFactor,
@@ -441,14 +465,11 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return new Response(
-          JSON.stringify({
-            id: purchaseInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: purchaseInvoiceId,
+          },
+          201
         );
       }
       case "quoteToSalesOrder": {
@@ -530,7 +551,7 @@ serve(async (req: Request) => {
 
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
-          const today = format(new Date(), "yyyy-MM-dd");
+          const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
           const salesOrderId = await getNextSequence(
             trx,
             "salesOrder",
@@ -811,13 +832,16 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (salesOrder.error) throw new Error(salesOrder.error.message);
+        if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
+        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
-          throw new Error("Purchase order payment not found");
+          throw new Error("Sales order payment details not found");
+        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
-          throw new Error("Purchase order delivery not found");
+          throw new Error("Sales order delivery details not found");
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -865,7 +889,7 @@ serve(async (req: Request) => {
               locationId: salesOrderShipment.data.locationId,
               paymentTermId: salesOrderPayment.data.paymentTermId,
               currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: salesOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               opportunityId: salesOrder.data.opportunityId,
@@ -878,7 +902,7 @@ serve(async (req: Request) => {
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          if (!salesInvoice.id) throw new Error("Sales invoice not created");
           salesInvoiceId = salesInvoice.id;
 
           await trx
@@ -940,14 +964,11 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: salesInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: salesInvoiceId,
+          },
+          201
         );
       }
       case "salesRfqToQuote": {
@@ -1059,13 +1080,17 @@ serve(async (req: Request) => {
           customer.data?.currencyCode ??
           company.data?.baseCurrencyCode ??
           "USD";
-        const currency = await client
-          .from("currency")
-          .select("*")
-          .eq("code", currencyCode)
-          .eq("companyId", companyId)
-          .single();
-        const exchangeRate = currency.data?.exchangeRate ?? 1;
+        // get_exchange_rate returns 1 for the base currency, prefers a
+        // company override, falls back to the global store, and raises on a
+        // missing rate -- a foreign-currency customer is never quoted at par.
+        const exchangeRateResult = await client.rpc("get_exchange_rate", {
+          p_company_id: companyId,
+          p_currency_code: currencyCode,
+        });
+        if (exchangeRateResult.error) {
+          throw new Error(exchangeRateResult.error.message);
+        }
+        const exchangeRate = Number(exchangeRateResult.data);
 
         const {
           paymentTermId,
@@ -1151,9 +1176,9 @@ serve(async (req: Request) => {
                 customerLocationId: salesRfq.data?.customerLocationId,
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
-                expirationDate: toCalendarDate(
-                  now(getLocalTimeZone()).add({ days: 30 })
-                ).toString(),
+                expirationDate: datetime.today(
+                  await getCompanyTimeZone(client, companyId)
+                ).add({ days: 30 }).toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: salesRfq.data?.externalNotes,
@@ -1334,9 +1359,9 @@ serve(async (req: Request) => {
               .eq("shipped", true),
           ]);
 
+        if (shipment.error) throw shipment.error;
         if (shipmentLines.error) throw shipmentLines.error;
-        if (shipmentFixedAssetLines.error)
-          throw shipmentFixedAssetLines.error;
+        if (shipmentFixedAssetLines.error) throw shipmentFixedAssetLines.error;
 
         // Accumulate quantities for each sales order line
         const quantitiesByLine = shipmentLines.data.reduce<
@@ -1359,7 +1384,9 @@ serve(async (req: Request) => {
           !shipment.data?.sourceDocumentId ||
           shipment.data?.sourceDocument !== "Sales Order"
         ) {
-          throw new Error("Shipment has no source document id");
+          throw new Error(
+            "This shipment isn't linked to a sales order, so there's nothing to invoice."
+          );
         }
 
         const [
@@ -1386,13 +1413,16 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (salesOrder.error) throw new Error(salesOrder.error.message);
+        if (!salesOrder.data) throw new Error("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
+        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
-          throw new Error("Purchase order payment not found");
+          throw new Error("Sales order payment details not found");
+        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
-          throw new Error("Purchase order delivery not found");
+          throw new Error("Sales order delivery details not found");
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -1452,7 +1482,7 @@ serve(async (req: Request) => {
               locationId: salesOrderShipment.data.locationId,
               paymentTermId: salesOrderPayment.data.paymentTermId,
               currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: salesOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               opportunityId: salesOrder.data.opportunityId,
@@ -1466,7 +1496,7 @@ serve(async (req: Request) => {
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          if (!salesInvoice.id) throw new Error("Sales invoice not created");
           salesInvoiceId = salesInvoice.id;
 
           await trx
@@ -1528,14 +1558,11 @@ serve(async (req: Request) => {
           }
         });
 
-        return new Response(
-          JSON.stringify({
-            id: salesInvoiceId,
-          }),
+        return jsonResponse(
           {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 201,
-          }
+            id: salesInvoiceId,
+          },
+          201
         );
       }
       case "supplierQuoteToPurchaseOrder": {
@@ -1695,6 +1722,7 @@ serve(async (req: Request) => {
                   supplierShippingCost:
                     selectedLines![line.id!].supplierShippingCost,
                   supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
+                  taxPercent: resolveTaxPercent(selectedLines![line.id!]),
                   sortOrder: line.sortOrder ?? 1,
                   createdBy: userId,
                   companyId,
@@ -2026,20 +2054,10 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        convertedId,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      convertedId,
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });

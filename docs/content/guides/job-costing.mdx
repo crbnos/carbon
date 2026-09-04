@@ -8,7 +8,7 @@ flowName: Manufacturing accounting
 flowIndex: 3
 ---
 
-The [make-to-order tour](/guides/order) built robots. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into <Term id="wip">work-in-process</Term>, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
+The [make-to-order tour](/guides/order) built satellites. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into <Term id="wip">work-in-process</Term>, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
 
 ## Accounting is a switch
 
@@ -32,7 +32,7 @@ As the job runs, cost flows **into** its work-in-process. Two streams feed it.
 WIP is the sum of consumed material and the priced production events. Each event posts labor and machine at the work center's rates, and when the work center has an overhead rate, that too is absorbed into WIP alongside the time, gated on the overhead-absorption account being configured. WIP is real material plus real time, not a standard estimate.
 </Callout>
 
-<Screenshot label="Job — production events" caption="Production events on a job; each posts labor, machine, and overhead to WIP at the work center's rates as it's logged." ratio="wide" />
+<Screenshot src="/screens/job-production-events.png" label="Job — production events" caption="Production events on J000001 — setup, labor, and machine time logged against each work center — priced into WIP at that work center's rates." ratio="wide" />
 
 ## Issued or backflushed
 
@@ -40,8 +40,8 @@ That material reaches WIP one of two ways, and the difference is *when*. **Issui
 
 The posting is identical either way (cost out of inventory, into WIP), so the choice is about floor discipline, not accounting. Issue as you go when you need tight control over what's consumed; lean on backflush for the routine material you'd rather not hand-count.
 
-<Callout tone="neutral" badge="SCRAP STAYS IN WIP" title="Scrapped material is consumed cost, too.">
-<Term>Scrap</Term> and <Term>rework</Term> are recorded as their own production quantities, but scrapping a tracked part posts the same consumption: out of inventory, into the job's WIP. There's no separate scrap account; the cost of what you ruined rides along in the job until it settles at close.
+<Callout tone="neutral" badge="SCRAP LEAVES WIP" title="Ruined cost is relieved to a scrap account, not carried to close.">
+<Term>Scrap</Term> and <Term>rework</Term> are recorded as their own production quantities. Scrapping a tracked part relieves its cost from the job: debited to a dedicated scrap account and credited out of WIP (or straight out of inventory, for a part still in stock), tagged with the reason, work center, and operator. The ruined value leaves the job rather than riding along to close, and the scrap reopens the routing so a replacement gets built. See [scrap and unscrap](/docs/reference/scrap).
 </Callout>
 
 ## WIP isn't a table

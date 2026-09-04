@@ -1,7 +1,8 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -861,6 +862,27 @@ export async function getIssueType(
     .single();
 }
 
+export async function getIssueTypeByName(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string,
+  excludeId?: string
+) {
+  // Case-insensitive exact match — escape LIKE wildcards in the name
+  const pattern = name.replace(/([\\%_])/g, "\\$1");
+  let query = client
+    .from("nonConformanceType")
+    .select("id")
+    .eq("companyId", companyId)
+    .ilike("name", pattern);
+
+  if (excludeId) {
+    query = query.neq("id", excludeId);
+  }
+
+  return query.limit(1).maybeSingle();
+}
+
 export async function getIssueTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1234,8 +1256,16 @@ export async function updateIssueTaskStatus(
   };
 
   if (status === "Completed") {
+    const task = await client
+      .from(table)
+      .select("companyId")
+      .eq("id", id)
+      .maybeSingle();
+    const timezone = task.data?.companyId
+      ? await getCompanyTimeZone(client, task.data.companyId)
+      : "UTC";
     // @ts-expect-error
-    updateData.completedDate = new Date().toISOString().split("T")[0];
+    updateData.completedDate = datetime.today(timezone).toString();
   }
 
   return client
@@ -1556,7 +1586,7 @@ export async function insertIssue(
     source: "Internal" | "External";
     locationId: string;
     nonConformanceTypeId: string;
-    openDate: string;
+    openDate?: string;
     description?: string;
     nonConformanceWorkflowId?: string;
     dueDate?: string;
@@ -1614,7 +1644,12 @@ export async function insertIssue(
       source: data.source,
       locationId: data.locationId,
       nonConformanceTypeId: data.nonConformanceTypeId,
-      openDate: data.openDate,
+      // Matches insertPurchaseOrder / insertSalesOrder, which default their own NOT NULL date.
+      openDate:
+        data.openDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, data.companyId))
+          .toString(),
       description: data.description ?? null,
       nonConformanceWorkflowId: data.nonConformanceWorkflowId ?? null,
       dueDate: data.dueDate ?? null,

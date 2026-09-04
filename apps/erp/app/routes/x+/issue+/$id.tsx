@@ -91,15 +91,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function IssueRoute() {
   const { t } = useLingui();
-  const { associations } = useLoaderData<typeof loader>();
+  const { associations, changeNotices } = useLoaderData<typeof loader>();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <IssueHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={
@@ -178,6 +178,21 @@ export default function IssueRoute() {
                           module: "quality",
                           children:
                             (resolvedAssociations as any).inspections ?? []
+                        },
+                        {
+                          key: "changeNotices",
+                          name: t`Change Notice`,
+                          pluralName: t`Change Notices`,
+                          module: "parts",
+                          readOnly: true,
+                          children: changeNotices.map((cn) => ({
+                            id: cn.id,
+                            documentId: cn.id,
+                            documentReadableId: cn.changeOrderId,
+                            documentLineId: "",
+                            type: "changeNotices",
+                            status: cn.status
+                          }))
                         }
                       ];
                       return (
@@ -196,8 +211,8 @@ export default function IssueRoute() {
                 </Suspense>
               }
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <VStack spacing={2} className="p-2">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>
                 </div>

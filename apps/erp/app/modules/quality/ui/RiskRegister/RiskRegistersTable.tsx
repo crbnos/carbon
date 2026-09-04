@@ -1,5 +1,5 @@
 import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemById, getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -7,16 +7,22 @@ import {
   LuBlocks,
   LuDice5,
   LuDna,
+  LuLocateFixed,
   LuPencil,
   LuShapes,
   LuStar,
   LuTrash,
   LuTriangleAlert,
-  LuUser,
-  LuWrench
+  LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  exportOnlyColumn,
+  Hyperlink,
+  New,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { Confirm } from "~/components/Modals";
@@ -117,9 +123,18 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
               value: item.id,
               label: item.readableIdWithRevision
             }))
-          }
+          },
+          // Without this the exporter substitutes the item's name for the id
+          // (Download.tsx idNameMaps), losing the readable id the cell shows.
+          exportValue: (row) => getItemReadableId(items, row.itemId) ?? null
         }
       },
+      exportOnlyColumn<Risk>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) =>
+          row.itemId ? (getItemById(items, row.itemId)?.name ?? null) : null
+      }),
       {
         accessorKey: "source",
         header: t`Source`,
@@ -187,7 +202,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Work Center`,
         cell: ({ row }) => <Enumerable value={row.original.workCenterName} />,
         meta: {
-          icon: <LuWrench />,
+          icon: <LuLocateFixed />,
           exportValue: (row) => row.workCenterName,
           filter: {
             type: "static",

@@ -36,15 +36,17 @@
     "build:erp": "turbo run build --filter=erp",
     "build:mes": "turbo run build --filter=mes",
     "build:docs": "turbo run build --filter=docs",
+    "check:workflow-catalog": "tsx scripts/check-workflow-catalog.ts",
     "ci:migrations": "pnpm --filter ci ci:migrations",
     "ci:deploy": "pnpm --filter ci ci:deploy",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./pnpm-lock.yaml",
+    "db:check:backups": "pnpm --filter @carbon/jobs db:check:backups --",
+    "db:check:datasets": "pnpm --filter @carbon/database db:check:datasets --",
     "db:function:new": "pnpm --filter @carbon/database db:function:new",
     "db:migrate": "crbn migrate",
     "db:migrate:new": "pnpm --filter @carbon/database db:migrate:new",
     "db:seed": "turbo run db:seed --no-cache",
     "db:seed:dev": "pnpm --filter @carbon/database db:seed:dev --",
-    "db:seed:change-orders": "pnpm --filter @carbon/database seed:change-orders --",
     "db:types": "tsx scripts/generate-db-types.ts",
     "deploy": "turbo run deploy",
     "dev": "crbn up --no-portless",
@@ -54,8 +56,9 @@
     "format": "biome format --write",
     "generate:agent-kb": "tsx scripts/generate-agent-kb.ts",
     "generate:mcp": "tsx scripts/generate-mcp.ts",
-    "generate:swagger": "tsx scripts/generate-swagger-docs.ts && pnpm exec biome format ./packages/database/src/swagger-docs-schema.ts --write --files-max-size=5000000",
+    "generate:swagger": "tsx scripts/generate-swagger-docs.ts && pnpm exec biome format ./packages/database/src/swagger-docs-schema.ts --write --files-max-size=20000000",
     "generate:types": "tsx scripts/generate-db-types.ts",
+    "generate:workflow-catalog": "tsx scripts/generate-workflow-catalog.ts && pnpm exec biome check --write packages/workflows/src/catalog/",
     "lint": "turbo run lint",
     "lingui:check": "pnpm run lingui:extract && pnpm run lingui:compile",
     "lingui:compile": "lingui compile --namespace es",
@@ -82,7 +85,7 @@
     "@react-router/remix-routes-option-adapter": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
-    "fast-uri": "3.1.0",
+    "fast-uri": "3.1.5",
     "fdir": "6.5.0",
     "nanoid": "catalog:",
     "react-pdf": "catalog:",
@@ -111,7 +114,9 @@
     ],
     "patchedDependencies": {
       "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
-      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch"
+      "@react-router/dev@7.18.0": "patches/@react-router__dev@7.18.0.patch",
+      "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
+      "supabase@2.89.0": "patches/supabase@2.89.0.patch"
     }
   }
 }

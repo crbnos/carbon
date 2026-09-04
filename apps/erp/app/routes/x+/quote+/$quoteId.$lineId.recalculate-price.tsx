@@ -5,6 +5,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { upsertQuoteLinePrices } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-recalculate-price");
 
@@ -13,7 +14,7 @@ const numberArrayValidator = z.array(z.number());
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -69,30 +70,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const inserts = unitPricesByQuantity.data.map((unitPrice, index) => {
     const quantity = quantities.data[index];
+    const markups = categoryMarkupsByQuantity.data[quantity];
     return {
       quoteLineId: lineId,
       quantity,
       unitPrice,
-      discountPercent: 0,
-      leadTime: 0,
       createdBy: userId,
-      categoryMarkups: categoryMarkupsByQuantity.data[quantity] ?? undefined,
-      // Applying a markup is explicit cost-plus intent: the row goes back to
-      // system pricing so future BOM changes reprice it from these markups.
-      priceSource: "system" as const
+      // discountPercent / leadTime / shippingCost are intentionally omitted so
+      // upsertQuoteLinePrices preserves the user-entered values for each quantity
+      // — a recalc only recomputes the unit price.
+      categoryMarkups: markups ?? undefined,
+      // Applying a markup is explicit cost-plus intent: that row goes back to
+      // system pricing so future BOM changes reprice it. A quantity with no
+      // markup omits priceSource, so a manual row keeps its manual source.
+      ...(markups !== undefined ? { priceSource: "system" as const } : {})
     };
   });
 
-  const insertLinePrices = await upsertQuoteLinePrices(
-    client,
-    quoteId,
-    lineId,
-    inserts
-  );
-  if (insertLinePrices.error) {
-    logger.error(insertLinePrices.error);
+  try {
+    await upsertQuoteLinePrices(
+      getDatabaseClient(),
+      companyId,
+      quoteId,
+      lineId,
+      inserts
+    );
+  } catch (err) {
+    logger.error("Failed to recalculate quote line prices", { error: err });
     return data(
-      { data: null, error: insertLinePrices.error.message },
+      { data: null, error: "Failed to recalculate quote line prices" },
       { status: 400 }
     );
   }

@@ -1,11 +1,17 @@
 import type {
   Active,
+  CollisionDetection,
   DataRef,
   DroppableContainer,
   KeyboardCoordinateGetter,
   Over
 } from "@dnd-kit/core";
-import { closestCorners, getFirstCollision, KeyboardCode } from "@dnd-kit/core";
+import {
+  closestCorners,
+  getFirstCollision,
+  KeyboardCode,
+  rectIntersection
+} from "@dnd-kit/core";
 import type { DraggableData } from "./types";
 
 const directions: string[] = [
@@ -14,6 +20,50 @@ const directions: string[] = [
   KeyboardCode.Up,
   KeyboardCode.Left
 ];
+
+function containersOfType(
+  containers: readonly DroppableContainer[],
+  type: "item" | "column"
+) {
+  return containers.filter(
+    (container) => container.data.current?.type === type
+  );
+}
+
+/**
+ * Use actual rectangle intersections for pointer/touch drops. Cards are
+ * checked first so a card nested inside a column wins; columns are only a
+ * fallback for empty-column and background drops. Keyboard movement keeps its
+ * directional nearest-target coordinate getter below.
+ */
+export const kanbanCollisionDetection: CollisionDetection = (args) => {
+  const droppableContainers = args.droppableContainers.filter(
+    (container) => !container.disabled && container.id !== args.active.id
+  );
+  const activeType = args.active.data.current?.type;
+
+  if (activeType === "item") {
+    const itemCollisions = rectIntersection({
+      ...args,
+      droppableContainers: containersOfType(droppableContainers, "item")
+    });
+    if (itemCollisions.length > 0) return itemCollisions;
+
+    return rectIntersection({
+      ...args,
+      droppableContainers: containersOfType(droppableContainers, "column")
+    });
+  }
+
+  if (activeType === "column") {
+    return rectIntersection({
+      ...args,
+      droppableContainers: containersOfType(droppableContainers, "column")
+    });
+  }
+
+  return rectIntersection({ ...args, droppableContainers });
+};
 
 export const coordinateGetter: KeyboardCoordinateGetter = (
   event,
@@ -44,8 +94,8 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
       if (data) {
         const { type, children } = data;
 
-        if (type === "Column" && children?.length > 0) {
-          if (active.data.current?.type !== "Column") {
+        if (type === "column" && children?.length > 0) {
+          if (active.data.current?.type !== "column") {
             return;
           }
         }
@@ -53,7 +103,7 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
 
       switch (event.code) {
         case KeyboardCode.Down:
-          if (active.data.current?.type === "Column") {
+          if (active.data.current?.type === "column") {
             return;
           }
           if (collisionRect.top < rect.top) {
@@ -62,7 +112,7 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
           }
           break;
         case KeyboardCode.Up:
-          if (active.data.current?.type === "Column") {
+          if (active.data.current?.type === "column") {
             return;
           }
           if (collisionRect.top > rect.top) {

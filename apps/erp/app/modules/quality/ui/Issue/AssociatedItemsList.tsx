@@ -31,6 +31,7 @@ import {
   ModalTitle,
   toast
 } from "@carbon/react";
+import { EPSILON } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -206,7 +207,8 @@ export function AssociatedItemsList({
           !row.disposition || row.disposition === "Pending" ? true : false,
         // Only tracked rows reconcile a per-entity quantity sum; a non-tracked
         // row carries its quantity directly with no links to add up.
-        sumMismatch: links.length > 0 && Math.abs(linkedSum - quantity) > 1e-6
+        sumMismatch:
+          links.length > 0 && Math.abs(linkedSum - quantity) > EPSILON
       };
     });
   }, [associatedItems]);

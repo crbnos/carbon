@@ -3,10 +3,12 @@ import {
   Button,
   cn,
   Skeleton,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
+import { indexBy, pluckUnique } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -18,10 +20,17 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
+import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
 import { ContainmentList } from "./ContainmentList";
-import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
+import type { ClusterMember, EntityCluster } from "./cluster";
+import { edgeKey } from "./cluster";
+import {
+  ACTIVITY_KIND_META,
+  activityKindFor,
+  isMovementActivity
+} from "./metadata";
 import { StepRecordsList } from "./StepRecordsList";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import {
@@ -35,6 +44,14 @@ import {
 type SidebarProps = {
   entity: TrackedEntity | null;
   activity: Activity | null;
+  /** Set when a serial group node is selected instead of a single entity. */
+  cluster?: EntityCluster | null;
+  /** Every cluster in the current graph, for collapsing an activity's
+   *  input/output lists. */
+  clusters?: EntityCluster[];
+  /** Member to scroll to and highlight — set when search picked a clustered
+   *  serial, whose group node got selected in its place. */
+  highlightMemberId?: string | null;
   payload?: LineagePayload;
   onSelect?: (id: string) => void;
   selectedIds: string[];
@@ -45,6 +62,9 @@ type SidebarProps = {
 export function TraceabilitySidebar({
   entity,
   activity,
+  cluster = null,
+  clusters,
+  highlightMemberId = null,
   payload,
   onSelect,
   selectedIds,
@@ -53,16 +73,30 @@ export function TraceabilitySidebar({
 }: SidebarProps) {
   const { t } = useLingui();
   const selectedNode = entity ?? activity;
-  const selectedNodeType = entity ? "entity" : "activity";
+  const selectedNodeType = cluster ? "group" : entity ? "entity" : "activity";
   const selectedNodeAttributes = (
     entity ? (entity.attributes ?? {}) : (activity?.attributes ?? {})
   ) as Record<string, any>;
 
-  const headline = entity
-    ? entityHeadline(entity)
-    : activity
-      ? (activity.type ?? activity.id)
-      : "No selection";
+  const clusterByMember = useMemo(() => {
+    const m = new Map<string, EntityCluster>();
+    for (const c of clusters ?? []) {
+      for (const member of c.members) m.set(member.id, c);
+    }
+    return m;
+  }, [clusters]);
+
+  const headline = cluster
+    ? cluster.headline
+    : entity
+      ? entityHeadline(entity)
+      : activity
+        ? (activity.type ?? activity.id)
+        : "No selection";
+
+  // `selectedNode` is null for a cluster, so the header and the Copy ID button
+  // both read from here rather than each deriving the id separately.
+  const copyId = cluster ? cluster.id : (selectedNode?.id ?? "");
 
   const sourceDoc = entity?.sourceDocument ?? activity?.sourceDocument;
   const sourceDocId = entity?.sourceDocumentId ?? activity?.sourceDocumentId;
@@ -70,49 +104,133 @@ export function TraceabilitySidebar({
     entity?.sourceDocumentReadableId ?? activity?.sourceDocumentReadableId;
   const sourceHref = sourceLinkHref(sourceDoc, sourceDocId);
 
-  const { producedBy, consumedBy, inputs, outputs } = useMemo(() => {
-    if (!payload) {
-      return {
-        producedBy: [] as RelatedActivity[],
-        consumedBy: [] as RelatedActivity[],
-        inputs: [] as RelatedEntity[],
-        outputs: [] as RelatedEntity[]
-      };
-    }
-    const activityById = new Map(payload.activities.map((a) => [a.id, a]));
-    const entityById = new Map(payload.entities.map((e) => [e.id, e]));
+  const { producedBy, consumedBy, movedBy, splits, inputs, outputs } =
+    useMemo(() => {
+      if (!payload) {
+        return {
+          producedBy: [] as RelatedActivity[],
+          consumedBy: [] as RelatedActivity[],
+          movedBy: [] as RelatedActivity[],
+          splits: [] as RelatedActivity[],
+          inputs: [] as RelatedEntity[],
+          outputs: [] as RelatedEntity[]
+        };
+      }
+      const activityById = indexBy(payload.activities, (a) => a.id);
+      const entityById = indexBy(payload.entities, (e) => e.id);
 
-    const producedBy: RelatedActivity[] = [];
-    const consumedBy: RelatedActivity[] = [];
-    const inputs: RelatedEntity[] = [];
-    const outputs: RelatedEntity[] = [];
+      const producedBy: RelatedActivity[] = [];
+      const consumedBy: RelatedActivity[] = [];
+      const movedBy: RelatedActivity[] = [];
+      const splits: RelatedActivity[] = [];
+      const inputs: RelatedEntityItem[] = [];
+      const outputs: RelatedEntityItem[] = [];
 
-    if (entity) {
-      for (const o of payload.outputs) {
-        if (o.trackedEntityId !== entity.id) continue;
-        const a = activityById.get(o.trackedActivityId);
-        if (a) producedBy.push({ activity: a, quantity: o.quantity });
-      }
-      for (const i of payload.inputs) {
-        if (i.trackedEntityId !== entity.id) continue;
-        const a = activityById.get(i.trackedActivityId);
-        if (a) consumedBy.push({ activity: a, quantity: i.quantity });
-      }
-    } else if (activity) {
-      for (const i of payload.inputs) {
-        if (i.trackedActivityId !== activity.id) continue;
-        const e = entityById.get(i.trackedEntityId);
-        if (e) inputs.push({ entity: e, quantity: i.quantity });
-      }
-      for (const o of payload.outputs) {
-        if (o.trackedActivityId !== activity.id) continue;
-        const e = entityById.get(o.trackedEntityId);
-        if (e) outputs.push({ entity: e, quantity: o.quantity });
-      }
-    }
+      if (cluster) {
+        // Every member sits on the same edges by construction — one row per
+        // signature entry, carrying the summed quantity.
+        for (const entry of cluster.signature) {
+          const a = activityById.get(entry.activityId);
+          if (!a) continue;
+          const quantity =
+            cluster.quantitiesByEdge[edgeKey(entry.activityId, entry.side)] ??
+            0;
+          if (entry.side === "output") {
+            producedBy.push({ activity: a, quantity });
+          } else if (isMovementActivity(a.type)) {
+            movedBy.push({ activity: a, quantity });
+          } else {
+            consumedBy.push({ activity: a, quantity });
+          }
+        }
+      } else if (entity) {
+        // A historical split survivor is recorded as both input and output of
+        // its own Split activity. That self-loop is neither production nor
+        // consumption — surface it as a Split instead of lying on both sides.
+        const inputActivityIds = new Set(
+          pluckUnique(payload.inputs, (i) =>
+            i.trackedEntityId === entity.id ? i.trackedActivityId : null
+          )
+        );
+        const selfLoopActivityIds = new Set(
+          pluckUnique(payload.outputs, (o) =>
+            o.trackedEntityId === entity.id &&
+            inputActivityIds.has(o.trackedActivityId)
+              ? o.trackedActivityId
+              : null
+          )
+        );
 
-    return { producedBy, consumedBy, inputs, outputs };
-  }, [payload, entity, activity]);
+        for (const o of payload.outputs) {
+          if (o.trackedEntityId !== entity.id) continue;
+          const a = activityById.get(o.trackedActivityId);
+          if (!a) continue;
+          if (selfLoopActivityIds.has(o.trackedActivityId)) {
+            // The output row's quantity is what the entity kept.
+            splits.push({ activity: a, quantity: o.quantity });
+          } else {
+            producedBy.push({ activity: a, quantity: o.quantity });
+          }
+        }
+        for (const i of payload.inputs) {
+          if (i.trackedEntityId !== entity.id) continue;
+          if (selfLoopActivityIds.has(i.trackedActivityId)) continue;
+          const a = activityById.get(i.trackedActivityId);
+          if (!a) continue;
+          // A Split draws a portion off this lot and leaves the rest on the
+          // shelf — the lot is an input but was NOT consumed. (Legacy splits
+          // recorded the survivor as input AND output; the self-loop skip above
+          // catches those.)
+          if (a.type === "Split") {
+            splits.push({ activity: a, quantity: i.quantity });
+          } else if (isMovementActivity(a.type)) {
+            // A transfer/pick relocated the lot — it did not consume it.
+            movedBy.push({ activity: a, quantity: i.quantity });
+          } else {
+            consumedBy.push({ activity: a, quantity: i.quantity });
+          }
+        }
+      } else if (activity) {
+        // Clustered members collapse into one row per group — a 50-serial fan
+        // is unreadable as 50 identical lines.
+        const collect = (
+          rows: { trackedEntityId: string; quantity: number }[],
+          into: RelatedEntityItem[]
+        ) => {
+          const clusterTotals = new Map<string, number>();
+          const clusterOrder: EntityCluster[] = [];
+          for (const row of rows) {
+            const memberCluster = clusterByMember.get(row.trackedEntityId);
+            if (memberCluster) {
+              if (!clusterTotals.has(memberCluster.id)) {
+                clusterOrder.push(memberCluster);
+              }
+              clusterTotals.set(
+                memberCluster.id,
+                (clusterTotals.get(memberCluster.id) ?? 0) + row.quantity
+              );
+              continue;
+            }
+            const e = entityById.get(row.trackedEntityId);
+            if (e) into.push({ entity: e, quantity: row.quantity });
+          }
+          for (const c of clusterOrder) {
+            into.push({ cluster: c, quantity: clusterTotals.get(c.id) ?? 0 });
+          }
+        };
+
+        collect(
+          payload.inputs.filter((i) => i.trackedActivityId === activity.id),
+          inputs
+        );
+        collect(
+          payload.outputs.filter((o) => o.trackedActivityId === activity.id),
+          outputs
+        );
+      }
+
+      return { producedBy, consumedBy, movedBy, splits, inputs, outputs };
+    }, [payload, entity, activity, cluster, clusterByMember]);
 
   const stepRecordsFetcher = useFetcher<{ stepRecords: StepRecord[] }>();
   const lastLoadedActivityIdRef = useRef<string | null>(null);
@@ -143,6 +261,32 @@ export function TraceabilitySidebar({
       (r) => r.operationId === opId && (!hasUnit || r.index === unit)
     );
   }, [activity, stepRecordsFetcher.data]);
+
+  // Where the lot sits now: destination of the latest movement that took it as
+  // an input. Bin names are enriched server-side (enrichActivityBinNames).
+  const storageUnit = useMemo(() => {
+    if (!entity || !payload) return null;
+    // A fully consumed lot was last moved somewhere, but nothing is there now —
+    // showing a bin would read as "the stock is in here". Rejected and On Hold
+    // lots still physically occupy a bin, so they keep the row.
+    if (entity.status === "Consumed" || !(Number(entity.quantity) > 0)) {
+      return null;
+    }
+    const activityById = indexBy(payload.activities, (a) => a.id);
+    let latest: { at: string; bin: string } | null = null;
+    for (const i of payload.inputs) {
+      if (i.trackedEntityId !== entity.id) continue;
+      const activity = activityById.get(i.trackedActivityId);
+      if (!activity || !isMovementActivity(activity.type)) continue;
+      const bin = (activity.attributes as Record<string, unknown> | null)?.[
+        "To Storage Unit Name"
+      ];
+      if (typeof bin !== "string" || !bin) continue;
+      const at = (activity.createdAt as string | undefined) ?? "";
+      if (!latest || at >= latest.at) latest = { at, bin };
+    }
+    return latest?.bin ?? null;
+  }, [entity, payload]);
 
   const containmentsForEntity = useMemo(() => {
     if (!entity || !payload?.containments?.length) return [];
@@ -200,7 +344,14 @@ export function TraceabilitySidebar({
       <header className="px-3 pt-3 pb-2.5">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-1.5 min-w-0">
-            {entity ? (
+            {cluster ? (
+              <Badge
+                variant="secondary"
+                className="uppercase tracking-wide text-[10px] shrink-0"
+              >
+                Serial Group
+              </Badge>
+            ) : entity ? (
               <Badge
                 variant="secondary"
                 className="uppercase tracking-wide text-[10px] shrink-0"
@@ -241,7 +392,7 @@ export function TraceabilitySidebar({
                   aria-label={t`Copy ID`}
                   size="sm"
                   className="p-1 h-7 w-7"
-                  onClick={() => copyToClipboard(selectedNode?.id ?? "")}
+                  onClick={() => copyToClipboard(copyId)}
                 >
                   <LuCopy className="w-3.5 h-3.5" />
                 </Button>
@@ -256,11 +407,34 @@ export function TraceabilitySidebar({
           {headline}
         </h2>
         <p className="text-[11px] text-muted-foreground/70 font-mono break-all leading-4 mt-0.5">
-          {selectedNode?.id}
+          {copyId}
         </p>
       </header>
 
       <div className="flex flex-col divide-y divide-border/40">
+        {cluster && (
+          <Section>
+            <dl className="divide-y divide-border/30">
+              <PropRow label="Status">
+                <TrackedEntityStatus status={cluster.status} />
+              </PropRow>
+              <PropRow label="Serials">
+                <span className="text-sm font-medium tabular-nums">
+                  {cluster.members.length}
+                </span>
+              </PropRow>
+              {cluster.readableIdRange && (
+                <PropRow label="Range">
+                  <span className="text-sm font-mono">
+                    {cluster.readableIdRange[0] === cluster.readableIdRange[1]
+                      ? cluster.readableIdRange[0]
+                      : `${cluster.readableIdRange[0]}…${cluster.readableIdRange[1]}`}
+                  </span>
+                </PropRow>
+              )}
+            </dl>
+          </Section>
+        )}
         {(selectedNodeType === "entity" || sourceDoc) && (
           <Section>
             <dl className="divide-y divide-border/30">
@@ -269,7 +443,7 @@ export function TraceabilitySidebar({
                   <PropRow label="Status">
                     <TrackedEntityStatus status={entity?.status} />
                   </PropRow>
-                  <PropRow label="Quantity">
+                  <PropRow label="Current Quantity">
                     <span className="text-sm font-medium tabular-nums">
                       {entity?.quantity}
                     </span>
@@ -279,6 +453,11 @@ export function TraceabilitySidebar({
                       <span className="text-sm font-mono">
                         {entity.readableId}
                       </span>
+                    </PropRow>
+                  )}
+                  {storageUnit && (
+                    <PropRow label="Storage Unit">
+                      <span className="text-sm font-medium">{storageUnit}</span>
                     </PropRow>
                   )}
                 </>
@@ -309,6 +488,32 @@ export function TraceabilitySidebar({
             </ul>
           </Section>
         )}
+        {splits.length > 0 && (
+          <Section title="Splits" count={splits.length}>
+            <ul className="divide-y divide-border/30">
+              {splits.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {movedBy.length > 0 && (
+          <Section title="Moved by" count={movedBy.length}>
+            <ul className="divide-y divide-border/30">
+              {movedBy.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
         {consumedBy.length > 0 && (
           <Section title="Consumed by" count={consumedBy.length}>
             <ul className="divide-y divide-border/30">
@@ -326,8 +531,8 @@ export function TraceabilitySidebar({
           <Section title="Inputs" count={inputs.length}>
             <ul className="divide-y divide-border/30">
               {inputs.map((item) => (
-                <RelatedEntityRow
-                  key={item.entity.id}
+                <RelatedEntityItemRow
+                  key={"cluster" in item ? item.cluster.id : item.entity.id}
                   item={item}
                   onSelect={onSelect}
                 />
@@ -339,13 +544,22 @@ export function TraceabilitySidebar({
           <Section title="Outputs" count={outputs.length}>
             <ul className="divide-y divide-border/30">
               {outputs.map((item) => (
-                <RelatedEntityRow
-                  key={item.entity.id}
+                <RelatedEntityItemRow
+                  key={"cluster" in item ? item.cluster.id : item.entity.id}
                   item={item}
                   onSelect={onSelect}
                 />
               ))}
             </ul>
+          </Section>
+        )}
+
+        {cluster && (
+          <Section title="Serials" count={cluster.members.length}>
+            <ClusterMemberList
+              members={cluster.members}
+              highlightMemberId={highlightMemberId}
+            />
           </Section>
         )}
 
@@ -385,6 +599,8 @@ export function TraceabilitySidebar({
 
 type RelatedActivity = { activity: Activity; quantity: number };
 type RelatedEntity = { entity: TrackedEntity; quantity: number };
+type RelatedCluster = { cluster: EntityCluster; quantity: number };
+type RelatedEntityItem = RelatedEntity | RelatedCluster;
 
 function Section({
   title,
@@ -398,14 +614,17 @@ function Section({
   return (
     <section className="px-3 py-3">
       {title && (
-        <header className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+        <Subheading
+          variant="heavy"
+          className="flex items-center justify-between mb-2"
+        >
           <span>{title}</span>
           {typeof count === "number" && (
             <span className="tabular-nums text-muted-foreground/60">
               {count}
             </span>
           )}
-        </header>
+        </Subheading>
       )}
       {children}
     </section>
@@ -540,6 +759,100 @@ function RelatedEntityRow({
         </div>
       </button>
     </li>
+  );
+}
+
+function RelatedEntityItemRow({
+  item,
+  onSelect
+}: {
+  item: RelatedEntityItem;
+  onSelect?: (id: string) => void;
+}) {
+  if ("cluster" in item) {
+    return <RelatedClusterRow item={item} onSelect={onSelect} />;
+  }
+  return <RelatedEntityRow item={item} onSelect={onSelect} />;
+}
+
+function RelatedClusterRow({
+  item,
+  onSelect
+}: {
+  item: RelatedCluster;
+  onSelect?: (id: string) => void;
+}) {
+  const { cluster } = item;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect?.(cluster.id)}
+        className={cn(
+          "group w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left rounded-md",
+          "hover:bg-accent/50 transition-colors"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <TrackedEntityStatus status={cluster.status} />
+          <span className="text-sm truncate">{cluster.headline}</span>
+          <span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
+            ×{cluster.members.length}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {item.quantity}
+          </span>
+          <LuChevronRight className="size-3 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+        </div>
+      </button>
+    </li>
+  );
+}
+
+/**
+ * A group's members. Plain scroll, no virtualization — even at the 500-entity
+ * ceiling these are single-line text rows, and adding a dependency for that
+ * isn't worth it.
+ */
+function ClusterMemberList({
+  members,
+  highlightMemberId
+}: {
+  members: ClusterMember[];
+  highlightMemberId: string | null;
+}) {
+  const highlightRef = useRef<HTMLLIElement | null>(null);
+
+  useEffect(() => {
+    if (!highlightMemberId) return;
+    highlightRef.current?.scrollIntoView({ block: "nearest" });
+  }, [highlightMemberId]);
+
+  return (
+    <ul className="divide-y divide-border/30 max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+      {members.map((member) => {
+        const highlighted = member.id === highlightMemberId;
+        return (
+          <li key={member.id} ref={highlighted ? highlightRef : undefined}>
+            <Link
+              to={`${path.to.traceabilityGraph}?trackedEntityId=${encodeURIComponent(member.id)}`}
+              className={cn(
+                "group w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left rounded-md",
+                "hover:bg-accent/50 transition-colors",
+                highlighted && "bg-accent/60 ring-1 ring-ring"
+              )}
+            >
+              <span className="text-sm font-mono truncate">
+                {member.readableId ?? member.id.slice(0, 8)}
+              </span>
+              <LuChevronRight className="size-3 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0" />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

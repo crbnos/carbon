@@ -1,6 +1,8 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { loadAccountCodesById } from "../../../core/account-mapping";
 import { createMappingService } from "../../../core/external-mapping";
+import { JournalEntrySyncError } from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -52,7 +54,10 @@ type InvoiceLineRow = {
   itemId: string | null;
   description: string | null;
   quantity: number;
+  /** BASE currency, as stored. */
   unitPrice: number;
+  /** Document-currency mirror (unitPrice * exchangeRate). */
+  convertedUnitPrice: number | null;
   taxPercent: number;
   // For item code lookup
   itemReadableIdWithRevision: string | null;
@@ -101,6 +106,62 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   Xero.Invoice,
   "UpdatedDateUTC"
 > {
+  private salesAccountCodePromise?: Promise<string>;
+
+  private get xeroProvider(): XeroProvider {
+    return this.provider as XeroProvider;
+  }
+
+  /**
+   * The Xero AccountCode item-referenced AR invoice lines post to: the item's
+   * mapped REVENUE account (`accountDefault.salesAccount` → the account-mapping
+   * externalCode) — the same resolution that feeds Rillet's product
+   * `account_code` and QBO's `IncomeAccountRef`. No blunt default-account-code
+   * fallback: when the company default is unset or unmapped, throws the
+   * structured UNMAPPED_ACCOUNTS Warning (same contract as the Rillet/QBO item
+   * syncers' revenue-account check) so the gap is surfaced and fixed rather
+   * than silently posted to the wrong account. Per-company defaults are
+   * resolved once.
+   */
+  private getSalesAccountCode(): Promise<string> {
+    if (!this.salesAccountCodePromise) {
+      this.salesAccountCodePromise = (async () => {
+        const defaults = await this.database
+          .selectFrom("accountDefault")
+          .select("salesAccount")
+          .where("companyId", "=", this.companyId)
+          .executeTakeFirst();
+
+        if (!defaults?.salesAccount) {
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_ACCOUNTS",
+            message:
+              "Cannot sync invoice: the company account defaults are missing salesAccount — Xero invoice lines require a revenue account code. Map the account on the integration settings page, then retry.",
+            warning: true,
+            metadata: { missingDefaults: ["salesAccount"] }
+          });
+        }
+
+        const codesById = await loadAccountCodesById(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        const code = codesById.get(defaults.salesAccount);
+        if (!code) {
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_ACCOUNTS",
+            message:
+              "Cannot sync invoice: the default sales account has no Xero account mapping. Map the account on the integration settings page, then retry.",
+            warning: true,
+            metadata: { unmappedAccountIds: [defaults.salesAccount] }
+          });
+        }
+        return code;
+      })();
+    }
+    return this.salesAccountCodePromise;
+  }
+
   // =================================================================
   // 1. ID MAPPING - Uses default implementation from BaseEntitySyncer
   // The entityType "invoice" maps to the salesInvoice table
@@ -206,6 +267,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         "salesInvoiceLine.description",
         "salesInvoiceLine.quantity",
         "salesInvoiceLine.unitPrice",
+        "salesInvoiceLine.convertedUnitPrice",
         "salesInvoiceLine.taxPercent",
         "item.readableIdWithRevision as itemReadableIdWithRevision"
       ])
@@ -251,6 +313,11 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
           const quantity = Number(line.quantity) || 0;
           const unitPrice = Number(line.unitPrice) || 0;
           const taxPercent = Number(line.taxPercent) || 0;
+          const convertedUnitPrice =
+            line.convertedUnitPrice === null ||
+            line.convertedUnitPrice === undefined
+              ? null
+              : Number(line.convertedUnitPrice);
           return {
             id: line.id,
             invoiceLineType: line.invoiceLineType,
@@ -259,6 +326,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
             description: line.description,
             quantity,
             unitPrice,
+            convertedUnitPrice,
             taxPercent,
             lineAmount: quantity * unitPrice
           };
@@ -276,10 +344,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   // =================================================================
 
   async fetchRemote(id: string): Promise<Xero.Invoice | null> {
-    const result = await this.provider.request<{ Invoices: Xero.Invoice[] }>(
-      "GET",
-      `/Invoices/${id}`
-    );
+    const result = await this.xeroProvider.request<{
+      Invoices: Xero.Invoice[];
+    }>("GET", `/Invoices/${id}`);
     return result.error ? null : (result.data?.Invoices?.[0] ?? null);
   }
 
@@ -289,10 +356,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const result = new Map<string, Xero.Invoice>();
     if (ids.length === 0) return result;
 
-    const response = await this.provider.request<{ Invoices: Xero.Invoice[] }>(
-      "GET",
-      `/Invoices?IDs=${ids.join(",")}`
-    );
+    const response = await this.xeroProvider.request<{
+      Invoices: Xero.Invoice[];
+    }>("GET", `/Invoices?IDs=${ids.join(",")}`);
 
     if (response.error) {
       throwXeroApiError("fetch invoices batch", response);
@@ -322,29 +388,30 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       local.customerId
     );
 
-    // Get default account code from provider settings
-    const xeroProvider = this.provider as XeroProvider;
-    const defaultAccountCode = xeroProvider.settings?.defaultSalesAccountCode;
+    // Item-referenced AR posts to the item's mapped REVENUE account
+    // (accountDefault.salesAccount) — throws UNMAPPED_ACCOUNTS when unset
+    // or unmapped (see getSalesAccountCode).
+    const salesAccountCode = await this.getSalesAccountCode();
 
-    logger.info("Provider settings", {
-      settings: xeroProvider.settings,
-      defaultAccountCode
-    });
+    logger.info("Sales AccountCode", { salesAccountCode });
 
     // Build line items, resolving item dependencies
     const lineItems: Xero.InvoiceLineItem[] = [];
     for (const line of local.lines) {
-      const taxAmount =
-        (line.quantity * line.unitPrice * line.taxPercent) / 100;
+      // The payload declares CurrencyCode below, so every amount on it must be
+      // in THAT currency. salesInvoiceLine.unitPrice is stored in the company
+      // BASE currency; convertedUnitPrice is the document-currency mirror.
+      const unitAmount = line.convertedUnitPrice ?? line.unitPrice;
+      const taxAmount = (line.quantity * unitAmount * line.taxPercent) / 100;
 
       const lineItem: Xero.InvoiceLineItem = {
         Description: line.description ?? undefined,
         Quantity: line.quantity,
-        UnitAmount: line.unitPrice,
+        UnitAmount: unitAmount,
         TaxAmount: taxAmount,
-        LineAmount: line.quantity * line.unitPrice,
-        // Use default account code from settings if no account specified
-        AccountCode: defaultAccountCode,
+        LineAmount: line.quantity * unitAmount,
+        // The item's mapped revenue account (item-referenced AR).
+        AccountCode: salesAccountCode,
         // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
         TaxType: line.taxPercent > 0 ? "OUTPUT" : "NONE"
       };
@@ -394,6 +461,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       AmountDue: local.balance,
       AmountPaid: local.totalAmount - local.balance,
       CurrencyCode: local.currencyCode,
+      // Xero's CurrencyRate is [invoice currency] PER [base currency] -- the
+      // same direction Carbon stores exchangeRate in, so it passes through
+      // unchanged. Inverting it earns Xero's "inverse rate" warning and books
+      // the base amounts wrong. Omit it on base-currency invoices: Xero calls
+      // an explicit rate of 1 redundant and warns on a 1 that reaches an FX
+      // document.
       CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined
     };
   }
@@ -491,11 +564,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       ? [{ ...data, InvoiceID: existingRemoteId }]
       : [data];
 
-    const result = await this.provider.request<{ Invoices: Xero.Invoice[] }>(
-      "POST",
-      "/Invoices",
-      { body: JSON.stringify({ Invoices: invoices }) }
-    );
+    const result = await this.xeroProvider.request<{
+      Invoices: Xero.Invoice[];
+    }>("POST", "/Invoices", { body: JSON.stringify({ Invoices: invoices }) });
 
     if (result.error) {
       throwXeroApiError(
@@ -535,11 +606,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       localIdOrder.push(localId);
     }
 
-    const response = await this.provider.request<{ Invoices: Xero.Invoice[] }>(
-      "POST",
-      "/Invoices",
-      { body: JSON.stringify({ Invoices: invoices }) }
-    );
+    const response = await this.xeroProvider.request<{
+      Invoices: Xero.Invoice[];
+    }>("POST", "/Invoices", { body: JSON.stringify({ Invoices: invoices }) });
 
     if (response.error) {
       throwXeroApiError("batch upsert invoices", response);

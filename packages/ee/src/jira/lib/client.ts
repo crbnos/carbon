@@ -1,6 +1,9 @@
 import { JIRA_CLIENT_ID, JIRA_CLIENT_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveIntegrationSecrets } from "../../integrations/secrets";
 import { getJiraIntegration, updateJiraCredentials } from "./service";
 import type {
   CreateJiraIssueInput,
@@ -156,9 +159,22 @@ export async function getAccessibleResources(
  * Jira Cloud REST API client.
  */
 export class JiraClient {
-  private getCredentials(integration: { metadata: unknown }): JiraCredentials {
-    return (integration.metadata as { credentials: JiraCredentials })
-      .credentials;
+  // Secret material (accessToken/refreshToken) lives in Supabase Vault; merge it
+  // back so callers read `metadata.credentials` the same as before. Vault RPCs
+  // require the service-role client.
+  private async getCredentials(
+    serviceRole: SupabaseClient<Database>,
+    companyId: string,
+    integration: { metadata: unknown; secretRef?: string | null }
+  ): Promise<JiraCredentials> {
+    const metadata = await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      "jira",
+      integration.metadata,
+      integration.secretRef ?? null
+    );
+    return (metadata as { credentials: JiraCredentials }).credentials;
   }
 
   /**
@@ -173,7 +189,11 @@ export class JiraClient {
       throw new Error("Jira integration not found for company");
     }
 
-    const credentials = this.getCredentials(integration);
+    const credentials = await this.getCredentials(
+      serviceRole,
+      companyId,
+      integration
+    );
 
     // Check if token needs refresh (5 min buffer)
     const now = Date.now();
@@ -217,7 +237,8 @@ export class JiraClient {
       throw new Error("Jira integration not found for company");
     }
 
-    return this.getCredentials(integration).cloudId;
+    return (await this.getCredentials(serviceRole, companyId, integration))
+      .cloudId;
   }
 
   /**
@@ -232,7 +253,8 @@ export class JiraClient {
       throw new Error("Jira integration not found for company");
     }
 
-    return this.getCredentials(integration).siteUrl;
+    return (await this.getCredentials(serviceRole, companyId, integration))
+      .siteUrl;
   }
 
   /**

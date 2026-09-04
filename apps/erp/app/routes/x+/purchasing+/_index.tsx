@@ -265,9 +265,8 @@ export default function PurchaseDashboard() {
 
   const currencyCompactFormatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode,
-    maximumFractionDigits: 0,
-    notation: "compact",
-    compactDisplay: "short"
+    compact: true,
+    wholeUnits: true
   });
   const currencyFormatter = useCurrencyFormatter();
   const numberFormatter = useNumberFormatter({
@@ -395,7 +394,7 @@ export default function PurchaseDashboard() {
   }, [dateRange, kpiLabels, selectedKpiData.key]);
 
   return (
-    <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
+    <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
         <MetricCard
           icon={<LuPackageSearch />}

@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { scrapAllowance } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   calculateJobPriority,
@@ -87,9 +88,9 @@ export async function action({ request }: ActionFunctionArgs) {
                 ? undefined
                 : (manufacturing?.data?.lotSize ?? 0),
             modelUploadId: item.data?.modelUploadId ?? null,
-            scrapQuantity: Math.ceil(
-              (manufacturing?.data?.lotSize ?? 0) *
-                (manufacturing?.data?.scrapPercentage ?? 0)
+            scrapQuantity: scrapAllowance(
+              manufacturing?.data?.lotSize ?? 0,
+              manufacturing?.data?.scrapPercentage ?? 0
             ),
             updatedBy: userId,
             updatedAt: new Date().toISOString()

@@ -147,7 +147,7 @@ function splitAtTopLevel(str: string, delimiter: string): string[] {
   for (let i = 0; i < str.length; i++) {
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch)) depth--;
+    else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
     if (ch === delimiter && depth === 0) {
       parts.push(current.trim());
       current = "";
@@ -159,12 +159,20 @@ function splitAtTopLevel(str: string, delimiter: string): string[] {
   return parts;
 }
 
+// The `>` in an arrow function (`() => ...`) is not a generic close. Counting it
+// as one drives brace depth negative, so every top-level delimiter after the
+// first arrow (e.g. a validator field after an `errorMap: () => ({...})`) stops
+// splitting — silently truncating a tool's schema to the fields before it.
+function isArrowClose(str: string, i: number): boolean {
+  return str[i] === ">" && str[i - 1] === "=";
+}
+
 function findTopLevelColon(str: string): number {
   let depth = 0;
   for (let i = 0; i < str.length; i++) {
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch)) depth--;
+    else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
     if (ch === ":" && depth === 0) return i;
   }
   return -1;
@@ -251,8 +259,10 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
   // Json type
   if (t === "Json" || t === "Json | null") return {};
 
-  // (typeof X)[number] — enum array reference
-  if (t.match(/\(typeof\s+\w+\)\s*\[number\]/)) return { type: "string" };
+  // (typeof X)[number] — enum array reference. Anchored: an unanchored match
+  // also fired for any inline object type that merely CONTAINS such a field,
+  // collapsing the whole object to a string.
+  if (/^\(typeof\s+\w+\)\s*\[number\]$/.test(t)) return { type: "string" };
 
   // Inline object: { field: Type; ... }
   if (t.startsWith("{")) {
@@ -338,7 +348,7 @@ function splitObjectFields(inner: string): string[] {
   for (let i = 0; i < inner.length; i++) {
     const ch = inner[i];
     if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch)) depth--;
+    else if (")}]>".includes(ch) && !isArrowClose(inner, i)) depth--;
 
     if (ch === ";" && depth === 0) {
       fields.push(current.trim());
@@ -357,17 +367,81 @@ function splitObjectFields(inner: string): string[] {
 
 function parseValidatorFields(
   validatorName: string,
-  modelsContent: string
+  modelsContent: string,
+  seen: Set<string> = new Set()
 ): Record<string, unknown> | null {
-  const regex = new RegExp(
-    `export\\s+const\\s+${validatorName}\\s*=\\s*z\\.object\\(\\{`
+  // Cycle guard for mutually-referential validators.
+  if (seen.has(validatorName)) return null;
+  seen = new Set(seen).add(validatorName);
+
+  const rhs = extractValidatorRhs(validatorName, modelsContent);
+  if (rhs === null) return null;
+
+  const properties: Record<string, unknown> = {};
+  const required: string[] = [];
+  const mergeIn = (sub: Record<string, unknown> | null) => {
+    if (!sub) return;
+    Object.assign(properties, sub.properties as Record<string, unknown>);
+    for (const r of (sub.required as string[] | undefined) ?? []) {
+      if (!required.includes(r)) required.push(r);
+    }
+  };
+
+  // Base validators pulled in by `Base.merge(...)` / `Base.extend(...)` — resolve
+  // each referenced `*Validator` (same file) and fold its fields in first, so the
+  // extension below can override. This is what makes
+  // `applyX(itemValidator.merge(z.object({...})))` resolvable instead of opaque.
+  const refs = new Set(
+    (rhs.match(/\b\w+Validator\b/g) ?? []).filter((n) => n !== validatorName)
   );
+  for (const ref of refs) {
+    mergeIn(parseValidatorFields(ref, modelsContent, seen));
+  }
+
+  // This validator's own object literal — for a `.merge(z.object({...}))` /
+  // wrapped chain the FIRST z.object is the extension; for a plain
+  // `z.object({...})` it is the whole thing. Wrappers (`applyX(...)`, `.refine`,
+  // `.superRefine`) are transparent to this scan.
+  mergeIn(parseFirstZObject(rhs));
+
+  if (Object.keys(properties).length === 0) return null;
+  const result: Record<string, unknown> = { type: "object", properties };
+  if (required.length > 0) result.required = required;
+  return result;
+}
+
+// The assignment expression of `export const {name} = <expr>;`, captured to the
+// first top-level `;` (arrow-guarded) so a `*Validator` reference or `z.object`
+// from a later declaration is never pulled in.
+function extractValidatorRhs(
+  validatorName: string,
+  modelsContent: string
+): string | null {
+  const regex = new RegExp(`export\\s+const\\s+${validatorName}\\s*=\\s*`);
   const match = regex.exec(modelsContent);
   if (!match) return null;
+  const start = match.index + match[0].length;
 
-  const braceStart = match.index + match[0].length - 1;
-  const braceEnd = findMatchingBrace(modelsContent, braceStart);
-  const inner = modelsContent.substring(braceStart + 1, braceEnd).trim();
+  let depth = 0;
+  for (let i = start; i < modelsContent.length; i++) {
+    const ch = modelsContent[i];
+    if ("({[<".includes(ch)) depth++;
+    else if (")}]>".includes(ch) && !isArrowClose(modelsContent, i)) depth--;
+    else if (ch === ";" && depth === 0) {
+      return modelsContent.substring(start, i);
+    }
+  }
+  return modelsContent.substring(start);
+}
+
+// Parse the first `z.object({ ... })` in an expression into a JSON-Schema object.
+function parseFirstZObject(expr: string): Record<string, unknown> | null {
+  const idx = expr.indexOf("z.object(");
+  if (idx === -1) return null;
+  const braceStart = expr.indexOf("{", idx);
+  if (braceStart === -1) return null;
+  const braceEnd = findMatchingBrace(expr, braceStart);
+  const inner = expr.substring(braceStart + 1, braceEnd).trim();
 
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
@@ -398,6 +472,7 @@ function parseValidatorFields(
     if (!isOptional) required.push(fieldName);
   }
 
+  if (Object.keys(properties).length === 0) return null;
   const result: Record<string, unknown> = { type: "object", properties };
   if (required.length > 0) result.required = required;
   return result;
@@ -417,7 +492,14 @@ function zodExprToJsonSchema(expr: string): Record<string, unknown> {
     }
   }
 
-  if (e.startsWith("z.array(")) return { type: "array" };
+  if (e.startsWith("z.array(")) {
+    // Resolve the element schema so the array is well-formed rather than a bare
+    // `{type:"array"}` a caller can't fill.
+    const open = e.indexOf("(");
+    const close = findMatchingBrace(e, open);
+    const inner = e.substring(open + 1, close).trim();
+    return { type: "array", items: inner ? zodExprToJsonSchema(inner) : {} };
+  }
   if (e.includes("z.number()")) return { type: "number" };
   if (e.includes("z.boolean()")) return { type: "boolean" };
   if (e.includes("z.string()") || e.startsWith("zfd.text("))
@@ -425,7 +507,10 @@ function zodExprToJsonSchema(expr: string): Record<string, unknown> {
   if (e.includes("z.any()")) return {};
   if (e.startsWith("zfd.numeric(")) return { type: "number" };
   if (e.startsWith("z.preprocess(")) {
-    if (e.includes("z.enum(")) return zodExprToJsonSchema(e);
+    // A preprocessed enum whose values aren't an inline array can't be
+    // enumerated (the top-of-function z.enum check already ran on this same
+    // expr), so treat it as a string. Recursing on `e` here looped forever.
+    if (e.includes("z.enum(")) return { type: "string" };
     if (e.includes("z.number()")) return { type: "number" };
     return { type: "string" };
   }
@@ -438,12 +523,48 @@ function zodExprToJsonSchema(expr: string): Record<string, unknown> {
 // ---------------------------------------------------------------------------
 
 function classifyFunction(
-  name: string
+  name: string,
+  content?: string
 ): "READ" | "WRITE" | "DESTRUCTIVE" {
   if (/^delete/.test(name)) return "DESTRUCTIVE";
-  if (/^(get|list|fetch|search|find|count|check|is|has)/.test(name))
+  // Require a camelCase boundary after the read prefix so a mutating name that merely starts with
+  // those letters is not misread as a reader — e.g. `issueMaterial` ("is"+lowercase) is a WRITE,
+  // while `isBlocked`/`getJob` ("is"/"get"+uppercase) stay READ.
+  if (/^(get|list|fetch|search|find|count|check|is|has|compute)(?![a-z])/.test(name))
     return "READ";
+  // Destructive-by-omission: a write whose body deletes rows (e.g. the
+  // delete-then-reinsert `upsert*Prices` rewrite) can silently drop data the
+  // caller didn't include. Flag it so the client treats it as destructive, even
+  // though its name says `upsert`/`update`. injectAuth stays name-based below, so
+  // the insert branch still gets its createdBy.
+  if (content && functionBodyDeletes(content, name)) return "DESTRUCTIVE";
   return "WRITE";
+}
+
+// True when the function body issues a row delete (supabase `.delete(` or Kysely
+// `.deleteFrom(`). Comment/URL-safe via stripComments.
+function functionBodyDeletes(content: string, funcName: string): boolean {
+  const body = extractFunctionBody(content, funcName);
+  if (body === null) return false;
+  const stripped = stripComments(body);
+  return /\.delete\s*\(/.test(stripped) || /\.deleteFrom\s*\(/.test(stripped);
+}
+
+function extractFunctionBody(content: string, funcName: string): string | null {
+  const regex = new RegExp(
+    `export\\s+(?:async\\s+)?function\\s+${funcName}\\s*\\(`
+  );
+  const match = regex.exec(content);
+  if (!match) return null;
+  const closeParen = findMatchingBrace(
+    content,
+    match.index + match[0].length - 1
+  );
+  const nextExport = content.indexOf("\nexport ", closeParen);
+  return content.substring(
+    closeParen,
+    nextExport === -1 ? content.length : nextExport
+  );
 }
 
 function computeInjectAuth(
@@ -451,7 +572,12 @@ function computeInjectAuth(
   classification: "READ" | "WRITE" | "DESTRUCTIVE"
 ): AuthField[] {
   const lower = funcName.toLowerCase();
-  if (classification === "READ" || classification === "DESTRUCTIVE") {
+  // Only READ tools take no audit fields. A DESTRUCTIVE label is just a caller
+  // hint — a delete-then-reinsert `upsert*` still inserts rows and needs its
+  // createdBy/updatedBy, so audit injection is keyed off the name verb, not the
+  // classification. A genuine `delete*` matches neither verb group and falls
+  // through to companyId-only.
+  if (classification === "READ") {
     return ["companyId"];
   }
   if (
@@ -467,6 +593,37 @@ function computeInjectAuth(
     return ["companyId", "updatedBy"];
   }
   return ["companyId"];
+}
+
+// Services that pick insert-vs-update this way are the only ones MCP can't infer.
+function usesCreatedByDiscriminator(
+  content: string,
+  funcName: string
+): boolean {
+  const body = extractFunctionBody(content, funcName);
+  if (body === null) return false;
+  return stripComments(body).includes('"createdBy" in');
+}
+
+// The `:` guard keeps `https://` intact.
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+function addOperationArg(schema: Record<string, unknown>): void {
+  const properties = (schema.properties ?? {}) as Record<string, unknown>;
+  properties._operation = {
+    type: "string",
+    enum: ["create", "update"],
+    description:
+      "Required. 'create' inserts a new record, 'update' modifies the existing record with this id.",
+  };
+  schema.properties = properties;
+  const required = ((schema.required as string[] | undefined) ?? []).slice();
+  if (!required.includes("_operation")) required.push("_operation");
+  schema.required = required;
 }
 
 function generateDescription(funcName: string): string {
@@ -494,10 +651,14 @@ function buildToolSchema(
   if (userParams.length === 1) {
     const param = userParams[0];
 
-    // Check for validator reference: z.infer<typeof validatorName>
-    const validatorMatch = param.typeStr.match(
-      /z\.infer<typeof\s+(\w+)>/
-    );
+    // Check for validator reference: z.infer<typeof validatorName>. Skip when the
+    // type is an inline object literal (`{ ... }`) that merely CONTAINS a nested
+    // `z.infer<...>` field — that object should be flattened, not replaced by the
+    // nested schema.
+    const isInlineObject = param.typeStr.trim().startsWith("{");
+    const validatorMatch = isInlineObject
+      ? null
+      : param.typeStr.match(/z\.infer<typeof\s+(\w+)>/);
     if (validatorMatch && modelsContent) {
       const validatorName = validatorMatch[1];
       const resolved = parseValidatorFields(validatorName, modelsContent);
@@ -509,13 +670,23 @@ function buildToolSchema(
       }
     }
 
-    // Inline object type
+    // Inline object type — flatten its fields to the top level. An
+    // array-of-objects (`{...}[]`) can't be flattened, so wrap it under the
+    // param name instead (typeToJsonSchema returns `{type:"array",...}`).
     if (param.typeStr.trim().startsWith("{")) {
-      const schema = parseInlineObjectType(param.typeStr);
+      const resolved = typeToJsonSchema(param.typeStr);
+      if (resolved.type === "array") {
+        const schema: Record<string, unknown> = {
+          type: "object",
+          properties: { [param.name]: resolved },
+          required: param.optional ? undefined : [param.name],
+        };
+        return { schema, paramCount: 1 };
+      }
       const propCount = Object.keys(
-        (schema.properties as Record<string, unknown>) || {}
+        (resolved.properties as Record<string, unknown>) || {}
       ).length;
-      return { schema, paramCount: propCount };
+      return { schema: resolved, paramCount: propCount };
     }
 
     // GenericQueryFilters
@@ -545,12 +716,10 @@ function buildToolSchema(
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
   for (const param of userParams) {
-    if (param.typeStr.trim().startsWith("{")) {
-      // Inline object — wrap under param name
-      properties[param.name] = parseInlineObjectType(param.typeStr);
-    } else {
-      properties[param.name] = typeToJsonSchema(param.typeStr);
-    }
+    // typeToJsonSchema handles inline objects AND arrays-of-objects (`{...}[]`),
+    // checking the `[]` suffix before the `{` prefix. Calling parseInlineObjectType
+    // directly here dropped the suffix, publishing an array param as a bare object.
+    properties[param.name] = typeToJsonSchema(param.typeStr);
     if (!param.optional) required.push(param.name);
   }
 
@@ -568,6 +737,12 @@ function loadModelsContent(mod: string): string | null {
   if (fs.existsSync(modelsPath)) {
     return fs.readFileSync(modelsPath, "utf-8");
   }
+  // Fall back to the `.ee`-licensed variant (see root LICENSE) when a module
+  // keeps its single models file under that name.
+  const eeModelsPath = path.join(MODULES_DIR, mod, `${mod}.ee.models.ts`);
+  if (fs.existsSync(eeModelsPath)) {
+    return fs.readFileSync(eeModelsPath, "utf-8");
+  }
   // Try shared models for cross-module validators
   const sharedPath = path.join(MODULES_DIR, "shared", "index.ts");
   if (fs.existsSync(sharedPath)) {
@@ -582,15 +757,36 @@ export function generateToolMetadata(): void {
   const allTools: ToolMetadata[] = [];
 
   for (const mod of MODULE_LIST) {
-    const serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
+    let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
     if (!fs.existsSync(serviceFile)) {
-      console.warn(`  ⚠ Service file not found: ${serviceFile}`);
-      continue;
+      // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
+      // module keeps its single service file under that name (e.g.
+      // accounting.ee.service.ts).
+      const eeServiceFile = path.join(
+        MODULES_DIR,
+        mod,
+        `${mod}.ee.service.ts`
+      );
+      if (!fs.existsSync(eeServiceFile)) {
+        console.warn(`  ⚠ Service file not found: ${serviceFile}`);
+        continue;
+      }
+      serviceFile = eeServiceFile;
     }
 
-    const content = fs.readFileSync(serviceFile, "utf-8");
+    let content = fs.readFileSync(serviceFile, "utf-8");
     const modelsContent = loadModelsContent(mod);
     const functions = parseExportedFunctions(content);
+
+    // A module may expose MCP tools from a server-only companion file
+    // (`{mod}.mcp.server.ts`) when those functions must import `*.server`
+    // modules and therefore cannot live in the client-reachable service file.
+    const mcpServerFile = path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`);
+    if (fs.existsSync(mcpServerFile)) {
+      const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
+      content = `${content}\n${mcpServerContent}`;
+      functions.push(...parseExportedFunctions(mcpServerContent));
+    }
 
     let toolCount = 0;
 
@@ -598,7 +794,7 @@ export function generateToolMetadata(): void {
       const toolName = `${mod}_${func.name}`;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
-      const classification = classifyFunction(func.name);
+      const classification = classifyFunction(func.name, content);
       const injectAuth =
         INJECT_AUTH_OVERRIDES[toolName] ||
         computeInjectAuth(func.name, classification);
@@ -606,6 +802,12 @@ export function generateToolMetadata(): void {
         DESCRIPTION_OVERRIDES[toolName] || generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
       const { schema, paramCount } = buildToolSchema(func, modelsContent);
+      if (
+        injectAuth.includes("createdBy") &&
+        usesCreatedByDiscriminator(content, func.name)
+      ) {
+        addOperationArg(schema);
+      }
 
       allTools.push({
         name: toolName,

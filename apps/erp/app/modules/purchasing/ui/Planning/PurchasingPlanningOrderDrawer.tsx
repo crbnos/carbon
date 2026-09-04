@@ -52,7 +52,7 @@ import {
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -91,6 +91,13 @@ export const PurchasingPlanningOrderDrawer = memo(
     onSupplierChange
   }: PurchasingPlanningOrderDrawerProps) => {
     const { t } = useLingui();
+    // Planned-order defaults are business dates on the plant's calendar — use
+    // the loader's location-today, not the planner's browser zone.
+    const planningData = useRouteData<{ locationToday?: string }>(
+      path.to.purchasingPlanning
+    );
+    const locationToday =
+      planningData?.locationToday ?? today(getLocalTimeZone()).toString();
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { carbon } = useCarbon();
 
@@ -210,11 +217,11 @@ export const PurchasingPlanningOrderDrawer = memo(
 
         const newOrder: PlannedOrder = {
           quantity: purchaseQuantity,
-          dueDate: today(getLocalTimeZone())
+          dueDate: parseDate(locationToday)
             .add({ days: selectedItem.leadTime ?? 0 })
             .toString(),
-          startDate: today(getLocalTimeZone()).toString(),
-          supplierId: selectedItem.preferredSupplierId,
+          startDate: locationToday,
+          supplierId: selectedSupplier ?? selectedItem.preferredSupplierId,
           itemReadableId: selectedItem.readableIdWithRevision,
           description: selectedItem.name,
           periodId: periods[0].id
@@ -246,12 +253,19 @@ export const PurchasingPlanningOrderDrawer = memo(
             order.existingStatus === "Planned"
         );
         const ordersWithPeriods = editableOrders.map((order) => {
+          // Stamp the currently-selected supplier onto every order. Orders built
+          // by onAddOrder/getPurchaseOrdersFromPlanning may carry a null
+          // supplierId (e.g. the item has no preferredSupplierId), which the
+          // server validator rejects as "No suppliers provided" — the Order
+          // button already guards that selectedSupplier is set.
+          const supplierId = selectedSupplier ?? order.supplierId;
           if (
             !order.dueDate ||
             parseDate(order.dueDate) < parseDate(periods[0].startDate)
           ) {
             return {
               ...order,
+              supplierId,
               periodId: periods[0].id
             };
           }
@@ -265,6 +279,7 @@ export const PurchasingPlanningOrderDrawer = memo(
 
           return {
             ...order,
+            supplierId,
             periodId: period?.id ?? periods[periods.length - 1].id
           };
         });
@@ -285,7 +300,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           encType: "application/json"
         });
       },
-      [fetcher, locationId, periods]
+      [fetcher, locationId, periods, selectedSupplier]
     );
 
     const onOrderUpdate = useCallback(

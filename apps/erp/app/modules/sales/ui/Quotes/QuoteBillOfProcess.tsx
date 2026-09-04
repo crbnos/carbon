@@ -35,6 +35,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -60,6 +61,7 @@ import {
 import { useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import {
+  DateTime,
   DirectionAwareTabs,
   EmployeeAvatar,
   OperationTypeIcon,
@@ -98,7 +100,7 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import {
-  useDateFormatter,
+  useCurrencyDecimals,
   usePermissions,
   useRouteData,
   useUser
@@ -1164,7 +1166,6 @@ function AttributesListItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const {
     name,
     unitOfMeasureCode,
@@ -1438,7 +1439,8 @@ function AttributesListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -1582,7 +1584,6 @@ function ParametersListItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -1659,7 +1660,8 @@ function ParametersListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>
@@ -1739,6 +1741,7 @@ function OperationForm({
   const { carbon } = useCarbon();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
     if (fetcher.data && fetcher.data.id) {
@@ -2005,10 +2008,7 @@ function OperationForm({
               label={t`Minimum Cost`}
               minValue={0}
               value={processData.operationMinimumCost}
-              formatOptions={{
-                style: "currency",
-                currency: baseCurrency
-              }}
+              formatOptions={INPUT_FORMAT.rate(baseCurrency, currencyDecimals)}
               onChange={(newValue) =>
                 setProcessData((d) => ({
                   ...d,
@@ -2021,10 +2021,7 @@ function OperationForm({
               label={t`Unit Cost`}
               minValue={0}
               value={processData.operationUnitCost}
-              formatOptions={{
-                style: "currency",
-                currency: baseCurrency
-              }}
+              formatOptions={INPUT_FORMAT.rate(baseCurrency, currencyDecimals)}
               onChange={(newValue) =>
                 setProcessData((d) => ({
                   ...d,
@@ -2369,10 +2366,10 @@ function OperationForm({
                 label={t`Labor Rate`}
                 minValue={0}
                 value={processData.laborRate}
-                formatOptions={{
-                  style: "currency",
-                  currency: baseCurrency
-                }}
+                formatOptions={INPUT_FORMAT.rate(
+                  baseCurrency,
+                  currencyDecimals
+                )}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
                     ...d,
@@ -2386,10 +2383,10 @@ function OperationForm({
                   label={t`Machine Rate`}
                   minValue={0}
                   value={processData.machineRate}
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.rate(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                   onChange={(newValue) =>
                     setProcessData((d) => ({
                       ...d,
@@ -2403,10 +2400,10 @@ function OperationForm({
                 label={t`Overhead Rate`}
                 minValue={0}
                 value={processData.overheadRate}
-                formatOptions={{
-                  style: "currency",
-                  currency: baseCurrency
-                }}
+                formatOptions={INPUT_FORMAT.rate(
+                  baseCurrency,
+                  currencyDecimals
+                )}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
                     ...d,
@@ -2603,7 +2600,6 @@ function ToolsListItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -2687,7 +2683,8 @@ function ToolsListItem({
           <div className="flex items-center justify-end gap-2">
             <HStack spacing={2}>
               <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                {isUpdated ? "Updated" : "Created"}{" "}
+                <DateTime value={date} variant="relative" />
               </span>
               <EmployeeAvatar employeeId={person} withName={false} />
             </HStack>

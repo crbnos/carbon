@@ -192,7 +192,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? navEntities[0]?.id
       : navEntities[unitIndex]?.id;
 
-  const [materials, openEvent] = await Promise.all([
+  const [materials, openEvent, priorDependency] = await Promise.all([
     getJobMaterialsByOperationId(serviceRole, {
       operation: op,
       trackedEntityId: effectiveEntityId,
@@ -211,8 +211,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .is("endTime", null)
       .order("startTime", { ascending: false })
       .limit(1)
+      .maybeSingle(),
+    // Is this the first operation in the routing? A serial unit only earns a printed
+    // label when completed at its first operation, so the first op flows unit-by-unit
+    // (auto-select), and later ops scan/select (labels exist). "First" means nothing
+    // precedes it within THIS make method — no jobOperationDependency whose predecessor
+    // shares this op's jobMakeMethodId. Cross make-method (subassembly) dependencies are
+    // ignored: a parent-assembly op still has no printed label just because a subassembly
+    // finished first. `order` is only a display/sort field and isn't a reliable signal.
+    serviceRole
+      .from("jobOperationDependency")
+      .select(
+        "dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk!inner(jobMakeMethodId)"
+      )
+      .eq("operationId", operationId)
+      .eq("dependsOn.jobMakeMethodId", op.jobMakeMethodId)
+      .limit(1)
       .maybeSingle()
   ]);
+  // Fail closed: a query error also returns null data, so treat an errored lookup
+  // as "not first" — later ops require scan/select, which is the safe default when
+  // we can't confirm the operation has no predecessor.
+  const isFirstOperation = !priorDependency.error && !priorDependency.data;
 
   return {
     job: job.data,
@@ -228,6 +248,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ncrs: ncrs.data ?? [],
     requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    isFirstOperation,
     openEvent: openEvent.data ?? null,
     events: events.data ?? [],
     nonConformanceActions,

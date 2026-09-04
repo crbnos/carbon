@@ -45,32 +45,35 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
   MethodIcon,
   New,
+  SupplierAvatarGroup,
   Table,
   TrackingTypeIcon
 } from "~/components";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
-import { usePeople } from "~/stores";
+import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { Tool } from "../../types";
+import type { ToolListItem } from "../../types";
 
 type ToolsTableProps = {
-  data: Tool[];
+  data: ToolListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -79,7 +82,6 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -108,14 +110,19 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   );
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Tool | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ToolListItem | null>(null);
 
   const [people] = usePeople();
+  const [suppliers] = useSuppliers();
+  const supplierMap = useMemo(
+    () => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])),
+    [suppliers]
+  );
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Tool>("tool");
+  const customColumns = useCustomColumns<ToolListItem>("tool");
 
-  const columns = useMemo<ColumnDef<Tool>[]>(() => {
-    const defaultColumns: ColumnDef<Tool>[] = [
+  const columns = useMemo<ColumnDef<ToolListItem>[]>(() => {
+    const defaultColumns: ColumnDef<ToolListItem>[] = [
       {
         accessorKey: "id",
         header: t`Tool ID`,
@@ -137,9 +144,17 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           </HStack>
         ),
         meta: {
-          icon: <LuBookMarked />
+          icon: <LuBookMarked />,
+          // The accessor is the raw item id — export the readable id
+          // the cell shows instead of a UUID.
+          exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
+      exportOnlyColumn<ToolListItem>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "description",
         header: t`Description`,
@@ -331,6 +346,29 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         }
       },
       {
+        accessorKey: "suppliers",
+        header: t`Supplier`,
+        cell: ({ row }) => (
+          <SupplierAvatarGroup supplierIds={row.original.suppliers ?? []} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: suppliers.map((supplier) => ({
+              value: supplier.id,
+              label: supplier.name
+            })),
+            isArray: true
+          },
+          icon: <LuTruck />,
+          exportValue: (row) =>
+            row.suppliers
+              ?.map((supplierId) => supplierMap.get(supplierId))
+              .filter(Boolean)
+              .join(", ") ?? null
+        }
+      },
+      {
         accessorKey: "active",
         header: t`Active`,
         cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -382,7 +420,9 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -407,7 +447,9 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -417,13 +459,14 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   }, [
     customColumns,
     people,
+    supplierMap,
+    suppliers,
     tags,
     itemPostingGroups,
     t,
     translateMethodType,
     translateReplenishment,
-    translateTrackingType,
-    formatDate
+    translateTrackingType
   ]);
 
   const fetcher = useFetcher<typeof action>();
@@ -546,7 +589,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Tool) => {
+    return (row: ToolListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -595,7 +638,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
 
   return (
     <>
-      <Table<Tool>
+      <Table<ToolListItem>
         count={count}
         columns={columns}
         data={data}

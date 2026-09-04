@@ -30,8 +30,9 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
   `useCreateLookup.ts` creates missing lookup values inline.
 - `useCsvContext.tsx` — shared state (`file`, `filePath`, `fileColumns`, `firstRows`).
 
-Used from `apps/erp/app/components/Table/components/TableHeader.tsx` (table import button)
-and `apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx`.
+Mounted from exactly one place: `apps/erp/app/components/Table/components/TableHeader.tsx`
+(the Bulk Import dropdown). A list page opts in by passing `importCSV={[{ table, label }]}`
+to `<Table>` — that prop is the whole UI-side registration.
 
 ## Models (`apps/erp/app/modules/shared/imports.models.ts`)
 
@@ -58,17 +59,67 @@ Three exported maps, all keyed by table name:
 
 Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 
+> **Every field in `fieldMappings[table]` must also be declared in `importSchemas[table]`.**
+> The route builds `columnMappings` from the zod parse result, and a zod object strips
+> keys it does not declare — so a field the wizard offers but the schema omits is mapped
+> by the user, submitted, and silently dropped before the edge function sees it. That is
+> what made every CSV-imported item land at revision `"0"` while the wizard marked the
+> Revision column required. `apps/erp/app/modules/shared/imports.models.test.ts` asserts
+> the invariant per table; add the field to BOTH maps when adding one.
+
 ### Tables & permissions
 
 `customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
-`part`, `material`, `tool`, `fixture`, `consumable`, `methodMaterial`, `bom`,
-`operations`, `partWithMethod` → `parts`; `workCenter`, `process` → `production`;
+`part`, `material`, `tool`, `fixture`, `consumable`, `bom`,
+`operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
+`materialGrade`, `materialType`, `materialDimension` → `parts`;
+`workCenter`, `process` → `production`; `storageUnit` → `inventory`;
 `fixedAsset` → `accounting`.
 
 The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
 `partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
-`process`. Note it does **not** list `fixedAsset` or `methodMaterial` (see Gotchas).
+`process`, `storageUnit`, `materialSubstance`, `materialForm`, `materialFinish`,
+`materialGrade`, `materialType`, `materialDimension`. Note it does **not** list
+`fixedAsset` (see Gotchas).
+
+### Storage-unit import (natural-key match + two-pass parent linking)
+
+`storageUnit` imports the fields `id` (Unique ID), `name`, `locationId` (Location,
+an enum resolved via the FieldMappings location fetcher), `parentName`,
+`storageTypeNames` (comma-separated), and `active`. Because storage unit names are
+unique **per location** (`storageUnit_name_locationId_key`), both in-file dedup and
+match-existing-to-update key on `(locationId, lower(name))` — NOT `classifyImportRow`'s
+name-only dedup. A csv `id` still writes an `externalIntegrationMapping` for id-based
+re-import. Updates deliberately never change `locationId` (avoids the "cannot move a
+unit with children" interceptor); a unit's location is **immutable via import**, so a row
+whose csv id resolves to a unit in a DIFFERENT location than the row states is reported as
+a row error (not a silent move), and an id-matched rename onto a name another unit already
+owns in that location is likewise reported rather than crashing the batch on
+`storageUnit_name_locationId_key`. `storageTypeNames` resolve case-insensitively against
+existing company `storageType` rows, **creating** any missing ones (mirrors the creatable
+StorageTypes combobox). `parentName` is applied in a **second pass** after all inserts —
+individual `UPDATE`s outside the insert transaction — so a parent defined later in the
+same file resolves and an unresolved/cyclic/self parent reports a per-row error instead
+of rolling back the whole import. The DB same-location / no-cycle interceptors
+(`20260417000200`) are the final guard; their exceptions are caught per row.
+
+### Material-property imports (skip-duplicate, create-only)
+
+The six material-taxonomy lookups (`materialSubstance`, `materialForm`,
+`materialFinish`, `materialGrade`, `materialType`, `materialDimension`) are each a
+standalone import surfaced from its own config table (`apps/erp/app/modules/items/ui/Material*`).
+They are handled by `import-csv/material-property-import.ts` (not the item/customer
+paths) with **create-only, skip-duplicate** semantics — no `externalIntegrationMapping`,
+no updates. A row matching an existing entry for the company **or** a global system row
+(`companyId IS NULL`) is reported as `skipped`; re-importing the same file is a no-op.
+Dedup keys mirror the DB unique constraints (case/whitespace-insensitive):
+`code` (substance/form), `(materialSubstanceId, name)` (finish/grade),
+`(materialFormId, name)` (dimension), and both `(substance, form, code)` and
+`(substance, form, name)` (type). Parent substance/shape are referenced **by name**
+and resolved to ids by the FieldMappings enum-mapping step (fetchers on
+`materialSubstance` / `materialForm`), so parents must already exist — an unresolved
+parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
 > The models also include `customerStatus` / `customerType` field-mapping entries (used by
 > creatable lookups), but only the tables above appear in `importPermissions`.
@@ -100,6 +151,14 @@ Deno `serve` handler. Payload validated by `importCsvValidator` (table enum, `fi
   when the strict parser rejects uneven row widths.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);
   `"N/A"` / unmapped columns are skipped.
+- **Material Finish / Grade / Dimensions arrive as raw text** (`finish`, `grade`,
+  `dimensions` — they can't be flat enum mappings because `materialFinish`/`materialGrade`
+  are scoped by substance and `materialDimension` by form). `resolveMaterialTaxonomyIds()`
+  resolves them per row within the row's substance/form scope — case-insensitive match
+  against global (`companyId IS NULL`) + company rows (company wins) — and **creates a
+  company-scoped taxonomy row for unmatched names** (mirroring the creatable comboboxes on
+  the material form). A row with no substance (finish/grade) or no form (dimensions) leaves
+  the attribute unset.
 - Classifies each row with `classifyImportRow()` (see `classify-import-row.ts`):
   returns `{ action: "insert" }`, `{ action: "update"; entityId }`, or
   `{ action: "skip"; reason }`. Skips on missing Name or duplicate id/name within the file.
@@ -122,7 +181,9 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
 
 ## Gotchas
 
-- **`methodMaterial` is not implemented** — its edge-function case `throw new Error("Not implemented")`.
+- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and the edge
+  function's enum, but `Fixture` was dropped from the app's item-type enum
+  (`items.models.ts`) and there is no Fixtures list page, so nothing surfaces it.
 - **`fixedAsset`** has models/permissions (`fieldMappings`, `importPermissions`) but is
   **confirmed absent** from the edge function's `table` enum, so the edge function
   **rejects it** — the zod `table` enum fails to parse and it errors out (effectively

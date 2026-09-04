@@ -1,11 +1,18 @@
-import { error, getAppUrl, RESEND_DOMAIN, success } from "@carbon/auth";
+import {
+  CONTROLLED_ENVIRONMENT,
+  error,
+  RESEND_DOMAIN,
+  success
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { sendEmail } from "@carbon/lib/resend.server";
+import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
@@ -65,7 +72,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const newCode = nanoid();
     const refreshed = await serviceRole
       .from("invite")
-      .update({ code: newCode, acceptedAt: null, revokedAt: null })
+      // Reset createdAt so the controlled-environment 7-day expiry window
+      // restarts from this resend.
+      .update({
+        code: newCode,
+        acceptedAt: null,
+        revokedAt: null,
+        createdAt: datetime.timestamp()
+      })
       .eq("email", user.data.email)
       .eq("companyId", companyId)
       .select("code")
@@ -84,6 +98,13 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("id", existingInvite.data.createdBy)
       .single();
 
+    const inviteLink = await getSsoAwareInviteLink(
+      serviceRole,
+      user.data.email,
+      refreshed.data.code,
+      companyId
+    );
+
     await sendEmail({
       from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
       to: user.data.email,
@@ -98,9 +119,10 @@ export async function action({ request }: ActionFunctionArgs) {
           email: user.data.email,
           name: user.data.fullName ?? "",
           companyName: company.data.name,
-          inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+          inviteLink,
           ip,
-          location
+          location,
+          controlledEnvironment: CONTROLLED_ENVIRONMENT
         })
       )
     });

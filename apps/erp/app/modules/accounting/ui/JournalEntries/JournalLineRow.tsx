@@ -1,7 +1,9 @@
 import { IconButton, Input, NumberField, NumberInput } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { LuTrash } from "react-icons/lu";
 import { AccountControlled } from "~/components/Form";
+import { useCurrencyDecimals } from "~/hooks";
 import DimensionSelector from "./DimensionSelector";
 import type {
   ClientJournalLine,
@@ -33,6 +35,9 @@ const JournalLineRow = ({
   autoSaveDimensions = false
 }: JournalLineRowProps) => {
   const { t } = useLingui();
+  // Debit/credit are GL journal lines — internal scale-5 values per the two-scale
+  // rule, so the currency's decimals are the MINIMUM here, never the maximum.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const handleAccountChange = (accountId: string) => {
     onChange({ ...line, accountId });
   };
@@ -99,10 +104,7 @@ const JournalLineRow = ({
         <NumberField
           value={line.debit ?? 0}
           onChange={handleDebitChange}
-          formatOptions={{
-            style: "currency",
-            currency: currencyCode
-          }}
+          formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
           minValue={0}
           isDisabled={isDisabled}
           isReadOnly={isDisabled}
@@ -117,10 +119,7 @@ const JournalLineRow = ({
         <NumberField
           value={line.credit ?? 0}
           onChange={handleCreditChange}
-          formatOptions={{
-            style: "currency",
-            currency: currencyCode
-          }}
+          formatOptions={INPUT_FORMAT.rate(currencyCode, currencyDecimals)}
           minValue={0}
           isDisabled={isDisabled}
           isReadOnly={isDisabled}

@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import {
   LuChevronDown,
@@ -39,7 +38,7 @@ import {
   useNavigate,
   useParams
 } from "react-router";
-import { DocumentHeader } from "~/components";
+import { DateTime, DocumentHeader } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
@@ -62,7 +61,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
     (data) => data?.asset?.fixedAssetId
-  )
+  ),
+  module: "accounting"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -134,7 +134,7 @@ export default function FixedAssetDetailRoute() {
   const canUpdate = permissions.can("update", "accounting");
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto space-y-4">
         {/* Main Details */}
         <Card>
@@ -328,14 +328,18 @@ export default function FixedAssetDetailRoute() {
                 </>
               )}
               <DetailRow label="Acquisition Date">
-                {asset.acquisitionDate
-                  ? formatDate(asset.acquisitionDate)
-                  : "—"}
+                <DateTime
+                  value={asset.acquisitionDate}
+                  variant="date"
+                  fallback="—"
+                />
               </DetailRow>
               <DetailRow label="Depreciation Start">
-                {asset.depreciationStartDate
-                  ? formatDate(asset.depreciationStartDate)
-                  : "—"}
+                <DateTime
+                  value={asset.depreciationStartDate}
+                  variant="date"
+                  fallback="—"
+                />
               </DetailRow>
             </div>
           </CardContent>
@@ -407,7 +411,11 @@ export default function FixedAssetDetailRoute() {
                               </Link>
                             </td>
                             <td className="py-3 sm:py-2.5">
-                              {run?.periodEnd ? formatDate(run.periodEnd) : "—"}
+                              <DateTime
+                                value={run?.periodEnd}
+                                variant="date"
+                                fallback="—"
+                              />
                             </td>
                             <td className="py-3 sm:py-2.5">
                               <DepreciationRunStatus
@@ -451,7 +459,7 @@ export default function FixedAssetDetailRoute() {
                   {disposal.disposalMethod}
                 </DetailRow>
                 <DetailRow label="Disposal Date">
-                  {formatDate(disposal.disposalDate)}
+                  <DateTime value={disposal.disposalDate} variant="date" />
                 </DetailRow>
                 <DetailRow label="NBV at Disposal">
                   <span className="tabular-nums">

@@ -40,10 +40,16 @@ export default $config({
       scaling: {
         min: 1,
         max: 10,
+        // Scale on sustained request volume too — CPU/mem stay low under an
+        // I/O-bound request pile-up, so those triggers alone never fire.
+        // Safe alongside the WAF: floods are blocked before they reach targets.
+        requestCount: 500,
         cpuUtilization: 70,
         memoryUtilization: 80,
       },
       environment: {
+        ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
+        ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         CARBON_EDITION: process.env.CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
@@ -64,6 +70,7 @@ export default $config({
         JIRA_STATE_SECRET: process.env.JIRA_STATE_SECRET,
         MES_URL: process.env.URL_MES ? `https://${process.env.URL_MES}` : "https://mes.itar.carbon.ms",
         NODE_ENV: "production",
+        TZ: "UTC",
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
         ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
         ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
@@ -86,6 +93,8 @@ export default $config({
         STRIPE_BYPASS_COMPANY_IDS: process.env.STRIPE_BYPASS_COMPANY_IDS,
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
         STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+        STRIPE_CONNECT_WEBHOOK_SECRET:
+          process.env.STRIPE_CONNECT_WEBHOOK_SECRET,
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
         SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
         SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
@@ -137,10 +146,16 @@ export default $config({
       scaling: {
         min: 1,
         max: 10,
+        // Scale on sustained request volume too — CPU/mem stay low under an
+        // I/O-bound request pile-up, so those triggers alone never fire.
+        // Safe alongside the WAF: floods are blocked before they reach targets.
+        requestCount: 500,
         cpuUtilization: 70,
         memoryUtilization: 80,
       },
       environment: {
+        ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
+        ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         CARBON_EDITION: process.env.CARBON_EDITION,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
@@ -156,6 +171,7 @@ export default $config({
         INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
         MES_URL: process.env.URL_MES ? `https://${process.env.URL_MES}` : "https://mes.itar.carbon.ms",
         NODE_ENV: "production",
+        TZ: "UTC",
         ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
         ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
         ONSHAPE_OAUTH_REDIRECT_URL: process.env.ONSHAPE_OAUTH_REDIRECT_URL,
@@ -225,9 +241,8 @@ export default $config({
       },
     };
 
-    // WAF configuration kept for manual association with load balancer
-    // To use: Associate this WAF ACL with your manually created load balancer in AWS Console
-    new aws.wafv2.WebAcl("AppAlbWebAcl", {
+    // WAF web ACL: rate-limit (1000 req/IP/5min) + AWS managed common rule set.
+    const webAcl = new aws.wafv2.WebAcl("AppAlbWebAcl", {
       defaultAction: { allow: {} },
       scope: "REGIONAL",
       visibilityConfig: {
@@ -236,6 +251,17 @@ export default $config({
         metricName: "AppAlbWebAcl",
       },
       rules: [rateLimitRule, awsManagedRules],
+    });
+
+    // Associate the web ACL with each service's ALB so the rules actually run.
+    // Without this the ACL exists but inspects no traffic (the prior state).
+    new aws.wafv2.WebAclAssociation("ErpAlbWebAclAssociation", {
+      resourceArn: erp.nodes.loadBalancer.arn,
+      webAclArn: webAcl.arn,
+    });
+    new aws.wafv2.WebAclAssociation("MesAlbWebAclAssociation", {
+      resourceArn: mes.nodes.loadBalancer.arn,
+      webAclArn: webAcl.arn,
     });
 
     return {};

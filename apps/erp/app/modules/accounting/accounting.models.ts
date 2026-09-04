@@ -68,10 +68,216 @@ export const accountClassTypes = [
   "Expense"
 ] as const;
 
+export const financialReportColumns = ["month", "quarter", "year"] as const;
+
+// Pin/unpin toggle on the reports hub (/x/accounting/reports)
+export const reportPinValidator = z.object({
+  reportKey: z.string().min(1),
+  pinned: z.enum(["true", "false"])
+});
+
+// URL search params for the /x/reports financial statements. Parsed with
+// safeParse in the loaders — invalid params fall back to defaults rather than
+// failing the report.
+export const financialReportParamsValidator = z.object({
+  companies: z.string().optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  columns: z.enum(financialReportColumns).catch("month").default("month"),
+  showTranslated: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+});
+
+// -- Dimensional analytics (pivot) reports --
+// Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md
+
+export const analyticsReportKeys = [
+  "revenue",
+  "expenses",
+  "assets",
+  "inventory-change",
+  "scrap"
+] as const;
+export type AnalyticsReportKey = (typeof analyticsReportKeys)[number];
+
+// Account scope: exactly one selector. "scrapAccounts" resolves at runtime to
+// accountDefault.scrapAccount (getScrapAccountIds in accounting.ee.service.ts).
+export type AnalyticsAccountScope =
+  | { classes: (typeof accountClassTypes)[number][] }
+  | { types: (typeof accountTypes)[number][] }
+  | { source: "scrapAccounts" };
+
+export type AnalyticsReportDefinition = {
+  key: AnalyticsReportKey;
+  accountScope: AnalyticsAccountScope;
+  // Row selections applied when the URL has no pivot params. Entries use the
+  // "et:<entityType>" alias the analytics loader resolves to a dimension id.
+  defaultRows: string[];
+};
+
+export const analyticsReports: Record<
+  AnalyticsReportKey,
+  AnalyticsReportDefinition
+> = {
+  revenue: {
+    key: "revenue",
+    accountScope: { classes: ["Revenue"] },
+    defaultRows: ["et:Customer"]
+  },
+  expenses: {
+    key: "expenses",
+    accountScope: { classes: ["Expense"] },
+    defaultRows: ["et:Location"]
+  },
+  assets: {
+    key: "assets",
+    accountScope: { classes: ["Asset"] },
+    defaultRows: ["et:Location"]
+  },
+  "inventory-change": {
+    key: "inventory-change",
+    accountScope: { types: ["Inventory"] },
+    defaultRows: ["et:Location"]
+  },
+  scrap: {
+    key: "scrap",
+    accountScope: { source: "scrapAccounts" },
+    defaultRows: ["et:ScrapReason"]
+  }
+};
+
+export const pivotMeasures = ["amount", "quantity", "count"] as const;
+export type PivotMeasure = (typeof pivotMeasures)[number];
+
+// Purchases report — grouping fields (columns on the purchase invoice line /
+// its header), NOT journal dimensions. The purchases pivot RPC resolves each
+// to a value id; the report reuses the shared PivotState (rows/columnAxis hold
+// these field keys).
+export const purchaseGroupingFields = [
+  "supplier",
+  "supplierType",
+  "item",
+  "itemPostingGroup",
+  "costCenter"
+] as const;
+export type PurchaseGroupingField = (typeof purchaseGroupingFields)[number];
+
+export const pivotColumnAxisValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("period"),
+    bucket: z.enum(financialReportColumns)
+  }),
+  z.object({ type: z.literal("dimension"), dimensionId: z.string().min(1) })
+]);
+export type PivotColumnAxis = z.infer<typeof pivotColumnAxisValidator>;
+
+// Pivot state, encoded in the URL as:
+//   rows    = comma-separated dimension ids (or "et:<entityType>" aliases), max 2
+//   col     = "period:month|quarter|year" or "dim:<dimensionId>"
+//   measure = amount|quantity|count; pct=1 for percent-of-column-total
+//   filters = URL-encoded JSON [{dimensionId, valueIds}]
+//   accounts = comma-separated account ids narrowing the report's account scope
+//   sort    = "<columnKey|__total__|__label__>:asc|desc" (row sort; omit for the
+//             default ABS(measure) descending)
+//   startDate/endDate — same params ReportFilters writes
+export const pivotStateValidator = z.object({
+  rows: z.array(z.string().min(1)).max(2).default([]),
+  columnAxis: pivotColumnAxisValidator.default({
+    type: "period",
+    bucket: "month"
+  }),
+  measure: z.enum(pivotMeasures).default("amount"),
+  percentOfTotal: z.boolean().default(false),
+  // Row sort. null (the default) means ABS(measure) descending, Unassigned last.
+  sort: z
+    .object({
+      key: z.string().min(1),
+      direction: z.enum(["asc", "desc"])
+    })
+    .nullable()
+    .default(null),
+  filters: z
+    .array(
+      z.object({
+        dimensionId: z.string().min(1),
+        valueIds: z.array(z.string()).min(1)
+      })
+    )
+    .default([]),
+  // Optional narrowing to specific accounts WITHIN the report's account scope
+  // (base classes/types define the universe; these intersect it).
+  accountIds: z.array(z.string().min(1)).default([])
+});
+export type PivotState = z.infer<typeof pivotStateValidator>;
+
+/**
+ * Overlay the client-only display params (`measure` / `pct` / `sort`) from the
+ * URL onto a loader-derived PivotState. The analytics report loaders skip
+ * revalidation when only these change (see `revalidateIgnoringPivotDisplay`), so
+ * the route component re-derives them here to stay in sync without a refetch.
+ * A server-affecting change always re-runs the loader, so the passed `state` is
+ * the correct base (saved view / default) for any display param absent from the
+ * URL — including after the user clears a sort.
+ */
+export function applyPivotDisplayParams(
+  state: PivotState,
+  searchParams: URLSearchParams
+): PivotState {
+  const measureParam = searchParams.get("measure");
+  const measure = (pivotMeasures as readonly string[]).includes(
+    measureParam ?? ""
+  )
+    ? (measureParam as PivotMeasure)
+    : state.measure;
+
+  const pctParam = searchParams.get("pct");
+  const percentOfTotal =
+    pctParam !== null ? pctParam === "1" : state.percentOfTotal;
+
+  const sortParam = searchParams.get("sort");
+  let sort = state.sort;
+  if (sortParam !== null) {
+    const separator = sortParam.lastIndexOf(":");
+    const key = separator > 0 ? sortParam.slice(0, separator) : "";
+    const direction = separator > 0 ? sortParam.slice(separator + 1) : "";
+    sort =
+      key && (direction === "asc" || direction === "desc")
+        ? { key, direction }
+        : state.sort;
+  }
+
+  return { ...state, measure, percentOfTotal, sort };
+}
+
+export const reportViewVisibilities = ["Private", "Company"] as const;
+
+// Save-view modal on the analytics reports; config is a JSON-encoded
+// PivotState re-parsed with pivotStateValidator in the route action.
+export const reportViewValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  reportKey: z.enum(analyticsReportKeys),
+  name: z
+    .string()
+    .min(1, { message: "Name is required" })
+    .max(100, { message: "Name must be 100 characters or fewer" }),
+  visibility: z.enum(reportViewVisibilities, {
+    errorMap: () => ({ message: "Visibility is required" })
+  }),
+  config: z.string().min(2, { message: "Config is required" })
+});
+
 export const groupAccountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     parentId: zfd.text(z.string().optional()),
     accountType: z
       .enum(accountTypes, {
@@ -125,7 +331,7 @@ export const accountValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     number: z.string().min(1, { message: "Number is required" }).nullish(),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     parentId: zfd.text(z.string().optional()),
     isGroup: zfd.checkbox(),
     accountType: z
@@ -209,12 +415,16 @@ export const journalLineValidator = z.object({
 
 export const currencyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  code: z.string().min(1, { message: "Code is required" }),
+  code: z.string().trim().min(1, { message: "Code is required" }),
   decimalPlaces: zfd.numeric(z.number().min(0).max(4)),
-  exchangeRate: zfd.numeric(z.number().min(0, { message: "Rate is required" })),
   historicalExchangeRate: zfd.numeric(
-    z.number().min(0, { message: "Rate must be positive" }).optional()
+    z.number().positive({ message: "Rate must be positive" }).optional()
   )
+});
+
+export const exchangeRateOverrideValidator = z.object({
+  currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
+  rate: zfd.numeric(z.number().positive({ message: "Rate must be positive" }))
 });
 
 export const defaultBalanceSheetAccountValidator = z.object({
@@ -375,7 +585,7 @@ export const paymentTermsCalculationMethod = [
 
 export const paymentTermValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   daysDue: zfd.numeric(
     z
       .number()
@@ -418,7 +628,7 @@ export const costLedgerValidator = z.object({
 
 export const costCenterValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   parentCostCenterId: zfd.text(z.string().optional()),
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
@@ -427,6 +637,13 @@ export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
   "Eliminated"
+] as const;
+
+export const intercompanyEliminationRoles = [
+  "Control",
+  "Revenue",
+  "COGS",
+  "Capitalization"
 ] as const;
 
 export const intercompanyTransactionValidator = z
@@ -465,8 +682,63 @@ export const intercompanyTransactionValidator = z
     }
   );
 
+export const openingBalanceValidator = z.object({
+  postingDate: z.string().min(1, { message: "Posting date is required" }),
+  // JSON-encoded array of { accountId, amount } produced by the form's hidden
+  // input. `amount` is the signed base-currency figure the user typed against
+  // the account, positive = the account's natural balance side (debit for
+  // Asset/Expense, credit for Liability/Equity/Revenue). The service converts
+  // each amount → {debit, credit} per class and appends the Retained Earnings
+  // plug before posting. Zero-amount rows are dropped.
+  lines: z
+    .string()
+    .min(1, { message: "At least one balance is required" })
+    .transform((val, ctx) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(val);
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+        return z.NEVER;
+      }
+      if (!Array.isArray(parsed)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+        return z.NEVER;
+      }
+
+      // Reject structurally-invalid rows rather than silently dropping them, so
+      // a malformed payload fails loudly instead of posting a partial entry. A
+      // zero amount is a legitimately-empty input and is the only thing skipped.
+      const result: Array<{ accountId: string; amount: number }> = [];
+      for (const row of parsed) {
+        const accountId = (row as { accountId?: unknown }).accountId;
+        const amount = (row as { amount?: unknown }).amount;
+        if (typeof accountId !== "string" || accountId.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "An opening balance row is missing its account"
+          });
+          return z.NEVER;
+        }
+        if (typeof amount !== "number" || !Number.isFinite(amount)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "An opening balance row has an invalid amount"
+          });
+          return z.NEVER;
+        }
+        if (amount !== 0) result.push({ accountId, amount });
+      }
+      return result;
+    })
+    .refine((lines) => lines.length > 0, {
+      message: "At least one balance is required"
+    })
+});
+
 export const journalEntrySourceTypes = [
   "Manual",
+  "Opening Balance",
   "Purchase Receipt",
   "Purchase Invoice",
   "Purchase Return",
@@ -530,7 +802,7 @@ export const closeTaskSkipValidator = z.object({
 export const addCloseTaskValidator = z.object({
   intent: z.literal("addTask"),
   periodId: z.string().min(1, { message: "Period is required" }),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   taskType: z.enum(periodCloseTaskTypes, {
     errorMap: () => ({ message: "Task type is required" })
   }),
@@ -541,7 +813,7 @@ export const addCloseTaskValidator = z.object({
 // Create/update a company-level close task definition (template row).
 export const periodCloseTaskDefinitionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   taskType: z.enum(periodCloseTaskTypes, {
     errorMap: () => ({ message: "Task type is required" })
   }),
@@ -589,6 +861,7 @@ export const dimensionEntityTypes = [
   "ItemPostingGroup",
   "Location",
   "Process",
+  "ScrapReason",
   "Supplier",
   "SupplierType",
   "WorkCenter"
@@ -596,7 +869,7 @@ export const dimensionEntityTypes = [
 
 export const dimensionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   entityType: z.enum(dimensionEntityTypes, {
     errorMap: () => ({ message: "Entity type is required" })
   }),
@@ -630,7 +903,7 @@ export const disposalMethods = ["Sale", "Scrapping"] as const;
 
 export const fixedAssetClassValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: z.string().optional(),
   depreciationMethod: z.enum(depreciationMethods, {
     errorMap: () => ({ message: "Depreciation method is required" })
@@ -683,7 +956,7 @@ export const fixedAssetClassValidator = z.object({
 export const fixedAssetValidator = z.object({
   id: zfd.text(z.string().optional()),
   fixedAssetClassId: z.string().min(1, { message: "Asset class is required" }),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: z.string().optional(),
   serialNumber: z.string().optional(),
   depreciationMethod: z.enum(depreciationMethods, {

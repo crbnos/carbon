@@ -6,6 +6,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import { getCurrencyByCode } from "~/modules/accounting";
 import {
   getCompanyHasOpenCredits,
   getPurchaseInvoice,
@@ -27,13 +28,17 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Purchasing Invoices`, to: path.to.invoicingPurchasing },
     (data) => data?.purchaseInvoice?.invoiceId
-  )
+  ),
+  module: "invoicing"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "invoicing"
+    }
+  );
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -55,21 +60,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplier, interaction, files, orgHasCredits] = await Promise.all([
-    purchaseInvoice.data?.supplierId
-      ? getSupplier(client, purchaseInvoice.data.supplierId)
-      : null,
-    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
-    getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseInvoice.data.supplierInteractionId!
-    ),
-    getCompanyHasOpenCredits(client, companyId, "purchase")
-  ]);
+  const [supplier, interaction, files, orgHasCredits, currency] =
+    await Promise.all([
+      purchaseInvoice.data?.supplierId
+        ? getSupplier(client, purchaseInvoice.data.supplierId)
+        : null,
+      getSupplierInteraction(
+        client,
+        purchaseInvoice.data.supplierInteractionId!
+      ),
+      getSupplierInteractionDocuments(
+        client,
+        companyId,
+        purchaseInvoice.data.supplierInteractionId!
+      ),
+      getCompanyHasOpenCredits(client, companyId, "purchase"),
+      purchaseInvoice.data?.currencyCode
+        ? getCurrencyByCode(
+            client,
+            companyGroupId,
+            purchaseInvoice.data.currencyCode
+          )
+        : null
+    ]);
 
   return {
     purchaseInvoice: purchaseInvoice.data,
+    currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
     files,
@@ -92,15 +109,15 @@ export default function PurchaseInvoiceRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <PurchaseInvoiceHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<PurchaseInvoiceExplorer />}
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <VStack spacing={2} className="p-2">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>
                 </div>

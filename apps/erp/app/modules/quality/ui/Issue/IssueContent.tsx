@@ -3,7 +3,6 @@ import type { JSONContent } from "@carbon/react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   generateHTML,
@@ -79,7 +78,6 @@ export function IssueContent({
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
-          <CardDescription>{subTitle}</CardDescription>
         </CardHeader>
 
         <CardContent>

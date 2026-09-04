@@ -1,5 +1,110 @@
 import { describe, expect, it } from "vitest";
-import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
+import {
+  decideRecalcPricing,
+  getEffectiveDefaultMarkups,
+  reconcileQuantityBreaks,
+  resolvePreservedQuoteLinePriceFields
+} from "./sales.utils";
+
+describe("resolvePreservedQuoteLinePriceFields", () => {
+  const stored = {
+    leadTime: 14,
+    discountPercent: 0.1,
+    shippingCost: 5,
+    categoryMarkups: { laborCost: 25 },
+    priceSource: "system" as const
+  };
+
+  it("preserves stored values when the caller omits a field", () => {
+    expect(resolvePreservedQuoteLinePriceFields({}, stored)).toEqual({
+      leadTime: 14,
+      discountPercent: 0.1,
+      shippingCost: 5,
+      categoryMarkups: { laborCost: 25 },
+      priceSource: "system"
+    });
+  });
+
+  it("lets an explicit value win over the stored one", () => {
+    const result = resolvePreservedQuoteLinePriceFields(
+      { leadTime: 3, discountPercent: 0.2, shippingCost: 0 },
+      stored
+    );
+    expect(result.leadTime).toBe(3);
+    expect(result.discountPercent).toBe(0.2);
+    // An explicit zero is a real value, not "omitted".
+    expect(result.shippingCost).toBe(0);
+  });
+
+  it("falls back to column defaults for a brand-new row", () => {
+    expect(resolvePreservedQuoteLinePriceFields({}, null)).toEqual({
+      leadTime: 0,
+      discountPercent: 0,
+      shippingCost: 0,
+      categoryMarkups: {},
+      // A hand-set price with no declared source is manual, not system.
+      priceSource: "manual"
+    });
+  });
+
+  it("marks an explicit price system when the caller says so", () => {
+    expect(
+      resolvePreservedQuoteLinePriceFields({ priceSource: "system" }, null)
+        .priceSource
+    ).toBe("system");
+  });
+});
+
+describe("reconcileQuantityBreaks", () => {
+  it("reports nothing when the breaks are unchanged", () => {
+    expect(reconcileQuantityBreaks([1, 25, 50], [1, 25, 50])).toEqual({
+      added: [],
+      removed: []
+    });
+  });
+  it("reports only additions when breaks are added", () => {
+    expect(reconcileQuantityBreaks([24], [24, 32])).toEqual({
+      added: [32],
+      removed: []
+    });
+  });
+  it("reports removals when a break is dropped — the orphan bug", () => {
+    expect(reconcileQuantityBreaks([1, 24, 32], [24])).toEqual({
+      added: [],
+      removed: [1, 32]
+    });
+  });
+  it("reports both sides of a swap", () => {
+    expect(reconcileQuantityBreaks([1, 25], [25, 100])).toEqual({
+      added: [100],
+      removed: [1]
+    });
+  });
+  it("removes every row when the line offers no breaks", () => {
+    expect(reconcileQuantityBreaks([1, 24], [])).toEqual({
+      added: [],
+      removed: [1, 24]
+    });
+  });
+  it("adds every break when no price rows exist yet", () => {
+    expect(reconcileQuantityBreaks([], [1, 25])).toEqual({
+      added: [1, 25],
+      removed: []
+    });
+  });
+  it("dedupes repeated quantities on either side", () => {
+    expect(reconcileQuantityBreaks([24, 24], [32, 32])).toEqual({
+      added: [32],
+      removed: [24]
+    });
+  });
+  it("handles fractional quantities (the column is NUMERIC(16,5))", () => {
+    expect(reconcileQuantityBreaks([0.5, 1.25], [1.25, 2.5])).toEqual({
+      added: [2.5],
+      removed: [0.5]
+    });
+  });
+});
 
 describe("getEffectiveDefaultMarkups", () => {
   it("returns {} when all category defaults are 0 (feature disabled)", () => {

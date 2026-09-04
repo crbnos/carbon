@@ -26,6 +26,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
@@ -307,7 +308,7 @@ export default function SalesSettingsRoute() {
   }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
@@ -714,11 +715,7 @@ function CategoryMarkupsCard({
                   <Number
                     name={key}
                     label=""
-                    formatOptions={{
-                      style: "percent",
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 2
-                    }}
+                    formatOptions={INPUT_FORMAT.percent}
                     minValue={0}
                   />
                 </div>

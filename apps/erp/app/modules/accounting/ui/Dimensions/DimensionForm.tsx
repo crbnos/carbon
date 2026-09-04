@@ -40,7 +40,8 @@ const entityTypeLabels: Record<string, string> = {
   FixedAssetClass: "Asset Class",
   CostCenter: "Cost Center",
   WorkCenter: "Work Center",
-  Process: "Process"
+  Process: "Process",
+  ScrapReason: "Scrap Reason"
 };
 
 const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {

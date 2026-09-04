@@ -24,6 +24,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -572,7 +573,11 @@ function getChildLabel(
     case "event": {
       const employeeName = child.employee?.fullName;
       const timeLabel = child.startTime
-        ? new Date(child.startTime).toLocaleString(locale)
+        ? formatDate(
+            child.startTime,
+            { dateStyle: "medium", timeStyle: "short" },
+            locale
+          )
         : "Timecard";
       return employeeName ? `${employeeName} - ${timeLabel}` : timeLabel;
     }

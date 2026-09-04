@@ -1,32 +1,48 @@
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Fragment, startTransition } from "react";
+import { startTransition } from "react";
 import { pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
+import {
+  CONTROLLED_ENVIRONMENT,
+  POSTHOG_API_HOST,
+  POSTHOG_PROJECT_PUBLIC_KEY
+} from "@carbon/auth";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
+import posthog from "posthog-js";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 
 ensureLoggingConfigured();
 
-// function PosthogInit() {
-//   useEffect(() => {
-//     if (!window?.location.href.includes("localhost")) {
-//       posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
-//         api_host: POSTHOG_API_HOST
-//       });
-//     }
-//   }, []);
-//   return null;
-// }
+// Initialized at module scope, before hydration, rather than from an effect:
+// the authenticated layout calls identify()/register()/group() from its own
+// effect, and posthog-js drops those when it isn't loaded yet — register()
+// without even a warning. React flushes effects in tree order, so an effect
+// here would run after the router's and lose them.
+//
+// The project key is what enables analytics: it is unset in local development
+// and set by the deployment. A hostname check can't stand in for that, since
+// `crbn up` serves the app from *.dev rather than localhost.
+//
+// Controlled (ITAR) environments never initialize analytics — no data about a
+// U.S.-Persons-only environment leaves it, even if the key is set.
+if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
+  posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
+    api_host: POSTHOG_API_HOST
+  });
+}
+
+// Fail-fast boot assertion (NIST 800-171 3.4.6): analytics must never be live in
+// a controlled environment. If a regression in the gate above lets posthog load,
+// refuse to boot rather than silently phone home about a U.S.-Persons-only system.
+if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
+  throw new Error(
+    "Analytics initialized in a controlled environment — refusing to boot"
+  );
+}
 
 startTransition(() => {
-  hydrateRoot(
-    document,
-    <Fragment>
-      <HydratedRouter />
-      {/* <PosthogInit /> */}
-    </Fragment>
-  );
+  hydrateRoot(document, <HydratedRouter />);
 });

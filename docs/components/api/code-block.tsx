@@ -22,7 +22,7 @@ function CopyButton({ text }: { text: string }) {
 
 /** A standalone shiki-highlighted code block (intro / prose), dark panel + copy. */
 export function CodeBlock({ html, code, label }: { html: string; code: string; label?: string }) {
-  const { base, apiKey } = useApiConfig();
+  const { base, apiKey, appBase } = useApiConfig();
   return (
     <div className="my-[18px] overflow-hidden rounded-xl border border-ed-dark-line bg-ed-dark-bg">
       {label && (
@@ -33,9 +33,9 @@ export function CodeBlock({ html, code, label }: { html: string; code: string; l
         </div>
       )}
       <div className="relative">
-        <CopyButton text={applyConfig(code, base, apiKey)} />
+        <CopyButton text={applyConfig(code, base, apiKey, false, appBase)} />
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
-        <div className="api-shiki" dangerouslySetInnerHTML={{ __html: applyConfig(html, base, apiKey, true) }} />
+        <div className="api-shiki" dangerouslySetInnerHTML={{ __html: applyConfig(html, base, apiKey, true, appBase) }} />
       </div>
     </div>
   );

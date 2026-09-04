@@ -14,7 +14,10 @@ export const FEATURE_PLANS = {
   EMAIL_NOTIFICATIONS: [Plan.Business, Plan.Partner],
   STORAGE_RULES: [Plan.Business, Plan.Partner],
   CUSTOMER_PORTALS: [Plan.Business, Plan.Partner],
-  AI_AGENT: [Plan.Business, Plan.Partner]
+  AI_AGENT: [Plan.Business, Plan.Partner],
+  WORKFLOWS: [Plan.Business, Plan.Partner],
+  FORECAST: [Plan.Business, Plan.Partner],
+  TWO_FACTOR: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;
@@ -23,10 +26,7 @@ export type Feature = keyof typeof FEATURE_PLANS;
  * Integration ids that bypass the `INTEGRATIONS` plan gate. Add ids here for
  * integrations that should remain available on every plan.
  */
-export const INTEGRATION_WHITELIST = new Set<IntegrationID>([
-  "email",
-  "exchange-rates-v1"
-]);
+export const INTEGRATION_WHITELIST = new Set<IntegrationID>(["email"]);
 
 export function isIntegrationWhitelisted(id: string) {
   return INTEGRATION_WHITELIST.has(id as IntegrationID);

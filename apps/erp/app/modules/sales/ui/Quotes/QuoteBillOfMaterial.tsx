@@ -27,7 +27,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -37,11 +37,11 @@ import {
   LuArrowLeft,
   LuChevronDown,
   LuChevronRight,
-  LuCog,
   LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
-  LuGitPullRequestCreateArrow
+  LuGitPullRequestCreateArrow,
+  LuRedoDot
 } from "react-icons/lu";
 import { Link, useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
@@ -68,7 +68,13 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUrlParams,
+  useUser
+} from "~/hooks";
 import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType, MethodType } from "~/modules/shared";
@@ -594,6 +600,7 @@ function MaterialForm({
   const routeData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
     // Remove from temporary items after successful submission
@@ -617,6 +624,7 @@ function MaterialForm({
     methodType: MethodType;
     description: string;
     unitCost: number;
+    unitCostSource: "system" | "manual";
     unitOfMeasureCode: string;
     quantity: number;
     kit: boolean;
@@ -630,6 +638,7 @@ function MaterialForm({
     methodType: item.data.methodType ?? "Pull from Inventory",
     description: item.data.description ?? "",
     unitCost: item.data.unitCost ?? 0,
+    unitCostSource: item.data.unitCostSource === "manual" ? "manual" : "system",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
     kit: item.data.kit ?? false,
@@ -648,6 +657,7 @@ function MaterialForm({
       methodType: "Pull from Inventory",
       quantity: 1,
       unitCost: 0,
+      unitCostSource: "system",
       description: "",
       unitOfMeasureCode: "EA",
       kit: false,
@@ -705,6 +715,7 @@ function MaterialForm({
       itemId,
       description: item.data?.name ?? "",
       unitCost,
+      unitCostSource: "system",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Pull from Inventory",
       requiresBatchTracking: item.data?.itemTrackingType === "Batch",
@@ -723,6 +734,8 @@ function MaterialForm({
 
       if (itemData.methodType !== "Purchase to Order" || !itemData.itemId)
         return;
+      // A typed cost survives a quantity change.
+      if (itemData.unitCostSource === "manual") return;
       if (!carbon) return;
 
       const itemCost = await carbon
@@ -738,9 +751,19 @@ function MaterialForm({
         fallbackCost
       );
 
-      setItemData((d) => ({ ...d, unitCost }));
+      // Re-checked here because the guard above reads a captured value, and a
+      // cost can be typed while the awaits are in flight.
+      setItemData((d) =>
+        d.unitCostSource === "manual" ? d : { ...d, unitCost }
+      );
     },
-    [carbon, itemData.methodType, itemData.itemId, lookupBuyPriceFn]
+    [
+      carbon,
+      itemData.methodType,
+      itemData.itemId,
+      itemData.unitCostSource,
+      lookupBuyPriceFn
+    ]
   );
 
   const sourceDisclosure = useDisclosure();
@@ -769,6 +792,7 @@ function MaterialForm({
         <Hidden name="quoteMakeMethodId" />
         <Hidden name="kit" value={itemData.kit.toString()} />
         <Hidden name="order" />
+        <Hidden name="unitCostSource" value={itemData.unitCostSource} />
 
         {itemData.methodType === "Make to Order" && (
           <Hidden name="unitCost" value={itemData.unitCost} />
@@ -821,10 +845,14 @@ function MaterialForm({
             label={t`Unit Cost`}
             value={itemData.unitCost}
             minValue={0}
-            formatOptions={{
-              style: "currency",
-              currency: baseCurrency
-            }}
+            formatOptions={INPUT_FORMAT.rate(baseCurrency, currencyDecimals)}
+            onChange={(newValue) =>
+              setItemData((d) => ({
+                ...d,
+                unitCost: newValue,
+                unitCostSource: "manual"
+              }))
+            }
           />
         )}
       </div>
@@ -933,7 +961,7 @@ function MaterialForm({
             <Badge
               variant={quoteOperations.length > 0 ? "secondary" : "destructive"}
             >
-              <LuCog className="size-3 mr-1" />
+              <LuRedoDot className="size-3 mr-1" />
               {itemData.quoteOperationId
                 ? quoteOperations.find(
                     (o) => o.id === itemData.quoteOperationId

@@ -4,7 +4,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   generateHTML,
@@ -107,9 +106,6 @@ const ShipmentNotes = ({
               <CardTitle>
                 <Trans>Shipping Notes</Trans>
               </CardTitle>
-              <CardDescription>
-                {tab === "internal" ? t`Internal Notes` : t`External Notes`}
-              </CardDescription>
             </CardHeader>
             <CardAction>
               <TabsList>

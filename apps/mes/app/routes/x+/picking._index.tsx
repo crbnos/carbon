@@ -13,6 +13,7 @@ import { Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import { DateTime } from "~/components";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
 import { getAssignedPickingLists } from "~/services/picking.service";
@@ -34,7 +35,7 @@ export default function PickingIndexRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
           <Heading size="h4">
@@ -43,7 +44,7 @@ export default function PickingIndexRoute() {
         </div>
       </header>
 
-      <main className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         {pickingLists.length > 0 ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
             {pickingLists.map((pl) => {
@@ -83,7 +84,7 @@ export default function PickingIndexRoute() {
                               <Trans>Due Date</Trans>
                             </span>
                             <span>
-                              {new Date(pl.dueDate).toLocaleDateString()}
+                              <DateTime value={pl.dueDate} variant="date" />
                             </span>
                           </HStack>
                         )}

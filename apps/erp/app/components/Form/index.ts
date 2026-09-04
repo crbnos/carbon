@@ -13,8 +13,6 @@ import {
   Input,
   InputControlled,
   MultiSelect,
-  Number,
-  NumberControlled,
   Password,
   PhoneInput,
   Radios,
@@ -22,8 +20,7 @@ import {
   SelectControlled,
   Submit,
   TextArea,
-  TimePicker,
-  Timezone
+  TimePicker
 } from "@carbon/form";
 
 import Abilities from "./Abilities";
@@ -36,6 +33,7 @@ import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
 import Currency from "./Currency";
+import { Number, NumberControlled } from "./CurrencyNumber";
 import Customer from "./Customer";
 import CustomerContact from "./CustomerContact";
 import CustomerLocation from "./CustomerLocation";
@@ -57,6 +55,7 @@ import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
 import JobSalesOrderLine from "./JobSalesOrderLine";
 import Location from "./Location";
+import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
 import PaymentTerm from "./PaymentTerm";
@@ -71,6 +70,7 @@ import {
   ShelfLifeStartTiming
 } from "./ShelfLifeStartEvent";
 import Shift from "./Shift";
+import Shifts from "./Shifts";
 import ShippingMethod from "./ShippingMethod";
 import StandardFactor from "./StandardFactor";
 import StorageTypes from "./StorageTypes";
@@ -83,6 +83,8 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import { TaxFields, useTaxPair } from "./TaxFields";
+import Timezone from "./Timezone";
 import Tool from "./Tool";
 import UnitHint from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
@@ -109,6 +111,7 @@ export {
   ConversionFactor,
   CreatableCombobox,
   CreatableMultiSelect,
+  LocationEmployee,
   Currency,
   Customer,
   CustomerContact,
@@ -161,6 +164,7 @@ export {
   StorageUnit,
   StorageTypes,
   Shift,
+  Shifts,
   ShippingMethod,
   StandardFactor,
   Submit,
@@ -172,6 +176,8 @@ export {
   SupplierStatus,
   SupplierType,
   Tags,
+  TaxFields,
+  useTaxPair,
   TextArea,
   TimePicker,
   Timezone,

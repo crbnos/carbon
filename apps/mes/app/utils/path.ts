@@ -1,4 +1,5 @@
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
 export const ERP_URL = getAppUrl();
@@ -7,6 +8,9 @@ export const MES_URL = getMESUrl();
 const x = "/x";
 const api = "/api";
 const file = `/file`;
+// Wall-mounted work center displays live outside `/x` so they don't inherit the
+// operator chrome (sidebar, pin-in overlay, time-card warning).
+const display = "/display";
 
 export const path = {
   to: {
@@ -30,6 +34,7 @@ export const path = {
       qualityIssueTypes: `${api}/quality-issue-types`,
       serialNumbers: (itemId: string) =>
         generatePath(`${api}/serial-numbers?itemId=${itemId}`),
+      ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (
         itemId: string,
         locationId: string,
@@ -51,6 +56,7 @@ export const path = {
     consolePinOut: `${x}/console/pin-out`,
     consoleToggle: `${x}/console/toggle`,
     convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
+    displays: display,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
     file: {
@@ -152,13 +158,17 @@ export const path = {
     maintenanceDetail: (id: string) => generatePath(`${x}/dispatch/${id}`),
     maintenanceDispatchItem: (id: string) =>
       generatePath(`${x}/dispatch/${id}/item`),
+    maintenanceDisplay: (workCenterId: string) =>
+      generatePath(`${display}/${workCenterId}/maintenance`),
     maintenanceEvent: `${x}/maintenance-event`,
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
+    mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
+    peopleOverride: `${x}/people-override`,
     picking: `${x}/picking`,
     pickingDetail: (id: string) => generatePath(`${x}/picking/${id}`),
     pickingLineQuantity: (id: string) =>
@@ -179,11 +189,12 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (operationId: string, id: string, parentId?: string) => {
-      const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
+    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+      const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
+    setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     suggestion: `${x}/suggestion`,
     switchCompany: (companyId: string) =>
@@ -193,7 +204,9 @@ export const path = {
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>
-      generatePath(`${x}/operations/${workCenter}`)
+      generatePath(`${x}/operations/${workCenter}`),
+    workDisplay: (workCenterId: string) =>
+      generatePath(`${display}/${workCenterId}/work`)
   }
 } as const;
 
@@ -207,7 +220,9 @@ export const removeSubdomain = (url?: string): string => {
 };
 
 export const getPrivateUrl = (path: string) => {
-  return `/file/preview/private/${path}`;
+  // Demo-template artwork ships with the app, so it never goes through the
+  // storage proxy. Anything else is a real tenant file.
+  return getDatasetAssetUrl(path) ?? `/file/preview/private/${path}`;
 };
 
 // Raw model source for the viewer's WASM fallback tier — the bucket varies

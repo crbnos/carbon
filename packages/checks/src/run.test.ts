@@ -16,14 +16,20 @@ describe("scanAll", () => {
 });
 
 describe("conformance gate (real migrations vs baseline)", () => {
-  it("introduces no NEW deprecated patterns beyond the committed baseline", () => {
-    const fresh = newViolations();
-    const detail = fresh
-      .map(
-        (f) =>
-          `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
-      )
-      .join("\n");
-    expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
-  });
+  // Whole-repo filesystem scan (migrations + both apps' route trees) — a cold
+  // CI runner takes several seconds, so the 5s vitest default is too tight.
+  it(
+    "introduces no NEW deprecated patterns beyond the committed baseline",
+    { timeout: 30_000 },
+    () => {
+      const fresh = newViolations();
+      const detail = fresh
+        .map(
+          (f) =>
+            `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
+        )
+        .join("\n");
+      expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
+    }
+  );
 });

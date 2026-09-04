@@ -13,6 +13,7 @@ A **tracked entity** is a tracked quantity of an item. A **Serial** item gets on
   - **On Hold**: Received but not yet released (awaiting inspection).
   - **Consumed**: Issued to a job or shipped out.
   - **Rejected**: Failed inspection.
+  - **Scrapped**: Written off as unrecoverable, with a reason. Unlike Consumed and Rejected, it can be reversed with `docs/reference/scrap`.
 
 ## Where entities come from
 
@@ -32,3 +33,4 @@ Tracked items can carry a **shelf life**: a fixed duration, a date set at receip
 
   - Jobs Where entities are consumed and produced as a job runs.
   - Quality Inspection holds and rejects tracked entities.
+  - Scrap and unscrap Writing an entity off to Scrapped, and restoring it.

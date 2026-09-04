@@ -1,6 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import {
+  DEFAULT_CURRENCY_DECIMALS,
+  formatPercent,
+  moneyFormatOptions,
+  pluralize
+} from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -42,6 +47,21 @@ export function LineItemsBlock({
   const overflow = itemTextOverflowStyle(opts);
   let rowIndex = 0;
 
+  // Unlike its sales-order/purchase-order siblings, a quote carries a PER-LINE
+  // unit-price precision (`quoteLine.unitPricePrecision`, constrained to 2/3/4),
+  // so it cannot reuse the single hoisted `numberFormatter`. Index the few
+  // distinct precisions once instead of constructing a formatter per line.
+  const unitPriceFormatters = new Map<number, Intl.NumberFormat>();
+  const unitPriceFormatter = (precision: number | null | undefined) => {
+    const digits = precision ?? DEFAULT_CURRENCY_DECIMALS;
+    let formatter = unitPriceFormatters.get(digits);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(locale, moneyFormatOptions(digits));
+      unitPriceFormatters.set(digits, formatter);
+    }
+    return formatter;
+  };
+
   return (
     <View>
       {/* Header */}
@@ -69,11 +89,9 @@ export function LineItemsBlock({
       </View>
 
       {quoteLines.map((line) => {
-        const unitPriceNumberFormatter = new Intl.NumberFormat(locale, {
-          style: "decimal",
-          minimumFractionDigits: line.unitPricePrecision ?? 2,
-          maximumFractionDigits: line.unitPricePrecision ?? 2
-        });
+        const unitPriceNumberFormatter = unitPriceFormatter(
+          line.unitPricePrecision
+        );
 
         const additionalCharges = line.additionalCharges ?? {};
 
@@ -172,9 +190,24 @@ export function LineItemsBlock({
                                   Tax & Fees
                                 </Text>
                                 {(price?.convertedShippingCost ?? 0) > 0 && (
-                                  <Text style={tw("text-[8px] text-gray-400")}>
-                                    - Shipping
-                                  </Text>
+                                  <View
+                                    style={tw("flex flex-row justify-between")}
+                                  >
+                                    <Text
+                                      style={tw(
+                                        "text-[8px] text-gray-400 flex-1 pr-2"
+                                      )}
+                                    >
+                                      - Shipping
+                                    </Text>
+                                    <Text
+                                      style={tw("text-[8px] text-gray-400")}
+                                    >
+                                      {numberFormatter.format(
+                                        price?.convertedShippingCost ?? 0
+                                      )}
+                                    </Text>
+                                  </View>
                                 )}
                                 {Object.values(additionalCharges)
                                   .filter(
@@ -185,18 +218,51 @@ export function LineItemsBlock({
                                   .sort((a, b) =>
                                     a.description.localeCompare(b.description)
                                   )
-                                  .map((charge) => (
+                                  .map((charge) => {
+                                    let chargeAmount =
+                                      charge.amounts?.[quantity] ?? 0;
+                                    if (shouldConvertCurrency)
+                                      chargeAmount *= exchangeRate;
+                                    return (
+                                      <View
+                                        key={charge.description}
+                                        style={tw(
+                                          "flex flex-row justify-between"
+                                        )}
+                                      >
+                                        <Text
+                                          style={tw(
+                                            "text-[8px] text-gray-400 flex-1 pr-2"
+                                          )}
+                                        >
+                                          - {charge.description}
+                                        </Text>
+                                        <Text
+                                          style={tw("text-[8px] text-gray-400")}
+                                        >
+                                          {numberFormatter.format(chargeAmount)}
+                                        </Text>
+                                      </View>
+                                    );
+                                  })}
+                                {taxPercent > 0 && (
+                                  <View
+                                    style={tw("flex flex-row justify-between")}
+                                  >
                                     <Text
-                                      key={charge.description}
+                                      style={tw(
+                                        "text-[8px] text-gray-400 flex-1 pr-2"
+                                      )}
+                                    >
+                                      - Tax ({formatPercent(taxPercent, locale)}
+                                      )
+                                    </Text>
+                                    <Text
                                       style={tw("text-[8px] text-gray-400")}
                                     >
-                                      - {charge.description}
+                                      {numberFormatter.format(taxAmount)}
                                     </Text>
-                                  ))}
-                                {taxPercent > 0 && (
-                                  <Text style={tw("text-[8px] text-gray-400")}>
-                                    - Tax ({(taxPercent * 100).toFixed(0)}%)
-                                  </Text>
+                                  </View>
                                 )}
                               </View>
                             )}

@@ -38,74 +38,25 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Link, useSubmit } from "react-router";
-import { Assignee, EmployeeAvatarGroup } from "~/components";
-import { useDateFormatter } from "~/hooks";
+import { Assignee, DateTime, EmployeeAvatarGroup } from "~/components";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { useCustomers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import JobStatus from "../../../Jobs/JobStatus";
 import { useKanban } from "../context/KanbanContext";
+import {
+  getDateOnly,
+  getInlineDueDateUpdateFields,
+  isDateColumnId
+} from "../date-utils";
 import type { JobItem } from "../types";
+import { useScheduleToday } from "../useScheduleToday";
 
 interface Progress {
   totalDuration: number;
   progress: number;
   active: boolean;
   employees?: Set<string>;
-}
-
-const DATE_COLUMN_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-function getDateOnly(value?: string | null) {
-  return value?.split("T")[0] ?? null;
-}
-
-function getOptimisticColumnId(dueDate: string, columnIds: string[]) {
-  if (columnIds.includes(dueDate)) {
-    return dueDate;
-  }
-
-  if (columnIds.includes("next-week")) {
-    return "next-week";
-  }
-
-  if (columnIds.includes("next-month")) {
-    const selectedDate = parseDate(dueDate);
-    const dateColumns = columnIds
-      .filter((id) => DATE_COLUMN_PATTERN.test(id))
-      .sort();
-
-    for (const columnId of dateColumns) {
-      const weekStart = parseDate(columnId);
-      const weekEnd = weekStart.add({ days: 6 });
-
-      if (
-        selectedDate.compare(weekStart) >= 0 &&
-        selectedDate.compare(weekEnd) <= 0
-      ) {
-        return columnId;
-      }
-    }
-
-    return "next-month";
-  }
-
-  return dueDate;
-}
-
-function getEmptyDueDateColumnId(
-  columnIds: string[],
-  fallbackColumnId: string
-) {
-  if (columnIds.includes("next-week")) {
-    return "next-week";
-  }
-
-  if (columnIds.includes("next-month")) {
-    return "next-month";
-  }
-
-  return fallbackColumnId;
 }
 
 const cardVariants = cva(
@@ -141,13 +92,18 @@ const cardVariants = cva(
 
 type JobCardProps = {
   item: JobItem;
+  locationId: string;
   isOverlay?: boolean;
   progressByItemId: Record<string, Progress>;
 };
 
-export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
+export function JobCard({
+  item,
+  locationId,
+  isOverlay,
+  progressByItemId
+}: JobCardProps) {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const submit = useSubmit();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { displaySettings, selectedGroup, setSelectedGroup, tags, columnIds } =
@@ -187,29 +143,38 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
   const [customers] = useCustomers();
 
   const customer = customers.find((s) => s.id === item.customerId);
+  const scheduleToday = useScheduleToday();
   const dueDate = getDateOnly(item.dueDate);
-  const isDueDateValid = Boolean(dueDate && DATE_COLUMN_PATTERN.test(dueDate));
+  const isDueDateValid = Boolean(dueDate && isDateColumnId(dueDate));
   const dueDateValue = isDueDateValid && dueDate ? dueDate : null;
   const scheduleColumnIds = columnIds ?? [];
 
-  function submitDueDate(nextDueDate: string | null) {
-    const columnId = nextDueDate
-      ? nextDueDate
-      : getEmptyDueDateColumnId(scheduleColumnIds, item.columnId);
-    const optimisticColumnId = nextDueDate
-      ? getOptimisticColumnId(nextDueDate, scheduleColumnIds)
-      : columnId;
+  // Forecast slack: calendar days between projected completion and the due date.
+  // Positive = late (+2d, red), negative = early (-3d, muted).
+  const projectedCompletionOnly = getDateOnly(item.projectedCompletionAt);
+  const slackDays =
+    projectedCompletionOnly && dueDateValue
+      ? parseDate(projectedCompletionOnly).compare(parseDate(dueDateValue))
+      : 0;
+  const slack =
+    projectedCompletionOnly && slackDays !== 0
+      ? {
+          late: slackDays > 0,
+          label: `${slackDays > 0 ? "+" : ""}${slackDays}d`
+        }
+      : null;
 
+  function submitDueDate(nextDueDate: string | null) {
     submit(
-      {
-        id: item.id,
-        columnId,
-        optimisticColumnId,
-        priority: item.priority
-      },
+      getInlineDueDateUpdateFields(
+        item,
+        locationId,
+        nextDueDate,
+        scheduleColumnIds
+      ),
       {
         method: "post",
-        action: path.to.scheduleDatesUpdate,
+        action: path.to.priorityDatesUpdate,
         navigate: false,
         fetcherKey: `job:${item.id}`
       }
@@ -217,9 +182,7 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
   }
 
   const isOverdue =
-    (item.dueDate &&
-      status !== "Completed" &&
-      new Date(item.dueDate) < new Date()) ||
+    (item.dueDate && status !== "Completed" && item.dueDate < scheduleToday) ||
     (item.dueDate &&
       item.completedDate &&
       status === "Completed" &&
@@ -264,6 +227,34 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
                   </TooltipTrigger>
                   <TooltipContent>
                     Scheduling conflict: operations cannot meet due date
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {item.scheduleOutdatedReason && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Schedule outdated — {item.scheduleOutdatedReason}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {slack && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span
+                      className={cn(
+                        "text-xs font-medium tabular-nums flex-shrink-0",
+                        slack.late ? "text-red-500" : "text-muted-foreground"
+                      )}
+                    >
+                      {slack.label}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Projected{" "}
+                    <DateTime value={projectedCompletionOnly!} variant="date" />
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -377,7 +368,9 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
               isPreviewInline
               inline={
                 dueDateValue ? (
-                  <span className="text-sm">{formatDate(dueDateValue)}</span>
+                  <span className="text-sm">
+                    <DateTime value={dueDateValue} variant="date" />
+                  </span>
                 ) : (
                   <span className="text-sm text-muted-foreground">
                     {t`Set due date`}
@@ -394,7 +387,7 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
           <HStack className="justify-start space-x-2">
             <LuCircleCheck className="text-emerald-500" />
             <span className="text-sm">
-              Completed {formatDate(item.completedDate)}
+              Completed <DateTime value={item.completedDate} variant="date" />
             </span>
           </HStack>
         )}

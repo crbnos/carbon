@@ -12,8 +12,8 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, Table } from "~/components";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { DateTime, Hyperlink, Table } from "~/components";
+import { usePermissions, useUrlParams } from "~/hooks";
 import type { SuggestionListItem } from "~/modules/resources";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -31,7 +31,6 @@ const SuggestionsTable = memo(
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const { formatDate } = useDateFormatter();
     const [params] = useUrlParams();
     const [people] = usePeople();
 
@@ -109,14 +108,16 @@ const SuggestionsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
       return defaultColumns;
-    }, [tags, people, t, formatDate]);
+    }, [tags, people, t]);
 
     const renderContextMenu = useCallback(
       (row: SuggestionListItem) => {

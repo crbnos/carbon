@@ -3,7 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { insertDepreciationRun } from "~/modules/accounting";
+import {
+  getBaseCurrencyDecimalPlaces,
+  insertDepreciationRun
+} from "~/modules/accounting";
 import {
   buildDepreciationLines,
   getNextPeriodEnd
@@ -12,9 +15,10 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "accounting"
+    });
 
   // Find the last run (posted or draft) to determine the next period
   const lastRun = await client
@@ -107,7 +111,8 @@ export async function action({ request }: ActionFunctionArgs) {
     periodEnd,
     lastPostedPeriodEnd,
     taxEnabled,
-    usageMap
+    usageMap,
+    await getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
   );
 
   const result = await insertDepreciationRun(client, {

@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
@@ -16,6 +17,7 @@ import {
   upsertPayment
 } from "~/modules/invoicing";
 import { getCompany, getNextSequence } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -93,7 +95,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       paymentType,
       customerId: customerId ?? "",
       supplierId: supplierId ?? "",
-      paymentDate: new Date().toISOString().slice(0, 10),
+      paymentDate: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString(),
       currencyCode,
       exchangeRate,
       totalAmount,

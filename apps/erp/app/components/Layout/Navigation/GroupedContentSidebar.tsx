@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton,
+  Subheading,
   useDebounce,
   VStack
 } from "@carbon/react";
@@ -78,14 +79,18 @@ const GroupedContentSidebar = ({
               key={group.name}
               className="border-b border-border p-2 pb-4 space-y-0.5"
             >
-              <h4 className="text-xxs text-foreground/70 uppercase font-light tracking-wide pl-4 py-1">
+              <Subheading as="h4" variant="light" className="pl-4 py-1">
                 {group.name}
-              </h4>
+              </Subheading>
               {group.routes.map((route) => {
-                const isActive = exactMatch
-                  ? location.pathname === route.to
-                  : location.pathname.includes(route.to) &&
-                    !`${location.pathname}${location.search}`.includes("view=");
+                const isActive = route.isActive
+                  ? route.isActive(location.pathname)
+                  : exactMatch
+                    ? location.pathname === route.to
+                    : location.pathname.includes(route.to) &&
+                      !`${location.pathname}${location.search}`.includes(
+                        "view="
+                      );
 
                 const hasViews = route.views && route.views.length > 0;
                 const isExpanded = expandedViews[route.name];

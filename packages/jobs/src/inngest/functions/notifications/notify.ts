@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
   type CompanyIntegration,
   notifyTaskAssigned
@@ -8,13 +9,16 @@ import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
 import { ERP_URL } from "@carbon/env";
 import type { Events } from "@carbon/lib/events";
 import {
+  escapeSlackText,
   getNotificationEmailCtaLabel,
   getNotificationEmailHeading,
   getNotificationTopic,
   isRecurringNotificationEvent,
   NotificationDestination,
-  NotificationEvent
+  NotificationEvent,
+  renderSlackMrkdwn
 } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -23,16 +27,6 @@ import {
   getNotificationContent,
   getNotificationEmailComponent
 } from "./content";
-
-// Slack mrkdwn requires &, <, > escaped in text; inside a <url|label> a
-// literal "|" would also terminate the label, so it's swapped for a lookalike.
-function escapeSlackText(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\|/g, "¦");
-}
 
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
@@ -183,7 +177,14 @@ const defaultDestinations: Partial<
   [NotificationEvent.ResourceTrainingAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
-  ]
+  ],
+  [NotificationEvent.Workflow]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
+  // In-app only: the outbound sweep re-fires while failures persist, and an
+  // email per sweep cycle would be noise.
+  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
 };
 
 export const notifyFunction = inngest.createFunction(
@@ -196,7 +197,8 @@ export const notifyFunction = inngest.createFunction(
     const payload = event.data as Events["carbon/notify"]["data"];
 
     // Single-document events pass documentId; digest events pass documentIds
-    // with the first entry as the fallback link target.
+    // with the first entry as the fallback link target. Workflow notifications
+    // always supply one too — the run id when the customer named no record.
     const primaryDocumentId = payload.documentId ?? payload.documentIds?.[0];
     if (!primaryDocumentId) {
       throw new NonRetriableError(
@@ -227,8 +229,10 @@ export const notifyFunction = inngest.createFunction(
         payload.from,
         payload.documentType,
         {
+          body: payload.body,
           companyId: payload.companyId,
           documentIds: payload.documentIds,
+          title: payload.title,
           userId:
             payload.recipient.type === "user"
               ? payload.recipient.userId
@@ -399,7 +403,7 @@ export const notifyFunction = inngest.createFunction(
         // ON DELETE SET NULL, so deleting a parent would resurface its hidden
         // children. Cron digests (no sourceEvent) are intentionally untouched.
         if (content.digest) {
-          const supersededAt = new Date().toISOString();
+          const supersededAt = datetime.timestamp();
 
           const [supersededDigests, supersededFlat] = await Promise.all([
             client
@@ -645,7 +649,7 @@ export const notifyFunction = inngest.createFunction(
         async () => {
           const { data: integration, error } = await client
             .from("companyIntegration")
-            .select("active, metadata")
+            .select("active, metadata, secretRef")
             .eq("companyId", payload.companyId)
             .eq("id", "slack")
             .maybeSingle();
@@ -656,9 +660,15 @@ export const notifyFunction = inngest.createFunction(
           }
           if (!integration?.active) return [];
 
-          const metadata = integration.metadata as {
-            access_token?: string;
-          } | null;
+          // Secret material (access_token) lives in Supabase Vault; merge it
+          // back so we read the same shape as before. `client` is service-role.
+          const metadata = (await resolveIntegrationSecrets(
+            client,
+            payload.companyId,
+            "slack",
+            integration.metadata,
+            integration.secretRef
+          )) as { access_token?: string } | null;
           const accessToken = metadata?.access_token;
           if (!accessToken) return [];
 
@@ -668,6 +678,12 @@ export const notifyFunction = inngest.createFunction(
             payload.companyId,
             payload.documentType
           );
+          const slackDetailLines = details
+            .map(
+              (detail) =>
+                `${escapeSlackText(detail.label)}: ${renderSlackMrkdwn(detail.value, ERP_URL)}`
+            )
+            .join("\n");
           // Digest: one mrkdwn-linked line per document (items are the
           // actions, no footer link). Otherwise: detail rows + footer link.
           const text = digestItems
@@ -681,7 +697,7 @@ export const notifyFunction = inngest.createFunction(
                 })
               ].join("\n")
             : `${description}${
-                detailLines ? `\n${detailLines}` : ""
+                slackDetailLines ? `\n${slackDetailLines}` : ""
               }\n<${ctaUrl}|View in Carbon>`;
 
           const slackUserIds = await Promise.all(

@@ -4,10 +4,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { ProductionQuantity, ScrapReason } from "../../types";
@@ -29,7 +29,6 @@ const ProductionQuantitiesTable = memo(
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
-    const { formatDateTime } = useDateFormatter();
     const [people] = usePeople();
 
     const columns = useMemo<ColumnDef<ProductionQuantity>[]>(() => {
@@ -150,10 +149,12 @@ const ProductionQuantitiesTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: ({ row }) => formatDateTime(row.original.createdAt)
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="absolute" />
+          )
         }
       ];
-    }, [operations, people, scrapReasons, t, formatDateTime]);
+    }, [operations, people, scrapReasons, t]);
 
     const permissions = usePermissions();
 

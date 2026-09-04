@@ -4,7 +4,38 @@ import type {
   PostgrestFilterBuilder
 } from "@supabase/postgrest-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely } from "kysely";
+import type { KyselyDatabase } from "./client.ts";
 import type { Database } from "./types.ts";
+
+/**
+ * Job statuses that participate in scheduling/planning ("open" work).
+ * The DB enum can't express this business subset itself; `satisfies` binds
+ * these values to the enum so a typo or an enum rename is a compile error,
+ * and every consumer imports THIS constant instead of re-hardcoding strings.
+ */
+export const activeJobStatuses = [
+  "Ready",
+  "In Progress",
+  "Paused"
+] as const satisfies readonly Database["public"]["Enums"]["jobStatus"][];
+
+/**
+ * Either data-access handle a helper might receive: a Supabase client or a
+ * Kysely handle (a `Kysely` instance or an active `Transaction`). Use it to
+ * overload a helper that some callers reach with a client and others with
+ * Kysely, instead of maintaining two near-identical `*Db` twins.
+ */
+export type AnyPostgresClient =
+  | SupabaseClient<Database>
+  | Kysely<KyselyDatabase>;
+
+/**
+ * Runtime guard narrowing {@link AnyPostgresClient} to the Kysely handle. Kysely
+ * exposes `.selectFrom`; the Supabase client does not.
+ */
+export const isKysely = (db: AnyPostgresClient): db is Kysely<KyselyDatabase> =>
+  typeof (db as Kysely<KyselyDatabase>).selectFrom === "function";
 
 const BATCH_SIZE = 1000;
 

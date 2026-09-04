@@ -1,16 +1,16 @@
 import { Email } from "./email/config";
-import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Onshape } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
+import { Rillet } from "./rillet/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
+import { StripeConnect } from "./stripe-connect/config";
 import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
-import { Zapier } from "./zapier/config";
 
 export { Email } from "./email/config";
 export { defineIntegration } from "./fns";
@@ -31,16 +31,16 @@ export type {
 export const integrations = [
   // Radan,
   Email,
-  ExchangeRates,
   Jira,
   Linear,
   Onshape,
   PaperlessParts,
   QuickBooks,
+  Rillet,
   Sage,
   Slack,
   Xero,
-  Zapier
+  StripeConnect
 ];
 
 export type IntegrationID = (typeof integrations)[number]["id"];
@@ -50,8 +50,10 @@ export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
+export { Rillet } from "./rillet/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
+export { StripeConnect } from "./stripe-connect/config";
 export { Xero } from "./xero/config";
 
 /**
@@ -62,6 +64,14 @@ export { Xero } from "./xero/config";
 export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
+
+export {
+  IntegrationSecretUnavailableError,
+  persistIntegrationSecrets,
+  resolveIntegrationSecrets,
+  SECRET_KEYS,
+  splitSecrets
+} from "./integrations/secrets";
 
 /**
  * Quick-install connectors are external link-outs with no DB state.

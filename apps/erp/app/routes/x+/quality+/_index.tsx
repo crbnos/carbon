@@ -32,6 +32,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import { formatDate } from "@carbon/utils";
 import { today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -136,7 +137,11 @@ function formatWeekLabel(weekKey: string, locale?: string): string {
   const week = Number.parseInt(match[2]);
   const d = new Date(Date.UTC(year, 0, 4));
   d.setUTCDate(d.getUTCDate() - (d.getUTCDay() || 7) + 1 + (week - 1) * 7);
-  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
+  return formatDate(
+    d.toISOString().slice(0, 10),
+    { month: "short", day: "numeric" },
+    locale
+  );
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -373,7 +378,7 @@ export default function QualityDashboard() {
     (kpiFetcher.data as any)?.meta?.qualityIssueTarget ?? qualityIssueTarget;
 
   return (
-    <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
+    <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
       {/* KPI Cards */}
       <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard

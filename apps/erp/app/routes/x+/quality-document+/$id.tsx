@@ -18,7 +18,6 @@ import {
   qualityDocumentApprovalValidator
 } from "~/modules/quality";
 import QualityDocumentEditor from "~/modules/quality/ui/Documents/QualityDocumentEditor";
-import QualityDocumentExplorer from "~/modules/quality/ui/Documents/QualityDocumentExplorer";
 import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumentHeader";
 import QualityDocumentProperties from "~/modules/quality/ui/Documents/QualityDocumentProperties";
 import {
@@ -264,18 +263,13 @@ export default function QualityDocumentRoute() {
 
   return (
     <PanelProvider key={`${id}-${document.version}`}>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <QualityDocumentHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
-              explorer={
-                <QualityDocumentExplorer
-                  key={`explorer-${id}-${document.version}`}
-                />
-              }
               content={
-                <div className="bg-background h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <QualityDocumentEditor />
                   <Outlet />
                 </div>

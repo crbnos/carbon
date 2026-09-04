@@ -1,10 +1,10 @@
 import { Badge, Checkbox, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBriefcase,
+  LuClock,
   LuMail,
   LuMapPin,
   LuPencil,
@@ -14,7 +14,14 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Avatar, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  Avatar,
+  DateTime,
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -28,12 +35,18 @@ type PeopleTableProps = {
   data: Person[];
   count: number;
   employeeTypes: Partial<EmployeeType>[];
+  shifts: { id: string; name: string }[];
 };
 
 const PeopleTable = memo(
-  ({ attributeCategories, data, count, employeeTypes }: PeopleTableProps) => {
+  ({
+    attributeCategories,
+    data,
+    count,
+    employeeTypes,
+    shifts
+  }: PeopleTableProps) => {
     const { t } = useLingui();
-    const { locale } = useLocale();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const locations = useLocations();
@@ -68,7 +81,7 @@ const PeopleTable = memo(
         }
 
         if (dataType === DataType.Date) {
-          return new Date(value as string).toLocaleDateString(locale);
+          return <DateTime value={value as string} variant="date" />;
         }
 
         if (dataType === DataType.Numeric) {
@@ -95,7 +108,7 @@ const PeopleTable = memo(
 
         return "Unknown";
       },
-      [locale]
+      []
     );
 
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
@@ -176,6 +189,21 @@ const PeopleTable = memo(
           }
         },
         {
+          id: "shiftId",
+          header: t`Shift`,
+          cell: ({ row }) => <Enumerable value={row.original.shiftName} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: shifts.map((shift) => ({
+                value: shift.id,
+                label: <Enumerable value={shift.name} />
+              }))
+            },
+            icon: <LuClock />
+          }
+        },
+        {
           accessorKey: "status",
           header: t`Status`,
           cell: (item) => {
@@ -235,6 +263,7 @@ const PeopleTable = memo(
       employeeTypes,
       employeeTypesById,
       locations,
+      shifts,
       renderGenericAttribute,
       t
     ]);

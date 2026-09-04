@@ -16,6 +16,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   ItemThumbnail,
@@ -25,14 +26,9 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useRealtime
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseInvoice } from "~/modules/invoicing";
+import type { PurchaseInvoiceListItem } from "~/modules/invoicing";
 import {
   PurchaseInvoicingStatus,
   purchaseInvoiceStatusType
@@ -41,7 +37,7 @@ import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicesTableProps = {
-  data: PurchaseInvoice[];
+  data: PurchaseInvoiceListItem[];
   count: number;
 };
 
@@ -56,18 +52,18 @@ const PurchaseInvoicesTable = memo(
     const permissions = usePermissions();
     const navigate = useNavigate();
     const currencyFormatter = useCurrencyFormatter();
-    const { formatDate } = useDateFormatter();
 
     const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] =
-      useState<PurchaseInvoice | null>(null);
+      useState<PurchaseInvoiceListItem | null>(null);
     const closePurchaseInvoiceModal = useDisclosure();
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
-    const customColumns = useCustomColumns<PurchaseInvoice>("purchaseInvoice");
+    const customColumns =
+      useCustomColumns<PurchaseInvoiceListItem>("purchaseInvoice");
 
-    const columns = useMemo<ColumnDef<PurchaseInvoice>[]>(() => {
-      const defaultColumns: ColumnDef<PurchaseInvoice>[] = [
+    const columns = useMemo<ColumnDef<PurchaseInvoiceListItem>[]>(() => {
+      const defaultColumns: ColumnDef<PurchaseInvoiceListItem>[] = [
         {
           accessorKey: "invoiceId",
           header: t`Invoice Number`,
@@ -190,7 +186,9 @@ const PurchaseInvoicesTable = memo(
         {
           accessorKey: "dateIssued",
           header: t`Issued Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -198,7 +196,9 @@ const PurchaseInvoicesTable = memo(
         {
           accessorKey: "dateDue",
           header: t`Due Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -206,7 +206,9 @@ const PurchaseInvoicesTable = memo(
         {
           accessorKey: "datePaid",
           header: t`Paid Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -214,7 +216,9 @@ const PurchaseInvoicesTable = memo(
         {
           accessorKey: "postingDate",
           header: t`Posting Date`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -247,7 +251,9 @@ const PurchaseInvoicesTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -272,7 +278,9 @@ const PurchaseInvoicesTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -280,10 +288,10 @@ const PurchaseInvoicesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [currencyFormatter, customColumns, people, suppliers, t, formatDate]);
+    }, [currencyFormatter, customColumns, people, suppliers, t]);
 
     const renderContextMenu = useMemo(() => {
-      return (row: PurchaseInvoice) => (
+      return (row: PurchaseInvoiceListItem) => (
         <>
           <MenuItem
             disabled={!permissions.can("view", "invoicing")}
@@ -311,7 +319,7 @@ const PurchaseInvoicesTable = memo(
 
     return (
       <>
-        <Table<PurchaseInvoice>
+        <Table<PurchaseInvoiceListItem>
           count={count}
           columns={columns}
           data={data}

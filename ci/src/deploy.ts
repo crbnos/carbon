@@ -71,6 +71,7 @@ export type Workspace = {
   stripe_bypass_company_ids: string | null;
   stripe_secret_key: string | null;
   stripe_webhook_secret: string | null;
+  stripe_connect_webhook_secret: string | null;
   url_erp: string | null;
   url_mes: string | null;
   xero_client_id: string | null;
@@ -107,6 +108,8 @@ async function deploy(): Promise<void> {
       console.log(`✅ 🥚 Migrating ${workspace.id}`);
       const {
         anon_key,
+        assembler_api_key,
+        assembler_domain,
         auth_providers,
         aws_account_id,
         aws_region,
@@ -152,6 +155,7 @@ async function deploy(): Promise<void> {
         stripe_bypass_company_ids,
         stripe_secret_key,
         stripe_webhook_secret,
+        stripe_connect_webhook_secret,
         url_erp,
         url_mes,
         xero_client_id,
@@ -254,12 +258,22 @@ async function deploy(): Promise<void> {
 
       console.log(`✅ 🔑 Setting up environment for ${workspace.id}`);
 
+      // Normalize the assembler domain into a full URL, tolerating a value that
+      // already includes a scheme (avoids "https://https://...").
+      const assembler_service_url = assembler_domain
+        ? /^https?:\/\//.test(assembler_domain)
+          ? assembler_domain
+          : `https://${assembler_domain}`
+        : undefined;
+
       const $$ = $({
         // @ts-ignore
         env: {
           AWS_ACCOUNT_ID: aws_account_id,
           AWS_REGION: aws_region,
           IMAGE_TAG: imageTag,
+          ASSEMBLER_SERVICE_API_KEY: assembler_api_key ?? undefined,
+          ASSEMBLER_SERVICE_URL: assembler_service_url,
           AUTH_PROVIDERS: auth_providers ?? undefined,
           CARBON_EDITION: carbon_edition ?? "enterprise",
           CERT_ARN_ERP: cert_arn_erp,
@@ -298,6 +312,8 @@ async function deploy(): Promise<void> {
           STRIPE_BYPASS_COMPANY_IDS: stripe_bypass_company_ids ?? undefined,
           STRIPE_SECRET_KEY: stripe_secret_key ?? undefined,
           STRIPE_WEBHOOK_SECRET: stripe_webhook_secret ?? undefined,
+          STRIPE_CONNECT_WEBHOOK_SECRET:
+            stripe_connect_webhook_secret ?? undefined,
           SUPABASE_ANON_KEY: anon_key,
           SUPABASE_DB_URL: database_connection_pooler_url,
           SUPABASE_JWT_SECRET: jwt_secret ?? undefined,

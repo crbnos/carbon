@@ -23,6 +23,7 @@
         "apps/erp/app/**",
         "apps/mes/app/**",
         "packages/react/src/**",
+        "packages/workflows/src/**",
         "packages/locale/locales/**/*.po"
       ],
       "outputs": ["packages/locale/locales/**/*.mjs"]

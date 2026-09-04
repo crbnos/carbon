@@ -143,7 +143,6 @@ export const productionEventValidator = z.object({
   jobOperationId: z
     .string()
     .min(1, { message: "Job Operation ID is required" }),
-  timezone: zfd.text(z.string()),
   action: z.enum(productionEventAction, {
     errorMap: (issue, ctx) => ({
       message: "Action is required"
@@ -206,6 +205,17 @@ export const nonScrapQuantityValidator = baseQuantityValidator;
 
 export const scrapQuantityValidator = baseQuantityValidator.extend({
   scrapReasonId: zfd.text(z.string()),
+  notes: zfd.text(z.string().optional())
+});
+
+// Scrapping an already-made/staged BOM entity from the Materials section.
+// makeReplacement (Make-to-Order materials only) reopens the subassembly's
+// routing and spawns a replacement unit.
+export const scrapTrackedEntityValidator = z.object({
+  scrapReasonId: zfd.text(z.string()),
+  makeReplacement: zfd
+    .text(z.string().optional())
+    .transform((v) => v === "true" || v === "on"),
   notes: zfd.text(z.string().optional())
 });
 

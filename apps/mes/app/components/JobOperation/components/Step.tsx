@@ -52,10 +52,11 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { DateTime } from "~/components";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import ItemThumbnail from "~/components/ItemThumbnail";
-import { useDateFormatter, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
 import { stepRecordValidator } from "~/services/models";
 import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
@@ -376,7 +377,6 @@ export function PreviewStepRecord({
 }) {
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
-  const { formatDateTime } = useDateFormatter();
 
   if (!step.jobOperationStepRecord) return null;
   const record = step.jobOperationStepRecord.find(
@@ -410,7 +410,9 @@ export function PreviewStepRecord({
           </p>
         )}
       {step.type === "Timestamp" && (
-        <p className="text-sm">{formatDateTime(record?.value ?? "")}</p>
+        <p className="text-sm">
+          <DateTime value={record?.value} variant="absolute" />
+        </p>
       )}
       {step.type === "List" && <p className="text-sm">{record?.value}</p>}
       {step.type === "Person" && (

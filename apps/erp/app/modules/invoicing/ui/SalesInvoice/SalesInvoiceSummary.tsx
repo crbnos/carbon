@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Heading,
@@ -12,6 +11,7 @@ import {
   Tbody,
   Td,
   Tr,
+  TruncatedTooltipText,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -21,11 +21,10 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, MethodIcon } from "~/components";
+import { CustomerAvatar, DateTime, MethodIcon } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
-  useDateFormatter,
   usePercentFormatter,
   useRouteData,
   useUser
@@ -113,29 +112,28 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={itemReadableId ?? ""}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0} className="w-full">
+              <VStack spacing={0} className="flex-1 min-w-0">
                 <div
                   className="flex flex-col cursor-pointer w-full"
                   onClick={() => toggleOpen(line.id!)}
                 >
+                  {/* The text column must shrink (flex-1 min-w-0) or a long
+                      description shoves the totals out of the card, and its
+                      children need w-full because VStack is items-start, which
+                      sizes each child to its own content and leaves truncate
+                      inert no matter how narrow the column gets. */}
                   <div className="flex items-center justify-between w-full">
-                    <VStack
-                      spacing={0}
-                      className="flex-shrink-0 min-w-0 w-auto"
-                    >
-                      <HStack
-                        spacing={2}
-                        className="flex min-w-0 flex-shrink-0"
-                      >
+                    <VStack spacing={0} className="flex-1 min-w-0">
+                      <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">{itemReadableId}</Heading>
                         <Button
                           asChild
@@ -150,9 +148,12 @@ const LineItems = ({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-base truncate">
+                      <TruncatedTooltipText
+                        className="text-muted-foreground text-sm truncate w-full"
+                        tooltip={line.description}
+                      >
                         {line.description}
-                      </span>
+                      </TruncatedTooltipText>
                     </VStack>
                     <VStack
                       spacing={2}
@@ -348,7 +349,6 @@ const SalesInvoiceSummary = ({
 }: SalesInvoiceSummaryProps) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
-  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
@@ -413,9 +413,11 @@ const SalesInvoiceSummary = ({
       return acc + lineTaxAmount;
     }, 0) ?? 0;
 
-  const shippingCost =
-    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
-    (routeData?.salesInvoice?.exchangeRate ?? 1);
+  // `salesInvoiceShipment.shippingCost` is stored in BASE currency, like every
+  // other raw column on this side -- the `salesInvoices` view adds it straight
+  // onto a base subtotal built from `unitPrice`. So the base figure is the
+  // stored value and only the customer-facing one converts.
+  const shippingCost = routeData?.salesInvoiceShipment?.shippingCost ?? 0;
 
   const customerShippingCost =
     (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
@@ -430,17 +432,18 @@ const SalesInvoiceSummary = ({
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
             <CardTitle>{routeData?.salesInvoice.invoiceId}</CardTitle>
-            <CardDescription>
-              <Trans>Sales Invoice</Trans>
-            </CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
             <CustomerAvatar
               customerId={routeData?.salesInvoice.customerId ?? null}
             />
             {routeData?.salesInvoice?.dateDue && (
-              <span className="text-muted-foreground text-sm">
-                Due {formatDate(routeData?.salesInvoice.dateDue)}
+              <span className="text-xs text-muted-foreground tracking-tight">
+                Due{" "}
+                <DateTime
+                  value={routeData?.salesInvoice.dateDue}
+                  variant="date"
+                />
               </span>
             )}
           </div>
@@ -457,7 +460,7 @@ const SalesInvoiceSummary = ({
         />
 
         <VStack spacing={2} className="mt-8">
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Subtotal:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(subtotal)}</span>
@@ -469,7 +472,7 @@ const SalesInvoiceSummary = ({
             </VStack>
           </HStack>
 
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             <span>Tax:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(tax)}</span>
@@ -481,7 +484,7 @@ const SalesInvoiceSummary = ({
             </VStack>
           </HStack>
 
-          <HStack className="justify-between text-base text-muted-foreground w-full">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
             {shippingCost > 0 ? (
               <>
                 <VStack spacing={0}>
@@ -512,7 +515,7 @@ const SalesInvoiceSummary = ({
               <Button
                 variant="link"
                 size="sm"
-                className="text-muted-foreground"
+                className="text-primary"
                 onClick={onEditShippingCost}
               >
                 <Trans>Add Shipping</Trans>
@@ -520,7 +523,7 @@ const SalesInvoiceSummary = ({
             ) : null}
           </HStack>
 
-          <HStack className="justify-between text-xl font-bold w-full">
+          <HStack className="justify-between text-xl font-semibold w-full">
             <span>Total:</span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(total)}</span>

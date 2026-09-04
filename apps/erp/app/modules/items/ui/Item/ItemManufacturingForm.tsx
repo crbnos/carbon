@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -63,9 +64,7 @@ const ItemManufacturingForm = ({
               name="scrapPercentage"
               label={t`Scrap Percent`}
               termId="item-scrap-percent"
-              formatOptions={{
-                style: "percent"
-              }}
+              formatOptions={INPUT_FORMAT.percent}
             />
             <Number
               name="leadTime"

@@ -1,11 +1,13 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { updateSalesInvoiceStatus } from "~/modules/invoicing";
 import { salesInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -94,7 +96,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    datePaid = isMarkingPaid ? new Date().toISOString().slice(0, 10) : null;
+    datePaid = isMarkingPaid
+      ? datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+      : null;
   }
 
   const update = await updateSalesInvoiceStatus(client, {

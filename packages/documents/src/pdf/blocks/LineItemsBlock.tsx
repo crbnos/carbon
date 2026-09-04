@@ -1,4 +1,5 @@
 import type { JSONContent } from "@carbon/react";
+import { formatPercent } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -23,7 +24,14 @@ export function LineItemsBlock({
   data: SalesInvoiceData;
 }) {
   const tw = useTw();
-  const { salesInvoiceLines, thumbnails, numberFormatter, theme } = data;
+  const {
+    salesInvoiceLines,
+    thumbnails,
+    numberFormatter,
+    rateFormatter,
+    theme,
+    locale
+  } = data;
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const overflow = itemTextOverflowStyle(opts);
   let rowIndex = 0;
@@ -106,24 +114,52 @@ export function LineItemsBlock({
                       Tax & Fees
                     </Text>
                     {lineShippingCost > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Shipping
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Shipping
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineShippingCost)}
+                        </Text>
+                      </View>
                     )}
                     {lineAddOnCost > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Add-On
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Add-On
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineAddOnCost)}
+                        </Text>
+                      </View>
                     )}
                     {lineNonTaxableAddOnCost > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Non-Taxable Add-On
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Non-Taxable Add-On
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineNonTaxableAddOnCost)}
+                        </Text>
+                      </View>
                     )}
                     {lineTaxPercent > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Tax ({(lineTaxPercent * 100).toFixed(0)}%)
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Tax ({formatPercent(lineTaxPercent, locale)})
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineTaxAmount)}
+                        </Text>
+                      </View>
                     )}
                   </View>
                 )}
@@ -136,7 +172,7 @@ export function LineItemsBlock({
               <Text style={tw("w-1/6 text-center text-gray-600")}>
                 {line.invoiceLineType === "Comment"
                   ? ""
-                  : numberFormatter.format(line.convertedUnitPrice ?? 0)}
+                  : rateFormatter.format(line.convertedUnitPrice ?? 0)}
               </Text>
               <Text style={tw("w-1/6 text-center text-gray-800 font-medium")}>
                 {line.invoiceLineType === "Comment"

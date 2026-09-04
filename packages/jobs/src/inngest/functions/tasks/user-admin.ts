@@ -2,7 +2,12 @@ import type { Result } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
-import { CarbonEdition, getAppUrl, RESEND_DOMAIN } from "@carbon/env";
+import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
+import {
+  CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
+  RESEND_DOMAIN
+} from "@carbon/env";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
@@ -28,7 +33,9 @@ export const userAdminFunction = inngest.createFunction(
           result = await deactivateUser(
             serviceRole,
             payload.id,
-            payload.companyId
+            payload.companyId,
+            payload.actorId,
+            payload.ip
           );
           if (result.success && CarbonEdition === Edition.Cloud) {
             await updateSubscriptionQuantityForCompany(payload.companyId);
@@ -90,6 +97,13 @@ export const userAdminFunction = inngest.createFunction(
             .eq("id", existingInvite.data.createdBy)
             .single();
 
+          const inviteLink = await getSsoAwareInviteLink(
+            serviceRole,
+            user.data.email,
+            refreshed.data.code,
+            companyId
+          );
+
           await sendEmail({
             from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
             to: user.data.email,
@@ -104,9 +118,10 @@ export const userAdminFunction = inngest.createFunction(
                 email: user.data.email,
                 name: user.data.fullName ?? "",
                 companyName: company.data.name,
-                inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+                inviteLink,
                 ip,
-                location
+                location,
+                controlledEnvironment: CONTROLLED_ENVIRONMENT
               })
             )
           });

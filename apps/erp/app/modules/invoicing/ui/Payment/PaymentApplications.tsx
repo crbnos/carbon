@@ -11,10 +11,11 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
+import { SCALE_FORMAT } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
-import { Hyperlink } from "~/components";
-import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
+import { DateTime, Hyperlink } from "~/components";
+import { useCurrencyFormatter } from "~/hooks";
 import type { getInvoiceSettlements } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
@@ -57,12 +58,8 @@ const PaymentApplications = ({
   applications,
   paymentTotal
 }: PaymentApplicationsProps) => {
-  const { formatDate } = useDateFormatter();
   const currencyFormatter = useCurrencyFormatter();
-  const rateFormatter = useNumberFormatter({
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4
-  });
+  const rateFormatter = useNumberFormatter(SCALE_FORMAT);
 
   const totalApplied = applications.reduce(
     (sum, a) =>
@@ -158,7 +155,9 @@ const PaymentApplications = ({
                   <Td className="text-right tabular-nums">
                     {currencyFormatter.format(Number(a.fxGainLossAmount ?? 0))}
                   </Td>
-                  <Td>{formatDate(a.appliedDate)}</Td>
+                  <Td>
+                    <DateTime value={a.appliedDate} variant="date" />
+                  </Td>
                 </Tr>
               ))
             )}

@@ -21,6 +21,7 @@ services:
     ports:
       - "${PORT_DB}:5432"
     environment:
+      TZ: UTC
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PORT: 5432
       PGPORT: 5432
@@ -81,8 +82,8 @@ services:
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
       GOTRUE_SITE_URL: ${ERP_URL}
-      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${MES_URL},${GTM_URL}
-      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/callback,${MES_URL},${MES_URL}/callback,${GTM_URL}
+      GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600
       GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10
@@ -107,6 +108,11 @@ services:
       GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI}
       GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${ERP_URL}/templates/magic-link.html
       GOTRUE_MAILER_TEMPLATES_INVITE: ${ERP_URL}/templates/invite.html
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
+      GOTRUE_MFA_MAX_ENROLLED_FACTORS: 10
+      GOTRUE_SAML_ENABLED: ${SAML_ENABLED:-false}
+      GOTRUE_SAML_PRIVATE_KEY: ${SAML_PRIVATE_KEY:-}
       SSL_CERT_FILE: /etc/ssl/certs/portless-ca.pem
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -283,6 +289,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      TZ: UTC
       JWT_SECRET: ${SUPABASE_JWT_SECRET}
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}

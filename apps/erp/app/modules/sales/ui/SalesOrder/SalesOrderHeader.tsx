@@ -22,6 +22,8 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import type { SalesOrderForProductionCheck } from "@carbon/utils";
+import { hasLinesRequiringJobs } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -204,10 +206,10 @@ const SalesOrderHeader = () => {
   const confirmFetcher = useFetcher<typeof confirmAction>();
   const { ship, invoice } = useSalesOrder();
 
-  // Check if there are any lines with "Make" method type that would require jobs
-  const hasMakeItems =
-    routeData?.lines?.some((line) => line.methodType === "Make to Order") ??
-    false;
+  const linesRequireJobs = hasLinesRequiringJobs({
+    jobs: routeData?.salesOrder?.jobs as SalesOrderForProductionCheck["jobs"],
+    lines: routeData?.salesOrder?.lines as SalesOrderForProductionCheck["lines"]
+  });
 
   const salesOrderToJobsModal = useDisclosure();
   const confirmDisclosure = useDisclosure();
@@ -256,7 +258,7 @@ const SalesOrderHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide">
+      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
@@ -290,8 +292,7 @@ const SalesOrderHeader = () => {
                     ) ||
                     !permissions.can("create", "production") ||
                     !permissions.is("employee") ||
-                    !!routeData?.salesOrder?.jobs ||
-                    !hasMakeItems
+                    !linesRequireJobs
                   }
                   onClick={salesOrderToJobsModal.onOpen}
                 >

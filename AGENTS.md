@@ -26,7 +26,11 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 ## Never
 
 - Never use `npm` — always `pnpm`.
+- Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
+- Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
+- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction, or an RPC when it must also be callable from an edge function.
+- Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — service files are re-exported through the module barrel that client components import, so they are bundled for the browser. Build the client in a `.server` file (`getDatabaseClient()` from `~/services/database.server`) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
 - Never rebuild the database to test changes — wait for the user.
@@ -44,7 +48,15 @@ pnpm run build               # Full build
 pnpm db:migrate:new <name>   # Create new migration
 pnpm db:migrate              # Apply pending migrations
 pnpm run generate:types      # Regenerate DB types (after migrations)
+pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
+pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+Both `db:check:*` commands read your live local schema. They run from
+`.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
+the dataset check fail for the wrong reason and makes the backup check refuse to give
+a verdict at all. Run by hand, both write nothing; from the hook, `db:check:backups`
+additionally regenerates and stages `packages/jobs/manifests/schema.json` on success.
 
 ## Task Router — Where to Find Detailed Guidance
 
@@ -82,7 +94,10 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Issues (NCR, CAPA, ECO, RMA) | `.claude/rules/issue-module.md` |
 | Traceability / lot tracking | `.claude/rules/traceability-model.md` |
 | Revision system | `.claude/rules/revision-system.md` |
+| Item supersession (phase-out / successor swaps) | `.claude/rules/supersession-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
+| Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
+| Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
@@ -102,10 +117,13 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
+| Date & time handling (no JS `Date`) | `.claude/rules/date-handling.md` |
+| Numeric precision & formatting (two scales, named kinds, tax pair) | `.claude/rules/numeric-precision.md` |
 | Project overview | `.claude/rules/project-overview.md` |
 | Customer/supplier DB schema | `.claude/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.claude/rules/user-employee-job-relationships.md` |
 | Company backup/restore | `.claude/rules/company-backup-restore.md` |
+| Onboarding demo templates / dev seed datasets | `.claude/rules/onboarding-company-templates.md` |
 | Environment configuration | `.claude/rules/environment-configuration.md` |
 | MCP tools reference | `.claude/rules/mcp-tools-reference.md` |
 | Adding a new module | `.ai/docs/module-conventions.md` |
@@ -172,6 +190,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
+- **Precision**: `packages/utils/src/math.ts` re-exports `functions/shared/precision.ts` by design (the edge runtime only mounts `supabase/functions/`) — not an import to "fix"
 
 ## ERP Module Layout
 

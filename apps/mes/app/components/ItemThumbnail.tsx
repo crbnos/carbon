@@ -1,5 +1,6 @@
 import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
+import { useState } from "react";
 import { LuBlocks } from "react-icons/lu";
 import { getPrivateUrl } from "~/utils/path";
 import { MethodItemTypeIcon } from "./Icons";
@@ -75,13 +76,19 @@ const ItemThumbnail = ({
   size = "md",
   onClick
 }: ItemThumbnailProps) => {
-  return thumbnailPath ? (
+  // Keyed by path, not a bare boolean — a virtualized row reused for another
+  // item would otherwise stay stuck on the fallback.
+  const [failedPath, setFailedPath] = useState<string | null>(null);
+
+  return thumbnailPath && failedPath !== thumbnailPath ? (
     <img
       alt="thumbnail"
       className={cn(
         itemVariants({ size, withPadding: false }),
         thumbnailPath && "cursor-pointer"
       )}
+      key={thumbnailPath}
+      onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
       onClick={onClick}
     />

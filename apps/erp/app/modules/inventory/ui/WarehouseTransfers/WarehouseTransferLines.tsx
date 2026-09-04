@@ -24,16 +24,12 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import {
-  formatRelativeTime,
-  getItemById,
-  getItemReadableId
-} from "@carbon/utils";
+import { getItemById, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { LuArrowRight, LuCirclePlus, LuEllipsisVertical } from "react-icons/lu";
 import { Link, Outlet, useFetcher, useNavigate } from "react-router";
-import { EmployeeAvatar, Empty, ItemThumbnail } from "~/components";
+import { DateTime, EmployeeAvatar, Empty, ItemThumbnail } from "~/components";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { WarehouseTransfer, WarehouseTransferLine } from "../../types";
@@ -150,12 +146,10 @@ function WarehouseTransferLineListItem({
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={line.item?.thumbnailPath}
-                // @ts-expect-error TS2339 - TODO: fix type
                 type={(item.type as "Part") ?? "Part"}
               />
               <VStack spacing={0}>
                 <span className="text-sm font-medium truncate">
-                  {/* @ts-expect-error TS2339 */}
                   {item.name}
                 </span>
                 <span className="text-xs text-muted-foreground truncate">
@@ -180,7 +174,8 @@ function WarehouseTransferLineListItem({
         <div className="flex items-center justify-end gap-2">
           <HStack spacing={2}>
             <span className="text-xs text-muted-foreground">
-              {isUpdated ? t`Updated` : t`Created`} {formatRelativeTime(date)}
+              {isUpdated ? t`Updated` : t`Created`}{" "}
+              <DateTime value={date} variant="relative" />
             </span>
             <EmployeeAvatar employeeId={person} withName={false} />
           </HStack>

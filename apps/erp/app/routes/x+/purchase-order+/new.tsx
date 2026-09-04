@@ -2,12 +2,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { z } from "zod";
-import { useUrlParams, useUser } from "~/hooks";
+import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import type { PurchaseOrderStatus } from "~/modules/purchasing";
 import {
   insertPurchaseOrder,
@@ -70,12 +69,13 @@ export default function PurchaseOrderNewRoute() {
   const [params] = useUrlParams();
   const supplierId = params.get("supplierId");
   const { defaults } = useUser();
+  const companyToday = useCompanyToday();
   const initialValues = {
     id: undefined,
     purchaseOrderId: undefined,
     supplierId: supplierId ?? "",
     locationId: defaults?.locationId ?? "",
-    orderDate: today(getLocalTimeZone()).toString(),
+    orderDate: companyToday,
     status: "Draft" as PurchaseOrderStatus,
     purchaseOrderType: "Purchase" as const
   };

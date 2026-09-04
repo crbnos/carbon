@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  changeNoticeBroadcastStages,
+  changeNoticeNotifyStages,
   changeNoticeStatusValidator,
   updateChangeNoticeStatus
 } from "~/modules/items";
@@ -76,9 +76,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Broadcast to the company team only on the stages that broadcast on entry
-  // (Start / Implementation / Done). Best-effort; never blocks the redirect.
-  if (changeNoticeBroadcastStages.includes(toStatus)) {
+  // Notify the CO assignee + action-task assignees only on the stages that
+  // notify on entry (Start / Implementation / Done). Best-effort; never blocks
+  // the redirect.
+  if (changeNoticeNotifyStages.includes(toStatus)) {
     await notifyChangeNoticeTransition({
       client,
       event: changeNoticeStageEvent[toStatus],

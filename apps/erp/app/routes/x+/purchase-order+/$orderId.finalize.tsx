@@ -3,8 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
@@ -12,7 +14,7 @@ import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   finalizePurchaseOrder,
@@ -45,10 +47,11 @@ export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "purchasing",
+      role: "employee"
+    });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -120,6 +123,22 @@ export async function action(args: ActionFunctionArgs) {
       )
     );
   }
+
+  // Emitted here, not at the end of the route: the order is finalized as of
+  // this line, and five things below can redirect out first — a failed PDF
+  // upload, a failed document row, any PDF throw, the form validation (which
+  // runs after this), and a failed email. Every one of them leaves a finalized
+  // order behind, so anything further down under-counts.
+  trackWorkEvent(
+    "purchase_order_finalized",
+    {
+      companyId,
+      userId,
+      purchaseOrderId: orderId,
+      stage: approvalRequired ? "gated" : "committed"
+    },
+    { discriminator: approvalRequired ? "gated" : "committed" }
+  );
 
   // If approval is required, create the request and return early
   // PDF generation, email sending, and price updates happen after approval
@@ -219,7 +238,7 @@ export async function action(args: ActionFunctionArgs) {
 
     file = await pdf.arrayBuffer();
     fileName = stripSpecialCharacters(
-      `${purchaseOrder.data.purchaseOrderId} - ${new Date()
+      `${getPurchaseOrderDisplayId(purchaseOrder.data)} - ${new Date()
         .toISOString()
         .slice(0, -5)}.pdf`
     );
@@ -316,9 +335,19 @@ export async function action(args: ActionFunctionArgs) {
         if (!paymentTerms.data) throw new Error("Failed to get payment terms");
         if (!supplier.data.contact.email) break;
 
+        // Same decimals the PDF of this order uses.
+        const currencyRow = purchaseOrder.data.currencyCode
+          ? await getCurrencyByCode(
+              serviceRole,
+              companyGroupId,
+              purchaseOrder.data.currencyCode
+            )
+          : null;
+
         const emailTemplate = PurchaseOrderEmail({
           // @ts-expect-error TS2739 - TODO: fix type
           company: company.data,
+          currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
           locale: locales?.[0] ?? "en-US",
           purchaseOrder: purchaseOrder.data,
           purchaseOrderLines: purchaseOrderLines.data ?? [],
@@ -401,7 +430,7 @@ export async function action(args: ActionFunctionArgs) {
           to: [buyer.data.email, supplier.data.contact.email],
           cc: ccSelections?.length ? ccSelections : undefined,
           from: buyer.data.email,
-          subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+          subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
           html,
           text,
           attachments: attachments.length ? attachments : undefined,

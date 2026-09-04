@@ -1,5 +1,5 @@
 import type React from "react";
-import { forwardRef } from "react";
+import { forwardRef, useRef } from "react";
 import * as ReactAria from "react-aria-components";
 import type { InputProps } from "./Input";
 import { Input } from "./Input";
@@ -7,9 +7,50 @@ import { cn } from "./utils/cn";
 
 export type NumberFieldProps = ReactAria.NumberFieldProps;
 
-const NumberField = ({ className, ...props }: ReactAria.NumberFieldProps) => {
+/** Shallow compare — exact here, since every option value is a primitive. */
+export function areNumberFormatOptionsEqual(
+  a: Intl.NumberFormatOptions | undefined,
+  b: Intl.NumberFormatOptions | undefined
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+
+  const aKeys = Object.keys(a) as (keyof Intl.NumberFormatOptions)[];
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+
+  return aKeys.every(
+    (key) =>
+      Object.prototype.hasOwnProperty.call(b, key) && Object.is(a[key], b[key])
+  );
+}
+
+/**
+ * react-aria compares `formatOptions` by reference and, on a change, rewrites the
+ * input text with the last committed value. An inline literal at the call site is a
+ * new reference every render, so a parent re-render mid-typing discards what the
+ * operator has typed — decimals never survive.
+ */
+function useStableFormatOptions(formatOptions?: Intl.NumberFormatOptions) {
+  const ref = useRef(formatOptions);
+  if (!areNumberFormatOptionsEqual(ref.current, formatOptions)) {
+    ref.current = formatOptions;
+  }
+  return ref.current;
+}
+
+const NumberField = ({
+  className,
+  formatOptions,
+  ...props
+}: ReactAria.NumberFieldProps) => {
+  const stableFormatOptions = useStableFormatOptions(formatOptions);
   return (
-    <ReactAria.NumberField className={cn("w-full", className)} {...props} />
+    <ReactAria.NumberField
+      className={cn("w-full", className)}
+      {...props}
+      formatOptions={stableFormatOptions}
+    />
   );
 };
 

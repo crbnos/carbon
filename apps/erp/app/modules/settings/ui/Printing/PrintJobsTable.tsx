@@ -12,7 +12,6 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
-import { formatDateTime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -29,7 +28,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { Table } from "~/components";
+import { DateTime, Table } from "~/components";
 
 type PrintJobsTableProps = {
   jobs: PrintJob[];
@@ -98,7 +97,7 @@ const ExpandedRowContent = memo(({ job }: { job: PrintJob }) => {
         <div>
           <span className="text-muted-foreground">Completed At</span>
           <div className="font-mono text-xs">
-            {job.completedAt ? formatDateTime(job.completedAt) : "—"}
+            <DateTime value={job.completedAt} variant="absolute" fallback="—" />
           </div>
         </div>
         <div>
@@ -108,13 +107,13 @@ const ExpandedRowContent = memo(({ job }: { job: PrintJob }) => {
         <div>
           <span className="text-muted-foreground">Created At</span>
           <div className="font-mono text-xs">
-            {formatDateTime(job.createdAt)}
+            <DateTime value={job.createdAt} variant="absolute" />
           </div>
         </div>
         <div>
           <span className="text-muted-foreground">Updated At</span>
           <div className="font-mono text-xs">
-            {job.updatedAt ? formatDateTime(job.updatedAt) : "—"}
+            <DateTime value={job.updatedAt} variant="absolute" fallback="—" />
           </div>
         </div>
         <div>
@@ -361,7 +360,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
         header: t`When`,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
-            {formatDateTime(row.original.createdAt)}
+            <DateTime value={row.original.createdAt} variant="absolute" />
           </span>
         ),
         meta: {

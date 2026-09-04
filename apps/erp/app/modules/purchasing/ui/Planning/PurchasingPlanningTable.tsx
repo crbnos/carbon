@@ -40,6 +40,7 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import {
+  exportOnlyColumn,
   ItemThumbnail,
   MethodItemTypeIcon,
   SupplierAvatar,
@@ -158,6 +159,31 @@ const PlanningTable = memo(
         return initial;
       }
     );
+
+    // Re-seed default suppliers whenever the planning rows change. The useState
+    // initializer above only runs once at mount, so an item that gained a
+    // supplier after the page loaded — data revalidated after adding a supplier
+    // part, running MRP, filtering, or an initially-empty list — would never get
+    // its default picked up, and the order drawer would reject it as having "no
+    // supplier". Merge only: an item the user explicitly chose a supplier for is
+    // left untouched.
+    useEffect(() => {
+      setSuppliersMap((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const item of data) {
+          if (next[item.id]) continue;
+          const seed =
+            item.preferredSupplierId ??
+            (item.suppliers as SupplierPart[] | null)?.[0]?.supplierId;
+          if (seed) {
+            next[item.id] = seed;
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, [data]);
 
     const isDisabled =
       !permissions.can("create", "production") ||
@@ -382,6 +408,11 @@ const PlanningTable = memo(
             icon: <LuBookMarked />
           }
         },
+        exportOnlyColumn<PurchasingPlanningItem>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.name ?? null
+        }),
         {
           accessorKey: "unitOfMeasureCode",
           header: "",
@@ -647,7 +678,7 @@ const PlanningTable = memo(
             </div>
           }
           renderActions={renderActions}
-          title={t`Planning`}
+          title={t`Material Planning`}
           table="planning"
           withSavedView
           withSelectableRows

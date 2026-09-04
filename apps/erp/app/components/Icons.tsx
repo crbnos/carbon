@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
+  LuArrowDownToDot,
   LuArrowLeftRight,
   LuAtom,
   LuBanknote,
@@ -33,7 +34,6 @@ import {
   LuClipboardCheck,
   LuClock,
   LuClock3,
-  LuCog,
   LuContainer,
   LuCreditCard,
   LuExternalLink,
@@ -48,9 +48,11 @@ import {
   LuLandmark,
   LuList,
   LuListChecks,
+  LuLocateFixed,
   LuMapPin,
   LuPizza,
   LuQrCode,
+  LuRedoDot,
   LuRotateCcw,
   LuShoppingCart,
   LuSquare,
@@ -62,8 +64,7 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers,
-  LuWrench
+  LuUsers
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
@@ -599,6 +600,8 @@ export const JournalEntrySourceTypeIcon = ({
   switch (sourceType) {
     case "Manual":
       return <LuBookOpen className={className} />;
+    case "Opening Balance":
+      return <LuArrowDownToDot className={className} />;
     case "Purchase Receipt":
       return <LuHandCoins className={className} />;
     case "Purchase Invoice":
@@ -677,9 +680,11 @@ export const DimensionEntityTypeIcon = ({
     case "CostCenter":
       return <LuCircleDollarSign className={className} />;
     case "WorkCenter":
-      return <LuWrench className={className} />;
+      return <LuLocateFixed className={className} />;
     case "Process":
-      return <LuCog className={className} />;
+      return <LuRedoDot className={className} />;
+    case "ScrapReason":
+      return <LuTriangleAlert className={className} />;
   }
 };
 

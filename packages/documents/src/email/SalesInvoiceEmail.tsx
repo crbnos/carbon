@@ -18,7 +18,7 @@ import {
   getLineTotal,
   getTotal
 } from "../utils/sales-invoice";
-import { getCurrencyFormatter } from "../utils/shared";
+import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -32,6 +32,8 @@ interface SalesInvoiceEmailProps extends Email {
   salesInvoiceLocations: Database["public"]["Views"]["salesInvoiceLocations"]["Row"];
   salesInvoiceShipment: Database["public"]["Tables"]["salesInvoiceShipment"]["Row"];
   paymentTerms: { id: string; name: string }[];
+  /** currency.decimalPlaces for the document currency; null falls back to 2 */
+  currencyDecimals?: number | null;
 }
 
 const SalesInvoiceEmail = ({
@@ -43,6 +45,7 @@ const SalesInvoiceEmail = ({
   salesInvoiceShipment,
   recipient,
   sender,
+  currencyDecimals,
   paymentTerms
 }: SalesInvoiceEmailProps) => {
   const {
@@ -56,7 +59,15 @@ const SalesInvoiceEmail = ({
   } = salesInvoiceLocations;
 
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
-  const formatter = getCurrencyFormatter(currencyCode ?? "USD", locale);
+  const formatter = getMoneyFormatter(locale, currencyDecimals, currencyCode);
+  // A unit price is a RATE, not a settlement amount: the currency's
+  // decimals are its FLOOR, not its ceiling, so a sub-cent price does not
+  // print as 0.00. The PDFs already split these two kinds.
+  const rateFormatter = getRateFormatter(
+    locale,
+    currencyDecimals,
+    currencyCode
+  );
   const preview = (
     <Preview>{`${salesInvoice.invoiceId} from ${company.name}`}</Preview>
   );
@@ -250,7 +261,7 @@ const SalesInvoiceEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.invoiceLineType === "Comment"
                       ? "-"
-                      : formatter.format(line.convertedUnitPrice ?? 0)}
+                      : rateFormatter.format(line.convertedUnitPrice ?? 0)}
                   </Text>
                 </Column>
                 <Column className="text-right pr-5 align-top w-[100px]">

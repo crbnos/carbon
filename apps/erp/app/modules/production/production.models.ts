@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { textToTiptap } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -79,6 +80,57 @@ export function isJobLocked(status: string | null | undefined): boolean {
     status as (typeof JOB_LOCKED_STATUSES)[number]
   );
 }
+
+export const DATE_COLUMN_SENTINELS = [
+  "unscheduled",
+  "next-week",
+  "next-month"
+] as const;
+
+export type DateColumnSentinel = (typeof DATE_COLUMN_SENTINELS)[number];
+
+const DATE_COLUMN_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function isDateColumnId(value: string): boolean {
+  if (!DATE_COLUMN_PATTERN.test(value)) return false;
+
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isDateColumnSentinel(
+  value: string
+): value is DateColumnSentinel {
+  return DATE_COLUMN_SENTINELS.includes(value as DateColumnSentinel);
+}
+
+export function isScheduleDateColumnId(value: string): boolean {
+  return isDateColumnSentinel(value) || isDateColumnId(value);
+}
+
+/**
+ * Convert a validated Dates board column to the persisted due date. The
+ * sentinel columns intentionally all persist as null; a value outside the
+ * canonical board vocabulary returns undefined for callers that need to
+ * distinguish invalid input from a valid null due date.
+ */
+export function getDueDateForColumn(
+  columnId: string
+): string | null | undefined {
+  if (isDateColumnId(columnId)) return columnId;
+  if (isDateColumnSentinel(columnId)) return null;
+  return undefined;
+}
+
+export const schedulePriorityValidator = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim().length === 0 ? undefined : value,
+  zfd.numeric(z.number().refine(Number.isFinite, "Priority must be finite"))
+);
 
 /**
  * A Queued assemblyPlanJob older than this never got picked up by the worker
@@ -815,6 +867,7 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
 export const getJobMethodValidator = z.object({
   sourceId: z.string().min(1, { message: "Source ID is required" }),
   targetId: z.string().min(1, { message: "Please select a source method" }),
+  versionId: zfd.text(z.string().optional()),
   billOfMaterial: zfd.checkbox(),
   billOfProcess: zfd.checkbox(),
   parameters: zfd.checkbox(),
@@ -830,7 +883,7 @@ export const getJobMethodValidator = z.object({
 
 export const procedureValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   version: zfd.numeric(z.number().min(0)),
   processId: zfd.text(z.string().optional()),
   content: zfd.text(z.string().optional()),
@@ -841,7 +894,7 @@ export const procedureStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     procedureId: z.string().min(1, { message: "Procedure is required" }),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     description: zfd.text(z.string().optional()),
     type: z.enum(procedureStepType, {
       errorMap: () => ({ message: "Type is required" })
@@ -967,23 +1020,27 @@ export const productionQuantityValidator = z
 export const scheduleOperationUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
   columnId: z.string().min(1, { message: "Column is required" }),
-  priority: zfd.numeric(z.number().min(0).optional())
+  priority: schedulePriorityValidator
 });
 
 export const scheduleJobUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
-  columnId: z.string().min(1, { message: "Column is required" }),
-  priority: zfd.numeric(z.number().min(0).optional())
+  locationId: z.string().trim().min(1, { message: "Location is required" }),
+  columnId: z
+    .string()
+    .min(1, { message: "Column is required" })
+    .refine(isScheduleDateColumnId, { message: "Invalid date column" }),
+  priority: schedulePriorityValidator
 });
 
 export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const failureModeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const maintenanceDispatchValidator = z.object({
@@ -1051,7 +1108,7 @@ export const maintenanceDispatchWorkCenterValidator = z.object({
 
 export const maintenanceScheduleValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   description: zfd.text(z.string().optional()),
   workCenterId: z.string().min(1, { message: "Work center is required" }),
   frequency: z.enum(maintenanceFrequency),
@@ -1196,7 +1253,7 @@ const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
 
 export const assemblyInstructionValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   modelUploadId: z.string().min(1, { message: "Model is required" }),
   itemId: zfd.text(z.string().optional())
 });
@@ -1263,6 +1320,11 @@ export const assemblyInstructionFromItemValidator = z.object({
 
 export const assemblyInstructionStatusValidator = z.object({
   status: z.enum(assemblyInstructionStatuses)
+});
+
+// Spin a new editable Draft version as a perfect copy of an existing instruction.
+export const assemblyInstructionVersionValidator = z.object({
+  copyFromId: z.string().min(1, { message: "Source instruction is required" })
 });
 
 /**
@@ -1420,10 +1482,136 @@ export const assemblyStepToolValidator = z.object({
 export const assemblyUnitValidator = z.object({
   id: zfd.text(z.string().optional()),
   modelUploadId: z.string().min(1),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   componentNodeIds: jsonField(z.array(z.string()).min(1)),
   itemId: zfd.text(z.string().optional())
 });
+
+export const peopleAssignmentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  date: z.string().min(1, { message: "Date is required" }), // YYYY-MM-DD
+  shiftId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional()),
+  // set when assigning a partial-day remainder; absent = whole shift
+  hours: zfd.numeric(z.number().gt(0).max(24).optional())
+});
+
+export const peopleAbsenceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  date: z.string().min(1, { message: "Date is required" }),
+  shiftId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
+export const copyPeopleBoardValidator = z.object({
+  locationId: z.string().min(1),
+  fromDate: z.string().min(1),
+  toDate: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleWeekAssignValidator = z.object({
+  locationId: z.string().min(1),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1), // Monday, YYYY-MM-DD
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleWeekUnassignValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleWeekMoveValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  fromWorkCenterId: z.string().min(1),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const copyPeopleWeekValidator = z.object({
+  locationId: z.string().min(1),
+  fromWeekStart: z.string().min(1), // Monday, YYYY-MM-DD
+  toWeekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleAbsenceRangeValidator = z
+  .object({
+    employeeId: z.string().min(1, { message: "Employee is required" }),
+    fromDate: z.string().min(1, { message: "Start date is required" }),
+    toDate: z.string().min(1, { message: "End date is required" }),
+    shiftId: zfd.text(z.string().optional()),
+    note: zfd.text(z.string().optional())
+  })
+  .refine((value) => value.toDate >= value.fromDate, {
+    message: "End date must be on or after the start date",
+    path: ["toDate"]
+  })
+  .refine(
+    (value) =>
+      new Date(`${value.toDate}T00:00:00Z`).getTime() -
+        new Date(`${value.fromDate}T00:00:00Z`).getTime() <=
+      62 * 24 * 3_600_000,
+    { message: "Range is limited to 62 days", path: ["toDate"] }
+  );
+
+export const peopleMoveValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" })
+});
+
+// One atomic edit of a person's whole day: the given rows become the day's
+// assignments (update/insert/delete reconciliation in one transaction)
+export const peopleDayValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  locationId: z.string().min(1),
+  date: z.string().min(1),
+  shiftId: zfd.text(z.string().optional()),
+  // day-scoped note: written to every row of the person's day
+  note: zfd.text(z.string().optional()),
+  // day-scoped overtime: a longer DAY, not extra hours per station
+  overtimeHours: zfd.numeric(z.number().min(0).max(16)),
+  rows: jsonField(
+    z
+      .array(
+        z.object({
+          workCenterId: z.string().min(1),
+          hours: z.number().gt(0).max(24).nullable()
+        })
+      )
+      .max(20)
+  )
+});
+
+// Absent hours = back to the whole shift (stored as null)
+export const peopleHoursValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  hours: zfd.numeric(z.number().gt(0).max(24).optional())
+});
+
+export const peopleOvertimeBulkValidator = z
+  .object({
+    locationId: z.string().min(1),
+    date: z.string().min(1),
+    /** inclusive end of the range; omitted = the single `date` only */
+    toDate: zfd.text(z.string().optional()),
+    hours: zfd.numeric(z.number().min(0).max(16)),
+    departmentId: zfd.text(z.string().optional()),
+    shiftId: zfd.text(z.string().optional())
+  })
+  .refine((value) => !value.toDate || value.toDate >= value.date, {
+    message: "End date must be on or after the start date",
+    path: ["toDate"]
+  });
 
 export type Motion = z.infer<typeof motionSchema>;
 export type CameraPose = z.infer<typeof cameraSchema>;
@@ -1806,3 +1994,31 @@ export const inspectionSaveAnchorsPayloadValidator = z
     delete: z.array(z.string().min(1)).default([])
   })
   .strict();
+
+/**
+ * Weekday flag columns on `shift`, Monday-first — the order people week rows
+ * are dealt out in.
+ */
+export const WEEKDAYS_MONDAY_FIRST = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday"
+] as const;
+
+/**
+ * The same weekday names Sunday-first — indexable directly by
+ * `getDayOfWeek(date, "en-US")` (0 = Sunday).
+ */
+export const WEEKDAYS_SUNDAY_FIRST = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+] as const;

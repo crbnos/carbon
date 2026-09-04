@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="alTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="1" stop-color="#a9b1b7"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clipEnd">
+      <path d="M786 440 L914 349 L914 579 L786 670 Z"/>
+    </clipPath>
+    <clipPath id="clipFront">
+      <path d="M110 440 L786 440 L786 670 L110 670 Z"/>
+    </clipPath>
+    <clipPath id="clipTop">
+      <path d="M110 440 L238 349 L914 349 L786 440 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="500" cy="672" rx="470" ry="103" fill="url(#shadow)"/>
+
+  <!-- band saw cut end face -->
+  <path d="M786 440 L914 349 L914 579 L786 670 Z" fill="url(#alFace)"/>
+  <path d="M786 440 L914 349 L914 579 L786 670 Z" fill="#1e2124" opacity="0.16"/>
+  <g clip-path="url(#clipEnd)" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5">
+    <path d="M760 700 Q900 520 1000 380"/>
+    <path d="M748 686 Q892 508 992 366"/>
+    <path d="M736 672 Q884 496 984 352"/>
+    <path d="M724 658 Q876 484 976 338"/>
+    <path d="M772 714 Q908 532 1008 394"/>
+  </g>
+  <g clip-path="url(#clipEnd)" fill="none" stroke="#3f4448" stroke-opacity="0.3" stroke-width="2">
+    <path d="M754 693 Q896 514 996 373"/>
+    <path d="M742 679 Q888 502 988 359"/>
+    <path d="M730 665 Q880 490 980 345"/>
+    <path d="M766 707 Q904 526 1004 387"/>
+  </g>
+  <!-- shallow ink-free stamped depression on the end face -->
+  <g clip-path="url(#clipEnd)">
+    <ellipse cx="852" cy="500" rx="46" ry="34" transform="rotate(-35 852 500)" fill="#5c6368" opacity="0.42"/>
+    <ellipse cx="850" cy="497" rx="38" ry="27" transform="rotate(-35 850 497)" fill="#8b9298" opacity="0.5"/>
+    <ellipse cx="854" cy="505" rx="44" ry="32" transform="rotate(-35 854 505)" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+  </g>
+
+  <!-- top broad face -->
+  <path d="M110 440 L238 349 L914 349 L786 440 Z" fill="url(#alTop)"/>
+  <g clip-path="url(#clipTop)" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">
+    <path d="M132 424 L806 424 M156 407 L830 407 M180 390 L854 390 M204 373 L878 373 M222 360 L896 360"/>
+  </g>
+  <g clip-path="url(#clipTop)" fill="none" stroke="#5b6266" stroke-opacity="0.18" stroke-width="1.6">
+    <path d="M144 415 L818 415 M168 398 L842 398 M192 381 L866 381 M212 367 L886 367"/>
+  </g>
+
+  <!-- front broad face -->
+  <path d="M110 440 L786 440 L786 670 L110 670 Z" fill="url(#alFace)"/>
+  <!-- faint longitudinal extrusion striping -->
+  <g clip-path="url(#clipFront)" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="2.5">
+    <path d="M110 458 L786 458 M110 484 L786 484 M110 512 L786 512 M110 542 L786 542
+             M110 574 L786 574 M110 606 L786 606 M110 638 L786 638"/>
+  </g>
+  <g clip-path="url(#clipFront)" fill="none" stroke="#5b6266" stroke-opacity="0.2" stroke-width="1.8">
+    <path d="M110 466 L786 466 M110 494 L786 494 M110 524 L786 524 M110 554 L786 554
+             M110 586 L786 586 M110 618 L786 618 M110 650 L786 650"/>
+  </g>
+  <g clip-path="url(#clipFront)" fill="none" stroke="#767d82" stroke-opacity="0.22" stroke-width="4">
+    <path d="M180 500 L520 500 M300 560 L740 560 M140 620 L470 620"/>
+  </g>
+
+  <!-- softly broken corner arrises -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3">
+    <path d="M110 449 L786 449"/>
+    <path d="M118 441 L246 350"/>
+  </g>
+  <g fill="none" stroke="#eef2f4" stroke-opacity="0.5" stroke-width="4">
+    <path d="M116 434 L790 434 L916 344"/>
+  </g>
+  <path d="M778 446 L778 664" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+
+  <!-- light burr along the sawn bottom edge -->
+  <path d="M786 670 L700 670 L640 673 L560 669 L470 674 L380 669 L300 673 L200 669 L110 672"
+        fill="none" stroke="#8c9399" stroke-width="5" stroke-opacity="0.75"/>
+  <path d="M786 663 Q740 676 690 664 Q640 678 588 665 Q536 677 486 666"
+        fill="none" stroke="#c8cfd4" stroke-width="3" stroke-opacity="0.45"/>
+
+  <!-- outer silhouette -->
+  <path d="M110 440 L238 349 L914 349 L914 579 L786 670 L110 670 Z"
+        fill="none" stroke="#565c61" stroke-width="3"/>
+  <path d="M786 440 L914 349 M786 440 L786 670 M110 440 L786 440"
+        fill="none" stroke="#565c61" stroke-width="2.5"/>
+</svg>

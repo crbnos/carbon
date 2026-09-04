@@ -4,11 +4,12 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { sql } from "npm:kysely@0.27.6";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 import { classifyImportRow } from "./classify-import-row.ts";
+import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
 
 const pool = getConnectionPool(1);
@@ -30,6 +31,13 @@ const importCsvValidator = z.object({
     "tool",
     "workCenter",
     "process",
+    "storageUnit",
+    "materialSubstance",
+    "materialForm",
+    "materialFinish",
+    "materialGrade",
+    "materialType",
+    "materialDimension",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string()),
@@ -106,7 +114,8 @@ type CsvEntityType =
   | "item"
   | "contact"
   | "workCenter"
-  | "process";
+  | "process"
+  | "storageUnit";
 
 /**
  * Look up the ids that still exist in the entity table. Done as a typed
@@ -158,6 +167,13 @@ async function fetchLiveEntityIds(
     case "process":
       rows = await db
         .selectFrom("process")
+        .select(["id"])
+        .where("id", "in", ids)
+        .execute();
+      break;
+    case "storageUnit":
+      rows = await db
+        .selectFrom("storageUnit")
         .select(["id"])
         .where("id", "in", ids)
         .execute();
@@ -296,6 +312,108 @@ async function upsertCsvMappings(
         }))
     )
     .execute();
+}
+
+/**
+ * Key for a scoped material-taxonomy lookup: the parent scope id (substance
+ * for finish/grade, form for dimensions) plus the case-insensitively
+ * normalized name.
+ */
+function materialTaxonomyKey(scopeId: string, name: string): string {
+  return `${scopeId.trim()}:${name.trim().toLowerCase()}`;
+}
+
+/**
+ * Resolve raw Finish / Grade / Dimensions CSV text to material-taxonomy ids.
+ * The taxonomy tables are scoped — materialFinish/materialGrade by substance,
+ * materialDimension by form — so names are matched within the row's scope
+ * against both global (companyId IS NULL) and company rows; a company row wins
+ * a name clash. Unmatched names create a company-scoped row, mirroring the
+ * creatable comboboxes on the material form. Returns ids keyed by
+ * materialTaxonomyKey.
+ */
+async function resolveMaterialTaxonomyIds(
+  trx: typeof db,
+  taxonomyTable: "materialFinish" | "materialGrade" | "materialDimension",
+  scopeColumn: "materialSubstanceId" | "materialFormId",
+  pairs: Array<{ scopeId: string; name: string }>,
+  cId: string
+): Promise<Map<string, string>> {
+  const needed = new Map<string, { scopeId: string; name: string }>();
+  for (const pair of pairs) {
+    const scopeId = pair.scopeId?.trim();
+    const name = pair.name?.trim();
+    if (!scopeId || !name) continue;
+    const key = materialTaxonomyKey(scopeId, name);
+    if (!needed.has(key)) {
+      needed.set(key, { scopeId, name });
+    }
+  }
+
+  const idByKey = new Map<string, string>();
+  if (needed.size === 0) return idByKey;
+
+  const scopeIds = [...new Set([...needed.values()].map((p) => p.scopeId))];
+
+  const selectMatches = async () => {
+    const rows = await trx
+      .selectFrom(taxonomyTable)
+      .select(["id", "name", "companyId", scopeColumn] as never)
+      .where(trx.dynamic.ref<string>(scopeColumn), "in", scopeIds)
+      .where(sql<boolean>`("companyId" = ${cId} OR "companyId" IS NULL)`)
+      .$castTo<Record<string, string | null>>()
+      .execute();
+    return rows.map((row) => ({
+      id: row.id as string,
+      name: row.name as string,
+      companyId: row.companyId ?? null,
+      scopeId: row[scopeColumn] as string,
+    }));
+  };
+
+  const collect = (rows: Awaited<ReturnType<typeof selectMatches>>) => {
+    for (const row of rows) {
+      const key = materialTaxonomyKey(row.scopeId, row.name);
+      // Company-scoped rows win over global (NULL companyId) rows.
+      if (!idByKey.has(key) || row.companyId === cId) {
+        idByKey.set(key, row.id);
+      }
+    }
+  };
+
+  collect(await selectMatches());
+
+  const missing = [...needed.values()].filter(
+    (pair) => !idByKey.has(materialTaxonomyKey(pair.scopeId, pair.name))
+  );
+
+  if (missing.length > 0) {
+    await trx
+      .insertInto(taxonomyTable)
+      .values(
+        missing.map((pair) => ({
+          name: pair.name,
+          companyId: cId,
+          [scopeColumn]: pair.scopeId,
+        })) as never
+      )
+      // A concurrent import may have created the same name first; the
+      // re-select below picks up whichever row won. The unique constraint is
+      // exact-match, so two concurrent imports inserting different CASINGS of
+      // the same new name can both land, leaving a case-variant duplicate —
+      // the same duplicate the app's creatable comboboxes permit. Closing
+      // that window needs a case-insensitive unique index on
+      // (scope, lower(name), companyId), which requires a migration plus a
+      // dedupe of existing case-variant rows.
+      .onConflict((oc) =>
+        oc.columns([scopeColumn, "name", "companyId"] as never).doNothing()
+      )
+      .execute();
+
+    collect(await selectMatches());
+  }
+
+  return idByKey;
 }
 
 /**
@@ -821,9 +939,8 @@ async function upsertTaxIdentifiers(
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const payload = await req.json();
 
   try {
@@ -1408,7 +1525,98 @@ serve(async (req: Request) => {
             finishId: z.string().optional(),
             dimensionId: z.string().optional(),
             gradeId: z.string().optional(),
+            // Raw text from the mapping UI; resolved to the *Id columns below.
+            finish: z.string().optional(),
+            grade: z.string().optional(),
+            dimensions: z.string().optional(),
           });
+
+          // The mapping UI sends Finish / Grade / Dimensions as raw CSV text —
+          // materialFinish/materialGrade are scoped by substance and
+          // materialDimension by form, so a flat enum mapping can't target
+          // them. Resolve the text to taxonomy ids up front (creating
+          // company-scoped rows for unmatched names). Rows without a resolved
+          // substance/form keep the attribute unset, since the taxonomy
+          // tables require the scope.
+          let finishIdByKey = new Map<string, string>();
+          let gradeIdByKey = new Map<string, string>();
+          let dimensionIdByKey = new Map<string, string>();
+
+          if (table === "material") {
+            const finishPairs: Array<{ scopeId: string; name: string }> = [];
+            const gradePairs: Array<{ scopeId: string; name: string }> = [];
+            const dimensionPairs: Array<{ scopeId: string; name: string }> =
+              [];
+
+            for (const record of mappedRecords) {
+              const substanceId = record.materialSubstanceId;
+              const formId = record.materialFormId;
+              // An explicit *Id (possible via direct invocation) wins over the
+              // raw text, so don't resolve — and possibly create — a taxonomy
+              // row that nothing would reference.
+              if (substanceId && record.finish && !record.finishId) {
+                finishPairs.push({ scopeId: substanceId, name: record.finish });
+              }
+              if (substanceId && record.grade && !record.gradeId) {
+                gradePairs.push({ scopeId: substanceId, name: record.grade });
+              }
+              if (formId && record.dimensions && !record.dimensionId) {
+                dimensionPairs.push({ scopeId: formId, name: record.dimensions });
+              }
+            }
+
+            finishIdByKey = await resolveMaterialTaxonomyIds(
+              trx,
+              "materialFinish",
+              "materialSubstanceId",
+              finishPairs,
+              companyId
+            );
+            gradeIdByKey = await resolveMaterialTaxonomyIds(
+              trx,
+              "materialGrade",
+              "materialSubstanceId",
+              gradePairs,
+              companyId
+            );
+            dimensionIdByKey = await resolveMaterialTaxonomyIds(
+              trx,
+              "materialDimension",
+              "materialFormId",
+              dimensionPairs,
+              companyId
+            );
+          }
+
+          const resolveFinishId = (data: {
+            materialSubstanceId?: string;
+            finish?: string;
+          }) =>
+            data.materialSubstanceId && data.finish
+              ? finishIdByKey.get(
+                  materialTaxonomyKey(data.materialSubstanceId, data.finish)
+                )
+              : undefined;
+
+          const resolveGradeId = (data: {
+            materialSubstanceId?: string;
+            grade?: string;
+          }) =>
+            data.materialSubstanceId && data.grade
+              ? gradeIdByKey.get(
+                  materialTaxonomyKey(data.materialSubstanceId, data.grade)
+                )
+              : undefined;
+
+          const resolveDimensionId = (data: {
+            materialFormId?: string;
+            dimensions?: string;
+          }) =>
+            data.materialFormId && data.dimensions
+              ? dimensionIdByKey.get(
+                  materialTaxonomyKey(data.materialFormId, data.dimensions)
+                )
+              : undefined;
 
           // Rows on the INSERT path whose Unique ID already exists in this
           // company's catalog (e.g. a re-import after the item was deleted,
@@ -1533,9 +1741,18 @@ serve(async (req: Request) => {
                       materialSubstanceId:
                         material.data.materialSubstanceId || undefined,
                       materialFormId: material.data.materialFormId || undefined,
-                      dimensionId: material.data.dimensionId || undefined,
-                      gradeId: material.data.gradeId || undefined,
-                      finishId: material.data.finishId || undefined,
+                      dimensionId:
+                        material.data.dimensionId ||
+                        resolveDimensionId(material.data) ||
+                        undefined,
+                      gradeId:
+                        material.data.gradeId ||
+                        resolveGradeId(material.data) ||
+                        undefined,
+                      finishId:
+                        material.data.finishId ||
+                        resolveFinishId(material.data) ||
+                        undefined,
                       companyId,
                       updatedAt: new Date().toISOString(),
                       updatedBy: userId,
@@ -1604,6 +1821,13 @@ serve(async (req: Request) => {
                   materialPartialInserts[material.data.readableId!] = {
                     ...material.data,
                     id: material.data.readableId,
+                    dimensionId:
+                      material.data.dimensionId ||
+                      resolveDimensionId(material.data),
+                    gradeId:
+                      material.data.gradeId || resolveGradeId(material.data),
+                    finishId:
+                      material.data.finishId || resolveFinishId(material.data),
                     companyId,
                     createdAt: new Date().toISOString(),
                     createdBy: userId,
@@ -1800,6 +2024,7 @@ serve(async (req: Request) => {
                   .updateTable("material")
                   .set(update.data)
                   .where("id", "=", update.id)
+                  .where("companyId", "=", companyId)
                   .execute();
               }
             }
@@ -2290,10 +2515,386 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "storageUnit": {
+        const externalIdMap = await getCsvExternalIdMap(
+          "storageUnit",
+          companyId
+        );
+        // Entities that already carry a csv mapping. externalIntegrationMapping
+        // is unique on (entityType, entityId, integration, companyId) — ONE
+        // external id per entity — so a name-matched update must NOT attach a
+        // second external id to an entity that already has one (it would violate
+        // that index and roll back the whole import).
+        const alreadyMappedEntityIds = new Set(externalIdMap.values());
+
+        // Stored location of each already-mapped entity. A csv-id match that
+        // resolves to a unit in a DIFFERENT location than the row states is a
+        // conflict, not a move — used below to reject it instead of silently
+        // renaming the wrong unit or crashing on storageUnit_name_locationId_key.
+        const mappedEntityIds = Array.from(alreadyMappedEntityIds);
+        const entityLocation = new Map<string, string>(
+          (mappedEntityIds.length > 0
+            ? await db
+                .selectFrom("storageUnit")
+                .select(["id", "locationId"])
+                .where("id", "in", mappedEntityIds)
+                .execute()
+            : []
+          ).map((r) => [r.id, r.locationId])
+        );
+
+        // Storage unit names are unique per location
+        // (storageUnit_name_locationId_key), so the natural key for both in-file
+        // dedup and match-existing-to-update is (locationId + lowercased name).
+        const naturalKey = (locationId: string, name: string) =>
+          `${locationId}::${name.trim().toLowerCase()}`;
+
+        // Preload existing units for the referenced locations so a name that
+        // already exists updates instead of tripping the unique constraint, and
+        // so parent references can resolve against pre-existing units.
+        const referencedLocationIds = Array.from(
+          new Set(
+            mappedRecords
+              .map((r) => r.locationId)
+              .filter(
+                (l): l is string => typeof l === "string" && l.trim() !== ""
+              )
+          )
+        );
+        const existingUnits =
+          referencedLocationIds.length > 0
+            ? await db
+                .selectFrom("storageUnit")
+                .select(["id", "name", "locationId"])
+                .where("companyId", "=", companyId)
+                .where("locationId", "in", referencedLocationIds)
+                .execute()
+            : [];
+        // (locationId + lowercased name) -> storageUnit id. Grows as we insert,
+        // so a child whose parent is defined later in the same file resolves.
+        const naturalKeyMap = new Map<string, string>();
+        for (const u of existingUnits) {
+          naturalKeyMap.set(naturalKey(u.locationId, u.name), u.id);
+        }
+
+        // Preload existing storage types (lowercased name -> id). Unmatched
+        // names create a company-scoped storageType, mirroring the creatable
+        // StorageTypes combobox on the storage-unit form.
+        const existingTypes = await db
+          .selectFrom("storageType")
+          .select(["id", "name"])
+          .where("companyId", "=", companyId)
+          .execute();
+        const storageTypeByName = new Map<string, string>();
+        for (const st of existingTypes) {
+          storageTypeByName.set(st.name.trim().toLowerCase(), st.id);
+        }
+
+        const parseActive = (value: string | undefined): boolean => {
+          const v = (value ?? "").trim().toLowerCase();
+          // Default active; only explicit falsey values deactivate.
+          return !["false", "no", "0", "inactive", "n"].includes(v);
+        };
+        const parseTypeNames = (value: string | undefined): string[] =>
+          (value ?? "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s !== "");
+
+        const seenNaturalKeys = new Set<string>();
+        const seenCsvIds = new Set<string>();
+        // Parent links are applied in a second pass (after all inserts) so a
+        // parent defined later in the same file resolves and a bad parent
+        // reports a row error instead of rolling back the whole import.
+        const parentIntents: Array<{
+          locationId: string;
+          childKey: string;
+          parentName: string;
+          rowIndex: number;
+        }> = [];
+
+        await db.transaction().execute(async (trx) => {
+          const inserts: Database["public"]["Tables"]["storageUnit"]["Insert"][] =
+            [];
+          const csvIdsForInserts: string[] = [];
+          const updates: {
+            id: string;
+            data: Database["public"]["Tables"]["storageUnit"]["Update"];
+          }[] = [];
+          const csvIdsForNameMatchedUpdates: Array<{
+            entityId: string;
+            externalId: string;
+          }> = [];
+
+          // Resolve storage type names to ids, creating any that don't exist.
+          const resolveTypeIds = async (names: string[]): Promise<string[]> => {
+            const ids: string[] = [];
+            for (const name of names) {
+              const key = name.toLowerCase();
+              let id = storageTypeByName.get(key);
+              if (!id) {
+                const created = await trx
+                  .insertInto("storageType")
+                  .values({
+                    id: nanoid(),
+                    name,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: new Date().toISOString(),
+                  } as never)
+                  .returning(["id"])
+                  .execute();
+                id = created[0]?.id ?? undefined;
+                if (id) storageTypeByName.set(key, id);
+              }
+              if (id && !ids.includes(id)) ids.push(id);
+            }
+            return ids;
+          };
+
+          for (const [rowIndex, record] of mappedRecords.entries()) {
+            const id = record.id ?? "";
+            const name = (record.name ?? "").trim();
+            const locationId = (record.locationId ?? "").trim();
+            const parentName = (record.parentName ?? "").trim();
+
+            if (name === "" || locationId === "") {
+              summary.errors.push({
+                row: rowIndex,
+                reason:
+                  name === ""
+                    ? "Missing required Name"
+                    : "Missing required Location",
+              });
+              continue;
+            }
+            if (id && seenCsvIds.has(id)) {
+              summary.skipped.push({
+                row: rowIndex,
+                reason: `Duplicate ID "${id}" in file`,
+              });
+              continue;
+            }
+            const key = naturalKey(locationId, name);
+            if (seenNaturalKeys.has(key)) {
+              summary.skipped.push({
+                row: rowIndex,
+                reason: `Duplicate storage unit "${name}" for this location in file`,
+              });
+              continue;
+            }
+            // Resolve the row to an existing unit. A csv-id match is honored only
+            // when it is in the SAME location the row states — a storage unit's
+            // location is immutable via import. Updates never touch locationId, so
+            // a cross-location id match would otherwise silently rename the unit in
+            // its old location (ignoring the CSV Location) or crash the whole
+            // import on storageUnit_name_locationId_key.
+            const matchedByCsvId = id ? externalIdMap.get(id) : undefined;
+            const csvIdLocation =
+              matchedByCsvId !== undefined
+                ? entityLocation.get(matchedByCsvId)
+                : undefined;
+            if (
+              matchedByCsvId !== undefined &&
+              csvIdLocation !== undefined &&
+              csvIdLocation !== locationId
+            ) {
+              summary.errors.push({
+                row: rowIndex,
+                reason: `Unique ID "${id}" already belongs to a storage unit in a different location; import cannot move a storage unit between locations`,
+              });
+              continue;
+            }
+            const matchedByName =
+              matchedByCsvId === undefined ? naturalKeyMap.get(key) : undefined;
+            // An id-matched update renames the unit to `name`. If a DIFFERENT unit
+            // in this location already owns that name, the rename would violate
+            // storageUnit_name_locationId_key — report it instead of crashing.
+            if (matchedByCsvId !== undefined) {
+              const nameOwner = naturalKeyMap.get(key);
+              if (nameOwner !== undefined && nameOwner !== matchedByCsvId) {
+                summary.errors.push({
+                  row: rowIndex,
+                  reason: `A different storage unit named "${name}" already exists in this location`,
+                });
+                continue;
+              }
+            }
+            const existingEntityId = matchedByCsvId ?? matchedByName;
+
+            // Row is valid — claim its dedup slots now (after the guards, so a
+            // rejected row never blocks a later legitimate row with the same
+            // name/id from being processed).
+            seenNaturalKeys.add(key);
+            if (id) seenCsvIds.add(id);
+
+            const storageTypeIds = await resolveTypeIds(
+              parseTypeNames(record.storageTypeNames)
+            );
+            const active = parseActive(record.active);
+
+            if (parentName) {
+              parentIntents.push({
+                locationId,
+                childKey: key,
+                parentName,
+                rowIndex,
+              });
+            }
+
+            if (existingEntityId !== undefined) {
+              // Deliberately does not touch locationId (the match/natural key)
+              // to avoid the "cannot move a unit with children" interceptor.
+              updates.push({
+                id: existingEntityId,
+                data: {
+                  name,
+                  storageTypeIds,
+                  active,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                },
+              });
+              if (
+                matchedByCsvId === undefined &&
+                id &&
+                !alreadyMappedEntityIds.has(existingEntityId)
+              ) {
+                csvIdsForNameMatchedUpdates.push({
+                  entityId: existingEntityId,
+                  externalId: id,
+                });
+                // Guard against two name-matched rows in the same file both
+                // trying to first-map the same entity (they can't share a
+                // natural key, but belt-and-braces for the unique index).
+                alreadyMappedEntityIds.add(existingEntityId);
+              }
+              naturalKeyMap.set(key, existingEntityId);
+            } else {
+              const newId = nanoid();
+              inserts.push({
+                id: newId,
+                name,
+                locationId,
+                storageTypeIds,
+                active,
+                companyId,
+                createdBy: userId,
+                createdAt: new Date().toISOString(),
+              } as never);
+              csvIdsForInserts.push(id);
+              naturalKeyMap.set(key, newId);
+            }
+          }
+
+          console.log({
+            totalRecords: mappedRecords.length,
+            storageUnitInserts: inserts.length,
+            storageUnitUpdates: updates.length,
+          });
+          summary.inserted += inserts.length;
+          summary.updated += updates.length;
+
+          if (inserts.length > 0) {
+            const inserted = await trx
+              .insertInto("storageUnit")
+              .values(inserts)
+              .returning(["id"])
+              .execute();
+            await upsertCsvMappings(
+              trx,
+              "storageUnit",
+              inserted.map((row, i) => ({
+                entityId: row.id!,
+                externalId: csvIdsForInserts[i],
+              })),
+              companyId,
+              userId
+            );
+          }
+          for (const update of updates) {
+            await trx
+              .updateTable("storageUnit")
+              .set(update.data)
+              .where("id", "=", update.id)
+              .execute();
+          }
+          if (csvIdsForNameMatchedUpdates.length > 0) {
+            await upsertCsvMappings(
+              trx,
+              "storageUnit",
+              csvIdsForNameMatchedUpdates,
+              companyId,
+              userId
+            );
+          }
+        });
+
+        // Second pass: link parents by (locationId + name) now that every unit
+        // in the file exists. Individual UPDATEs (outside the insert txn) so an
+        // unresolved or cyclic parent reports a row error without discarding the
+        // successful imports. The DB same-location / no-cycle interceptors are
+        // the final guard; their exceptions are caught per-row.
+        for (const intent of parentIntents) {
+          const childId = naturalKeyMap.get(intent.childKey);
+          const parentId = naturalKeyMap.get(
+            naturalKey(intent.locationId, intent.parentName)
+          );
+          if (!childId) continue;
+          if (!parentId) {
+            summary.errors.push({
+              row: intent.rowIndex,
+              reason: `Parent storage unit "${intent.parentName}" not found in the same location`,
+            });
+            continue;
+          }
+          if (parentId === childId) {
+            summary.errors.push({
+              row: intent.rowIndex,
+              reason: `Storage unit cannot be its own parent`,
+            });
+            continue;
+          }
+          try {
+            await db
+              .updateTable("storageUnit")
+              .set({
+                parentId,
+                updatedAt: new Date().toISOString(),
+                updatedBy: userId,
+              })
+              .where("id", "=", childId)
+              .execute();
+          } catch (parentErr) {
+            summary.errors.push({
+              row: intent.rowIndex,
+              reason: `Could not set parent "${intent.parentName}": ${
+                (parentErr as Error).message
+              }`,
+            });
+          }
+        }
+        break;
+      }
       case "bom":
       case "operations":
       case "partWithMethod": {
         await importMethods(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
+      case "materialSubstance":
+      case "materialForm":
+      case "materialFinish":
+      case "materialGrade":
+      case "materialType":
+      case "materialDimension": {
+        await importMaterialProperties(db, {
           table,
           mappedRecords,
           companyId,
@@ -2314,25 +2915,15 @@ serve(async (req: Request) => {
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
       issues.map((issue) => ({ ...issue, values: parsedCsv[issue.row] ?? {} }));
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        inserted: summary.inserted,
-        updated: summary.updated,
-        errors: withValues(summary.errors),
-        skipped: withValues(summary.skipped),
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+    return jsonResponse({
+      success: true,
+      inserted: summary.inserted,
+      updated: summary.updated,
+      errors: withValues(summary.errors),
+      skipped: withValues(summary.skipped),
     });
+  } catch (err) {
+    return errorResponse(err, 500);
   }
 });
 

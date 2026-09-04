@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Papa from "papaparse";
 import {
@@ -77,6 +78,10 @@ type Summary = {
 };
 
 type ImportQuotesArgs = {
+  // `upsertQuoteLinePrices` runs a Kysely transaction, so the importer needs the
+  // Kysely handle alongside the Supabase client. Built by the route action
+  // (`getDatabaseClient()`) and passed in, per the `no-db-client-in-service` seam.
+  db: Kysely<KyselyDatabase>;
   table: QuoteImportTable;
   filePath: string;
   columnMappings: Record<string, string>;
@@ -169,8 +174,15 @@ export async function importQuotes(
   client: SupabaseClient<Database>,
   args: ImportQuotesArgs
 ): Promise<ImportQuotesResult> {
-  const { table, filePath, columnMappings, companyId, companyGroupId, userId } =
-    args;
+  const {
+    db,
+    table,
+    filePath,
+    columnMappings,
+    companyId,
+    companyGroupId,
+    userId
+  } = args;
 
   const summary: Summary = {
     inserted: 0,
@@ -230,6 +242,7 @@ export async function importQuotes(
   // 4. process by mode -----------------------------------------------------
   if (table === "quoteLine") {
     await importLinesIntoExistingQuotes(client, {
+      db,
       records,
       refs,
       companyId,
@@ -238,6 +251,7 @@ export async function importQuotes(
     });
   } else {
     await importQuoteGroups(client, {
+      db,
       table,
       records,
       refs,
@@ -423,6 +437,7 @@ type Entry = { record: Rec; index: number };
 async function importQuoteGroups(
   client: SupabaseClient<Database>,
   ctx: {
+    db: Kysely<KyselyDatabase>;
     table: QuoteImportTable;
     records: Rec[];
     refs: References;
@@ -432,8 +447,16 @@ async function importQuoteGroups(
     summary: Summary;
   }
 ): Promise<void> {
-  const { table, records, refs, companyId, companyGroupId, userId, summary } =
-    ctx;
+  const {
+    db,
+    table,
+    records,
+    refs,
+    companyId,
+    companyGroupId,
+    userId,
+    summary
+  } = ctx;
 
   // Group rows by Quote Group (externalId), preserving order.
   const groups = new Map<
@@ -578,6 +601,7 @@ async function importQuoteGroups(
     }
 
     await createLines(client, {
+      db,
       quoteInternalId,
       lines: group.lines,
       refs,
@@ -595,6 +619,7 @@ async function importQuoteGroups(
 async function importLinesIntoExistingQuotes(
   client: SupabaseClient<Database>,
   ctx: {
+    db: Kysely<KyselyDatabase>;
     records: Rec[];
     refs: References;
     companyId: string;
@@ -602,7 +627,7 @@ async function importLinesIntoExistingQuotes(
     summary: Summary;
   }
 ): Promise<void> {
-  const { records, refs, companyId, userId, summary } = ctx;
+  const { db, records, refs, companyId, userId, summary } = ctx;
 
   const byQuote = new Map<string, Entry[]>();
   records.forEach((record, index) => {
@@ -626,6 +651,7 @@ async function importLinesIntoExistingQuotes(
       continue;
     }
     await createLines(client, {
+      db,
       quoteInternalId,
       lines,
       refs,
@@ -643,6 +669,7 @@ async function importLinesIntoExistingQuotes(
 async function createLines(
   client: SupabaseClient<Database>,
   ctx: {
+    db: Kysely<KyselyDatabase>;
     quoteInternalId: string;
     lines: Entry[];
     refs: References;
@@ -651,7 +678,7 @@ async function createLines(
     summary: Summary;
   }
 ): Promise<void> {
-  const { quoteInternalId, lines, refs, companyId, userId, summary } = ctx;
+  const { db, quoteInternalId, lines, refs, companyId, userId, summary } = ctx;
   const seen = new Set<string>(); // `${partNumber}|${quantity}` within this quote
 
   for (const { record, index } of lines) {
@@ -780,11 +807,9 @@ async function createLines(
           values: record
         });
       } else {
-        const priceResult = await upsertQuoteLinePrices(
-          client,
-          quoteInternalId,
-          lineId,
-          [
+        // Kysely transaction — it throws rather than returning an error.
+        try {
+          await upsertQuoteLinePrices(db, companyId, quoteInternalId, lineId, [
             {
               quoteLineId: lineId,
               unitPrice,
@@ -794,12 +819,11 @@ async function createLines(
               createdBy: userId,
               priceSource: "manual"
             }
-          ]
-        );
-        if (priceResult.error) {
+          ]);
+        } catch (err) {
           summary.errors.push({
             row: index,
-            reason: `Line created but pricing failed: ${priceResult.error.message}`,
+            reason: `Line created but pricing failed: ${(err as Error).message}`,
             values: record
           });
         }

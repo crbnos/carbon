@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15181a"/>
+      <stop offset="0.3" stop-color="#33383d"/>
+      <stop offset="0.6" stop-color="#43484d"/>
+      <stop offset="1" stop-color="#101214"/>
+    </linearGradient>
+    <linearGradient id="shaft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="shaftFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#8b9298"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="736" rx="400" ry="92" fill="url(#shadow)"/>
+
+  <!-- stepped keyed output shaft -->
+  <rect x="812" y="461" width="46" height="88" fill="url(#shaft)"/>
+  <rect x="856" y="473" width="34" height="64" fill="url(#shaft)"/>
+  <rect x="858" y="482" width="30" height="12" fill="#2f353a"/>
+  <ellipse cx="890" cy="505" rx="12" ry="32" fill="url(#shaftFace)" stroke="#5d6368" stroke-width="2.5"/>
+  <ellipse cx="856" cy="505" rx="13" ry="32" fill="#9aa2a9" opacity="0.7"/>
+  <g stroke="#ffffff" stroke-opacity="0.3" stroke-width="2">
+    <path d="M816 476 L852 476"/><path d="M816 534 L852 534"/>
+  </g>
+
+  <!-- machined front register -->
+  <rect x="780" y="377" width="36" height="256" fill="url(#anod)" stroke="#0f1113" stroke-width="2.5"/>
+  <ellipse cx="812" cy="505" rx="20" ry="128" fill="url(#shaftFace)" opacity="0.35"/>
+  <g stroke="#ffffff" stroke-opacity="0.22" stroke-width="2">
+    <path d="M784 400 L812 400"/><path d="M784 610 L812 610"/>
+  </g>
+
+  <!-- front end bell -->
+  <rect x="700" y="301" width="86" height="408" fill="url(#anod)" stroke="#0f1113" stroke-width="3"/>
+  <ellipse cx="786" cy="505" rx="30" ry="204" fill="url(#anodDark)" opacity="0.6"/>
+  <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5" fill="none">
+    <path d="M708 330 L780 330"/><path d="M708 680 L780 680"/>
+  </g>
+
+  <!-- finned barrel : twelve deep longitudinal fins -->
+  <rect x="320" y="295" width="384" height="420" fill="url(#anod)" stroke="#0f1113" stroke-width="3"/>
+  <g stroke="#0e1012" stroke-width="9" opacity="0.85" fill="none">
+    <path d="M320 302 L704 302"/><path d="M320 356 L704 356"/><path d="M320 451 L704 451"/>
+    <path d="M320 559 L704 559"/><path d="M320 654 L704 654"/><path d="M320 708 L704 708"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.26" stroke-width="3.5" fill="none">
+    <path d="M320 310 L704 310"/><path d="M320 364 L704 364"/><path d="M320 459 L704 459"/>
+    <path d="M320 567 L704 567"/><path d="M320 662 L704 662"/><path d="M320 716 L704 716"/>
+  </g>
+  <g stroke="#6b7278" stroke-width="2" opacity="0.45" fill="none">
+    <path d="M320 330 L704 330"/><path d="M320 404 L704 404"/><path d="M320 505 L704 505"/>
+    <path d="M320 610 L704 610"/><path d="M320 686 L704 686"/>
+  </g>
+
+  <!-- finned rear cowl body -->
+  <rect x="215" y="283" width="110" height="444" fill="url(#anod)" stroke="#0f1113" stroke-width="3"/>
+  <g stroke="#0e1012" stroke-width="7" opacity="0.7" fill="none">
+    <path d="M215 300 L325 300"/><path d="M215 372 L325 372"/><path d="M215 462 L325 462"/>
+    <path d="M215 556 L325 556"/><path d="M215 648 L325 648"/><path d="M215 714 L325 714"/>
+  </g>
+
+  <!-- rear cowl face : fan guard, fins, tie bolts -->
+  <ellipse cx="215" cy="505" rx="84" ry="222" fill="url(#anodFace)" stroke="#0f1113" stroke-width="3"/>
+  <ellipse cx="215" cy="505" rx="70" ry="186" fill="none" stroke="#6b7278" stroke-width="2.5" opacity="0.6"/>
+  <g stroke="#0e1012" stroke-width="5" opacity="0.9" fill="none">
+      <path d="M273.4 546.4 L296.1 562.5"/>
+      <path d="M257.8 618.0 L274.4 662.0"/>
+      <path d="M230.7 659.4 L236.7 719.4"/>
+      <path d="M199.3 659.4 L193.3 719.4"/>
+      <path d="M172.2 618.0 L155.6 662.0"/>
+      <path d="M156.6 546.4 L133.9 562.5"/>
+      <path d="M156.6 463.6 L133.9 447.5"/>
+      <path d="M172.2 392.0 L155.6 348.0"/>
+      <path d="M199.3 350.6 L193.3 290.6"/>
+      <path d="M230.7 350.6 L236.7 290.6"/>
+      <path d="M257.8 392.0 L274.4 348.0"/>
+      <path d="M273.4 463.6 L296.1 447.5"/>
+  </g>
+  <g stroke="#8b9298" stroke-width="2" opacity="0.5" fill="none">
+      <path d="M275.4 550.4 L298.1 566.5"/>
+      <path d="M259.8 622.0 L276.4 666.0"/>
+      <path d="M234.7 661.4 L240.7 721.4"/>
+      <path d="M195.3 661.4 L189.3 721.4"/>
+      <path d="M168.2 620.0 L151.6 664.0"/>
+      <path d="M154.6 550.4 L131.9 566.5"/>
+      <path d="M154.6 467.6 L131.9 451.5"/>
+      <path d="M168.2 396.0 L151.6 352.0"/>
+      <path d="M195.3 352.6 L189.3 292.6"/>
+      <path d="M234.7 352.6 L240.7 292.6"/>
+      <path d="M259.8 396.0 L276.4 352.0"/>
+      <path d="M275.4 467.6 L298.1 451.5"/>
+  </g>
+  <!-- axial fan behind the guard -->
+  <ellipse cx="215" cy="505" rx="52" ry="138" fill="#101315" stroke="#0f1113" stroke-width="2"/>
+  <g stroke="#4a5055" stroke-width="6" opacity="0.85" fill="none" stroke-linecap="round">
+      <path d="M229.2 513.0 L261.8 531.4"/>
+      <path d="M222.9 537.4 L241.1 611.5"/>
+      <path d="M212.0 542.8 L205.1 629.2"/>
+      <path d="M202.8 526.0 L174.9 574.1"/>
+      <path d="M200.8 497.0 L168.2 478.6"/>
+      <path d="M207.1 472.6 L188.9 398.5"/>
+      <path d="M218.0 467.2 L224.9 380.8"/>
+      <path d="M227.2 484.0 L255.1 435.9"/>
+  </g>
+  <ellipse cx="215" cy="505" rx="18" ry="48" fill="#33383d" stroke="#15181a" stroke-width="2"/>
+  <!-- four large hex tie bolts, corner to corner -->
+  <g>
+    <g transform="translate(266 640) scale(0.38 1)">
+      <polygon points="0,-40 35,-20 35,20 0,40 -35,20 -35,-20" fill="#8b9298" stroke="#4b5156" stroke-width="6"/>
+    </g>
+    <g transform="translate(164 640) scale(0.38 1)">
+      <polygon points="0,-40 35,-20 35,20 0,40 -35,20 -35,-20" fill="#8b9298" stroke="#4b5156" stroke-width="6"/>
+    </g>
+    <g transform="translate(164 370) scale(0.38 1)">
+      <polygon points="0,-40 35,-20 35,20 0,40 -35,20 -35,-20" fill="#8b9298" stroke="#4b5156" stroke-width="6"/>
+    </g>
+    <g transform="translate(266 370) scale(0.38 1)">
+      <polygon points="0,-40 35,-20 35,20 0,40 -35,20 -35,-20" fill="#8b9298" stroke="#4b5156" stroke-width="6"/>
+    </g>
+  </g>
+
+  <!-- encoder cap centred behind the cowl -->
+  <rect x="150" y="443" width="68" height="124" fill="url(#anod)" stroke="#0f1113" stroke-width="2.5"/>
+  <ellipse cx="150" cy="505" rx="24" ry="62" fill="url(#anodFace)" stroke="#0f1113" stroke-width="2.5"/>
+  <ellipse cx="150" cy="505" rx="15" ry="40" fill="none" stroke="#6b7278" stroke-width="2" opacity="0.7"/>
+
+  <!-- bolted terminal box on the upper flank -->
+  <polygon points="420,214 640,214 690,178 470,178" fill="url(#anodFace)" stroke="#0f1113" stroke-width="3"/>
+  <polygon points="640,214 690,178 690,264 640,300" fill="url(#anodDark)" stroke="#0f1113" stroke-width="3"/>
+  <polygon points="420,214 640,214 640,300 420,300" fill="url(#anod)" stroke="#0f1113" stroke-width="3"/>
+  <polyline points="426,208 634,208 682,174" fill="none" stroke="#6b7278" stroke-width="2.5" opacity="0.5"/>
+  <g fill="#3a4045">
+    <ellipse cx="452" cy="204" rx="12" ry="5"/>
+    <ellipse cx="608" cy="204" rx="12" ry="5"/>
+    <ellipse cx="490" cy="188" rx="12" ry="5"/>
+    <ellipse cx="648" cy="188" rx="12" ry="5"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">
+    <path d="M432 240 L628 240"/><path d="M432 268 L628 268"/>
+  </g>
+  <!-- cable gland facing out -->
+  <rect x="686" y="204" width="30" height="42" fill="#4a5055" stroke="#15181a" stroke-width="2"/>
+  <rect x="714" y="211" width="34" height="28" fill="#5a6167" stroke="#15181a" stroke-width="2"/>
+  <ellipse cx="748" cy="225" rx="11" ry="14" fill="#22262a" stroke="#15181a" stroke-width="2"/>
+</svg>

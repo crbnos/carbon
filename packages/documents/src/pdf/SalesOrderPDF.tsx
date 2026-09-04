@@ -8,7 +8,11 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { resolveRegistrationLine } from "../utils/shared";
+import {
+  getMoneyFormatter,
+  getRateFormatter,
+  resolveRegistrationLine
+} from "../utils/shared";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
 import {
   buildSalesOrderVars,
@@ -32,6 +36,8 @@ interface SalesOrderPDFProps extends PDF {
   template?: DocumentTemplate | null;
   /** Shared sections referenced by the template, keyed by id. */
   sections?: Record<string, ResolvedSection>;
+  /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
+  currencyDecimals?: number | null;
 }
 
 const SalesOrderPDF = ({
@@ -47,16 +53,16 @@ const SalesOrderPDF = ({
   shippingMethods,
   thumbnails,
   locale,
+  currencyDecimals,
   template,
   sections = {},
   title = "Sales Order"
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
-  const numberFormatter = new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
+  // The unit-price COLUMN is a rate, not a settlement amount — see
+  // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
+  const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesOrder", template);
@@ -97,6 +103,7 @@ const SalesOrderPDF = ({
     sections,
     currencyCode,
     numberFormatter,
+    rateFormatter,
     vars,
     headerOptions
   };

@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   HStack,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -21,7 +22,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -66,6 +67,8 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
           ? t`Serial`
           : t`Batch`;
   const params = useParams();
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
   const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
@@ -191,13 +194,13 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className="w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
-          </h3>
+          </Subheading>
           <HStack spacing={1}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -264,6 +267,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
                 name="consumableId"
                 inline
                 size="sm"
+                isUppercase={!allowLowercaseItemIds}
                 value={routeData?.consumableSummary?.readableId ?? ""}
                 onBlur={(e) => {
                   onUpdate("consumableId", e.target.value ?? null);
@@ -279,7 +283,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
             validator={z.object({
               name: z.string()
             })}
-            className="w-full -mt-2"
+            className="w-full"
           >
             <span className="text-xs text-muted-foreground">
               <InputControlled

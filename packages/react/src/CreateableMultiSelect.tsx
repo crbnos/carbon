@@ -59,7 +59,8 @@ const CreatableMultiSelect = forwardRef<
       value,
       options,
       selected,
-      isReadOnly,
+      isReadOnly: isReadOnlyProp,
+      disabled,
       placeholder,
       emptyMessage,
       label,
@@ -77,6 +78,9 @@ const CreatableMultiSelect = forwardRef<
     ref
   ) => {
     const { t } = useLingui();
+    // Treat the native `disabled` prop as equivalent to `isReadOnly` — the type
+    // accepts it (extends button props), so honor it rather than swallow it.
+    const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
 
@@ -89,18 +93,15 @@ const CreatableMultiSelect = forwardRef<
       .map((item) => options.find((option) => option.value === item)?.label)
       .filter((label): label is string => Boolean(label));
     const selectedLabelText = selectedLabels.join(", ");
-    const dropdownContentWidthCh = useMemo(() => {
-      if (options.length === 0) return undefined;
-
-      const maxOptionChars = options.reduce((longest, option) => {
+    // Real-text sizer instead of a ch estimate — see Combobox.tsx.
+    const longestOptionText = useMemo(() => {
+      return options.reduce((longest, option) => {
         const combined = [option.label, option.helper]
           .filter(Boolean)
           .join(" ");
 
-        return Math.max(longest, combined.length);
-      }, 0);
-
-      return Math.min(72, Math.max(36, maxOptionChars + 8));
+        return combined.length > longest.length ? combined : longest;
+      }, "");
     }, [options]);
 
     return (
@@ -110,14 +111,20 @@ const CreatableMultiSelect = forwardRef<
       >
         {isInlinePreview && Array.isArray(value) && value.length > 0 && (
           <span
-            className="flex flex-grow line-clamp-1 items-center cursor-pointer"
-            onClick={() => setOpen(true)}
+            className={cn(
+              "flex flex-grow line-clamp-1 items-center cursor-pointer",
+              isReadOnly && "cursor-default opacity-50"
+            )}
+            onClick={isReadOnly ? undefined : () => setOpen(true)}
           >
             {inline(value, options, maxPreview)}
           </span>
         )}
 
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={open}
+          onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
+        >
           <PopoverTrigger asChild>
             {inline ? (
               <IconButton
@@ -135,7 +142,9 @@ const CreatableMultiSelect = forwardRef<
                 }
                 ref={ref}
                 isDisabled={isReadOnly}
-                onClick={() => setOpen(true)}
+                onClick={() => {
+                  if (!isReadOnly) setOpen(true);
+                }}
               />
             ) : (
               <CommandTrigger
@@ -169,13 +178,16 @@ const CreatableMultiSelect = forwardRef<
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
-            className="min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
-            style={{
-              width: dropdownContentWidthCh
-                ? `min(560px, max(var(--radix-popover-trigger-width), 11rem, ${dropdownContentWidthCh}ch))`
-                : "max(var(--radix-popover-trigger-width), 11rem)"
-            }}
+            className="w-auto min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
+            {/* Zero-height sizer: the widest option, so the auto width fits it
+                even when virtualization keeps it unrendered. */}
+            <div
+              aria-hidden
+              className="invisible h-0 overflow-hidden whitespace-nowrap px-8 text-sm"
+            >
+              {longestOptionText}
+            </div>
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
@@ -269,7 +281,7 @@ function VirtualizedCommand({
     count: filteredOptions.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
-    overscan: 5
+    overscan: 12
   });
 
   const items = virtualizer.getVirtualItems();

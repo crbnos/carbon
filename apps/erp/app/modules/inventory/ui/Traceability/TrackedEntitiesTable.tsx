@@ -13,6 +13,7 @@ import {
   LuHash,
   LuNetwork,
   LuQrCode,
+  LuRotateCcw,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -28,6 +29,7 @@ import { path } from "~/utils/path";
 import { EditExpiryModal } from "./EditExpiryModal";
 import { ExpiryTracePopover } from "./ExpiryTracePopover";
 import TrackedEntityStatus from "./TrackedEntityStatus";
+import { UnscrapModal } from "./UnscrapModal";
 
 type ShelfLifePolicy = {
   mode: string;
@@ -59,6 +61,7 @@ const TrackedEntitiesTable = memo(
     // Edit-expiry modal state. Holds the entity being edited so the modal
     // can pre-fill its form. Lives at table level so the row context-menu
     // action can open it.
+    const [unscrapping, setUnscrapping] = useState<TrackedEntity | null>(null);
     const [editingExpiry, setEditingExpiry] = useState<TrackedEntity | null>(
       null
     );
@@ -244,6 +247,17 @@ const TrackedEntitiesTable = memo(
               <MenuIcon icon={<LuCalendarCog />} />
               <Trans>Edit Expiry</Trans>
             </MenuItem>
+            {row.status === "Scrapped" && (
+              <MenuItem
+                disabled={
+                  !permissions.can("update", "inventory") || !row.itemId
+                }
+                onClick={() => setUnscrapping(row)}
+              >
+                <MenuIcon icon={<LuRotateCcw />} />
+                <Trans>Unscrap</Trans>
+              </MenuItem>
+            )}
           </>
         );
       },
@@ -268,6 +282,23 @@ const TrackedEntitiesTable = memo(
             label={editingExpiry.sourceDocumentReadableId ?? editingExpiry.id}
           />
         )}
+        {unscrapping &&
+          unscrapping.itemId &&
+          Number.isFinite(Number(unscrapping.quantity)) &&
+          Number(unscrapping.quantity) > 0 && (
+            <UnscrapModal
+              open={!!unscrapping}
+              onClose={() => setUnscrapping(null)}
+              itemId={unscrapping.itemId}
+              trackedEntityId={unscrapping.id}
+              quantity={Number(unscrapping.quantity)}
+              label={
+                unscrapping.readableId ??
+                unscrapping.sourceDocumentReadableId ??
+                unscrapping.id
+              }
+            />
+          )}
       </>
     );
   }

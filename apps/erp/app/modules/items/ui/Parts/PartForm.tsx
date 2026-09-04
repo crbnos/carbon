@@ -18,6 +18,7 @@ import {
 import {
   convertKbToString,
   getFileSizeLimit,
+  INPUT_FORMAT,
   supportedModelTypes
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -46,6 +47,8 @@ import {
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
 import {
+  useCompanySettings,
+  useCurrencyDecimals,
   useModelUpload,
   useNextItemId,
   usePermissions,
@@ -75,6 +78,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -174,6 +178,8 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
 
   const { id, onIdChange, loading } = useNextItemId("Part");
   const permissions = usePermissions();
+  const companySettings = useCompanySettings();
+  const allowLowercaseItemIds = companySettings?.allowLowercaseItemIds === true;
   const isEditing = !!initialValues.id;
 
   const translateItemTrackingType = (v: string) =>
@@ -275,7 +281,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
-                    isUppercase
+                    isUppercase={!allowLowercaseItemIds}
                   />
                 )}
                 <Input
@@ -338,10 +344,10 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   <Number
                     name="unitCost"
                     label={t`Unit Cost`}
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      baseCurrency,
+                      currencyDecimals
+                    )}
                     minValue={0}
                   />
                 )}

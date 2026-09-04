@@ -898,6 +898,10 @@ export const terms = {
   },
 
   // ── Shipping methods (ShippingMethodForm) ───────────────────────────────
+  "shipping-method": {
+    term: msg`Shipping Method`,
+    definition: msg`The carrier and service a shipment goes out on, supplying the tracking-URL template that turns a tracking number into a link and the account freight charges post to.`
+  },
   "shipping-method-carrier-account": {
     term: msg`Carrier Account`,
     definition: msg`The GL account charges for this carrier post to (freight expense, freight in/out).`
@@ -976,6 +980,10 @@ export const terms = {
   },
 
   // ── Items: core (Part/Tool/Material/Consumable/Item forms) ──────────────
+  item: {
+    term: msg`Item`,
+    definition: msg`Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at.`
+  },
   "item-tracking-type": {
     term: msg`Tracking Type`,
     definition: msg`Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory).`
@@ -1278,7 +1286,20 @@ export const terms = {
   },
   "job-deadline-type": {
     term: msg`Deadline Type`,
-    definition: msg`How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely.`
+    definition: msg`How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement.`,
+    href: "/docs/reference/scheduling#placement-against-real-capacity"
+  },
+  "job-due-date": {
+    term: msg`Due Date (job)`,
+    definition: msg`The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules.`
+  },
+  "job-priority": {
+    term: msg`Job Priority`,
+    definition: msg`The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating.`
+  },
+  "job-sales-order-line": {
+    term: msg`Sales Order Line (job)`,
+    definition: msg`The sales order line this job was created to supply, tying the job to the customer demand behind it.`
   },
   "job-bulk-total-quantity": {
     term: msg`Total Quantity`,
@@ -1901,8 +1922,18 @@ export const terms = {
   },
   "dispatch-priority": {
     term: msg`Dispatch priority`,
-    definition: msg`An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates.`,
-    href: "/docs/reference/scheduling"
+    definition: msg`An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates.`,
+    href: "/docs/reference/scheduling#placement-against-real-capacity"
+  },
+  "capacity-reservation": {
+    term: msg`Capacity reservation`,
+    definition: msg`A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws.`,
+    href: "/docs/reference/scheduling#the-forecast-explains-the-schedule"
+  },
+  "need-by-date": {
+    term: msg`Need-by target`,
+    definition: msg`The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement.`,
+    href: "/docs/reference/scheduling#two-dates-on-every-operation"
   },
 
   // ── Shop floor: MES, kanban, picking, lineside ──────────────────────────
@@ -1947,5 +1978,69 @@ export const terms = {
     term: msg`Notification`,
     definition: msg`An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user.`,
     href: "/docs/reference/notifications"
+  },
+
+  // ── Workflows & cross-cutting record fields ─────────────────────────────
+  workflow: {
+    term: msg`Workflow`,
+    definition: msg`An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL.`,
+    href: "/docs/reference/workflows"
+  },
+  "business-moment": {
+    term: msg`Business moment`,
+    definition: msg`A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id.`,
+    href: "/docs/reference/workflows#what-starts-a-workflow"
+  },
+  "workflow-run": {
+    term: msg`Workflow run`,
+    definition: msg`One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner.`,
+    href: "/docs/reference/workflow-runs"
+  },
+  webhook: {
+    term: msg`Webhook`,
+    definition: msg`An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured.`,
+    href: "/docs/reference/workflows#calling-an-outside-url"
+  },
+  assignee: {
+    term: msg`Assignee`,
+    definition: msg`The Carbon user currently responsible for working this record, set per record and independent of ownership fields like Account Manager or Sales Person.`
+  },
+  "workflow-notify-about-record": {
+    term: msg`About (notification)`,
+    definition: msg`The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself.`
+  },
+  "workflow-notify-channels": {
+    term: msg`Notification Type`,
+    definition: msg`Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected.`
+  },
+  "workflow-webhook-url": {
+    term: msg`Webhook URL`,
+    definition: msg`The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds.`
+  },
+  "workflow-webhook-body": {
+    term: msg`Webhook Body`,
+    definition: msg`The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one.`
+  },
+  "workflow-webhook-method": {
+    term: msg`Webhook Method`,
+    definition: msg`Which kind of request to send: GET reads something, POST creates, PUT and PATCH update, DELETE removes. A new step starts at GET, and only POST, PUT, and PATCH carry a body.`
+  },
+  "workflow-webhook-headers": {
+    term: msg`Webhook Headers`,
+    definition: msg`Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable.`
+  },
+  "single-sign-on": {
+    term: msg`Single sign-on (SSO)`,
+    definition: msg`An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "identity-provider": {
+    term: msg`Identity provider (IdP)`,
+    definition: msg`The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "magic-link": {
+    term: msg`Magic link`,
+    definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

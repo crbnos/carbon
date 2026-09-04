@@ -2,9 +2,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
+import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -62,7 +63,7 @@ export async function action(args: ActionFunctionArgs) {
       .from("quote")
       .update({
         externalLinkId: externalLink.data.id,
-        completedDate: now(getLocalTimeZone()).toAbsoluteString()
+        completedDate: datetime.timestamp()
       })
       .eq("id", quoteId);
   }
@@ -74,7 +75,9 @@ export async function action(args: ActionFunctionArgs) {
 
     file = await pdf.arrayBuffer();
     fileName = stripSpecialCharacters(
-      `${quote.data.quoteId} - ${new Date().toISOString().slice(0, -5)}.pdf`
+      `${getQuoteDisplayId(quote.data)} - ${new Date()
+        .toISOString()
+        .slice(0, -5)}.pdf`
     );
 
     documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
@@ -119,7 +122,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const finalize = await finalizeQuote(client, quoteId, userId);
+    const finalize = await finalizeQuote(client, quoteId, userId, companyId);
     if (finalize.error) {
       throw redirect(
         path.to.quote(quoteId),
@@ -197,7 +200,7 @@ export async function action(args: ActionFunctionArgs) {
           to: [user.data.email, customerContact.data.contact!.email!],
           cc: ccSelections?.length ? ccSelections : undefined,
           from: user.data.email,
-          subject: `Quote ${quote.data.quoteId}`,
+          subject: `Quote ${getQuoteDisplayId(quote.data)}`,
           html,
           text,
           attachments: signedUrlData?.signedUrl

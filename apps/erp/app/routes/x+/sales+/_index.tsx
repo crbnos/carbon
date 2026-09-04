@@ -206,10 +206,7 @@ export default function SalesDashboard() {
     day: "numeric"
   });
 
-  const currencyCompactFormatter = useCurrencyFormatter({
-    notation: "compact",
-    compactDisplay: "short"
-  });
+  const currencyCompactFormatter = useCurrencyFormatter({ compact: true });
   const currencyFormatter = useCurrencyFormatter();
   const numberFormatter = useNumberFormatter({
     maximumFractionDigits: 0,
@@ -383,7 +380,7 @@ export default function SalesDashboard() {
   ]);
 
   return (
-    <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
+    <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
         <MetricCard
           icon={<RiProgress2Line />}

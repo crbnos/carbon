@@ -1,10 +1,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { z } from "zod";
 import { applyCreditsToInvoices, getPayment } from "~/modules/invoicing";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -80,7 +82,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       paymentId,
       companyId,
       createdBy: userId,
-      appliedDate: new Date().toISOString().slice(0, 10),
+      appliedDate: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString(),
       side,
       applications: rows.data
     });

@@ -14,8 +14,8 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -50,7 +50,6 @@ function formatRateLimit(limit: number, window: string): string {
 
 const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();
@@ -151,7 +150,11 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           const isExpired = new Date(expiresAt) < new Date();
           return (
             <Badge variant={isExpired ? "destructive" : "secondary"}>
-              {isExpired ? t`Expired` : formatDate(expiresAt)}
+              {isExpired ? (
+                t`Expired`
+              ) : (
+                <DateTime value={expiresAt} variant="date" />
+              )}
             </Badge>
           );
         },
@@ -162,13 +165,15 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
       }
     ];
-  }, [people, t, formatDate]);
+  }, [people, t]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const renderContextMenu = useCallback(

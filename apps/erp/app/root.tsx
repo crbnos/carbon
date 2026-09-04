@@ -7,7 +7,10 @@ import {
 } from "@carbon/auth/middleware/flash.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import { requestIdMiddleware } from "@carbon/logger/middleware.server";
+import {
+  requestContextMiddleware,
+  requestIdMiddleware
+} from "@carbon/logger/middleware.server";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -44,11 +47,16 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
-import "./polyfill";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [requestIdMiddleware, flashMiddleware];
+export const middleware = [
+  // First: publishes the request context so server code can reach it via ALS.
+  requestContextMiddleware,
+  requestIdMiddleware,
+  flashMiddleware
+];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {
@@ -87,6 +95,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    STRIPE_CONNECT_ENABLED,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
     DEFAULT_LANGUAGE,
@@ -119,6 +128,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID,
+        STRIPE_CONNECT_ENABLED,
         SUPABASE_ANON_KEY,
         SUPABASE_URL,
         VERCEL_ENV,

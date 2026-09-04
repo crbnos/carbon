@@ -16,10 +16,17 @@ export enum NotificationEvent {
   ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
+  // Accounting sync needs attention (failed sync operations); like Workflow,
+  // the text is carried on the payload — documentId is the provider id, not a
+  // readable document.
+  IntegrationSync = "integrationSync",
   JobAssignment = "job-assignment",
   JobCompleted = "job-completed",
   JobOperationAssignment = "job-operation-assignment",
   JobOperationMessage = "job-operation-message",
+  // Digest (documentIds-shaped): jobs a regen flipped to projected-late, one
+  // digest per assignee. In-app only by default.
+  JobsProjectedLate = "jobs-projected-late",
   MaintenanceDispatchAssignment = "maintenance-dispatch-assignment",
   MaintenanceDispatchCreated = "maintenance-dispatch-created",
   NonConformanceAssignment = "issue-assignment",
@@ -42,6 +49,8 @@ export enum NotificationEvent {
   SupplierQuoteResponse = "supplier-quote-response",
   TrainingAssignment = "training-assignment",
   ResourceTrainingAssignment = "resource-training-assignment",
+  // Text authored by a customer's workflow; carries no source document to read.
+  Workflow = "workflow",
   Digest = "digest"
 }
 
@@ -121,6 +130,7 @@ export function getNotificationTopic(
     case NotificationEvent.JobOperationAssignment:
     case NotificationEvent.JobOperationMessage:
     case NotificationEvent.JobCompleted:
+    case NotificationEvent.JobsProjectedLate:
       return NotificationTopic.Job;
     case NotificationEvent.PurchaseInvoiceAssignment:
     case NotificationEvent.PurchaseOrderAssignment:
@@ -161,6 +171,11 @@ export function getNotificationTopic(
     case NotificationEvent.ChangeNoticeImplementation:
     case NotificationEvent.ChangeNoticeDone:
       return NotificationTopic.Items;
+    // No topic of its own: topicLabels in the account settings route is an
+    // exhaustive Record<NotificationTopic, string>.
+    case NotificationEvent.Workflow:
+    case NotificationEvent.IntegrationSync:
+      return NotificationTopic.General;
     default:
       return NotificationTopic.General;
   }
@@ -176,6 +191,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Job assigned to you";
     case NotificationEvent.JobCompleted:
       return "Job completed";
+    case NotificationEvent.JobsProjectedLate:
+      return "Jobs projected late";
     case NotificationEvent.JobOperationAssignment:
       return "Job operation assigned to you";
     case NotificationEvent.JobOperationMessage:
@@ -238,6 +255,10 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Change notice in implementation";
     case NotificationEvent.ChangeNoticeDone:
       return "Change notice complete";
+    case NotificationEvent.Workflow:
+      return "Workflow";
+    case NotificationEvent.IntegrationSync:
+      return "Accounting sync needs attention";
     default:
       return "You have a new notification";
   }
@@ -257,6 +278,7 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ChangeNoticeDone:
       return "View change notice";
     case NotificationEvent.JobCompleted:
+    case NotificationEvent.JobsProjectedLate:
       return "View job";
     case NotificationEvent.SuggestionResponse:
       return "View suggestion";
@@ -269,6 +291,10 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.DigitalQuoteResponse:
     case NotificationEvent.SupplierQuoteResponse:
       return "View response";
+    case NotificationEvent.Workflow:
+      return "View details";
+    case NotificationEvent.IntegrationSync:
+      return "View sync activity";
     default:
       return "View details";
   }
@@ -306,4 +332,82 @@ export function getNotificationTopicPhrase(
     default:
       return `${count} unread ${plural}`;
   }
+}
+
+export type InlineLinkSegment =
+  | { text: string }
+  | { text: string; href: string };
+
+/**
+ * Deliberately strict: `[label](url)` where the url is an absolute https URL on the
+ * supplied origin. A relative path, another host, or a `javascript:` url is left as
+ * literal text.
+ *
+ * This is a security boundary, not a formatting nicety. A workflow's message body is
+ * customer-authored, so an unrestricted matcher would let its author choose where a
+ * notification the recipient trusts actually points.
+ */
+const INLINE_LINK = /\[([^\]\n]+)\]\((https:\/\/[^\s()]+)\)/g;
+
+export function renderInlineLinks(
+  text: string,
+  origin: string
+): InlineLinkSegment[] {
+  if (text === "") return [];
+
+  let allowed: URL;
+  try {
+    allowed = new URL(origin);
+  } catch {
+    return [{ text }];
+  }
+
+  const segments: InlineLinkSegment[] = [];
+  let index = 0;
+
+  for (const match of text.matchAll(INLINE_LINK)) {
+    const [whole, label, href] = match;
+    if (label === undefined || href === undefined) continue;
+
+    let parsed: URL;
+    try {
+      parsed = new URL(href);
+    } catch {
+      continue;
+    }
+    if (parsed.protocol !== "https:" || parsed.origin !== allowed.origin) {
+      continue;
+    }
+
+    const start = match.index ?? 0;
+    if (start > index) segments.push({ text: text.slice(index, start) });
+    segments.push({ text: label, href: parsed.toString() });
+    index = start + whole.length;
+  }
+
+  if (index < text.length) segments.push({ text: text.slice(index) });
+  return segments;
+}
+
+/** Slack mrkdwn requires `&`, `<` and `>` escaped in text; inside a `<url|label>` a literal
+ * `|` would also terminate the label, so it is swapped for a lookalike. */
+export function escapeSlackText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\|/g, "¦");
+}
+
+/** The Slack rendition of the same `[label](url)` the in-app and email renderers handle —
+ * Slack spells a link `<url|label>`, so the markdown would otherwise be shown verbatim.
+ * Goes through `renderInlineLinks`, so it inherits that matcher's origin restriction. */
+export function renderSlackMrkdwn(text: string, origin: string): string {
+  return renderInlineLinks(text, origin)
+    .map((segment) =>
+      "href" in segment
+        ? `<${segment.href}|${escapeSlackText(segment.text)}>`
+        : escapeSlackText(segment.text)
+    )
+    .join("");
 }

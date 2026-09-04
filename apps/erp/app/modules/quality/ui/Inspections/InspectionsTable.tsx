@@ -11,8 +11,14 @@ import {
   LuHash,
   LuTruck
 } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
-import { useDateFormatter, useUrlParams } from "~/hooks";
+import {
+  DateTime,
+  EmployeeAvatar,
+  exportOnlyColumn,
+  Hyperlink,
+  Table
+} from "~/components";
+import { useUrlParams } from "~/hooks";
 import {
   inspectionSourceDocuments,
   inspectionStatusType
@@ -41,7 +47,6 @@ function computeProgress(row: Inspection): {
 
 const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
   const [items] = useItems();
 
@@ -84,9 +89,20 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
               value: item.id,
               label: item.readableIdWithRevision
             }))
-          }
+          },
+          // Without this the exporter substitutes the item's name for the id
+          // (Download.tsx idNameMaps), losing the readable id the cell shows.
+          exportValue: (row) =>
+            getItemReadableId(items, (row as any).itemId) ??
+            (row as any).itemReadableId ??
+            null
         }
       },
+      exportOnlyColumn<Inspection>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => (row as any).item?.name ?? null
+      }),
       {
         accessorKey: "sourceDocument",
         header: t`Source`,
@@ -168,12 +184,13 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Received At`,
-        cell: ({ row }) =>
-          row.original.createdAt ? formatDate(row.original.createdAt) : "",
+        cell: ({ row }) => (
+          <DateTime value={row.original.createdAt} variant="date" />
+        ),
         meta: { icon: <LuCalendar /> }
       }
     ];
-  }, [items, t, params, formatDate]);
+  }, [items, t, params]);
 
   return (
     <Table<Inspection>

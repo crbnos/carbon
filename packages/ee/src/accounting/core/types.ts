@@ -16,6 +16,8 @@ import type {
   EmployeeSchema,
   InventoryAdjustmentSchema,
   ItemSchema,
+  JournalEntryLineSchema,
+  JournalEntrySchema,
   ProviderCredentialsSchema,
   ProviderID,
   ProviderIntegrationMetadataSchema,
@@ -25,8 +27,13 @@ import type {
   SalesInvoiceSchema,
   SalesOrderLineSchema,
   SalesOrderSchema,
-  SyncDirectionSchema
+  SyncDirectionSchema,
+  SyncOperationDirectionSchema,
+  SyncOperationSchema,
+  SyncOperationStatusSchema,
+  SyncOperationTriggerSchema
 } from "./models";
+import { JournalEntrySyncError } from "./posting";
 import { AccountingApiError, withTriggersDisabled } from "./utils";
 
 const logger = getLogger("ee", "accounting");
@@ -64,11 +71,121 @@ export type ProviderConfig<T = unknown> = {
   onTokenRefresh?: OAuthClientOptions["onTokenRefresh"];
 } & T;
 
+/**
+ * Static description of how a provider communicates and what it supports.
+ */
+export interface ProviderCapabilities {
+  /**
+   * How the provider is reached: "rest" = Carbon calls the provider API
+   * synchronously; "bridge" = a third-party vendor bridge performs the calls.
+   */
+  transport: "rest" | "bridge";
+  /** Whether the provider can push change notifications to Carbon. */
+  supportsWebhooks: boolean;
+  /** Whether Carbon journals can be pushed as provider journal entries. */
+  supportsJournalPush: boolean;
+  /**
+   * Structural cap on how many dimension slots the provider's journal
+   * lines can carry (QBO: 2 — one ClassRef + one DepartmentRef; Xero: 2 —
+   * org-wide tracking-category limit). Absent = no structural cap
+   * (Rillet Fields are dimension-native).
+   */
+  maxJournalDimensionSlots?: number;
+}
+
+/**
+ * One analytics field a provider can carry on pushed journal lines — a
+ * QBO Class/Department, a Xero tracking category, a Rillet Field. The
+ * settings UI offers only targets the provider actually declares (via
+ * `journalDimensionTargets()`), so slot config can never point at a
+ * feature the org doesn't have.
+ */
+export interface DimensionTarget {
+  /**
+   * Provider-specific target id stored on the dimension slot:
+   * QBO `"class"` / `"department"`, Xero `"tracking:<categoryId>"`,
+   * Rillet `"field:<fieldId>"`.
+   */
+  id: string;
+  /** Human label for the settings UI (e.g. the tracking category name). */
+  label: string;
+  /** Max slots that may use this target. Absent = 1. */
+  capacity?: number;
+}
+
+/**
+ * One remote change observed by an incremental pull (the sweep cron).
+ */
+export interface ProviderChange {
+  entityType: AccountingEntityType;
+  /**
+   * Remote id used as the sync operation's entityId. Composite ids are
+   * allowed where an entity is only addressable through its parent (e.g.
+   * Rillet payments use "<invoiceRemoteId>:<paymentRemoteId>").
+   */
+  remoteId: string;
+  /** Remote last-updated timestamp (ISO 8601) driving cursor advance. */
+  updatedAt: string | null;
+  /** Remote deletion stub — logged and skipped (DELETE sync is unimplemented). */
+  deleted?: boolean;
+  /**
+   * Local mapping this change's processing depends on. The sweep skips the
+   * change (without a ledger row) when the mapping is absent — the
+   * ownership filter for providers whose org is shared by several Carbon
+   * instances (e.g. Rillet payments on another subsidiary's invoices).
+   */
+  dependsOnMapping?: { entityType: AccountingEntityType; remoteId: string };
+}
+
+export interface ListChangesResult {
+  changes: ProviderChange[];
+}
+
+/**
+ * Incremental remote-change pull, implemented by providers the generic
+ * accounting-pull-sweep cron can poll (webhooks are a latency
+ * optimization; the sweep is the correctness guarantee). Providers filter
+ * internally to entities whose resolved sync config allows pull; the
+ * sweep owns cursor state and clamps `since` to `pullLookbackDays` before
+ * calling.
+ */
+export interface SupportsIncrementalPull {
+  /**
+   * Days the provider's change feed can reach back, when capped (QBO CDC:
+   * 30, clamped to 29 for margin). Absent = unbounded.
+   */
+  readonly pullLookbackDays?: number;
+  listChanges(args: { since: string }): Promise<ListChangesResult>;
+}
+
+export function providerSupportsIncrementalPull<T extends BaseProvider>(
+  provider: T
+): provider is T & SupportsIncrementalPull {
+  return (
+    typeof (provider as Partial<SupportsIncrementalPull>).listChanges ===
+    "function"
+  );
+}
+
 export abstract class BaseProvider {
   static id: ProviderID;
 
+  /**
+   * Optional capability declaration. When absent, callers should assume a
+   * REST provider (`transport: "rest"`) — the default for all providers
+   * that predate this field (e.g. Xero).
+   */
+  readonly capabilities?: ProviderCapabilities;
+
   protected creds?: ProviderCredentials;
   public auth!: AuthProvider;
+
+  /**
+   * Optional: the journal-line analytics targets this provider offers for
+   * dimension slots (see DimensionTarget). Absent = the provider carries
+   * no journal dimensions.
+   */
+  journalDimensionTargets?(): Promise<DimensionTarget[]>;
 
   abstract getSyncConfig<T extends AccountingEntityType>(
     entity: T
@@ -88,6 +205,13 @@ export abstract class BaseProvider {
 // \********************************************************/
 
 export type SyncDirection = z.infer<typeof SyncDirectionSchema>;
+
+export type SyncOperation = z.infer<typeof SyncOperationSchema>;
+export type SyncOperationStatus = z.infer<typeof SyncOperationStatusSchema>;
+export type SyncOperationDirection = z.infer<
+  typeof SyncOperationDirectionSchema
+>;
+export type SyncOperationTrigger = z.infer<typeof SyncOperationTriggerSchema>;
 
 /**
  * Defines which system owns the data integrity.
@@ -111,7 +235,8 @@ export type AccountingEntityType =
   | "salesOrder"
   | "invoice"
   | "payment"
-  | "inventoryAdjustment";
+  | "inventoryAdjustment"
+  | "journalEntry";
 
 export interface EntityConfig {
   /** Is this entity sync active? */
@@ -177,6 +302,17 @@ export interface SyncResult {
   localId?: string;
   remoteId?: string;
   error?: unknown;
+}
+
+/**
+ * Normalize a thrown value for SyncResult.error. A JournalEntrySyncError
+ * keeps its structured failure envelope (errorCode/warning/metadata) so
+ * the ledger drain records a Warning with machine-readable detail instead
+ * of a flattened Failed string — batch pushes previously lost this.
+ */
+export function toSyncResultError(err: unknown): unknown {
+  if (err instanceof JournalEntrySyncError) return err.failure;
+  return err instanceof Error ? err.message : String(err);
 }
 
 export interface BatchSyncResult {
@@ -401,6 +537,7 @@ export abstract class BaseEntitySyncer<
       return {
         status: "skipped",
         action: "none",
+        localId: entityId,
         error: "Sync disabled in config"
       };
     }
@@ -484,7 +621,7 @@ export abstract class BaseEntitySyncer<
         status: "error",
         action: "none",
         localId: entityId,
-        error: err instanceof Error ? err.message : String(err)
+        error: toSyncResultError(err)
       };
     }
   }
@@ -498,6 +635,7 @@ export abstract class BaseEntitySyncer<
       return {
         status: "skipped",
         action: "none",
+        remoteId,
         error: "Sync disabled in config"
       };
     }
@@ -591,7 +729,7 @@ export abstract class BaseEntitySyncer<
         status: "error",
         action: "none",
         remoteId,
-        error: err instanceof Error ? err.message : String(err)
+        error: toSyncResultError(err)
       };
     }
   }
@@ -668,7 +806,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             localId,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -727,7 +865,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             localId: id,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -834,7 +972,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             remoteId,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -846,7 +984,7 @@ export abstract class BaseEntitySyncer<
             status: "error",
             action: "none",
             remoteId: id,
-            error: err instanceof Error ? err.message : String(err)
+            error: toSyncResultError(err)
           });
         }
       }
@@ -1008,6 +1146,8 @@ export namespace Accounting {
   export type InventoryAdjustment = z.infer<typeof InventoryAdjustmentSchema>;
   export type SalesOrder = z.infer<typeof SalesOrderSchema>;
   export type SalesOrderLine = z.infer<typeof SalesOrderLineSchema>;
+  export type JournalEntry = z.infer<typeof JournalEntrySchema>;
+  export type JournalEntryLine = z.infer<typeof JournalEntryLineSchema>;
 }
 
 export interface RequestContext {

@@ -13,6 +13,7 @@ import {
   NumberInputGroup,
   NumberInputStepper
 } from "@carbon/react";
+import { SCALE_FORMAT } from "@carbon/utils";
 
 import { forwardRef } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
@@ -57,12 +58,11 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     const formState = useFormStateContext();
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
     const isDisabled = formState.isDisabled || isDisabledProp;
-    const formatOptions =
-      rest.formatOptions ??
-      ({
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 10
-      } satisfies Intl.NumberFormatOptions);
+    // react-aria commits on blur via parse(format(x)), so this default is
+    // arithmetic on the stored value, not decoration. Quantity is the right
+    // fallback kind: it renders the full storage scale and no more. Money,
+    // price and rate fields pass their own INPUT_FORMAT.* kind.
+    const formatOptions = rest.formatOptions ?? SCALE_FORMAT;
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 

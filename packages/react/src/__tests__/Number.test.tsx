@@ -11,7 +11,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { NumberInput } from "../Number";
+import { areNumberFormatOptionsEqual, NumberInput } from "../Number";
 
 /**
  * The `onFocus` behavior ([4] focus-select) is an inline closure on the real
@@ -102,5 +102,61 @@ describe("NumberInput", () => {
         getRenderedOnFocus({})?.({ target: { select: vi.fn() } })
       ).not.toThrow();
     });
+  });
+});
+
+/**
+ * react-aria compares `formatOptions` by reference and rewrites the in-progress
+ * input text when it changes, so an inline literal at a call site destroys
+ * half-typed decimals on any parent re-render. `NumberField` holds the reference
+ * steady via this predicate — these tests pin the comparison, the snap-back
+ * itself is only observable in a browser.
+ */
+describe("areNumberFormatOptionsEqual", () => {
+  const options = { minimumFractionDigits: 0, maximumFractionDigits: 2 };
+
+  it("treats distinct literals with the same values as equal", () => {
+    expect(areNumberFormatOptionsEqual({ ...options }, { ...options })).toBe(
+      true
+    );
+  });
+
+  it("treats a changed value as not equal", () => {
+    expect(
+      areNumberFormatOptionsEqual(options, {
+        ...options,
+        maximumFractionDigits: 4
+      })
+    ).toBe(false);
+  });
+
+  it("treats an added key as not equal", () => {
+    expect(
+      areNumberFormatOptionsEqual(options, { ...options, style: "decimal" })
+    ).toBe(false);
+  });
+
+  it("treats a removed key as not equal", () => {
+    expect(
+      areNumberFormatOptionsEqual(options, { maximumFractionDigits: 2 })
+    ).toBe(false);
+  });
+
+  it("is insensitive to key order", () => {
+    expect(
+      areNumberFormatOptionsEqual(
+        { style: "currency", currency: "USD" },
+        { currency: "USD", style: "currency" }
+      )
+    ).toBe(true);
+  });
+
+  it("treats both undefined as equal", () => {
+    expect(areNumberFormatOptionsEqual(undefined, undefined)).toBe(true);
+  });
+
+  it("treats one undefined side as not equal", () => {
+    expect(areNumberFormatOptionsEqual(options, undefined)).toBe(false);
+    expect(areNumberFormatOptionsEqual(undefined, options)).toBe(false);
   });
 });

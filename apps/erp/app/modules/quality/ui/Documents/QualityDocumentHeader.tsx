@@ -6,9 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -24,21 +21,19 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useState } from "react";
 import {
   LuCheckCheck,
-  LuChevronDown,
-  LuCirclePlus,
   LuClipboardCheck,
   LuEllipsisVertical,
-  LuGitPullRequestArrow,
-  LuPanelLeft,
   LuPanelRight,
   LuTrash,
   LuX
 } from "react-icons/lu";
-import { Await, useFetcher, useNavigate, useParams } from "react-router";
+import { Await, useFetcher, useParams } from "react-router";
+import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ApprovalDecision } from "~/modules/shared/types";
+import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";
 import QualityDocumentApprovalModal from "./QualityDocumentApprovalModal";
@@ -59,10 +54,13 @@ const QualityDocumentHeader = () => {
     isApprovalRequired: boolean;
   }>(path.to.qualityDocument(id));
 
-  const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { toggleExplorer, toggleProperties } = usePanels();
+  const { toggleProperties } = usePanels();
+  // Live title from the editor's locked title block, so the header updates as
+  // the user types (before the loader revalidates).
+  const liveTitle = useDocumentStore((s) => s.liveTitle);
+  const displayName = liveTitle ?? routeData?.document?.name ?? "";
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const statusFetcher = useFetcher<{ error?: { message: string } }>();
@@ -119,17 +117,11 @@ const QualityDocumentHeader = () => {
   }, [id]);
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
+    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
       <VStack spacing={0} className="flex-grow">
         <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
           <Heading size="h4" className="flex items-center gap-2">
-            <span>{routeData?.document?.name}</span>
+            <span>{displayName}</span>
             <Badge variant="outline">V{routeData?.document?.version}</Badge>
             <QualityDocumentStatus status={routeData?.document?.status} />
           </Heading>
@@ -207,65 +199,33 @@ const QualityDocumentHeader = () => {
         )}
         <Suspense fallback={null}>
           <Await resolve={routeData?.versions}>
-            {(versions) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuGitPullRequestArrow />}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    <Trans>Versions</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {permissions.can("create", "quality") && (
+            {(versions) => {
+              const allVersions =
+                versions?.data ??
+                (routeData?.document ? [routeData.document] : []);
+              return (
+                <VersionMenu
+                  versions={allVersions}
+                  currentVersionId={id}
+                  getKey={(v) => v.id}
+                  getHref={(v) => path.to.qualityDocument(v.id)}
+                  renderLabel={(v) => (
                     <>
-                      <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
-                        <DropdownMenuIcon icon={<LuCirclePlus />} />
-                        <Trans>New Version</Trans>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <Badge variant="outline">V{v.version}</Badge>
+                      <span>{v.name}</span>
                     </>
                   )}
-                  <DropdownMenuRadioGroup
-                    value={id}
-                    onValueChange={(value) =>
-                      navigate(path.to.qualityDocument(value))
-                    }
-                  >
-                    {routeData?.document && (
-                      <DropdownMenuRadioItem
-                        key={routeData.document.id}
-                        value={routeData.document.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <Badge variant="outline">
-                          V{routeData.document.version}
-                        </Badge>
-                        <span>{routeData.document.name}</span>
-                        <QualityDocumentStatus
-                          status={routeData.document.status}
-                        />
-                      </DropdownMenuRadioItem>
-                    )}
-                    {versions?.data
-                      ?.filter((v) => v.id !== id)
-                      .map((version) => (
-                        <DropdownMenuRadioItem
-                          key={version.id}
-                          value={version.id}
-                          className="flex items-center justify-between gap-2"
-                        >
-                          <Badge variant="outline">V{version.version}</Badge>
-                          <span>{version.name}</span>
-                          <QualityDocumentStatus status={version.status} />
-                        </DropdownMenuRadioItem>
-                      ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                  renderStatus={(v) => (
+                    <QualityDocumentStatus status={v.status} />
+                  )}
+                  onNewVersion={
+                    permissions.can("create", "quality")
+                      ? newVersionDisclosure.onOpen
+                      : undefined
+                  }
+                />
+              );
+            }}
           </Await>
         </Suspense>
         <IconButton

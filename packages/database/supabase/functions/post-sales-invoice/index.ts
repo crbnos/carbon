@@ -1,19 +1,21 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
 import { credit, debit, journalReference } from "../lib/utils.ts";
+import { calculateDueDate } from "../shared/calculate-due-date.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
+import { round } from "../shared/precision.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 
 const pool = getConnectionPool(1);
@@ -27,12 +29,10 @@ const payloadValidator = z.object({
 });
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
 
   const payload = await req.json();
-  const today = format(new Date(), "yyyy-MM-dd");
 
   try {
     const { type, invoiceId, userId, companyId } =
@@ -47,6 +47,7 @@ serve(async (req: Request) => {
     });
 
     const client = await requirePermissions(req, companyId, userId, { update: "invoicing" });
+    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     const [companyRecord, accountingSettings] = await Promise.all([
       client
@@ -396,7 +397,7 @@ serve(async (req: Request) => {
                     itemLedgerInserts.push({
                       postingDate: today,
                       itemId: invoiceLine.itemId!,
-                      quantity: -invoiceLineQuantityInInventoryUnit,
+                      quantity: round(-invoiceLineQuantityInInventoryUnit),
                       locationId: invoiceLine.locationId,
                       storageUnitId: invoiceLine.storageUnitId,
                       entryType: "Negative Adjmt.",
@@ -423,11 +424,10 @@ serve(async (req: Request) => {
                     journalLineInserts.push({
                       accountId: accountDefaults.data.salesAccount,
                       description: "Sales Account",
-                      amount: credit(
-                        "revenue",
-                        totalLineCostWithWeightedShipping
+                      amount: round(
+                        credit("revenue", totalLineCostWithWeightedShipping)
                       ),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -444,8 +444,8 @@ serve(async (req: Request) => {
                       description: isIntercompany
                         ? "IC Receivables"
                         : "Accounts Receivable",
-                      amount: debit("asset", totalLineCostWithWeightedShipping),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -475,7 +475,7 @@ serve(async (req: Request) => {
                         accountId: accountDefaults.data.costOfGoodsSoldAccount,
                         description: "Cost of Goods Sold",
                         amount: 0,
-                        quantity: invoiceLineQuantityInInventoryUnit,
+                        quantity: round(invoiceLineQuantityInInventoryUnit),
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
                         externalDocumentId: salesInvoice.data?.customerReference,
@@ -491,7 +491,7 @@ serve(async (req: Request) => {
                         accountId: inventoryAccount.account,
                         description: inventoryAccount.description,
                         amount: 0,
-                        quantity: invoiceLineQuantityInInventoryUnit,
+                        quantity: round(invoiceLineQuantityInInventoryUnit),
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
                         externalDocumentId: salesInvoice.data?.customerReference,
@@ -521,11 +521,10 @@ serve(async (req: Request) => {
                     journalLineInserts.push({
                       accountId: accountDefaults.data.salesAccount,
                       description: "Sales Account",
-                      amount: credit(
-                        "revenue",
-                        totalLineCostWithWeightedShipping
+                      amount: round(
+                        credit("revenue", totalLineCostWithWeightedShipping)
                       ),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -544,8 +543,8 @@ serve(async (req: Request) => {
                       description: isIntercompany
                         ? "IC Receivables"
                         : "Accounts Receivable",
-                      amount: debit("asset", totalLineCostWithWeightedShipping),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                      amount: round(debit("asset", totalLineCostWithWeightedShipping)),
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
                       externalDocumentId: salesInvoice.data?.customerReference,
@@ -644,8 +643,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: receivablesAccountId,
                     description: "Accounts Receivable",
-                    amount: debit("asset", saleProceeds),
-                    quantity: invoiceLineQuantityInInventoryUnit,
+                    amount: round(debit("asset", saleProceeds)),
+                    quantity: round(invoiceLineQuantityInInventoryUnit),
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
                     externalDocumentId:
@@ -663,8 +662,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: writeOffAccountId,
                     description: "Clear disposal clearing",
-                    amount: credit("expense", nbv),
-                    quantity: invoiceLineQuantityInInventoryUnit,
+                    amount: round(credit("expense", nbv)),
+                    quantity: round(invoiceLineQuantityInInventoryUnit),
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
                     externalDocumentId:
@@ -700,9 +699,9 @@ serve(async (req: Request) => {
                         gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
                       amount:
                         gainLoss > 0
-                          ? credit("revenue", gainLoss)
-                          : debit("expense", -gainLoss),
-                      quantity: invoiceLineQuantityInInventoryUnit,
+                          ? round(credit("revenue", gainLoss))
+                          : round(debit("expense", -gainLoss)),
+                      quantity: round(invoiceLineQuantityInInventoryUnit),
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id ?? undefined,
                       externalDocumentId:
@@ -786,7 +785,7 @@ serve(async (req: Request) => {
                       accountId:
                         assetClass.accumulatedDepreciationAccountId,
                       description: "Clear accumulated depreciation",
-                      amount: debit("asset", accumulatedDepreciation),
+                      amount: round(debit("asset", accumulatedDepreciation)),
                       quantity: 1,
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id ?? undefined,
@@ -804,7 +803,7 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: assetClass.assetAccountId,
                     description: "Remove asset at cost",
-                    amount: credit("asset", acquisitionCost),
+                    amount: round(credit("asset", acquisitionCost)),
                     quantity: 1,
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
@@ -821,8 +820,8 @@ serve(async (req: Request) => {
                   journalLineInserts.push({
                     accountId: receivablesAccountId,
                     description: "Accounts Receivable",
-                    amount: debit("asset", saleProceeds),
-                    quantity: invoiceLineQuantityInInventoryUnit,
+                    amount: round(debit("asset", saleProceeds)),
+                    quantity: round(invoiceLineQuantityInInventoryUnit),
                     documentType: "Invoice",
                     documentId: salesInvoice.data?.id ?? undefined,
                     externalDocumentId:
@@ -848,8 +847,8 @@ serve(async (req: Request) => {
                         gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
                       amount:
                         gainLoss > 0
-                          ? credit("revenue", gainLoss)
-                          : debit("expense", -gainLoss),
+                          ? round(credit("revenue", gainLoss))
+                          : round(debit("expense", -gainLoss)),
                       quantity: 1,
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id ?? undefined,
@@ -898,7 +897,7 @@ serve(async (req: Request) => {
         }
 
         const accountingPeriodId = accountingEnabled
-          ? await getCurrentAccountingPeriod(client, companyId, db)
+          ? await getCurrentAccountingPeriod(client, companyId, db, today)
           : null;
 
         await db.transaction().execute(async (trx) => {
@@ -1056,11 +1055,15 @@ serve(async (req: Request) => {
               if (
                 jl.description === "Cost of Goods Sold" &&
                 jl.amount === 0 &&
-                jl.quantity === directLine.quantity
+                jl.quantity === round(directLine.quantity)
               ) {
-                journalLineInserts[i].amount = debit("expense", cogsResult.totalCost);
+                journalLineInserts[i].amount = round(
+                  debit("expense", cogsResult.totalCost)
+                );
                 if (i + 1 < journalLineInserts.length) {
-                  journalLineInserts[i + 1].amount = credit("asset", cogsResult.totalCost);
+                  journalLineInserts[i + 1].amount = round(
+                    credit("asset", cogsResult.totalCost)
+                  );
                 }
 
                 await trx
@@ -1072,10 +1075,11 @@ serve(async (req: Request) => {
                     documentType: "Sales Shipment",
                     documentId: salesInvoice.data?.id ?? "",
                     itemId: directLine.itemId,
-                    quantity: -directLine.quantity,
-                    cost: -cogsResult.totalCost,
+                    quantity: round(-directLine.quantity),
+                    cost: round(-cogsResult.totalCost),
                     remainingQuantity: 0,
                     companyId,
+                    postingDate: today,
                   })
                   .execute();
 
@@ -1221,25 +1225,138 @@ serve(async (req: Request) => {
 
           // Create intercompany transaction record if IC
           if (accountingEnabled && isIntercompany && intercompanyPartnerId) {
-            const icJournalLineId = journalLineResults.length > 0
-              ? journalLineResults[0].id
-              : null;
+            // Reference the IC receivable line (not [0], which is the revenue line)
+            // so generateEliminationEntries reverses the Inter-Company Receivables
+            // control account and clears it against the buyer's IC Payables.
+            // journalLineInserts is inserted 1:1 into journalLineResults. If no
+            // receivable line was posted, skip: referencing another line would make
+            // elimination reverse the wrong account and leave the control balance.
+            const icReceivableIdx = journalLineInserts.findIndex(
+              (line) => line.accountId === receivablesAccountId
+            );
+            const icJournalLineId =
+              icReceivableIdx >= 0
+                ? journalLineResults[icReceivableIdx]?.id ?? null
+                : null;
 
-            await trx
-              .insertInto("intercompanyTransaction")
-              .values({
-                companyGroupId: companyGroupId!,
-                sourceCompanyId: companyId,
-                targetCompanyId: intercompanyPartnerId,
-                sourceJournalLineId: icJournalLineId,
-                amount: totalLinesCost,
-                currencyCode: salesInvoice.data?.currencyCode ?? "USD",
-                description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
-                documentType: "Invoice",
-                documentId: salesInvoice.data?.id,
-                status: "Unmatched",
-              })
-              .execute();
+            // Match on the same pre-tax basis the buyer computes
+            // (quantity * unitPrice + shippingCost over non-comment lines).
+            // addOnCost is excluded because purchaseInvoiceLine has no such column,
+            // so including it here would break matching on lines that carry one.
+            const intercompanyAmount = salesInvoiceLines.data.reduce(
+              (acc, invoiceLine) => {
+                if (invoiceLine.invoiceLineType === "Comment") return acc;
+                return (
+                  acc +
+                  (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
+                  (invoiceLine.shippingCost ?? 0)
+                );
+              },
+              0
+            );
+
+            if (icJournalLineId) {
+              const icTxn = await trx
+                .insertInto("intercompanyTransaction")
+                .values({
+                  companyGroupId: companyGroupId!,
+                  sourceCompanyId: companyId,
+                  targetCompanyId: intercompanyPartnerId,
+                  sourceJournalLineId: icJournalLineId,
+                  amount: round(intercompanyAmount),
+                  currencyCode: salesInvoice.data?.currencyCode ?? "USD",
+                  description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
+                  documentType: "Invoice",
+                  documentId: salesInvoice.data?.id,
+                  status: "Unmatched",
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              // Capture the seller side's role-classified elimination lines so
+              // consolidation reverses them by reference instead of reconstructing
+              // the trade from the GL. The edge function knows each line's role
+              // exactly (Control = IC receivable, Revenue = sales account, COGS =
+              // cost-of-goods account), so no account-class guessing is needed.
+              const eliminationLineInserts: Database["public"]["Tables"]["intercompanyEliminationLine"]["Insert"][] =
+                [];
+              const salesAccount = accountDefaults?.data?.salesAccount;
+              const cogsAccount = accountDefaults?.data?.costOfGoodsSoldAccount;
+
+              journalLineInserts.forEach((line, index) => {
+                const jlId = journalLineResults[index]?.id;
+                if (!jlId) return;
+                let role: "Control" | "Revenue" | "COGS" | null = null;
+                if (index === icReceivableIdx) role = "Control";
+                else if (salesAccount && line.accountId === salesAccount)
+                  role = "Revenue";
+                else if (cogsAccount && line.accountId === cogsAccount)
+                  role = "COGS";
+                if (!role) return;
+                eliminationLineInserts.push({
+                  companyId,
+                  intercompanyTransactionId: icTxn.id,
+                  role,
+                  journalLineId: jlId,
+                  accountId: line.accountId!,
+                  amount: line.amount ?? 0,
+                  itemId: journalLineDimensionsMeta[index]?.itemId ?? null,
+                  quantity: line.quantity ?? null,
+                  createdBy: userId,
+                });
+              });
+
+              // Sales-order-based sales post COGS at SHIPMENT (a prior posting),
+              // not on this invoice, so it is not in journalLineInserts. Capture
+              // those shipment COGS lines via the deterministic invoice ->
+              // salesInvoiceLine.salesOrderId -> shipment(sourceDocument = 'Sales
+              // Order') link. Done once, here, and stored — never re-derived per
+              // elimination run.
+              const salesOrderIds = [
+                ...new Set(
+                  salesInvoiceLines.data
+                    .map((line) => line.salesOrderId)
+                    .filter((id): id is string => !!id)
+                ),
+              ];
+              if (cogsAccount && salesOrderIds.length > 0) {
+                const shipmentCogsLines = await trx
+                  .selectFrom("journalLine as jl")
+                  .innerJoin("shipment as s", "s.id", "jl.documentId")
+                  .select([
+                    "jl.id as id",
+                    "jl.accountId as accountId",
+                    "jl.amount as amount",
+                    "jl.quantity as quantity",
+                  ])
+                  .where("jl.companyId", "=", companyId)
+                  .where("jl.accountId", "=", cogsAccount)
+                  .where("s.companyId", "=", companyId)
+                  .where("s.sourceDocument", "=", "Sales Order")
+                  .where("s.sourceDocumentId", "in", salesOrderIds)
+                  .execute();
+                for (const cogs of shipmentCogsLines) {
+                  eliminationLineInserts.push({
+                    companyId,
+                    intercompanyTransactionId: icTxn.id,
+                    role: "COGS",
+                    journalLineId: cogs.id,
+                    accountId: cogs.accountId,
+                    amount: cogs.amount ?? 0,
+                    itemId: null,
+                    quantity: cogs.quantity ?? null,
+                    createdBy: userId,
+                  });
+                }
+              }
+
+              if (eliminationLineInserts.length > 0) {
+                await trx
+                  .insertInto("intercompanyEliminationLine")
+                  .values(eliminationLineInserts)
+                  .execute();
+              }
+            }
           }
 
           // Apply deferred fixed-asset disposal writes inside the transaction so
@@ -1266,10 +1383,24 @@ serve(async (req: Request) => {
               .execute();
           }
 
+          // Posting stamps dateIssued with today, so recompute dateDue from
+          // the payment term to keep it consistent with the new issue date.
+          // With no payment term the invoice still gets one, via Net 30.
+          const paymentTerm = salesInvoice.data?.paymentTermId
+            ? await trx
+                .selectFrom("paymentTerm")
+                .select(["daysDue", "calculationMethod"])
+                .where("id", "=", salesInvoice.data.paymentTermId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : undefined;
+          const dateDue = calculateDueDate(today, paymentTerm);
+
           await trx
             .updateTable("salesInvoice")
             .set({
               dateIssued: today,
+              ...(dateDue ? { dateDue } : {}),
               postingDate: today,
               status: "Submitted",
             })
@@ -1352,7 +1483,9 @@ serve(async (req: Request) => {
           ? journalEntries.map((entry) => ({
               accountId: entry.accountId,
               description: `VOID: ${entry.description}`,
-              amount: -entry.amount, // Reverse the amount
+              // A reversal is a sign flip of an already-posted value, which is
+              // exact — no rounding to do.
+              amount: -entry.amount,
               quantity: -entry.quantity,
               documentType: "Invoice" as const,
               documentId: salesInvoice.data?.id,
@@ -1378,7 +1511,7 @@ serve(async (req: Request) => {
             reversingItemLedgerEntries.push({
               postingDate: today,
               itemId: entry.itemId,
-              quantity: -entry.quantity, // Reverse the quantity
+              quantity: -entry.quantity,
               locationId: entry.locationId,
               storageUnitId: entry.storageUnitId,
               entryType:
@@ -1395,7 +1528,7 @@ serve(async (req: Request) => {
         }
 
         const accountingPeriodId = accountingEnabled
-          ? await getCurrentAccountingPeriod(client, companyId, db)
+          ? await getCurrentAccountingPeriod(client, companyId, db, today)
           : null;
 
         await db.transaction().execute(async (trx) => {
@@ -1561,14 +1694,7 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ success: true });
   } catch (err) {
     console.error(err);
     if ("invoiceId" in payload) {
@@ -1578,9 +1704,6 @@ serve(async (req: Request) => {
         .update({ status: "Draft" })
         .eq("id", payload.invoiceId);
     }
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

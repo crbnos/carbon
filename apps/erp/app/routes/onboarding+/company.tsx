@@ -6,8 +6,6 @@ import { updateCompanySession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
-  Card,
-  CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -15,6 +13,7 @@ import {
   VStack
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
+import { getLocalTimeZone } from "@internationalized/date";
 import {
   type ActionFunctionArgs,
   Link,
@@ -22,11 +21,17 @@ import {
   useLoaderData
 } from "react-router";
 import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "~/components";
+import {
   AddressAutocomplete,
   Currency,
   Hidden,
   Input,
-  Submit
+  Submit,
+  Timezone
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import { addressValidator, getCompany } from "~/modules/settings";
@@ -83,7 +88,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyId = await provisionOnboardingCompany(serviceRole, client, {
     userId,
     companyData,
-    backup: null
+    backup: null,
+    template: null
   });
 
   const companyRecord = await serviceRole
@@ -121,28 +127,33 @@ export default function OnboardingCompany() {
     countryCode: company?.countryCode ?? draft?.company?.countryCode ?? "US",
     baseCurrencyCode:
       company?.baseCurrencyCode ?? draft?.company?.baseCurrencyCode ?? "USD",
+    // Browser timezone is the best guess for the HQ at onboarding time
+    timezone:
+      company?.timezone ?? draft?.company?.timezone ?? getLocalTimeZone(),
     website: company?.website ?? draft?.company?.website ?? ""
   };
 
   return (
-    <Card className="max-w-lg">
+    <OnboardingCard>
       <ValidatedForm
         validator={addressValidator}
         defaultValues={initialValues}
         method="post"
+        className={onboardingFormClassName}
       >
         <CardHeader>
           <CardTitle>Now let's set up your company</CardTitle>
         </CardHeader>
-        <CardContent>
+        <OnboardingCardContent>
           <Hidden name="next" value={next} />
           <VStack spacing={4}>
             <Input autoFocus name="name" label="Company Name" />
             <AddressAutocomplete />
+            <Timezone name="timezone" label="Timezone" />
             <Input name="website" label="Website" />
             <Currency name="baseCurrencyCode" label="Base Currency" />
           </VStack>
-        </CardContent>
+        </OnboardingCardContent>
 
         <CardFooter>
           <HStack>
@@ -161,6 +172,6 @@ export default function OnboardingCompany() {
           </HStack>
         </CardFooter>
       </ValidatedForm>
-    </Card>
+    </OnboardingCard>
   );
 }

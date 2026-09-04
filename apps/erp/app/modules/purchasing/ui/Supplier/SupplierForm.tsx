@@ -176,7 +176,7 @@ const SupplierForm = ({
                     name="supplierStatus"
                     label={t`Supplier Status`}
                     placeholder={t`Select Supplier Status`}
-                    disabled={supplierApprovalRequired}
+                    isReadOnly={supplierApprovalRequired}
                     termId="supplier-status"
                   />
                   <SupplierType

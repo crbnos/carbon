@@ -46,6 +46,7 @@
     "storage-rules",
     "shelf-life",
     "traceability",
+    "scrap",
     "company-settings",
     "printing",
     "custom-fields",
@@ -57,10 +58,13 @@
     "people",
     "training",
     "permissions",
+    "two-factor",
     "account",
     "onboarding",
     "sharing",
     "agent",
+    "workflows",
+    "workflow-runs",
     "notifications"
   ]
 }

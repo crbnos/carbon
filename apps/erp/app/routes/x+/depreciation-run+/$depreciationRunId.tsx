@@ -30,6 +30,7 @@ import {
   useNavigate,
   useParams
 } from "react-router";
+import { DateTime } from "~/components";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -46,7 +47,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Depreciation`, to: path.to.depreciationRuns },
     (data) => data?.run?.depreciationRunId
-  )
+  ),
+  module: "accounting"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -105,7 +107,7 @@ export default function DepreciationRunDetailRoute() {
     : "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px]";
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
@@ -168,12 +170,16 @@ export default function DepreciationRunDetailRoute() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3 w-full mb-6">
               <div>
                 <p className="text-sm text-muted-foreground">Period End</p>
-                <p className="text-sm">{formatDate(run.periodEnd)}</p>
+                <p className="text-sm">
+                  <DateTime value={run.periodEnd} variant="date" />
+                </p>
               </div>
               {run.postedAt && (
                 <div>
                   <p className="text-sm text-muted-foreground">Posted At</p>
-                  <p className="text-sm">{formatDate(run.postedAt)}</p>
+                  <p className="text-sm">
+                    <DateTime value={run.postedAt} variant="date" />
+                  </p>
                 </div>
               )}
             </div>

@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { round } from "../shared/precision.ts";
 import type { Database } from "./types.ts";
 
 export type JobMethod = NonNullable<
@@ -59,9 +60,9 @@ function getJobMethodTreeArrayToTree(
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    lookup[itemId]["data"] = item;
+    lookup[itemId]!["data"] = item;
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
@@ -71,7 +72,7 @@ function getJobMethodTreeArrayToTree(
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      lookup[parentId]["children"].push(treeItem);
+      lookup[parentId]!["children"].push(treeItem);
     }
   }
   return rootItems;
@@ -86,6 +87,24 @@ export function traverseJobMethod(
   if (node.children) {
     for (const child of node.children) {
       traverseJobMethod(child, callback);
+    }
+  }
+}
+
+// Async twin of traverseJobMethod, mirroring traverseQuoteMethod: each node's
+// callback is awaited before its children are visited, so a parent's cascade
+// state (quantities, id maps) is in place when a child reads it. The sync
+// version cannot be reused — an async callback passed to it would fire
+// unawaited and the parent-before-child ordering would be lost.
+export async function traverseJobMethodAsync(
+  node: JobMethodTreeItem,
+  callback: (node: JobMethodTreeItem) => void | Promise<void>
+) {
+  await callback(node);
+
+  if (node.children) {
+    for (const child of node.children) {
+      await traverseJobMethodAsync(child, callback);
     }
   }
 }
@@ -138,10 +157,10 @@ function getQuoteMethodTreeArrayToTree(
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
       lookup[itemId] = { id: itemId, children: [], data: item };
     } else {
-      lookup[itemId].data = item;
+      lookup[itemId]!.data = item;
     }
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
@@ -154,7 +173,7 @@ function getQuoteMethodTreeArrayToTree(
         };
       }
 
-      lookup[parentId].children.push(treeItem);
+      lookup[parentId]!.children.push(treeItem);
     }
   }
   return rootItems;
@@ -356,9 +375,9 @@ async function getSupplierPriceBreaksForItems(
     if (!result[sp.itemId]) {
       result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
     }
-    const current = result[sp.itemId].fallbackUnitPrice;
+    const current = result[sp.itemId]!.fallbackUnitPrice;
     if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
+      result[sp.itemId]!.fallbackUnitPrice = sp.unitPrice;
     }
   }
 
@@ -401,6 +420,24 @@ function lookupBuyPriceFromMap(
     entry.priceBreaks,
     requestedQty,
     entry.fallbackUnitPrice ?? fallbackCost
+  );
+}
+
+/**
+ * Mirror of `resolveBuyUnitCost` in
+ * `apps/erp/app/modules/shared/shared.service.ts` — keep both in sync.
+ */
+function resolveBuyUnitCost(
+  material: { itemId: string; unitCost: number; unitCostSource?: string | null },
+  requestedQty: number,
+  priceMap: SupplierPriceMap
+): number {
+  if (material.unitCostSource === "manual") return material.unitCost;
+  return lookupBuyPriceFromMap(
+    material.itemId,
+    requestedQty,
+    priceMap,
+    material.unitCost
   );
 }
 
@@ -523,10 +560,11 @@ export async function calculateQuoteLinePrices(
       .map((row) => Number(row.quantity))
   );
 
-  // 2. Fix Buy material costs with supplier price breaks
+  // 2. Fix Buy material costs with supplier price breaks; resolveBuyUnitCost
+  //    leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
-    .select("id, itemId, unitCost")
+    .select("id, itemId, unitCost, unitCostSource")
     .eq("quoteLineId", quoteLineId)
     .eq("methodType", "Purchase to Order");
 
@@ -536,7 +574,8 @@ export async function calculateQuoteLinePrices(
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
   for (const mat of buyMaterials.data ?? []) {
-    const price = lookupBuyPriceFromMap(mat.itemId, 1, priceMap, mat.unitCost);
+    if (mat.unitCostSource === "manual") continue;
+    const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
       await client
         .from("quoteMaterial")
@@ -565,6 +604,7 @@ export async function calculateQuoteLinePrices(
     methodType: string;
     quantity: number;
     unitCost: number;
+    unitCostSource: string | null;
     quoteMaterialMakeMethodId: string;
     operations: typeof operations;
     children: EnhancedNode[];
@@ -584,6 +624,7 @@ export async function calculateQuoteLinePrices(
       methodType: node.data.methodType,
       quantity: qty,
       unitCost: node.data.unitCost,
+      unitCostSource: node.data.unitCostSource,
       quoteMaterialMakeMethodId: node.data.quoteMaterialMakeMethodId,
       operations: nodeOps,
       children: node.children.map((c) => buildEnhancedTree(c, qty)),
@@ -607,15 +648,15 @@ export async function calculateQuoteLinePrices(
     itemId: string,
     itemType: string,
     quantity: number,
-    unitCost: number
+    unitCost: number,
+    unitCostSource: string | null
   ) {
     const costFn = (outerQty: number) => {
       const requestedQty = quantity * outerQty;
-      const resolved = lookupBuyPriceFromMap(
-        itemId,
+      const resolved = resolveBuyUnitCost(
+        { itemId, unitCost, unitCostSource },
         requestedQty,
-        priceMap,
-        unitCost
+        priceMap
       );
       return resolved * requestedQty;
     };
@@ -640,7 +681,13 @@ export async function calculateQuoteLinePrices(
 
   function walkTree(node: EnhancedNode) {
     if (node.methodType === "Purchase to Order") {
-      pushBuyCostEffect(node.itemId, node.itemType, node.quantity, node.unitCost);
+      pushBuyCostEffect(
+        node.itemId,
+        node.itemType,
+        node.quantity,
+        node.unitCost,
+        node.unitCostSource
+      );
     } else if (node.methodType === "Pull from Inventory") {
       const costFn = (quantity: number) =>
         node.unitCost * node.quantity * quantity;
@@ -799,7 +846,7 @@ export async function calculateQuoteLinePrices(
         return sum + cost * (1 + markup / 100);
       }, 0);
 
-      const roundedUnitPrice = Number(unitPrice.toFixed(precision));
+      const roundedUnitPrice = round(unitPrice, precision);
 
       return {
         quoteId,

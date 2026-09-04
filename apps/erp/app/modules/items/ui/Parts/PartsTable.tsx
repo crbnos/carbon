@@ -45,32 +45,35 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
   MethodIcon,
   New,
+  SupplierAvatarGroup,
   Table,
   TrackingTypeIcon
 } from "~/components";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
-import { usePeople } from "~/stores";
+import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { Part } from "../../types";
+import type { PartListItem } from "../../types";
 
 type PartsTableProps = {
-  data: Part[];
+  data: PartListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -79,7 +82,6 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -108,14 +110,19 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   );
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Part | null>(null);
+  const [selectedItem, setSelectedItem] = useState<PartListItem | null>(null);
 
   const [people] = usePeople();
+  const [suppliers] = useSuppliers();
+  const supplierMap = useMemo(
+    () => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])),
+    [suppliers]
+  );
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Part>("part");
+  const customColumns = useCustomColumns<PartListItem>("part");
 
-  const columns = useMemo<ColumnDef<Part>[]>(() => {
-    const defaultColumns: ColumnDef<Part>[] = [
+  const columns = useMemo<ColumnDef<PartListItem>[]>(() => {
+    const defaultColumns: ColumnDef<PartListItem>[] = [
       {
         accessorKey: "id",
         header: t`Part ID`,
@@ -137,9 +144,17 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           </HStack>
         ),
         meta: {
-          icon: <LuBookMarked />
+          icon: <LuBookMarked />,
+          // The accessor is the raw item id — export the readable id
+          // the cell shows instead of a UUID.
+          exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
+      exportOnlyColumn<PartListItem>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "description",
         header: t`Description`,
@@ -332,6 +347,29 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         }
       },
       {
+        accessorKey: "suppliers",
+        header: t`Supplier`,
+        cell: ({ row }) => (
+          <SupplierAvatarGroup supplierIds={row.original.suppliers ?? []} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: suppliers.map((supplier) => ({
+              value: supplier.id,
+              label: supplier.name
+            })),
+            isArray: true
+          },
+          icon: <LuTruck />,
+          exportValue: (row) =>
+            row.suppliers
+              ?.map((supplierId) => supplierMap.get(supplierId))
+              .filter(Boolean)
+              .join(", ") ?? null
+        }
+      },
+      {
         accessorKey: "active",
         header: t`Active`,
         cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -367,7 +405,9 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -392,7 +432,9 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -402,13 +444,14 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   }, [
     tags,
     people,
+    supplierMap,
+    suppliers,
     customColumns,
     itemPostingGroups,
     t,
     translateMethodType,
     translateReplenishment,
-    translateTrackingType,
-    formatDate
+    translateTrackingType
   ]);
 
   const fetcher = useFetcher<typeof action>();
@@ -558,7 +601,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Part) => {
+    return (row: PartListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -619,7 +662,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
 
   return (
     <>
-      <Table<Part>
+      <Table<PartListItem>
         count={count}
         columns={columns}
         data={data}

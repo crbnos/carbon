@@ -27,6 +27,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import {
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
@@ -134,9 +135,7 @@ const JobMaterialsTable = memo(
           accessorKey: "jobMaterialItemId",
           header: t`Item`,
           cell: ({ row }) => {
-            const substitutedFromId = (
-              row.original as { substitutedFromItemId?: string | null }
-            ).substitutedFromItemId;
+            const substitutedFromId = row.original.substitutedFromItemId;
             const substitutedFrom = substitutedFromId
               ? (items.find((i) => i.id === substitutedFromId)
                   ?.readableIdWithRevision ?? substitutedFromId)
@@ -199,9 +198,16 @@ const JobMaterialsTable = memo(
                   value: item.id,
                   label: item.readableIdWithRevision
                 }))
-            }
+            },
+            // The accessor is a raw item id — export the readable id instead.
+            exportValue: (row) => row.itemReadableId ?? null
           }
         },
+        exportOnlyColumn<JobMaterial>({
+          id: "itemName",
+          header: t`Item Name`,
+          value: (row) => row.description ?? null
+        }),
         {
           id: "orderStatus",
           header: () => (

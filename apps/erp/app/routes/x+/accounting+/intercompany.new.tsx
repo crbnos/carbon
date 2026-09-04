@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { useCompanyToday } from "~/hooks";
 import {
   createIntercompanyTransaction,
   getCompaniesInGroup,
@@ -65,6 +66,7 @@ export default function NewIntercompanyTransactionRoute() {
   const { companies } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
+  const companyToday = useCompanyToday();
   const initialValues = {
     sourceCompanyId: "",
     targetCompanyId: "",
@@ -73,7 +75,7 @@ export default function NewIntercompanyTransactionRoute() {
     description: "",
     debitAccountId: "",
     creditAccountId: "",
-    postingDate: new Date().toISOString().split("T")[0]
+    postingDate: companyToday
   };
 
   return (

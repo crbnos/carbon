@@ -18,6 +18,7 @@ import {
 import {
   convertKbToString,
   getFileSizeLimit,
+  INPUT_FORMAT,
   supportedModelTypes
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -45,6 +46,8 @@ import {
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
 import {
+  useCompanySettings,
+  useCurrencyDecimals,
   useModelUpload,
   useNextItemId,
   usePermissions,
@@ -74,6 +77,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -172,6 +176,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
 
   const { id, onIdChange, loading } = useNextItemId("Tool");
   const permissions = usePermissions();
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
   const isEditing = !!initialValues.id;
 
   const translateItemTrackingType = (v: string) =>
@@ -267,7 +273,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
-                    isUppercase
+                    isUppercase={!allowLowercaseItemIds}
                     autoFocus
                   />
                 )}
@@ -330,10 +336,10 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   <Number
                     name="unitCost"
                     label={t`Unit Cost`}
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      baseCurrency,
+                      currencyDecimals
+                    )}
                     minValue={0}
                     isReadOnly={replenishmentSystem === "Make"}
                   />

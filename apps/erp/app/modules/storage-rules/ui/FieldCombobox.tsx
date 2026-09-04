@@ -11,6 +11,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -189,10 +190,13 @@ export default function FieldCombobox({
                     {gi > 0 && <CommandSeparator />}
                     <CommandGroup
                       heading={
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <Subheading
+                          variant="heavy"
+                          className="flex items-center gap-1.5"
+                        >
                           {meta.icon}
                           {meta.label}
-                        </span>
+                        </Subheading>
                       }
                     >
                       {fields.map((f) => {

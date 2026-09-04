@@ -13,8 +13,8 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher, useNavigate } from "react-router";
-import { Input, Location, Select, Submit } from "~/components/Form";
-import { useUser } from "~/hooks";
+import { Boolean, Input, Location, Select, Submit } from "~/components/Form";
+import { useFlags, useUser } from "~/hooks";
 import type { getEmployeeTypes, getInvitable } from "~/modules/users";
 import { createEmployeeValidator } from "~/modules/users";
 import type { Result } from "~/types";
@@ -27,6 +27,7 @@ type CreateEmployeeModalProps = {
 const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   const { t } = useLingui();
   const { defaults } = useUser();
+  const { isControlledEnvironment } = useFlags();
   const navigate = useNavigate();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher =
@@ -86,6 +87,13 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
                 label={t`Location`}
                 termId="create-employee-location"
               />
+              {isControlledEnvironment && (
+                <Boolean
+                  name="usPersonAttestation"
+                  label={t`U.S. Person Attestation`}
+                  description={t`I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62`}
+                />
+              )}
             </VStack>
           </ModalBody>
           <ModalFooter>

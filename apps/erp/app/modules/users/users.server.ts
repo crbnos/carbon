@@ -1,5 +1,6 @@
-import { error, success } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
+import { logPermissionChange } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
 import {
@@ -9,8 +10,22 @@ import {
 } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import { getLogger } from "@carbon/logger";
+import { now, parseAbsolute } from "@internationalized/date";
 
+// Re-exported, not reimplemented: this module used to carry a near-identical
+// copy that (a) missed the canonical version's cache TTL and (b) bypassed its
+// per-request memoization.
+export { getUserClaims } from "@carbon/auth/users.server";
+
+import {
+  emailDomain,
+  getSsoConnection,
+  getSsoConnectionByDomain,
+  isSsoEnabled,
+  seedSsoIdentityForUser,
+  uncoveredSsoDomainError
+} from "@carbon/ee/sso.server";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "react-router";
 import { getSupplierContact } from "~/modules/purchasing";
@@ -25,11 +40,56 @@ import type {
   User
 } from "~/modules/users";
 import { getPermissionsByEmployeeType } from "~/modules/users";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { insertEmployeeJob } from "../people/people.service";
 
 const logger = getLogger("erp", "users");
+
+/**
+ * Controlled environments (ITAR) expire invites 7 days after creation. Computed
+ * at read time — no `expiresAt` column. Resend resets `createdAt`, restarting
+ * the window. Enforced only when CONTROLLED_ENVIRONMENT is on.
+ */
+export const INVITE_EXPIRY_DAYS = 7;
+
+export function isControlledInviteExpired(createdAt: string): boolean {
+  if (!CONTROLLED_ENVIRONMENT) return false;
+  const expiresAt = parseAbsolute(createdAt, "UTC").add({
+    days: INVITE_EXPIRY_DAYS
+  });
+  return expiresAt.compare(now("UTC")) < 0;
+}
+
+/**
+ * Once a company has an active SSO connection, employee invites must stay on
+ * its covered domains — an uncovered invite would silently bypass the IdP via
+ * magic-link auth. Customer/supplier invites are external by nature and are
+ * not constrained. Scoped to THIS company's connection: a domain covered by
+ * another company's connection is neither required nor blocked here.
+ * Returns the refusal message for the email field, or null when the invite
+ * may proceed. A failed connection read refuses (fail closed) rather than
+ * guessing.
+ */
+export async function getSsoInviteDomainError(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  email: string
+): Promise<string | null> {
+  const connection = await getSsoConnection(serviceRole, companyId);
+  if (connection.error) {
+    logger.error("Failed to read SSO connection for invite check", {
+      companyId,
+      error: connection.error
+    });
+    return "Could not verify the company's single sign-on configuration. Try again.";
+  }
+  if (!connection.data) {
+    return null;
+  }
+  return uncoveredSsoDomainError(connection.data.domains ?? [], email);
+}
 
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
@@ -45,6 +105,16 @@ export async function acceptInvite(
     .single();
 
   if (invite.error) return invite;
+
+  if (isControlledInviteExpired(invite.data.createdAt)) {
+    return {
+      data: null,
+      error: {
+        message:
+          "This invite has expired. Please request a new invite to continue."
+      }
+    };
+  }
 
   if (email && invite.data.email !== email) {
     throw new Error(
@@ -225,6 +295,43 @@ export async function addUserToCompany(
   return client.from("userToCompany").insert(userToCompany);
 }
 
+/**
+ * Pre-seed a SAML SSO identity for a newly-created auth user when their email
+ * domain already has a verified SSO connection — so their first SAML sign-in
+ * links to this account instead of being rejected by GOTRUE_DISABLE_SIGNUP.
+ * (Existing users on a domain are handled by the backfill in verifySsoDomain.)
+ *
+ * Best-effort: a failure is logged, never thrown — account creation must not
+ * fail because seeding failed, and the domain-verify backfill is a fallback.
+ * Rollback-safe: identities cascade-delete with auth.users, so a later insert
+ * failure that deletes the auth account also removes this row. Self-gates on
+ * isSsoEnabled(); off-Enterprise it does not query.
+ */
+async function seedSsoIdentityForNewUser(
+  serviceRole: SupabaseClient<Database>,
+  { userId, email }: { userId: string; email: string }
+): Promise<void> {
+  if (!isSsoEnabled()) return;
+  const domain = emailDomain(email);
+  if (!domain) return;
+
+  const connection = await getSsoConnectionByDomain(serviceRole, domain);
+  if (connection.error || !connection.data) return;
+
+  const seed = await seedSsoIdentityForUser(getDatabaseClient(), {
+    userId,
+    email,
+    providerId: connection.data.providerId
+  });
+  if (seed.error) {
+    logger.error("Failed to pre-seed SSO identity for new user", {
+      userId,
+      domain,
+      error: seed.error
+    });
+  }
+}
+
 export async function createCustomerAccount(
   client: SupabaseClient<Database>,
   {
@@ -262,19 +369,21 @@ export async function createCustomerAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -287,6 +396,8 @@ export async function createCustomerAccount(
       await deleteAuthAccount(serviceRole, userId);
       return { success: false, message: createCarbonUser.error.message };
     }
+
+    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -347,7 +458,9 @@ export async function createEmployeeAccount(
     employeeType,
     locationId,
     companyId,
-    createdBy
+    createdBy,
+    attestedBy,
+    attestedAt
   }: {
     email: string;
     firstName: string;
@@ -356,6 +469,10 @@ export async function createEmployeeAccount(
     locationId: string;
     companyId: string;
     createdBy: string;
+    // ITAR (controlled environments): the inviter's 22 CFR 120.62 U.S.-person
+    // attestation. Null in ordinary deployments.
+    attestedBy?: string | null;
+    attestedAt?: string | null;
   }
 ): Promise<
   | { success: false; message: string }
@@ -377,6 +494,13 @@ export async function createEmployeeAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
 
     const existingEmployee = await client
       .from("employee")
@@ -393,17 +517,12 @@ export async function createEmployeeAccount(
     }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -416,6 +535,8 @@ export async function createEmployeeAccount(
       await deleteAuthAccount(serviceRole, userId);
       return { success: false, message: createCarbonUser.error.message };
     }
+
+    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -437,7 +558,9 @@ export async function createEmployeeAccount(
       email,
       companyId,
       createdBy,
-      code
+      code,
+      attestedBy: attestedBy ?? null,
+      attestedAt: attestedAt ?? null
     })
   ]);
 
@@ -506,19 +629,21 @@ export async function createSupplierAccount(
 
   if (user.data) {
     userId = user.data.id;
+    if (!(await authIdentityExists(userId))) {
+      return {
+        success: false,
+        message:
+          "This user's auth account no longer exists. Contact support before re-adding."
+      };
+    }
   } else {
     isNewUser = true;
-    const createSupabaseUser = await serviceRole.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password: crypto.randomUUID(),
-      email_confirm: true
-    });
-
-    if (createSupabaseUser.error) {
-      return { success: false, message: createSupabaseUser.error.message };
+    const resolvedId = await resolveAuthUserId(email);
+    if (!resolvedId) {
+      return { success: false, message: "Failed to create auth account" };
     }
+    userId = resolvedId;
 
-    userId = createSupabaseUser.data.user.id;
     const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
@@ -531,6 +656,8 @@ export async function createSupplierAccount(
       await deleteAuthAccount(serviceRole, userId);
       return { success: false, message: createCarbonUser.error.message };
     }
+
+    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -641,48 +768,40 @@ export async function getUserByEmail(email: string) {
     .single();
 }
 
-export async function getUserClaims(userId: string, companyId: string) {
-  let claims: {
-    permissions: Record<string, Permission>;
-    role: string | null;
-  } | null = null;
+// Returns false if the auth identity for this userId has been deleted, leaving only an app-side row.
+async function authIdentityExists(userId: string): Promise<boolean> {
+  const { error } = await getCarbonServiceRole().auth.admin.getUserById(userId);
+  return !error;
+}
 
-  try {
-    const cachedClaims = await redis.get(getPermissionCacheKey(userId));
-    if (cachedClaims) {
-      claims = JSON.parse(cachedClaims) as {
-        permissions: Record<string, Permission>;
-        role: string | null;
-      };
-    }
-  } catch (e) {
-    logger.error("Failed to get claims from redis", { error: e });
-  } finally {
-    // if we don't have permissions from redis, get them from the database
-    if (!claims) {
-      // TODO: remove service role from here, and move it up a level
-      const rawClaims = await getClaims(
-        getCarbonServiceRole(),
-        userId,
-        companyId
-      );
-      if (rawClaims.error || rawClaims.data === null) {
-        logger.error("Failed to get claims", { error: rawClaims.error });
-        throw new Error("Failed to get claims");
-      }
+// Creates the auth user for email, or recovers the existing ID if a prior deletion left one behind.
+async function resolveAuthUserId(email: string): Promise<string | null> {
+  const serviceRole = getCarbonServiceRole();
+  const result = await serviceRole.auth.admin.createUser({
+    email: email.toLowerCase(),
+    password: crypto.randomUUID(),
+    email_confirm: true
+  });
 
-      // convert rawClaims to permissions
-      claims = makePermissionsFromClaims(rawClaims.data as Json[]);
+  if (!result.error) return result.data.user.id;
 
-      // store claims in redis
-      await redis.set(getPermissionCacheKey(userId), JSON.stringify(claims));
+  // Only recover for "already registered"; other errors (network, rate limit) surface as-is.
+  if (result.error.code !== "user_already_exists") return null;
 
-      if (!claims) {
-        throw new Error("Failed to get claims");
-      }
-    }
-
-    return claims;
+  // auth record exists but app user row doesn't; find the orphaned ID.
+  const target = email.toLowerCase();
+  let page = 1;
+  const perPage = 1000;
+  while (true) {
+    const { data, error } = await serviceRole.auth.admin.listUsers({
+      page,
+      perPage
+    });
+    if (error || !data?.users?.length) return null;
+    const match = data.users.find((u) => u.email?.toLowerCase() === target);
+    if (match) return match.id;
+    if (data.users.length < perPage) return null;
+    page++;
   }
 }
 
@@ -690,7 +809,12 @@ export async function getUserGroups(
   client: SupabaseClient<Database>,
   userId: string
 ) {
-  return client.rpc("groups_for_user", { uid: userId });
+  // Normalize an empty result to [] (not null) — belt-and-suspenders with the
+  // groups_for_user COALESCE migration, so a user with no memberships is a
+  // well-formed empty array rather than a null the /x guard could mistake for
+  // an auth failure.
+  const result = await client.rpc("groups_for_user", { uid: userId });
+  return { ...result, data: result.data ?? [] };
 }
 
 export async function getUserDefaults(
@@ -1122,23 +1246,19 @@ export function makeCompanyPermissionsFromClaims(
         switch (action) {
           case "view":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["view"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["view"] = value.includes(companyId);
             break;
           case "create":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["create"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["create"] = value.includes(companyId);
             break;
           case "update":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["update"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["update"] = value.includes(companyId);
             break;
           case "delete":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["delete"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["delete"] = value.includes(companyId);
             break;
         }
       }
@@ -1237,18 +1357,10 @@ export function makeCompanyPermissionsFromEmployeeType(
       result[permission.module] = {
         name: permission.module.toLowerCase(),
         permission: {
-          view:
-            permission.view.includes("0") ||
-            permission.view.includes(companyId),
-          create:
-            permission.create.includes("0") ||
-            permission.create.includes(companyId),
-          update:
-            permission.update.includes("0") ||
-            permission.update.includes(companyId),
-          delete:
-            permission.delete.includes("0") ||
-            permission.delete.includes(companyId)
+          view: permission.view.includes(companyId),
+          create: permission.create.includes(companyId),
+          update: permission.update.includes(companyId),
+          delete: permission.delete.includes(companyId)
         }
       };
     }
@@ -1368,12 +1480,16 @@ export async function updateEmployee(
     id,
     employeeType,
     permissions,
-    companyId
+    companyId,
+    actorId,
+    ip
   }: {
     id: string;
     employeeType: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
+    actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
   const updateEmployeeEmployeeType = await client
@@ -1383,7 +1499,7 @@ export async function updateEmployee(
   if (updateEmployeeEmployeeType.error)
     return error(updateEmployeeEmployeeType.error, "Failed to update employee");
 
-  return updatePermissions(client, { id, permissions, companyId });
+  return updatePermissions(client, { id, permissions, companyId, actorId, ip });
 }
 
 export async function updatePermissions(
@@ -1392,15 +1508,19 @@ export async function updatePermissions(
     id,
     permissions,
     companyId,
-    addOnly = false
+    addOnly = false,
+    actorId,
+    ip
   }: {
     id: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
     addOnly?: boolean;
+    actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
-  if (await client.rpc("is_claims_admin")) {
+  if (await client.rpc("is_claims_admin", { company: companyId })) {
     const claims = await getClaims(client, id);
 
     if (claims.error) return error(claims.error, "Failed to get claims");
@@ -1414,6 +1534,10 @@ export async function updatePermissions(
     ) as Record<string, string[]>;
     // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
     delete updatedPermissions["role"];
+
+    // Snapshot the effective grant set BEFORE the in-place mutation below, so
+    // the audit event carries an honest before/after diff (NIST 3.3.1/3.3.2).
+    const beforePermissions = structuredClone(updatedPermissions);
 
     // add any missing claims to the current claims
     Object.keys(permissions).forEach((name) => {
@@ -1517,6 +1641,15 @@ export async function updatePermissions(
       });
     }
 
+    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
+    // from every array so it can never be persisted to the authoritative table.
+    for (const key of Object.keys(updatedPermissions)) {
+      const value = updatedPermissions[key];
+      if (Array.isArray(value)) {
+        updatedPermissions[key] = value.filter((c: string) => c !== "0");
+      }
+    }
+
     const permissionsUpdate = await getCarbonServiceRole()
       .from("userPermission")
       .update({ permissions: updatedPermissions })
@@ -1525,6 +1658,17 @@ export async function updatePermissions(
       return error(permissionsUpdate.error, "Failed to update claims");
 
     await redis.del(getPermissionCacheKey(id));
+
+    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
+    logPermissionChange({
+      actor: actorId,
+      targetUserId: id,
+      companyId,
+      ip,
+      before: beforePermissions,
+      after: updatedPermissions,
+      reason: addOnly ? "add" : "edit"
+    });
 
     return success("Permissions updated");
   } else {

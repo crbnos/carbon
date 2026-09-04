@@ -15,24 +15,17 @@ import {
   LuHandCoins,
   LuLayers,
   LuScale,
-  LuSheet,
-  LuTrendingUp
+  LuSheet
 } from "react-icons/lu";
-import { usePermissions, useRouteData, useSettings } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
 const multiCompanyRoutes = new Set<string>([path.to.intercompany]);
-const accountingOnlyRoutes = new Set<string>([
-  path.to.balanceSheet,
-  path.to.incomeStatement,
-  path.to.trialBalance,
-  path.to.intercompany,
-  path.to.accountingJournals,
-  path.to.accountingPeriods,
-  path.to.fixedAssets,
-  path.to.depreciationRuns
-]);
+
+/** Routes that only make sense with an active accounting integration
+ * (xero/quickbooks/rillet) — hidden otherwise. */
+const integrationRoutes = new Set<string>([path.to.accountingSyncTieOut]);
 
 export default function useAccountingSubmodules() {
   const { t } = useLingui();
@@ -42,22 +35,16 @@ export default function useAccountingSubmodules() {
         name: t`Reports`,
         routes: [
           {
-            name: t`Balance Sheet`,
-            to: path.to.balanceSheet,
-            role: "employee",
-            icon: <LuScale />
-          },
-          {
-            name: t`Income Statement`,
-            to: path.to.incomeStatement,
-            role: "employee",
-            icon: <LuTrendingUp />
-          },
-          {
-            name: t`Trial Balance`,
-            to: path.to.trialBalance,
+            name: t`Reporting`,
+            to: path.to.reports,
             role: "employee",
             icon: <LuFileSpreadsheet />
+          },
+          {
+            name: t`Sync Tie-Out`,
+            to: path.to.accountingSyncTieOut,
+            role: "employee",
+            icon: <LuScale />
           }
         ]
       },
@@ -159,18 +146,20 @@ export default function useAccountingSubmodules() {
     [t]
   );
 
-  const settings = useSettings();
-  const accountingEnabled = (settings as any).accountingEnabled ?? false;
   const permissions = usePermissions();
-  const routeData = useRouteData<{ hasMultipleCompanies: boolean }>(
-    path.to.accounting
-  );
+  const routeData = useRouteData<{
+    hasMultipleCompanies: boolean;
+    accountingIntegrations: string[];
+  }>(path.to.accounting);
   const hasMultipleCompanies = routeData?.hasMultipleCompanies ?? false;
+  const hasAccountingIntegration =
+    (routeData?.accountingIntegrations?.length ?? 0) > 0;
 
   const isRouteVisible = (route: { to: string; role?: string }) => {
     if (route.role && !permissions.is(route.role as Role)) return false;
     if (!hasMultipleCompanies && multiCompanyRoutes.has(route.to)) return false;
-    if (!accountingEnabled && accountingOnlyRoutes.has(route.to)) return false;
+    if (!hasAccountingIntegration && integrationRoutes.has(route.to))
+      return false;
     return true;
   };
 

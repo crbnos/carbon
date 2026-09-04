@@ -6,7 +6,7 @@ A job has been collecting cost in work-in-process. Three events turn that runnin
 
 ## Finish into inventory
 
-When the last operation is done, Carbon completes the job. It backflushes any material still owed, catches up any labor that hasn't posted yet, and then **receives the finished goods into inventory**: a debit to inventory, a credit to work-in-process, tagged *Job Receipt*. The job moves to **"Completed"**.
+When the last operation is done, you complete the job. The **"Complete Job"** dialog confirms the move — it shows the **"Quantity Completed"**, derived from the serials and batches completed in MES rather than typed in, and warns that the job will no longer be available on the shop floor. Carbon then backflushes any untracked material still owed — serial- and batch-tracked material has to be scanned in on the floor, so it is never backflushed — catches up any labor that hasn't posted yet, and **receives the finished goods into inventory**: a debit to inventory, a credit to work-in-process, tagged *Job Receipt*. The job moves to **"Completed"**.
 
 The receipt is valued at the job's **actual accumulated WIP cost** — whatever really went in. Carbon does not receive finished goods at standard and book a variance; the finished unit's cost is simply the sum of what the job spent.
 

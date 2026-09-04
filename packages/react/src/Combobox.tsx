@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { matchSorter, rankings } from "match-sorter";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
 import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
@@ -19,6 +20,21 @@ import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
 
+export type ComboboxOption = {
+  label: string | JSX.Element;
+  value: string;
+  helper?: string;
+  helperRight?: string;
+  /** Extra search text, matched but never rendered. */
+  keywords?: string;
+};
+
+/** Ranks options against the query. Defaults to `filterComboboxOptions`. */
+export type ComboboxFilter = (
+  options: ComboboxOption[],
+  search: string
+) => ComboboxOption[];
+
 export type ComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
   "onChange"
@@ -26,12 +42,8 @@ export type ComboboxProps = Omit<
   asButton?: boolean;
   size?: "sm" | "md" | "lg";
   value?: string;
-  options: {
-    label: string | JSX.Element;
-    value: string;
-    helper?: string;
-    helperRight?: string;
-  }[];
+  options: ComboboxOption[];
+  filter?: ComboboxFilter;
   isClearable?: boolean;
   isLoading?: boolean;
   isReadOnly?: boolean;
@@ -52,9 +64,11 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       size,
       value,
       options,
+      filter,
       isClearable,
       isLoading,
-      isReadOnly,
+      isReadOnly: isReadOnlyProp,
+      disabled,
       placeholder,
       emptyMessage,
       onChange,
@@ -65,6 +79,10 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // Treat the native `disabled` prop as equivalent to `isReadOnly`. The type
+    // accepts `disabled` (it extends button props), so callers reasonably pass
+    // it — honor it instead of silently overwriting it below.
+    const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const isInlinePreview = !!inline;
     const selectedOption = useMemo(
@@ -80,8 +98,14 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
 
       return [labelText, selectedOption.helper].filter(Boolean).join(" - ");
     }, [selectedOption]);
-    const dropdownContentWidthCh = useMemo(() => {
-      const maxOptionChars = options.reduce((longest, option) => {
+    // The list is virtualized (items are absolutely positioned), so the
+    // popover can't size to its options naturally. Instead of estimating in
+    // `ch` (which overestimates proportional text and made every popover wider
+    // than its trigger), render the longest label in an invisible zero-height
+    // sizer row — the browser measures the true text width and the popover
+    // takes max(trigger width, real content width).
+    const longestOptionText = useMemo(() => {
+      return options.reduce((longest, option) => {
         const labelText =
           typeof option.label === "string"
             ? option.label
@@ -90,13 +114,8 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
           .filter(Boolean)
           .join(" ");
 
-        return Math.max(longest, combined.length);
-      }, 0);
-
-      // Keep a sensible minimum even for an empty list so the `emptyMessage`
-      // has room. An inline "+" trigger is tiny, so falling back to the trigger
-      // width would collapse the popover and wrap the message one word per line.
-      return Math.min(72, Math.max(36, maxOptionChars + 8));
+        return combined.length > longest.length ? combined : longest;
+      }, "");
     }, [options]);
 
     return (
@@ -159,16 +178,23 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
-            className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
-            style={{
-              width: `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
-            }}
+            className="w-auto min-w-[max(var(--radix-popover-trigger-width),14rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
+            {/* Zero-height sizer: the widest option, so the auto width fits it
+                even when virtualization keeps it unrendered. px-8 covers item
+                padding + the selected-check icon + scrollbar. */}
+            <div
+              aria-hidden
+              className="invisible h-0 overflow-hidden whitespace-nowrap px-8 text-sm"
+            >
+              {longestOptionText}
+            </div>
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
               <VirtualizedCommand
                 options={options}
+                filter={filter}
                 value={value}
                 onChange={onChange}
                 itemHeight={itemHeight}
@@ -195,15 +221,46 @@ Combobox.displayName = "Combobox";
 export { Combobox };
 
 type VirtualizedCommandProps = {
-  options: ComboboxProps["options"];
+  options: ComboboxOption[];
+  filter?: ComboboxFilter;
   value?: string;
   onChange?: (selected: string) => void;
   itemHeight: number;
   setOpen: (open: boolean) => void;
 };
 
+const labelOf = (option: ComboboxOption) =>
+  typeof option.label === "string"
+    ? option.label
+    : reactNodeToString(option.label);
+
+/**
+ * Default search. Capped at CONTAINS because match-sorter's fuzzy tier matched
+ * 278 of 419 timezones for "EST"; the joined key lets a query span fields
+ * ("PART-001 Steel Bracket"), which per-key matching alone misses.
+ */
+export function filterComboboxOptions(
+  options: ComboboxOption[],
+  search: string
+): ComboboxOption[] {
+  if (!search) return options;
+  return matchSorter(options, search, {
+    threshold: rankings.CONTAINS,
+    keys: [
+      labelOf,
+      (option) => option.helper ?? "",
+      (option) => option.keywords ?? "",
+      (option) =>
+        [labelOf(option), option.helper, option.keywords]
+          .filter(Boolean)
+          .join(" ")
+    ]
+  });
+}
+
 function VirtualizedCommand({
   options,
+  filter = filterComboboxOptions,
   value,
   onChange,
   itemHeight,
@@ -213,24 +270,16 @@ function VirtualizedCommand({
   const [search, setSearch] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filteredOptions = useMemo(() => {
-    return search
-      ? options.filter((option) => {
-          const value =
-            typeof option.label === "string"
-              ? `${option.label} ${option.helper}`
-              : reactNodeToString(option.label);
-
-          return value.toLowerCase().includes(search.toLowerCase());
-        })
-      : options;
-  }, [options, search]);
+  const filteredOptions = useMemo(
+    () => filter(options, search),
+    [options, search, filter]
+  );
 
   const virtualizer = useVirtualizer({
     count: filteredOptions.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
-    overscan: 5
+    overscan: 12
   });
 
   const items = virtualizer.getVirtualItems();

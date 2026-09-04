@@ -248,7 +248,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                     }));
                   }
                 }}
-                disabled={initialValues.originatedFromQuote}
+                isReadOnly={initialValues.originatedFromQuote}
               />
 
               {isEditing &&

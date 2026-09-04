@@ -29,15 +29,10 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
-import { CustomerAvatar, SupplierAvatar, Table } from "~/components";
+import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useUrlParams
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -83,6 +78,9 @@ type ARAPWorkbenchProps = {
   asOfDate: string;
   agingMethod: "dueDate" | "documentDate";
   bucketDays: [number, number, number];
+  // Overrides the table title. Defaults to Receivables/Payables (the invoicing
+  // workbench); the aging reports pass "AR Aging" / "AP Aging".
+  title?: string;
 };
 
 // A counterparty (root) row carries the aging buckets; an invoice (child) row
@@ -106,7 +104,8 @@ export function ARAPWorkbench({
   open,
   asOfDate,
   agingMethod,
-  bucketDays
+  bucketDays,
+  title
 }: ARAPWorkbenchProps) {
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
@@ -114,7 +113,6 @@ export function ARAPWorkbench({
   const adjustFetcher = useFetcher();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
-  const { formatDate } = useDateFormatter();
   const [b1, b2, b3] = bucketDays;
 
   const money = useCallback(
@@ -322,7 +320,11 @@ export function ARAPWorkbench({
                   {r.invoiceNumber}
                 </Link>
                 <span className="text-xs text-muted-foreground">
-                  {r.dateDue ? formatDate(r.dateDue) : "—"}
+                  {r.dateDue ? (
+                    <DateTime value={r.dateDue} variant="date" />
+                  ) : (
+                    "—"
+                  )}
                 </span>
               </div>
             </div>
@@ -386,7 +388,6 @@ export function ARAPWorkbench({
     b2,
     b3,
     money,
-    formatDate,
     childrenByParty,
     expandedIds,
     selectedIds,
@@ -549,7 +550,7 @@ export function ARAPWorkbench({
           data={displayRows}
           columns={columns}
           count={displayRows.length}
-          title={side === "ar" ? t`Receivables` : t`Payables`}
+          title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
           primaryAction={filters}
           defaultColumnPinning={{ left: ["Select", "counterparty"] }}
         />

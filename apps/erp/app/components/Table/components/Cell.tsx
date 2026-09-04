@@ -20,7 +20,16 @@ type CellProps<T> = {
   isEditMode: boolean;
   isRowSelected: boolean;
   isSelected: boolean;
-  pinnedColumns: string;
+  // Memo key only — see Row.tsx. Identity flips when the column defs are
+  // rebuilt or visibility/order/pinning changes, which is when a memoized cell
+  // would otherwise render a stale `columnDef.cell` renderer.
+  visibleColumns: Column<any, unknown>[];
+  // Render key only: `getPinnedStyles` is a fresh closure every render and is
+  // deliberately excluded from the memo comparator, so without a primitive that
+  // flips with the scroll state and the pinned columns' sticky offsets,
+  // memoized cells never pick up the pinned-edge shadow or a moved offset. The
+  // style itself still comes from `getPinnedStyles`.
+  pinnedStyleKey?: string;
   getPinnedStyles: (column: Column<any, unknown>) => CSSProperties;
   onClick?: () => void;
   onUpdate?: (updates: Record<string, unknown>) => void;
@@ -136,7 +145,9 @@ const MemoizedCell = memo(
     next.isEditMode === prev.isEditMode &&
     next.cell.getValue() === prev.cell.getValue() &&
     next.cell.getContext() === prev.cell.getContext() &&
-    next.pinnedColumns === prev.pinnedColumns &&
+    next.visibleColumns === prev.visibleColumns &&
+    next.pinnedStyleKey === prev.pinnedStyleKey &&
+    next.editedCells === prev.editedCells &&
     next.columnIndex === prev.columnIndex
 ) as typeof Cell;
 

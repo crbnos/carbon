@@ -2,16 +2,17 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { Loading } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-
 import { getDefaultStorageUnitForJob, getKanban } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
@@ -25,6 +26,11 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "kanban");
@@ -86,7 +92,12 @@ async function handleKanban({
     ]);
 
     const leadTime = manufacturing.data?.leadTime ?? 7;
-    const startDate = today(getLocalTimeZone());
+    // No location on the kanban → the company calendar.
+    const startDate = datetime.today(
+      kanban.data.locationId
+        ? await getLocationTimeZone(client, kanban.data.locationId, companyId)
+        : await getCompanyTimeZone(client, companyId)
+    );
     const dueDate = startDate.add({ days: leadTime }).toString();
 
     // Use storage unit from kanban if it exists, otherwise use default storage unit
@@ -109,7 +120,7 @@ async function handleKanban({
         companyId,
         createdBy: userId
       },
-      { skipMethod: true, skipRecalculate: true }
+      { skipMethod: true, skipRecalculate: true, source: "kanban" }
     );
 
     const id = createdJob.data?.id;
@@ -153,20 +164,18 @@ async function handleKanban({
           companyId,
           userId
         }),
-        runMRP(serviceRole, {
+        runMRP(serviceRole, getDatabaseClient(), {
           type: "job",
           id,
           companyId,
           userId
         }),
-        serviceRole.functions.invoke("schedule", {
-          body: {
-            jobId: id,
-            companyId,
-            userId,
-            mode: "initial",
-            direction: "backward"
-          }
+        runLocationSchedule({
+          db: getDatabaseClient(),
+          client: serviceRole,
+          locationId: kanban.data.locationId!,
+          companyId,
+          userId
         }),
         serviceRole
           .from("job")
@@ -175,6 +184,17 @@ async function handleKanban({
           })
           .eq("id", id)
       ]);
+
+      // This path writes job.status directly, so it never reaches
+      // updateJobStatus and its raiseMoment. The job was just created above,
+      // so the prior status is always Draft.
+      trackWorkEvent("job_released", {
+        companyId,
+        userId,
+        jobId: id,
+        priorStatus: "Draft",
+        source: "kanban"
+      });
     } else if (upsertMethod.error) {
       logger.error("Kanban operation failed", { error: upsertMethod.error });
     }
@@ -295,6 +315,7 @@ async function handleKanban({
         supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
+      taxPercent: 0,
       exchangeRate: 1,
       purchaseUnitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
       inventoryUnitOfMeasureCode:

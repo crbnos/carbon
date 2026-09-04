@@ -1,11 +1,16 @@
 import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   useIsMobile
 } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
+import { useOptimisticLocation } from "~/hooks";
 
 interface PanelContextType {
   isExplorerCollapsed: boolean;
@@ -86,9 +91,15 @@ export function ResizablePanels({
   content,
   properties
 }: ResizablePanelsProps) {
-  const { isExplorerCollapsed, isPropertiesCollapsed, setIsExplorerCollapsed } =
-    usePanels();
+  const {
+    isExplorerCollapsed,
+    isPropertiesCollapsed,
+    setIsExplorerCollapsed,
+    setIsPropertiesCollapsed
+  } = usePanels();
   const panelRef = useRef<ImperativePanelHandle>(null);
+  const isMobile = useIsMobile();
+  const location = useOptimisticLocation();
 
   useEffect(() => {
     if (isExplorerCollapsed) {
@@ -98,24 +109,94 @@ export function ResizablePanels({
     }
   }, [isExplorerCollapsed]);
 
+  // On mobile the side panels overlay the content as drawers; collapse them once
+  // the pathname changes (e.g. picking an item in the explorer) so the drawer
+  // doesn't sit over the destination.
+  useEffect(() => {
+    if (isMobile) {
+      setIsExplorerCollapsed(true);
+      setIsPropertiesCollapsed(true);
+    }
+  }, [
+    location.pathname,
+    isMobile,
+    setIsExplorerCollapsed,
+    setIsPropertiesCollapsed
+  ]);
+
+  // A resizable column split is unreadable at phone width. Render the content
+  // full-width and float the explorer / properties as overlay drawers instead.
+  if (isMobile) {
+    return (
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full overflow-hidden">
+        {content}
+        {explorer && (
+          <Drawer
+            open={!isExplorerCollapsed}
+            onOpenChange={(open) => setIsExplorerCollapsed(!open)}
+          >
+            <DrawerContent
+              position="left"
+              size="content"
+              className="w-[20rem] max-w-[90vw] p-0"
+            >
+              <DrawerTitle className="sr-only">
+                <Trans>Explorer</Trans>
+              </DrawerTitle>
+              <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+                {explorer}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
+        {properties && (
+          <Drawer
+            open={!isPropertiesCollapsed}
+            onOpenChange={(open) => setIsPropertiesCollapsed(!open)}
+          >
+            <DrawerContent
+              position="right"
+              size="content"
+              className="w-[20rem] max-w-[90vw] p-0"
+            >
+              <DrawerTitle className="sr-only">
+                <Trans>Properties</Trans>
+              </DrawerTitle>
+              <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+                {properties}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
+      </div>
+    );
+  }
+
+  // A layout with no explorer renders no left panel at all -- an always-present
+  // `ResizablePanel` would leave an empty column and a drag handle with nothing
+  // behind it.
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel
-        ref={panelRef}
-        order={1}
-        minSize={10}
-        className="bg-card shadow-lg"
-        collapsible
-        defaultSize={isExplorerCollapsed ? 0 : 20}
-        collapsedSize={0}
-        onCollapse={() => setIsExplorerCollapsed(true)}
-        onExpand={() => setIsExplorerCollapsed(false)}
-      >
-        {!isExplorerCollapsed && explorer}
-      </ResizablePanel>
-      <ResizableHandle withHandle />
+      {explorer && (
+        <>
+          <ResizablePanel
+            ref={panelRef}
+            order={1}
+            minSize={10}
+            className="bg-card shadow-lg"
+            collapsible
+            defaultSize={isExplorerCollapsed ? 0 : 20}
+            collapsedSize={0}
+            onCollapse={() => setIsExplorerCollapsed(true)}
+            onExpand={() => setIsExplorerCollapsed(false)}
+          >
+            {!isExplorerCollapsed && explorer}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+        </>
+      )}
       <ResizablePanel order={2} className="z-1 relative">
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           {content}
           {!isPropertiesCollapsed && properties}
         </div>

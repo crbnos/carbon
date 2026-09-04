@@ -17,10 +17,12 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
+  TruncatedTooltipText,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getSalesOrderJobStatus } from "@carbon/utils";
+import type { SalesOrderForProductionCheck } from "@carbon/utils";
+import { getSalesOrderJobStatus, hasLinesRequiringJobs } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -30,7 +32,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
-import MotionNumber from "motion-number";
 import { useMemo, useState } from "react";
 import {
   LuChevronRight,
@@ -40,13 +41,21 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, Hyperlink, MethodIcon } from "~/components";
+import {
+  CustomerAvatar,
+  DateTime,
+  Hyperlink,
+  MethodIcon,
+  MotionMoney
+} from "~/components";
 import { Confirm } from "~/components/Modals";
 import {
-  useDateFormatter,
+  useCurrencyDecimals,
+  useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  useRouteData
+  useRouteData,
+  useUser
 } from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -68,7 +77,6 @@ const SalesOrderSummary = ({
   const { t } = useLingui();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
-  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
@@ -85,16 +93,17 @@ const SalesOrderSummary = ({
   const salesOrderToJobsModal = useDisclosure();
 
   const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: routeData?.salesOrder?.currencyCode ?? "USD"
-      }),
-    [locale, routeData?.salesOrder?.currencyCode]
-  );
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  // Base currency: this formats `line.unitPrice`, a base-currency column. The
+  // order-currency figure is `convertedUnitPrice`, rendered above the badge.
+  const formatter = useCurrencyFormatter({ currency: baseCurrency });
 
   const isEditable = !isSalesOrderLocked(routeData?.salesOrder?.status);
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(
+    routeData?.salesOrder?.currencyCode ?? "USD"
+  );
 
   // Calculate totals
   const subtotal =
@@ -123,10 +132,10 @@ const SalesOrderSummary = ({
   const total = subtotal + tax + convertedShippingCost;
   const permissions = usePermissions();
 
-  // Check if there are any lines with "Make" method type that would require jobs
-  const hasMakeItems =
-    routeData?.lines?.some((line) => line.methodType === "Make to Order") ??
-    false;
+  const linesRequireJobs = hasLinesRequiringJobs({
+    jobs: routeData?.salesOrder?.jobs as SalesOrderForProductionCheck["jobs"],
+    lines: routeData?.salesOrder?.lines as SalesOrderForProductionCheck["lines"]
+  });
 
   // Services never ship, so an all-service order confirms straight to
   // "To Invoice" (getSalesOrderStatus counts Service lines as shipped) and
@@ -150,8 +159,7 @@ const SalesOrderSummary = ({
       {jobsCardStatusMatches &&
         permissions.can("create", "production") &&
         permissions.is("employee") &&
-        !routeData?.salesOrder?.jobs &&
-        hasMakeItems && (
+        linesRequireJobs && (
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-row gap-2">
@@ -185,22 +193,22 @@ const SalesOrderSummary = ({
           <HStack className="justify-between items-center">
             <div className="flex flex-col gap-1">
               <CardTitle>{routeData?.salesOrder.salesOrderId}</CardTitle>
-              <CardDescription>
-                <Trans>Sales Order</Trans>
-              </CardDescription>
             </div>
             <div className="flex flex-col gap-1 items-end">
               <CustomerAvatar
                 customerId={routeData?.salesOrder.customerId ?? null}
               />
               {routeData?.salesOrder?.orderDate && (
-                <span className="text-muted-foreground text-sm">
+                <span className="text-xs text-muted-foreground tracking-tight">
                   <Trans>Ordered</Trans>{" "}
-                  {formatDate(routeData?.salesOrder.orderDate)}
+                  <DateTime
+                    value={routeData?.salesOrder.orderDate}
+                    variant="date"
+                  />
                 </span>
               )}
               {routeData?.quote?.digitalQuoteAcceptedBy && (
-                <span className="text-muted-foreground text-sm flex flex-row items-center gap-x-1">
+                <span className="text-xs text-muted-foreground tracking-tight flex flex-row items-center gap-x-1">
                   <Trans>via Digital Quote</Trans>
                   <Tooltip>
                     <TooltipTrigger>
@@ -230,33 +238,27 @@ const SalesOrderSummary = ({
           />
 
           <VStack spacing={2} className="mt-8">
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Subtotal:</Trans>
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={subtotal}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Tax:</Trans>
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={tax}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               {convertedShippingCost > 0 ? (
                 <>
                   <VStack spacing={0}>
@@ -272,64 +274,52 @@ const SalesOrderSummary = ({
                       <Trans>Edit Shipping</Trans>
                     </Button>
                   </VStack>
-                  <MotionNumber
+                  <MotionMoney
                     value={convertedShippingCost}
-                    format={{
-                      style: "currency",
-                      currency: routeData?.salesOrder.currencyCode ?? "USD"
-                    }}
-                    locales={locale}
+                    currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                    decimalPlaces={currencyDecimals}
                   />
                 </>
               ) : isEditable ? (
                 <Button
                   variant="link"
                   size="sm"
-                  className="text-muted-foreground"
+                  className="text-primary"
                   onClick={onEditShippingCost}
                 >
                   <Trans>Add Shipping</Trans>
                 </Button>
               ) : null}
             </HStack>
-            <HStack className="justify-between text-xl font-bold w-full">
+            <HStack className="justify-between text-xl font-semibold w-full">
               <span>
                 <Trans>Total:</Trans>
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={total}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
             <div className="h-px bg-border my-2 w-full" />
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Invoiced Amount:</Trans>
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={routeData?.invoiceSummary?.invoicedAmount ?? 0}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
-            <HStack className="justify-between text-base text-muted-foreground w-full">
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
                 <Trans>Paid Amount:</Trans>
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={routeData?.invoiceSummary?.paidAmount ?? 0}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
             {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
@@ -366,6 +356,8 @@ function LineItems({
   if (!orderId) throw new Error("Could not find orderId");
 
   const percentFormatter = usePercentFormatter();
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
@@ -400,29 +392,28 @@ function LineItems({
               {line.thumbnailPath ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0} className="w-full">
+              <VStack spacing={0} className="flex-1 min-w-0">
                 <div
                   className="flex flex-col cursor-pointer w-full"
                   onClick={() => toggleOpen(line.id!)}
                 >
+                  {/* The text column must shrink (flex-1 min-w-0) or a long
+                      description shoves the totals out of the card, and its
+                      children need w-full because VStack is items-start, which
+                      sizes each child to its own content and leaves truncate
+                      inert no matter how narrow the column gets. */}
                   <div className="flex items-center justify-between w-full">
-                    <VStack
-                      spacing={0}
-                      className="flex-shrink-0 min-w-0 w-auto"
-                    >
-                      <HStack
-                        spacing={2}
-                        className="flex min-w-0 flex-shrink-0"
-                      >
+                    <VStack spacing={0} className="flex-1 min-w-0">
+                      <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">
                           {line.salesOrderLineType === "Fixed Asset"
                             ? (line as any).assetReadableId || "Fixed Asset"
@@ -439,17 +430,19 @@ function LineItems({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-base truncate">
+                      <TruncatedTooltipText
+                        className="text-muted-foreground text-sm truncate w-full"
+                        tooltip={line.description}
+                      >
                         {line.description}
-                      </span>
+                      </TruncatedTooltipText>
                     </VStack>
                     <VStack
                       spacing={2}
                       className="flex-shrink-0 items-end w-auto"
                     >
                       <HStack spacing={4}>
-                        <MotionNumber
-                          className="font-bold text-xl whitespace-nowrap"
+                        <MotionMoney
                           value={
                             ((line?.convertedUnitPrice ?? 0) *
                               (line?.saleQuantity ?? 0) +
@@ -458,11 +451,8 @@ function LineItems({
                               (1 + (line?.taxPercent ?? 0)) +
                             (line?.convertedNonTaxableAddOnCost ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
-                          locales={locale}
+                          currency={currencyCode}
+                          decimalPlaces={currencyDecimals}
                         />
                         <motion.div
                           animate={{
@@ -577,23 +567,24 @@ function LineItems({
                     <Tr>
                       <Td>Unit Price</Td>
                       <Td className="text-right">
-                        <MotionNumber
+                        <MotionMoney
                           value={line.convertedUnitPrice ?? 0}
-                          format={{ style: "currency", currency: currencyCode }}
-                          locales={locale}
+                          currency={currencyCode}
+                          decimalPlaces={currencyDecimals}
+                          rate
                         />
                       </Td>
                     </Tr>
                     <Tr className="border-b border-border">
                       <Td>Extended Price</Td>
                       <Td className="text-right">
-                        <MotionNumber
+                        <MotionMoney
                           value={
                             (line.convertedUnitPrice ?? 0) *
                             (line.saleQuantity ?? 0)
                           }
-                          format={{ style: "currency", currency: currencyCode }}
-                          locales={locale}
+                          currency={currencyCode}
+                          decimalPlaces={currencyDecimals}
                         />
                       </Td>
                     </Tr>
@@ -602,13 +593,10 @@ function LineItems({
                       <Tr>
                         <Td>Additional Charges</Td>
                         <Td className="text-right">
-                          <MotionNumber
+                          <MotionMoney
                             value={line.addOnCost ?? 0}
-                            format={{
-                              style: "currency",
-                              currency: currencyCode
-                            }}
-                            locales={locale}
+                            currency={currencyCode}
+                            decimalPlaces={currencyDecimals}
                           />
                         </Td>
                       </Tr>
@@ -618,13 +606,10 @@ function LineItems({
                       <Tr>
                         <Td>Non-Taxable Charges</Td>
                         <Td className="text-right">
-                          <MotionNumber
+                          <MotionMoney
                             value={line.nonTaxableAddOnCost ?? 0}
-                            format={{
-                              style: "currency",
-                              currency: currencyCode
-                            }}
-                            locales={locale}
+                            currency={currencyCode}
+                            decimalPlaces={currencyDecimals}
                           />
                         </Td>
                       </Tr>
@@ -633,7 +618,7 @@ function LineItems({
                     <Tr key="subtotal">
                       <Td>Subtotal</Td>
                       <Td className="text-right">
-                        <MotionNumber
+                        <MotionMoney
                           value={
                             (line.convertedUnitPrice ?? 0) *
                               (line.saleQuantity ?? 0) +
@@ -641,11 +626,8 @@ function LineItems({
                             (line.convertedNonTaxableAddOnCost ?? 0) +
                             (line.convertedShippingCost ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
-                          locales={locale}
+                          currency={currencyCode}
+                          decimalPlaces={currencyDecimals}
                         />
                       </Td>
                     </Tr>
@@ -655,7 +637,7 @@ function LineItems({
                         Tax ({percentFormatter.format(line.taxPercent ?? 0)})
                       </Td>
                       <Td className="text-right">
-                        <MotionNumber
+                        <MotionMoney
                           value={
                             ((line.convertedUnitPrice ?? 0) *
                               (line.saleQuantity ?? 0) +
@@ -663,11 +645,8 @@ function LineItems({
                               (line.convertedShippingCost ?? 0)) *
                             (line.taxPercent ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
-                          locales={locale}
+                          currency={currencyCode}
+                          decimalPlaces={currencyDecimals}
                         />
                       </Td>
                     </Tr>
@@ -675,7 +654,7 @@ function LineItems({
                     <Tr key="total" className="font-bold">
                       <Td>Total</Td>
                       <Td className="text-right">
-                        <MotionNumber
+                        <MotionMoney
                           value={
                             ((line.convertedUnitPrice ?? 0) *
                               (line.saleQuantity ?? 0) +
@@ -684,11 +663,8 @@ function LineItems({
                               (1 + (line.taxPercent ?? 0)) +
                             (line.convertedNonTaxableAddOnCost ?? 0)
                           }
-                          format={{
-                            style: "currency",
-                            currency: currencyCode
-                          }}
-                          locales={locale}
+                          currency={currencyCode}
+                          decimalPlaces={currencyDecimals}
                         />
                       </Td>
                     </Tr>

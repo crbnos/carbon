@@ -2,16 +2,22 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs,
+  LoaderFunctionArgs
+} from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
   getIssueType,
+  getIssueTypeByName,
   issueTypeValidator,
   upsertIssueType
 } from "~/modules/quality";
 import IssueTypeForm from "~/modules/quality/ui/IssueTypes/IssueTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { getCompanyId, issueTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -41,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -55,6 +61,18 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
+  const duplicateIssueType = await getIssueTypeByName(
+    client,
+    companyId,
+    d.name,
+    id
+  );
+  if (duplicateIssueType.data) {
+    return validationError({
+      fieldErrors: { name: "An issue type with this name already exists" }
+    });
+  }
+
   const updateIssueType = await upsertIssueType(client, {
     id,
     ...d,
@@ -62,6 +80,11 @@ export async function action({ request }: ActionFunctionArgs) {
     updatedBy: userId
   });
 
+  if (updateIssueType.error?.code === "23505") {
+    return validationError({
+      fieldErrors: { name: "An issue type with this name already exists" }
+    });
+  }
   if (updateIssueType.error) {
     return data(
       {},
@@ -76,6 +99,14 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.issueTypes,
     await flash(request, success("Updated issue type"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    issueTypesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function EditIssueTypeRoute() {

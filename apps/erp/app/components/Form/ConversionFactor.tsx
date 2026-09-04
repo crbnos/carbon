@@ -22,7 +22,7 @@ import {
   NumberInputStepper,
   VStack
 } from "@carbon/react";
-import { twoDecimals } from "@carbon/utils";
+import { SCALE_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ElementRef } from "react";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
@@ -32,6 +32,7 @@ import {
   LuChevronUp,
   LuLanguages
 } from "react-icons/lu";
+import { useQuantityFormatter } from "~/hooks";
 import { useUnitOfMeasure } from "./UnitOfMeasure";
 
 enum ConversionDirection {
@@ -83,6 +84,12 @@ const ConversionFactor = forwardRef<
     const [open, setOpen] = useState(false);
     const initialValue = useRef(defaultValue);
 
+    // A conversion factor is a RATE, not a settlement amount: inventoryQty =
+    // purchaseQty x factor, and the modal also shows its inverse. A bare
+    // NumberField falls to Intl's 3-digit decimal default, which stored 1/3 as
+    // 0.333 and 0.16455 as 0.165 — a permanent error on every receipt of that
+    // item, even though the columns are bare NUMERIC. SCALE_FORMAT is the
+    // storage scale, and react-aria commits parse(format(x)).
     const [conversionFactor, setConversionFactor] = useState(
       initialValue.current
     );
@@ -108,6 +115,7 @@ const ConversionFactor = forwardRef<
     };
 
     const unitOfMeasureOptions = useUnitOfMeasure();
+    const formatQuantity = useQuantityFormatter();
 
     const description = useMemo(() => {
       const purchaseUnit =
@@ -129,7 +137,7 @@ const ConversionFactor = forwardRef<
         return (
           <>
             <span className={cn(Number.isNaN(conversionFactor) && "opacity-0")}>
-              {`There ${conversionFactor === 1 ? "is" : "are"} ${twoDecimals(
+              {`There ${conversionFactor === 1 ? "is" : "are"} ${formatQuantity(
                 conversionFactor
               )} ${inventoryUnit.toLocaleLowerCase()} in one `}
               <span className="text-primary">
@@ -143,7 +151,7 @@ const ConversionFactor = forwardRef<
       return (
         <>
           <span>
-            {`There ${conversionFactor === 1 ? "is" : "are"} ${twoDecimals(
+            {`There ${conversionFactor === 1 ? "is" : "are"} ${formatQuantity(
               inverseOfConversion
             )} `}
             <span className="text-primary">
@@ -156,18 +164,25 @@ const ConversionFactor = forwardRef<
     }, [
       conversionDirection,
       conversionFactor,
+      formatQuantity,
       inventoryCode,
       purchasingCode,
       unitOfMeasureOptions,
       t
     ]);
 
+    // Equal codes force the factor to 1 only when a unit of measure CHANGES
+    // into equality — never on mount, where the codes can already be equal
+    // and the stored factor must be displayed (and submitted) as stored.
+    const wasEqual = useRef(inventoryCode === purchasingCode);
     useEffect(() => {
-      if (inventoryCode === purchasingCode) {
+      const isEqual = inventoryCode === purchasingCode;
+      if (isEqual && !wasEqual.current) {
         setConversionFactor(1);
         setControlValue(1);
         initialValue.current = 1;
       }
+      wasEqual.current = isEqual;
     }, [inventoryCode, purchasingCode, setControlValue]);
 
     const onPurchaseUnitChange = (v: number) => {
@@ -220,7 +235,7 @@ const ConversionFactor = forwardRef<
             ref={ref}
             onClick={() => setOpen(true)}
           >
-            {controlValue ? twoDecimals(controlValue) : "-"}
+            {controlValue ? formatQuantity(controlValue) : "-"}
           </CommandTrigger>
 
           <ModalContent>
@@ -247,6 +262,7 @@ const ConversionFactor = forwardRef<
                       <NumberField
                         value={1 / conversionFactor}
                         onChange={onPurchaseUnitChange}
+                        formatOptions={SCALE_FORMAT}
                       >
                         <NumberInputGroup className="relative">
                           <NumberInput />
@@ -285,6 +301,7 @@ const ConversionFactor = forwardRef<
                       <NumberField
                         value={conversionFactor}
                         onChange={onInventoryUnitChange}
+                        formatOptions={SCALE_FORMAT}
                       >
                         <NumberInputGroup className="relative">
                           <NumberInput />

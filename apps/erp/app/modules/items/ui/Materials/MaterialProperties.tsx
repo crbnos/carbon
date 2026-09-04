@@ -12,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -25,7 +26,12 @@ import { LuCopy, LuKeySquare, LuLink, LuTriangleAlert } from "react-icons/lu";
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
+import {
+  DateTime,
+  MethodBadge,
+  MethodIcon,
+  TrackingTypeIcon
+} from "~/components";
 import {
   Boolean,
   ItemPostingGroup,
@@ -155,6 +161,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   } | null>(null);
 
   const settings = useSettings();
+  const allowLowercaseItemIds = settings.allowLowercaseItemIds === true;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -290,13 +297,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
     <>
       <VStack
         spacing={4}
-        className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+        className="w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
       >
         <VStack spacing={2}>
           <HStack className="w-full justify-between">
-            <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+            <Subheading as="h3" variant="light">
               <Trans>Properties</Trans>
-            </h3>
+            </Subheading>
             <HStack spacing={1}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -387,6 +394,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
                     name="materialId"
                     inline
                     size="sm"
+                    isUppercase={!allowLowercaseItemIds}
                     value={routeData?.materialSummary?.readableId ?? ""}
                     onBlur={(e) => {
                       onUpdate("materialId", e.target.value ?? null);
@@ -403,7 +411,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               validator={z.object({
                 name: z.string()
               })}
-              className="w-full -mt-2"
+              className="w-full"
             >
               <span className="text-xs text-muted-foreground">
                 <InputControlled
@@ -765,7 +773,12 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               <p className="text-xs text-muted-foreground">
                 <Trans>
                   From{" "}
-                  {routeDataFromRoute.supersession.successorEffectivityDate}
+                  <DateTime
+                    value={
+                      routeDataFromRoute.supersession.successorEffectivityDate
+                    }
+                    variant="date"
+                  />
                 </Trans>
               </p>
             )}

@@ -8,6 +8,7 @@ declare global {
       CARBON_EDITION: string;
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
+      STRIPE_CONNECT_ENABLED: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
@@ -50,6 +51,7 @@ declare global {
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       QUICKBOOKS_CLIENT_SECRET: string;
+      QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
       RESEND_DOMAIN: string;
@@ -63,6 +65,7 @@ declare global {
       SLACK_STATE_SECRET: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
+      STRIPE_CONNECT_WEBHOOK_SECRET: string;
       STRIPE_BYPASS_COMPANY_IDS: string;
       STRIPE_BYPASS_USER_IDS: string;
       GTM_URL: string;
@@ -112,7 +115,7 @@ export function getEnv(
  * Server env
  */
 
-export type AuthProvider = "email" | "google" | "azure" | "passkey";
+export type AuthProvider = "email" | "google" | "azure" | "passkey" | "sso";
 
 export const AUTH_PROVIDERS =
   getEnv("AUTH_PROVIDERS", {
@@ -236,6 +239,16 @@ const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT", {
 
 export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
 
+// Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
+// `docHash` stamped onto every ITAR certification, and the target of the
+// "View the full Rider" link. `ITAR_RIDER_SHA256` is the sha256 of the Rider PDF
+// served at `ITAR_RIDER_PDF_PATH` — recompute and update it whenever that PDF
+// changes so certifications stamp the exact document that was accepted.
+export const ITAR_RIDER_VERSION = "1.0";
+export const ITAR_RIDER_SHA256 =
+  "e5ec082dfa511561edd86043060b0eff82c019ff95dda2cc7a6d79eff9560874";
+export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
+
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID", {
   isRequired: false
 });
@@ -264,6 +277,13 @@ export const QUICKBOOKS_CLIENT_SECRET = getEnv("QUICKBOOKS_CLIENT_SECRET", {
   isRequired: false,
   isSecret: true
 });
+
+/** Intuit environment: "sandbox" or "production" (default). */
+export const QUICKBOOKS_ENVIRONMENT =
+  getEnv("QUICKBOOKS_ENVIRONMENT", {
+    isRequired: false,
+    isSecret: false
+  }) ?? "production";
 
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,
@@ -323,16 +343,32 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isSecret: true
   }
 );
-
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
 export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY", {
   isRequired: false
 });
+// Browser-safe boolean signal for whether Stripe (and therefore the Stripe
+// Connect integration) is configured. STRIPE_SECRET_KEY is a secret, so it is
+// `""` in the browser — the integration's `active` gate must read this derived
+// flag instead, which crosses to the client via getBrowserEnv() the same way
+// CARBON_SLACK_ENABLED does. Only the boolean is exposed, never the key.
+export const STRIPE_CONNECT_ENABLED = isBrowser
+  ? window.env?.STRIPE_CONNECT_ENABLED === "true"
+  : Boolean(STRIPE_SECRET_KEY);
 export const STRIPE_WEBHOOK_SECRET = getEnv("STRIPE_WEBHOOK_SECRET", {
   isRequired: false
 });
+// Connect webhook endpoints (`connect: true`) are signed with their OWN secret,
+// distinct from the platform-account endpoint above — a Connect event verified
+// against STRIPE_WEBHOOK_SECRET fails signature validation.
+export const STRIPE_CONNECT_WEBHOOK_SECRET = getEnv(
+  "STRIPE_CONNECT_WEBHOOK_SECRET",
+  {
+    isRequired: false
+  }
+);
 export const STRIPE_BYPASS_COMPANY_IDS = getEnv("STRIPE_BYPASS_COMPANY_IDS", {
   isRequired: false
 });
@@ -353,6 +389,13 @@ export const REDIS_URL = getEnv("REDIS_URL", {
 });
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
+// Session lock / termination (NIST 800-171 3.1.10 / 3.1.11). All in MILLISECONDS
+// (unlike SESSION_MAX_AGE above, which is seconds for the cookie maxAge). Enforced
+// only when CONTROLLED_ENVIRONMENT is true. Plain literals, matching SESSION_MAX_AGE
+// precedent (not env-overridable in v1).
+export const SESSION_IDLE_LOCK_MS = 15 * 60 * 1000; // 15 min — DISA App-Sec STIG web-app idle
+export const SESSION_ABSOLUTE_MAX_MS = 12 * 60 * 60 * 1000; // 12 h — absolute session cap
+export const SESSION_HEARTBEAT_MS = 60 * 1000; // client activity heartbeat throttle
 export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
 
 export const XERO_CLIENT_ID = getEnv("XERO_CLIENT_ID", {
@@ -396,6 +439,16 @@ export const VERCEL_ENV =
     isRequired: false,
     isSecret: false
   }) ?? NODE_ENV;
+
+// True only on a developer's local stack — never in prod, preview, or a
+// self-hosted deployment (those all run NODE_ENV=production). Gates features
+// that stay internal-only in real deployments but should be exercisable by
+// anyone locally. Derived from vars already in `getBrowserEnv()`, so it is
+// correct client-side too.
+export const IS_LOCAL_DEV =
+  NODE_ENV !== "production" &&
+  VERCEL_ENV !== "production" &&
+  VERCEL_ENV !== "preview";
 
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false
@@ -471,6 +524,7 @@ export function getBrowserEnv() {
     CARBON_API_URL,
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
+    STRIPE_CONNECT_ENABLED: STRIPE_CONNECT_ENABLED ? "true" : "",
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,

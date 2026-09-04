@@ -12,7 +12,8 @@ export const getCarbonServiceRole = (): SupabaseClient<Database> => {
 };
 
 export async function getUserScopedClient(
-  userId: string
+  userId: string,
+  options?: { workflowRunId?: string }
 ): Promise<SupabaseClient<Database>> {
   if (!SUPABASE_JWT_SECRET) {
     throw new Error("SUPABASE_JWT_SECRET is required for user-scoped clients");
@@ -22,7 +23,10 @@ export async function getUserScopedClient(
   const jwt = await new SignJWT({
     sub: userId,
     aud: "authenticated",
-    role: "authenticated"
+    role: "authenticated",
+    ...(options?.workflowRunId
+      ? { workflow_run_id: options.workflowRunId }
+      : {})
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt()

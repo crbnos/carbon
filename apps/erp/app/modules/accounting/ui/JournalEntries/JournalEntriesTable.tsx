@@ -1,5 +1,4 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -16,7 +15,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { JournalEntrySourceTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
@@ -78,7 +77,9 @@ const JournalEntriesTable = memo(
         {
           accessorKey: "postingDate",
           header: t`Date`,
-          cell: ({ row }) => formatDate(row.original.postingDate),
+          cell: ({ row }) => (
+            <DateTime value={row.original.postingDate} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -183,7 +184,9 @@ const JournalEntriesTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: ({ row }) => formatDate(row.original.createdAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -208,14 +211,16 @@ const JournalEntriesTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: ({ row }) => formatDate(row.original.updatedAt),
+          cell: ({ row }) => (
+            <DateTime value={row.original.updatedAt} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
       return defaultColumns;
-    }, [currencyFormatter, people.map, t]);
+    }, [currencyFormatter, people, t]);
 
     const renderContextMenu = useCallback(
       (row: JournalEntryListItem) => {

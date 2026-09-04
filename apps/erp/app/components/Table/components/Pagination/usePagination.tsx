@@ -1,16 +1,16 @@
-import { parseNumberFromUrlParam } from "@carbon/auth";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { Dispatch, SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import { useUrlParams } from "~/hooks";
+import { getPageOffset, getPageSize } from "~/utils/pagination";
 
 export function usePagination(
   count: number,
   setRowSelections: Dispatch<SetStateAction<RowSelectionState>>
 ) {
   const [params, setParams] = useUrlParams();
-  const pageSize = parseNumberFromUrlParam(params, "limit", 100);
-  const offset = parseNumberFromUrlParam(params, "offset", 0);
+  const pageSize = getPageSize(params);
+  const offset = getPageOffset(params);
 
   const pageIndex = Math.floor(offset / pageSize) + 1;
   const pageCount = Math.ceil(count / pageSize);

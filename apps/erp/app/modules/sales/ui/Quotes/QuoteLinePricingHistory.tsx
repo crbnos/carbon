@@ -25,8 +25,8 @@ import {
 } from "@carbon/react/Carousel";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
-import { Empty } from "~/components";
-import { useDateFormatter } from "~/hooks";
+import { DateTime, Empty } from "~/components";
+import { useCurrencyFormatter } from "~/hooks";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
@@ -40,7 +40,6 @@ const QuoteLinePricingHistory = ({
   relatedSalesOrderLines: SalesOrderLine[];
   historicalQuoteLinePrices: HistoricalQuotationPrice[];
 }) => {
-  const { formatDate } = useDateFormatter();
   const historicalQuoteLines = historicalQuoteLinePrices.reduce<
     Record<
       string,
@@ -66,6 +65,10 @@ const QuoteLinePricingHistory = ({
   // Default to the tab that has items
   const defaultTab = hasOrderLines ? "salesOrderLines" : "quoteLines";
   const [customers] = useCustomers();
+  const priceFormatter = useCurrencyFormatter({
+    rate: true,
+    currency: baseCurrency
+  });
 
   return (
     <Card>
@@ -137,7 +140,10 @@ const QuoteLinePricingHistory = ({
                                 </div>
                                 <div className="flex flex-col gap-1 items-end">
                                   <span className="text-xs text-muted-foreground">
-                                    {formatDate(line.orderDate!)}
+                                    <DateTime
+                                      value={line.orderDate!}
+                                      variant="date"
+                                    />
                                   </span>
                                   <span className="text-xs text-muted-foreground">
                                     {line.itemReadableId}
@@ -164,10 +170,9 @@ const QuoteLinePricingHistory = ({
                                     <Tr>
                                       <Td>{line.saleQuantity}</Td>
                                       <Td>
-                                        {new Intl.NumberFormat("en-US", {
-                                          style: "currency",
-                                          currency: baseCurrency
-                                        }).format(line.unitPrice ?? 0)}
+                                        {priceFormatter.format(
+                                          line.unitPrice ?? 0
+                                        )}
                                       </Td>
                                     </Tr>
                                   </Tbody>
@@ -225,7 +230,10 @@ const QuoteLinePricingHistory = ({
                                   </div>
                                   <div className="flex flex-col gap-1 items-end">
                                     <span className="text-xs text-muted-foreground">
-                                      {formatDate(line.quoteCreatedAt!)}
+                                      <DateTime
+                                        value={line.quoteCreatedAt!}
+                                        variant="date"
+                                      />
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                       {line.itemReadableId}
@@ -256,10 +264,9 @@ const QuoteLinePricingHistory = ({
                                         <Tr key={quantity}>
                                           <Td>{quantity}</Td>
                                           <Td>
-                                            {new Intl.NumberFormat("en-US", {
-                                              style: "currency",
-                                              currency: baseCurrency
-                                            }).format(price as number)}
+                                            {priceFormatter.format(
+                                              price as number
+                                            )}
                                           </Td>
                                         </Tr>
                                       )

@@ -1,9 +1,8 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { datetime, getPurchaseOrderStatus } from "@carbon/utils";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -12,9 +11,9 @@ import type {
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.service";
+import { getExchangeRate } from "../accounting/accounting.ee.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   canApproveRequest,
@@ -42,7 +41,11 @@ import type {
   supplierTypeValidator,
   supplierValidator
 } from "./purchasing.models";
+import { PURCHASE_ORDER_LOCKED_STATUSES } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+
+const PURCHASE_ORDERS_LIST_COLUMNS =
+  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
 const logger = getLogger("erp", "purchasing-service");
 
@@ -51,11 +54,20 @@ export async function closePurchaseOrder(
   purchaseOrderId: string,
   userId: string
 ) {
+  const purchaseOrder = await client
+    .from("purchaseOrder")
+    .select("companyId")
+    .eq("id", purchaseOrderId)
+    .single();
+  const companyTz = await getCompanyTimeZone(
+    client,
+    purchaseOrder.data?.companyId ?? ""
+  );
   return client
     .from("purchaseOrder")
     .update({
       closed: true,
-      closedAt: today(getLocalTimeZone()).toString(),
+      closedAt: datetime.today(companyTz).toString(),
       closedBy: userId
     })
     .eq("id", purchaseOrderId)
@@ -124,6 +136,7 @@ export async function duplicatePurchaseOrder(
         "id, supplierId, supplierContactId, supplierLocationId, supplierReference, currencyCode, purchaseOrderType, internalNotes, externalNotes"
       )
       .eq("id", sourcePurchaseOrderId)
+      .eq("companyId", companyId)
       .single(),
     client
       .from("purchaseOrderDelivery")
@@ -133,9 +146,10 @@ export async function duplicatePurchaseOrder(
     client
       .from("purchaseOrderLine")
       .select(
-        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
+      .eq("companyId", companyId)
   ]);
 
   if (source.error || !source.data) {
@@ -292,7 +306,7 @@ export async function finalizeSupplierQuote(
     .from("supplierQuote")
     .update({
       status: "Active",
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .eq("id", supplierQuoteId);
@@ -315,7 +329,7 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select("*", { count: "exact" })
+    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1094,13 +1108,17 @@ export async function finalizePurchaseOrder(
 
   const updateData: Database["public"]["Tables"]["purchaseOrder"]["Update"] = {
     status,
-    updatedAt: today(getLocalTimeZone()).toString(),
+    updatedAt: datetime.timestamp(),
     updatedBy: userId
   };
 
   // Only set orderDate if it's not already set
   if (!purchaseOrder.data?.orderDate) {
-    updateData.orderDate = today(getLocalTimeZone()).toString();
+    const companyTz = await getCompanyTimeZone(
+      client,
+      purchaseOrder.data?.companyId ?? ""
+    );
+    updateData.orderDate = datetime.today(companyTz).toString();
   }
 
   return client
@@ -1118,7 +1136,7 @@ export async function sendSupplierQuote(
   const quoteUpdate = await client
     .from("supplierQuote")
     .update({
-      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
     .eq("id", supplierQuoteId);
@@ -1193,6 +1211,43 @@ export async function updatePurchaseOrderStatus(
   }
 ) {
   return client.from("purchaseOrder").update(update).eq("id", update.id);
+}
+
+/**
+ * Reopens a released purchase order to Draft as its next revision.
+ *
+ * Compare-and-swap: the increment and the eligibility conditions are both in
+ * SQL, so concurrent requests can't share a revision number and an ineligible
+ * order matches no rows. Returns rows updated — 0 means it was not eligible.
+ */
+export async function reopenPurchaseOrderAsRevision(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    updatedBy
+  }: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const result = await db
+    .updateTable("purchaseOrder")
+    .set((eb) => ({
+      status: "Draft" as const,
+      assignee: null,
+      revisionId: eb("revisionId", "+", 1),
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    }))
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .where("status", "in", [...PURCHASE_ORDER_LOCKED_STATUSES])
+    .where("orderDate", "is not", null)
+    .executeTakeFirst();
+
+  return Number(result.numUpdatedRows ?? 0);
 }
 
 export async function updateSupplierAccounting(
@@ -1422,6 +1477,21 @@ export async function insertPurchaseOrder(
     purchaseOrderId = seq.data;
   }
 
+  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
+  // failure must not leave an orphaned interaction row behind.
+  let exchangeRate = 1;
+  let exchangeRateUpdatedAt = new Date().toISOString();
+  if (input.currencyCode) {
+    const rate = await getExchangeRate(
+      client,
+      input.companyId,
+      input.currencyCode
+    );
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
       insertSupplierInteraction(client, input.companyId, input.supplierId),
@@ -1447,20 +1517,6 @@ export async function insertPurchaseOrder(
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
 
-  let exchangeRate = 1;
-  let exchangeRateUpdatedAt = new Date().toISOString();
-  if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
-      client,
-      input.companyGroupId,
-      input.currencyCode
-    );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
-  }
-
   const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
 
   const order = await client
@@ -1473,7 +1529,11 @@ export async function insertPurchaseOrder(
       supplierLocationId: input.supplierLocationId,
       supplierInteractionId: supplierInteraction.data?.id,
       status: input.status ?? "Draft",
-      orderDate: input.orderDate ?? new Date().toISOString().split("T")[0],
+      orderDate:
+        input.orderDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       currencyCode: input.currencyCode,
       exchangeRate,
       exchangeRateUpdatedAt,
@@ -1536,8 +1596,7 @@ export async function updatePurchaseOrder(
     purchaseOrderType?: (typeof purchaseOrderTypeType)[number];
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1546,16 +1605,22 @@ export async function updatePurchaseOrder(
 
   let exchangeRate: number | undefined;
   let exchangeRateUpdatedAt: string | undefined;
-  if (updates.currencyCode && companyGroupId) {
-    const currency = await getCurrencyByCode(
+  if (updates.currencyCode) {
+    const existing = await client
+      .from("purchaseOrder")
+      .select("companyId")
+      .eq("id", id)
+      .single();
+    if (existing.error) return { data: null, error: existing.error };
+
+    const rate = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   return client
@@ -1607,6 +1672,22 @@ export async function upsertPurchaseOrder(
       .select("id, purchaseOrderId");
   }
 
+  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
+  // failure must not leave an orphaned interaction row behind.
+  if (purchaseOrder.currencyCode) {
+    const rate = await getExchangeRate(
+      client,
+      purchaseOrder.companyId,
+      purchaseOrder.currencyCode
+    );
+    if (rate.error) return { data: null, error: rate.error };
+    purchaseOrder.exchangeRate = rate.data;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  } else {
+    purchaseOrder.exchangeRate = 1;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
       insertSupplierInteraction(
@@ -1632,21 +1713,6 @@ export async function upsertPurchaseOrder(
 
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
-
-  if (purchaseOrder.currencyCode) {
-    const currency = await getCurrencyByCode(
-      client,
-      purchaseOrder.companyGroupId,
-      purchaseOrder.currencyCode
-    );
-    if (currency.data) {
-      purchaseOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
-      purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-  } else {
-    purchaseOrder.exchangeRate = 1;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
 
   const locationId =
     purchaseOrder.locationId ?? purchaser?.data?.locationId ?? null;
@@ -1931,7 +1997,7 @@ export async function upsertSupplier(
     .from("supplier")
     .update({
       ...sanitize(supplier),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", supplier.id)
     .select("id")
@@ -2015,15 +2081,14 @@ export async function insertSupplierQuote(
   let exchangeRate = 1;
   let exchangeRateUpdatedAt = new Date().toISOString();
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const supplierInteraction = await insertSupplierInteraction(
@@ -2096,8 +2161,7 @@ export async function updateSupplierQuote(
     supplierLocationId?: string | null;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -2109,7 +2173,7 @@ export async function updateSupplierQuote(
 
   const existing = await client
     .from("supplierQuote")
-    .select("currencyCode")
+    .select("currencyCode, companyId")
     .eq("id", id)
     .single();
 
@@ -2117,18 +2181,16 @@ export async function updateSupplierQuote(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   return client
@@ -2173,15 +2235,14 @@ export async function upsertSupplierQuote(
 ) {
   if ("createdBy" in supplierQuote) {
     if (supplierQuote.currencyCode) {
-      const currency = await getCurrencyByCode(
+      const rate = await getExchangeRate(
         client,
-        supplierQuote.companyGroupId,
+        supplierQuote.companyId,
         supplierQuote.currencyCode
       );
-      if (currency.data) {
-        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-      }
+      if (rate.error) return { data: null, error: rate.error };
+      supplierQuote.exchangeRate = rate.data;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     } else {
       supplierQuote.exchangeRate = 1;
       supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
@@ -2243,40 +2304,44 @@ export async function upsertSupplierQuote(
     // Only update the exchange rate if the currency code has changed
     const existingQuote = await client
       .from("supplierQuote")
-      .select("currencyCode, status")
+      .select("currencyCode, status, companyId")
       .eq("id", supplierQuote.id)
       .single();
 
     if (existingQuote.error) return existingQuote;
 
-    const { currencyCode, status: existingStatus } = existingQuote.data;
+    const {
+      currencyCode,
+      status: existingStatus,
+      companyId
+    } = existingQuote.data;
 
     if (
       supplierQuote.currencyCode &&
       currencyCode !== supplierQuote.currencyCode
     ) {
-      const currency = await getCurrencyByCode(
+      const rate = await getExchangeRate(
         client,
-        supplierQuote.companyGroupId,
+        companyId,
         supplierQuote.currencyCode
       );
-      if (currency.data) {
-        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-      }
+      if (rate.error) return { data: null, error: rate.error };
+      supplierQuote.exchangeRate = rate.data;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     }
     const { companyGroupId: _companyGroupId2, ...supplierQuoteUpdateData } =
       supplierQuote;
+    const companyTz = await getCompanyTimeZone(client, companyId);
     return client
       .from("supplierQuote")
       .update({
         ...sanitize(supplierQuoteUpdateData),
         status:
           supplierQuote.expirationDate &&
-          today(getLocalTimeZone()).toString() > supplierQuote.expirationDate
+          datetime.today(companyTz).toString() > supplierQuote.expirationDate
             ? "Expired"
             : (supplierQuote.status ?? existingStatus ?? "Draft"),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", supplierQuote.id);
   }
@@ -2461,7 +2526,9 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
+  // @ts-ignore TS2589 — supabase select-string instantiation depth sits on
+  // tsgo's limit; the cliff shifts as unrelated modules join the program.
+  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")
@@ -2511,7 +2578,11 @@ export async function insertPurchasingRFQ(
     .from("purchasingRfq")
     .insert({
       rfqId,
-      rfqDate: input.rfqDate ?? today(getLocalTimeZone()).toString(),
+      rfqDate:
+        input.rfqDate ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       expirationDate: input.expirationDate,
       locationId: input.locationId,
       employeeId: input.employeeId,

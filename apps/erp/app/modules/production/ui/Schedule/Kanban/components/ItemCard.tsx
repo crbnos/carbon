@@ -20,13 +20,16 @@ import {
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
+  formatDate,
   formatDurationMilliseconds
 } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
+  LuCalendarClock,
   LuCalendarDays,
   LuCircleCheck,
   LuCirclePlay,
@@ -40,12 +43,18 @@ import {
   LuSquareUser,
   LuTimer,
   LuTrash,
+  LuTriangleAlert,
   LuUsers
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Link } from "react-router";
 import { z } from "zod";
-import { Assignee, CustomerAvatar, EmployeeAvatarGroup } from "~/components";
+import {
+  Assignee,
+  CustomerAvatar,
+  DateTime,
+  EmployeeAvatarGroup
+} from "~/components";
 import { Tags } from "~/components/Form";
 import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
@@ -54,6 +63,7 @@ import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationSta
 import { getPrivateUrl, path } from "~/utils/path";
 import { useKanban } from "../context/KanbanContext";
 import type { Item } from "../types";
+import { useScheduleToday } from "../useScheduleToday";
 
 interface Progress {
   totalDuration: number;
@@ -99,7 +109,7 @@ type ItemCardProps = {
 
 export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
   const { t } = useLingui();
-  const { formatDate, formatRelativeTime } = useDateFormatter();
+  const { formatRelativeTime } = useDateFormatter();
   const { displaySettings, selectedGroup, setSelectedGroup, tags } =
     useKanban();
   const {
@@ -121,6 +131,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
   });
 
   const isHighlighted = selectedGroup === item.jobReadableId;
+  const scheduleToday = useScheduleToday();
 
   const style = {
     transition,
@@ -129,8 +140,19 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
 
   const isOverdue =
     item.deadlineType !== "No Deadline" && item.dueDate
-      ? new Date(item.dueDate) < new Date()
+      ? item.dueDate < scheduleToday
       : false;
+
+  const projectedCompletionDate = item.projectedCompletionAt
+    ? item.projectedCompletionAt.slice(0, 10)
+    : null;
+  const daysBehindTarget =
+    projectedCompletionDate && item.dueDate
+      ? parseDate(projectedCompletionDate).compare(
+          parseDate(item.dueDate.slice(0, 10))
+        )
+      : 0;
+  const isBehindTarget = daysBehindTarget > 0;
 
   const progress = progressByItemId[item.id]?.progress ?? 0;
   const status = progressByItemId[item.id]?.active
@@ -146,6 +168,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
       style={style}
       className={cn(
         "max-w-[330px]",
+        item.hasConflict && "border-red-500 border-2",
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
           // @ts-expect-error TS2322 - TODO: fix type
@@ -170,6 +193,16 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
             </Link>
           </div>
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
+            {item.hasConflict && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {item.conflictReason ?? t`Scheduling conflict`}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <IconButton
               aria-label={t`Move item`}
               icon={<LuGripVertical />}
@@ -344,7 +377,30 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
         {displaySettings.showDueDate && item.dueDate && (
           <HStack className="justify-start space-x-2">
             <LuCalendarDays />
-            <span className="text-sm">{formatDate(item.dueDate)}</span>
+            <span className="text-sm">
+              <DateTime value={item.dueDate} variant="date" />
+            </span>
+          </HStack>
+        )}
+        {displaySettings.showDueDate && projectedCompletionDate && (
+          <HStack className="justify-start space-x-2">
+            <LuCalendarClock className="text-muted-foreground" />
+            {isBehindTarget ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="red">
+                    {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {t`Proj. ${formatDate(projectedCompletionDate)}`}
+              </span>
+            )}
           </HStack>
         )}
 

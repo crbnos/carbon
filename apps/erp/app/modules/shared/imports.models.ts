@@ -178,6 +178,28 @@ const unitOfMeasureFetcher = async (
   return { data: data.map((u) => ({ name: u.name, id: u.code })) };
 };
 
+const materialSubstanceFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  return client
+    .from("materialSubstance")
+    .select("id, name")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .order("name");
+};
+
+const materialFormFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  return client
+    .from("materialForm")
+    .select("id, name")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .order("name");
+};
+
 // Row-type discriminator + explicit parent key. Spread into every method entry.
 const methodParentKeyFields = {
   rowType: {
@@ -1591,6 +1613,52 @@ export const fieldMappings = {
       }
     }
   },
+  storageUnit: {
+    id: {
+      label: "Unique ID",
+      required: true,
+      type: "string"
+    },
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    locationId: {
+      label: "Location",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The location this storage unit belongs to — match by location name",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("location")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    parentName: {
+      label: "Parent Storage Unit",
+      required: false,
+      type: "string"
+    },
+    storageTypeNames: {
+      label: "Storage Types",
+      required: false,
+      type: "string"
+    },
+    active: {
+      label: "Active",
+      required: false,
+      type: "boolean"
+    }
+  },
   fixedAsset: {
     name: {
       label: "Name",
@@ -1672,6 +1740,122 @@ export const fieldMappings = {
     ...quoteHeaderImportFields,
     externalId: { ...quoteHeaderImportFields.externalId, required: true },
     ...quoteLineImportFields
+  },
+  materialSubstance: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    code: {
+      label: "Code",
+      required: true,
+      type: "string"
+    }
+  },
+  materialForm: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    code: {
+      label: "Code",
+      required: true,
+      type: "string"
+    }
+  },
+  materialFinish: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    materialSubstanceId: {
+      label: "Substance",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The substance this finish belongs to — match by substance name",
+        fetcher: materialSubstanceFetcher,
+        default: ""
+      }
+    }
+  },
+  materialGrade: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    materialSubstanceId: {
+      label: "Substance",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The substance this grade belongs to — match by substance name",
+        fetcher: materialSubstanceFetcher,
+        default: ""
+      }
+    }
+  },
+  materialType: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    code: {
+      label: "Code",
+      required: true,
+      type: "string"
+    },
+    materialSubstanceId: {
+      label: "Substance",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The substance this type belongs to — match by substance name",
+        fetcher: materialSubstanceFetcher,
+        default: ""
+      }
+    },
+    materialFormId: {
+      label: "Shape",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The shape this type belongs to — match by shape name",
+        fetcher: materialFormFetcher,
+        default: ""
+      }
+    }
+  },
+  materialDimension: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    materialFormId: {
+      label: "Shape",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The shape this dimension belongs to — match by shape name",
+        fetcher: materialFormFetcher,
+        default: ""
+      }
+    },
+    isMetric: {
+      label: "Metric",
+      required: false,
+      type: "boolean"
+    }
   }
 } as const;
 
@@ -1690,7 +1874,14 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   consumable: "parts",
   workCenter: "production",
   process: "production",
+  storageUnit: "inventory",
   fixedAsset: "accounting",
+  materialSubstance: "parts",
+  materialForm: "parts",
+  materialFinish: "parts",
+  materialGrade: "parts",
+  materialType: "parts",
+  materialDimension: "parts",
   quote: "sales",
   quoteLine: "sales",
   quoteWithLines: "sales"
@@ -1774,6 +1965,7 @@ const methodPartSchema = {
   readableId: z.string().optional(),
   revision: z.string().optional(),
   name: z.string().optional(),
+  mpn: z.string().optional(),
   active: z.string().optional(),
   replenishmentSystem: z.string().optional(),
   defaultMethodType: z.string().optional(),
@@ -1986,6 +2178,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the part. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2030,6 +2228,12 @@ export const importSchemas: Record<
       .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the tool. Usually a number or set of alphanumeric characters."
+      ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the tool. Defaults to "0" when the column is absent.'
       ),
     name: z
       .string()
@@ -2079,6 +2283,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the fixture. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the fixture. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2127,6 +2337,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the consumable. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2171,6 +2387,12 @@ export const importSchemas: Record<
       .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the material. Usually a number or set of alphanumeric characters."
+      ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the material. Defaults to "0" when the column is absent.'
       ),
     name: z
       .string()
@@ -2309,6 +2531,40 @@ export const importSchemas: Record<
         "Whether scanning a barcode should complete all operations for this process"
       )
   }),
+  storageUnit: z.object({
+    id: z
+      .string()
+      .min(1, { message: "ID is required" })
+      .describe(
+        "The unique ID of the storage unit, usually a number or set of alphanumeric characters."
+      ),
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe(
+        "The name/label of the storage unit (e.g. bin, shelf, rack, or zone). Unique within a location."
+      ),
+    locationId: z
+      .string()
+      .min(1, { message: "Location is required" })
+      .describe("The location ID of the storage unit"),
+    parentName: z
+      .string()
+      .optional()
+      .describe(
+        "The name of the parent storage unit — must be in the same location"
+      ),
+    storageTypeNames: z
+      .string()
+      .optional()
+      .describe(
+        "Comma-separated storage type names (e.g. Cold Storage, Hazardous)"
+      ),
+    active: z
+      .string()
+      .optional()
+      .describe("Whether the storage unit is active (true/false)")
+  }),
   fixedAsset: z.object({
     name: z
       .string()
@@ -2352,6 +2608,78 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The location ID where the asset is located")
+  }),
+  materialSubstance: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the material substance (e.g. Steel, Aluminum)"),
+    code: z
+      .string()
+      .min(1, { message: "Code is required" })
+      .describe("A short code for the substance (e.g. ST, AL)")
+  }),
+  materialForm: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the shape/form (e.g. Sheet, Plate, Round Bar)"),
+    code: z
+      .string()
+      .min(1, { message: "Code is required" })
+      .describe("A short code for the shape (e.g. SHT, PL)")
+  }),
+  materialFinish: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the finish"),
+    materialSubstanceId: z
+      .string()
+      .min(1, { message: "Substance is required" })
+      .describe("The substance this finish belongs to")
+  }),
+  materialGrade: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the grade"),
+    materialSubstanceId: z
+      .string()
+      .min(1, { message: "Substance is required" })
+      .describe("The substance this grade belongs to")
+  }),
+  materialType: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the material type"),
+    code: z
+      .string()
+      .min(1, { message: "Code is required" })
+      .describe("A short code for the material type"),
+    materialSubstanceId: z
+      .string()
+      .min(1, { message: "Substance is required" })
+      .describe("The substance this type belongs to"),
+    materialFormId: z
+      .string()
+      .min(1, { message: "Shape is required" })
+      .describe("The shape this type belongs to")
+  }),
+  materialDimension: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the dimension"),
+    materialFormId: z
+      .string()
+      .min(1, { message: "Shape is required" })
+      .describe("The shape this dimension belongs to"),
+    isMetric: z
+      .string()
+      .optional()
+      .describe("Whether the dimension is metric (true/false)")
   }),
   quote: z.object(quoteImportSchemaFields),
   quoteLine: z.object(quoteImportSchemaFields),

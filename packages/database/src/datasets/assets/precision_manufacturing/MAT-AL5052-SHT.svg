@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="alEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b7bec4"/>
+      <stop offset="0.5" stop-color="#7d848a"/>
+      <stop offset="1" stop-color="#5c6367"/>
+    </linearGradient>
+    <radialGradient id="filmSheen" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.26"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="softDark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4e565c" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#4e565c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="sheetClip">
+      <path d="M128 526 C318 552 518 562 728 558 L896 446 L296 446 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="508" rx="432" ry="95" fill="url(#shadow)"/>
+
+  <!-- hairline sheared edges: front, right, and the lifted left end showing its underside -->
+  <path d="M128 526 C318 552 518 562 728 558 L728 564 C518 568 318 558 128 532 Z" fill="url(#alEdge)" stroke="#585f64" stroke-width="1.6"/>
+  <path d="M728 558 L896 446 L896 452 L728 564 Z" fill="url(#alEdge)" stroke="#585f64" stroke-width="1.6"/>
+  <path d="M128 526 L296 446 L296 452 L128 532 Z" fill="#5a6166" stroke="#4c5256" stroke-width="1.6"/>
+
+  <!-- sheet face -->
+  <path d="M128 526 C318 552 518 562 728 558 L896 446 L296 446 Z" fill="url(#alTop)" stroke="#5f666b" stroke-width="2.2"/>
+  <g clip-path="url(#sheetClip)">
+    <!-- soft matte mill finish: contrast pulled down -->
+    <path d="M128 526 C318 552 518 562 728 558 L896 446 L296 446 Z" fill="#aeb5ba" opacity="0.30"/>
+      <path d="M131 524 C321 550 521 560 731 556" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M138 519 C328 545 528 555 738 551" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M144 514 C334 540 534 550 744 546" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M151 510 C341 536 541 546 751 542" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M157 505 C347 531 547 541 757 537" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M164 501 C354 527 554 537 764 533" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M170 496 C360 522 560 532 770 528" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M176 491 C366 517 566 527 776 523" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M183 487 C373 513 573 523 783 519" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M189 482 C379 508 579 518 789 514" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M196 478 C386 504 586 514 796 510" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M202 473 C392 499 592 509 802 505" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M209 468 C399 494 599 504 809 500" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M215 464 C405 490 605 500 815 496" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M222 459 C412 485 612 495 822 491" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M228 454 C418 480 618 490 828 486" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M235 450 C425 476 625 486 835 482" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M241 445 C431 471 631 481 841 477" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M248 441 C438 467 638 477 848 473" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M254 436 C444 462 644 472 854 468" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M260 431 C450 457 650 467 860 463" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M267 427 C457 453 657 463 867 459" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M273 422 C463 448 663 458 873 454" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M280 418 C470 444 670 454 880 450" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+      <path d="M286 413 C476 439 676 449 886 445" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.8" fill="none"/>
+      <path d="M293 408 C483 434 683 444 893 440" stroke="#6c757c" stroke-opacity="0.13" stroke-width="1.4" fill="none"/>
+    <!-- faint protective-film sheen -->
+    <ellipse cx="400" cy="470" rx="300" ry="110" fill="url(#filmSheen)" transform="rotate(-12 400 470)"/>
+    <ellipse cx="760" cy="480" rx="170" ry="70" fill="url(#softDark)"/>
+    <ellipse cx="220" cy="520" rx="150" ry="60" fill="url(#softDark)"/>
+    <ellipse cx="600" cy="452" rx="200" ry="60" fill="url(#filmSheen)"/>
+  </g>
+
+  <!-- spring lift at the near-left long edge: light catching the raised lip -->
+  <path d="M128 526 C318 552 518 562 728 558" fill="none" stroke="#eef2f4" stroke-opacity="0.55" stroke-width="2.4"/>
+  <path d="M134 530 C320 556 518 566 726 562" fill="none" stroke="#f5f8f9" stroke-opacity="0.30" stroke-width="2"/>
+  <!-- light burr along the underside of the sheared edge -->
+  <path d="M150 534 C330 559 520 569 720 565" fill="none" stroke="#cfd6da" stroke-opacity="0.45" stroke-width="1.6"/>
+  <!-- back sheared edge, square and clean -->
+  <path d="M300 448 L892 448" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+  <path d="M303 453 L888 453" fill="none" stroke="#5f666b" stroke-opacity="0.35" stroke-width="1.6"/>
+</svg>

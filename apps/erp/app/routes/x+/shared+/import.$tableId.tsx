@@ -9,6 +9,7 @@ import {
   isQuoteImportTable
 } from "~/modules/sales/sales.import.server";
 import { importCsv, importPermissions, importSchemas } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { tableId } = params;
@@ -63,6 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // all other tables run through the generic import-csv edge function.
   const importResult = isQuoteImportTable(table)
     ? await importQuotes(serviceRole, {
+        db: getDatabaseClient(),
         table,
         filePath: filePath as string,
         columnMappings: columnMappings as Record<string, string>,

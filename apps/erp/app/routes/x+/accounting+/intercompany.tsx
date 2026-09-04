@@ -52,6 +52,7 @@ export default function IntercompanyRoute() {
   const permissions = usePermissions();
   const matchFetcher = useFetcher();
   const eliminateFetcher = useFetcher();
+  const regenerateFetcher = useFetcher();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -79,6 +80,16 @@ export default function IntercompanyRoute() {
                   Generate Eliminations
                 </Button>
               </eliminateFetcher.Form>
+              <regenerateFetcher.Form method="post" action="eliminate">
+                <input type="hidden" name="regenerate" value="true" />
+                <Button
+                  variant="secondary"
+                  type="submit"
+                  isLoading={regenerateFetcher.state !== "idle"}
+                >
+                  Regenerate
+                </Button>
+              </regenerateFetcher.Form>
               <New label="IC Transaction" to={`new?${params.toString()}`} />
             </div>
           )

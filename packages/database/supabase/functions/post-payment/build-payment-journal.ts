@@ -19,7 +19,13 @@
 // AP refund (cash in from a supplier against a debit memo): !isAR && cashIn.
 //
 // Posting model (all amounts converted to base currency):
-//   1) Cash      — DR Bank (cashIn) / CR Bank (!cashIn) for the full cash.
+//   1) Cash      — DR Bank (cashIn) / CR Bank (!cashIn). When a processor fee is
+//                  deducted AT SOURCE (e.g. Stripe never deposits the gross —
+//                  the fee is withheld before the payout lands), the bank line
+//                  carries only the NET amount and a same-side fee expense line
+//                  makes up the difference, so the entry reflects what actually
+//                  moved through the bank rather than a gross deposit that never
+//                  happened.
 //   2) Per app   — control account (AR/AP) at the TARGET rate so it reverses the
 //                  original booking exactly; discount and write-off (also
 //                  invoice-currency reliefs) at the target rate; realized FX on
@@ -34,6 +40,7 @@
 // means a loss, for both AR and AP. This is the same quantity the stored
 // `invoiceSettlement.fxGainLossAmount` captures, so the subledger reconciles.
 
+import { assertBalanced, EPSILON, round } from "../shared/precision.ts";
 import { credit, debit } from "../lib/utils.ts";
 
 // A journal line this builder emits. Deliberately self-contained — a pure unit
@@ -53,11 +60,6 @@ export interface PaymentJournalLine {
   companyId: string;
 }
 
-// Round to 4 decimal places to match NUMERIC(19,4) storage and prevent
-// floating-point cruft from making the journal fail its balance check. Shared
-// with the driver so amounts are rounded identically everywhere.
-export const round4 = (n: number) => Math.round(n * 10000) / 10000;
-
 export interface PaymentJournalApplicationInput {
   targetSalesInvoiceId?: string | null;
   targetPurchaseInvoiceId?: string | null;
@@ -76,6 +78,17 @@ export interface PaymentJournalAccounts {
   fxLossAccountId: string | null;
 }
 
+// A fee withheld by a payment processor BEFORE the cash reaches the bank (e.g.
+// Stripe Connect's per-charge commission) — never a fee billed separately. The
+// caller resolves the account (a per-integration override or the company's
+// service-charge default) and converts nothing; `amount` is in the payment's
+// own currency, same as `totalAmount`, and gets the same exchangeRate applied.
+export interface PaymentJournalFeeInput {
+  amount: number;
+  accountId: string;
+  description?: string;
+}
+
 export interface BuildPaymentJournalInput {
   // Internal payment record id — becomes `documentId` on every line.
   paymentId: string;
@@ -90,6 +103,7 @@ export interface BuildPaymentJournalInput {
   journalLineReference: string;
   applications: PaymentJournalApplicationInput[];
   accounts: PaymentJournalAccounts;
+  fee?: PaymentJournalFeeInput;
 }
 
 export interface BuildPaymentJournalResult {
@@ -119,6 +133,7 @@ export function buildPaymentJournal(
     journalLineReference,
     applications,
     accounts,
+    fee,
   } = input;
 
   const {
@@ -168,12 +183,25 @@ export function buildPaymentJournal(
     });
   };
 
-  // 1) Cash: DR Bank (cash in) / CR Bank (cash out), full cash in base.
-  const cashBase = round4(totalAmount * exchangeRate);
-  pushLine(cashIn ? "debit" : "credit", "asset", cashBase, {
+  // 1) Cash: DR Bank (cash in) / CR Bank (cash out). A processor fee withheld
+  //    at source never reaches the bank, so it comes OUT of the cash line
+  //    (not booked against a gross deposit that never happened) and gets its
+  //    own expense line on the SAME side — the control account below is still
+  //    relieved at the full (gross) applied amount, since the fee is between
+  //    us and the processor, not something the customer/supplier owes less of.
+  const grossBase = round(totalAmount * exchangeRate);
+  const feeBase = fee && fee.amount > 0 ? round(fee.amount * exchangeRate) : 0;
+  const netBase = round(grossBase - feeBase);
+  pushLine(cashIn ? "debit" : "credit", "asset", netBase, {
     accountId: bankAccount,
     description: "Bank / Cash",
   });
+  if (feeBase > 0) {
+    pushLine(cashIn ? "debit" : "credit", "expense", feeBase, {
+      accountId: fee!.accountId,
+      description: fee!.description ?? "Payment Processing Fee",
+    });
+  }
 
   // 2) Per application: control at TARGET rate; discount / write-off at target
   //    rate. FX is accumulated and plugged once below.
@@ -193,7 +221,7 @@ export function buildPaymentJournal(
     pushLine(
       cashIn ? "credit" : "debit",
       isAR ? "asset" : "liability",
-      round4((applied + discount + writeOff) * invRate),
+      round((applied + discount + writeOff) * invRate),
       {
         accountId: controlAccountId,
         description: isAR ? "Accounts Receivable" : "Accounts Payable",
@@ -210,7 +238,7 @@ export function buildPaymentJournal(
           `Missing ${isAR ? "customer" : "supplier"} payment discount account default`
         );
       }
-      pushLine(cashIn ? "debit" : "credit", "expense", round4(discount * invRate), {
+      pushLine(cashIn ? "debit" : "credit", "expense", round(discount * invRate), {
         accountId: discountAccountId,
         description: isAR
           ? "Customer Payment Discount"
@@ -231,7 +259,7 @@ export function buildPaymentJournal(
       pushLine(
         cashIn ? "debit" : "credit",
         isAR ? "expense" : "revenue",
-        round4(writeOff * invRate),
+        round(writeOff * invRate),
         {
           accountId: writeOffAccountId,
           description: isAR ? "Bad Debt Expense" : "Vendor Write-Off Income",
@@ -252,14 +280,19 @@ export function buildPaymentJournal(
   //    Positive: cash beyond what was applied becomes new on-account credit.
   //    Negative: this payment applied more than its cash, drawing down the
   //    party's existing on-account credit (the inverse posting side).
+  //    The band is EPSILON, not a hand-picked 1e-4: whatever we DON'T book here
+  //    stays in the cash line with nothing to offset it, so anything the ledger
+  //    can store must get a line or the entry is stored out of balance. When the
+  //    columns were NUMERIC(19,4) a 1e-4 band was exactly "smaller than one
+  //    storable unit"; at scale 5 that same literal drops ten storable units.
   const unappliedInPaymentCcy =
     totalAmount - applications.reduce((sum, a) => sum + Number(a.appliedAmount), 0);
-  if (Math.abs(unappliedInPaymentCcy) > 0.0001) {
+  if (Math.abs(unappliedInPaymentCcy) > EPSILON) {
     const buildingCredit = unappliedInPaymentCcy > 0;
     pushLine(
       cashIn === buildingCredit ? "credit" : "debit",
       isAR ? "asset" : "liability",
-      round4(Math.abs(unappliedInPaymentCcy) * exchangeRate),
+      round(Math.abs(unappliedInPaymentCcy) * exchangeRate),
       {
         accountId: controlAccountId,
         description: isAR
@@ -273,9 +306,10 @@ export function buildPaymentJournal(
     );
   }
 
-  // 4) FX plug (single line).
-  if (Math.abs(totalFxImpact) > 0.0001) {
-    const fxBase = round4(Math.abs(totalFxImpact));
+  // 4) FX plug (single line). Same reasoning as the unapplied band above — an
+  //     unbooked FX residual has nothing to offset it.
+  if (Math.abs(totalFxImpact) > EPSILON) {
+    const fxBase = round(Math.abs(totalFxImpact));
     if (totalFxImpact > 0) {
       if (!fxGainAccountId) {
         throw new Error("Missing realized FX gain account default");
@@ -298,12 +332,15 @@ export function buildPaymentJournal(
   // Self-check: the entry must balance in true debit/credit space. The FX plug
   // (same formula as the stored fxGainLossAmount) should make this ~0; a larger
   // residual means a logic/rounding bug, so we refuse to post rather than write
-  // an unbalanced journal to the GL.
-  if (Math.abs(signedDebitTotal) > BALANCE_TOLERANCE) {
-    throw new Error(
-      `Payment journal does not balance (off by ${round4(signedDebitTotal)} in base currency); refusing to post`
-    );
-  }
+  // an unbalanced journal to the GL. BALANCE_TOLERANCE is a business threshold
+  // (multi-currency journals carry sub-cent cross-rate residuals), NOT the
+  // float-noise default.
+  assertBalanced(
+    signedDebitTotal,
+    0,
+    BALANCE_TOLERANCE,
+    "Payment journal (base currency)"
+  );
 
   return { lines, signedDebitTotal, totalFxImpact };
 }

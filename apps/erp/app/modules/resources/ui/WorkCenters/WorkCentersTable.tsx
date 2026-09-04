@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -27,13 +28,13 @@ import {
   LuAlignLeft,
   LuBuilding2,
   LuCheck,
-  LuCog,
   LuDollarSign,
+  LuLocateFixed,
   LuPencil,
+  LuRedoDot,
   LuTrash,
   LuTriangleAlert,
-  LuUser,
-  LuWrench
+  LuUser
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
@@ -102,7 +103,6 @@ const WorkCentersTable = memo(
     };
 
     const customColumns = useCustomColumns<WorkCenter>("workCenter");
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<WorkCenter>[]>(() => {
       const defaultColumns: ColumnDef<WorkCenter>[] = [
         {
@@ -128,7 +128,7 @@ const WorkCentersTable = memo(
             </HStack>
           ),
           meta: {
-            icon: <LuWrench />
+            icon: <LuLocateFixed />
           }
         },
         {
@@ -150,7 +150,7 @@ const WorkCentersTable = memo(
             </span>
           ),
           meta: {
-            icon: <LuCog />,
+            icon: <LuRedoDot />,
             filter: {
               type: "static",
               options: processes.map((process) => ({
@@ -285,7 +285,19 @@ const WorkCentersTable = memo(
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [params, customColumns]);
+      // `processes` arrives from a fetcher AFTER the first render. Without it
+      // here the cell closure keeps the empty first-render array forever, so
+      // every process id fails its label lookup and the column renders blank.
+    }, [
+      processes,
+      locations,
+      departments,
+      people,
+      formatter,
+      customColumns,
+      navigate,
+      t
+    ]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<(row: WorkCenter) => JSX.Element>(
@@ -409,7 +421,7 @@ function DeleteWorkCenterModal({
     const { data, error } = await carbon
       .from("jobOperation")
       .select("job(jobId, id, status)")
-      .in("job.status", ["Ready", "In Progress", "Paused"])
+      .in("job.status", [...activeJobStatuses])
       .neq("status", "Done")
       .eq("workCenterId", workCenter.id!)
       .eq("companyId", company?.id);

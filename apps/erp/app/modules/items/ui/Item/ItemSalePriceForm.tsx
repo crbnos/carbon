@@ -6,10 +6,11 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Number, Submit } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { itemUnitSalePriceValidator } from "../../items.models";
 
 type ItemSalePriceFormProps = {
@@ -20,6 +21,9 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    company?.baseCurrencyCode ?? "USD"
+  );
 
   return (
     <Card>
@@ -40,10 +44,10 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
               name="unitSalePrice"
               label={t`Unit Sale Price`}
               minValue={0}
-              formatOptions={{
-                style: "currency",
-                currency: company?.baseCurrencyCode ?? "USD"
-              }}
+              formatOptions={INPUT_FORMAT.rate(
+                company?.baseCurrencyCode ?? "USD",
+                currencyDecimals
+              )}
             />
             {/* <Currency
               name="currencyCode"

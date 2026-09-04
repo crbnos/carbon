@@ -18,7 +18,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
@@ -29,6 +28,7 @@ import { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
+import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { MaintenanceAddPartModal } from "~/components/MaintenanceDispatch";
 import MaintenanceOeeImpact from "~/components/MaintenanceOeeImpact";
@@ -185,7 +185,6 @@ export default function MaintenanceDetailRoute() {
   const { dispatch, events, items, activeEvent } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
-  const { locale } = useLocale();
   const fetcher = useFetcher();
   const deleteFetcher = useFetcher();
   const addPartModal = useDisclosure();
@@ -231,7 +230,7 @@ export default function MaintenanceDetailRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
         <div className="flex items-center gap-2 px-2 w-full justify-between">
           <HStack>
             <SidebarTrigger />
@@ -251,7 +250,7 @@ export default function MaintenanceDetailRoute() {
         </div>
       </header>
 
-      <main className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
+      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
         <VStack spacing={4} className="max-w-2xl mx-auto">
           {/* Work Center & OEE Impact */}
           <Card className="w-full">
@@ -400,9 +399,16 @@ export default function MaintenanceDetailRoute() {
                           size="xs"
                         />
                         <span className="text-xs text-muted-foreground">
-                          {new Date(event.startTime).toLocaleString(locale)}
-                          {event.endTime &&
-                            ` - ${new Date(event.endTime).toLocaleTimeString(locale)}`}
+                          <DateTime
+                            value={event.startTime}
+                            variant="absolute"
+                          />
+                          {event.endTime && (
+                            <>
+                              {" - "}
+                              <DateTime value={event.endTime} variant="time" />
+                            </>
+                          )}
                         </span>
                       </VStack>
                       <span className="text-sm font-mono">

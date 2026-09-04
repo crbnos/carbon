@@ -5,6 +5,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
   cn,
   HStack,
   IconButton,
@@ -78,7 +79,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
     const options = useMemo(() => {
       const base =
         people
-          .filter((person) => person.id !== user.id)
+          .filter((person) => person.id !== user.id && person.active !== false)
           .map((person) => ({
             value: person.id,
             label: person.name
@@ -165,35 +166,37 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
             >
               <Command id="assignee-options">
                 <CommandInput placeholder={t`Search...`} className="h-9" />
-                <CommandEmpty>
-                  <Trans>No option found.</Trans>
-                </CommandEmpty>
-                <CommandGroup>
-                  {options.map((option) => (
-                    <CommandItem
-                      value={
-                        typeof option.label === "string"
-                          ? option.label
-                          : undefined
-                      }
-                      key={option.value}
-                      onSelect={() => {
-                        handleChange(option.value);
-                        onChange?.(option.value);
-                        setOpen(false);
-                      }}
-                    >
-                      {option.label}
+                <CommandList>
+                  <CommandEmpty>
+                    <Trans>No option found.</Trans>
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {options.map((option) => (
+                      <CommandItem
+                        value={
+                          typeof option.label === "string"
+                            ? option.label
+                            : undefined
+                        }
+                        key={option.value}
+                        onSelect={() => {
+                          handleChange(option.value);
+                          onChange?.(option.value);
+                          setOpen(false);
+                        }}
+                      >
+                        {option.label}
 
-                      <RxCheck
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          option.value === value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                        <RxCheck
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            option.value === value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
               </Command>
             </PopoverContent>
           </Popover>

@@ -38,6 +38,7 @@ export function LineItemsBlock({
     purchaseOrderLines,
     thumbnails,
     numberFormatter,
+    rateFormatter,
     theme,
     locale
   } = data;
@@ -73,6 +74,7 @@ export function LineItemsBlock({
 
         const netValue =
           (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
+        const taxPercentLabel = formatTaxPercent(line.taxPercent, locale);
 
         return (
           <View key={line.id}>
@@ -158,7 +160,7 @@ export function LineItemsBlock({
                 <Text style={tw("w-[12%] text-center text-gray-600")}>
                   {line.purchaseOrderLineType === "Comment"
                     ? ""
-                    : numberFormatter.format(line.supplierUnitPrice ?? 0)}
+                    : rateFormatter.format(line.supplierUnitPrice ?? 0)}
                 </Text>
                 <Text style={tw("w-[12%] text-center text-gray-600")}>
                   {line.purchaseOrderLineType === "Comment"
@@ -171,9 +173,9 @@ export function LineItemsBlock({
                       <Text style={tw("text-gray-600")}>
                         {numberFormatter.format(line.supplierTaxAmount ?? 0)}
                       </Text>
-                      {formatTaxPercent(line.taxPercent) && (
+                      {taxPercentLabel && (
                         <Text style={tw("text-[6px] text-gray-400")}>
-                          {formatTaxPercent(line.taxPercent)}
+                          {taxPercentLabel}
                         </Text>
                       )}
                     </View>

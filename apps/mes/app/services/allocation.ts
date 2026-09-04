@@ -11,6 +11,12 @@ export type SuggestedAllocationLot = {
   expirationDate: string | null;
   storageUnitId: string | null;
   storageUnitName: string | null;
+  /**
+   * The shelf parent this lot was split from at pick time
+   * ("Split From Entity ID"), when the source loads it. Lets the Issue modal
+   * resolve a scanned shelf label to its allocated lineside child.
+   */
+  splitFromEntityId?: string | null;
 };
 
 export type PickMethodSortMethod = "Default" | "FEFO" | "FIFO" | "LIFO";

@@ -20,6 +20,7 @@ import { useMemo, useState } from "react";
 import { LuSearch, LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { userContext } from "~/context";
 import {
@@ -94,16 +95,6 @@ function JobStatus({ status }: { status: string | null }) {
   );
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value + "T00:00:00");
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
-}
-
 export default function JobsRoute() {
   const { t } = useLingui();
   const { jobs, trackedEntities } = useLoaderData<typeof loader>();
@@ -122,7 +113,7 @@ export default function JobsRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
           <Heading size="h4">
@@ -209,7 +200,11 @@ export default function JobsRoute() {
                         <EmployeeAvatar employeeId={job.assignee} />
                       </Td>
                       <Td className="text-muted-foreground">
-                        {formatDate(job.dueDate)}
+                        <DateTime
+                          value={job.dueDate}
+                          variant="date"
+                          fallback="—"
+                        />
                       </Td>
                       <Td className="text-muted-foreground">
                         {job.deadlineType ?? "—"}

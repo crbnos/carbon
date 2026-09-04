@@ -8,7 +8,12 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
-import { resolveRegistrationLine } from "../utils/shared";
+import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
+import {
+  getMoneyFormatter,
+  getRateFormatter,
+  resolveRegistrationLine
+} from "../utils/shared";
 import type { PurchaseOrderData } from "./blocks/purchaseOrder";
 import {
   buildPurchaseOrderVars,
@@ -31,6 +36,8 @@ interface PurchaseOrderPDFProps extends PDF {
   template?: DocumentTemplate | null;
   /** Shared sections referenced by the template, keyed by id. */
   sections?: Record<string, ResolvedSection>;
+  /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
+  currencyDecimals?: number | null;
 }
 
 const PurchaseOrderPDF = ({
@@ -45,21 +52,22 @@ const PurchaseOrderPDF = ({
   terms,
   thumbnails,
   locale,
+  currencyDecimals,
   template,
   sections = {},
   title = "Purchase Order"
 }: PurchaseOrderPDFProps) => {
   const currencyCode =
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD";
-  const numberFormatter = new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
+  // The unit-price COLUMN is a rate, not a settlement amount — see
+  // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
+  const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const headerTitle = purchaseOrder?.purchaseOrderId
-    ? `${title}: ${purchaseOrder.purchaseOrderId}`
-    : title;
+  const displayId = purchaseOrder
+    ? getPurchaseOrderDisplayId(purchaseOrder)
+    : "";
+  const headerTitle = displayId ? `${title}: ${displayId}` : title;
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchaseOrder", template);
@@ -99,6 +107,7 @@ const PurchaseOrderPDF = ({
     sections,
     currencyCode,
     numberFormatter,
+    rateFormatter,
     vars,
     headerOptions
   };
@@ -131,7 +140,7 @@ const PurchaseOrderPDF = ({
         keywords: meta?.keywords ?? "purchase order",
         subject: meta?.subject ?? "Purchase Order"
       }}
-      footerDocumentId={purchaseOrder?.purchaseOrderId}
+      footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}

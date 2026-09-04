@@ -52,9 +52,14 @@ export function buildSupersessionRedirectMap(
     });
   }
 
-  // Collapse multi-hop chains, multiplying factors along the way, cycle-safe.
-  for (const oldId of [...redirect.keys()]) {
-    const start = redirect.get(oldId)!;
+  // Collapse multi-hop chains, multiplying factors along the way. Built into a
+  // SECOND map rather than updating `redirect` in place: mutating it mid-walk
+  // makes the result depend on which entry is visited first (a later entry reads
+  // an earlier one's already-collapsed value and multiplies its factor in twice)
+  // and, once cycle entries are dropped, lets a cycle member read a deleted
+  // predecessor, see no successor, and pass as a clean terminal.
+  const collapsed = new Map<string, Redirect>();
+  for (const [oldId, start] of redirect) {
     let to = start.to;
     let factor = start.factor;
     const seen = new Set<string>([oldId]);
@@ -64,8 +69,16 @@ export function buildSupersessionRedirectMap(
       factor *= next.factor;
       to = next.to;
     }
-    redirect.set(oldId, { to, factor });
+    // Exiting with `to` still in the map means the walk closed a loop. A cycle
+    // has no terminal successor, so there is nothing safe to point at — drop the
+    // entry and leave the demand on the original part. Keeping it made the item
+    // supersede ITSELF (`substitutedFromItemId` = its own id) while multiplying
+    // the job's quantities by the cycle's factor product, which is invisible
+    // downstream: the quantity is a plausible number and nothing can repair it.
+    // Only a self-reference is blocked by the DB CHECK and the zod validator, so
+    // a two-row cycle is writable straight from the UI.
+    if (!redirect.has(to)) collapsed.set(oldId, { to, factor });
   }
 
-  return redirect;
+  return collapsed;
 }

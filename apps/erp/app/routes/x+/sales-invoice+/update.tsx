@@ -1,12 +1,14 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
-import { isSalesInvoiceLocked } from "~/modules/invoicing";
+import { getExchangeRate } from "~/modules/accounting";
+import {
+  computeInvoiceDateDue,
+  isSalesInvoiceLocked
+} from "~/modules/invoicing";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -49,11 +51,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         if (customer.data?.currencyCode) {
           currencyCode = customer.data.currencyCode;
-          const currency = await getCurrencyByCode(
-            client,
-            companyGroupId,
-            currencyCode
-          );
+          const rate = await getExchangeRate(client, companyId, currencyCode);
+          if (rate.error) return rate;
           return await client
             .from("salesInvoice")
             .update({
@@ -61,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
               invoiceCustomerContactId: null,
               invoiceCustomerLocationId: null,
               currencyCode: currencyCode ?? undefined,
-              exchangeRate: currency.data?.exchangeRate ?? 1,
+              exchangeRate: rate.data,
               updatedBy: userId,
               updatedAt: new Date().toISOString()
             })
@@ -79,54 +78,68 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("id", ids as string[]);
     case "dateIssued":
       if (ids.length === 1) {
-        const paymentTerms = await client
-          .from("paymentTerm")
-          .select("*")
-          .eq("id", value as string)
+        const invoice = await client
+          .from("salesInvoice")
+          .select("paymentTermId")
+          .eq("id", ids[0] as string)
+          .eq("companyId", companyId)
           .single();
-        if (paymentTerms.data) {
-          return await client
-            .from("salesInvoice")
-            .update({
-              dateIssued: value,
-              dateDue: parseDate(value as string)
-                .add({ days: paymentTerms.data.daysDue })
-                .toString(),
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .eq("id", ids[0] as string);
-        } else {
-          return await client
-            .from("salesInvoice")
-            .update({
-              [field]: value ? value : null,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", ids as string[]);
-        }
+        const dateDue = await computeInvoiceDateDue(client, {
+          dateIssued: value,
+          paymentTermId: invoice.data?.paymentTermId,
+          companyId
+        });
+        return await client
+          .from("salesInvoice")
+          .update({
+            dateIssued: value ? value : null,
+            ...(dateDue ? { dateDue } : {}),
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+          .eq("id", ids[0] as string)
+          .eq("companyId", companyId);
+      }
+      break;
+    case "paymentTermId":
+      if (ids.length === 1) {
+        const invoice = await client
+          .from("salesInvoice")
+          .select("dateIssued")
+          .eq("id", ids[0] as string)
+          .eq("companyId", companyId)
+          .single();
+        const dateDue = await computeInvoiceDateDue(client, {
+          dateIssued: invoice.data?.dateIssued,
+          paymentTermId: value,
+          companyId
+        });
+        return await client
+          .from("salesInvoice")
+          .update({
+            paymentTermId: value ? value : null,
+            ...(dateDue ? { dateDue } : {}),
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+          .eq("id", ids[0] as string)
+          .eq("companyId", companyId);
       }
       break;
     // don't break -- just let it catch the next case
     case "currencyCode":
       if (value) {
-        const currency = await getCurrencyByCode(
-          client,
-          companyGroupId,
-          value as string
-        );
-        if (currency.data) {
-          return await client
-            .from("salesInvoice")
-            .update({
-              currencyCode: value as string,
-              exchangeRate: currency.data.exchangeRate ?? 1,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", ids as string[]);
-        }
+        const rate = await getExchangeRate(client, companyId, value as string);
+        if (rate.error) return rate;
+        return await client
+          .from("salesInvoice")
+          .update({
+            currencyCode: value as string,
+            exchangeRate: rate.data,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+          .in("id", ids as string[]);
       }
     // don't break -- just let it catch the next case
     case "customerId":
@@ -134,7 +147,6 @@ export async function action({ request }: ActionFunctionArgs) {
     case "invoiceCustomerLocationId":
     case "locationId":
     case "customerReference":
-    case "paymentTermId":
     case "exchangeRate":
     case "dateDue":
     case "datePaid":

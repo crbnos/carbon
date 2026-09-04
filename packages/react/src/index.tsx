@@ -64,8 +64,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "./Collapsible";
-import type { ComboboxProps } from "./Combobox";
-import { Combobox } from "./Combobox";
+import type { ComboboxFilter, ComboboxOption, ComboboxProps } from "./Combobox";
+import { Combobox, filterComboboxOptions } from "./Combobox";
 import {
   Command,
   CommandDialog,
@@ -105,11 +105,14 @@ import { CreatableCombobox } from "./CreateableCombobox";
 import type { CreatableMultiSelectProps } from "./CreateableMultiSelect";
 import { CreatableMultiSelect } from "./CreateableMultiSelect";
 import {
+  Calendar,
   DatePicker,
   DateRangePicker,
   DateTimePicker,
   TimePicker
 } from "./Date";
+import type { DateTimeProps } from "./DateTime";
+import { DateTime } from "./DateTime";
 import {
   Drawer,
   DrawerBody,
@@ -249,6 +252,7 @@ import {
 import { Paragraph } from "./Paragraph";
 import {
   Popover,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverFooter,
@@ -309,6 +313,8 @@ import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
 import { SplitButton } from "./SplitButton";
 import { Status } from "./Status";
+import type { SubheadingProps } from "./Subheading";
+import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
@@ -393,6 +399,7 @@ export {
   CollapsibleContent,
   CollapsibleTrigger,
   Combobox,
+  filterComboboxOptions,
   Command,
   CommandDialog,
   CommandEmpty,
@@ -424,8 +431,10 @@ export {
   Count,
   CreatableCombobox,
   CreatableMultiSelect,
+  Calendar,
   DatePicker,
   DateRangePicker,
+  DateTime,
   DateTimePicker,
   Drawer,
   DrawerBody,
@@ -534,6 +543,7 @@ export {
   OperatingSystemContextProvider,
   Paragraph,
   Popover,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverFooter,
@@ -588,6 +598,7 @@ export {
   Spinner,
   SplitButton,
   Status,
+  Subheading,
   Switch,
   Table,
   TableCaption,
@@ -637,9 +648,12 @@ export type {
   ButtonProps,
   ChoiceCardOption,
   ChoiceSelectOption,
+  ComboboxFilter,
+  ComboboxOption,
   ComboboxProps,
   CreatableComboboxProps,
   CreatableMultiSelectProps,
+  DateTimeProps,
   InputProps,
   JSONContent,
   Modifier,
@@ -648,6 +662,7 @@ export type {
   OperatingSystemPlatform,
   Shortcut,
   ShortcutDefinition,
+  SubheadingProps,
   TextareaProps,
   ExpiredEntityPolicy,
   TrackedEntityOption,

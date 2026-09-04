@@ -1,10 +1,7 @@
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
-import { useMount } from "@carbon/react";
 import { useMemo } from "react";
-import { useFetcher } from "react-router";
-import type { getCurrenciesList } from "~/modules/accounting";
-import { path } from "~/utils/path";
+import { useCurrencies } from "~/hooks/useCurrencies";
 
 type CurrencySelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   inline?: boolean;
@@ -37,23 +34,10 @@ Currency.displayName = "Currency";
 export default Currency;
 
 const useCurrencyCodes = () => {
-  const currencyFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCurrenciesList>>>();
+  const currencies = useCurrencies();
 
-  useMount(() => {
-    currencyFetcher.load(path.to.api.currencies);
-  });
-
-  const options = useMemo(
-    () =>
-      currencyFetcher.data?.data
-        ? currencyFetcher.data?.data.map((c) => ({
-            value: c.code,
-            label: c.name
-          }))
-        : [],
-    [currencyFetcher.data]
+  return useMemo(
+    () => currencies.map((c) => ({ value: c.code, label: c.name })),
+    [currencies]
   );
-
-  return options;
 };

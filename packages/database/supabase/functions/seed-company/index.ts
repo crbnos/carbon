@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import { corsHeaders } from "../lib/headers.ts";
+import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   accountDefaults,
   accounts,
@@ -31,9 +31,8 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
   const { companyId: id, userId, parentCompanyId, identityOnly } =
     await req.json();
 
@@ -77,13 +76,7 @@ serve(async (req: Request) => {
       .eq("companyId", companyId);
       
     if ((existingLink.count ?? 0) > 0) {
-      return new Response(
-        JSON.stringify({ success: true, alreadySeeded: true }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+      return jsonResponse({ success: true, alreadySeeded: true });
     }
 
     // Determine if this is a new root company or joining an existing group
@@ -127,14 +120,19 @@ serve(async (req: Request) => {
           .execute();
       }
 
-      // For subsidiaries: set companyGroupId and parentCompanyId
-      if (parentCompanyId) {
-        await trx
-          .updateTable("company")
-          .set({ companyGroupId, parentCompanyId })
-          .where("id", "=", companyId)
-          .execute();
-      }
+      // For subsidiaries, companyGroupId + parentCompanyId are set LATER (just
+      // before the elimination-entity block), not here. Setting companyGroupId
+      // fires the `company_sync_ic_partners` trigger, which inserts an
+      // intercompany supplier/customer row in this company for each sibling. Those
+      // inserts rely on the `set_{supplier,customer}_readable_id_on_insert`
+      // triggers to stamp a readableId from the company's sequence — and the
+      // sequences aren't seeded until the reference-data block below. Firing the
+      // trigger here left every intercompany row with readableId '' (the auto-fill
+      // no-ops when no sequence row exists yet). Since
+      // `supplier_readableId_companyId_unique` treats '' as a real value, only the
+      // FIRST sibling's row survived; every later sibling collided on
+      // (companyId, '') and was silently dropped by ON CONFLICT DO NOTHING — so a
+      // company created into a group of 3+ only ever saw one sibling.
 
       await trx
         .withSchema("storage")
@@ -319,7 +317,7 @@ serve(async (req: Request) => {
 
       // period-close checklist definitions (system template rows). The table is
       // new on this branch and not yet in the cloud-generated Kysely types, so
-      // the insert goes through a cast (mirrors accounting.service.ts).
+      // the insert goes through a cast (mirrors accounting.ee.service.ts).
       await (trx as any)
         .insertInto("periodCloseTaskDefinition")
         .values(
@@ -498,6 +496,19 @@ serve(async (req: Request) => {
         .eq("id", userId);
       if (error) throw new Error(error.message);
 
+      // For subsidiaries: set companyGroupId + parentCompanyId now that the
+      // reference data (including the supplier/customer sequences) has been
+      // seeded. This is what fires `company_sync_ic_partners`; running it here
+      // guarantees the readableId auto-fill triggers can stamp a real id on every
+      // intercompany partner row, so no two siblings collide on (companyId, '').
+      if (parentCompanyId) {
+        await trx
+          .updateTable("company")
+          .set({ companyGroupId, parentCompanyId })
+          .where("id", "=", companyId)
+          .execute();
+      }
+
       // Auto-create elimination entity if this is a subsidiary
       if (parentCompanyId && companyGroupId) {
         const siblings = await trx
@@ -518,7 +529,7 @@ serve(async (req: Request) => {
             .where("id", "=", parentCompanyId)
             .executeTakeFirst();
 
-          await trx
+          const eliminationCompany = await trx
             .insertInto("company")
             .values({
               name: `Elimination - ${parent?.name ?? "Unknown"}`,
@@ -535,25 +546,31 @@ serve(async (req: Request) => {
               isEliminationEntity: true,
               companyGroupId,
             })
-            .execute();
+            .returning(["id"])
+            .executeTakeFirst();
+
+          // Seed sequences for the elimination entity. It is otherwise a bare
+          // consolidation shell, but generateEliminationEntries posts an
+          // elimination journal on it and stamps journalEntryId from
+          // get_next_sequence('journalEntry', <elim>) — without its own
+          // sequence rows that raises "Sequence not found".
+          if (eliminationCompany?.id) {
+            await trx
+              .insertInto("sequence")
+              .values(
+                sequences.map((s) => ({
+                  ...s,
+                  companyId: eliminationCompany.id,
+                }))
+              )
+              .execute();
+          }
         }
       }
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return jsonResponse({ success: true });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify(err), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return errorResponse(err, 500);
   }
 });

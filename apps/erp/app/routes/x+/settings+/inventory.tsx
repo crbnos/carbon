@@ -28,10 +28,12 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import {
   LuLayers,
+  LuPackageCheck,
   LuShield,
   LuShieldCheck,
   LuTimerReset,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuUndo2
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
@@ -41,9 +43,11 @@ import {
   incompletePickingListPolicyValidator,
   kanbanOutputTypes,
   kanbanOutputValidator,
+  returnPickedMaterialTimingValidator,
   shelfLifeSettingsValidator,
   updateIncompletePickingListPolicySetting,
   updateKanbanOutputSetting,
+  updateReturnPickedMaterialTimingSetting,
   updateShelfLifeSettings
 } from "~/modules/settings";
 
@@ -53,6 +57,7 @@ import { path } from "~/utils/path";
 type CalculatedInputScope = "AllInputs" | "ManagedInputsOnly";
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 type IncompletePickingListPolicy = "warn" | "error";
+type ReturnPickedMaterialTiming = "job" | "operation";
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
@@ -158,6 +163,31 @@ export async function action({ request }: ActionFunctionArgs) {
         success: true,
         message: "Picking list completion policy updated"
       };
+
+    case "returnPickedMaterialTiming":
+      const returnTimingValidation = await validator(
+        returnPickedMaterialTimingValidator
+      ).validate(formData);
+
+      if (returnTimingValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const returnTimingResult = await updateReturnPickedMaterialTimingSetting(
+        client,
+        companyId,
+        returnTimingValidation.data.returnPickedMaterialTiming
+      );
+      if (returnTimingResult.error)
+        return {
+          success: false,
+          message: returnTimingResult.error.message
+        };
+
+      return {
+        success: true,
+        message: "Material return timing updated"
+      };
   }
 
   return { success: false, message: "Invalid form data" };
@@ -185,7 +215,7 @@ export default function InventorySettingsRoute() {
   }, [fetcher.data?.message, fetcher.data?.success]);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
@@ -332,6 +362,44 @@ export default function InventorySettingsRoute() {
               <Hidden name="intent" value="incompletePickingListPolicy" />
               <div className="flex flex-col gap-3 max-w-[640px]">
                 <IncompletePickingListPolicyChoice />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={returnPickedMaterialTimingValidator}
+            defaultValues={{
+              returnPickedMaterialTiming:
+                (companySettings.returnPickedMaterialTiming as
+                  | ReturnPickedMaterialTiming
+                  | null
+                  | undefined) ?? "job"
+            }}
+            fetcher={fetcher}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Returning unused picked material</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide when material picked to a work center but not consumed
+                  flows back to the warehouse.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="returnPickedMaterialTiming" />
+              <div className="flex flex-col gap-3 max-w-[640px]">
+                <ReturnPickedMaterialTimingChoice />
               </div>
             </CardContent>
             <CardFooter>
@@ -493,6 +561,41 @@ function IncompletePickingListPolicyChoice() {
         ]}
       />
       <input type="hidden" name="incompletePickingListPolicy" value={current} />
+    </>
+  );
+}
+
+// ChoiceSelect for when un-consumed picked material returns to the warehouse.
+// 'job' flushes the remainder when the whole job completes; 'operation' flushes
+// each operation's remainder as soon as that operation is Done (holding back
+// what completion-time backflush still needs).
+function ReturnPickedMaterialTimingChoice() {
+  const { t } = useLingui();
+  const [value, setValue] = useControlField<ReturnPickedMaterialTiming>(
+    "returnPickedMaterialTiming"
+  );
+  const current: ReturnPickedMaterialTiming = value ?? "job";
+  return (
+    <>
+      <ChoiceSelect<ReturnPickedMaterialTiming>
+        value={current}
+        onChange={setValue}
+        options={[
+          {
+            value: "job",
+            title: t`At job completion`,
+            description: t`Leftover staged material returns when the whole job completes.`,
+            icon: <LuPackageCheck />
+          },
+          {
+            value: "operation",
+            title: t`At operation completion`,
+            description: t`Each operation's unused material returns as soon as the operation is done.`,
+            icon: <LuUndo2 />
+          }
+        ]}
+      />
+      <input type="hidden" name="returnPickedMaterialTiming" value={current} />
     </>
   );
 }

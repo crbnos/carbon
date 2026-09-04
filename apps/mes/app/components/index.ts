@@ -1,6 +1,7 @@
 import { PrintButton } from "@carbon/printing/ui";
 import { AppSidebar } from "./AppSidebar";
 import Avatar from "./Avatar";
+import { DateTime } from "./DateTime";
 import FilePreview from "./FilePreview";
 import Hyperlink from "./Hyperlink";
 import { DeadlineIcon, FileIcon, OperationStatusIcon } from "./Icons";
@@ -9,6 +10,7 @@ import { OperationsList } from "./OperationsList";
 export {
   AppSidebar,
   Avatar,
+  DateTime,
   DeadlineIcon,
   FileIcon,
   FilePreview,

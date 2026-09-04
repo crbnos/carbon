@@ -1,6 +1,8 @@
+import { Card } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CADENCE, ESCALATION } from "../content/howwework";
 import { EditableField } from "./EditableField";
+import { Panel, Section, SectionList } from "./primitives";
 import { useFieldMap } from "./state";
 
 export function HowWeWorkView() {
@@ -21,13 +23,8 @@ export function HowWeWorkView() {
         </p>
       </header>
 
-      <section className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
-        <div className="px-5 py-3 border-b">
-          <span className="text-sm font-semibold">
-            <Trans>Meeting cadence</Trans>
-          </span>
-        </div>
-        <ul className="divide-y">
+      <Section title={<Trans>Meeting cadence</Trans>}>
+        <SectionList>
           {CADENCE.map((c) => (
             <li key={c.key} className="flex items-center gap-4 px-5 py-3">
               <span className="text-sm font-medium w-28 shrink-0">
@@ -41,13 +38,10 @@ export function HowWeWorkView() {
               />
             </li>
           ))}
-        </ul>
-      </section>
+        </SectionList>
+      </Section>
 
-      <section className="rounded-2xl border bg-card shadow-button-base p-5">
-        <h2 className="text-sm font-semibold mb-4">
-          <Trans>If something is off track</Trans>
-        </h2>
+      <Panel title={<Trans>If something is off track</Trans>}>
         <ol className="flex flex-col gap-4">
           {ESCALATION.map((step) => (
             <li key={step.n} className="flex items-start gap-3">
@@ -63,9 +57,9 @@ export function HowWeWorkView() {
             </li>
           ))}
         </ol>
-      </section>
+      </Panel>
 
-      <div className="rounded-2xl border-l-2 border-l-primary bg-muted/30 px-5 py-4">
+      <Card className="p-5 border border-primary/30 bg-primary/5 dark:bg-primary/5">
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground">
             <Trans>The principle:</Trans>
@@ -75,7 +69,7 @@ export function HowWeWorkView() {
             small fix; the same problem at go-live is a delay.
           </Trans>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

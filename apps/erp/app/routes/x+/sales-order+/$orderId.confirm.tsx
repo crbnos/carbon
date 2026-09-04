@@ -2,8 +2,8 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
-import { getSalesOrderStatus } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { datetime, getSalesOrderStatus } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { runMRP } from "~/modules/production/production.service";
@@ -16,7 +16,9 @@ import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -24,10 +26,11 @@ export async function action(args: ActionFunctionArgs) {
   try {
     assertIsPost(request);
 
-    const { client, companyId, userId } = await requirePermissions(request, {
-      create: "sales",
-      role: "employee"
-    });
+    const { client, companyId, companyGroupId, userId } =
+      await requirePermissions(request, {
+        create: "sales",
+        role: "employee"
+      });
 
     const { orderId } = params;
     if (!orderId) {
@@ -109,6 +112,7 @@ export async function action(args: ActionFunctionArgs) {
           const emailResult = await sendSalesOrderEmail({
             salesOrderId: orderId,
             companyId,
+            companyGroupId,
             userId,
             customerContactId: customerContact,
             cc: ccSelections,
@@ -150,8 +154,11 @@ export async function action(args: ActionFunctionArgs) {
       .update({
         status,
         orderDate:
-          salesOrder.data.orderDate ?? today(getLocalTimeZone()).toString(),
-        updatedAt: today(getLocalTimeZone()).toString(),
+          salesOrder.data.orderDate ??
+          datetime
+            .today(await getCompanyTimeZone(client, companyId))
+            .toString(),
+        updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
       .eq("id", orderId);
@@ -163,11 +170,22 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
       type: "salesOrder",
       id: orderId,
       companyId: companyId,
       userId: userId
+    });
+
+    // Below every early return above, so a failed email or a failed status
+    // write never counts as a confirmed order.
+    trackWorkEvent("sales_order_confirmed", {
+      companyId,
+      userId,
+      salesOrderId: orderId,
+      lineCount: orderLines.data?.length ?? 0,
+      derivedStatus: status,
+      emailed: notification === "Email"
     });
 
     return {

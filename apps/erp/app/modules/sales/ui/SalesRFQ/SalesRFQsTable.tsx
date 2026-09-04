@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   New,
@@ -23,7 +24,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -40,7 +41,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { formatDate } = useDateFormatter();
 
   const [selectedSalesRFQ, setSelectedSalesRFQ] = useState<SalesRFQ | null>(
     null
@@ -115,7 +115,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       {
         accessorKey: "rfqDate",
         header: t`RFQ Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -123,7 +125,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       {
         accessorKey: "expirationDate",
         header: t`Due Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -183,7 +187,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -208,7 +214,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -216,7 +224,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, t, formatDate]);
+  }, [customers, people, customColumns, t]);
 
   const renderContextMenu = useMemo(() => {
     return (row: SalesRFQ) => (

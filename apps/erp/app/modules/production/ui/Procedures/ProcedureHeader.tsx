@@ -1,14 +1,10 @@
 import {
   Badge,
-  Button,
   Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -20,18 +16,17 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect } from "react";
 import {
-  LuChevronDown,
-  LuCirclePlus,
   LuEllipsisVertical,
-  LuGitPullRequestArrow,
   LuPanelLeft,
   LuPanelRight,
   LuTrash
 } from "react-icons/lu";
-import { Await, useNavigate, useParams } from "react-router";
+import { Await, useParams } from "react-router";
+import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { Procedure } from "../../types";
 import ProcedureForm from "./ProcedureForm";
@@ -47,9 +42,11 @@ const ProcedureHeader = () => {
     versions: PostgrestResponse<Procedure>;
   }>(path.to.procedure(id));
 
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
+  // Live title from the editor's locked title block (updates before revalidate).
+  const liveTitle = useDocumentStore((s) => s.liveTitle);
+  const displayName = liveTitle ?? routeData?.procedure?.name ?? "";
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
@@ -59,7 +56,7 @@ const ProcedureHeader = () => {
   }, [id]);
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
+    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <IconButton
@@ -69,7 +66,7 @@ const ProcedureHeader = () => {
             variant="ghost"
           />
           <Heading size="h4" className="flex items-center gap-2">
-            <span>{routeData?.procedure?.name}</span>
+            <span>{displayName}</span>
             <Badge variant="outline">V{routeData?.procedure?.version}</Badge>
             <ProcedureStatus status={routeData?.procedure?.status} />
           </Heading>
@@ -102,63 +99,31 @@ const ProcedureHeader = () => {
       <div className="flex flex-shrink-0 gap-1 items-center justify-end">
         <Suspense fallback={null}>
           <Await resolve={routeData?.versions}>
-            {(versions) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuGitPullRequestArrow />}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    <Trans>Versions</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {permissions.can("create", "production") && (
+            {(versions) => {
+              const allVersions =
+                versions?.data ??
+                (routeData?.procedure ? [routeData.procedure] : []);
+              return (
+                <VersionMenu
+                  versions={allVersions}
+                  currentVersionId={id}
+                  getKey={(v) => v.id}
+                  getHref={(v) => path.to.procedure(v.id)}
+                  renderLabel={(v) => (
                     <>
-                      <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
-                        <DropdownMenuIcon icon={<LuCirclePlus />} />
-                        <Trans>New Version</Trans>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <Badge variant="outline">V{v.version}</Badge>
+                      <span>{v.name}</span>
                     </>
                   )}
-                  <DropdownMenuRadioGroup
-                    value={id}
-                    onValueChange={(value) =>
-                      navigate(path.to.procedure(value))
-                    }
-                  >
-                    {routeData?.procedure && (
-                      <DropdownMenuRadioItem
-                        key={routeData.procedure.id}
-                        value={routeData.procedure.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <Badge variant="outline">
-                          V{routeData.procedure.version}
-                        </Badge>
-                        <span>{routeData.procedure.name}</span>
-                        <ProcedureStatus status={routeData.procedure.status} />
-                      </DropdownMenuRadioItem>
-                    )}
-                    {versions?.data
-                      ?.filter((v) => v.id !== id)
-                      .map((version) => (
-                        <DropdownMenuRadioItem
-                          key={version.id}
-                          value={version.id}
-                          className="flex items-center justify-between gap-2"
-                        >
-                          <Badge variant="outline">V{version.version}</Badge>
-                          <span>{version.name}</span>
-                          <ProcedureStatus status={version.status} />
-                        </DropdownMenuRadioItem>
-                      ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                  renderStatus={(v) => <ProcedureStatus status={v.status} />}
+                  onNewVersion={
+                    permissions.can("create", "production")
+                      ? newVersionDisclosure.onOpen
+                      : undefined
+                  }
+                />
+              );
+            }}
           </Await>
         </Suspense>
         <IconButton

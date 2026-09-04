@@ -43,7 +43,7 @@ The **holy source of truth is the actual source code + the LATEST database migra
 - **Read the newest migration, not the first.** Timestamps order them; a 2026 refactor may have rebuilt a
   subsystem the cache still describes the old way.
 - **Document only real, ACTIVE features.** Omit placeholders / inactive / not-yet-shipped things (e.g.
-  integration registry entries with `active: false` like QuickBooks/Sage/Zapier). Don't surface them.
+  integration registry entries with `active: false` like QuickBooks/Sage). Don't surface them.
 - **When code and cache disagree, code wins** — and note the drift.
 - **Method:** dispatch a research subagent per feature → return verified facts with `file:line` refs →
   then write. This is how every flow in the Guide was built. Don't skip it for anything non-trivial.

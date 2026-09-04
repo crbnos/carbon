@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steel4140" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3a3733"/>
+      <stop offset="0.2" stop-color="#6a655e"/>
+      <stop offset="0.45" stop-color="#807a72"/>
+      <stop offset="0.72" stop-color="#55504a"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="steel4140Face" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#807a72"/>
+      <stop offset="0.5" stop-color="#6a655e"/>
+      <stop offset="1" stop-color="#3a3733"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#c3ccd2"/>
+      <stop offset="1" stop-color="#6a7178"/>
+    </linearGradient>
+    <linearGradient id="nickel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="nickelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#6e747a"/>
+    </linearGradient>
+    <linearGradient id="lamFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="rotorBarrel">
+      <path d="M260 400 L260 680 Q512 808 764 680 L764 400 Q512 528 260 400 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="838" rx="208" ry="46" fill="url(#shadow)"/>
+
+  <!-- short non-drive stub with centre hole -->
+  <path d="M456 600 L456 826 Q512 847 568 826 L568 600 Z" fill="url(#steel4140)" stroke="#241f1c" stroke-width="3"/>
+  <ellipse cx="512" cy="826" rx="56" ry="21" fill="url(#steel4140Face)" stroke="#241f1c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="826" rx="46" ry="17" fill="none" stroke="#a29a90" stroke-width="2" opacity="0.4"/>
+  <ellipse cx="512" cy="826" rx="15" ry="6" fill="#23282c" stroke="#8f8880" stroke-width="2"/>
+
+  <!-- magnet ring on the outside diameter -->
+  <path d="M260 400 L260 680 Q512 808 764 680 L764 400 Z" fill="url(#nickel)" stroke="#4a5054" stroke-width="3"/>
+  <g clip-path="url(#rotorBarrel)">
+    <!-- magnet joint lines with amber epoxy fillets -->
+    <g stroke="#4d545a" stroke-width="3.5" opacity="0.75" fill="none">
+      <path d="M762 413 L762 693"/> <path d="M745 437 L745 717"/> <path d="M712 458 L712 738"/> <path d="M665 476 L665 756"/>
+      <path d="M608 489 L608 769"/> <path d="M545 495 L545 775"/> <path d="M479 495 L479 775"/> <path d="M416 489 L416 769"/>
+      <path d="M359 476 L359 756"/> <path d="M312 458 L312 738"/> <path d="M279 437 L279 717"/> <path d="M262 413 L262 693"/>
+    </g>
+    <g stroke="#c9903a" stroke-width="4" opacity="0.4" fill="none">
+      <path d="M757 413 L757 693"/> <path d="M740 437 L740 717"/> <path d="M707 458 L707 738"/> <path d="M660 476 L660 756"/>
+      <path d="M603 489 L603 769"/> <path d="M540 495 L540 775"/> <path d="M484 495 L484 775"/> <path d="M421 489 L421 769"/>
+      <path d="M364 476 L364 756"/> <path d="M317 458 L317 738"/> <path d="M284 437 L284 717"/> <path d="M267 413 L267 693"/>
+    </g>
+    <!-- glass banding wrap over the magnets -->
+    <path d="M260 432 L260 660 Q512 788 764 660 L764 432 Q512 560 260 432 Z" fill="#dfe6ea" opacity="0.17"/>
+    <g stroke="#f4f8fa" stroke-width="1.8" opacity="0.32" fill="none">
+      <path d="M260 444 Q512 572 764 444"/><path d="M260 462 Q512 590 764 462"/>
+      <path d="M260 480 Q512 608 764 480"/><path d="M260 498 Q512 626 764 498"/>
+      <path d="M260 516 Q512 644 764 516"/><path d="M260 534 Q512 662 764 534"/>
+      <path d="M260 552 Q512 680 764 552"/><path d="M260 570 Q512 698 764 570"/>
+      <path d="M260 588 Q512 716 764 588"/><path d="M260 606 Q512 734 764 606"/>
+      <path d="M260 624 Q512 752 764 624"/><path d="M260 642 Q512 770 764 642"/>
+    </g>
+    <g stroke="#8f989e" stroke-width="1.4" opacity="0.35" fill="none">
+      <path d="M260 453 Q512 581 764 453"/><path d="M260 471 Q512 599 764 471"/>
+      <path d="M260 489 Q512 617 764 489"/><path d="M260 507 Q512 635 764 507"/>
+      <path d="M260 525 Q512 653 764 525"/><path d="M260 543 Q512 671 764 543"/>
+      <path d="M260 561 Q512 689 764 561"/><path d="M260 579 Q512 707 764 579"/>
+      <path d="M260 597 Q512 725 764 597"/><path d="M260 615 Q512 743 764 615"/>
+      <path d="M260 633 Q512 761 764 633"/><path d="M260 651 Q512 779 764 651"/>
+    </g>
+    <!-- filament crossover texture -->
+    <g stroke="#ffffff" stroke-width="1.6" opacity="0.2" fill="none">
+      <path d="M300 440 L420 668"/><path d="M400 452 L520 680"/><path d="M500 458 L620 674"/>
+      <path d="M600 452 L716 660"/><path d="M340 668 L460 440"/><path d="M440 680 L560 452"/>
+      <path d="M540 678 L660 448"/><path d="M640 656 L740 442"/>
+    </g>
+    <path d="M260 436 Q512 564 764 436" stroke="#6f777d" stroke-width="3" opacity="0.55" fill="none"/>
+    <path d="M260 656 Q512 784 764 656" stroke="#6f777d" stroke-width="3" opacity="0.55" fill="none"/>
+  </g>
+
+  <!-- end lamination face -->
+  <ellipse cx="512" cy="400" rx="252" ry="96" fill="url(#nickelFace)" stroke="#4a5054" stroke-width="3"/>
+  <g stroke="#5a6167" stroke-width="2.6" opacity="0.8" fill="none">
+    <path d="M762 413 L724 411"/> <path d="M745 437 L710 431"/> <path d="M712 458 L682 449"/> <path d="M665 476 L642 464"/> <path d="M608 489 L594 475"/> <path d="M545 495 L540 481"/>
+    <path d="M479 495 L484 481"/> <path d="M416 489 L430 475"/> <path d="M359 476 L382 464"/> <path d="M312 458 L342 449"/> <path d="M279 437 L314 431"/> <path d="M262 413 L300 411"/>
+    <path d="M262 387 L300 389"/> <path d="M279 363 L314 369"/> <path d="M312 342 L342 351"/> <path d="M359 324 L382 336"/> <path d="M416 311 L430 325"/> <path d="M479 305 L484 319"/>
+    <path d="M545 305 L540 319"/> <path d="M608 311 L594 325"/> <path d="M665 324 L642 336"/> <path d="M712 342 L682 351"/> <path d="M745 363 L710 369"/> <path d="M762 387 L724 389"/>
+  </g>
+  <ellipse cx="512" cy="400" rx="214" ry="81" fill="url(#lamFace)" stroke="#3b3f42" stroke-width="2.5"/>
+  <ellipse cx="512" cy="400" rx="203" ry="77" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.16"/>
+  <ellipse cx="512" cy="400" rx="126" ry="48" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.13"/>
+
+  <!-- irregular balance holes drilled in the end lamination -->
+  <g>
+    <ellipse cx="672" cy="422" rx="18" ry="7" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="584" cy="459" rx="18" ry="7" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="432" cy="457" rx="18" ry="7" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="362" cy="430" rx="18" ry="7" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="358" cy="373" rx="16" ry="6" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="454" cy="341" rx="16" ry="6" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="597" cy="346" rx="16" ry="6" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+    <ellipse cx="646" cy="378" rx="14" ry="5.5" fill="#3a4045" stroke="#9aa0a4" stroke-width="2"/>
+  </g>
+
+  <!-- shaft: shoulder section -->
+  <path d="M440 336 L440 400 Q512 427 584 400 L584 336 Z" fill="url(#steel4140)" stroke="#241f1c" stroke-width="3"/>
+  <ellipse cx="512" cy="336" rx="72" ry="27" fill="url(#steel4140Face)" stroke="#241f1c" stroke-width="2.5"/>
+  <!-- undercut relief groove -->
+  <path d="M454 336 L454 352 Q512 374 570 352 L570 336 Z" fill="#2a2724" opacity="0.85"/>
+
+  <!-- ground bright journal -->
+  <path d="M454 238 L454 340 Q512 362 570 340 L570 238 Z" fill="url(#chrome)" stroke="#3f4448" stroke-width="3"/>
+  <g stroke="#ffffff" stroke-width="2" opacity="0.35" fill="none">
+    <path d="M470 240 L470 348"/><path d="M486 240 L486 352"/>
+  </g>
+  <ellipse cx="512" cy="238" rx="58" ry="22" fill="url(#chromeFace)" stroke="#3f4448" stroke-width="2.5"/>
+  <ellipse cx="512" cy="238" rx="49" ry="18" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+
+  <!-- keyed drive end -->
+  <path d="M460 152 L460 244 Q512 264 564 244 L564 152 Z" fill="url(#steel4140)" stroke="#241f1c" stroke-width="3"/>
+  <g stroke="#8f8880" stroke-width="1.6" opacity="0.35" fill="none">
+    <path d="M460 172 Q512 192 564 172"/><path d="M460 190 Q512 210 564 190"/>
+    <path d="M460 208 Q512 228 564 208"/><path d="M460 226 Q512 246 564 226"/>
+  </g>
+  <!-- milled keyway with radiused ends -->
+  <path d="M492 180 Q512 168 532 180 L532 226 Q512 238 492 226 Z" fill="#26221f" stroke="#7d766e" stroke-width="2.5"/>
+  <path d="M497 182 Q512 172 527 182" fill="none" stroke="#b2aaa0" stroke-width="2.5" opacity="0.6"/>
+  <!-- drive end face -->
+  <ellipse cx="512" cy="152" rx="52" ry="20" fill="url(#steel4140Face)" stroke="#241f1c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="152" rx="43" ry="16" fill="none" stroke="#a29a90" stroke-width="2" opacity="0.45"/>
+  <ellipse cx="512" cy="152" rx="13" ry="5" fill="#23282c" stroke="#8f8880" stroke-width="2"/>
+</svg>

@@ -75,6 +75,7 @@ export default function PurchaseOrderExplorer() {
     locationId:
       purchaseOrderData?.purchaseOrder?.locationId ?? defaults.locationId ?? "",
     supplierTaxAmount: 0,
+    taxPercent: 0,
     supplierShippingCost: 0,
     exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1
   };
@@ -123,7 +124,7 @@ export default function PurchaseOrderExplorer() {
 
   return (
     <>
-      <VStack className="w-full h-[calc(100dvh-99px)] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <VStack
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}

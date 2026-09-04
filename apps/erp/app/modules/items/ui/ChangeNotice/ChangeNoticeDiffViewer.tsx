@@ -6,6 +6,7 @@ import {
   cn,
   HStack,
   LabelWithHelp,
+  Subheading,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -50,6 +51,9 @@ const FIELD_LABELS: Record<string, string> = {
   workCenterId: "Work center",
   procedureId: "Procedure",
   operationSupplierProcessId: "Supplier process",
+  assemblyInstructionId: "Assembly instruction",
+  inspectionDocumentId: "Inspection plan",
+  operationType: "Operation type",
   operationLeadTime: "Lead time",
   operationUnitCost: "Unit cost",
   operationMinimumCost: "Minimum cost",
@@ -95,8 +99,6 @@ const NOISE_FIELDS = new Set<string>([
   "stagedOperationId",
   "makeMethodId",
   "operationId",
-  // Internal linkage id with no user-facing name — never show its raw UUID.
-  "assemblyInstructionId",
   "itemType",
   "itemReadableId",
   "toolReadableId",
@@ -582,9 +584,9 @@ function OperationEntry({ entry }: { entry: OperationDiffEntry }) {
       <EntryBody entry={entry} skip={OPERATION_LABEL_FIELDS} />
       {buckets.map(({ bucket, changed }) => (
         <div key={bucket.key} className="w-full">
-          <div className="text-[0.65rem] font-medium uppercase text-muted-foreground pb-0.5">
+          <Subheading variant="heavy" className="block pb-0.5">
             {bucket.title}
-          </div>
+          </Subheading>
           <TreeChildren>
             {changed.map((child, i) => (
               <TreeNode
@@ -730,9 +732,9 @@ export default function ChangeNoticeDiffViewer({
     <div className="w-full rounded-lg border border-border p-3">
       <div className="pb-2">
         <LabelWithHelp termId="change-order" variant="inline">
-          <span className="text-xs font-medium uppercase text-muted-foreground">
+          <Subheading variant="heavy">
             <Trans>Changes</Trans>
-          </span>
+          </Subheading>
         </LabelWithHelp>
       </div>
       {body}

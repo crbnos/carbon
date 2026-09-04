@@ -14,14 +14,9 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useDateFormatter,
-  usePermissions,
-  useRealtime,
-  useUrlParams
-} from "~/hooks";
+import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import type { InventoryCount } from "~/modules/inventory";
 import { InventoryCountStatus } from "~/modules/inventory";
 import { usePeople } from "~/stores";
@@ -39,7 +34,6 @@ const InventoryCountsTable = memo(
 
     const [params] = useUrlParams();
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -110,9 +104,9 @@ const InventoryCountsTable = memo(
           accessorKey: "postedAt",
           header: t`Posted At`,
           cell: (item) =>
-            item.getValue<string>()
-              ? formatDate(item.getValue<string>())
-              : null,
+            item.getValue<string>() ? (
+              <DateTime value={item.getValue<string>()} variant="date" />
+            ) : null,
           meta: { icon: <LuCalendar /> }
         },
         {
@@ -135,11 +129,13 @@ const InventoryCountsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: { icon: <LuCalendar /> }
         }
       ];
-    }, [people, locations, t, formatDate]);
+    }, [people, locations, t]);
 
     const [selected, setSelected] = useState<InventoryCount | null>(null);
     const deleteModal = useDisclosure();

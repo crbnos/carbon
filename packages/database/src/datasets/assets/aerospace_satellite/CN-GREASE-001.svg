@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- white plastic tube barrel (cylinder roll, recipe structure) -->
+    <linearGradient id="plastic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8adb1"/>
+      <stop offset="0.18" stop-color="#e6eaec"/>
+      <stop offset="0.42" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#d2d7da"/>
+      <stop offset="1" stop-color="#a1a6aa"/>
+    </linearGradient>
+    <linearGradient id="plasticNozzle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ea3a7"/>
+      <stop offset="0.2" stop-color="#dde2e5"/>
+      <stop offset="0.45" stop-color="#f7fafb"/>
+      <stop offset="0.74" stop-color="#c6cbcf"/>
+      <stop offset="1" stop-color="#979ca0"/>
+    </linearGradient>
+    <linearGradient id="crimp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9aa0a4"/>
+      <stop offset="0.3" stop-color="#dfe4e7"/>
+      <stop offset="0.55" stop-color="#f4f7f8"/>
+      <stop offset="0.8" stop-color="#c2c7cb"/>
+      <stop offset="1" stop-color="#8f9599"/>
+    </linearGradient>
+    <linearGradient id="capBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a5aaae"/>
+      <stop offset="0.18" stop-color="#e3e8ea"/>
+      <stop offset="0.42" stop-color="#fdfefe"/>
+      <stop offset="0.7" stop-color="#ced3d6"/>
+      <stop offset="1" stop-color="#9ba0a4"/>
+    </linearGradient>
+    <linearGradient id="capBore" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6f7478"/>
+      <stop offset="0.55" stop-color="#9ba0a4"/>
+      <stop offset="1" stop-color="#c3c8cb"/>
+    </linearGradient>
+    <!-- pearl-white grease: buttery, translucent, glossy -->
+    <linearGradient id="grease" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.34" stop-color="#f6f4ef"/>
+      <stop offset="0.66" stop-color="#e3e0d6"/>
+      <stop offset="1" stop-color="#c9c6bc"/>
+    </linearGradient>
+    <radialGradient id="greaseGloss" cx="0.36" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tubeShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.22"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- contact shadow -->
+  <ellipse cx="512" cy="700" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- ================= screw-on cap, set beside the tube ================= -->
+  <g transform="translate(378 742) rotate(-8)">
+    <!-- barrel -->
+    <path d="M -84 -46 L 62 -46 L 62 46 L -84 46 Z" fill="url(#capBody)"/>
+    <!-- domed closed end (left) -->
+    <path d="M -84 -46 C -122 -46 -134 -22 -134 0 C -134 22 -122 46 -84 46 Z" fill="url(#capBody)"/>
+    <!-- open mouth (right) -->
+    <ellipse cx="62" cy="0" rx="19" ry="46" fill="url(#capBore)" stroke="#8b9094" stroke-width="2.5"/>
+    <ellipse cx="64" cy="0" rx="12" ry="35" fill="#7d8286" opacity="0.75"/>
+    <!-- knurl ribs -->
+    <g stroke="#9ea3a7" stroke-width="3" opacity="0.6" fill="none">
+      <path d="M -66 -44 L -66 44"/><path d="M -48 -45 L -48 45"/>
+      <path d="M -30 -46 L -30 46"/><path d="M -12 -46 L -12 46"/>
+      <path d="M 6 -46 L 6 46"/><path d="M 24 -46 L 24 46"/>
+      <path d="M 42 -46 L 42 46"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2" opacity="0.55" fill="none">
+      <path d="M -60 -44 L -60 44"/><path d="M -42 -45 L -42 45"/>
+      <path d="M -24 -46 L -24 46"/><path d="M -6 -46 L -6 46"/>
+      <path d="M 12 -46 L 12 46"/><path d="M 30 -46 L 30 46"/>
+      <path d="M 48 -46 L 48 46"/>
+    </g>
+    <!-- collar step near the mouth -->
+    <path d="M 44 -46 L 44 46" stroke="#8f9498" stroke-width="3" fill="none" opacity="0.9"/>
+    <!-- underside occlusion -->
+    <path d="M -134 -46 L 62 -46 L 62 46 L -134 46 Z" fill="url(#tubeShade)"/>
+    <!-- silhouette -->
+    <path d="M -84 -46 C -122 -46 -134 -22 -134 0 C -134 22 -122 46 -84 46 L 62 46 L 62 -46 Z"
+          fill="none" stroke="#8b9094" stroke-width="3"/>
+    <!-- top highlight -->
+    <path d="M -110 -30 L 52 -30" stroke="#ffffff" stroke-width="7" opacity="0.55" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- ================= lubricant tube ================= -->
+  <g transform="translate(500 560) rotate(-8)">
+    <!-- crimped tail fin -->
+    <path d="M -348 -80 L -276 -70 L -276 70 L -348 80 Z" fill="url(#crimp)" stroke="#8b9094" stroke-width="3"/>
+    <g stroke="#9ea3a7" stroke-width="3" opacity="0.75" fill="none">
+      <path d="M -336 -76 L -336 76"/><path d="M -320 -74 L -320 74"/>
+      <path d="M -304 -72 L -304 72"/><path d="M -288 -71 L -288 71"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2" opacity="0.6" fill="none">
+      <path d="M -328 -75 L -328 75"/><path d="M -312 -73 L -312 73"/>
+      <path d="M -296 -72 L -296 72"/>
+    </g>
+
+    <!-- body + shoulder -->
+    <path d="M -276 -80 C -276 -83 -274 -84 -266 -84
+             L 148 -84 L 236 -36 L 236 36 L 148 84 L -266 84
+             C -274 84 -276 83 -276 80 Z" fill="url(#plastic)"/>
+    <!-- slight compression crease near the crimped tail -->
+    <path d="M -232 -80 C -212 -30 -212 32 -230 84" stroke="#a7acb0" stroke-width="4" fill="none" opacity="0.8"/>
+    <path d="M -222 -80 C -204 -30 -204 32 -220 84" stroke="#ffffff" stroke-width="3" fill="none" opacity="0.6"/>
+    <path d="M -176 -82 C -160 -34 -162 34 -178 82" stroke="#b2b7bb" stroke-width="3" fill="none" opacity="0.55"/>
+    <!-- soft dent on the flank -->
+    <path d="M -60 -70 C -20 -40 -20 34 -58 74" stroke="#c0c5c9" stroke-width="3.5" fill="none" opacity="0.5"/>
+    <!-- shoulder break line -->
+    <path d="M 148 -84 C 166 -30 166 30 148 84" stroke="#a3a8ac" stroke-width="3.5" fill="none" opacity="0.85"/>
+    <!-- underside occlusion -->
+    <path d="M -276 -84 L 236 -84 L 236 84 L -276 84 Z" fill="url(#tubeShade)"/>
+    <!-- long specular streak along the barrel -->
+    <path d="M -258 -50 L 150 -50" stroke="#ffffff" stroke-width="14" opacity="0.65" stroke-linecap="round" fill="none"/>
+    <path d="M -252 -34 L 142 -34" stroke="#ffffff" stroke-width="5" opacity="0.35" stroke-linecap="round" fill="none"/>
+    <!-- silhouette -->
+    <path d="M -276 -80 C -276 -83 -274 -84 -266 -84
+             L 148 -84 L 236 -36 L 236 36 L 148 84 L -266 84
+             C -274 84 -276 83 -276 80 Z" fill="none" stroke="#8b9094" stroke-width="3"/>
+
+    <!-- threaded neck + tapered nozzle -->
+    <path d="M 236 -36 L 288 -30 L 334 -22 L 334 22 L 288 30 L 236 36 Z" fill="url(#plasticNozzle)"
+          stroke="#8b9094" stroke-width="3"/>
+    <!-- neck thread rings -->
+    <g stroke="#a4a9ad" stroke-width="3" opacity="0.8" fill="none">
+      <path d="M 248 -35 C 258 -14 258 14 248 35"/>
+      <path d="M 266 -33 C 276 -13 276 13 266 33"/>
+      <path d="M 284 -30 C 293 -12 293 12 284 30"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2" opacity="0.6" fill="none">
+      <path d="M 256 -34 C 266 -14 266 14 256 34"/>
+      <path d="M 274 -32 C 284 -12 284 12 274 32"/>
+    </g>
+    <path d="M 244 -28 L 328 -16" stroke="#ffffff" stroke-width="6" opacity="0.6" stroke-linecap="round" fill="none"/>
+    <!-- tip orifice -->
+    <ellipse cx="334" cy="0" rx="8" ry="22" fill="#b9bec2" stroke="#8b9094" stroke-width="2"/>
+    <ellipse cx="335" cy="0" rx="4" ry="13" fill="#8d9296"/>
+  </g>
+
+  <!-- ================= extruded grease bead ================= -->
+  <g>
+    <!-- slumped ridge lying on the surface just past the nozzle -->
+    <path d="M 742 606 C 748 578 786 566 818 570 C 856 574 878 588 876 606
+             C 874 626 838 640 802 638 C 766 636 738 626 742 606 Z"
+          fill="url(#grease)" stroke="#bcb9af" stroke-width="2.5"/>
+    <!-- raised crest of the bead -->
+    <path d="M 758 598 C 772 578 806 574 834 582 C 852 588 862 596 858 604
+             C 848 594 812 586 786 590 C 770 592 762 595 758 598 Z"
+          fill="#ffffff" opacity="0.75"/>
+    <!-- soft slump fold -->
+    <path d="M 754 616 C 782 628 838 630 868 612" stroke="#c6c3b8" stroke-width="3" fill="none" opacity="0.8"/>
+    <!-- gloss -->
+    <ellipse cx="796" cy="596" rx="58" ry="24" fill="url(#greaseGloss)"/>
+    <ellipse cx="778" cy="590" rx="20" ry="8" fill="#ffffff" opacity="0.9"/>
+    <!-- thin thread of grease still on the nozzle tip -->
+    <path d="M 828 528 C 826 548 812 566 790 576 C 806 560 814 544 814 526 Z"
+          fill="url(#grease)" stroke="#c2bfb5" stroke-width="2"/>
+    <!-- small secondary droplet -->
+    <path d="M 704 622 C 706 610 722 604 734 608 C 744 612 744 622 734 628
+             C 722 634 702 632 704 622 Z" fill="url(#grease)" stroke="#bcb9af" stroke-width="2"/>
+    <ellipse cx="718" cy="614" rx="12" ry="5" fill="#ffffff" opacity="0.85"/>
+  </g>
+</svg>

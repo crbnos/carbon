@@ -155,7 +155,7 @@ export default function LoginRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         {fetcher.data?.success === true ? (
           <>
             <VStack spacing={4} className="items-center justify-center">

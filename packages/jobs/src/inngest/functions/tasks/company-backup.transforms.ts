@@ -5,6 +5,7 @@ import {
   type ColumnInfo,
   type CompanyBackup,
   mapWithConcurrency,
+  newIdForTable,
   RETAINED_REF_TABLES,
   rewriteStoragePath,
   rewriteToTemplateAssetPath,
@@ -211,6 +212,51 @@ export async function loadSubstrateIds(
     result.set(refTable, new Set(present.rows.map((r) => r.id)));
   });
   return result;
+}
+
+/**
+ * Assign a fresh id to every row of every id-bearing table, so a foreign load can
+ * rewrite ids and the FKs pointing at them in one pass. Shared by the restore and
+ * the reseed/import so the two can't drift.
+ *
+ * Keyed on having a text/uuid `id` COLUMN, not on `hasId` (PK exactly `id`): ~25
+ * Carbon tables key on `("id", "companyId")` yet still carry a global `UNIQUE (id)`
+ * so children can FK to them, and gating on `hasId` left their source ids in place —
+ * which collides with the source company's own live rows on a cross-company restore.
+ * Int/serial ids are still skipped (a nanoid doesn't fit, and the table is wiped
+ * first so the original values are free to reuse verbatim).
+ *
+ * A 1:1 extension table keys itself BY its parent (`purchaseOrderDelivery.id ->
+ * purchaseOrder.id`, `partner.id -> supplierLocation.id`), so it SHARES the parent's
+ * map rather than minting its own — two independent ids would split the pair and
+ * `session_replication_role='replica'` would let the break commit. `tables` must be
+ * topologically sorted (parents first); both call sites derive from the sorted catalog.
+ */
+export function buildIdMaps(
+  tables: TableInfo[],
+  dataByTable: Record<string, Array<{ [col: string]: unknown }>>
+): Map<string, Map<string, string>> {
+  const idMaps = new Map<string, Map<string, string>>();
+  for (const table of tables) {
+    const idType = table.columns.find((c) => c.name === "id")?.udtName;
+    if (idType !== "uuid" && idType !== "text") continue;
+    const idFk = table.foreignKeys.find(
+      (f) => f.column === "id" && f.refColumn === "id"
+    );
+    if (idFk) {
+      // No parent map (`terms.id -> company`, `employeeJob.id -> user`) means the
+      // id follows a column transform instead, so leave it unmapped.
+      const parent = idMaps.get(idFk.refTable);
+      if (parent) idMaps.set(table.name, parent);
+      continue;
+    }
+    const map = new Map<string, string>();
+    for (const row of dataByTable[table.name] ?? []) {
+      if (typeof row.id === "string") map.set(row.id, newIdForTable(table));
+    }
+    idMaps.set(table.name, map);
+  }
+  return idMaps;
 }
 
 export type RowTransform = (value: unknown) => unknown;

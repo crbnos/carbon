@@ -26,10 +26,10 @@ import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
-import { useDateFormatter } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
+import { DateTime } from "./DateTime";
 
 interface TreeNode {
   data: TreeData;
@@ -61,7 +61,6 @@ export const OnshapeSync = ({
   isDisabled: boolean;
 }) => {
   const { t } = useLingui();
-  const { formatDateTime } = useDateFormatter();
   const [initialized, setInitialized] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(null);
@@ -263,7 +262,7 @@ export const OnshapeSync = ({
                 <Combobox
                   isLoading={documentsFetcher.state === "loading"}
                   options={documentOptions}
-                  disabled={isDisabled}
+                  isReadOnly={isDisabled}
                   onChange={(value) => {
                     setVersionId(null);
                     setElementId(null);
@@ -283,7 +282,7 @@ export const OnshapeSync = ({
               <div className="w-[180px]">
                 <Combobox
                   isLoading={versionsFetcher.state === "loading"}
-                  disabled={isDisabled}
+                  isReadOnly={isDisabled}
                   options={versionOptions}
                   onChange={(value) => {
                     setVersionId(value);
@@ -304,7 +303,7 @@ export const OnshapeSync = ({
                 <Combobox
                   isLoading={elementsFetcher.state === "loading"}
                   options={elementOptions}
-                  disabled={isDisabled}
+                  isReadOnly={isDisabled}
                   onChange={(value) => {
                     setElementId(value);
                   }}
@@ -351,7 +350,10 @@ export const OnshapeSync = ({
         <div className="flex items-center gap-1 w-full justify-between">
           {lastSyncedAt ? (
             <span className="text-xs text-muted-foreground">
-              <Trans>Last synced: {formatDateTime(lastSyncedAt)}</Trans>
+              <Trans>
+                Last synced:{" "}
+                <DateTime value={lastSyncedAt} variant="absolute" />
+              </Trans>
             </span>
           ) : (
             <div />

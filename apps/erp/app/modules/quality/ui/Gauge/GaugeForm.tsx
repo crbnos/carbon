@@ -34,7 +34,7 @@ import {
 } from "react-icons/lu";
 import { Await, Link, useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
-import { EmployeeAvatar, Empty } from "~/components";
+import { DateTime, EmployeeAvatar, Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import {
   CustomFormFields,
@@ -47,7 +47,7 @@ import {
   Submit,
   Supplier
 } from "~/components/Form";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { gaugeRole, gaugeValidator } from "../../quality.models";
@@ -74,7 +74,6 @@ const GaugeForm = ({
   onClose
 }: GaugeFormProps) => {
   const { t } = useLingui();
-  const { formatRelativeTime } = useDateFormatter();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const navigate = useNavigate();
@@ -250,11 +249,10 @@ const GaugeForm = ({
                                                           ? t`Updated`
                                                           : t`Created`
                                                         : null}{" "}
-                                                      {date
-                                                        ? formatRelativeTime(
-                                                            date
-                                                          )
-                                                        : null}
+                                                      <DateTime
+                                                        value={date}
+                                                        variant="relative"
+                                                      />
                                                     </span>
                                                     <EmployeeAvatar
                                                       employeeId={person}

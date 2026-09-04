@@ -8,6 +8,7 @@ import {
   Button,
   HStack,
   Separator,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -49,9 +50,9 @@ function PropertiesSection({
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
-        <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <Subheading as="h3" variant="light">
           {title}
-        </h3>
+        </Subheading>
         {accessory}
       </HStack>
       {children}
@@ -135,7 +136,7 @@ const ChangeNoticeProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 pt-2 pb-12 text-sm"
+      className="w-96 flex-shrink-0 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 pt-2 pb-12 text-sm"
     >
       {/* Release is triggered from the header button (opens this confirmation
           dialog via releaseDialogOpenAtom). The dialog is mounted here — headless
@@ -150,9 +151,9 @@ const ChangeNoticeProperties = () => {
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
-          </h3>
+          </Subheading>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

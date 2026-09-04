@@ -51,12 +51,15 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
+  exportOnlyColumn,
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
   MethodIcon,
   New,
+  SupplierAvatarGroup,
   Table,
   TrackingTypeIcon
 } from "~/components";
@@ -65,17 +68,17 @@ import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
-import { usePeople } from "~/stores";
+import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
-import type { Material } from "../../types";
+import type { MaterialListItem } from "../../types";
 
 type MaterialsTableProps = {
-  data: Material[];
+  data: MaterialListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -104,22 +107,28 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   );
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
 
   const deleteItemModal = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState<Material | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MaterialListItem | null>(
+    null
+  );
 
   const [people] = usePeople();
+  const [suppliers] = useSuppliers();
+  const supplierMap = useMemo(
+    () => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])),
+    [suppliers]
+  );
   const unitsOfMeasure = useUnitOfMeasure();
   const itemPostingGroups = useItemPostingGroups();
-  const customColumns = useCustomColumns<Material>("material");
+  const customColumns = useCustomColumns<MaterialListItem>("material");
 
   const filters = useFilters();
   const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
   const materialFormId = filters.getFilter("materialFormId")?.[0];
 
-  const columns = useMemo<ColumnDef<Material>[]>(() => {
-    const defaultColumns: ColumnDef<Material>[] = [
+  const columns = useMemo<ColumnDef<MaterialListItem>[]>(() => {
+    const defaultColumns: ColumnDef<MaterialListItem>[] = [
       {
         accessorKey: "id",
         header: t`Material ID`,
@@ -141,9 +150,17 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           </HStack>
         ),
         meta: {
-          icon: <LuBookMarked />
+          icon: <LuBookMarked />,
+          // The accessor is the raw item id — export the readable id
+          // the cell shows instead of a UUID.
+          exportValue: (row) => row.readableIdWithRevision ?? null
         }
       },
+      exportOnlyColumn<MaterialListItem>({
+        id: "itemName",
+        header: t`Item Name`,
+        value: (row) => row.name ?? null
+      }),
       {
         accessorKey: "description",
         header: t`Description`,
@@ -427,6 +444,29 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         }
       },
       {
+        accessorKey: "suppliers",
+        header: t`Supplier`,
+        cell: ({ row }) => (
+          <SupplierAvatarGroup supplierIds={row.original.suppliers ?? []} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: suppliers.map((supplier) => ({
+              value: supplier.id,
+              label: supplier.name
+            })),
+            isArray: true
+          },
+          icon: <LuTruck />,
+          exportValue: (row) =>
+            row.suppliers
+              ?.map((supplierId) => supplierMap.get(supplierId))
+              .filter(Boolean)
+              .join(", ") ?? null
+        }
+      },
+      {
         accessorKey: "active",
         header: t`Active`,
         cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -462,7 +502,9 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Created At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -487,7 +529,9 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       {
         accessorKey: "updatedAt",
         header: t`Updated At`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendar />
         }
@@ -501,11 +545,12 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
     unitsOfMeasure,
     tags,
     people,
+    supplierMap,
+    suppliers,
     customColumns,
     t,
     translateMethodType,
-    translateTrackingType,
-    formatDate
+    translateTrackingType
   ]);
 
   const fetcher = useFetcher<typeof action>();
@@ -629,7 +674,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   );
 
   const renderContextMenu = useMemo(() => {
-    return (row: Material) => {
+    return (row: MaterialListItem) => {
       const revisions =
         (row.revisions as {
           id: string;
@@ -678,7 +723,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
 
   return (
     <>
-      <Table<Material>
+      <Table<MaterialListItem>
         count={count}
         columns={columns}
         data={data}

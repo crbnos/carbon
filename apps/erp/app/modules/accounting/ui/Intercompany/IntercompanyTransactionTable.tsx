@@ -1,4 +1,6 @@
+import { formatMoney } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { memo, useMemo } from "react";
@@ -8,7 +10,8 @@ import {
   LuFileText,
   LuStar
 } from "react-icons/lu";
-import { Table } from "~/components";
+import { DateTime, Table } from "~/components";
+import { useCurrencyDecimalsLookup } from "~/hooks";
 import { intercompanyTransactionStatuses } from "../../accounting.models";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
 
@@ -35,6 +38,10 @@ type IntercompanyTransactionTableProps = {
 const IntercompanyTransactionTable = memo(
   ({ data, count, primaryAction }: IntercompanyTransactionTableProps) => {
     const { t } = useLingui();
+    // Currency varies per row, so the formatter is built per cell from the
+    // app locale rather than a single-currency hook instance.
+    const { locale } = useLocale();
+    const currencyDecimals = useCurrencyDecimalsLookup();
     const columns = useMemo<ColumnDef<IntercompanyTransaction>[]>(() => {
       const defaultColumns: ColumnDef<IntercompanyTransaction>[] = [
         {
@@ -57,11 +64,15 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "amount",
           header: t`Amount`,
           cell: ({ row }) => {
-            const formatted = new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: row.original.currencyCode || "USD"
-            }).format(row.original.amount);
-            return formatted;
+            // The currency varies per row, so the decimals are looked up from
+            // the cached list rather than by a hook (which cannot run per row).
+            const code = row.original.currencyCode || "USD";
+            return formatMoney(
+              row.original.amount,
+              locale,
+              code,
+              currencyDecimals(code)
+            );
           },
           meta: {
             icon: <LuCircleDollarSign />
@@ -104,12 +115,13 @@ const IntercompanyTransactionTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created`,
-          cell: ({ row }) =>
-            new Date(row.original.createdAt).toLocaleDateString()
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="date" />
+          )
         }
       ];
       return defaultColumns;
-    }, [t]);
+    }, [t, locale, currencyDecimals]);
 
     return (
       <Table<IntercompanyTransaction>

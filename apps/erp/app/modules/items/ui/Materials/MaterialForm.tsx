@@ -11,7 +11,11 @@ import {
   ModalCardTitle,
   toast
 } from "@carbon/react";
-import { getMaterialDescription, getMaterialId } from "@carbon/utils";
+import {
+  getMaterialDescription,
+  getMaterialId,
+  INPUT_FORMAT
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
@@ -37,7 +41,12 @@ import MaterialGrade from "~/components/Form/MaterialGrade";
 import MaterialType, { useMaterialTypes } from "~/components/Form/MaterialType";
 import Shape, { useShape } from "~/components/Form/Shape";
 import Substance, { useSubstance } from "~/components/Form/Substance";
-import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useNextItemId,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
 import {
@@ -84,6 +93,7 @@ const MaterialForm = ({
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
   const materialTypes = useMaterialTypes(substanceId, formId);
@@ -117,6 +127,7 @@ const MaterialForm = ({
   const permissions = usePermissions();
   const companySettings = useSettings();
   const useCustomId = companySettings.materialGeneratedIds === false;
+  const allowLowercaseItemIds = companySettings.allowLowercaseItemIds === true;
 
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Purchase to Order"
@@ -195,7 +206,7 @@ const MaterialForm = ({
                       value={id}
                       onChange={onIdChange}
                       isDisabled={loading}
-                      isUppercase
+                      isUppercase={!allowLowercaseItemIds}
                       autoFocus
                     />
 
@@ -311,10 +322,10 @@ const MaterialForm = ({
                 <Number
                   name="unitCost"
                   label={t`Unit Cost`}
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency
-                  }}
+                  formatOptions={INPUT_FORMAT.rate(
+                    baseCurrency,
+                    currencyDecimals
+                  )}
                   minValue={0}
                 />
 
