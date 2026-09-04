@@ -28,6 +28,7 @@ import type { ExpressionBuilder } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -987,25 +988,11 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
-// Lazy Node Kysely handle for the IN-PROCESS scheduling engine. Built through a
-// dynamic import so this module — which is ALSO bundled for the browser (it is
-// imported by client components via the module barrel) — never STATICALLY pulls
-// in `pg` or a `.server` module. Same tactic as notifyScheduleInputsChanged's
-// `await import("@carbon/jobs")` below. A modest dedicated pool: a regen uses one
-// connection at a time (sequential per job).
-let schedulingDbPromise: Promise<Kysely<KyselyDatabase>> | undefined;
-function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
-  if (!schedulingDbPromise) {
-    schedulingDbPromise = (async () => {
-      const { getPostgresClient, getPostgresConnectionPool } = await import(
-        "@carbon/database/client"
-      );
-      const { PostgresDriver } = await import("kysely");
-      return getPostgresClient(getPostgresConnectionPool(5), PostgresDriver);
-    })();
-  }
-  return schedulingDbPromise;
-}
+// The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
+// in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
+// the route action — NEVER constructed here. This module is also bundled for the
+// browser (imported by client components via the module barrel), so it must not
+// pull in `pg`/`kysely`. Enforced by the no-db-client-in-service conformance check.
 
 // Read-only "best case" what-if: runs the job first in its location's schedule
 // IN-PROCESS (persists nothing) and returns the projected completion +
@@ -1013,6 +1000,7 @@ function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
 // (e.g. not Ready/In Progress/Paused).
 export async function getJobExpediteForecast(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobId: string,
   companyId: string,
   userId: string
@@ -1032,7 +1020,7 @@ export async function getJobExpediteForecast(
   try {
     const { runExpediteWhatIf } = await import("@carbon/ee/planning");
     const expedite = await runExpediteWhatIf({
-      db: await getSchedulingDb(),
+      db,
       client,
       locationId: job.locationId,
       companyId,
@@ -1226,14 +1214,19 @@ export async function getJobsBySalesOrderLine(
 
 export async function getJobsList(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  statuses?: Database["public"]["Enums"]["jobStatus"][]
 ) {
   return fetchAllFromTable<{
     id: string;
     jobId: string;
-  }>(client, "job", "id, jobId", (query) =>
-    query.eq("companyId", companyId).order("jobId")
-  );
+  }>(client, "job", "id, jobId", (query) => {
+    let filtered = query.eq("companyId", companyId);
+    if (statuses && statuses.length > 0) {
+      filtered = filtered.in("status", statuses);
+    }
+    return filtered.order("jobId");
+  });
 }
 
 export async function getJobMakeMethodById(
@@ -2519,6 +2512,7 @@ export async function getTrackedEntitiesByJobId(
  */
 export async function recalculateJobOperationDependencies(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     jobId: string;
     companyId: string;
@@ -2543,7 +2537,7 @@ export async function recalculateJobOperationDependencies(
   try {
     const { runLocationSchedule } = await import("@carbon/ee/planning");
     const data = await runLocationSchedule({
-      db: await getSchedulingDb(),
+      db,
       client,
       locationId: job.locationId,
       companyId: params.companyId,
@@ -2591,6 +2585,7 @@ export async function recalculateJobMakeMethodRequirements(
 
 export async function runMRP(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     type:
       | "company"
@@ -2610,7 +2605,7 @@ export async function runMRP(
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
     const { runMrp } = await import("@carbon/ee/planning");
-    const data = await runMrp(client, await getSchedulingDb(), params);
+    const data = await runMrp(client, db, params);
     return { data, error: null };
   } catch (err) {
     return {
@@ -3939,13 +3934,14 @@ export async function setJobOperationToolStepLink(
 
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
-  type: "itemToJob" | "quoteLineToJob",
+  type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3957,12 +3953,13 @@ export async function upsertJobMethod(
   }
 ) {
   const body: {
-    type: "itemToJob" | "quoteLineToJob";
+    type: "itemToJob" | "quoteLineToJob" | "jobToJob";
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3984,6 +3981,11 @@ export async function upsertJobMethod(
     body.configuration = jobMethod.configuration;
   }
 
+  // A specific source method version (itemToJob only); absent = active method
+  if (jobMethod.versionId) {
+    body.versionId = jobMethod.versionId;
+  }
+
   // Only add parts if it exists
   if (jobMethod.parts !== undefined) {
     body.parts = jobMethod.parts;
@@ -3993,7 +3995,15 @@ export async function upsertJobMethod(
     body
   });
   if (getMethodResult.error) {
-    return getMethodResult;
+    return {
+      data: null,
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          getMethodResult.error,
+          "Failed to get job method"
+        )
+      } as PostgrestError
+    };
   }
   return recalculateJobRequirements(client, {
     id: jobMethod.targetId,
@@ -4010,6 +4020,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4027,6 +4038,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4048,6 +4060,11 @@ export async function upsertJobMaterialMakeMethod(
     body.configuration = jobMaterial.configuration;
   }
 
+  // A specific source method version; absent = active method
+  if (jobMaterial.versionId) {
+    body.versionId = jobMaterial.versionId;
+  }
+
   // Only add parts if it exists
   if (jobMaterial.parts !== undefined) {
     body.parts = jobMaterial.parts;
@@ -4060,7 +4077,12 @@ export async function upsertJobMaterialMakeMethod(
   if (error) {
     return {
       data: null,
-      error: { message: "Failed to pull method" } as PostgrestError
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          error,
+          "Failed to pull method"
+        )
+      } as PostgrestError
     };
   }
 

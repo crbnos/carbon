@@ -1080,13 +1080,17 @@ serve(async (req: Request) => {
           customer.data?.currencyCode ??
           company.data?.baseCurrencyCode ??
           "USD";
-        const currency = await client
-          .from("currency")
-          .select("*")
-          .eq("code", currencyCode)
-          .eq("companyId", companyId)
-          .single();
-        const exchangeRate = currency.data?.exchangeRate ?? 1;
+        // get_exchange_rate returns 1 for the base currency, prefers a
+        // company override, falls back to the global store, and raises on a
+        // missing rate -- a foreign-currency customer is never quoted at par.
+        const exchangeRateResult = await client.rpc("get_exchange_rate", {
+          p_company_id: companyId,
+          p_currency_code: currencyCode,
+        });
+        if (exchangeRateResult.error) {
+          throw new Error(exchangeRateResult.error.message);
+        }
+        const exchangeRate = Number(exchangeRateResult.data);
 
         const {
           paymentTermId,

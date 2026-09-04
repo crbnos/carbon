@@ -164,7 +164,7 @@ async function handleKanban({
           companyId,
           userId
         }),
-        runMRP(serviceRole, {
+        runMRP(serviceRole, getDatabaseClient(), {
           type: "job",
           id,
           companyId,

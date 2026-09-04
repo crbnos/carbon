@@ -48,6 +48,14 @@ msgstr "\"{taskName}\" is done — all {0} of its Setup Map items are configured
 msgid "(excluded for this customer)"
 msgstr "(excluded for this customer)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -144,6 +152,10 @@ msgstr "{0} Processes"
 msgid "{0} registered"
 msgstr "{0} registered"
 
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr "{0} rows"
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} scrapped"
@@ -227,6 +239,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflicts"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
@@ -235,6 +250,9 @@ msgstr "{days}d"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
+
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
@@ -286,6 +304,9 @@ msgstr "{noDemandItemCount} parts skipped — nothing to make"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
@@ -878,8 +899,14 @@ msgstr "A shipment's status changes"
 msgid "A shipment's tracking number changes"
 msgstr "A shipment's tracking number changes"
 
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+
 msgid "A step needs a name."
 msgstr "A step needs a name."
+
+msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
+msgstr "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 
 msgid "A supplier is created"
 msgstr "A supplier is created"
@@ -1695,8 +1722,8 @@ msgstr "An operation done by an outside supplier rather than an in-house work ce
 msgid "An operation on this job runs in this batch"
 msgstr "An operation on this job runs in this batch"
 
-msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
-msgstr "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
+msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
+msgstr "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "An unexpected error occurred while connecting to Onshape. Try connecting again."
@@ -2351,6 +2378,9 @@ msgstr "As of"
 msgid "As of {0}"
 msgstr "As of {0}"
 
+msgid "As of date"
+msgstr "As of date"
+
 msgid "As of:"
 msgstr "As of:"
 
@@ -2624,6 +2654,9 @@ msgstr "Back to traceability"
 msgid "Backflush"
 msgstr "Backflush"
 
+msgid "Backup failed"
+msgstr "Backup failed"
+
 msgid "Backups"
 msgstr "Backups"
 
@@ -2674,6 +2707,9 @@ msgstr "Bank and financial service charge expenses"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
+
+msgid "Base currency"
+msgstr "Base currency"
 
 msgid "Base Currency"
 msgstr "Base Currency"
@@ -3094,6 +3130,9 @@ msgstr "Cannot upload to parts bucket without item ID"
 msgid "Capacity"
 msgstr "Capacity"
 
+msgid "Capacity reservation"
+msgstr "Capacity reservation"
+
 msgid "Caption"
 msgstr "Caption"
 
@@ -3280,6 +3319,9 @@ msgstr "Changing this will update the part ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
+
+msgid "Chart"
+msgstr "Chart"
 
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
@@ -5104,6 +5146,9 @@ msgstr "Delete action"
 msgid "Delete Action"
 msgstr "Delete Action"
 
+msgid "Delete and restore"
+msgstr "Delete and restore"
+
 msgid "Delete API Key"
 msgstr "Delete API Key"
 
@@ -5326,9 +5371,6 @@ msgstr "Delete Shipping Method"
 msgid "Delete step"
 msgstr "Delete step"
 
-msgid "Delete Step"
-msgstr "Delete Step"
-
 msgid "Delete Stock Transfer"
 msgstr "Delete Stock Transfer"
 
@@ -5452,6 +5494,9 @@ msgstr "departments"
 
 msgid "Departments"
 msgstr "Departments"
+
+msgid "depends on an excluded row"
+msgstr "depends on an excluded row"
 
 msgid "Depreciation"
 msgstr "Depreciation"
@@ -5931,6 +5976,12 @@ msgstr "e.g. Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Each operation's unused material returns as soon as the operation is done."
 
@@ -6218,9 +6269,6 @@ msgstr "Edit Shipping Method"
 
 msgid "Edit Size"
 msgstr "Edit Size"
-
-msgid "Edit Step"
-msgstr "Edit Step"
 
 msgid "Edit Stock Transfer"
 msgstr "Edit Stock Transfer"
@@ -8031,11 +8079,11 @@ msgstr "How often this gauge must be recalibrated; combined with Last Calibratio
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 
-msgid "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
-msgstr "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "How strictly each material property must match for operations to share a batch on this process."
+
+msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
+msgstr "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
@@ -9162,6 +9210,9 @@ msgstr "Link Jira Issue"
 msgid "Link Linear Issue"
 msgstr "Link Linear Issue"
 
+msgid "link outside company"
+msgstr "link outside company"
+
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Link this Carbon customer to one of them, or create a separate Stripe customer."
 
@@ -9569,6 +9620,15 @@ msgstr "Mark Short"
 
 msgid "Mark to delete"
 msgstr "Mark to delete"
+
+msgid "Market rate"
+msgstr "Market rate"
+
+msgid "Market rate (per USD)"
+msgstr "Market rate (per USD)"
+
+msgid "Market Rate History (per USD)"
+msgstr "Market Rate History (per USD)"
 
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marks the person off for every day in the range. They won't be scheduled while they're away."
@@ -10066,6 +10126,9 @@ msgstr "Need by"
 msgid "Need the right columns?"
 msgstr "Need the right columns?"
 
+msgid "Need-by target"
+msgstr "Need-by target"
+
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 
@@ -10152,6 +10215,9 @@ msgstr "New Cost Center"
 
 msgid "New Credit / Debit Memo"
 msgstr "New Credit / Debit Memo"
+
+msgid "New Currency"
+msgstr "New Currency"
 
 msgid "New Custom Field"
 msgstr "New Custom Field"
@@ -10802,6 +10868,9 @@ msgstr "No Quote Reason"
 msgid "No Quote Reasons"
 msgstr "No Quote Reasons"
 
+msgid "No rate"
+msgstr "No rate"
+
 msgid "No receivables"
 msgstr "No receivables"
 
@@ -10897,6 +10966,9 @@ msgstr "No variable matches {query}"
 
 msgid "No variables available"
 msgstr "No variables available"
+
+msgid "No versions available"
+msgstr "No versions available"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
@@ -11173,6 +11245,11 @@ msgstr "On-time delivery"
 msgid "Onboard your agent to Carbon"
 msgstr "Onboard your agent to Carbon"
 
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "One {0} is equal to how many {1}?"
+
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 
@@ -11341,8 +11418,18 @@ msgstr "Opening"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Opening an operation starts its timer, so time is tracked from the moment work begins."
 
+msgid "Opening Balance"
+msgstr "Opening Balance"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "Opening balance for {0}"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
+
+msgid "Opening Balances"
+msgstr "Opening Balances"
 
 msgid "Operating Expenses"
 msgstr "Operating Expenses"
@@ -12103,6 +12190,9 @@ msgstr "Post Invoice"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Post journal entries with proper account and description codes"
+
+msgid "Post opening balances"
+msgstr "Post opening balances"
 
 msgid "Post Receipt"
 msgstr "Post Receipt"
@@ -12873,8 +12963,14 @@ msgstr "Raise it at the weekly status call"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 
+msgid "Rate"
+msgstr "Rate"
+
 msgid "Rate Limit"
 msgstr "Rate Limit"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 
 msgid "Ratio"
 msgstr "Ratio"
@@ -13226,6 +13322,9 @@ msgstr "Remove clause"
 msgid "Remove condition"
 msgstr "Remove condition"
 
+msgid "Remove corrupted data and restore"
+msgstr "Remove corrupted data and restore"
+
 msgid "Remove Employee"
 msgstr "Remove Employee"
 
@@ -13490,6 +13589,9 @@ msgstr "Reset PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reset PIN for {0} {1}"
 
+msgid "Reset to market rate"
+msgstr "Reset to market rate"
+
 msgid "Reset Two-Factor Auth"
 msgstr "Reset Two-Factor Auth"
 
@@ -13548,6 +13650,9 @@ msgstr "Restore…"
 
 msgid "Restoring files"
 msgstr "Restoring files"
+
+msgid "restoring…"
+msgstr "restoring…"
 
 msgid "Result"
 msgstr "Result"
@@ -13629,6 +13734,9 @@ msgstr "Revert"
 
 msgid "Reverting"
 msgstr "Reverting"
+
+msgid "reverting…"
+msgstr "reverting…"
 
 msgid "Review"
 msgstr "Review"
@@ -13757,6 +13865,9 @@ msgstr "Routing"
 
 msgid "rows"
 msgstr "rows"
+
+msgid "Rows left out of this backup"
+msgstr "Rows left out of this backup"
 
 msgid "Rule"
 msgstr "Rule"
@@ -14027,6 +14138,9 @@ msgstr "Save dimension settings"
 msgid "Save Method"
 msgstr "Save Method"
 
+msgid "Save Rate"
+msgstr "Save Rate"
+
 msgid "Save view"
 msgstr "Save view"
 
@@ -14287,6 +14401,9 @@ msgstr "Select"
 
 msgid "Select a assignee"
 msgstr "Select a assignee"
+
+msgid "Select a completed job"
+msgstr "Select a completed job"
 
 msgid "Select a default approver"
 msgstr "Select a default approver"
@@ -15003,6 +15120,9 @@ msgstr "Sizes"
 msgid "Skip"
 msgstr "Skip"
 
+msgid "Skip corrupted rows and retry"
+msgstr "Skip corrupted rows and retry"
+
 msgid "Skip Existing"
 msgstr "Skip Existing"
 
@@ -15098,6 +15218,9 @@ msgstr "Source document readable"
 
 msgid "Source Item"
 msgstr "Source Item"
+
+msgid "Source Job"
+msgstr "Source Job"
 
 msgid "Source list"
 msgstr "Source list"
@@ -15882,6 +16005,9 @@ msgstr "Taxes"
 msgid "Team trained"
 msgstr "Team trained"
 
+msgid "Technical details"
+msgstr "Technical details"
+
 msgid "Technical support"
 msgstr "Technical support"
 
@@ -15963,6 +16089,12 @@ msgstr "The append-only record of every stock movement; on-hand is the sum of it
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "The authorization was refused in Onshape. Try connecting again."
+
+msgid "The backup job reported this error."
+msgstr "The backup job reported this error."
+
+msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
+msgstr "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"
@@ -16069,8 +16201,8 @@ msgstr "The customers you sell and ship to"
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "The dashed threshold you don't want inventory to fall below."
 
-msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
-msgstr "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
+msgid "The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules."
+msgstr "The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules."
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "The date depreciation begins for this asset; usually the in-service date."
@@ -16501,6 +16633,9 @@ msgstr "The residual WIP a job has left at close, swept to a Production Variance
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "The response from Onshape was missing required parameters. Try connecting again."
 
+msgid "The restore job reported this error."
+msgstr "The restore job reported this error."
+
 msgid "The result will not appear on the Runs page."
 msgstr "The result will not appear on the Runs page."
 
@@ -16738,8 +16873,17 @@ msgstr "These jobs have operations assigned to this work center:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
+msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+
 msgid "this ability"
 msgstr "this ability"
+
+msgid "This backup could not be completed."
+msgstr "This backup could not be completed."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "This backup hasn't been checked yet. Any differences are found when the restore runs."
@@ -16810,6 +16954,9 @@ msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Per
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "This is the base currency. Exchange rate is always 1."
 
 msgid "This is the month your fiscal year starts."
 msgstr "This is the month your fiscal year starts."
@@ -16888,6 +17035,12 @@ msgstr "This Quarter"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
+
+msgid "This restore could not be completed."
+msgstr "This restore could not be completed."
+
+msgid "This revert could not be completed."
+msgstr "This revert could not be completed."
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "This revision is released (Production). Changes should normally flow through a change notice."
@@ -17598,6 +17751,9 @@ msgstr "Unshipped orders"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Unsupported source document type: {sourceDocument}"
+
+msgid "Untitled"
+msgstr "Untitled"
 
 msgid "Untitled Diagram"
 msgstr "Untitled Diagram"
@@ -18671,8 +18827,14 @@ msgstr "Why is this locked?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 
+msgid "Why this backup failed"
+msgstr "Why this backup failed"
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
+
+msgid "Why this restore failed"
+msgstr "Why this restore failed"
 
 msgid "Will remain as a comment line"
 msgstr "Will remain as a comment line"
@@ -18913,6 +19075,9 @@ msgstr "Your customer-facing price lists"
 msgid "Your data is accessible and reasonably clean"
 msgstr "Your data is accessible and reasonably clean"
 
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr "Your data was not changed — the restore stops before touching anything if it can't complete."
+
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 
@@ -18957,6 +19122,9 @@ msgstr "Your project end to end: the plan, the gates, and go-live"
 
 msgid "Your Project Team"
 msgstr "Your Project Team"
+
+msgid "Your rate"
+msgstr "Your rate"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Your real data is loaded and you have checked a sample and approved it."

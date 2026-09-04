@@ -91,6 +91,24 @@ export function traverseJobMethod(
   }
 }
 
+// Async twin of traverseJobMethod, mirroring traverseQuoteMethod: each node's
+// callback is awaited before its children are visited, so a parent's cascade
+// state (quantities, id maps) is in place when a child reads it. The sync
+// version cannot be reused — an async callback passed to it would fire
+// unawaited and the parent-before-child ordering would be lost.
+export async function traverseJobMethodAsync(
+  node: JobMethodTreeItem,
+  callback: (node: JobMethodTreeItem) => void | Promise<void>
+) {
+  await callback(node);
+
+  if (node.children) {
+    for (const child of node.children) {
+      await traverseJobMethodAsync(child, callback);
+    }
+  }
+}
+
 export type QuoteMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMethodTreeArray>>["data"]
 >[number];

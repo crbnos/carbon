@@ -24,6 +24,7 @@ import {
     JobMethodTreeItem,
     QuoteMethodTreeItem,
     traverseJobMethod,
+    traverseJobMethodAsync,
     traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
@@ -139,6 +140,18 @@ function remapStepLinks(
   });
 }
 
+// A BOM line whose quantity is explicitly 0 contributes nothing, so it is
+// dropped whenever a method is instantiated or copied. `null`/`undefined` is
+// NOT treated as zero — those fall back to a quantity of 1 elsewhere in this
+// file, so only a real numeric 0 removes the line.
+function isZeroQuantity(quantity: unknown): boolean {
+  // Only a real numeric 0 removes the line. `getConfiguredValue` returns a
+  // dynamically-configured value behind a type assertion, so `""`/`false`/`[]`
+  // can reach here — `Number("")`/`Number(false)` are 0 and would wrongly drop
+  // the line. A strict typeof check keeps those falling back to a quantity of 1.
+  return typeof quantity === "number" && quantity === 0;
+}
+
 const partsValidator = z.object({
   billOfMaterial: z.boolean().default(true),
   billOfProcess: z.boolean().default(true),
@@ -157,6 +170,7 @@ const payloadValidator = z.object({
     "itemToQuoteMakeMethod",
     "jobMakeMethodToItem",
     "jobToItem",
+    "jobToJob",
     "makeMethodToMakeMethod",
     "procedureToOperation",
     "quoteLineToItem",
@@ -171,6 +185,9 @@ const payloadValidator = z.object({
   userId: z.string(),
   configuration: z.record(z.unknown()).optional(),
   parts: partsValidator,
+  // A specific source makeMethod version (itemToJob / itemToJobMakeMethod
+  // only). Absent = the item's active method, as before.
+  versionId: z.string().optional(),
 });
 
 serve(async (req: Request) => {
@@ -179,8 +196,16 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { type, sourceId, targetId, companyId, userId, configuration, parts } =
-      payloadValidator.parse(payload);
+    const {
+      type,
+      sourceId,
+      targetId,
+      companyId,
+      userId,
+      configuration,
+      parts,
+      versionId,
+    } = payloadValidator.parse(payload);
 
     console.log({
       function: "get-method",
@@ -191,6 +216,7 @@ serve(async (req: Request) => {
       userId,
       parts,
       configuration,
+      versionId,
     });
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
@@ -277,12 +303,17 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
-          // Copy materials from source to target
-          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
-                sourceMaterials.data.map((material) => ({
+                materialsToCopy.map((material) => ({
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
@@ -430,12 +461,23 @@ serve(async (req: Request) => {
 
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses, job] =
           await Promise.all([
-            client
-              .from("activeMakeMethods")
-              .select("*")
-              .eq("itemId", itemId)
-              .eq("companyId", companyId)
-              .single(),
+            // A chosen version overrides the default active-method lookup; it
+            // is re-read under itemId + companyId so a foreign or mismatched
+            // makeMethod id can never be exploded.
+            versionId
+              ? client
+                  .from("makeMethod")
+                  .select("*")
+                  .eq("id", versionId)
+                  .eq("itemId", itemId)
+                  .eq("companyId", companyId)
+                  .single()
+              : client
+                  .from("activeMakeMethods")
+                  .select("*")
+                  .eq("itemId", itemId)
+                  .eq("companyId", companyId)
+                  .single(),
             client
               .from("jobMakeMethod")
               .select("*")
@@ -1296,6 +1338,10 @@ serve(async (req: Request) => {
               ]);
 
               if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM. Made sub-assemblies drop out of `configuredChildren`
+              // below with the row, so their sub-tree is never exploded either.
+              if (isZeroQuantity(quantity)) return null;
 
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
@@ -1666,12 +1712,23 @@ serve(async (req: Request) => {
 
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
-            client
-              .from("activeMakeMethods")
-              .select("*")
-              .eq("itemId", itemId)
-              .eq("companyId", companyId)
-              .single(),
+            // A chosen version overrides the default active-method lookup; it
+            // is re-read under itemId + companyId so a foreign or mismatched
+            // makeMethod id can never be exploded.
+            versionId
+              ? client
+                  .from("makeMethod")
+                  .select("*")
+                  .eq("id", versionId)
+                  .eq("itemId", itemId)
+                  .eq("companyId", companyId)
+                  .single()
+              : client
+                  .from("activeMakeMethods")
+                  .select("*")
+                  .eq("itemId", itemId)
+                  .eq("companyId", companyId)
+                  .single(),
             client
               .from("jobMakeMethod")
               .select("*")
@@ -2198,6 +2255,10 @@ serve(async (req: Request) => {
               [];
 
             for await (const child of node.children) {
+              // A zero-quantity BOM line is removed from the method. `madeChildren`
+              // below filters the same way, so a skipped made row stays index-aligned
+              // and its sub-tree is never exploded.
+              if (isZeroQuantity(child.data.quantity)) continue;
               const material = await mapMethodMaterialToJobMaterial(child);
               if (child.data.methodType === "Make to Order") {
                 madeMaterials.push(material);
@@ -2251,7 +2312,9 @@ serve(async (req: Request) => {
               }
 
               const madeChildren = node.children.filter(
-                (child) => child.data.methodType === "Make to Order"
+                (child) =>
+                  child.data.methodType === "Make to Order" &&
+                  !isZeroQuantity(child.data.quantity)
               );
 
               for (const [index, child] of madeChildren.entries()) {
@@ -2905,6 +2968,9 @@ serve(async (req: Request) => {
               ]);
 
               if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM (and its sub-tree, via configuredChildren below).
+              if (isZeroQuantity(quantity)) return null;
 
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
@@ -3410,11 +3476,18 @@ serve(async (req: Request) => {
               customFields: {},
             });
 
+            // A zero-quantity BOM line is removed from the method. Filtering the
+            // children (not the mapped rows) keeps `madeChildren`/`madeMaterials`
+            // index-aligned and stops a made line's sub-tree from being exploded.
             const madeChildren = node.children.filter(
-              (child) => child.data.methodType === "Make to Order"
+              (child) =>
+                child.data.methodType === "Make to Order" &&
+                !isZeroQuantity(child.data.quantity)
             );
             const unmadeChildren = node.children.filter(
-              (child) => child.data.methodType !== "Make to Order"
+              (child) =>
+                child.data.methodType !== "Make to Order" &&
+                !isZeroQuantity(child.data.quantity)
             );
 
             const madeMaterials = madeChildren.map(
@@ -3580,6 +3653,8 @@ serve(async (req: Request) => {
             }
 
             node.children.forEach((child) => {
+              // A zero-quantity BOM line is dropped from the saved method.
+              if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -3900,6 +3975,8 @@ serve(async (req: Request) => {
             }
 
             node.children.forEach((child) => {
+              // A zero-quantity BOM line is dropped from the saved method.
+              if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -4115,6 +4192,767 @@ serve(async (req: Request) => {
 
         break;
       }
+      case "jobToJob": {
+        const sourceJobId = sourceId;
+        const targetJobId = targetId;
+        if (!sourceJobId || !targetJobId) {
+          throw new Error("Invalid sourceId or targetId");
+        }
+        if (sourceJobId === targetJobId) {
+          throw new Error("Cannot copy a job method onto itself");
+        }
+
+        // Assembly ops whose steps were materialized from an instruction —
+        // material ↔ step links flush after the jobMaterial rows exist.
+        const assemblyOperationsToLink: Array<{
+          operationId: string;
+          assemblyInstructionId: string;
+        }> = [];
+
+        // The embeds defeat the generated response types (as elsewhere in this
+        // file), so the paged rows are typed explicitly.
+        type SourceJobMaterialRow =
+          Database["public"]["Tables"]["jobMaterial"]["Row"] & {
+            jobMaterialStep: {
+              jobOperationStepId: string | null;
+              quantity: number | null;
+            }[];
+          };
+        type SourceJobOperationRow =
+          Database["public"]["Tables"]["jobOperation"]["Row"] & {
+            jobOperationTool: (Database["public"]["Tables"]["jobOperationTool"]["Row"] & {
+              jobOperationToolStep: { jobOperationStepId: string | null }[];
+            })[];
+            jobOperationParameter: Database["public"]["Tables"]["jobOperationParameter"]["Row"][];
+            jobOperationStep: Database["public"]["Tables"]["jobOperationStep"]["Row"][];
+          };
+
+        // Paged: a bare select stops at PostgREST's 1000-row cap and would
+        // silently copy a subset of a large job. The secondary `.order("id")`
+        // makes paging stable across batches. Started here (not awaited) so the
+        // reads below run concurrently with them.
+        const sourceMaterialsPromise = fetchAll<SourceJobMaterialRow>(() =>
+          client
+            .from("jobMaterial")
+            .select("*, jobMaterialStep(jobOperationStepId, quantity)")
+            .eq("jobId", sourceJobId)
+            .eq("companyId", companyId)
+            .order("id")
+        );
+        const sourceOperationsPromise = fetchAll<SourceJobOperationRow>(() =>
+          client
+            .from("jobOperation")
+            .select(
+              "*, jobOperationTool(*, jobOperationToolStep(*)), jobOperationParameter(*), jobOperationStep(*)"
+            )
+            .eq("jobId", sourceJobId)
+            .eq("companyId", companyId)
+            .order("order", { ascending: true })
+            .order("id")
+        );
+
+        const [
+          targetJob,
+          sourceJob,
+          targetJobMakeMethod,
+          sourceJobMakeMethod,
+        ] = await Promise.all([
+          client
+            .from("job")
+            .select("itemId, locationId, quantity, startDate, dueDate")
+            .eq("id", targetJobId)
+            .eq("companyId", companyId)
+            .single(),
+          // requirePermissions proved the CALLER may act in companyId; it proves
+          // nothing about the record ids in the body. Re-read the source job
+          // under companyId so a foreign job id can never be copied from.
+          client
+            .from("job")
+            .select("id")
+            .eq("id", sourceJobId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("jobId", targetJobId)
+            .is("parentMaterialId", null)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("jobId", sourceJobId)
+            .is("parentMaterialId", null)
+            .eq("companyId", companyId)
+            .single(),
+        ]);
+        const [sourceMaterials, sourceOperations] = await Promise.all([
+          sourceMaterialsPromise,
+          sourceOperationsPromise,
+        ]);
+
+        if (targetJob.error) {
+          throw new Error("Failed to get job");
+        }
+        if (sourceJob.error) {
+          throw new Error("Failed to get source job");
+        }
+        if (targetJobMakeMethod.error || !targetJobMakeMethod.data) {
+          throw new Error("Failed to get job make method");
+        }
+        if (sourceJobMakeMethod.error || !sourceJobMakeMethod.data) {
+          throw new Error("Failed to get source job make method");
+        }
+        if (sourceMaterials.error) {
+          throw new Error("Failed to get source job materials");
+        }
+        if (sourceOperations.error) {
+          throw new Error("Failed to get source job operations");
+        }
+
+        const jobMethodTrees = await getJobMethodTree(
+          client,
+          sourceJobMakeMethod.data.id
+        );
+        if (jobMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+        const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+        if (!jobMethodTree) throw new Error("Method tree not found");
+
+        // A process-only copy of a multi-level job cannot work: the sub-assembly
+        // make methods only come into existence on the bill-of-material path, so
+        // their operations would reference make methods that were never created
+        // (jobOperation_jobMakeMethodId_fkey). Refuse with an authored message
+        // instead of rolling back on the FK.
+        if (!parts.billOfMaterial && parts.billOfProcess) {
+          let hasSubAssemblies = false;
+          traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+            for (const child of node.children) {
+              if (child.data.jobMaterialMakeMethodId) {
+                hasSubAssemblies = true;
+              }
+            }
+          });
+          if (hasSubAssemblies) {
+            throw new Error(
+              "Copying only the bill of process from a job with sub-assemblies is not supported — include the bill of material as well"
+            );
+          }
+        }
+
+        // Loaded ONCE per request, before the transaction — as every *-ToJob
+        // path does. The source job's rows were swapped live at ITS creation;
+        // this re-resolves as-of the TARGET job's build date, so a supersession
+        // that became effective since then still redirects the copy.
+        const supersessionRedirect = await loadSupersessionRedirect(
+          client,
+          companyId,
+          targetJob.data
+        );
+
+        let selfConsumedItem: string | null = null;
+        traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+          for (const child of node.children) {
+            const resolvedItemId =
+              child.data.methodType !== "Make to Order"
+                ? (supersessionRedirect.get(child.data.itemId)?.to ??
+                  child.data.itemId)
+                : child.data.itemId;
+            if (resolvedItemId === targetJob.data.itemId) {
+              selfConsumedItem = child.data.itemReadableId ?? resolvedItemId;
+            }
+          }
+        });
+        if (selfConsumedItem) {
+          throw new Error(
+            `The source job's method consumes ${selfConsumedItem}, which is the item this job produces — a job cannot consume its own output`
+          );
+        }
+
+        const sourceMaterialRows = sourceMaterials.data ?? [];
+        const sourceOperationRows = sourceOperations.data ?? [];
+
+        const sourceMaterialById = new Map(
+          sourceMaterialRows.map((m) => [m.id, m])
+        );
+
+        const sourceMaterialIdToJobMaterialId: Record<string, string> = {};
+        const sourceMakeMethodIdToJobMakeMethodId: Record<string, string> = {};
+        // Track estimated quantities for each SOURCE make method to set on operations
+        const sourceMakeMethodIdToQuantities: Record<
+          string,
+          {
+            targetQuantity: number;
+            estimatedQuantity: number;
+            totalWithScrap: number;
+          }
+        > = {};
+        // Old job step id -> new job step id, for material/tool ↔ step links.
+        const sourceStepsToJobSteps: Record<string, string> = {};
+        const sourceOperationIdToJobOperationId: Record<string, string> = {};
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing jobMakeMethods, jobMaterials, and jobOperations for the target job
+          await Promise.all([
+            parts.billOfMaterial
+              ? trx
+                  .deleteFrom("jobMakeMethod")
+                  .where((eb) =>
+                    eb.and([
+                      eb("jobId", "=", targetJobId),
+                      eb("parentMaterialId", "is not", null),
+                    ])
+                  )
+                  .execute()
+              : Promise.resolve(),
+            parts.billOfMaterial
+              ? trx
+                  .deleteFrom("jobMaterial")
+                  .where("jobId", "=", targetJobId)
+                  .execute()
+              : Promise.resolve(),
+            // Prevent cascade deletion of materials when only replacing operations
+            !parts.billOfMaterial && parts.billOfProcess
+              ? trx
+                  .updateTable("jobMaterial")
+                  .set({ jobOperationId: null })
+                  .where("jobId", "=", targetJobId)
+                  .execute()
+              : Promise.resolve(),
+            parts.billOfProcess
+              ? trx
+                  .deleteFrom("jobOperation")
+                  .where("jobId", "=", targetJobId)
+                  .execute()
+              : Promise.resolve(),
+          ]);
+
+          await traverseJobMethodAsync(
+            jobMethodTree,
+            async (node: JobMethodTreeItem) => {
+              const jobMaterialInserts: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
+                [];
+              const jobMakeMethodInserts: Database["public"]["Tables"]["jobMakeMethod"]["Insert"][] =
+                [];
+
+              // Get the total quantity for this node (parent level) to pass to children
+              // This is estimated + scrap for Make parts (what children use for their target calculation)
+              let nodeTotalForChildren: number;
+              if (node.data.isRoot) {
+                // Root: target = TARGET job quantity — the source job's own
+                // quantity is irrelevant; the tree carries per-parent quantities.
+                const rootItemReplenishment = await trx
+                  .selectFrom("itemReplenishment")
+                  .select("scrapPercentage")
+                  .where("itemId", "=", node.data.itemId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst();
+                const rootScrapPercentage = Number(
+                  rootItemReplenishment?.scrapPercentage ?? 0
+                );
+                const rootTarget = targetJob.data?.quantity ?? 1;
+                // Scrap applies to every method type (mirrors itemToJob)
+                const rootScrapQuantity = scrapAllowance(
+                  rootTarget,
+                  rootScrapPercentage
+                );
+                const rootTotalWithScrap = rootTarget + rootScrapQuantity;
+                const rootEstimatedQuantity =
+                  node.data.methodType === "Make to Order"
+                    ? rootTarget
+                    : rootTotalWithScrap;
+
+                nodeTotalForChildren = rootTotalWithScrap;
+
+                sourceMakeMethodIdToQuantities[sourceJobMakeMethod.data.id] = {
+                  targetQuantity: rootTarget,
+                  estimatedQuantity: rootEstimatedQuantity,
+                  totalWithScrap: rootTotalWithScrap,
+                };
+              } else {
+                // Non-root: get from stored quantities using parent's source jobMakeMethodId
+                const parentSourceMakeMethodId =
+                  node.data.jobMaterialMakeMethodId;
+                const parentQuantities =
+                  sourceMakeMethodIdToQuantities[parentSourceMakeMethodId ?? ""];
+                // Children receive parent's total (estimated + scrap) for cascade
+                nodeTotalForChildren = parentQuantities?.totalWithScrap ?? 1;
+              }
+
+              for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the copied job.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
+                const sourceMaterial = sourceMaterialById.get(child.id);
+                const newMaterialId = nanoid();
+                sourceMaterialIdToJobMaterialId[child.id] = newMaterialId;
+
+                // Resolve the supersession FIRST — see the note in
+                // itemToJobMakeMethod's mapper. Every field below derives from
+                // the post-swap item, so a field added later follows
+                // automatically. Buy/Pick only — made sub-assemblies keep the
+                // source job's structure (their successors' methods would have
+                // to be re-exploded from the item side).
+                const supersession = await resolveJobMaterialSupersession(
+                  client,
+                  companyId,
+                  supersessionRedirect,
+                  {
+                    itemId: child.data.itemId,
+                    methodType: child.data.methodType,
+                  }
+                );
+                const itemId = supersession?.itemId ?? child.data.itemId;
+                const quantityPerParent =
+                  (child.data.quantity ?? 1) * (supersession?.factor ?? 1);
+
+                // Get scrap percentage for this item
+                const itemReplenishment = await trx
+                  .selectFrom("itemReplenishment")
+                  .select("scrapPercentage")
+                  .where("itemId", "=", itemId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst();
+                const itemScrapPercentage = Number(
+                  itemReplenishment?.scrapPercentage ?? 0
+                );
+
+                // Calculate scrap quantities for this child material
+                // Target = parent's total (including scrap) * quantity per parent
+                const childTargetQuantity =
+                  nodeTotalForChildren * quantityPerParent;
+                // Scrap applies to every method type (mirrors itemToJob)
+                const childScrapQuantity = scrapAllowance(
+                  childTargetQuantity,
+                  itemScrapPercentage
+                );
+                const childTotalWithScrap =
+                  childTargetQuantity + childScrapQuantity;
+                // For Make: estimatedQuantity is good quantity (without scrap)
+                // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
+                const childEstimatedQuantity =
+                  child.data.methodType === "Make to Order"
+                    ? childTargetQuantity
+                    : childTotalWithScrap;
+
+                // Store quantities for this child's make method (if it has one)
+                if (child.data.jobMaterialMakeMethodId) {
+                  sourceMakeMethodIdToQuantities[
+                    child.data.jobMaterialMakeMethodId
+                  ] = {
+                    targetQuantity: childTargetQuantity,
+                    estimatedQuantity: childEstimatedQuantity,
+                    totalWithScrap: childTotalWithScrap,
+                  };
+                }
+
+                jobMaterialInserts.push({
+                  id: newMaterialId,
+                  jobId: targetJobId,
+                  itemId,
+                  itemType: supersession?.itemType ?? child.data.itemType,
+                  kit: child.data.kit,
+                  methodType: child.data.methodType,
+                  order: child.data.order,
+                  description:
+                    supersession?.description ?? child.data.description,
+                  jobMakeMethodId:
+                    child.data.jobMakeMethodId === sourceJobMakeMethod.data.id
+                      ? targetJobMakeMethod.data.id
+                      : sourceMakeMethodIdToJobMakeMethodId[
+                          child.data.jobMakeMethodId
+                        ],
+                  quantity: quantityPerParent,
+                  scrapQuantity: childScrapQuantity,
+                  estimatedQuantity: childEstimatedQuantity,
+                  itemScrapPercentage,
+                  substitutedFromItemId:
+                    supersession?.substitutedFromItemId ?? null,
+                  substitutionFactor: supersession?.factor ?? null,
+                  // ALWAYS set, never conditionally spread — see the note in
+                  // quoteLineToJob: Kysely builds ONE column list per multi-row
+                  // insert, and `unitCost` is NOT NULL DEFAULT 0.
+                  unitCost: supersession
+                    ? (supersession.unitCost ?? 0)
+                    : (sourceMaterial?.unitCost ?? child.data.unitCost ?? 0),
+                  // The bin belongs to the post-swap item; an explicit bin on
+                  // the source job's line still wins.
+                  storageUnitId: await getStorageUnitId(
+                    trx,
+                    itemId,
+                    targetJob.data.locationId,
+                    child.data.storageUnitId ?? undefined
+                  ),
+                  requiresBatchTracking:
+                    supersession?.requiresBatchTracking ??
+                    sourceMaterial?.requiresBatchTracking ??
+                    false,
+                  requiresSerialTracking:
+                    supersession?.requiresSerialTracking ??
+                    sourceMaterial?.requiresSerialTracking ??
+                    false,
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
+
+                if (child.data.jobMaterialMakeMethodId) {
+                  const newMakeMethodId = nanoid();
+                  sourceMakeMethodIdToJobMakeMethodId[
+                    child.data.jobMaterialMakeMethodId
+                  ] = newMakeMethodId;
+                  jobMakeMethodInserts.push({
+                    id: newMakeMethodId,
+                    jobId: targetJobId,
+                    parentMaterialId: sourceMaterialIdToJobMaterialId[child.id],
+                    itemId: child.data.itemId,
+                    quantityPerParent: child.data.quantity,
+                    companyId,
+                    createdBy: userId,
+                  });
+                }
+              }
+
+              if (parts.billOfMaterial && jobMaterialInserts.length > 0) {
+                // The supersession swap happens where each row is built, before
+                // any field derives from the item — there is deliberately no
+                // second pass here.
+                await trx
+                  .insertInto("jobMaterial")
+                  .values(jobMaterialInserts)
+                  .execute();
+              }
+
+              if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
+                for await (const insert of jobMakeMethodInserts) {
+                  await trx
+                    .updateTable("jobMakeMethod")
+                    .set({
+                      id: insert.id,
+                      quantityPerParent: insert.quantityPerParent,
+                    })
+                    .where("jobId", "=", targetJobId)
+                    .where("parentMaterialId", "=", insert.parentMaterialId!)
+                    .execute();
+                }
+              }
+            }
+          );
+
+          if (parts.billOfProcess) {
+            const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+              sourceOperationRows.map((op) => {
+                // Get quantities for this operation's SOURCE make method
+                const opQuantities =
+                  sourceMakeMethodIdToQuantities[op.jobMakeMethodId ?? ""];
+                // The traversal stores quantities for every make method in the
+                // tree, so a miss means the operation references an orphaned
+                // make method. Fail the conversion (rolls back the transaction)
+                // instead of silently inserting a zero-quantity operation with
+                // a NULL jobMakeMethodId.
+                if (!opQuantities) {
+                  throw new Error(
+                    `No quantities found for source job make method ${op.jobMakeMethodId} referenced by operation ${op.id} — the job method tree and its operations are out of sync`
+                  );
+                }
+                return {
+                  jobId: targetJobId,
+                  jobMakeMethodId:
+                    op.jobMakeMethodId === sourceJobMakeMethod.data.id
+                      ? targetJobMakeMethod.data.id
+                      : sourceMakeMethodIdToJobMakeMethodId[
+                          op.jobMakeMethodId!
+                        ],
+                  processId: op.processId,
+                  procedureId: op.procedureId,
+                  workCenterId: op.workCenterId,
+                  description: op.description,
+                  setupTime: op.setupTime,
+                  setupUnit: op.setupUnit,
+                  laborTime: op.laborTime,
+                  laborUnit: op.laborUnit,
+                  machineTime: op.machineTime,
+                  machineUnit: op.machineUnit,
+                  order: op.order,
+                  operationOrder: op.operationOrder,
+                  operationType: op.operationType,
+                  // Carry the Assembly → BOP sync link so the MES can drive the
+                  // animated instruction player on the copied job.
+                  assemblyInstructionId: op.assemblyInstructionId,
+                  inspectionDocumentId: op.inspectionDocumentId,
+                  operationSupplierProcessId: op.operationSupplierProcessId,
+                  operationMinimumCost: op.operationMinimumCost ?? 0,
+                  operationLeadTime: op.operationLeadTime ?? 0,
+                  operationUnitCost: op.operationUnitCost ?? 0,
+                  tags: op.tags ?? [],
+                  workInstruction: parts.workInstructions
+                    ? op.workInstruction
+                    : {},
+                  targetQuantity: opQuantities.targetQuantity,
+                  // Fractional targets flow through; the scrap allowance is already whole
+                  operationQuantity: opQuantities.totalWithScrap,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                };
+              });
+
+            if (jobOperationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("jobOperation")
+                .values(jobOperationInserts)
+                .returning(["id"])
+                .execute();
+
+              for (const [index, operation] of sourceOperationRows.entries()) {
+                const operationId = operationIds[index].id;
+                if (operationId) {
+                  sourceOperationIdToJobOperationId[operation.id] = operationId;
+
+                  const {
+                    jobOperationTool,
+                    jobOperationParameter,
+                    jobOperationStep,
+                    procedureId,
+                  } = operation;
+
+                  // Tool ids the assembly-instruction copy inserts itself, so
+                  // the source job's copies of the same tools are skipped below.
+                  let assemblyToolIds = new Set<string>();
+
+                  if (procedureId) {
+                    await insertProcedureDataForJobOperation(trx, client, {
+                      operationId,
+                      procedureId,
+                      companyId,
+                      userId,
+                    });
+                  } else {
+                    if (
+                      parts.parameters &&
+                      Array.isArray(jobOperationParameter) &&
+                      jobOperationParameter.length > 0
+                    ) {
+                      await trx
+                        .insertInto("jobOperationParameter")
+                        .values(
+                          jobOperationParameter.map((param) => ({
+                            operationId,
+                            key: param.key,
+                            value: param.value,
+                            companyId,
+                            createdBy: userId,
+                          }))
+                        )
+                        .execute();
+                    }
+
+                    if (operation.assemblyInstructionId) {
+                      // Assembly ops inherit their steps from the linked
+                      // instruction (fresh from the live definition, as every
+                      // *-ToJob path does); material ↔ step links are flushed
+                      // after the jobMaterial rows exist.
+                      assemblyToolIds = await insertAssemblyDataForJobOperation(
+                        trx,
+                        client,
+                        {
+                          operationId,
+                          assemblyInstructionId:
+                            operation.assemblyInstructionId,
+                          companyId,
+                          userId,
+                        }
+                      );
+                      assemblyOperationsToLink.push({
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId,
+                      });
+                    } else if (
+                      parts.steps &&
+                      Array.isArray(jobOperationStep) &&
+                      jobOperationStep.length > 0
+                    ) {
+                      const insertedSteps = await trx
+                        .insertInto("jobOperationStep")
+                        .values(
+                          jobOperationStep.map((step) => ({
+                            operationId,
+                            name: step.name,
+                            type: step.type,
+                            description: toTiptapDoc(step.description),
+                            required: step.required,
+                            sortOrder: step.sortOrder,
+                            unitOfMeasureCode: step.unitOfMeasureCode,
+                            minValue: step.minValue,
+                            maxValue: step.maxValue,
+                            listValues: step.listValues,
+                            fileTypes: step.fileTypes,
+                            companyId,
+                            createdBy: userId,
+                          }))
+                        )
+                        .returning(["id"])
+                        .execute();
+
+                      // Bulk insert preserves order, so insertedSteps[i] ↔
+                      // jobOperationStep[i]: record old step -> new step so
+                      // material/tool ↔ step links can be remapped below.
+                      jobOperationStep.forEach((s, i) => {
+                        const newStepId = insertedSteps[i]?.id;
+                        if (s?.id && newStepId) {
+                          sourceStepsToJobSteps[s.id] = newStepId;
+                        }
+                      });
+
+                      await copyStepSlides(
+                        trx,
+                        client,
+                        jobOperationStep,
+                        insertedSteps,
+                        "jobOperationStepSlide",
+                        "jobOperationStepSlide",
+                        companyId,
+                        userId,
+                      );
+                    }
+                  }
+
+                  // Tools after steps: the old-step -> new-step map is now
+                  // populated, so a tool scoped to steps carries those links via
+                  // jobOperationToolStep. Tools the assembly-instruction copy
+                  // already inserted are skipped (see above).
+                  const toolsToCopy = (
+                    Array.isArray(jobOperationTool) ? jobOperationTool : []
+                  ).filter((tool) => !assemblyToolIds.has(tool.toolId));
+                  if (parts.tools && toolsToCopy.length > 0) {
+                    const insertedTools = await trx
+                      .insertInto("jobOperationTool")
+                      .values(
+                        toolsToCopy.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
+                          operationId,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .returning(["id"])
+                      .execute();
+
+                    // Tool ↔ step links. Bulk insert preserves order, so
+                    // insertedTools[i] ↔ toolsToCopy[i]. A tool with no links
+                    // applies to the whole operation.
+                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
+                      const jobOperationToolId = insertedTools[i]?.id;
+                      if (!jobOperationToolId) return [];
+                      const oldStepIds = (
+                        (tool.jobOperationToolStep ?? []) as Array<{
+                          jobOperationStepId: string | null;
+                        }>
+                      ).map((l) => l.jobOperationStepId);
+                      return remapStepIds(oldStepIds, sourceStepsToJobSteps).map(
+                        (jobOperationStepId) => ({
+                          jobOperationToolId,
+                          jobOperationStepId,
+                        })
+                      );
+                    });
+                    if (toolStepRows.length > 0) {
+                      await trx
+                        .insertInto("jobOperationToolStep")
+                        .values(toolStepRows)
+                        .execute();
+                    }
+                  }
+                }
+              }
+            }
+          } // end if (parts.billOfProcess)
+
+          // The links between materials and operations/steps can only be
+          // rebuilt when BOTH sides were copied in this run — otherwise one end
+          // of each link points at rows this copy never created.
+          if (parts.billOfMaterial && parts.billOfProcess) {
+            // Material ↔ operation links (jobMaterial.jobOperationId): the
+            // materials were inserted during the traversal, before the
+            // operations existed, so the link is applied as a second pass —
+            // batched as one UPDATE per operation rather than one per material.
+            const materialIdsByOperationId = new Map<string, string[]>();
+            for (const sourceMaterial of sourceMaterialRows) {
+              const newMaterialId =
+                sourceMaterialIdToJobMaterialId[sourceMaterial.id];
+              const newOperationId = sourceMaterial.jobOperationId
+                ? sourceOperationIdToJobOperationId[sourceMaterial.jobOperationId]
+                : undefined;
+              if (newMaterialId && newOperationId) {
+                const ids = materialIdsByOperationId.get(newOperationId) ?? [];
+                ids.push(newMaterialId);
+                materialIdsByOperationId.set(newOperationId, ids);
+              }
+            }
+            for (const [operationId, materialIds] of materialIdsByOperationId) {
+              await trx
+                .updateTable("jobMaterial")
+                .set({ jobOperationId: operationId })
+                .where("id", "in", materialIds)
+                .execute();
+            }
+
+            // Material ↔ step links (jobMaterialStep), remapped onto the new
+            // material and step ids. Links to procedure/assembly-materialized
+            // steps drop out of the map (assembly links are rebuilt from the
+            // instruction by linkAssemblyStepMaterialsForJobOperations below).
+            const materialStepRows = sourceMaterialRows.flatMap(
+              (sourceMaterial) => {
+                const newMaterialId =
+                  sourceMaterialIdToJobMaterialId[sourceMaterial.id];
+                if (!newMaterialId) return [];
+                return (sourceMaterial.jobMaterialStep ?? []).flatMap((link) => {
+                  const newStepId = link.jobOperationStepId
+                    ? sourceStepsToJobSteps[link.jobOperationStepId]
+                    : undefined;
+                  return newStepId
+                    ? [
+                        {
+                          jobMaterialId: newMaterialId,
+                          jobOperationStepId: newStepId,
+                          quantity: link.quantity,
+                        },
+                      ]
+                    : [];
+                });
+              }
+            );
+            if (materialStepRows.length > 0) {
+              await trx
+                .insertInto("jobMaterialStep")
+                .values(materialStepRows)
+                .execute();
+            }
+          }
+
+          // Materials were inserted before operations in this direction, so the
+          // assembly material ↔ step links can flush immediately.
+          await linkAssemblyStepMaterialsForJobOperations(
+            trx,
+            client,
+            assemblyOperationsToLink,
+            companyId
+          );
+        });
+
+        break;
+      }
       case "makeMethodToMakeMethod": {
         const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
           client
@@ -4174,12 +5012,17 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
-          // Copy materials from source to target
-          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
-                sourceMaterials.data.map((material) => ({
+                materialsToCopy.map((material) => ({
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
@@ -4557,6 +5400,8 @@ serve(async (req: Request) => {
               }
 
               node.children.forEach((child) => {
+                // A zero-quantity BOM line is dropped from the saved method.
+                if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -4878,6 +5723,8 @@ serve(async (req: Request) => {
               }
 
               node.children.forEach((child) => {
+                // A zero-quantity BOM line is dropped from the saved method.
+                if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -5280,6 +6127,16 @@ serve(async (req: Request) => {
               }
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the created job.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const newMaterialId = nanoid();
                 quoteMaterialIdToJobMaterialId[child.id] = newMaterialId;
 
@@ -5742,6 +6599,16 @@ serve(async (req: Request) => {
                 [];
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the copied quote.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const newMaterialId = nanoid();
                 quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
 
@@ -6172,7 +7039,14 @@ serve(async (req: Request) => {
                     quantity: l.quantity ?? 0,
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
-                    exchangeRate: l.exchangeRate ?? 0,
+                    // Never 0: a zero rate is not a valid snapshot (DB CHECK
+                    // "exchangeRate" > 0) and zeroes every converted* generated
+                    // column. A legacy null line rate falls back to the SOURCE
+                    // QUOTE's own stamped header rate; 1 only when the source
+                    // header predates stamping too (base-consistent with its
+                    // line snapshots' old default).
+                    exchangeRate:
+                      l.exchangeRate ?? sourceQuote.data?.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
                     // stays protected on the new quote/revision.
@@ -6261,6 +7135,16 @@ serve(async (req: Request) => {
                   [];
 
                 for await (const child of node.children) {
+                  // A zero-quantity Buy/Pick line is dropped from the new quote.
+                  // A made sub-assembly is left intact even at quantity 0: its
+                  // operations are copied by make method below and would reference
+                  // a make method that never got created if the row were removed.
+                  if (
+                    isZeroQuantity(child.data.quantity) &&
+                    child.data.methodType !== "Make to Order"
+                  ) {
+                    continue;
+                  }
                   const newMaterialId = nanoid();
                   quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
 

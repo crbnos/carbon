@@ -96,6 +96,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       startDate
     );
 
+    if (consolidated.error || !consolidated.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            consolidated.error,
+            "Failed to translate a subsidiary's balances"
+          )
+        )
+      );
+    }
+
     return {
       trialBalance: consolidated.data as (Chart & {
         translatedBalance?: number;
@@ -151,6 +164,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       startDate,
       balances.data ?? []
     );
+
+    // Rendering untranslated numbers under a translated header with no signal
+    // is worse than refusing — surface the failure.
+    if (translation.error) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(translation.error, "Failed to translate balances")
+        )
+      );
+    }
 
     if (translation.data) {
       const translationMap = new Map(

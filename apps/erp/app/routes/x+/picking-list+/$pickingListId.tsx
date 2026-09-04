@@ -74,9 +74,9 @@ export default function PickingListDetailRoute() {
   if (!pickingListId) throw new Error("Could not find pickingListId");
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
       <PickingListHeader />
-      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
         <div className="h-full p-4 w-full max-w-5xl mx-auto flex flex-col gap-4 pb-16">
           <Outlet />
         </div>

@@ -25,6 +25,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Subheading,
   toast,
   VStack
 } from "@carbon/react";
@@ -133,9 +134,9 @@ const WorkCenterForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <p className="text-xs font-mono uppercase font-light text-muted-foreground">
+                <Subheading variant="heavy" className="block">
                   <Trans>Basic Information</Trans>
-                </p>
+                </Subheading>
                 <Input name="name" label={t`Name`} />
                 {showProcesses && (
                   <Processes
@@ -162,9 +163,9 @@ const WorkCenterForm = ({
                 />
                 <TextArea name="description" label={t`Description`} />
 
-                <p className="text-xs font-mono uppercase font-light text-muted-foreground pt-2">
+                <Subheading variant="heavy" className="block pt-2">
                   <Trans>Costing</Trans>
-                </p>
+                </Subheading>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
                   <Number
                     name="laborRate"
@@ -195,9 +196,9 @@ const WorkCenterForm = ({
                   />
                 </div>
 
-                <p className="text-xs font-mono uppercase font-light text-muted-foreground pt-2">
+                <Subheading variant="heavy" className="block pt-2">
                   <Trans>Scheduling</Trans>
-                </p>
+                </Subheading>
                 <FormControl>
                   <FormLabel htmlFor="scheduleMode">
                     {t`Operating hours`}

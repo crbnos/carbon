@@ -318,13 +318,20 @@ export const paperlessPartsFunction = inngest.createFunction(
         } = quoteCustomerShipping.data;
 
         if (quote.currencyCode) {
-          const currency = await getCurrencyByCode(
-            carbon,
-            company.data.companyGroupId!,
-            quote.currencyCode
-          );
-          if (currency.data) {
-            quote.exchangeRate = currency.data.exchangeRate ?? undefined;
+          const exchangeRate = await carbon.rpc("get_exchange_rate", {
+            p_company_id: payload.companyId,
+            p_currency_code: quote.currencyCode
+          });
+          if (exchangeRate.error) {
+            logger.warn(
+              "Failed to resolve exchange rate for imported quote, keeping default",
+              {
+                currencyCode: quote.currencyCode,
+                error: exchangeRate.error
+              }
+            );
+          } else if (exchangeRate.data !== null) {
+            quote.exchangeRate = exchangeRate.data;
             quote.exchangeRateUpdatedAt = new Date().toISOString();
           }
         } else {
@@ -803,19 +810,6 @@ async function getCustomerShipping(
     .from("customerShipping")
     .select("*")
     .eq("customerId", customerId)
-    .single();
-}
-
-async function getCurrencyByCode(
-  client: SupabaseClient<Database>,
-  companyGroupId: string,
-  currencyCode: string
-) {
-  return client
-    .from("currency")
-    .select("exchangeRate")
-    .eq("companyGroupId", companyGroupId)
-    .eq("code", currencyCode)
     .single();
 }
 

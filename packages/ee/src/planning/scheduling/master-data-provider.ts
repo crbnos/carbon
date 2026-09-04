@@ -263,6 +263,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .leftJoin("location", "location.id", "job.locationId")
       .select([
         "job.id",
+        "job.status",
         "job.dueDate",
         "job.deadlineType",
         "job.locationId",

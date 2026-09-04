@@ -28,6 +28,7 @@ import {
   Heading,
   HStack,
   ScrollArea,
+  Subheading,
   Switch,
   Tabs,
   TabsContent,
@@ -521,9 +522,9 @@ function SettingsGroup({
   return (
     <div className="w-full border-t border-border pt-4">
       <div className="flex flex-col gap-1 pb-3">
-        <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+        <Subheading variant="light" className="block">
           {name}
-        </div>
+        </Subheading>
         {description && (
           <p className="text-xs text-muted-foreground">{description}</p>
         )}
@@ -770,9 +771,9 @@ export function IntegrationForm({
             {/* @ts-expect-error TS2339 */}
             {integration.setupInstructions && (
               <div className="flex flex-col gap-2">
-                <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+                <Subheading variant="light" className="block">
                   <Trans>Setup instructions</Trans>
-                </div>
+                </Subheading>
                 {/* @ts-expect-error TS2339 */}
                 <integration.setupInstructions
                   companyId={companyId}
@@ -806,9 +807,9 @@ export function IntegrationForm({
               // when every gated action is hidden, so the toggle live-controls
               // visibility without leaving an empty "Actions" header.
               <div className="hidden has-[button]:flex w-full flex-col gap-3 border-t border-border pt-4">
-                <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+                <Subheading variant="light" className="block">
                   <Trans>Actions</Trans>
-                </div>
+                </Subheading>
                 <VStack spacing={2} className="w-full">
                   {integrationActions.map((action) =>
                     action.enabledWhenSetting ? (

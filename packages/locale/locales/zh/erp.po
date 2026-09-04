@@ -48,6 +48,14 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
@@ -144,6 +152,10 @@ msgstr "{0} 个流程"
 msgid "{0} registered"
 msgstr "{0}已登记"
 
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr "{0} 行"
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 报废"
@@ -227,6 +239,9 @@ msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 个冲突"
 
+msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
+msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的账户}}"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
@@ -235,6 +250,9 @@ msgstr "{days}天"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
+
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
@@ -286,6 +304,9 @@ msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
@@ -878,8 +899,14 @@ msgstr "发货单的状态已更改"
 msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
 
+msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
+msgstr "一条平衡的分录将以下面的日期过账，差额冲至未分配利润。"
+
 msgid "A step needs a name."
 msgstr "步骤需要一个名称。"
+
+msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
+msgstr "工作中心或操作员在某个工序预定时间段内的预约记录——排程运行的物化输出，也是预测显示的内容。"
 
 msgid "A supplier is created"
 msgstr "供应商已创建"
@@ -1454,7 +1481,7 @@ msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
 msgid "Afternoon, {name}."
-msgstr "下午好，{name}。"
+msgstr "下午，{name}。"
 
 msgid "Aging"
 msgstr "账龄分析"
@@ -1695,8 +1722,8 @@ msgstr "一项由外部供应商而非内部工作中心执行的工序，由分
 msgid "An operation on this job runs in this batch"
 msgstr "此工作的一道工序在此批次中运行"
 
-msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
-msgstr "一个工序在其工作中心队列中的位置 — 车间拾取工作的顺序 — 通过在工作中心看板上重新排序卡片而不改变任何日期来设置。"
+msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
+msgstr "工序在所在工作中心队列中的位置——车间人员拿工作的顺序。引擎按安排顺序编号（最早预计开始时间优先）；在工作中心看板上重新排列卡片会覆盖它，不会改变日期。"
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
@@ -2351,6 +2378,9 @@ msgstr "截至"
 msgid "As of {0}"
 msgstr "截至 {0}"
 
+msgid "As of date"
+msgstr "截至日期"
+
 msgid "As of:"
 msgstr "截至："
 
@@ -2624,6 +2654,9 @@ msgstr "返回可追溯性"
 msgid "Backflush"
 msgstr "倒冲"
 
+msgid "Backup failed"
+msgstr "备份失败"
+
 msgid "Backups"
 msgstr "备份"
 
@@ -2674,6 +2707,9 @@ msgstr "银行和金融服务费用。"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "柱状图显示每周的流向：<0>供应</0>推高库存，<1>需求</1>拉低库存。<2>线</2>表示您的预计现有库存 — 当它跌破<3>安全库存</3>时，您面临风险；跌破零则是<4>缺货</4>。"
+
+msgid "Base currency"
+msgstr "基础货币"
 
 msgid "Base Currency"
 msgstr "基础货币"
@@ -3094,6 +3130,9 @@ msgstr "无法在没有项目ID的情况下上传到零件存储桶"
 msgid "Capacity"
 msgstr "产能"
 
+msgid "Capacity reservation"
+msgstr "产能预留"
+
 msgid "Caption"
 msgstr "标题"
 
@@ -3280,6 +3319,9 @@ msgstr "更改此项将更新零件ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "更改类型将重置此项目的草稿编辑。"
+
+msgid "Chart"
+msgstr "图表"
 
 msgid "Chart of accounts"
 msgstr "会计科目表"
@@ -3926,7 +3968,7 @@ msgid "Copied setup prompt to your clipboard"
 msgstr "已将换型提示复制到剪贴板"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr "为您的AI编码工具复制换型提示"
+msgstr "复制换型提示给您的AI编码工具"
 
 msgid "Copy"
 msgstr "复制"
@@ -4843,7 +4885,7 @@ msgid "Dates"
 msgstr "日期"
 
 msgid "Dawn's breaking, {name}."
-msgstr "曙光初现，{name}。"
+msgstr "黎明破晓，{name}。"
 
 msgid "Day"
 msgstr "天"
@@ -4951,7 +4993,7 @@ msgid "Declining balance"
 msgstr "余额递减法"
 
 msgid "Deep in the small hours, {name}."
-msgstr "夜深人静，{name}。"
+msgstr "深夜时分，{name}。"
 
 msgid "Default"
 msgstr "默认"
@@ -5103,6 +5145,9 @@ msgstr "删除操作"
 
 msgid "Delete Action"
 msgstr "删除操作"
+
+msgid "Delete and restore"
+msgstr "删除并恢复"
 
 msgid "Delete API Key"
 msgstr "删除API密钥"
@@ -5326,9 +5371,6 @@ msgstr "删除发货方式"
 msgid "Delete step"
 msgstr "删除步骤"
 
-msgid "Delete Step"
-msgstr "删除步骤"
-
 msgid "Delete Stock Transfer"
 msgstr "删除库存转移"
 
@@ -5452,6 +5494,9 @@ msgstr "部门"
 
 msgid "Departments"
 msgstr "部门"
+
+msgid "depends on an excluded row"
+msgstr "依赖于已排除的行"
 
 msgid "Depreciation"
 msgstr "折旧"
@@ -5704,7 +5749,7 @@ msgid "Don't Cancel"
 msgstr "不要取消"
 
 msgid "Don't show this again"
-msgstr "不再显示此内容"
+msgstr "不再显示"
 
 msgid "done"
 msgstr "完成"
@@ -5930,6 +5975,12 @@ msgstr "例如 Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr "每一行都是从该公司的数据链接到它不拥有的一行。包含这些行的备份永远无法恢复。"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删除这些行可以运行恢复。"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "每个工序的未使用原材料在工序完成后立即退回。"
@@ -6218,9 +6269,6 @@ msgstr "编辑 发货方式"
 
 msgid "Edit Size"
 msgstr "编辑尺寸"
-
-msgid "Edit Step"
-msgstr "编辑步骤"
 
 msgid "Edit Stock Transfer"
 msgstr "编辑库存转移"
@@ -6621,7 +6669,7 @@ msgid "Estimator"
 msgstr "估价员"
 
 msgid "Evening, {name}."
-msgstr "晚上好，{name}。"
+msgstr "傍晚，{name}。"
 
 msgid "Event"
 msgstr "事件"
@@ -7114,7 +7162,7 @@ msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr "排程重新生成失败"
+msgstr "排程再生成失败"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "未能重新生成缩略图"
@@ -7371,7 +7419,7 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 
 msgid "First light, {name}."
-msgstr "初现曙光，{name}。"
+msgstr "天明时刻，{name}。"
 
 msgid "First name"
 msgstr "名字"
@@ -7774,7 +7822,7 @@ msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
 msgid "Go to that week"
-msgstr "转到那一周"
+msgstr "跳转到该周"
 
 msgid "Go-Live"
 msgstr "上线"
@@ -8031,11 +8079,11 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
 
-msgid "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
-msgstr "到期日的严格程度——硬期限阻止排程超过它，软期限允许计划推迟但会显示警告，无期限则完全忽略它。"
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
+
+msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
+msgstr "调度程序分配产能时工单的排名方式——立即执行优先，然后是硬期限、软期限，最后是无期限。仅作为排序信号；任何期限类型都不会阻止或限制安排。"
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "原材料如何采购（自制、采购或从库存领用），以及从哪个存储单元中拉取。"
@@ -9004,7 +9052,7 @@ msgid "Last used"
 msgstr "最后使用"
 
 msgid "Late in the evening, {name}."
-msgstr "夜幕降临，{name}。"
+msgstr "傍晚晚些时候，{name}。"
 
 msgid "Latest operation end"
 msgstr "最新操作结束"
@@ -9079,7 +9127,7 @@ msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
 msgid "Let's make it a good one, {name}."
-msgstr "让我们把握好这一天，{name}。"
+msgstr "让我们创造美好的一天吧，{name}。"
 
 msgid "Let's set up your new company"
 msgstr "让我们为您设置新公司"
@@ -9161,6 +9209,9 @@ msgstr "关联 Jira 问题"
 
 msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
+
+msgid "link outside company"
+msgstr "公司外的链接"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
@@ -9570,6 +9621,15 @@ msgstr "标记短缺"
 msgid "Mark to delete"
 msgstr "标记删除"
 
+msgid "Market rate"
+msgstr "市场汇率"
+
+msgid "Market rate (per USD)"
+msgstr "市场汇率（兑美元）"
+
+msgid "Market Rate History (per USD)"
+msgstr "市场汇率历史（兑美元）"
+
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "在范围内的每一天都标记该人缺席。他们在外出期间不会被安排。"
 
@@ -9966,7 +10026,7 @@ msgid "More overtime"
 msgstr "更多加班"
 
 msgid "Morning, {name}."
-msgstr "早上好，{name}。"
+msgstr "早上，{name}。"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
@@ -10066,6 +10126,9 @@ msgstr "需要日期"
 msgid "Need the right columns?"
 msgstr "需要正确的列吗？"
 
+msgid "Need-by target"
+msgstr "需要日期"
+
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "需要的是该天的工作小时数除以 {personDayHours} 小时，向上舍入——您筛选的班次或此位置最常见的班次时长。"
 
@@ -10152,6 +10215,9 @@ msgstr "新建成本中心"
 
 msgid "New Credit / Debit Memo"
 msgstr "新建贷方/借方备忘录"
+
+msgid "New Currency"
+msgstr "新货币"
 
 msgid "New Custom Field"
 msgstr "新建自定义字段"
@@ -10445,7 +10511,7 @@ msgid "Next:"
 msgstr "下一步："
 
 msgid "Nice and quiet at this hour."
-msgstr "这个时间安静祥和。"
+msgstr "这个时间很宁静。"
 
 msgid "No"
 msgstr "否"
@@ -10650,7 +10716,7 @@ msgid "No items have inventory activity here yet."
 msgstr "此处尚无物料库存活动。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr "此地点还未排程工单——下达工单以查看工作中心负荷。"
+msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
 
 msgid "No jobs were created"
 msgstr "没有创建工单"
@@ -10802,6 +10868,9 @@ msgstr "不报价原因"
 msgid "No Quote Reasons"
 msgstr "不报价原因"
 
+msgid "No rate"
+msgstr "无汇率"
+
 msgid "No receivables"
 msgstr "没有应收款项"
 
@@ -10833,7 +10902,7 @@ msgid "No rules assigned"
 msgstr "没有已分配的规则"
 
 msgid "No scheduled work in this window"
-msgstr "此窗口中没有排程的工作"
+msgstr "此时间窗内无排程工作"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
@@ -10897,6 +10966,9 @@ msgstr "没有变量匹配{query}"
 
 msgid "No variables available"
 msgstr "没有可用的变量"
+
+msgid "No versions available"
+msgstr "没有可用的版本"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
@@ -11171,7 +11243,12 @@ msgid "On-time delivery"
 msgstr "准时交付"
 
 msgid "Onboard your agent to Carbon"
-msgstr "将您的代理加入Carbon"
+msgstr "将您的代理接入Carbon"
+
+#. placeholder {0}: company?.baseCurrencyCode
+#. placeholder {1}: initialValues.code
+msgid "One {0} is equal to how many {1}?"
+msgstr "1 {0} 等于多少 {1}？"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，始终以工作流负责人的权限行动。"
@@ -11341,8 +11418,18 @@ msgstr "期初"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "打开一个操作会启动其计时器，因此从工作开始时起就跟踪时间。"
 
+msgid "Opening Balance"
+msgstr "期初余额"
+
+#. placeholder {0}: account.name
+msgid "Opening balance for {0}"
+msgstr "{0}的期初余额"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
+
+msgid "Opening Balances"
+msgstr "期初余额"
 
 msgid "Operating Expenses"
 msgstr "运营费用"
@@ -11991,7 +12078,7 @@ msgid "Plan"
 msgstr "计划"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr "通过按物料和地点投影需求来提前规划，然后直接送入MRP和排程。"
+msgstr "通过按物料和地点投影需求进行超前规划，然后将其直接送入MRP和排程。"
 
 msgid "Plan the work"
 msgstr "规划工作"
@@ -12103,6 +12190,9 @@ msgstr "过账发票"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "使用正确的科目和描述代码过账凭证。"
+
+msgid "Post opening balances"
+msgstr "过账期初余额"
 
 msgid "Post Receipt"
 msgstr "过账收据"
@@ -12873,8 +12963,14 @@ msgstr "在每周状态会议上提出"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很容易修复；同样的问题在上线时就会导致延期。"
 
+msgid "Rate"
+msgstr "汇率"
+
 msgid "Rate Limit"
 msgstr "速率限制"
+
+msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
+msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空则使用当前汇率。"
 
 msgid "Ratio"
 msgstr "比率"
@@ -13121,7 +13217,7 @@ msgid "Regenerate"
 msgstr "重新生成"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr "现在重新生成此地点的排程。最后一次排程更改约30秒后会自动运行（编辑批处理，因此多次快速更改触发单一重新生成）。"
+msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "从 3D 模型重新生成缩略图"
@@ -13225,6 +13321,9 @@ msgstr "移除条款"
 
 msgid "Remove condition"
 msgstr "移除条件"
+
+msgid "Remove corrupted data and restore"
+msgstr "移除损坏数据并恢复"
 
 msgid "Remove Employee"
 msgstr "移除员工"
@@ -13399,7 +13498,7 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "成员登录此公司时需要第二因素验证"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr "在排程器在地点放置工作前需要已分配的操作员。启用时，人员不足的工作中心不会获得工作，没有人工覆盖的工序显示为无法排程。无人值守（24×7）工作中心豁免。"
+msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
@@ -13468,7 +13567,7 @@ msgid "Requires Repair"
 msgstr "需要维修"
 
 msgid "Requires staffing"
-msgstr "需要人员配置"
+msgstr "需要人工配置"
 
 msgid "Reserve floor"
 msgstr "储备下限"
@@ -13489,6 +13588,9 @@ msgstr "重置PIN"
 #. placeholder {1}: operator.lastName
 msgid "Reset PIN for {0} {1}"
 msgstr "重置 {0} {1} 的 PIN"
+
+msgid "Reset to market rate"
+msgstr "重置为市场汇率"
 
 msgid "Reset Two-Factor Auth"
 msgstr "重置双因素认证"
@@ -13548,6 +13650,9 @@ msgstr "恢复…"
 
 msgid "Restoring files"
 msgstr "正在恢复文件"
+
+msgid "restoring…"
+msgstr "恢复中…"
 
 msgid "Result"
 msgstr "结果"
@@ -13629,6 +13734,9 @@ msgstr "还原"
 
 msgid "Reverting"
 msgstr "正在还原"
+
+msgid "reverting…"
+msgstr "还原中…"
 
 msgid "Review"
 msgstr "评审"
@@ -13757,6 +13865,9 @@ msgstr "工艺路线"
 
 msgid "rows"
 msgstr "行"
+
+msgid "Rows left out of this backup"
+msgstr "此备份中遗漏的行"
 
 msgid "Rule"
 msgstr "规则"
@@ -14027,6 +14138,9 @@ msgstr "保存维度设置"
 msgid "Save Method"
 msgstr "保存方法"
 
+msgid "Save Rate"
+msgstr "保存汇率"
+
 msgid "Save view"
 msgstr "保存视图"
 
@@ -14097,7 +14211,7 @@ msgid "Schedule outdated at"
 msgstr "排程过期于"
 
 msgid "Schedule outdated reason"
-msgstr "排程过期原因"
+msgstr "排程过时原因"
 
 msgid "Schedule regenerated"
 msgstr "排程已重新生成"
@@ -14268,7 +14382,7 @@ msgid "Section"
 msgstr "部分"
 
 msgid "Sections"
-msgstr "板块"
+msgstr "部分"
 
 msgid "Secure your account with 2FA"
 msgstr "使用2FA保护您的账户"
@@ -14277,7 +14391,7 @@ msgid "Security"
 msgstr "安全"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr "查看每个工作中心的实时产能预测 — 了解每个工单在您的车间中预计运行和完成的时间。"
+msgstr "查看每个工作中心的实时产能预测 — 每个工单预计在整个车间运行和完成的时间。"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "驱动客户定价和条款的细分市场"
@@ -14287,6 +14401,9 @@ msgstr "选择"
 
 msgid "Select a assignee"
 msgstr "选择经办人"
+
+msgid "Select a completed job"
+msgstr "选择已完成的工单"
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"
@@ -15003,6 +15120,9 @@ msgstr "尺寸"
 msgid "Skip"
 msgstr "跳过"
 
+msgid "Skip corrupted rows and retry"
+msgstr "跳过损坏的行并重试"
+
 msgid "Skip Existing"
 msgstr "跳过现有"
 
@@ -15099,6 +15219,9 @@ msgstr "源单据可读"
 msgid "Source Item"
 msgstr "源项目"
 
+msgid "Source Job"
+msgstr "源工单"
+
 msgid "Source list"
 msgstr "源列表"
 
@@ -15169,7 +15292,7 @@ msgid "Staffing optional"
 msgstr "人员配置可选"
 
 msgid "Staffing required"
-msgstr "人员配置必需"
+msgstr "人工配置必需"
 
 msgid "Stand up hosting"
 msgstr "建立托管"
@@ -15305,7 +15428,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
 
 msgid "Still dark out on the floor."
-msgstr "车间里仍然一片黑暗。"
+msgstr "车间仍在黑暗中。"
 
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
@@ -15882,6 +16005,9 @@ msgstr "税"
 msgid "Team trained"
 msgstr "班组已培训"
 
+msgid "Technical details"
+msgstr "技术细节"
+
 msgid "Technical support"
 msgstr "技术支持"
 
@@ -15963,6 +16089,12 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
+msgid "The backup job reported this error."
+msgstr "备份工作报告了此错误。"
+
+msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
+msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
@@ -16069,8 +16201,8 @@ msgstr "您销售和运送的客户"
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "你不希望库存跌破的虚线阈值。"
 
-msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
-msgstr "需要工单数量的日期，与截止类型一起设置工单在其地点排程队列中的位置。"
+msgid "The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules."
+msgstr "需要工单数量的日期 — 测量延期的标尺，以及（与截止日期类型一起）工单声明产能的顺序。不是放置锚点；没有到期日的工单仍会排程。"
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "资产开始折旧的日期；通常是投入使用日期。"
@@ -16118,7 +16250,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
 msgid "The early hours, {name}."
-msgstr "清晨时段，{name}。"
+msgstr "早晨时刻，{name}。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "八大纪律质量方法，通过不合格工作流的任务建模，而非硬编码。"
@@ -16139,7 +16271,7 @@ msgid "The evening hours, {name}."
 msgstr "傍晚时段，{name}。"
 
 msgid "The exact material part, not just its properties"
-msgstr "具体的原材料零件，而非仅其属性"
+msgstr "傍晚时刻，{name}。"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求乘以 1 / (1 − 报废) 来补偿。"
@@ -16338,7 +16470,7 @@ msgstr "请求者怀疑的最可能的失败模式；技术人员在关闭时确
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr "此地点最近的排程工作是在{0}。"
+msgstr "该地点最近的排程工作是{0}。"
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "此行协商的单价；内联跟踪图标显示哪个定价规则或覆盖生成了它。"
@@ -16357,10 +16489,10 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr "此地点下一个排程工作将于{0}开始。"
 
 msgid "The night shift suits you, {name}."
-msgstr "夜班很适合你，{name}。"
+msgstr "晚班适合你，{name}。"
 
 msgid "The night's still young, {name}."
-msgstr "夜幕初垂，{name}。"
+msgstr "夜还年轻，{name}。"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "从向首选供应商下达采购订单到货物到达装卸码头的天数;计划偏移以此向后推移需求。"
@@ -16500,6 +16632,9 @@ msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - 
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
+
+msgid "The restore job reported this error."
+msgstr "恢复工作报告了此错误。"
 
 msgid "The result will not appear on the Runs page."
 msgstr "结果不会出现在运行页面上。"
@@ -16738,8 +16873,17 @@ msgstr "这些工单在此工作中心分配了工序:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
+msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"
+
 msgid "this ability"
 msgstr "此能力"
+
+msgid "This backup could not be completed."
+msgstr "无法完成此备份。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
@@ -16811,6 +16955,9 @@ msgstr "这是一个ITAR管制环境。访问仅限于美国人。"
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
 msgstr "这比预期花费的时间更长。它可能仍会完成——如果没有，请重试还原以恢复您的数据。"
 
+msgid "This is the base currency. Exchange rate is always 1."
+msgstr "这是本位币。汇率始终为1。"
+
 msgid "This is the month your fiscal year starts."
 msgstr "这是你会计年度开始的月份。"
 
@@ -16839,7 +16986,7 @@ msgid "This location only schedules staffed work centers, but this is a lights-o
 msgstr "此地点仅排程有人值守的工作中心，但这是一个无人值守工作站（24×7）— 它被豁免并保持无人运行。"
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr "此地点仅排程在人员配置委员会上已分配操作员的工作。在此处没有任何人分配的情况下，工作不会被排程，显示为无法排程。"
+msgstr "该地点仅排程在人员配备板上已分配操作员的工作。此处未分配任何人员时，工作不会被排程并显示为无法排程。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期且无法拣货。"
@@ -16854,7 +17001,7 @@ msgid "This Month"
 msgstr "本月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr "此工序暂时无法排程 — 条形表示一旦解决冲突，它将运行的位置。它不占用产能。"
+msgstr "该工序暂时无法排程 — 条形图标记一旦冲突解决后它将运行的位置。它不占用产能。"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "这个实施中心页面正在开发中。在我们完成之前，请从指挥中心开始。"
@@ -16889,6 +17036,12 @@ msgstr "本季度"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
 
+msgid "This restore could not be completed."
+msgstr "无法完成此恢复。"
+
+msgid "This revert could not be completed."
+msgstr "无法完成此还原。"
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "这个修订版已下达（生产）。更改应该通常通过变更通知进行。"
 
@@ -16911,7 +17064,7 @@ msgid "This station runs ability-gated work — it only runs while a qualified o
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr "此工作中心运行不需要特殊技能的工作；人员配置委员会上指定的操作员形成可用的人工。"
+msgstr "该站运行无技能要求的工作；人员配备板上分配的操作员塑造可用人工。"
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17598,6 +17751,9 @@ msgstr "未发货订单"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Untitled Diagram"
 msgstr "未命名图表"
@@ -18671,8 +18827,14 @@ msgstr "为什么这个被已锁定了?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "为什么库存在变化 — 正向（发现）、负向（丢失/报废）或设置（用测量值替换计数）。"
 
+msgid "Why this backup failed"
+msgstr "备份失败原因"
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告记录。"
+
+msgid "Why this restore failed"
+msgstr "还原失败原因"
 
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
@@ -18913,6 +19075,9 @@ msgstr "您面向客户的价格表"
 msgid "Your data is accessible and reasonably clean"
 msgstr "您的数据可访问且相对干净"
 
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr "您的数据未被更改——如果还原无法完成,它会在修改任何内容之前停止。"
+
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"
 
@@ -18957,6 +19122,9 @@ msgstr "您的项目端到端：计划、关卡和上线"
 
 msgid "Your Project Team"
 msgstr "您的项目团队"
+
+msgid "Your rate"
+msgstr "自定义汇率"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"

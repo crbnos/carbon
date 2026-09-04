@@ -143,11 +143,11 @@ describe("resolveIntegrationSecrets", () => {
   it("returns metadata as-is for an integration with no secret keys", async () => {
     const client = mockClient({});
     const metadata = { active: true, someConfig: "x" };
-    // exchange-rates-v1 has no SECRET_KEYS entry — nothing to resolve.
+    // sage has no SECRET_KEYS entry — nothing to resolve.
     const merged = await resolveIntegrationSecrets(
       client,
       "co",
-      "exchange-rates-v1",
+      "sage",
       metadata,
       null
     );

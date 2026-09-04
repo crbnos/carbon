@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { runMRP } from "~/modules/production/production.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -14,7 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "inventory"
   });
 
-  const result = await runMRP(getCarbonServiceRole(), {
+  const result = await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
     type: locationId ? "location" : "company",
     id: locationId ?? companyId,
     companyId,

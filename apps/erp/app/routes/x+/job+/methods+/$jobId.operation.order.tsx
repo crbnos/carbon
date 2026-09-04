@@ -8,6 +8,7 @@ import {
   recalculateJobOperationDependencies,
   updateJobOperationOrder
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -54,6 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (jobId) {
     const recalculateDependencies = await recalculateJobOperationDependencies(
       getCarbonServiceRole(),
+      getDatabaseClient(),
       {
         jobId: jobId,
         companyId: companyId,

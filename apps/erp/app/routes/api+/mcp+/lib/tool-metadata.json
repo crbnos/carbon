@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-04T17:19:30.664Z",
-  "totalTools": 1496,
+  "generated": "2026-09-04T17:23:35.128Z",
+  "totalTools": 1503,
   "modules": 15,
   "tools": [
     {
@@ -1373,6 +1373,107 @@
       }
     },
     {
+      "name": "accounting_getExchangeRate",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get exchange rate",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "currencyCode"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currencyCode"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getExchangeRates",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get exchange rates",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_upsertExchangeRateOverride",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert exchange rate override",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "override"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "currencyCode",
+          "rate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteExchangeRateOverride",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete exchange rate override",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "currencyCode"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currencyCode"
+        ]
+      }
+    },
+    {
       "name": "accounting_getCurrencies",
       "module": "accounting",
       "classification": "READ",
@@ -2485,7 +2586,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "upsert currency",
-      "paramCount": 5,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "currency"
@@ -2505,9 +2606,6 @@
             "type": "string"
           },
           "decimalPlaces": {
-            "type": "number"
-          },
-          "exchangeRate": {
             "type": "number"
           },
           "historicalExchangeRate": {
@@ -3208,7 +3306,6 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyGroupId",
         "currencyCode"
       ],
       "injectAuth": [
@@ -3610,6 +3707,53 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getExistingOpeningBalanceEntry",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get existing opening balance entry",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_createOpeningBalanceJournal",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "create opening balance journal",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "postingDate": {
+            "type": "string"
+          },
+          "balances": {}
+        },
+        "required": [
+          "postingDate",
+          "balances"
         ]
       }
     },
@@ -20492,6 +20636,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "db",
         "jobId",
         "companyId",
         "userId"
@@ -20753,17 +20898,23 @@
       "module": "production",
       "classification": "READ",
       "description": "get jobs list",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "companyId"
+        "companyId",
+        "statuses"
       ],
       "injectAuth": [
         "companyId"
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "statuses": {
+            "type": "array",
+            "items": {}
+          }
+        }
       }
     },
     {
@@ -22332,6 +22483,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "db",
         "params"
       ],
       "injectAuth": [
@@ -22410,6 +22562,7 @@
       "paramCount": 2,
       "serviceParams": [
         "client",
+        "db",
         "params"
       ],
       "injectAuth": [
@@ -23852,7 +24005,8 @@
             "type": "string",
             "enum": [
               "itemToJob",
-              "quoteLineToJob"
+              "quoteLineToJob",
+              "jobToJob"
             ]
           },
           "jobMethod": {
@@ -23865,6 +24019,9 @@
                 "type": "string"
               },
               "configuration": {},
+              "versionId": {
+                "type": "string"
+              },
               "parts": {
                 "type": "object",
                 "properties": {
@@ -23914,7 +24071,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job material make method",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "jobMaterial"
@@ -23934,6 +24091,9 @@
             "type": "string"
           },
           "configuration": {},
+          "versionId": {
+            "type": "string"
+          },
           "parts": {
             "type": "object",
             "properties": {
@@ -30174,8 +30334,7 @@
       "paramCount": 11,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -30604,8 +30763,7 @@
       "paramCount": 8,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -42248,8 +42406,7 @@
       "paramCount": 17,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -43478,8 +43635,7 @@
       "paramCount": 9,
       "serviceParams": [
         "client",
-        "input",
-        "companyGroupId"
+        "input"
       ],
       "injectAuth": [
         "companyId",
@@ -45516,6 +45672,31 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "companyId",
+        "company"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "company": {}
+        },
+        "required": [
+          "company"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateCompanyWithBaseCurrencyChange",
+      "module": "settings",
+      "classification": "DESTRUCTIVE",
+      "description": "update company with base currency change",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
         "companyId",
         "company"
       ],

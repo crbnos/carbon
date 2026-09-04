@@ -14,7 +14,8 @@ serve(async (req: Request) => {
   if (preflight) return preflight;
 
   try {
-    const { companyId, userId, label, includeStorage } = await req.json();
+    const { companyId, userId, label, includeStorage, skipCorrupted } =
+      await req.json();
 
     if (!companyId) throw new Error("Payload is missing companyId");
     if (!userId) throw new Error("Payload is missing userId");
@@ -30,7 +31,8 @@ serve(async (req: Request) => {
       companyId,
       userId,
       label: typeof label === "string" ? label.slice(0, 80) : undefined,
-      includeStorage: includeStorage ?? "none"
+      includeStorage: includeStorage ?? "none",
+      skipCorrupted: skipCorrupted === true
     });
 
     return jsonResponse({ success: true }, 202);

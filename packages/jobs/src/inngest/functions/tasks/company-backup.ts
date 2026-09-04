@@ -5,7 +5,7 @@ import { createGunzip, createGzip } from "node:zlib";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type Kysely, type RawBuilder, sql } from "kysely";
+import { type Kysely, sql } from "kysely";
 import { nanoid } from "nanoid";
 import {
   BACKUP_KIND,
@@ -17,12 +17,14 @@ import {
   SECRET_TABLES,
   type TableInfo
 } from "../../../backups/schema";
+import { buildScopeFilter, mapWithConcurrency } from "../../../backups/scope";
 
 // Catalog introspection + compatibility live in src/backups/ (shared with the
 // drift check and the ERP Backups page); re-exported so the backup jobs keep
 // one import surface.
 export * from "../../../backups/renames";
 export * from "../../../backups/schema";
+export * from "../../../backups/scope";
 
 const log = getLogger("jobs", "company-backup");
 
@@ -178,26 +180,6 @@ export function backupDir(name: string): string {
 }
 export function backupManifestPath(name: string): string {
   return `${EXPORTS_PREFIX}/${name}/manifest.json`;
-}
-
-/** Run `fn` over `items` with at most `limit` in flight. */
-export async function mapWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<void>
-): Promise<void> {
-  let next = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (next < items.length) {
-        const item = items[next++];
-        if (item === undefined) break;
-        await fn(item);
-      }
-    }
-  );
-  await Promise.all(workers);
 }
 
 /** Live progress of the current phase. `phase` is a stable KEY
@@ -402,19 +384,6 @@ function blockingReason(f: CompatibilityFinding): string {
 }
 
 /**
- * FK targets a restore resolves WITHOUT the referenced row being in the backup:
- * `user` (global identity table, never in the catalog) and `company` (structural),
- * plus `employee` (collapsed to the importer) and `companyGroup` (re-stamped to the
- * target group). A FK to any of these can't be a closure gap.
- */
-export const RETAINED_REF_TABLES = new Set([
-  "user",
-  "employee",
-  "company",
-  "companyGroup"
-]);
-
-/**
  * A fresh primary-key value for a table, matching its `id` column's type as the
  * schema defines it — a real UUID for `uuid` columns, otherwise a nanoid (what
  * the `id()` default produces). Used wherever reseed/restore remaps ids, so we
@@ -450,108 +419,6 @@ export function bindValue(value: unknown, col: ColumnInfo): unknown {
     return JSON.stringify(value);
   }
   return value;
-}
-
-/**
- * A SQL predicate scoping a table's rows to one company. For a directly-scoped
- * table it's `companyId = $`; for a `via` table it's
- * `fk IN (SELECT parent.refColumn FROM parent WHERE <parent's predicate>)`,
- * recursing to the scoped root. The subquery is NOT correlated (it lists the
- * parent's ids for the company), so it stays a cheap semi-join. `byName` must
- * hold every catalog table so parents resolve.
- */
-export function buildScopeFilter(
-  table: TableInfo,
-  byName: Map<string, TableInfo>,
-  companyId: string,
-  companyGroupId: string | null
-): RawBuilder<unknown> {
-  if (table.scope.kind === "direct") {
-    const value =
-      table.scope.column === "companyGroupId" ? companyGroupId : companyId;
-    return sql`${sql.id(table.scope.column)} = ${value}`;
-  }
-  const parent = byName.get(table.scope.parent);
-  if (!parent) {
-    throw new Error(
-      `Scope parent "${table.scope.parent}" of "${table.name}" is not in the catalog`
-    );
-  }
-  return sql`${sql.id(table.scope.column)} IN (SELECT ${sql.id(
-    table.scope.refColumn
-  )} FROM ${sql.id(table.scope.parent)} WHERE ${buildScopeFilter(
-    parent,
-    byName,
-    companyId,
-    companyGroupId
-  )})`;
-}
-
-/**
- * Export-time closure guard — refuse to PRODUCE a backup that could never be
- * restored. For each NOT-NULL FK from an exportable scoped table to another
- * exportable scoped table, count rows in this company's export scope whose
- * reference falls OUTSIDE the referenced table's export scope (the child row
- * would be dumped but its parent would not). DB-level and count-only. The
- * export mirror of the restore-side `assertReferentiallyClosed`. Skips
- * nullable FKs (restore nulls a missing ref) and refs to retained/global/
- * secret tables.
- */
-export async function findExportScopeViolations(
-  db: Kysely<KyselyDatabase>,
-  exportable: TableInfo[],
-  byName: Map<string, TableInfo>,
-  companyId: string,
-  companyGroupId: string | null
-): Promise<string[]> {
-  const exportableNames = new Set(exportable.map((t) => t.name));
-  const checks: Array<{ desc: string; query: RawBuilder<{ n: string }> }> = [];
-  for (const t of exportable) {
-    const colByName = new Map(t.columns.map((c) => [c.name, c]));
-    for (const fk of t.foreignKeys) {
-      if (fk.refColumn !== "id") continue;
-      if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
-      if (!exportableNames.has(fk.refTable)) continue; // global/secret → not in closure
-      const col = colByName.get(fk.column);
-      if (!col || col.isNullable) continue; // nullable → restore nulls a missing ref
-      const parent = byName.get(fk.refTable)!;
-      const childScope = buildScopeFilter(t, byName, companyId, companyGroupId);
-      const parentScope = buildScopeFilter(
-        parent,
-        byName,
-        companyId,
-        companyGroupId
-      );
-      // A `companyId IS NULL` parent row is shared substrate (seeded
-      // `material*`, currencies, …) present in every target — never a gap. A
-      // row owned by a DIFFERENT company still surfaces.
-      const parentExistence =
-        parent.scope.kind === "direct"
-          ? sql`${parentScope} OR ${sql.id(parent.scope.column)} IS NULL`
-          : parentScope;
-      checks.push({
-        desc: `${t.name}.${fk.column} → ${fk.refTable}`,
-        query: sql<{ n: string }>`
-          SELECT count(*)::text AS n
-          FROM ${sql.id(t.name)}
-          WHERE ${childScope}
-            AND ${sql.id(fk.column)} IS NOT NULL
-            AND ${sql.id(fk.column)} NOT IN (
-              SELECT ${sql.id(fk.refColumn)}
-              FROM ${sql.id(parent.name)}
-              WHERE ${parentExistence}
-            )`
-      });
-    }
-  }
-
-  const violations: string[] = [];
-  await mapWithConcurrency(checks, 6, async (c) => {
-    const r = await c.query.execute(db);
-    const n = Number(r.rows[0]?.n ?? 0);
-    if (n > 0) violations.push(`${c.desc} (${n} row${n === 1 ? "" : "s"})`);
-  });
-  return violations;
 }
 
 /**
