@@ -49,28 +49,28 @@ msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
 msgid "(group)"
-msgstr ""
+msgstr "(grup)"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr ""
+msgstr "{0, plural, one {# hesap mevcut bir hesapla birleştirildi} other {# hesap mevcut hesaplarla birleştirildi}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
-msgstr ""
+msgstr "{0, plural, one {oluşturulacak # hesap} other {oluşturulacak # hesap}}"
 
 #. placeholder {0}: s.updates
 msgid "{0, plural, one {# account to update} other {# accounts to update}}"
-msgstr ""
+msgstr "{0, plural, one {güncellenecek # hesap} other {güncellenecek # hesap}}"
 
 #. placeholder {0}: s.unchanged
 msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
-msgstr ""
+msgstr "{0, plural, one {# hesap değişmedi} other {# hesap değişmedi}}"
 
 #. placeholder {0}: s.groupsToCreate
 #. placeholder {1}: s.accountsToCreate
 msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
-msgstr ""
+msgstr "oluşturulacak {0, plural, one {# grup} other {# grup}} ve {1, plural, one {# hesap} other {# hesap}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,15 +82,15 @@ msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı 
 
 #. placeholder {0}: s.errors
 msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# satır dikkat gerektiriyor} other {# satır dikkat gerektiriyor}}"
 
 #. placeholder {0}: s.skipped
 msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
-msgstr ""
+msgstr "{0, plural, one {# satır atlandı} other {# satır atlandı}}"
 
 #. placeholder {0}: plan.nodes.length
 msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
-msgstr ""
+msgstr "{0, plural, one {Tek satırı göster} other {# satırın tamamını göster}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -135,7 +135,7 @@ msgstr "{0} satır eşlenecek"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
+msgstr "{0} eşleşen hesap: {fileCount} tanesi dosyadaki numaraları alır, {keepCount} tanesi Carbon'daki numaraları korur."
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -254,7 +254,7 @@ msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
 msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
-msgstr ""
+msgstr "{fileCount, plural, one {# eşleşen hesap dosyadaki numarayı alır.} other {# eşleşen hesap dosyadaki numaraları alır.}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
@@ -271,7 +271,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
 msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
-msgstr ""
+msgstr "{keepCount, plural, one {# eşleşen hesap Carbon'daki numarasını korur.} other {# eşleşen hesap Carbon'daki numaralarını korur.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
@@ -302,7 +302,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
 
 msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
-msgstr ""
+msgstr "{pendingCount, plural, one {# karar henüz planda değil} other {# karar henüz planda değil}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
@@ -329,7 +329,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
 msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
-msgstr ""
+msgstr "{undecided, plural, one {# hesap Carbon'da zaten başka bir numarayla mevcut.} other {# hesap Carbon'da zaten başka numaralarla mevcut.}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} planlanmıyor"
@@ -2484,7 +2484,7 @@ msgid "Attempts"
 msgstr "Denemeler"
 
 msgid "Attention"
-msgstr ""
+msgstr "Dikkat"
 
 msgid "Attribute"
 msgstr "Öznitelik"
@@ -3289,7 +3289,7 @@ msgid "Check the item ledger for any items with a negative on-hand quantity as o
 msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok kartı için stok kartı defterini kontrol edin — genellikle eksik bir mal kabul veya envanter değerini ve satılan malın maliyetini bozan sıra dışı bir muhasebeleştirme. İncelendikten sonra bitti olarak işaretleyin veya bir gerekçeyle atlayın."
 
 msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
-msgstr ""
+msgstr "İçe aktarmadan önce nelerin oluşturulacağını ve değiştirileceğini kontrol edin. Onaylayana kadar hiçbir şey yazılmaz."
 
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
@@ -3298,7 +3298,7 @@ msgid "Checking Stripe for this customer…"
 msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 
 msgid "Checking the file against your chart of accounts…"
-msgstr ""
+msgstr "Dosya hesap planınızla karşılaştırılıyor…"
 
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
@@ -5479,7 +5479,7 @@ msgid "Details"
 msgstr "Detaylar"
 
 msgid "Detect from the file"
-msgstr ""
+msgstr "Dosyadan algıla"
 
 msgid "Developer"
 msgstr "Geliştirici"
@@ -6636,7 +6636,7 @@ msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
 
 msgid "Existing"
-msgstr ""
+msgstr "Mevcut"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
@@ -7780,7 +7780,7 @@ msgid "Groups"
 msgstr "Gruplar"
 
 msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
-msgstr ""
+msgstr "Gruplar dosyadan gelir. Bir Carbon grubuyla aynı ada sahip üst düzey bir grup o grupla birleştirilir."
 
 msgid "Guided"
 msgstr "Rehberli"
@@ -7822,19 +7822,19 @@ msgid "Hide system quantities until the review step"
 msgstr "Sistem miktarlarını inceleme adımına kadar gizle"
 
 msgid "Hide the full list"
-msgstr ""
+msgstr "Tam listeyi gizle"
 
 msgid "Hide, pin and reorder columns"
 msgstr "Sütunları gizle, sabitle ve yeniden sırala"
 
 msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
-msgstr ""
+msgstr "Hiyerarşi dosyadaki Begin-Total / End-Total satırlarından alındı."
 
 msgid "Hierarchy taken from the file's parent column."
-msgstr ""
+msgstr "Hiyerarşi dosyadaki üst hesap sütunundan alındı."
 
 msgid "Hierarchy taken from the paths in the account names."
-msgstr ""
+msgstr "Hiyerarşi hesap adlarındaki yollardan alındı."
 
 msgid "High"
 msgstr "Yüksek"
@@ -7975,7 +7975,7 @@ msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Co
 msgstr "Bu bakım ne sıklıkla tekrarlanır — Günlük, Haftalık, Aylık, Periyodik Sayımında; Günlük seçim haftanın günü seçicisini gösterir, diğerleri daha basit aralık matematiğini kullanır."
 
 msgid "How should the accounts be organised?"
-msgstr ""
+msgstr "Hesaplar nasıl düzenlenmeli?"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "İş emri'nin, zamanlayıcı kapasite dağıttığında nasıl sıralandığı — ASAP ilk öncelik alır, sonra Sert Son Tarih, Esnek Son Tarih ve Son Tarih Yok son sırada. Yalnızca bir sıralama sinyali; hiçbir son tarih türü yerleştirmeyi engellemiyor veya kısıtlamıyor."
@@ -8098,7 +8098,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Parça numaralarını değiştirmek isterseniz, lütfen iptal'e tıklayın ve dönüştürmeden önce her bir satır öğesi için parçaları manuel olarak atayın."
 
 msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
-msgstr ""
+msgstr "Dosyadaki grupları yok say; her hesap, hesap türüyle eşleşen Carbon grubunun altına yerleştirilir."
 
 msgid "II (normal default)"
 msgstr "II (normal varsayılan)"
@@ -8122,27 +8122,27 @@ msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"
 
 msgid "Import"
-msgstr ""
+msgstr "İçe aktar"
 
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
 #. placeholder {0}: resolution.name
 msgid "Import as \"{0}\""
-msgstr ""
+msgstr "“{0}” olarak içe aktar"
 
 #. placeholder {0}: resolution.number
 msgid "Import as {0}"
-msgstr ""
+msgstr "{0} olarak içe aktar"
 
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import under a different name"
-msgstr ""
+msgstr "Farklı bir adla içe aktar"
 
 msgid "Import under a different number"
-msgstr ""
+msgstr "Farklı bir numarayla içe aktar"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
@@ -8825,10 +8825,10 @@ msgid "Keep"
 msgstr "Tut"
 
 msgid "Keep Carbon's number"
-msgstr ""
+msgstr "Carbon'daki numarayı koru"
 
 msgid "Keep Carbon's numbers"
-msgstr ""
+msgstr "Carbon'daki numaraları koru"
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
@@ -9009,7 +9009,7 @@ msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
 
 msgid "Leave this account as it is"
-msgstr ""
+msgstr "Bu hesabı olduğu gibi bırak"
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -9090,7 +9090,7 @@ msgid "Likelihood"
 msgstr "Olasılık"
 
 msgid "Line"
-msgstr ""
+msgstr "Satır"
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
@@ -10019,7 +10019,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "Business veya Partner planı gereklidir."
 
 msgid "Needs attention"
-msgstr ""
+msgstr "Dikkat gerektiriyor"
 
 msgid "Needs fixing"
 msgstr "Onarılması gerekir"
@@ -10581,7 +10581,7 @@ msgid "No groups assigned"
 msgstr "Atanmış grup yok"
 
 msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
-msgstr ""
+msgstr "Dosyada hiyerarşi yok: hesaplar, hesap türüne göre Carbon'daki mevcut grupların altına yerleştirilir."
 
 msgid "No image"
 msgstr "Resim yok"
@@ -10683,7 +10683,7 @@ msgid "No overtime scheduled"
 msgstr "Planlanmış fazla mesai yok"
 
 msgid "No parent column, row kinds, or paths in the names were found in the file."
-msgstr ""
+msgstr "Dosyada üst hesap sütunu, satır türü veya adlarda yol bulunamadı."
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Henüz üst kaynaklar kaydedilmedi. Atıfı yenilemek için planlama sayfasındaki Yeniden Hesapla düğmesine tıklayın."
@@ -10969,7 +10969,7 @@ msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
 
 msgid "Nothing to import."
-msgstr ""
+msgstr "İçe aktarılacak bir şey yok."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -11695,7 +11695,7 @@ msgid "Path"
 msgstr "Yol"
 
 msgid "Path separator in account names"
-msgstr ""
+msgstr "Hesap adlarındaki yol ayırıcı"
 
 msgid "Pay Rate"
 msgstr "Ödeme Oranı"
@@ -11928,7 +11928,7 @@ msgid "Pinned"
 msgstr "Sabitlenmiş"
 
 msgid "Place accounts under Carbon's existing groups"
-msgstr ""
+msgstr "Hesapları Carbon'daki mevcut grupların altına yerleştir"
 
 msgid "Plan"
 msgstr "Plan"
@@ -13457,7 +13457,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "NCR'yi tamamlamadan önce bunları çöz: her satırın Bekleme Dışı bir Karar'ı olmalı ve onun bağlı varlık miktarları satır miktarıyla eşleşmeli."
 
 msgid "Resolved"
-msgstr ""
+msgstr "Çözüldü"
 
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
@@ -13931,16 +13931,16 @@ msgid "Salesperson"
 msgstr "Satış danışmanı"
 
 msgid "Same as {target}"
-msgstr ""
+msgstr "{target} ile aynı"
 
 msgid "Same as {target} (keep its number)"
-msgstr ""
+msgstr "{target} ile aynı (numarasını koru)"
 
 msgid "Same as {target} (use this file's number)"
-msgstr ""
+msgstr "{target} ile aynı (bu dosyadaki numarayı kullan)"
 
 msgid "Same as {target}, keeping its number"
-msgstr ""
+msgstr "{target} ile aynı, numarası korunuyor"
 
 msgid "Same as Book"
 msgstr "Kitapta aynı"
@@ -14967,7 +14967,7 @@ msgid "Skip the released-but-not-started state — the job starts immediately on
 msgstr "Yayınlanan ancak başlatılmayan durumu atlayın - iş tarama sırasında hemen başlar."
 
 msgid "Skip this row"
-msgstr ""
+msgstr "Bu satırı atla"
 
 msgid "Skipped"
 msgstr "Atlanmış"
@@ -15114,7 +15114,7 @@ msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
 
 msgid "Split the account names on a separator, e.g. Parent:Child."
-msgstr ""
+msgstr "Hesap adlarını bir ayırıcıyla bölün, ör. Üst:Alt."
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16374,7 +16374,7 @@ msgid "The permission set new employees of this type receive automatically; edit
 msgstr "Bu tür yeni çalışanların otomatik olarak aldığı izin kümesi; burada düzenleme, yalnızca gelecekteki işe almalar için şablonu değiştirir - mevcut çalışanlar, açıkça toplu güncellenmediği sürece sahip olduklarını tutarlar."
 
 msgid "The plan could not be built"
-msgstr ""
+msgstr "Plan oluşturulamadı"
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Çalışmanızın ve stokunuzun bulunduğu fabrikalar, depolar ve tesisler"
@@ -16693,7 +16693,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
 msgid "These rows are not imported until they are resolved; everything else imports on confirm."
-msgstr ""
+msgstr "Bu satırlar çözülene kadar içe aktarılmaz; geri kalan her şey onaylandığında içe aktarılır."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
@@ -17422,13 +17422,13 @@ msgid "Unballoon"
 msgstr "Balonu Kaldır"
 
 msgid "Unchanged"
-msgstr ""
+msgstr "Değişmedi"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."
 
 msgid "Under"
-msgstr ""
+msgstr "Üst grup"
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Talep Tabanlı Yeniden Sipariş Altında, planlama bir yenileme miktarı hesaplanırken bu kayan pencere içinde talebi toplar."
@@ -17653,7 +17653,7 @@ msgid "Update Permissions"
 msgstr "İzinleri Güncelle"
 
 msgid "Update plan"
-msgstr ""
+msgstr "Planı güncelle"
 
 msgid "Update Quantity"
 msgstr "Miktarı Güncelle"
@@ -17668,7 +17668,7 @@ msgid "Update the kanban information for scan-based replenishment."
 msgstr "Tarama tabanlı ikmal için kanban bilgilerini güncelleyin."
 
 msgid "Update the plan to see the result. Confirming the import applies them all."
-msgstr ""
+msgstr "Sonucu görmek için planı güncelleyin. İçe aktarmayı onaylamak hepsini uygular."
 
 msgid "Update the purchase order quantities"
 msgstr "Satın alma siparişi miktarlarını güncelle"
@@ -17689,7 +17689,7 @@ msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
 
 msgid "Updating the plan…"
-msgstr ""
+msgstr "Plan güncelleniyor…"
 
 msgid "Upgrade"
 msgstr "Yükselt"
@@ -17779,13 +17779,13 @@ msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
 
 msgid "Use the file's numbers"
-msgstr ""
+msgstr "Dosyadaki numaraları kullan"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
-msgstr ""
+msgstr "Varsa dosyadaki üst hesap sütununu, ad yollarını veya toplam satırlarını kullan."
 
 msgid "Use the hierarchy in the file"
-msgstr ""
+msgstr "Dosyadaki hiyerarşiyi kullan"
 
 msgid "Used In"
 msgstr "Kullanıldığı Yer"

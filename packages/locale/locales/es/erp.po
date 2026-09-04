@@ -49,28 +49,28 @@ msgid "(excluded for this customer)"
 msgstr "(excluido para este cliente)"
 
 msgid "(group)"
-msgstr ""
+msgstr "(grupo)"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr ""
+msgstr "{0, plural, one {# cuenta fusionada con una existente} other {# cuentas fusionadas con existentes}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
-msgstr ""
+msgstr "{0, plural, one {# cuenta por crear} other {# cuentas por crear}}"
 
 #. placeholder {0}: s.updates
 msgid "{0, plural, one {# account to update} other {# accounts to update}}"
-msgstr ""
+msgstr "{0, plural, one {# cuenta por actualizar} other {# cuentas por actualizar}}"
 
 #. placeholder {0}: s.unchanged
 msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
-msgstr ""
+msgstr "{0, plural, one {# cuenta sin cambios} other {# cuentas sin cambios}}"
 
 #. placeholder {0}: s.groupsToCreate
 #. placeholder {1}: s.accountsToCreate
 msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
-msgstr ""
+msgstr "{0, plural, one {# grupo} other {# grupos}} y {1, plural, one {# cuenta} other {# cuentas}} por crear"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,15 +82,15 @@ msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo qu
 
 #. placeholder {0}: s.errors
 msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# fila requiere atención} other {# filas requieren atención}}"
 
 #. placeholder {0}: s.skipped
 msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
-msgstr ""
+msgstr "{0, plural, one {# fila omitida} other {# filas omitidas}}"
 
 #. placeholder {0}: plan.nodes.length
 msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
-msgstr ""
+msgstr "{0, plural, one {Mostrar la única fila} other {Mostrar las # filas}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -135,7 +135,7 @@ msgstr "{0} líneas para mapear"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
+msgstr "{0} cuentas coincidentes: {fileCount} toman los números del archivo, {keepCount} conservan los de Carbon."
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -254,7 +254,7 @@ msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
 
 msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
-msgstr ""
+msgstr "{fileCount, plural, one {# cuenta coincidente toma el número del archivo.} other {# cuentas coincidentes toman los números del archivo.}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} de {count}"
@@ -271,7 +271,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección, {1} omitidos."
 
 msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
-msgstr ""
+msgstr "{keepCount, plural, one {# cuenta coincidente conserva su número de Carbon.} other {# cuentas coincidentes conservan sus números de Carbon.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# línea} other {# líneas}}"
@@ -302,7 +302,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} se reabrirá para edición como revisión {0}. El documento ya enviado al proveedor permanece sin cambios hasta que finalices y reenvíes la orden."
 
 msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
-msgstr ""
+msgstr "{pendingCount, plural, one {# decisión aún no está en el plan} other {# decisiones aún no están en el plan}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {¿Eliminar permanentemente # fila?} other {¿Eliminar permanentemente # filas?}}"
@@ -329,7 +329,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# línea sin contar} other {# líneas sin contar}}"
 
 msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
-msgstr ""
+msgstr "{undecided, plural, one {# cuenta ya existe en Carbon con otro número.} other {# cuentas ya existen en Carbon con otros números.}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} no puede ser programado"
@@ -2484,7 +2484,7 @@ msgid "Attempts"
 msgstr "Intentos"
 
 msgid "Attention"
-msgstr ""
+msgstr "Atención"
 
 msgid "Attribute"
 msgstr "Atributo"
@@ -3289,7 +3289,7 @@ msgid "Check the item ledger for any items with a negative on-hand quantity as o
 msgstr "Verifique el libro mayor de artículos para cualquier artículo con cantidad negativa en existencias a fin de período — generalmente una recepción faltante o una contabilización fuera de orden que distorsiona el valor del inventario y el costo de ventas. Márquelo como completado una vez revisado, o omítalo con un motivo."
 
 msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
-msgstr ""
+msgstr "Revise lo que se creará y cambiará antes de importar. No se escribe nada hasta que confirme."
 
 msgid "Check your email"
 msgstr "Revisa tu correo electrónico"
@@ -3298,7 +3298,7 @@ msgid "Checking Stripe for this customer…"
 msgstr "Verificando Stripe para este cliente…"
 
 msgid "Checking the file against your chart of accounts…"
-msgstr ""
+msgstr "Comparando el archivo con su plan de cuentas…"
 
 msgid "Checkpoint ·"
 msgstr "Punto de control ·"
@@ -5479,7 +5479,7 @@ msgid "Details"
 msgstr "Detalles"
 
 msgid "Detect from the file"
-msgstr ""
+msgstr "Detectar desde el archivo"
 
 msgid "Developer"
 msgstr "Desarrollador"
@@ -6636,7 +6636,7 @@ msgid "Exemption Reason"
 msgstr "Motivo de Exención"
 
 msgid "Existing"
-msgstr ""
+msgstr "Existente"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapeos existentes. Elige una opción de proveedor diferente para remapear."
@@ -7780,7 +7780,7 @@ msgid "Groups"
 msgstr "Grupos"
 
 msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
-msgstr ""
+msgstr "Los grupos provienen del archivo. Un grupo de nivel superior con el mismo nombre que un grupo de Carbon se fusiona con él."
 
 msgid "Guided"
 msgstr "Guiado"
@@ -7822,19 +7822,19 @@ msgid "Hide system quantities until the review step"
 msgstr "Ocultar cantidades del sistema hasta el paso de revisión"
 
 msgid "Hide the full list"
-msgstr ""
+msgstr "Ocultar la lista completa"
 
 msgid "Hide, pin and reorder columns"
 msgstr "Ocultar, anclar y reordenar columnas"
 
 msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
-msgstr ""
+msgstr "Jerarquía tomada de las filas Begin-Total / End-Total del archivo."
 
 msgid "Hierarchy taken from the file's parent column."
-msgstr ""
+msgstr "Jerarquía tomada de la columna de cuenta principal del archivo."
 
 msgid "Hierarchy taken from the paths in the account names."
-msgstr ""
+msgstr "Jerarquía tomada de las rutas en los nombres de las cuentas."
 
 msgid "High"
 msgstr "Alto"
@@ -7975,7 +7975,7 @@ msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Co
 msgstr "Con qué frecuencia se repite este Mantenimiento — Diario, Semanal, Mensual, En Conteo cíclico; Diario revela el selector de día de la semana, los otros usan matemática de intervalo más simple."
 
 msgid "How should the accounts be organised?"
-msgstr ""
+msgstr "¿Cómo se deben organizar las cuentas?"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Cómo se clasifica la orden de trabajo cuando el programador asigna capacidad — ASAP va primero, luego Plazo firme, Plazo flexible, y Sin plazo al final. Solo una señal de clasificación; ningún tipo de plazo bloquea o restringe la colocación."
@@ -8098,7 +8098,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Si desea cambiar los números de pieza, haga clic en Cancelar y Asigne manualmente las Piezas para cada Línea de Artículo antes de convertir."
 
 msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
-msgstr ""
+msgstr "Ignorar los grupos del archivo; cada cuenta se coloca bajo el grupo de Carbon que corresponde a su tipo de cuenta."
 
 msgid "II (normal default)"
 msgstr "II (normal predeterminado)"
@@ -8122,27 +8122,27 @@ msgid "Implementation Lead"
 msgstr "Líder de Implementación"
 
 msgid "Import"
-msgstr ""
+msgstr "Importar"
 
 msgid "Import {label} CSV"
 msgstr "Importar {label} CSV"
 
 #. placeholder {0}: resolution.name
 msgid "Import as \"{0}\""
-msgstr ""
+msgstr "Importar como «{0}»"
 
 #. placeholder {0}: resolution.number
 msgid "Import as {0}"
-msgstr ""
+msgstr "Importar como {0}"
 
 msgid "Import results"
 msgstr "Resultados de Importación"
 
 msgid "Import under a different name"
-msgstr ""
+msgstr "Importar con otro nombre"
 
 msgid "Import under a different number"
-msgstr ""
+msgstr "Importar con otro número"
 
 msgid "Import your BOM"
 msgstr "Importa tu BOM"
@@ -8825,10 +8825,10 @@ msgid "Keep"
 msgstr "Mantener"
 
 msgid "Keep Carbon's number"
-msgstr ""
+msgstr "Conservar el número de Carbon"
 
 msgid "Keep Carbon's numbers"
-msgstr ""
+msgstr "Conservar los números de Carbon"
 
 msgid "Keep Current"
 msgstr "Mantener Actual"
@@ -9009,7 +9009,7 @@ msgid "Leave empty for exact match"
 msgstr "Dejar vacío para coincidencia exacta"
 
 msgid "Leave this account as it is"
-msgstr ""
+msgstr "Dejar esta cuenta como está"
 
 msgid "Leave this page"
 msgstr "Salir de esta página"
@@ -9090,7 +9090,7 @@ msgid "Likelihood"
 msgstr "Probabilidad"
 
 msgid "Line"
-msgstr ""
+msgstr "Línea"
 
 msgid "Line description (optional)"
 msgstr "Descripción de línea (opcional)"
@@ -10019,7 +10019,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "Requiere un plan Business o Partner."
 
 msgid "Needs attention"
-msgstr ""
+msgstr "Requiere atención"
 
 msgid "Needs fixing"
 msgstr "Necesita reparación"
@@ -10581,7 +10581,7 @@ msgid "No groups assigned"
 msgstr "No hay grupos asignados"
 
 msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
-msgstr ""
+msgstr "El archivo no tiene jerarquía: las cuentas se colocan bajo los grupos existentes de Carbon según su tipo de cuenta."
 
 msgid "No image"
 msgstr "Sin imagen"
@@ -10683,7 +10683,7 @@ msgid "No overtime scheduled"
 msgstr "Sin horas extra programadas"
 
 msgid "No parent column, row kinds, or paths in the names were found in the file."
-msgstr ""
+msgstr "No se encontró en el archivo una columna de cuenta principal, tipos de fila ni rutas en los nombres."
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "No hay fuentes principales registradas aún. Haz clic en Recalcular en la página de planificación para actualizar la atribución."
@@ -10969,7 +10969,7 @@ msgid "Nothing scheduled — add a station below."
 msgstr "Nada programado — añade una estación abajo."
 
 msgid "Nothing to import."
-msgstr ""
+msgstr "Nada que importar."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Aún no hay nada. Un paso solo ofrece valores una vez que está configurado."
@@ -11695,7 +11695,7 @@ msgid "Path"
 msgstr "Ruta"
 
 msgid "Path separator in account names"
-msgstr ""
+msgstr "Separador de ruta en los nombres de cuenta"
 
 msgid "Pay Rate"
 msgstr "Tasa de Pago"
@@ -11928,7 +11928,7 @@ msgid "Pinned"
 msgstr "Fijado"
 
 msgid "Place accounts under Carbon's existing groups"
-msgstr ""
+msgstr "Colocar las cuentas bajo los grupos existentes de Carbon"
 
 msgid "Plan"
 msgstr "Plan"
@@ -13457,7 +13457,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "Resuelve estos antes de completar la NCR: cada fila debe tener una disposición que no sea Pendiente, y sus cantidades de entidades vinculadas deben coincidir con la cantidad de la fila."
 
 msgid "Resolved"
-msgstr ""
+msgstr "Resuelto"
 
 msgid "Resolved Price"
 msgstr "Precio Resuelto"
@@ -13931,16 +13931,16 @@ msgid "Salesperson"
 msgstr "Vendedor"
 
 msgid "Same as {target}"
-msgstr ""
+msgstr "Igual que {target}"
 
 msgid "Same as {target} (keep its number)"
-msgstr ""
+msgstr "Igual que {target} (conservar su número)"
 
 msgid "Same as {target} (use this file's number)"
-msgstr ""
+msgstr "Igual que {target} (usar el número de este archivo)"
 
 msgid "Same as {target}, keeping its number"
-msgstr ""
+msgstr "Igual que {target}, conservando su número"
 
 msgid "Same as Book"
 msgstr "Igual que el libro"
@@ -14967,7 +14967,7 @@ msgid "Skip the released-but-not-started state — the job starts immediately on
 msgstr "Omita el estado liberado pero no iniciado: el trabajo comienza inmediatamente al escanear."
 
 msgid "Skip this row"
-msgstr ""
+msgstr "Omitir esta fila"
 
 msgid "Skipped"
 msgstr "Omitido"
@@ -15114,7 +15114,7 @@ msgid "Split shipment line"
 msgstr "Dividir línea de envío"
 
 msgid "Split the account names on a separator, e.g. Parent:Child."
-msgstr ""
+msgstr "Dividir los nombres de cuenta por un separador, p. ej. Principal:Secundaria."
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16374,7 +16374,7 @@ msgid "The permission set new employees of this type receive automatically; edit
 msgstr "El conjunto de permisos que reciben automáticamente los nuevos empleados de este tipo; editar aquí cambia la plantilla solo para futuras contrataciones - los empleados existentes conservan lo que tienen a menos que se actualicen explícitamente en masa."
 
 msgid "The plan could not be built"
-msgstr ""
+msgstr "No se pudo generar el plan"
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Las plantas, almacenes y sitios donde viven tu trabajo e inventario"
@@ -16693,7 +16693,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Estos asientos aún están en Borrador, por lo que sus debe y haber no están en el libro mayor para este período. Contabiliza cada uno, o cambia su fecha a un período abierto posterior."
 
 msgid "These rows are not imported until they are resolved; everything else imports on confirm."
-msgstr ""
+msgstr "Estas filas no se importan hasta que se resuelvan; todo lo demás se importa al confirmar."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Estas filas contienen referencias a datos fuera de esta empresa, por lo que no se puede crear una copia de seguridad de los datos actuales. La eliminación de estas filas no se puede deshacer. Si se encuentran compartidas con otras empresas del grupo, nada se eliminará y la restauración no se iniciará."
@@ -17422,13 +17422,13 @@ msgid "Unballoon"
 msgstr "Desvinculación"
 
 msgid "Unchanged"
-msgstr ""
+msgstr "Sin cambios"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Las líneas no contadas se dejan sin cambios al publicar — no se ponen a cero."
 
 msgid "Under"
-msgstr ""
+msgstr "Bajo"
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Bajo Reorden Basado en Demanda, la planificación suma la demanda dentro de esta ventana móvil al calcular una cantidad de reabastecimiento."
@@ -17653,7 +17653,7 @@ msgid "Update Permissions"
 msgstr "Actualizar Permisos"
 
 msgid "Update plan"
-msgstr ""
+msgstr "Actualizar plan"
 
 msgid "Update Quantity"
 msgstr "Actualizar Cantidad"
@@ -17668,7 +17668,7 @@ msgid "Update the kanban information for scan-based replenishment."
 msgstr "Actualizar la información del kanban para reabastecimiento basado en escaneo."
 
 msgid "Update the plan to see the result. Confirming the import applies them all."
-msgstr ""
+msgstr "Actualice el plan para ver el resultado. Al confirmar la importación se aplican todas."
 
 msgid "Update the purchase order quantities"
 msgstr "Actualizar las cantidades de la orden de compra"
@@ -17689,7 +17689,7 @@ msgid "Updated successfully"
 msgstr "Actualizado exitosamente"
 
 msgid "Updating the plan…"
-msgstr ""
+msgstr "Actualizando el plan…"
 
 msgid "Upgrade"
 msgstr "Actualizar"
@@ -17779,13 +17779,13 @@ msgid "Use metric system for default material dimensions."
 msgstr "Utilizar el sistema métrico para las dimensiones predeterminadas del material."
 
 msgid "Use the file's numbers"
-msgstr ""
+msgstr "Usar los números del archivo"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
-msgstr ""
+msgstr "Usar la columna de cuenta principal, las rutas en los nombres o las filas de totales del archivo cuando existan."
 
 msgid "Use the hierarchy in the file"
-msgstr ""
+msgstr "Usar la jerarquía del archivo"
 
 msgid "Used In"
 msgstr "Utilizado en"

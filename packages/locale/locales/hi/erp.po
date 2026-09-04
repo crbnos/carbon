@@ -49,28 +49,28 @@ msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
 msgid "(group)"
-msgstr ""
+msgstr "(समूह)"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr ""
+msgstr "{0, plural, one {# खाता मौजूदा खाते में मिलाया गया} other {# खाते मौजूदा खातों में मिलाए गए}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
-msgstr ""
+msgstr "{0, plural, one {# खाता बनाया जाएगा} other {# खाते बनाए जाएंगे}}"
 
 #. placeholder {0}: s.updates
 msgid "{0, plural, one {# account to update} other {# accounts to update}}"
-msgstr ""
+msgstr "{0, plural, one {# खाता अपडेट किया जाएगा} other {# खाते अपडेट किए जाएंगे}}"
 
 #. placeholder {0}: s.unchanged
 msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
-msgstr ""
+msgstr "{0, plural, one {# खाता अपरिवर्तित} other {# खाते अपरिवर्तित}}"
 
 #. placeholder {0}: s.groupsToCreate
 #. placeholder {1}: s.accountsToCreate
 msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
-msgstr ""
+msgstr "{0, plural, one {# समूह} other {# समूह}} और {1, plural, one {# खाता} other {# खाते}} बनाए जाएंगे"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,15 +82,15 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 
 #. placeholder {0}: s.errors
 msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# पंक्ति पर ध्यान देना आवश्यक है} other {# पंक्तियों पर ध्यान देना आवश्यक है}}"
 
 #. placeholder {0}: s.skipped
 msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
-msgstr ""
+msgstr "{0, plural, one {# पंक्ति छोड़ी गई} other {# पंक्तियाँ छोड़ी गईं}}"
 
 #. placeholder {0}: plan.nodes.length
 msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
-msgstr ""
+msgstr "{0, plural, one {एकमात्र पंक्ति दिखाएँ} other {सभी # पंक्तियाँ दिखाएँ}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -135,7 +135,7 @@ msgstr "{0} लाइनें मैप करने के लिए"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
+msgstr "{0} मिलते-जुलते खाते: {fileCount} फ़ाइल की संख्याएँ लेंगे, {keepCount} Carbon की संख्याएँ रखेंगे।"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -254,7 +254,7 @@ msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# पंक्ति बाहर रखी गई} other {# पंक्तियाँ बाहर रखी गईं}}"
 
 msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
-msgstr ""
+msgstr "{fileCount, plural, one {# मिलता-जुलता खाता फ़ाइल की संख्या लेगा।} other {# मिलते-जुलते खाते फ़ाइल की संख्याएँ लेंगे।}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} में से {count}"
@@ -271,7 +271,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} जोड़े गए, {updated} अपडेट किए गए, {0} को ठीक करने की आवश्यकता है, {1} छोड़ दिए गए।"
 
 msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
-msgstr ""
+msgstr "{keepCount, plural, one {# मिलता-जुलता खाता अपनी Carbon संख्या रखेगा।} other {# मिलते-जुलते खाते अपनी Carbon संख्याएँ रखेंगे।}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
@@ -302,7 +302,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
 
 msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
-msgstr ""
+msgstr "{pendingCount, plural, one {# निर्णय अभी योजना में नहीं है} other {# निर्णय अभी योजना में नहीं हैं}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
@@ -329,7 +329,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
 
 msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
-msgstr ""
+msgstr "{undecided, plural, one {# खाता Carbon में पहले से किसी अन्य संख्या के साथ मौजूद है।} other {# खाते Carbon में पहले से अन्य संख्याओं के साथ मौजूद हैं।}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
@@ -2484,7 +2484,7 @@ msgid "Attempts"
 msgstr "प्रयास"
 
 msgid "Attention"
-msgstr ""
+msgstr "ध्यान दें"
 
 msgid "Attribute"
 msgstr "विशेषता"
@@ -3289,7 +3289,7 @@ msgid "Check the item ledger for any items with a negative on-hand quantity as o
 msgstr "अवधि के अंत तक किसी भी आइटम के लिए आइटम लेजर की जांच करें जिसमें नकारात्मक ऑन-हैंड मात्रा है — आमतौर पर एक लापता प्राप्ति या एक गलत क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए माल की लागत को विकृत करती है। एक बार समीक्षा के बाद इसे हो गया के रूप में चिह्नित करें, या कारण के साथ छोड़ दें।"
 
 msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
-msgstr ""
+msgstr "आयात करने से पहले जाँचें कि क्या बनाया और बदला जाएगा। आपकी पुष्टि तक कुछ भी लिखा नहीं जाता।"
 
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
@@ -3298,7 +3298,7 @@ msgid "Checking Stripe for this customer…"
 msgstr "इस ग्राहक के लिए Stripe की जांच की जा रही है…"
 
 msgid "Checking the file against your chart of accounts…"
-msgstr ""
+msgstr "फ़ाइल की आपके खातों के चार्ट से जाँच की जा रही है…"
 
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
@@ -5479,7 +5479,7 @@ msgid "Details"
 msgstr "विवरण"
 
 msgid "Detect from the file"
-msgstr ""
+msgstr "फ़ाइल से पहचानें"
 
 msgid "Developer"
 msgstr "डेवलपर"
@@ -6636,7 +6636,7 @@ msgid "Exemption Reason"
 msgstr "छूट कारण"
 
 msgid "Existing"
-msgstr ""
+msgstr "मौजूदा"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
@@ -7780,7 +7780,7 @@ msgid "Groups"
 msgstr "समूह"
 
 msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
-msgstr ""
+msgstr "समूह फ़ाइल से आते हैं। Carbon के किसी समूह के समान नाम वाला शीर्ष-स्तरीय समूह उसमें मिला दिया जाता है।"
 
 msgid "Guided"
 msgstr "निर्देशित"
@@ -7822,19 +7822,19 @@ msgid "Hide system quantities until the review step"
 msgstr "समीक्षा चरण तक सिस्टम मात्रा को छिपाएं"
 
 msgid "Hide the full list"
-msgstr ""
+msgstr "पूरी सूची छिपाएँ"
 
 msgid "Hide, pin and reorder columns"
 msgstr "कॉलम को छिपाएं, पिन करें और पुनः क्रमित करें"
 
 msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
-msgstr ""
+msgstr "पदानुक्रम फ़ाइल की Begin-Total / End-Total पंक्तियों से लिया गया।"
 
 msgid "Hierarchy taken from the file's parent column."
-msgstr ""
+msgstr "पदानुक्रम फ़ाइल के मूल खाता स्तंभ से लिया गया।"
 
 msgid "Hierarchy taken from the paths in the account names."
-msgstr ""
+msgstr "पदानुक्रम खाता नामों में मौजूद पथों से लिया गया।"
 
 msgid "High"
 msgstr "उच्च"
@@ -7975,7 +7975,7 @@ msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Co
 msgstr "यह रखरखाव कितनी बार दोहराया जाता है — दैनिक, साप्ताहिक, मासिक, चक्रीय गणना पर; दैनिक सप्ताह-की-दिन चयनकर्ता को प्रकट करता है, अन्य सरल अंतराल गणित का उपयोग करते हैं।"
 
 msgid "How should the accounts be organised?"
-msgstr ""
+msgstr "खातों को कैसे व्यवस्थित किया जाए?"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "जब शेड्यूलर क्षमता देता है तो जॉब कैसे रैंक करता है — ASAP पहले दावे करता है, फिर कठोर समय सीमा, नरम समय सीमा, और कोई समय सीमा नहीं अंतिम। केवल एक रैंकिंग संकेत; कोई समय सीमा प्रकार प्लेसमेंट को रोकता या प्रतिबंधित नहीं करता है।"
@@ -8098,7 +8098,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "यदि आप पार्ट नंबर बदलना चाहते हैं, तो कृपया रद्द करें पर क्लिक करें और परिवर्तित करने से पहले प्रत्येक पंक्ति आइटम के लिए पार्ट्स को मैन्युअल रूप से असाइन करें।"
 
 msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
-msgstr ""
+msgstr "फ़ाइल के समूहों को अनदेखा करें; प्रत्येक खाता उसके खाता प्रकार से मेल खाने वाले Carbon समूह के अंतर्गत जाएगा।"
 
 msgid "II (normal default)"
 msgstr "II (सामान्य डिफ़ॉल्ट)"
@@ -8122,27 +8122,27 @@ msgid "Implementation Lead"
 msgstr "कार्यान्वयन नेता"
 
 msgid "Import"
-msgstr ""
+msgstr "आयात करें"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV आयात करें"
 
 #. placeholder {0}: resolution.name
 msgid "Import as \"{0}\""
-msgstr ""
+msgstr "“{0}” के रूप में आयात करें"
 
 #. placeholder {0}: resolution.number
 msgid "Import as {0}"
-msgstr ""
+msgstr "{0} के रूप में आयात करें"
 
 msgid "Import results"
 msgstr "आयात परिणाम"
 
 msgid "Import under a different name"
-msgstr ""
+msgstr "किसी अन्य नाम से आयात करें"
 
 msgid "Import under a different number"
-msgstr ""
+msgstr "किसी अन्य संख्या से आयात करें"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
@@ -8825,10 +8825,10 @@ msgid "Keep"
 msgstr "रखें"
 
 msgid "Keep Carbon's number"
-msgstr ""
+msgstr "Carbon की संख्या रखें"
 
 msgid "Keep Carbon's numbers"
-msgstr ""
+msgstr "Carbon की संख्याएँ रखें"
 
 msgid "Keep Current"
 msgstr "वर्तमान रखें"
@@ -9009,7 +9009,7 @@ msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
 
 msgid "Leave this account as it is"
-msgstr ""
+msgstr "इस खाते को वैसा ही रहने दें"
 
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
@@ -9090,7 +9090,7 @@ msgid "Likelihood"
 msgstr "संभावना"
 
 msgid "Line"
-msgstr ""
+msgstr "पंक्ति"
 
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
@@ -10019,7 +10019,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "एक बिजनेस या पार्टनर प्लान की आवश्यकता है।"
 
 msgid "Needs attention"
-msgstr ""
+msgstr "ध्यान देना आवश्यक"
 
 msgid "Needs fixing"
 msgstr "मरम्मत की आवश्यकता है"
@@ -10581,7 +10581,7 @@ msgid "No groups assigned"
 msgstr "कोई समूह असाइन नहीं किया गया"
 
 msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
-msgstr ""
+msgstr "फ़ाइल में कोई पदानुक्रम नहीं: खाते खाता प्रकार के अनुसार Carbon के मौजूदा समूहों के अंतर्गत रखे जाते हैं।"
 
 msgid "No image"
 msgstr "कोई छवि नहीं"
@@ -10683,7 +10683,7 @@ msgid "No overtime scheduled"
 msgstr "कोई ओवरटाइम शेड्यूल नहीं है"
 
 msgid "No parent column, row kinds, or paths in the names were found in the file."
-msgstr ""
+msgstr "फ़ाइल में मूल खाता स्तंभ, पंक्ति प्रकार या नामों में पथ नहीं मिले।"
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "अभी तक कोई मूल स्रोत दर्ज नहीं किया गया है। एट्रिब्यूशन को रीफ्रेश करने के लिए योजना पृष्ठ पर पुनः गणना करें पर क्लिक करें।"
@@ -10969,7 +10969,7 @@ msgid "Nothing scheduled — add a station below."
 msgstr "कुछ भी शेड्यूल नहीं किया गया — नीचे एक स्टेशन जोड़ें।"
 
 msgid "Nothing to import."
-msgstr ""
+msgstr "आयात करने के लिए कुछ नहीं।"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक चरण केवल तभी मान प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -11695,7 +11695,7 @@ msgid "Path"
 msgstr "पथ"
 
 msgid "Path separator in account names"
-msgstr ""
+msgstr "खाता नामों में पथ विभाजक"
 
 msgid "Pay Rate"
 msgstr "भुगतान दर"
@@ -11928,7 +11928,7 @@ msgid "Pinned"
 msgstr "पिन किया गया"
 
 msgid "Place accounts under Carbon's existing groups"
-msgstr ""
+msgstr "खातों को Carbon के मौजूदा समूहों के अंतर्गत रखें"
 
 msgid "Plan"
 msgstr "योजना"
@@ -13457,7 +13457,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "इसे NCR पूरा करने से पहले हल करें: प्रत्येक पंक्ति के पास एक गैर-लंबित निपटान होना चाहिए, और इसकी जुड़ी हुई इकाई मात्रा पंक्ति मात्रा से मेल खानी चाहिए।"
 
 msgid "Resolved"
-msgstr ""
+msgstr "हल किया गया"
 
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
@@ -13931,16 +13931,16 @@ msgid "Salesperson"
 msgstr "विक्रयकर्ता"
 
 msgid "Same as {target}"
-msgstr ""
+msgstr "{target} के समान"
 
 msgid "Same as {target} (keep its number)"
-msgstr ""
+msgstr "{target} के समान (उसकी संख्या रखें)"
 
 msgid "Same as {target} (use this file's number)"
-msgstr ""
+msgstr "{target} के समान (इस फ़ाइल की संख्या उपयोग करें)"
 
 msgid "Same as {target}, keeping its number"
-msgstr ""
+msgstr "{target} के समान, उसकी संख्या रखते हुए"
 
 msgid "Same as Book"
 msgstr "किताब के समान"
@@ -14967,7 +14967,7 @@ msgid "Skip the released-but-not-started state — the job starts immediately on
 msgstr "रिलीज़ किए गए लेकिन शुरू न किए गए स्थिति को छोड़ दें — जॉब स्कैन पर तुरंत शुरू हो जाता है।"
 
 msgid "Skip this row"
-msgstr ""
+msgstr "इस पंक्ति को छोड़ें"
 
 msgid "Skipped"
 msgstr "छोड़ा गया"
@@ -15114,7 +15114,7 @@ msgid "Split shipment line"
 msgstr "शिपमेंट पंक्ति को विभाजित करें"
 
 msgid "Split the account names on a separator, e.g. Parent:Child."
-msgstr ""
+msgstr "खाता नामों को विभाजक से विभाजित करें, जैसे मूल:उप।"
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16374,7 +16374,7 @@ msgid "The permission set new employees of this type receive automatically; edit
 msgstr "अनुमति सेट जो इस प्रकार के नए कर्मचारी स्वचालित रूप से प्राप्त करते हैं; यहाँ संपादन केवल भविष्य की भर्ती के लिए टेम्पलेट को बदलता है - मौजूदा कर्मचारी जो उनके पास है वह रखते हैं जब तक कि स्पष्ट रूप से बड़े पैमाने पर अद्यतन नहीं किया जाता।"
 
 msgid "The plan could not be built"
-msgstr ""
+msgstr "योजना नहीं बनाई जा सकी"
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "वह संयंत्र, गोदाम, और साइटें जहां आपका काम और स्टॉक रहता है"
@@ -16693,7 +16693,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
 msgid "These rows are not imported until they are resolved; everything else imports on confirm."
-msgstr ""
+msgstr "ये पंक्तियाँ हल होने तक आयात नहीं होंगी; बाकी सब पुष्टि पर आयात हो जाएगा।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ भी हटाया नहीं जाता है और पुनर्स्थापन शुरू नहीं होता है।"
@@ -17422,13 +17422,13 @@ msgid "Unballoon"
 msgstr "गुब्बारा हटाएं"
 
 msgid "Unchanged"
-msgstr ""
+msgstr "अपरिवर्तित"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "गिनती न किए गए लाइनें पोस्ट पर अपरिवर्तित रहती हैं — उन्हें शून्य नहीं किया जाता है।"
 
 msgid "Under"
-msgstr ""
+msgstr "के अंतर्गत"
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Demand-आधारित पुनः आदेश के तहत, योजना एक पुनः भरण मात्रा की गणना करते समय इस रोलिंग विंडो के भीतर मांग को जोड़ता है।"
@@ -17653,7 +17653,7 @@ msgid "Update Permissions"
 msgstr "अनुमतियों को अपडेट करें"
 
 msgid "Update plan"
-msgstr ""
+msgstr "योजना अपडेट करें"
 
 msgid "Update Quantity"
 msgstr "मात्रा अपडेट करें"
@@ -17668,7 +17668,7 @@ msgid "Update the kanban information for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनः भरण के लिए कानबान जानकारी को अपडेट करें।"
 
 msgid "Update the plan to see the result. Confirming the import applies them all."
-msgstr ""
+msgstr "परिणाम देखने के लिए योजना अपडेट करें। आयात की पुष्टि करने पर सभी लागू हो जाएंगे।"
 
 msgid "Update the purchase order quantities"
 msgstr "क्रय आदेश मात्रा अपडेट करें"
@@ -17689,7 +17689,7 @@ msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"
 
 msgid "Updating the plan…"
-msgstr ""
+msgstr "योजना अपडेट की जा रही है…"
 
 msgid "Upgrade"
 msgstr "अपग्रेड करें"
@@ -17779,13 +17779,13 @@ msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
 
 msgid "Use the file's numbers"
-msgstr ""
+msgstr "फ़ाइल की संख्याएँ उपयोग करें"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
-msgstr ""
+msgstr "मौजूद होने पर फ़ाइल के मूल खाता स्तंभ, नाम पथ या योग पंक्तियों का उपयोग करें।"
 
 msgid "Use the hierarchy in the file"
-msgstr ""
+msgstr "फ़ाइल के पदानुक्रम का उपयोग करें"
 
 msgid "Used In"
 msgstr "में उपयोग किया गया"

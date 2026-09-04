@@ -49,28 +49,28 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
 msgid "(group)"
-msgstr ""
+msgstr "(группа)"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr ""
+msgstr "{0, plural, one {# счёт объединён с существующим} few {# счёта объединены с существующими} many {# счетов объединены с существующими} other {# счёта объединены с существующими}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
-msgstr ""
+msgstr "{0, plural, one {# счёт будет создан} few {# счёта будут созданы} many {# счетов будут созданы} other {# счёта будут созданы}}"
 
 #. placeholder {0}: s.updates
 msgid "{0, plural, one {# account to update} other {# accounts to update}}"
-msgstr ""
+msgstr "{0, plural, one {# счёт будет обновлён} few {# счёта будут обновлены} many {# счетов будут обновлены} other {# счёта будут обновлены}}"
 
 #. placeholder {0}: s.unchanged
 msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
-msgstr ""
+msgstr "{0, plural, one {# счёт без изменений} few {# счёта без изменений} many {# счетов без изменений} other {# счёта без изменений}}"
 
 #. placeholder {0}: s.groupsToCreate
 #. placeholder {1}: s.accountsToCreate
 msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
-msgstr ""
+msgstr "Будет создано: {0, plural, one {# группа} few {# группы} many {# групп} other {# группы}} и {1, plural, one {# счёт} few {# счёта} many {# счетов} other {# счёта}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,15 +82,15 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 
 #. placeholder {0}: s.errors
 msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# строка требует внимания} few {# строки требуют внимания} many {# строк требуют внимания} other {# строки требуют внимания}}"
 
 #. placeholder {0}: s.skipped
 msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
-msgstr ""
+msgstr "{0, plural, one {# строка пропущена} few {# строки пропущены} many {# строк пропущено} other {# строки пропущено}}"
 
 #. placeholder {0}: plan.nodes.length
 msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
-msgstr ""
+msgstr "{0, plural, one {Показать единственную строку} few {Показать все # строки} many {Показать все # строк} other {Показать все # строки}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -135,7 +135,7 @@ msgstr "{0} строк для сопоставления"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
+msgstr "Совпадающих счетов: {0}. {fileCount} получат номера из файла, {keepCount} сохранят номера Carbon."
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -254,7 +254,7 @@ msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
 
 msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
-msgstr ""
+msgstr "{fileCount, plural, one {# совпадающий счёт получит номер из файла.} few {# совпадающих счёта получат номера из файла.} many {# совпадающих счетов получат номера из файла.} other {# совпадающего счёта получат номера из файла.}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} из {count}"
@@ -271,7 +271,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
 msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
-msgstr ""
+msgstr "{keepCount, plural, one {# совпадающий счёт сохранит номер Carbon.} few {# совпадающих счёта сохранят номера Carbon.} many {# совпадающих счетов сохранят номера Carbon.} other {# совпадающего счёта сохранят номера Carbon.}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"
@@ -302,7 +302,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} будет переоткрыт для редактирования как ревизия {0}. Отправленный поставщику документ останется неизменным, пока вы не завершите и не переотправите заказ."
 
 msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
-msgstr ""
+msgstr "{pendingCount, plural, one {# решение ещё не в плане} few {# решения ещё не в плане} many {# решений ещё не в плане} other {# решения ещё не в плане}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
@@ -329,7 +329,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
 msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
-msgstr ""
+msgstr "{undecided, plural, one {# счёт уже существует в Carbon под другим номером.} few {# счёта уже существуют в Carbon под другими номерами.} many {# счетов уже существуют в Carbon под другими номерами.} other {# счёта уже существуют в Carbon под другими номерами.}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
@@ -2484,7 +2484,7 @@ msgid "Attempts"
 msgstr "Попытки"
 
 msgid "Attention"
-msgstr ""
+msgstr "Внимание"
 
 msgid "Attribute"
 msgstr "Атрибут"
@@ -3289,7 +3289,7 @@ msgid "Check the item ledger for any items with a negative on-hand quantity as o
 msgstr "Проверьте реестр номенклатуры на наличие номенклатур с отрицательным количеством на складе на конец периода — обычно это недостающее поступление или неправильно проведённая операция, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
 
 msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
-msgstr ""
+msgstr "Проверьте, что будет создано и изменено, перед импортом. Ничего не записывается, пока вы не подтвердите."
 
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
@@ -3298,7 +3298,7 @@ msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
 
 msgid "Checking the file against your chart of accounts…"
-msgstr ""
+msgstr "Сверка файла с вашим планом счетов…"
 
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
@@ -5479,7 +5479,7 @@ msgid "Details"
 msgstr "Детали"
 
 msgid "Detect from the file"
-msgstr ""
+msgstr "Определить по файлу"
 
 msgid "Developer"
 msgstr "Разработчик"
@@ -6636,7 +6636,7 @@ msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
 msgid "Existing"
-msgstr ""
+msgstr "Существующий"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
@@ -7780,7 +7780,7 @@ msgid "Groups"
 msgstr "Группы"
 
 msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
-msgstr ""
+msgstr "Группы берутся из файла. Группа верхнего уровня с тем же названием, что и группа в Carbon, объединяется с ней."
 
 msgid "Guided"
 msgstr "Управляемый"
@@ -7822,19 +7822,19 @@ msgid "Hide system quantities until the review step"
 msgstr "Скрывать системные количества до шага рассмотрения"
 
 msgid "Hide the full list"
-msgstr ""
+msgstr "Скрыть полный список"
 
 msgid "Hide, pin and reorder columns"
 msgstr "Скрывать, закреплять и переупорядочивать столбцы"
 
 msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
-msgstr ""
+msgstr "Иерархия взята из строк Begin-Total / End-Total файла."
 
 msgid "Hierarchy taken from the file's parent column."
-msgstr ""
+msgstr "Иерархия взята из столбца родительского счёта файла."
 
 msgid "Hierarchy taken from the paths in the account names."
-msgstr ""
+msgstr "Иерархия взята из путей в названиях счетов."
 
 msgid "High"
 msgstr "Высокий"
@@ -7975,7 +7975,7 @@ msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Co
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
 msgid "How should the accounts be organised?"
-msgstr ""
+msgstr "Как упорядочить счета?"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Как производственный заказ рангируется, когда планировщик распределяет мощность — ASAP занимает первое место, затем Жесткий срок, Мягкий срок и Нет срока в последнюю очередь. Только сигнал ранжирования; ни один тип срока не блокирует и не ограничивает размещение."
@@ -8098,7 +8098,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "Если вы хотите изменить номера деталей, нажмите Отмена и вручную назначьте детали для каждого элемента строки перед преобразованием."
 
 msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
-msgstr ""
+msgstr "Игнорировать группы из файла; каждый счёт помещается в группу Carbon, соответствующую его типу."
 
 msgid "II (normal default)"
 msgstr "II (обычно по умолчанию)"
@@ -8122,27 +8122,27 @@ msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
 
 msgid "Import"
-msgstr ""
+msgstr "Импорт"
 
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
 
 #. placeholder {0}: resolution.name
 msgid "Import as \"{0}\""
-msgstr ""
+msgstr "Импортировать как «{0}»"
 
 #. placeholder {0}: resolution.number
 msgid "Import as {0}"
-msgstr ""
+msgstr "Импортировать как {0}"
 
 msgid "Import results"
 msgstr "Импортировать результаты"
 
 msgid "Import under a different name"
-msgstr ""
+msgstr "Импортировать под другим названием"
 
 msgid "Import under a different number"
-msgstr ""
+msgstr "Импортировать под другим номером"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
@@ -8825,10 +8825,10 @@ msgid "Keep"
 msgstr "Сохранить"
 
 msgid "Keep Carbon's number"
-msgstr ""
+msgstr "Сохранить номер Carbon"
 
 msgid "Keep Carbon's numbers"
-msgstr ""
+msgstr "Сохранить номера Carbon"
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
@@ -9009,7 +9009,7 @@ msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
 
 msgid "Leave this account as it is"
-msgstr ""
+msgstr "Оставить этот счёт без изменений"
 
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
@@ -9090,7 +9090,7 @@ msgid "Likelihood"
 msgstr "Вероятность"
 
 msgid "Line"
-msgstr ""
+msgstr "Строка"
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
@@ -10019,7 +10019,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
 
 msgid "Needs attention"
-msgstr ""
+msgstr "Требует внимания"
 
 msgid "Needs fixing"
 msgstr "Требуется исправление"
@@ -10581,7 +10581,7 @@ msgid "No groups assigned"
 msgstr "Нет назначенных групп"
 
 msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
-msgstr ""
+msgstr "В файле нет иерархии: счета размещаются в существующих группах Carbon по типу счёта."
 
 msgid "No image"
 msgstr "Нет изображения"
@@ -10683,7 +10683,7 @@ msgid "No overtime scheduled"
 msgstr "Нет запланированных переработок"
 
 msgid "No parent column, row kinds, or paths in the names were found in the file."
-msgstr ""
+msgstr "В файле не найдены ни столбец родительского счёта, ни типы строк, ни пути в названиях."
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Родительские источники еще не записаны. Нажмите \"Пересчитать\" на странице планирования, чтобы обновить атрибуцию."
@@ -10969,7 +10969,7 @@ msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
 
 msgid "Nothing to import."
-msgstr ""
+msgstr "Нечего импортировать."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -11695,7 +11695,7 @@ msgid "Path"
 msgstr "Путь"
 
 msgid "Path separator in account names"
-msgstr ""
+msgstr "Разделитель пути в названиях счетов"
 
 msgid "Pay Rate"
 msgstr "Курс платежа"
@@ -11928,7 +11928,7 @@ msgid "Pinned"
 msgstr "Закреплено"
 
 msgid "Place accounts under Carbon's existing groups"
-msgstr ""
+msgstr "Разместить счета в существующих группах Carbon"
 
 msgid "Plan"
 msgstr "План"
@@ -13457,7 +13457,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "Решите эти вопросы перед завершением NCR: каждая строка должна иметь решение, которое не является Ожидающим, и количества связанных сущностей должны совпадать с количеством строки."
 
 msgid "Resolved"
-msgstr ""
+msgstr "Решено"
 
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
@@ -13931,16 +13931,16 @@ msgid "Salesperson"
 msgstr "Продавец"
 
 msgid "Same as {target}"
-msgstr ""
+msgstr "То же, что {target}"
 
 msgid "Same as {target} (keep its number)"
-msgstr ""
+msgstr "То же, что {target} (сохранить его номер)"
 
 msgid "Same as {target} (use this file's number)"
-msgstr ""
+msgstr "То же, что {target} (использовать номер из этого файла)"
 
 msgid "Same as {target}, keeping its number"
-msgstr ""
+msgstr "То же, что {target}, с сохранением его номера"
 
 msgid "Same as Book"
 msgstr "Как в книге"
@@ -14967,7 +14967,7 @@ msgid "Skip the released-but-not-started state — the job starts immediately on
 msgstr "Пропустить состояние «выпущено, но не начато» — задание начинается сразу при сканировании."
 
 msgid "Skip this row"
-msgstr ""
+msgstr "Пропустить эту строку"
 
 msgid "Skipped"
 msgstr "Пропущено"
@@ -15114,7 +15114,7 @@ msgid "Split shipment line"
 msgstr "Разделить строку отгрузки"
 
 msgid "Split the account names on a separator, e.g. Parent:Child."
-msgstr ""
+msgstr "Разделять названия счетов по разделителю, например Родитель:Потомок."
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16374,7 +16374,7 @@ msgid "The permission set new employees of this type receive automatically; edit
 msgstr "Набор прав доступа, который автоматически получают новые сотрудники этого типа; редактирование здесь изменяет шаблон только для будущих сотрудников — существующие сотрудники сохраняют свои права, пока их явно не обновить массово."
 
 msgid "The plan could not be built"
-msgstr ""
+msgstr "Не удалось построить план"
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Заводы, склады и объекты, где находятся ваша работа и запасы"
@@ -16693,7 +16693,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Эти операции по-прежнему находятся в режиме Черновик, поэтому их дебеты и кредиты не включены в главную книгу для этого периода. Проведите каждый из них или переведите его в более поздний открытый период."
 
 msgid "These rows are not imported until they are resolved; everything else imports on confirm."
-msgstr ""
+msgstr "Эти строки не будут импортированы, пока не будут решены; всё остальное импортируется при подтверждении."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Эти строки связаны с данными вне этой организации, поэтому не удаётся создать резервную копию текущих данных. Удаление их не может быть отменено. Если окажется, что они используются другими организациями в этой группе, ничего не удаляется и восстановление не начинается."
@@ -17422,13 +17422,13 @@ msgid "Unballoon"
 msgstr "Удалить выноску"
 
 msgid "Unchanged"
-msgstr ""
+msgstr "Без изменений"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."
 
 msgid "Under"
-msgstr ""
+msgstr "В группе"
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "При переупорядочении на основе потребности планирование суммирует потребность в этом скользящем окне при расчете количества пополнения"
@@ -17653,7 +17653,7 @@ msgid "Update Permissions"
 msgstr "Обновить Права доступа"
 
 msgid "Update plan"
-msgstr ""
+msgstr "Обновить план"
 
 msgid "Update Quantity"
 msgstr "Обновить количество"
@@ -17668,7 +17668,7 @@ msgid "Update the kanban information for scan-based replenishment."
 msgstr "Обновите информацию канбана для пополнения на основе сканирования."
 
 msgid "Update the plan to see the result. Confirming the import applies them all."
-msgstr ""
+msgstr "Обновите план, чтобы увидеть результат. Подтверждение импорта применит их все."
 
 msgid "Update the purchase order quantities"
 msgstr "Обновить количества Заказа поставщику"
@@ -17689,7 +17689,7 @@ msgid "Updated successfully"
 msgstr "Успешно обновлено"
 
 msgid "Updating the plan…"
-msgstr ""
+msgstr "Обновление плана…"
 
 msgid "Upgrade"
 msgstr "Обновить"
@@ -17779,13 +17779,13 @@ msgid "Use metric system for default material dimensions."
 msgstr "Используйте метрическую систему для измерений материала по умолчанию."
 
 msgid "Use the file's numbers"
-msgstr ""
+msgstr "Использовать номера из файла"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
-msgstr ""
+msgstr "Использовать столбец родительского счёта, пути в названиях или итоговые строки файла, если они есть."
 
 msgid "Use the hierarchy in the file"
-msgstr ""
+msgstr "Использовать иерархию из файла"
 
 msgid "Used In"
 msgstr "Используется в"

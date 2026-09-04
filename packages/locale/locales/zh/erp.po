@@ -49,28 +49,28 @@ msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
 msgid "(group)"
-msgstr ""
+msgstr "（组）"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr ""
+msgstr "{0, plural, other {# 个科目已合并到现有科目}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
-msgstr ""
+msgstr "{0, plural, other {待创建 # 个科目}}"
 
 #. placeholder {0}: s.updates
 msgid "{0, plural, one {# account to update} other {# accounts to update}}"
-msgstr ""
+msgstr "{0, plural, other {待更新 # 个科目}}"
 
 #. placeholder {0}: s.unchanged
 msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
-msgstr ""
+msgstr "{0, plural, other {# 个科目无变化}}"
 
 #. placeholder {0}: s.groupsToCreate
 #. placeholder {1}: s.accountsToCreate
 msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
-msgstr ""
+msgstr "待创建 {0, plural, other {# 个组}}和 {1, plural, other {# 个科目}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,15 +82,15 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。�
 
 #. placeholder {0}: s.errors
 msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
-msgstr ""
+msgstr "{0, plural, other {# 行需要处理}}"
 
 #. placeholder {0}: s.skipped
 msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
-msgstr ""
+msgstr "{0, plural, other {已跳过 # 行}}"
 
 #. placeholder {0}: plan.nodes.length
 msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
-msgstr ""
+msgstr "{0, plural, other {显示全部 # 行}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -135,7 +135,7 @@ msgstr "{0} 行待映射"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
+msgstr "{0} 个匹配的科目：{fileCount} 个采用文件中的编号，{keepCount} 个保留 Carbon 中的编号。"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -254,7 +254,7 @@ msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
 msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
-msgstr ""
+msgstr "{fileCount, plural, other {# 个匹配的科目采用文件中的编号。}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
@@ -271,7 +271,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
 msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
-msgstr ""
+msgstr "{keepCount, plural, other {# 个匹配的科目保留 Carbon 中的编号。}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -302,7 +302,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
 
 msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
-msgstr ""
+msgstr "{pendingCount, plural, other {# 项决定尚未纳入计划}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
@@ -329,7 +329,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
 msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
-msgstr ""
+msgstr "{undecided, plural, other {# 个科目已在 Carbon 中以其他编号存在。}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
@@ -2484,7 +2484,7 @@ msgid "Attempts"
 msgstr "尝试次数"
 
 msgid "Attention"
-msgstr ""
+msgstr "需处理"
 
 msgid "Attribute"
 msgstr "属性"
@@ -3289,7 +3289,7 @@ msgid "Check the item ledger for any items with a negative on-hand quantity as o
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
 
 msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
-msgstr ""
+msgstr "导入前请检查将要创建和更改的内容。在您确认之前不会写入任何数据。"
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
@@ -3298,7 +3298,7 @@ msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
 
 msgid "Checking the file against your chart of accounts…"
-msgstr ""
+msgstr "正在将文件与您的会计科目表进行核对…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -5479,7 +5479,7 @@ msgid "Details"
 msgstr "详情"
 
 msgid "Detect from the file"
-msgstr ""
+msgstr "从文件中检测"
 
 msgid "Developer"
 msgstr "开发人员"
@@ -6636,7 +6636,7 @@ msgid "Exemption Reason"
 msgstr "豁免原因"
 
 msgid "Existing"
-msgstr ""
+msgstr "现有"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项进行重新映射。"
@@ -7780,7 +7780,7 @@ msgid "Groups"
 msgstr "组"
 
 msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
-msgstr ""
+msgstr "分组来自文件。与 Carbon 中的组同名的顶级组将合并到该组中。"
 
 msgid "Guided"
 msgstr "引导式"
@@ -7822,19 +7822,19 @@ msgid "Hide system quantities until the review step"
 msgstr "在评审步骤前隐藏系统数量"
 
 msgid "Hide the full list"
-msgstr ""
+msgstr "隐藏完整列表"
 
 msgid "Hide, pin and reorder columns"
 msgstr "隐藏、固定和重新排序列"
 
 msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
-msgstr ""
+msgstr "层级取自文件中的 Begin-Total / End-Total 行。"
 
 msgid "Hierarchy taken from the file's parent column."
-msgstr ""
+msgstr "层级取自文件中的上级科目列。"
 
 msgid "Hierarchy taken from the paths in the account names."
-msgstr ""
+msgstr "层级取自科目名称中的路径。"
 
 msgid "High"
 msgstr "高"
@@ -7975,7 +7975,7 @@ msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Co
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
 
 msgid "How should the accounts be organised?"
-msgstr ""
+msgstr "应如何组织这些科目？"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "调度程序分配产能时工单的排名方式——立即执行优先，然后是硬期限、软期限，最后是无期限。仅作为排序信号；任何期限类型都不会阻止或限制安排。"
@@ -8098,7 +8098,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
 
 msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
-msgstr ""
+msgstr "忽略文件中的组；每个科目归入与其科目类型匹配的 Carbon 组。"
 
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
@@ -8122,27 +8122,27 @@ msgid "Implementation Lead"
 msgstr "实施主管"
 
 msgid "Import"
-msgstr ""
+msgstr "导入"
 
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
 #. placeholder {0}: resolution.name
 msgid "Import as \"{0}\""
-msgstr ""
+msgstr "导入为“{0}”"
 
 #. placeholder {0}: resolution.number
 msgid "Import as {0}"
-msgstr ""
+msgstr "导入为 {0}"
 
 msgid "Import results"
 msgstr "导入结果"
 
 msgid "Import under a different name"
-msgstr ""
+msgstr "以其他名称导入"
 
 msgid "Import under a different number"
-msgstr ""
+msgstr "以其他编号导入"
 
 msgid "Import your BOM"
 msgstr "导入您的BOM"
@@ -8825,10 +8825,10 @@ msgid "Keep"
 msgstr "保留"
 
 msgid "Keep Carbon's number"
-msgstr ""
+msgstr "保留 Carbon 中的编号"
 
 msgid "Keep Carbon's numbers"
-msgstr ""
+msgstr "保留 Carbon 中的编号"
 
 msgid "Keep Current"
 msgstr "保持当前"
@@ -9009,7 +9009,7 @@ msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
 
 msgid "Leave this account as it is"
-msgstr ""
+msgstr "保持此科目不变"
 
 msgid "Leave this page"
 msgstr "离开此页面"
@@ -9090,7 +9090,7 @@ msgid "Likelihood"
 msgstr "可能性"
 
 msgid "Line"
-msgstr ""
+msgstr "行"
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -10019,7 +10019,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
 
 msgid "Needs attention"
-msgstr ""
+msgstr "需要处理"
 
 msgid "Needs fixing"
 msgstr "需要修复"
@@ -10581,7 +10581,7 @@ msgid "No groups assigned"
 msgstr "没有已分配的组"
 
 msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
-msgstr ""
+msgstr "文件中没有层级：科目按科目类型归入 Carbon 现有的组。"
 
 msgid "No image"
 msgstr "没有图像"
@@ -10683,7 +10683,7 @@ msgid "No overtime scheduled"
 msgstr "没有安排加班"
 
 msgid "No parent column, row kinds, or paths in the names were found in the file."
-msgstr ""
+msgstr "文件中未找到上级科目列、行类型或名称中的路径。"
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以刷新归因。"
@@ -10969,7 +10969,7 @@ msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
 
 msgid "Nothing to import."
-msgstr ""
+msgstr "没有可导入的内容。"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -11695,7 +11695,7 @@ msgid "Path"
 msgstr "路径"
 
 msgid "Path separator in account names"
-msgstr ""
+msgstr "科目名称中的路径分隔符"
 
 msgid "Pay Rate"
 msgstr "支付汇率"
@@ -11928,7 +11928,7 @@ msgid "Pinned"
 msgstr "已固定"
 
 msgid "Place accounts under Carbon's existing groups"
-msgstr ""
+msgstr "将科目归入 Carbon 现有的组"
 
 msgid "Plan"
 msgstr "计划"
@@ -13457,7 +13457,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
 
 msgid "Resolved"
-msgstr ""
+msgstr "已解决"
 
 msgid "Resolved Price"
 msgstr "已解决价格"
@@ -13931,16 +13931,16 @@ msgid "Salesperson"
 msgstr "销售人员"
 
 msgid "Same as {target}"
-msgstr ""
+msgstr "与 {target} 相同"
 
 msgid "Same as {target} (keep its number)"
-msgstr ""
+msgstr "与 {target} 相同（保留其编号）"
 
 msgid "Same as {target} (use this file's number)"
-msgstr ""
+msgstr "与 {target} 相同（使用此文件中的编号）"
 
 msgid "Same as {target}, keeping its number"
-msgstr ""
+msgstr "与 {target} 相同，保留其编号"
 
 msgid "Same as Book"
 msgstr "与账面相同"
@@ -14967,7 +14967,7 @@ msgid "Skip the released-but-not-started state — the job starts immediately on
 msgstr "跳过已发布但未启动状态 — 扫码时工单立即启动。"
 
 msgid "Skip this row"
-msgstr ""
+msgstr "跳过此行"
 
 msgid "Skipped"
 msgstr "已跳过"
@@ -15114,7 +15114,7 @@ msgid "Split shipment line"
 msgstr "拆分发货行"
 
 msgid "Split the account names on a separator, e.g. Parent:Child."
-msgstr ""
+msgstr "按分隔符拆分科目名称，例如“上级:下级”。"
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16374,7 +16374,7 @@ msgid "The permission set new employees of this type receive automatically; edit
 msgstr "该类型的新员工自动接收的权限集；在此处编辑仅更改模板以供将来雇用 - 现有员工保留他们拥有的内容，除非明确进行批量更新。"
 
 msgid "The plan could not be built"
-msgstr ""
+msgstr "无法生成计划"
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "您的工作和库存所在的工厂、仓库和场所"
@@ -16693,7 +16693,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
 msgid "These rows are not imported until they are resolved; everything else imports on confirm."
-msgstr ""
+msgstr "这些行在解决之前不会导入；其余内容将在确认时导入。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
@@ -17422,13 +17422,13 @@ msgid "Unballoon"
 msgstr "取消气球标注"
 
 msgid "Unchanged"
-msgstr ""
+msgstr "无变化"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
 
 msgid "Under"
-msgstr ""
+msgstr "所属"
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "在基于需求的再订购下，计划在计算补货数量时对该滚动窗口内的需求进行求和。"
@@ -17653,7 +17653,7 @@ msgid "Update Permissions"
 msgstr "更新权限"
 
 msgid "Update plan"
-msgstr ""
+msgstr "更新计划"
 
 msgid "Update Quantity"
 msgstr "更新数量"
@@ -17668,7 +17668,7 @@ msgid "Update the kanban information for scan-based replenishment."
 msgstr "更新看板信息以进行扫描式补货。"
 
 msgid "Update the plan to see the result. Confirming the import applies them all."
-msgstr ""
+msgstr "更新计划以查看结果。确认导入将全部应用。"
 
 msgid "Update the purchase order quantities"
 msgstr "更新采购订单数量"
@@ -17689,7 +17689,7 @@ msgid "Updated successfully"
 msgstr "更新成功"
 
 msgid "Updating the plan…"
-msgstr ""
+msgstr "正在更新计划…"
 
 msgid "Upgrade"
 msgstr "升级"
@@ -17779,13 +17779,13 @@ msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"
 
 msgid "Use the file's numbers"
-msgstr ""
+msgstr "使用文件中的编号"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
-msgstr ""
+msgstr "存在时使用文件中的上级科目列、名称路径或合计行。"
 
 msgid "Use the hierarchy in the file"
-msgstr ""
+msgstr "使用文件中的层级"
 
 msgid "Used In"
 msgstr "用于"

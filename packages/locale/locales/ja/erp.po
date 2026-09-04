@@ -49,28 +49,28 @@ msgid "(excluded for this customer)"
 msgstr "（このお客様向けに除外されています）"
 
 msgid "(group)"
-msgstr ""
+msgstr "（グループ）"
 
 #. placeholder {0}: s.linked
 msgid "{0, plural, one {# account merged into an existing one} other {# accounts merged into existing ones}}"
-msgstr ""
+msgstr "{0, plural, other {既存の科目に統合: #件}}"
 
 #. placeholder {0}: s.accountsToCreate
 msgid "{0, plural, one {# account to create} other {# accounts to create}}"
-msgstr ""
+msgstr "{0, plural, other {作成する科目: #件}}"
 
 #. placeholder {0}: s.updates
 msgid "{0, plural, one {# account to update} other {# accounts to update}}"
-msgstr ""
+msgstr "{0, plural, other {更新する科目: #件}}"
 
 #. placeholder {0}: s.unchanged
 msgid "{0, plural, one {# account unchanged} other {# accounts unchanged}}"
-msgstr ""
+msgstr "{0, plural, other {変更なしの科目: #件}}"
 
 #. placeholder {0}: s.groupsToCreate
 #. placeholder {1}: s.accountsToCreate
 msgid "{0, plural, one {# group} other {# groups}} and {1, plural, one {# account} other {# accounts}} to create"
-msgstr ""
+msgstr "作成する: {0, plural, other {グループ #件}}、{1, plural, other {科目 #件}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,15 +82,15 @@ msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンク�
 
 #. placeholder {0}: s.errors
 msgid "{0, plural, one {# row needs attention} other {# rows need attention}}"
-msgstr ""
+msgstr "{0, plural, other {要確認の行: #件}}"
 
 #. placeholder {0}: s.skipped
 msgid "{0, plural, one {# row skipped} other {# rows skipped}}"
-msgstr ""
+msgstr "{0, plural, other {スキップした行: #件}}"
 
 #. placeholder {0}: plan.nodes.length
 msgid "{0, plural, one {Show the only row} other {Show all # rows}}"
-msgstr ""
+msgstr "{0, plural, other {全 # 行を表示}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -135,7 +135,7 @@ msgstr "{0}件のラインをマップします"
 
 #. placeholder {0}: matching.length
 msgid "{0} matching accounts: {fileCount} take the file's numbers, {keepCount} keep Carbon's."
-msgstr ""
+msgstr "一致する科目 {0}件: {fileCount}件はファイルの番号を使用し、{keepCount}件はCarbonの番号を維持します。"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -254,7 +254,7 @@ msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 
 msgid "{fileCount, plural, one {# matching account takes the file's number.} other {# matching accounts take the file's numbers.}}"
-msgstr ""
+msgstr "{fileCount, plural, other {一致する科目 #件がファイルの番号を使用します。}}"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
@@ -271,7 +271,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}件を追加、{updated}件を更新、{0}件を修正が必要、{1}件をスキップ。"
 
 msgid "{keepCount, plural, one {# matching account keeps its Carbon number.} other {# matching accounts keep their Carbon numbers.}}"
-msgstr ""
+msgstr "{keepCount, plural, other {一致する科目 #件がCarbonの番号を維持します。}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -302,7 +302,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
 
 msgid "{pendingCount, plural, one {# decision not in the plan yet} other {# decisions not in the plan yet}}"
-msgstr ""
+msgstr "{pendingCount, plural, other {プランに未反映の決定: #件}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
@@ -329,7 +329,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
 msgid "{undecided, plural, one {# account already exists in Carbon under another number.} other {# accounts already exist in Carbon under other numbers.}}"
-msgstr ""
+msgstr "{undecided, plural, other {#件の科目は別の番号でCarbonに既に存在します。}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}はスケジュール化できません"
@@ -2484,7 +2484,7 @@ msgid "Attempts"
 msgstr "試行"
 
 msgid "Attention"
-msgstr ""
+msgstr "要確認"
 
 msgid "Attribute"
 msgstr "属性"
@@ -3289,7 +3289,7 @@ msgid "Check the item ledger for any items with a negative on-hand quantity as o
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
 
 msgid "Check what will be created and changed before importing. Nothing is written until you confirm."
-msgstr ""
+msgstr "インポート前に、作成・変更される内容を確認してください。確認するまで何も書き込まれません。"
 
 msgid "Check your email"
 msgstr "メールを確認してください"
@@ -3298,7 +3298,7 @@ msgid "Checking Stripe for this customer…"
 msgstr "この得意先の Stripe を確認中…"
 
 msgid "Checking the file against your chart of accounts…"
-msgstr ""
+msgstr "ファイルを勘定科目表と照合しています…"
 
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
@@ -5479,7 +5479,7 @@ msgid "Details"
 msgstr "詳細"
 
 msgid "Detect from the file"
-msgstr ""
+msgstr "ファイルから検出"
 
 msgid "Developer"
 msgstr "開発者"
@@ -6636,7 +6636,7 @@ msgid "Exemption Reason"
 msgstr "免除理由"
 
 msgid "Existing"
-msgstr ""
+msgstr "既存"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
@@ -7780,7 +7780,7 @@ msgid "Groups"
 msgstr "グループ"
 
 msgid "Groups come from the file. A top-level group with the same name as a Carbon group is merged into it."
-msgstr ""
+msgstr "グループはファイルから取得します。Carbonのグループと同名の最上位グループはそのグループに統合されます。"
 
 msgid "Guided"
 msgstr "ガイド付き"
@@ -7822,19 +7822,19 @@ msgid "Hide system quantities until the review step"
 msgstr "レビューステップまでシステム数量を非表示にする"
 
 msgid "Hide the full list"
-msgstr ""
+msgstr "全リストを非表示"
 
 msgid "Hide, pin and reorder columns"
 msgstr "列を非表示、ピン留め、並び替え"
 
 msgid "Hierarchy taken from the file's Begin-Total / End-Total rows."
-msgstr ""
+msgstr "階層はファイルのBegin-Total / End-Total行から取得しました。"
 
 msgid "Hierarchy taken from the file's parent column."
-msgstr ""
+msgstr "階層はファイルの親科目列から取得しました。"
 
 msgid "Hierarchy taken from the paths in the account names."
-msgstr ""
+msgstr "階層は科目名のパスから取得しました。"
 
 msgid "High"
 msgstr "高"
@@ -7975,7 +7975,7 @@ msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Co
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
 
 msgid "How should the accounts be organised?"
-msgstr ""
+msgstr "科目をどのように整理しますか？"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "スケジューラーが容量を割り当てるときに製造指図がどのようにランク付けされるか — ASAP が最初に請求し、その後ハード期限、ソフト期限、期限なしが最後です。ランキング信号のみ；期限タイプは配置をブロックまたはゲートしません。"
@@ -8098,7 +8098,7 @@ msgid "If you wish to change the part numbers, please click Cancel and manually 
 msgstr "部品番号を変更したい場合は、[キャンセル]をクリックして、変換する前に各行アイテムの部品を手動で割り当ててください。"
 
 msgid "Ignore the file's groups; each account goes under the Carbon group that matches its account type."
-msgstr ""
+msgstr "ファイルのグループを無視し、各科目を科目タイプに対応するCarbonのグループに配置します。"
 
 msgid "II (normal default)"
 msgstr "II（通常デフォルト）"
@@ -8122,27 +8122,27 @@ msgid "Implementation Lead"
 msgstr "実施リード"
 
 msgid "Import"
-msgstr ""
+msgstr "インポート"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
 #. placeholder {0}: resolution.name
 msgid "Import as \"{0}\""
-msgstr ""
+msgstr "「{0}」としてインポート"
 
 #. placeholder {0}: resolution.number
 msgid "Import as {0}"
-msgstr ""
+msgstr "{0} としてインポート"
 
 msgid "Import results"
 msgstr "インポート結果"
 
 msgid "Import under a different name"
-msgstr ""
+msgstr "別の名前でインポート"
 
 msgid "Import under a different number"
-msgstr ""
+msgstr "別の番号でインポート"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
@@ -8825,10 +8825,10 @@ msgid "Keep"
 msgstr "保持"
 
 msgid "Keep Carbon's number"
-msgstr ""
+msgstr "Carbonの番号を維持"
 
 msgid "Keep Carbon's numbers"
-msgstr ""
+msgstr "Carbonの番号を維持"
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
@@ -9009,7 +9009,7 @@ msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
 msgid "Leave this account as it is"
-msgstr ""
+msgstr "この科目をそのままにする"
 
 msgid "Leave this page"
 msgstr "このページを離れる"
@@ -9090,7 +9090,7 @@ msgid "Likelihood"
 msgstr "発生可能性"
 
 msgid "Line"
-msgstr ""
+msgstr "行"
 
 msgid "Line description (optional)"
 msgstr "行の説明 (オプション)"
@@ -10019,7 +10019,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "ビジネスプランまたはパートナープランが必要です。"
 
 msgid "Needs attention"
-msgstr ""
+msgstr "要確認"
 
 msgid "Needs fixing"
 msgstr "修理が必要です"
@@ -10581,7 +10581,7 @@ msgid "No groups assigned"
 msgstr "グループが割り当てられていません"
 
 msgid "No hierarchy in the file: accounts are placed under Carbon's existing groups by account type."
-msgstr ""
+msgstr "ファイルに階層がありません。科目は科目タイプごとにCarbonの既存グループに配置されます。"
 
 msgid "No image"
 msgstr "画像なし"
@@ -10683,7 +10683,7 @@ msgid "No overtime scheduled"
 msgstr "残業予定なし"
 
 msgid "No parent column, row kinds, or paths in the names were found in the file."
-msgstr ""
+msgstr "ファイルに親科目列、行の種類、名前内のパスのいずれも見つかりませんでした。"
 
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "親ソースはまだ記録されていません。計画ページの「再計算」をクリックして属性を更新してください。"
@@ -10969,7 +10969,7 @@ msgid "Nothing scheduled — add a station below."
 msgstr "スケジュールがありません。以下にステーションを追加してください。"
 
 msgid "Nothing to import."
-msgstr ""
+msgstr "インポートするものはありません。"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
@@ -11695,7 +11695,7 @@ msgid "Path"
 msgstr "パス"
 
 msgid "Path separator in account names"
-msgstr ""
+msgstr "科目名のパス区切り文字"
 
 msgid "Pay Rate"
 msgstr "支払レート"
@@ -11928,7 +11928,7 @@ msgid "Pinned"
 msgstr "ピン留め"
 
 msgid "Place accounts under Carbon's existing groups"
-msgstr ""
+msgstr "Carbonの既存グループに科目を配置"
 
 msgid "Plan"
 msgstr "計画"
@@ -13457,7 +13457,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "NCRを完了する前にこれらを解決してください。すべての行に保留中ではない処置が必要で、リンクされたエンティティの数量は行の数量と一致する必要があります。"
 
 msgid "Resolved"
-msgstr ""
+msgstr "解決済み"
 
 msgid "Resolved Price"
 msgstr "解決済み価格"
@@ -13931,16 +13931,16 @@ msgid "Salesperson"
 msgstr "営業担当者"
 
 msgid "Same as {target}"
-msgstr ""
+msgstr "{target} と同じ"
 
 msgid "Same as {target} (keep its number)"
-msgstr ""
+msgstr "{target} と同じ（その番号を維持）"
 
 msgid "Same as {target} (use this file's number)"
-msgstr ""
+msgstr "{target} と同じ（このファイルの番号を使用）"
 
 msgid "Same as {target}, keeping its number"
-msgstr ""
+msgstr "{target} と同じ（番号を維持）"
 
 msgid "Same as Book"
 msgstr "簿価と同じ"
@@ -14967,7 +14967,7 @@ msgid "Skip the released-but-not-started state — the job starts immediately on
 msgstr "リリースされたが開始していない状態をスキップします。スキャン時にジョブがすぐに開始します。"
 
 msgid "Skip this row"
-msgstr ""
+msgstr "この行をスキップ"
 
 msgid "Skipped"
 msgstr "スキップ済"
@@ -15114,7 +15114,7 @@ msgid "Split shipment line"
 msgstr "出荷明細を分割"
 
 msgid "Split the account names on a separator, e.g. Parent:Child."
-msgstr ""
+msgstr "区切り文字で科目名を分割します（例: 親:子）。"
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -16374,7 +16374,7 @@ msgid "The permission set new employees of this type receive automatically; edit
 msgstr "このタイプの新しい従業員が自動的に受け取る権限セット。ここで編集すると、将来の雇用のみがテンプレートを変更します。既存の従業員は、明示的に大量更新されない限り、持っているものを保持します。"
 
 msgid "The plan could not be built"
-msgstr ""
+msgstr "プランを作成できませんでした"
 
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサイト"
@@ -16693,7 +16693,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
 msgid "These rows are not imported until they are resolved; everything else imports on confirm."
-msgstr ""
+msgstr "これらの行は解決されるまでインポートされません。それ以外は確認時にインポートされます。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
@@ -17422,13 +17422,13 @@ msgid "Unballoon"
 msgstr "バルーンを削除"
 
 msgid "Unchanged"
-msgstr ""
+msgstr "変更なし"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"
 
 msgid "Under"
-msgstr ""
+msgstr "所属"
 
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "所要量ベースの再発注では、補給数量を計算する際、計画はこのローリングウィンドウ内の所要量を合計します。"
@@ -17653,7 +17653,7 @@ msgid "Update Permissions"
 msgstr "権限を更新"
 
 msgid "Update plan"
-msgstr ""
+msgstr "プランを更新"
 
 msgid "Update Quantity"
 msgstr "数量を更新"
@@ -17668,7 +17668,7 @@ msgid "Update the kanban information for scan-based replenishment."
 msgstr "スキャンベースの補充用かんばん情報を更新します。"
 
 msgid "Update the plan to see the result. Confirming the import applies them all."
-msgstr ""
+msgstr "結果を確認するにはプランを更新してください。インポートを確認するとすべて適用されます。"
 
 msgid "Update the purchase order quantities"
 msgstr "発注書の数量を更新"
@@ -17689,7 +17689,7 @@ msgid "Updated successfully"
 msgstr "正常に更新されました"
 
 msgid "Updating the plan…"
-msgstr ""
+msgstr "プランを更新しています…"
 
 msgid "Upgrade"
 msgstr "アップグレード"
@@ -17779,13 +17779,13 @@ msgid "Use metric system for default material dimensions."
 msgstr "デフォルト材料ディメンションにメートル法を使用してください。"
 
 msgid "Use the file's numbers"
-msgstr ""
+msgstr "ファイルの番号を使用"
 
 msgid "Use the file's parent column, name paths, or total rows when present."
-msgstr ""
+msgstr "ファイルに親科目列、名前のパス、合計行がある場合はそれを使用します。"
 
 msgid "Use the hierarchy in the file"
-msgstr ""
+msgstr "ファイルの階層を使用"
 
 msgid "Used In"
 msgstr "使用されている"
