@@ -63,6 +63,12 @@ const config = {
         permanent: true,
       },
       { source: "/mcp", destination: "/api/mcp", permanent: true },
+      // API keys moved from Reference into the Building section.
+      {
+        source: "/docs/reference/api-keys",
+        destination: "/docs/building/api-keys",
+        permanent: true,
+      },
     ];
   },
 };
