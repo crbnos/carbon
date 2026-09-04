@@ -7,6 +7,9 @@ import {
   DropdownMenuSeparator,
   MenuIcon,
   MenuItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -14,12 +17,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   LuCalendar,
+  LuCirclePlay,
   LuEye,
   LuFactory,
   LuHash,
   LuLayers,
   LuLoaderCircle,
   LuTrash,
+  LuUndo2,
   LuUsers
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
@@ -35,16 +40,43 @@ type BatchesTableProps = {
   count: number;
 };
 
-const BATCH_STATUSES = ["Active", "Completing", "Completed"] as const;
+const BATCH_STATUSES = [
+  "Planned",
+  "Active",
+  "Completing",
+  "Completed"
+] as const;
 
-function BatchStatus({ status }: { status: string | null }) {
+// The ONE status → badge map for batches: the list, its filter options, and the
+// detail drawer all render through it. The stored `Active` value is DISPLAYED
+// as "Released" (exactly like jobs display `Ready` as "Released"); `Planned` is
+// the pre-floor state — composed, not yet dispatched.
+export function BatchStatus({ status }: { status: string | null }) {
   switch (status) {
     case "Completed":
-      return <Badge variant="green">{status}</Badge>;
+      return (
+        <Badge variant="green">
+          <Trans>Completed</Trans>
+        </Badge>
+      );
     case "Completing":
-      return <Badge variant="yellow">{status}</Badge>;
+      return (
+        <Badge variant="yellow">
+          <Trans>Completing</Trans>
+        </Badge>
+      );
     case "Active":
-      return <Badge variant="secondary">{status}</Badge>;
+      return (
+        <Badge variant="secondary">
+          <Trans>Released</Trans>
+        </Badge>
+      );
+    case "Planned":
+      return (
+        <Badge variant="outline">
+          <Trans>Planned</Trans>
+        </Badge>
+      );
     default:
       return null;
   }
@@ -56,7 +88,38 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const navigate = useNavigate();
   const canUpdate = permissions.can("update", "production");
 
-  // "Delete" is the edge fn's dissolve — only offered while the batch is
+  // Release (Planned → Active) / Unrelease (Active → Planned) post to the
+  // batching action; the server's refusal (no work center, production already
+  // recorded) comes back as { success: false, message } and lands in the toast.
+  const releaseFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+  }>();
+  const wasReleasing = useRef(false);
+  useEffect(() => {
+    if (releaseFetcher.state !== "idle") {
+      wasReleasing.current = true;
+      return;
+    }
+    if (!wasReleasing.current) return;
+    wasReleasing.current = false;
+    const d = releaseFetcher.data;
+    if (d?.success === false && d.message) {
+      toast.error(d.message);
+    }
+  }, [releaseFetcher.state, releaseFetcher.data]);
+
+  const submitBatchIntent = useCallback(
+    (intent: "release" | "unrelease", batchId: string) => {
+      releaseFetcher.submit(
+        { intent, batchId },
+        { method: "post", action: path.to.priorityBatchingUpdate }
+      );
+    },
+    [releaseFetcher]
+  );
+
+  // "Delete" is the edge fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (
@@ -65,9 +128,46 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>
+        {row.status === "Planned" &&
+          (row.workCenterId ? (
+            <MenuItem
+              disabled={!canUpdate}
+              onClick={() => submitBatchIntent("release", row.id)}
+            >
+              <MenuIcon icon={<LuCirclePlay />} />
+              {t`Release Batch`}
+            </MenuItem>
+          ) : (
+            // A disabled item swallows pointer events, so the tooltip hangs on
+            // a wrapper — the server refuses a release without a work center.
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <MenuItem disabled>
+                    <MenuIcon icon={<LuCirclePlay />} />
+                    {t`Release Batch`}
+                  </MenuItem>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {t`Assign a work center first`}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        {row.status === "Active" && (
+          <MenuItem
+            disabled={!canUpdate}
+            onClick={() => submitBatchIntent("unrelease", row.id)}
+          >
+            <MenuIcon icon={<LuUndo2 />} />
+            {t`Unrelease Batch`}
+          </MenuItem>
+        )}
         <MenuItem
           destructive
-          disabled={row.status !== "Active" || !canUpdate}
+          disabled={
+            (row.status !== "Planned" && row.status !== "Active") || !canUpdate
+          }
           onClick={() => navigate(path.to.deleteOperationBatch(row.id))}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -75,12 +175,13 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         </MenuItem>
       </>
     ),
-    [navigate, canUpdate, t]
+    [navigate, canUpdate, submitBatchIntent, t]
   );
 
-  // Bulk dissolve for the selected rows — Active batches only (a started batch
-  // must be completed, not dissolved). Submits the ids to the dissolve action;
-  // the fetcher revalidates the loader and we toast the summary.
+  // Bulk dissolve for the selected rows — Planned/Active batches only (a
+  // started batch must be completed, not dissolved). Submits the ids to the
+  // dissolve action; the fetcher revalidates the loader and we toast the
+  // summary.
   const dissolveFetcher = useFetcher<{
     success?: boolean;
     message?: string;
@@ -113,7 +214,9 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
 
   const renderActions = useCallback(
     (selectedRows: JobOperationBatch[]) => {
-      const active = selectedRows.filter((r) => r.status === "Active");
+      const dissolvable = selectedRows.filter(
+        (r) => r.status === "Planned" || r.status === "Active"
+      );
       return (
         <DropdownMenuContent align="end" className="min-w-[220px]">
           <DropdownMenuLabel>
@@ -122,10 +225,10 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             destructive
-            disabled={active.length === 0 || !canUpdate}
+            disabled={dissolvable.length === 0 || !canUpdate}
             onClick={() =>
               dissolveFetcher.submit(
-                { batchIds: active.map((r) => r.id) },
+                { batchIds: dissolvable.map((r) => r.id) },
                 {
                   method: "post",
                   action: path.to.dissolveOperationBatches,
@@ -135,7 +238,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             }
           >
             <DropdownMenuIcon icon={<LuTrash />} />
-            {t`Dissolve ${active.length} batches`}
+            {t`Dissolve ${dissolvable.length} batches`}
           </DropdownMenuItem>
         </DropdownMenuContent>
       );

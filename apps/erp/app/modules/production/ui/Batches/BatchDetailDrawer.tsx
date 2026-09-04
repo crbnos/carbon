@@ -18,13 +18,18 @@ import {
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
+  toast,
   VStack
 } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
+  LuCirclePlay,
   LuHammer,
   LuHardHat,
   LuLayers,
@@ -32,15 +37,17 @@ import {
   LuPrinter,
   LuStickyNote,
   LuTimer,
-  LuTrash
+  LuTrash,
+  LuUndo2
 } from "react-icons/lu";
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { DateTime, EmployeeAvatar, ItemThumbnail } from "~/components";
 import { path } from "~/utils/path";
 import type {
   JobOperationBatchDetail,
   JobOperationBatchEvent
 } from "../../types";
+import { BatchStatus } from "./BatchesTable";
 import { batchPlanBreakdown } from "./batch-builder-logic";
 
 const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;
@@ -78,6 +85,38 @@ export function BatchDetailDrawer({
   const { t } = useLingui();
 
   const isLive = batch.status === "Active" || batch.status === "Completing";
+  // Planned and Active batches stay composable/dissolvable; the edge fn's
+  // production-event guard is what actually freezes a started batch.
+  const isPreStart = batch.status === "Planned" || batch.status === "Active";
+
+  // Release (Planned → Active) / Unrelease (Active → Planned). The server's
+  // refusal (no work center, production already recorded) comes back as
+  // { success: false, message } and lands in the toast; success revalidates
+  // the loader and the badge flips.
+  const releaseFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+  }>();
+  const wasReleasing = useRef(false);
+  useEffect(() => {
+    if (releaseFetcher.state !== "idle") {
+      wasReleasing.current = true;
+      return;
+    }
+    if (!wasReleasing.current) return;
+    wasReleasing.current = false;
+    const d = releaseFetcher.data;
+    if (d?.success === false && d.message) {
+      toast.error(d.message);
+    }
+  }, [releaseFetcher.state, releaseFetcher.data]);
+
+  const submitBatchIntent = (intent: "release" | "unrelease") => {
+    releaseFetcher.submit(
+      { intent, batchId: batch.id },
+      { method: "post", action: path.to.priorityBatchingUpdate }
+    );
+  };
 
   // Planned durations, batch semantics (mirrors the MES operation view): ONE
   // shared setup — the largest member's — plus labor/machine summed. Missing
@@ -137,17 +176,7 @@ export function BatchDetailDrawer({
         <DrawerHeader className="px-6 flex-shrink-0">
           <DrawerTitle>{batch.readableId}</DrawerTitle>
           <HStack spacing={2} className="pt-1 flex-wrap">
-            <Badge
-              variant={
-                batch.status === "Completed"
-                  ? "green"
-                  : batch.status === "Completing"
-                    ? "yellow"
-                    : "secondary"
-              }
-            >
-              {batch.status}
-            </Badge>
+            <BatchStatus status={batch.status} />
             {batch.process?.name && (
               <span className="text-sm text-muted-foreground">
                 {batch.process.name}
@@ -169,6 +198,11 @@ export function BatchDetailDrawer({
               <EmployeeAvatar employeeId={batch.createdBy} size="xs" />
             </span>
           </HStack>
+          {batch.status === "Planned" && (
+            <p className="pt-1 text-sm text-muted-foreground">
+              <Trans>Not on the shop floor — release to dispatch</Trans>
+            </p>
+          )}
           {batch.notes && (
             <HStack
               spacing={1}
@@ -429,11 +463,22 @@ export function BatchDetailDrawer({
 
         <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-end items-center">
           <HStack spacing={2}>
-            {batch.status === "Active" && (
+            {isPreStart && (
               <Button variant="destructive" leftIcon={<LuTrash />} asChild>
                 <Link to={path.to.deleteOperationBatch(batch.id)}>
                   {t`Dissolve`}
                 </Link>
+              </Button>
+            )}
+            {batch.status === "Active" && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                isLoading={releaseFetcher.state !== "idle"}
+                isDisabled={releaseFetcher.state !== "idle"}
+                onClick={() => submitBatchIntent("unrelease")}
+              >
+                {t`Unrelease`}
               </Button>
             )}
             <Button variant="secondary" leftIcon={<LuPrinter />} asChild>
@@ -445,7 +490,7 @@ export function BatchDetailDrawer({
                 {t`Print load list`}
               </a>
             </Button>
-            {batch.status === "Active" && (
+            {isPreStart && (
               <Button variant="secondary" leftIcon={<LuPlus />} asChild>
                 <Link to={`${path.to.newOperationBatch}?batchId=${batch.id}`}>
                   {t`Add operations`}
@@ -459,6 +504,38 @@ export function BatchDetailDrawer({
                 </Link>
               </Button>
             )}
+            {batch.status === "Planned" &&
+              (batch.workCenterId ? (
+                <Button
+                  variant="primary"
+                  leftIcon={<LuCirclePlay />}
+                  isLoading={releaseFetcher.state !== "idle"}
+                  isDisabled={releaseFetcher.state !== "idle"}
+                  onClick={() => submitBatchIntent("release")}
+                >
+                  {t`Release`}
+                </Button>
+              ) : (
+                // A disabled button swallows pointer events, so the tooltip
+                // hangs on a wrapper — the server refuses a release without a
+                // work center.
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        variant="primary"
+                        leftIcon={<LuCirclePlay />}
+                        isDisabled
+                      >
+                        {t`Release`}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t`Assign a work center first`}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
           </HStack>
         </DrawerFooter>
       </DrawerContent>

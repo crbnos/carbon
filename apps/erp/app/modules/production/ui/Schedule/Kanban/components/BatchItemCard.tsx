@@ -84,6 +84,10 @@ export function BatchItemCard({
   const scheduleToday = useScheduleToday();
   const fetcher = useFetcher();
   const isCompleting = item.batchStatus === "Completing";
+  // Planned = composed but not yet on the floor. Visually distinct (dashed
+  // border, outline badge) but still draggable — work-center reassignment is
+  // legal pre-release.
+  const isPlanned = item.batchStatus === "Planned";
   const {
     setNodeRef,
     attributes,
@@ -156,6 +160,7 @@ export function BatchItemCard({
       className={cn(
         "max-w-[330px]",
         KANBAN_CARD_SHELL,
+        isPlanned && "border-dashed",
         isOverlay && "ring-2 ring-primary",
         isDragging && "ring-2 ring-primary opacity-30"
       )}
@@ -165,6 +170,7 @@ export function BatchItemCard({
           <HStack spacing={2} className="min-w-0">
             <LuLayers className="text-muted-foreground size-4 flex-shrink-0" />
             <Badge>{item.batchReadableId}</Badge>
+            {isPlanned && <Badge variant="outline">{t`Planned`}</Badge>}
             {isCompleting && <Badge variant="yellow">{t`Completing`}</Badge>}
             <span className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">
               {members.length} · {totalQty}

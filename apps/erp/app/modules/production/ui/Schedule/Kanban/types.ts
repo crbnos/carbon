@@ -118,7 +118,9 @@ export type BatchItem = Pick<
 > & {
   batchId: string;
   batchReadableId: string;
-  batchStatus: "Active" | "Completing";
+  // Planned = composed but not yet dispatched (renders dashed, still
+  // draggable); Active is displayed as "Released"; Completing is read-only.
+  batchStatus: "Planned" | "Active" | "Completing";
   members: OperationItem[];
 };
 
