@@ -1416,22 +1416,37 @@ export async function regenerateApiKey(
     };
   }
 
-  const result = await client
+  // The read above gives the clear error; the predicate below makes the
+  // check atomic, so a key that expires between the two statements is not
+  // re-secreted either. Only a key WITH an expiry can expire in that window,
+  // which is why this is a plain `gt` rather than an `or(is.null, gt)` —
+  // PostgREST rejects an `or` on this camelCase column for UPDATE (42703)
+  // while accepting it for SELECT. No row matched means it expired.
+  const now = datetime.timestamp();
+  let update = client
     .from("apiKey")
     .update({
       keyHash,
       keyPreview,
       lastUsedAt: null,
       updatedBy,
-      updatedAt: datetime.timestamp()
+      updatedAt: now
     })
     .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+    .eq("companyId", companyId);
+  if (existing.data.expiresAt) {
+    update = update.gt("expiresAt", now);
+  }
+  const result = await update.select("id").maybeSingle();
 
   if (result.error) {
     return { data: null, error: result.error };
+  }
+  if (!result.data) {
+    return {
+      data: null,
+      error: new Error("API key has expired; extend its expiration first")
+    };
   }
 
   // Return the raw key (shown to user once, never stored)

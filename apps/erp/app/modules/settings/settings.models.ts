@@ -68,7 +68,7 @@ export const apiKeyValidator = z.object({
 
 /** Instant comparison only — an expiry is a stored UTC instant, not a calendar date. */
 export function isApiKeyExpired(expiresAt: string | null | undefined): boolean {
-  return !!expiresAt && Date.parse(expiresAt) < Date.now();
+  return !!expiresAt && Date.parse(expiresAt) <= Date.now();
 }
 
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
