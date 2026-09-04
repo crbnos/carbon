@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 
 import type {
     PostgrestError,
@@ -159,7 +159,9 @@ const partsValidator = z.object({
   tools: z.boolean().default(true),
   steps: z.boolean().default(true),
   workInstructions: z.boolean().default(true),
-}).default({});
+  // prefault, not default: v4's .default() returns {} AS-IS on undefined input,
+  // which would skip every inner default and disable all six part flags.
+}).prefault({});
 
 const payloadValidator = z.object({
   type: z.enum([
@@ -183,7 +185,7 @@ const payloadValidator = z.object({
   targetId: z.string(),
   companyId: z.string(),
   userId: z.string(),
-  configuration: z.record(z.unknown()).optional(),
+  configuration: z.record(z.string(), z.unknown()).optional(),
   parts: partsValidator,
   // A specific source makeMethod version (itemToJob / itemToJobMakeMethod
   // only). Absent = the item's active method, as before.

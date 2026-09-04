@@ -2,7 +2,7 @@ import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { sql } from "npm:kysely@0.27.6";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -40,8 +40,10 @@ const importCsvValidator = z.object({
     "materialDimension",
   ]),
   filePath: z.string(),
-  columnMappings: z.record(z.string()),
-  enumMappings: z.record(z.record(z.string())).optional(),
+  columnMappings: z.record(z.string(), z.string()),
+  enumMappings: z
+    .record(z.string(), z.record(z.string(), z.string()))
+    .optional(),
   companyId: z.string(),
   userId: z.string(),
 });

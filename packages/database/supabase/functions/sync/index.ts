@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { Transaction } from "npm:kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
