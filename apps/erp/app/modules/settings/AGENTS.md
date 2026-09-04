@@ -10,7 +10,7 @@ Company configuration: the company/subsidiary records themselves, the ~50-flag `
 - **Sequence** — per-company numbering (`table`, `prefix`, `suffix`, `next`, `step`, `size`) behind readable ids like `PO000123`. `getNextSequence` calls the `get_next_sequence` RPC and **consumes** a number; `getCurrentSequence` only previews it (and re-derives date tokens through `interpolateSequenceDate` in the company timezone so the preview matches what SQL will issue). `itemSerialSequence` is the per-item serial-number equivalent.
 - **Custom Field** — user-defined fields per table (`customField`, read through the `customFieldTables` view). Definitions are Redis-cached under `customFields:{companyId}:*`.
 - **Integration** — per-company third-party config in `companyIntegration` (read through the `integrations` view), Redis-cached under `integrations:{companyId}` and `json:integrations:{companyId}`. An OAuth callback can't render its own failure, so it redirects with `integrationErrorSearch(integration, code)` and the integrations page resolves the code to Lingui copy via `getIntegrationError` (`integration-errors.ts`) — only a code crosses the URL, never the provider's message.
-- **API Key / Webhook** — outbound automation. `upsertApiKey` stores only `keyHash` / `keyPreview` and returns the raw key **once**; `rateLimit`/`rateLimitWindow` are stripped as platform-controlled.
+- **API Key / Webhook** — outbound automation. `mintApiKey` (`settings.server.ts`) is the one place a secret is generated; `upsertApiKey` stores only `keyHash` / `keyPreview` and returns the raw key **once**; `rateLimit`/`rateLimitWindow` are stripped as platform-controlled. `regenerateApiKey` swaps the secret in place (same id, name, scopes, expiry), nulls `lastUsedAt`, stamps `updatedBy`/`updatedAt`, and refuses an expired key via `isApiKeyExpired` — every auth path hashes per request with no cache, so the old value dies on the next call.
 
 ## Safety
 
@@ -31,7 +31,7 @@ Company configuration: the company/subsidiary records themselves, the ~50-flag `
 ### Never
 
 - Never add a wide "update companySettings" helper — the per-setting functions exist so an unrelated form can't blank a neighboring flag.
-- Never persist or log a raw API key; only `keyHash` / `keyPreview` are stored, and the raw value is returned to the caller exactly once on create.
+- Never persist or log a raw API key; only `keyHash` / `keyPreview` are stored, and the raw value is returned to the caller exactly once on create or regenerate.
 - Never re-export the `*.server.ts` files from `index.ts`. The barrel is `backups.service`, `settings.models`, `settings.service`, `types`, `ui` only — `settings.server.ts` (Redis + `@carbon/ee`), `backups.server.ts`, `backups-archive.server.ts`, `documentPreview.server.ts`, and `labelLogo.server.ts` are deep-imported by path (e.g. `~/modules/settings/documentPreview.server`) to keep server-only deps out of client bundles.
 
 ## Validation Commands

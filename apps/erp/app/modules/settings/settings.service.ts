@@ -18,6 +18,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -37,6 +38,7 @@ import type {
   subsidiaryValidator,
   webhookValidator
 } from "./settings.models";
+import { isApiKeyExpired } from "./settings.models";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -1314,6 +1316,7 @@ export async function upsertApiKey(
         id: string;
         scopes: Record<string, string[]>;
         expiresAt?: string;
+        updatedBy: string;
       })
 ) {
   if ("createdBy" in apiKey) {
@@ -1365,10 +1368,89 @@ export async function upsertApiKey(
       sanitize({
         ...rest,
         scopes: scopes as any,
-        expiresAt: expiresAt || null
+        expiresAt: expiresAt || null,
+        updatedAt: datetime.timestamp()
       }) as any
     )
     .eq("id", apiKey.id);
+}
+
+/**
+ * Replace an existing key's secret in place. The row keeps its id, name, scopes
+ * and expiration; only the hash and preview change, so every integration
+ * pointed at this key keeps its permissions and loses its credential.
+ *
+ * The old value stops authenticating on the next request: every auth path
+ * hashes the incoming header and looks the row up by `keyHash`, and none of
+ * them cache the result. `lastUsedAt` is cleared because it described the
+ * retired secret, not the new one.
+ */
+export async function regenerateApiKey(
+  client: SupabaseClient<Database>,
+  apiKey: {
+    id: string;
+    companyId: string;
+    keyHash: string;
+    keyPreview: string;
+    rawKey: string;
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, keyHash, keyPreview, rawKey, updatedBy } = apiKey;
+
+  // An expired key would come back with a fresh secret that is rejected on its
+  // first request. Refuse rather than hand the user a dead credential.
+  const existing = await client
+    .from("apiKey")
+    .select("expiresAt")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (existing.error) {
+    return { data: null, error: existing.error };
+  }
+  if (isApiKeyExpired(existing.data.expiresAt)) {
+    return {
+      data: null,
+      error: new Error("API key has expired; extend its expiration first")
+    };
+  }
+
+  // The read above gives the clear error; the predicate below makes the
+  // check atomic, so a key that expires between the two statements is not
+  // re-secreted either. Only a key WITH an expiry can expire in that window,
+  // which is why this is a plain `gt` rather than an `or(is.null, gt)` —
+  // PostgREST rejects an `or` on this camelCase column for UPDATE (42703)
+  // while accepting it for SELECT. No row matched means it expired.
+  const now = datetime.timestamp();
+  let update = client
+    .from("apiKey")
+    .update({
+      keyHash,
+      keyPreview,
+      lastUsedAt: null,
+      updatedBy,
+      updatedAt: now
+    })
+    .eq("id", id)
+    .eq("companyId", companyId);
+  if (existing.data.expiresAt) {
+    update = update.gt("expiresAt", now);
+  }
+  const result = await update.select("id").maybeSingle();
+
+  if (result.error) {
+    return { data: null, error: result.error };
+  }
+  if (!result.data) {
+    return {
+      data: null,
+      error: new Error("API key has expired; extend its expiration first")
+    };
+  }
+
+  // Return the raw key (shown to user once, never stored)
+  return { data: { key: rawKey, id: result.data.id }, error: null };
 }
 
 export async function updateConsoleSetting(

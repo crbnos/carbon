@@ -1,13 +1,13 @@
 import { assertIsPost, error } from "@carbon/auth";
-import { hashApiKey, requirePermissions } from "@carbon/auth/auth.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { nanoid } from "nanoid";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
 import { useRouteData } from "~/hooks";
 import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { mintApiKey } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -45,10 +45,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // Parse scopes from JSON string
   const scopes = scopesJson ? JSON.parse(scopesJson) : {};
 
-  // Generate key + hash in the route action (server-only context)
-  const rawKey = `crbn_${nanoid()}`;
-  const keyHash = hashApiKey(rawKey);
-  const keyPreview = rawKey.slice(-5);
+  // Generated in the route action (server-only context), never persisted raw
+  const { rawKey, keyHash, keyPreview } = mintApiKey();
 
   const insertApiKey = await upsertApiKey(client, {
     ...d,

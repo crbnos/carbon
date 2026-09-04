@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-03T15:31:57.926Z",
+  "generated": "2026-09-04T11:50:19.489Z",
   "totalTools": 1495,
   "modules": 15,
   "tools": [
@@ -46376,7 +46376,7 @@
       "module": "settings",
       "classification": "WRITE",
       "description": "upsert api key",
-      "paramCount": 50,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "apiKey"
@@ -46389,161 +46389,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "domain": {
-            "type": "string"
-          },
-          "next": {
-            "type": "string"
-          },
-          "industryId": {
-            "type": "string"
-          },
-          "customIndustryDescription": {
-            "type": "string"
-          },
-          "digitalQuoteEnabled": {
-            "type": "string"
-          },
-          "digitalQuoteNotificationGroup": {
-            "type": "string"
-          },
-          "digitalQuoteIncludesPurchaseOrders": {
-            "type": "string"
-          },
-          "inventoryJobCompletedNotificationGroup": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "salesJobCompletedNotificationGroup": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "kanbanOutput": {
-            "type": "string"
-          },
-          "plmReleaseControl": {
-            "type": "string"
-          },
-          "purchasePriceUpdateTiming": {
-            "type": "string"
-          },
-          "incompletePickingListPolicy": {
-            "type": "string"
-          },
-          "returnPickedMaterialTiming": {
-            "type": "string"
-          },
-          "updateLeadTimesOnReceipt": {
-            "type": "string"
-          },
-          "materialGeneratedIds": {
-            "type": "string"
-          },
-          "useMetric": {
-            "type": "string"
-          },
-          "productLabelSize": {
-            "type": "string"
-          },
-          "rfqReadyNotificationGroup": {
-            "type": "string"
-          },
-          "suggestionNotificationGroup": {
-            "type": "string"
-          },
-          "maintenanceDispatchNotificationGroup": {
-            "type": "string"
-          },
-          "qualityDispatchNotificationGroup": {
-            "type": "string"
-          },
-          "operationsDispatchNotificationGroup": {
-            "type": "string"
-          },
-          "otherDispatchNotificationGroup": {
-            "type": "string"
-          },
-          "supplierQuoteNotificationGroup": {
-            "type": "string"
-          },
-          "accountsPayableEmail": {
-            "type": "string"
-          },
-          "defaultSupplierCc": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "accountsReceivableEmail": {
-            "type": "string"
-          },
-          "defaultCustomerCc": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "id": {
-            "type": "string"
-          },
-          "parentCompanyId": {
-            "type": "string"
-          },
-          "table": {
-            "type": "string"
-          },
-          "prefix": {
-            "type": "string"
-          },
-          "suffix": {
-            "type": "string"
-          },
-          "step": {
-            "type": "number"
-          },
-          "size": {
-            "type": "number"
-          },
-          "itemId": {
-            "type": "string"
-          },
-          "theme": {
-            "type": "string"
-          },
-          "consoleEnabled": {
-            "type": "string"
-          },
-          "intent": {
-            "type": "string"
-          },
-          "ids": {
-            "type": "string"
-          },
-          "to": {
-            "type": "string",
-            "enum": [
-              "Pending",
-              "Skipped"
-            ]
-          },
-          "accountId": {
-            "type": "string"
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "externalCode": {
-            "type": "string"
-          },
-          "externalName": {
-            "type": "string"
-          },
-          "mappings": {
             "type": "string"
           },
           "name": {
@@ -46565,27 +46411,6 @@
           }
         },
         "required": [
-          "domain",
-          "next",
-          "digitalQuoteEnabled",
-          "digitalQuoteIncludesPurchaseOrders",
-          "kanbanOutput",
-          "plmReleaseControl",
-          "purchasePriceUpdateTiming",
-          "updateLeadTimesOnReceipt",
-          "materialGeneratedIds",
-          "useMetric",
-          "productLabelSize",
-          "table",
-          "itemId",
-          "theme",
-          "consoleEnabled",
-          "intent",
-          "ids",
-          "to",
-          "accountId",
-          "externalId",
-          "mappings",
           "name",
           "_operation"
         ]

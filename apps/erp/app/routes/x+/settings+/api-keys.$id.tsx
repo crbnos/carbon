@@ -12,7 +12,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -43,7 +43,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     ...d,
     scopes,
-    expiresAt: expiresAt || undefined
+    expiresAt: expiresAt || undefined,
+    updatedBy: userId
   });
 
   if (updateApiKey.error) {

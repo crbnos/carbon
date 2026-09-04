@@ -2564,6 +2564,7 @@ export type Database = {
           rateLimit: number
           rateLimitWindow: string
           scopes: Json
+          updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
@@ -2579,6 +2580,7 @@ export type Database = {
           rateLimit?: number
           rateLimitWindow?: string
           scopes?: Json
+          updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
@@ -2594,6 +2596,7 @@ export type Database = {
           rateLimit?: number
           rateLimitWindow?: string
           scopes?: Json
+          updatedAt?: string | null
           updatedBy?: string | null
         }
         Relationships: [
