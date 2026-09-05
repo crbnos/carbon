@@ -102,6 +102,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     slugs: [
       "inventory",
       "inventory-count",
+      "scrap",
       "storage-rules",
       "shelf-life",
       "traceability",

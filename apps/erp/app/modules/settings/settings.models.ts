@@ -35,7 +35,7 @@ export const purchasePriceUpdateTimingTypes = [
 
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update"],
+  accounting: ["view", "create", "update", "delete"],
   documents: ["view", "create", "update", "delete"],
   inventory: ["view", "create", "update", "delete"],
   invoicing: ["view", "create", "update", "delete"],
@@ -51,6 +51,14 @@ export const apiKeyPermissionModules = {
 } as const;
 
 export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
+
+/**
+ * Permission keys (`${module}_${action}`) that are opt-in only: they must be
+ * enabled by clicking their own cell and are never turned on by the "all
+ * modules" or per-row select-all checkboxes. Deleting accounting data via the
+ * API is high-risk, so it stays deselected unless explicitly chosen.
+ */
+export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),

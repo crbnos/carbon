@@ -360,7 +360,11 @@ export async function runMrp(
     const jobSupplyByLocationPeriodItem = new Map<string, number>();
 
     for (const line of productionLines.data ?? []) {
-      if (!line.itemId || !line.quantityToReceive) continue;
+      // locationId is part of the supplyActual primary key (hence NOT NULL) and
+      // an FK to location. A line with no location has nowhere to be planned and
+      // would write locationId="" (via the ?? "" key fallback), violating
+      // supplyActual_locationId_fkey and aborting the whole run. Skip it.
+      if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
 
       const dueDate = line.dueDate
         ? parseDate(line.dueDate)
@@ -386,7 +390,9 @@ export async function runMrp(
     const poSupplyByLocationPeriodItem = new Map<string, number>();
 
     for (const line of purchaseOrderLines.data ?? []) {
-      if (!line.itemId || !line.quantityToReceive) continue;
+      // See the productionLines guard above: a null locationId would write
+      // supplyActual with locationId="" and violate its FK.
+      if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
 
       const dueDate = line.promisedDate
         ? parseDate(line.promisedDate)
@@ -433,7 +439,15 @@ export async function runMrp(
     // jobAndPoSupplyByLocationPeriodItem below). Netting here as well would
     // double-count supply and under-drive child demand.
     for (const projection of demandProjections.data ?? []) {
-      if (!projection.itemId || !projection.forecastQuantity) continue;
+      // locationId is part of the demandForecast primary key (hence NOT NULL)
+      // and an FK to location; a null one would write locationId="" and violate
+      // demandForecast_locationId_fkey, aborting the run.
+      if (
+        !projection.itemId ||
+        !projection.forecastQuantity ||
+        !projection.locationId
+      )
+        continue;
 
       const netDemand = projection.forecastQuantity;
 
@@ -463,7 +477,9 @@ export async function runMrp(
 
     // Sales order lines
     for (const line of salesOrderLines.data ?? []) {
-      if (!line.itemId || !line.quantityToSend) continue;
+      // A null locationId would write demandForecast/demandActual with
+      // locationId="" and violate their locationId FK — skip (see above).
+      if (!line.itemId || !line.quantityToSend || !line.locationId) continue;
 
       const promiseDate = line.promisedDate
         ? parseDate(line.promisedDate)
@@ -499,7 +515,9 @@ export async function runMrp(
 
     // Job material lines
     for (const line of jobMaterialLines.data ?? []) {
-      if (!line.itemId || !line.quantityToIssue) continue;
+      // A null locationId would write demandForecast/demandActual with
+      // locationId="" and violate their locationId FK — skip (see above).
+      if (!line.itemId || !line.quantityToIssue || !line.locationId) continue;
 
       const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
       const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
