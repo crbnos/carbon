@@ -7217,6 +7217,7 @@ msgid "Finish To"
 msgstr "完成至"
 
 msgid "Finish with material unpicked?"
+msgstr "完成但材料未选拣？"
 msgstr "不拣货原材料就完成？"
 
 msgid "Finished goods"
@@ -7235,6 +7236,7 @@ msgid "Finishes"
 msgstr "表面处理"
 
 msgid "Finishing an incomplete pick"
+msgstr "完成未完成的拣选"
 msgstr "完成不完整的拣货"
 
 msgid "Finishing is refused until every line is picked or marked Short."
@@ -8735,6 +8737,7 @@ msgid "Keep Open"
 msgstr "保持未结"
 
 msgid "Keep picking"
+msgstr "继续选拣"
 msgstr "继续拣货"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12639,9 @@ msgstr "报价行"
 msgid "Quote Line"
 msgstr "报价行"
 
+msgid "Quote Lines"
+msgstr "报价行"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "物料清单中包含此物品的报价行"
 
@@ -12665,6 +12671,9 @@ msgstr "报价日期"
 
 msgid "Quotes"
 msgstr "报价"
+
+msgid "Quotes with Lines"
+msgstr "带报价行的报价单"
 
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"
@@ -14666,6 +14675,7 @@ msgid "Shop-floor configuration."
 msgstr "车间配置。"
 
 msgid "short"
+msgstr "短"
 msgstr "短缺"
 
 msgid "Short"
@@ -16525,6 +16535,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价电子邮件中。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "这些项目仍有材料需要选拣。现在完成将把列表标记为部分完成。"
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
 msgid "These jobs have operations assigned to this work center:"

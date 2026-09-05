@@ -7217,6 +7217,7 @@ msgid "Finish To"
 msgstr "समाप्त करने के लिए"
 
 msgid "Finish with material unpicked?"
+msgstr "सामग्री बिना उठाए समाप्त करें?"
 msgstr "सामग्री अनचुनी के साथ समाप्त करें?"
 
 msgid "Finished goods"
@@ -7235,7 +7236,7 @@ msgid "Finishes"
 msgstr "फिनिशेस"
 
 msgid "Finishing an incomplete pick"
-msgstr "अधूरी पिकिंग को समाप्त करना"
+msgstr "एक अधूरी पिक को समाप्त करना"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
@@ -8735,6 +8736,7 @@ msgid "Keep Open"
 msgstr "खुला रखें"
 
 msgid "Keep picking"
+msgstr "चुनना जारी रखें"
 msgstr "पिकिंग जारी रखें"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12638,9 @@ msgstr "कोटेशन पंक्ति"
 msgid "Quote Line"
 msgstr "कोटेशन पंक्ति"
 
+msgid "Quote Lines"
+msgstr "उद्धरण पंक्तियाँ"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "कोटेशन पंक्तियाँ जिनकी सामग्री सूची इस आइटम को शामिल करती है"
 
@@ -12665,6 +12670,9 @@ msgstr "उद्धृत तारीख"
 
 msgid "Quotes"
 msgstr "उद्धरण"
+
+msgid "Quotes with Lines"
+msgstr "पंक्तियों के साथ उद्धरण"
 
 msgid "Quoting and sales orders"
 msgstr "कोटेशन और विक्रय आदेश"
@@ -14666,6 +14674,7 @@ msgid "Shop-floor configuration."
 msgstr "शॉप-फ्लोर कॉन्फ़िगरेशन।"
 
 msgid "short"
+msgstr "छोटा"
 msgstr "अधूरा"
 
 msgid "Short"
@@ -16525,6 +16534,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "ये ईमेल पते ग्राहकों को भेजे गए सभी कोटेशन ईमेल पर स्वचालित रूप से CC किए जाएंगे।"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "इन वस्तुओं के पास अभी भी सामग्री उठानी है। अभी समाप्त करने से सूची आंशिक चिह्नित हो जाती है।"
 msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
 
 msgid "These jobs have operations assigned to this work center:"

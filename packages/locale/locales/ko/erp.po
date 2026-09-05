@@ -7217,6 +7217,7 @@ msgid "Finish To"
 msgstr "종료 시점"
 
 msgid "Finish with material unpicked?"
+msgstr "선택되지 않은 자재로 완료하시겠습니까?"
 msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
 
 msgid "Finished goods"
@@ -7235,7 +7236,7 @@ msgid "Finishes"
 msgstr "마감"
 
 msgid "Finishing an incomplete pick"
-msgstr "불완전한 픽 완료"
+msgstr "불완전한 피킹 완료"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
@@ -8735,6 +8736,7 @@ msgid "Keep Open"
 msgstr "열린 상태 유지"
 
 msgid "Keep picking"
+msgstr "계속 선택"
 msgstr "피킹 유지"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12638,9 @@ msgstr "견적 라인"
 msgid "Quote Line"
 msgstr "견적 라인"
 
+msgid "Quote Lines"
+msgstr "견적 라인"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "이 품목을 포함하는 자재 명세서를 가진 견적 라인"
 
@@ -12665,6 +12670,9 @@ msgstr "견적일"
 
 msgid "Quotes"
 msgstr "견적"
+
+msgid "Quotes with Lines"
+msgstr "라인이 포함된 견적"
 
 msgid "Quoting and sales orders"
 msgstr "견적서 작성 및 수주"
@@ -14666,6 +14674,7 @@ msgid "Shop-floor configuration."
 msgstr "현장 설정."
 
 msgid "short"
+msgstr "짧음"
 msgstr "부족"
 
 msgid "Short"
@@ -16525,6 +16534,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메일에 자동으로 참조(CC)됩니다."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "이 항목들은 선택할 자재가 남아 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 msgstr "이 항목들은 여전히 선택할 자재가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
 msgid "These jobs have operations assigned to this work center:"

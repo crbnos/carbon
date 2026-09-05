@@ -1048,6 +1048,7 @@ msgid "Accumulation Period:"
 msgstr "Período de Acumulación:"
 
 msgid "Acknowledge & finish"
+msgstr "Reconocer y finalizar"
 msgstr "Confirmar y finalizar"
 
 msgid "Acknowledged itar"
@@ -7217,6 +7218,7 @@ msgid "Finish To"
 msgstr "Terminar En"
 
 msgid "Finish with material unpicked?"
+msgstr "¿Finalizar con material sin recoger?"
 msgstr "¿Finalizar sin recoger el material?"
 
 msgid "Finished goods"
@@ -7235,7 +7237,7 @@ msgid "Finishes"
 msgstr "Acabados"
 
 msgid "Finishing an incomplete pick"
-msgstr "Finalizando una recogida incompleta"
+msgstr "Finalizar un picking incompleto"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Se rechaza la finalización hasta que cada línea sea recogida o marcada como Corta."
@@ -8735,6 +8737,7 @@ msgid "Keep Open"
 msgstr "Mantener Abierto"
 
 msgid "Keep picking"
+msgstr "Continuar recogiendo"
 msgstr "Continuar picking"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12639,9 @@ msgstr "Línea de cotización"
 msgid "Quote Line"
 msgstr "Línea de Cotización"
 
+msgid "Quote Lines"
+msgstr "Líneas de Cotización"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Líneas de cotización cuya lista de materiales incluye este artículo"
 
@@ -12665,6 +12671,9 @@ msgstr "Fecha de Cotización"
 
 msgid "Quotes"
 msgstr "Cotizaciones"
+
+msgid "Quotes with Lines"
+msgstr "Cotizaciones con Líneas"
 
 msgid "Quoting and sales orders"
 msgstr "Presupuestos y pedidos de venta"
@@ -16525,6 +16534,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Estas direcciones de correo electrónico se copiarán automáticamente en todos los correos electrónicos de presupuestos enviados a los clientes."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Estos elementos todavía tienen material para recoger. Finalizar ahora marca la lista como Parcial."
 msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca la lista como Parcial."
 
 msgid "These jobs have operations assigned to this work center:"

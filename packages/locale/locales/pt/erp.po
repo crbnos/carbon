@@ -1048,6 +1048,7 @@ msgid "Accumulation Period:"
 msgstr "Período de Acumulação:"
 
 msgid "Acknowledge & finish"
+msgstr "Reconhecer e concluir"
 msgstr "Reconhecer e finalizar"
 
 msgid "Acknowledged itar"
@@ -7217,6 +7218,7 @@ msgid "Finish To"
 msgstr "Terminar Em"
 
 msgid "Finish with material unpicked?"
+msgstr "Concluir com material não selecionado?"
 msgstr "Finalizar com material não coletado?"
 
 msgid "Finished goods"
@@ -7235,7 +7237,7 @@ msgid "Finishes"
 msgstr "Acabamentos"
 
 msgid "Finishing an incomplete pick"
-msgstr "Concluindo uma colheita incompleta"
+msgstr "Conclusão de uma coleta incompleta"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "A conclusão é recusada até que cada linha seja colhida ou marcada como Curta."
@@ -8735,6 +8737,7 @@ msgid "Keep Open"
 msgstr "Manter Aberto"
 
 msgid "Keep picking"
+msgstr "Continuar selecionando"
 msgstr "Manter separação"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12639,9 @@ msgstr "Linha do orçamento"
 msgid "Quote Line"
 msgstr "Linha do orçamento"
 
+msgid "Quote Lines"
+msgstr "Linhas de Cotação"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Linhas do orçamento cuja lista de materiais inclui este item"
 
@@ -12665,6 +12671,9 @@ msgstr "Data da Cotação"
 
 msgid "Quotes"
 msgstr "Orçamentos"
+
+msgid "Quotes with Lines"
+msgstr "Orçamentos com Linhas"
 
 msgid "Quoting and sales orders"
 msgstr "Cotação e pedidos de venda"
@@ -16525,6 +16534,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Estes endereços de email serão automaticamente copiados em todos os emails de cotação enviados aos clientes."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Esses itens ainda têm material para selecionar. Concluir agora marca a lista como Parcial."
 msgstr "Esses itens ainda têm material para coletar. Finalizar agora marca a lista como Parcial."
 
 msgid "These jobs have operations assigned to this work center:"

@@ -12636,6 +12636,9 @@ msgstr "Quote line"
 msgid "Quote Line"
 msgstr "Quote Line"
 
+msgid "Quote Lines"
+msgstr "Quote Lines"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Quote lines whose bill of materials includes this item"
 
@@ -12665,6 +12668,9 @@ msgstr "Quoted Date"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Quotes with Lines"
+msgstr "Quotes with Lines"
 
 msgid "Quoting and sales orders"
 msgstr "Quoting and sales orders"

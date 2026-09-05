@@ -4,7 +4,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
+import {
+  importQuotes,
+  isQuoteImportTable
+} from "~/modules/sales/sales.import.server";
 import { importCsv, importPermissions, importSchemas } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { tableId } = params;
@@ -17,9 +22,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("Table not found in the list of supported tables");
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
-    update: importPermissions[table]
-  });
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
+      update: importPermissions[table]
+    }
+  );
 
   const schema = importSchemas[table].extend({
     filePath: z.string().min(1, { message: "Path is required" }),
@@ -36,16 +44,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { filePath, enumMappings, ...columnMappings } = validation.data;
+  let parsedEnumMappings: Record<string, Record<string, string>> | undefined;
+  if (enumMappings) {
+    try {
+      parsedEnumMappings = JSON.parse(enumMappings as string);
+    } catch {
+      // Malformed client-supplied JSON — treat as a validation failure rather
+      // than letting the parse throw escape as a 500.
+      return {
+        success: false,
+        message: "Validation failed"
+      };
+    }
+  }
 
   const serviceRole = getCarbonServiceRole();
-  const importResult = await importCsv(serviceRole, {
-    table,
-    filePath: filePath as string,
-    columnMappings,
-    enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined,
-    companyId,
-    userId
-  });
+  // Quotes are created through the sales services (Option B) so quote side
+  // effects — opportunity, payment, shipment, external link — are preserved;
+  // all other tables run through the generic import-csv edge function.
+  const importResult = isQuoteImportTable(table)
+    ? await importQuotes(serviceRole, {
+        db: getDatabaseClient(),
+        table,
+        filePath: filePath as string,
+        columnMappings: columnMappings as Record<string, string>,
+        enumMappings: parsedEnumMappings,
+        companyId,
+        companyGroupId,
+        userId
+      })
+    : await importCsv(serviceRole, {
+        table,
+        filePath: filePath as string,
+        columnMappings,
+        // The edge-fn wrapper types enumMappings loosely (Record<string,
+        // string[]>); the real payload is field → { value → mapped }.
+        enumMappings: parsedEnumMappings as unknown as Record<string, string[]>,
+        companyId,
+        userId
+      });
 
   if (importResult.error) {
     return {

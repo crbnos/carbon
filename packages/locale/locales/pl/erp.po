@@ -1048,6 +1048,7 @@ msgid "Accumulation Period:"
 msgstr "Okres akumulacji:"
 
 msgid "Acknowledge & finish"
+msgstr "Potwierdź i dokończ"
 msgstr "Potwierdź i zakończ"
 
 msgid "Acknowledged itar"
@@ -7217,6 +7218,7 @@ msgid "Finish To"
 msgstr "Zakończyć do"
 
 msgid "Finish with material unpicked?"
+msgstr "Dokończyć bez zebranego materiału?"
 msgstr "Zakończyć bez rozliczenia materiału?"
 
 msgid "Finished goods"
@@ -7235,7 +7237,7 @@ msgid "Finishes"
 msgstr "Wykończenia"
 
 msgid "Finishing an incomplete pick"
-msgstr "Kończenie niekompletnego pobrania"
+msgstr "Zakończenie niekompletnego odbioru"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Kończenie jest odrzucane, dopóki każda linia nie będzie pobrana lub oznaczona jako Krótka."
@@ -8735,6 +8737,7 @@ msgid "Keep Open"
 msgstr "Utrzymaj otwarte"
 
 msgid "Keep picking"
+msgstr "Kontynuuj zbieranie"
 msgstr "Zachowaj kompletację"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12639,9 @@ msgstr "pozycja oferty"
 msgid "Quote Line"
 msgstr "Pozycja oferty"
 
+msgid "Quote Lines"
+msgstr "Pozycje oferty"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Pozycje oferty, których lista materiałowa zawiera ten artykuł"
 
@@ -12665,6 +12671,9 @@ msgstr "Data wyceny"
 
 msgid "Quotes"
 msgstr "Oferty"
+
+msgid "Quotes with Lines"
+msgstr "Oferty z pozycjami"
 
 msgid "Quoting and sales orders"
 msgstr "Wycena i zamówienia sprzedaży"
@@ -14666,6 +14675,7 @@ msgid "Shop-floor configuration."
 msgstr "Konfiguracja hali produkcyjnej."
 
 msgid "short"
+msgstr "skrót"
 msgstr "krótko"
 
 msgid "Short"
@@ -16525,6 +16535,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich wiadomości e-mail z ofertami wysyłanych do klientów."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Te pozycje wciąż mają materiał do zebrania. Zakończenie teraz oznacza listę jako Niepełna."
 msgstr "Te elementy mają jeszcze materiał do pobrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
 msgid "These jobs have operations assigned to this work center:"

@@ -1048,6 +1048,7 @@ msgid "Accumulation Period:"
 msgstr "Biriktirme Dönemi:"
 
 msgid "Acknowledge & finish"
+msgstr "Kabul Et ve Bitir"
 msgstr "Onayla ve Bitir"
 
 msgid "Acknowledged itar"
@@ -7217,6 +7218,7 @@ msgid "Finish To"
 msgstr "Bitirmek İçin"
 
 msgid "Finish with material unpicked?"
+msgstr "Malzeme seçilmeden bitir mi?"
 msgstr "Seçilmemiş malzeme ile Bitir?"
 
 msgid "Finished goods"
@@ -7235,7 +7237,7 @@ msgid "Finishes"
 msgstr "Kaplamalar"
 
 msgid "Finishing an incomplete pick"
-msgstr "Eksik Seçimi Bitirme"
+msgstr "Eksik seçimi tamamlama"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar reddedilir."
@@ -8735,6 +8737,7 @@ msgid "Keep Open"
 msgstr "Açık Tut"
 
 msgid "Keep picking"
+msgstr "Seçmeye devam et"
 msgstr "Toplamaya devam et"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12639,9 @@ msgstr "Teklif satırı"
 msgid "Quote Line"
 msgstr "Teklif Satırı"
 
+msgid "Quote Lines"
+msgstr "Teklif Satırları"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Ürün ağacı bu stok kartını içeren teklif satırları"
 
@@ -12665,6 +12671,9 @@ msgstr "Teklif Tarihi"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Quotes with Lines"
+msgstr "Satırlı Teklifler"
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"
@@ -14666,6 +14675,7 @@ msgid "Shop-floor configuration."
 msgstr "Üretim katı yapılandırması."
 
 msgid "short"
+msgstr "kısa"
 msgstr "Kısa"
 
 msgid "Short"
@@ -16525,6 +16535,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postalarına otomatik olarak CC'lenecektir."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Bu öğelerin seçmesi gereken malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "These jobs have operations assigned to this work center:"

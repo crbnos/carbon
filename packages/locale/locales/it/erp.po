@@ -1048,6 +1048,7 @@ msgid "Accumulation Period:"
 msgstr "Periodo di Accumulo:"
 
 msgid "Acknowledge & finish"
+msgstr "Riconosci e termina"
 msgstr "Riconosci e completa"
 
 msgid "Acknowledged itar"
@@ -7235,7 +7236,7 @@ msgid "Finishes"
 msgstr "Finiture"
 
 msgid "Finishing an incomplete pick"
-msgstr "Completamento di un prelievo incompleto"
+msgstr "Completare un prelievo incompleto"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o marcata come Esaurito."
@@ -8735,6 +8736,7 @@ msgid "Keep Open"
 msgstr "Mantieni Aperto"
 
 msgid "Keep picking"
+msgstr "Continua a prelevare"
 msgstr "Continua il prelievo"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
@@ -12636,6 +12638,9 @@ msgstr "Riga offerta"
 msgid "Quote Line"
 msgstr "Riga offerta"
 
+msgid "Quote Lines"
+msgstr "Righe di Preventivo"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Righe offerta la cui distinta base include questo articolo"
 
@@ -12665,6 +12670,9 @@ msgstr "Data Quotata"
 
 msgid "Quotes"
 msgstr "Preventivi"
+
+msgid "Quotes with Lines"
+msgstr "Preventivi con Righe"
 
 msgid "Quoting and sales orders"
 msgstr "Preventivi e ordini di vendita"
@@ -16525,6 +16533,7 @@ msgid "These email addresses will be automatically CC'd on all quote emails sent
 msgstr "Questi indirizzi email verranno automaticamente messi in CC su tutte le email di preventivo inviate ai clienti."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
+msgstr "Questi articoli hanno ancora materiale da prelevare. Se termino ora, l'elenco sarà contrassegnato come Parziale."
 msgstr "Questi articoli hanno ancora materiale da prelevare. Il completamento ora contrassegna l'elenco come Parziale."
 
 msgid "These jobs have operations assigned to this work center:"
