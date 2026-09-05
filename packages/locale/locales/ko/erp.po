@@ -291,6 +291,9 @@ msgstr "{name}님 돌아오셨습니다!"
 msgid "{names} differs"
 msgstr "{names} 다릅니다"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{name}님, 돌아오셨군요!"
 
@@ -17042,6 +17045,9 @@ msgstr "이번 달"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "이 공정은 아직 일정을 잡을 수 없습니다 — 표시줄은 충돌이 해결되면 실행되는 위치를 표시합니다. 용량을 보유하지 않습니다."
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "실행 허브의 이 페이지는 준비 중입니다. 완성될 때까지 명령 센터에서 시작하세요."

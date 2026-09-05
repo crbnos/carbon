@@ -291,6 +291,9 @@ msgstr "{name}回来了！"
 msgid "{names} differs"
 msgstr "{names} 存在差异"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{names} 必须匹配 — 需要单独一批"
 
@@ -17042,6 +17045,9 @@ msgstr "本月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "该工序暂时无法排程 — 条形图标记一旦冲突解决后它将运行的位置。它不占用产能。"
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "这个实施中心页面正在开发中。在我们完成之前，请从指挥中心开始。"

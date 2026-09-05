@@ -291,6 +291,9 @@ msgstr "{name}が戻ってきました！"
 msgid "{names} differs"
 msgstr "{names}が異なります"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{names}は一致する必要があります — 別ロード"
 
@@ -17042,6 +17045,9 @@ msgstr "今月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "この工程はまだスケジュールできません — バーは競合が解決されたら実行される場所をマークします。容量を保持していません。"
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "実施ハブのこのページは構築中です。完成するまでコマンドセンターから開始してください。"

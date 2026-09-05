@@ -617,6 +617,37 @@ export function computeLockedById(
 
 // GUIDE mismatches (advisory): a guide dimension where the selection has a value
 // the candidate can't match. Warned, never blocked.
+// Mismatch flags for operations ALREADY IN the group — the current selection
+// plus, when adding to a batch, its existing members. The pre-pick warnings
+// (computeLockedById / computeGuideMismatches) deliberately go quiet once a
+// row is picked; this is the after-the-fact flag: "this operation is in the
+// batch and its material shares no {dimension} with the rest". Covers every
+// non-"ignore" dimension — a "must" mismatch that slipped in (rules changed,
+// or members drifted) flags here too, and the edge fn still refuses it on
+// submit. Members with no value for a dimension are never flagged by it.
+export function computeMemberMismatches(
+  members: { id: string; sets: MemberValueSets }[],
+  rules: Required<BatchRules>
+): Map<string, BatchRuleDimension[]> {
+  const map = new Map<string, BatchRuleDimension[]>();
+  if (members.length < 2) return map;
+  for (let i = 0; i < members.length; i++) {
+    const rest = members.filter((_, j) => j !== i).map((m) => m.sets);
+    const restFold = computeSelectionDimSets(rest);
+    const dims: BatchRuleDimension[] = [];
+    for (const dim of BATCH_RULE_DIMENSIONS) {
+      if (rules[dim] === "ignore") continue;
+      const restSet = restFold.get(dim);
+      if (!restSet || restSet.size === 0) continue;
+      const vals = members[i]!.sets[dim];
+      if (!vals || vals.length === 0) continue;
+      if (!vals.some((v) => restSet.has(v))) dims.push(dim);
+    }
+    if (dims.length) map.set(members[i]!.id, dims);
+  }
+  return map;
+}
+
 export function computeGuideMismatches(
   candidates: BatchCandidate[],
   selectedIds: ReadonlySet<string>,

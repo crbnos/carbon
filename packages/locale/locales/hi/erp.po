@@ -291,6 +291,9 @@ msgstr "{name} वापस आया!"
 msgid "{names} differs"
 msgstr "{names} अलग है"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{name} लौट गए!"
 
@@ -17042,6 +17045,9 @@ msgstr "इस महीने"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "इस ऑपरेशन को अभी तक शेड्यूल नहीं किया जा सकता — बार उस स्थान को चिन्हित करता है जहां यह चलेगा एक बार विवाद समाधान हो जाएगा। यह क्षमता धारण नहीं कर रहा है।"
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "आपके कार्यान्वयन हब के इस पृष्ठ को बनाया जा रहा है। कमांड सेंटर से शुरू करें जबकि हम इसे पूरा करते हैं।"

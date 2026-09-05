@@ -291,6 +291,9 @@ msgstr "{name} retorna!"
 msgid "{names} differs"
 msgstr "{names} difere"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{names} deve coincidir — carregamento separado"
 
@@ -17042,6 +17045,9 @@ msgstr "Este Mês"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Esta operação não pode ser programada ainda — a barra marca onde seria executada assim que o conflito for resolvido. Ela não está ocupando capacidade."
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Esta página do seu Implementation Hub está sendo construída. Comece pelo centro de comando enquanto terminamos."

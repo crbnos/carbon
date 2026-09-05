@@ -10,6 +10,7 @@ import {
   computeSelectionDimSets,
   groupingKey,
   materialSignature,
+  computeMemberMismatches,
   rankSuggestions,
   splitByDueWindow
 } from "../app/modules/production/ui/Batches/batch-builder-logic";
@@ -562,5 +563,58 @@ describe("rankSuggestions due-window clustering", () => {
       daysUntil
     );
     expect(out).toEqual([]);
+  });
+});
+
+describe("computeMemberMismatches", () => {
+  const entry = (id: string, substanceName: string | null) => ({
+    id,
+    sets: candidateValueSets(
+      makeCandidate(id, {
+        materials: substanceName ? [makeMaterial({ substanceName })] : []
+      })
+    )
+  });
+
+  it("flags the in-group op whose material shares nothing with the rest", () => {
+    const out = computeMemberMismatches(
+      [entry("a36-1", "Steel"), entry("a36-2", "Steel"), entry("ss", "Stainless Steel")],
+      DEFAULT_RULES
+    );
+    // The stainless op mismatches the steel pair — and each steel op
+    // mismatches the fold only if the REST shares nothing with it; the rest of
+    // a36-1 is {Steel ∩ Stainless} = ∅ fold → no flag (a dimension the rest
+    // cannot agree on flags nobody but the true odd one out).
+    expect(out.get("ss")).toEqual(["substance"]);
+  });
+
+  it("flags nothing when every member matches", () => {
+    const out = computeMemberMismatches(
+      [entry("a", "Steel"), entry("b", "Steel")],
+      DEFAULT_RULES
+    );
+    expect(out.size).toBe(0);
+  });
+
+  it("never flags a member with no value for the dimension", () => {
+    const out = computeMemberMismatches(
+      [entry("a", "Steel"), entry("none", null)],
+      DEFAULT_RULES
+    );
+    expect(out.size).toBe(0);
+  });
+
+  it("flags must dimensions too (server would refuse; the UI must show why)", () => {
+    const rules = resolveBatchRules({ substance: "must" });
+    const out = computeMemberMismatches(
+      [entry("a", "Steel"), entry("b", "Aluminum")],
+      rules
+    );
+    expect(out.get("a")).toEqual(["substance"]);
+    expect(out.get("b")).toEqual(["substance"]);
+  });
+
+  it("returns empty for fewer than two members", () => {
+    expect(computeMemberMismatches([entry("solo", "Steel")], DEFAULT_RULES).size).toBe(0);
   });
 });

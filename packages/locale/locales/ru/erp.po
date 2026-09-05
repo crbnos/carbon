@@ -291,6 +291,9 @@ msgstr "{name} вернулся!"
 msgid "{names} differs"
 msgstr "{names} отличаются"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{name} возвращается!"
 
@@ -17042,6 +17045,9 @@ msgstr "Этот месяц"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Эта операция не может быть запланирована пока — полоса отмечает, где она будет выполняться после разрешения конфликта. Она не занимает мощность."
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Эта страница вашего центра внедрения разрабатывается. Начните с командного центра, пока мы его завершаем."

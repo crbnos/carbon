@@ -67,7 +67,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
-import { ItemThumbnail, Table } from "~/components";
+import { Enumerable, ItemThumbnail, Table } from "~/components";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
@@ -77,6 +77,7 @@ import {
   candidateValueSets,
   computeGuideMismatches,
   computeLockedById,
+  computeMemberMismatches,
   computeSelectionDimSets,
   deriveAddTargets,
   deriveFacetDimensions,
@@ -109,11 +110,15 @@ type CompatInfo = {
   rules: Required<BatchRules>;
   lockedById: Map<string, BatchRuleDimension[]>;
   guideMismatchById: Map<string, BatchRuleDimension[]>;
+  // Ops already IN the group (selected, or existing batch members) whose
+  // material shares no value with the rest — the after-the-fact error flag.
+  memberMismatchById: Map<string, BatchRuleDimension[]>;
   dimLabel: Record<BatchRuleDimension, string>;
 };
 
-// One quiet tag on a candidate row: a locked "must" mismatch (grey, with lock),
-// or an advisory guide mismatch (amber). Locked wins when both are present.
+// One tag on a candidate row: a locked "must" mismatch (grey, with lock), an
+// IN-GROUP mismatch (red — the op was added and doesn't match), or an advisory
+// pre-pick guide mismatch (amber). Locked wins, then the in-group error.
 function CompatBadge({
   candidateId,
   compat
@@ -123,7 +128,21 @@ function CompatBadge({
 }) {
   const { t } = useLingui();
   const locked = compat.lockedById.get(candidateId);
+  const member = compat.memberMismatchById.get(candidateId);
   const guide = compat.guideMismatchById.get(candidateId);
+
+  if (!locked?.length && member?.length) {
+    const names = member.map((d) => compat.dimLabel[d]).join(", ");
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs text-red-600 dark:text-red-400"
+        title={t`This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together`}
+      >
+        <LuTriangleAlert className="size-3" />
+        {t`${names} doesn't match the batch`}
+      </span>
+    );
+  }
 
   if (locked?.length) {
     const names = locked.map((d) => compat.dimLabel[d]).join(", ");
@@ -420,6 +439,17 @@ export function BatchBuilder({
     [allCandidates]
   );
 
+  // Add-mode: the batch's existing members, as RPC rows (the members-as-lanes
+  // clause returns them WITH materials). They anchor compatibility — a new pick
+  // is judged against the batch it is joining, not only against other picks.
+  const existingMemberCandidates = useMemo(
+    () =>
+      batch
+        ? allCandidates.filter((c) => c.jobOperationBatchId === batch.id)
+        : [],
+    [allCandidates, batch]
+  );
+
   // Existing Active batches on this process — offered as add targets so a
   // planner extends a batch instead of accidentally creating a duplicate.
   const addTargets = useMemo(
@@ -456,46 +486,76 @@ export function BatchBuilder({
     [t]
   );
 
-  // The selection's per-dimension value sets, and their folded intersection per
-  // dimension (only members that carry a value for it). Drives must-locks and
-  // guide-mismatch tags against the current selection.
+  // The comparison BASIS: the current selection plus, in add-mode, the batch's
+  // existing members — a pick is judged against the batch it is joining, and
+  // their folded intersection per dimension (only members that carry a value
+  // for it) drives must-locks and guide-mismatch tags.
   const selectedValueSets = useMemo(
     () => [...selectedById.values()].map(candidateValueSets),
     [selectedById]
+  );
+  const basisValueSets = useMemo(
+    () => [
+      ...existingMemberCandidates.map(candidateValueSets),
+      ...selectedValueSets
+    ],
+    [existingMemberCandidates, selectedValueSets]
   );
   const selectedIds = useMemo(
     () => new Set(selectedById.keys()),
     [selectedById]
   );
   const selectionDimSets = useMemo(
-    () => computeSelectionDimSets(selectedValueSets),
-    [selectedValueSets]
+    () => computeSelectionDimSets(basisValueSets),
+    [basisValueSets]
   );
 
-  // A candidate is LOCKED when adding it to the current selection would leave a
-  // "must" dimension with no shared value. Empty selection locks nothing.
+  // A candidate is LOCKED when adding it to the basis would leave a "must"
+  // dimension with no shared value. Empty basis locks nothing.
   const lockedById = useMemo(
-    () => computeLockedById(candidates, selectedIds, selectedValueSets, rules),
-    [candidates, selectedIds, selectedValueSets, rules]
+    () => computeLockedById(candidates, selectedIds, basisValueSets, rules),
+    [candidates, selectedIds, basisValueSets, rules]
   );
 
-  // GUIDE mismatches (advisory): a guide dimension where the selection has a
+  // GUIDE mismatches (advisory): a guide dimension where the basis has a
   // value the candidate can't match. Warned, never blocked.
   const guideMismatchById = useMemo(
     () =>
       computeGuideMismatches(
         candidates,
         selectedIds,
-        selectedValueSets,
+        basisValueSets,
         selectionDimSets,
         rules
       ),
-    [candidates, selectedIds, selectedValueSets, selectionDimSets, rules]
+    [candidates, selectedIds, basisValueSets, selectionDimSets, rules]
+  );
+
+  // The after-the-fact ERROR flag: an operation already IN the group (picked,
+  // or an existing batch member) whose material shares no value with the rest
+  // on some non-ignore dimension. The pre-pick tags above go quiet once a row
+  // is selected — this one does not.
+  const memberMismatchById = useMemo(
+    () =>
+      computeMemberMismatches(
+        [...existingMemberCandidates, ...selectedById.values()].map((c) => ({
+          id: c.id,
+          sets: candidateValueSets(c)
+        })),
+        rules
+      ),
+    [existingMemberCandidates, selectedById, rules]
   );
 
   const compat = useMemo<CompatInfo>(
-    () => ({ rules, lockedById, guideMismatchById, dimLabel }),
-    [rules, lockedById, guideMismatchById, dimLabel]
+    () => ({
+      rules,
+      lockedById,
+      guideMismatchById,
+      memberMismatchById,
+      dimLabel
+    }),
+    [rules, lockedById, guideMismatchById, memberMismatchById, dimLabel]
   );
 
   // Filterable dimensions derived from what the candidates' BOMs actually
@@ -683,7 +743,11 @@ export function BatchBuilder({
     [locations]
   );
   const processOptions = useMemo(
-    () => processes.map((p) => ({ value: p.id, label: p.name })),
+    () =>
+      processes.map((p) => ({
+        value: p.id,
+        label: <Enumerable value={p.name} />
+      })),
     [processes]
   );
   // Only centers that can RUN the scoped process, at the batch's location —
@@ -820,6 +884,8 @@ export function BatchBuilder({
             <ReviewPanel
               isAddMode={isAddMode}
               existingMembers={batch?.members ?? []}
+              existingMemberCandidates={existingMemberCandidates}
+              compat={compat}
               selected={selected}
               rules={rules}
               batchType={batchType}
@@ -980,7 +1046,7 @@ function ScopeBar({
   processName: string | null;
   locationName: string | null;
   locationOptions: { value: string; label: string }[];
-  processOptions: { value: string; label: string }[];
+  processOptions: { value: string; label: string | JSX.Element }[];
   locationId: string;
   processId: string | null;
   onLocationChange: (id: string) => void;
@@ -1468,7 +1534,6 @@ function ComposePanel({
           onToggle={onToggle}
           allVisibleSelected={allVisibleSelected}
           onToggleAllVisible={onToggleAllVisible}
-          workCenterNameById={workCenterNameById}
           compat={compat}
         />
       ) : (
@@ -1514,7 +1579,6 @@ function CandidateTable({
   onToggle,
   allVisibleSelected,
   onToggleAllVisible,
-  workCenterNameById,
   compat
 }: {
   isLoading: boolean;
@@ -1525,7 +1589,6 @@ function CandidateTable({
   onToggle: (c: BatchCandidate) => void;
   allVisibleSelected: boolean;
   onToggleAllVisible: () => void;
-  workCenterNameById: Map<string, string>;
   compat: CompatInfo;
 }) {
   const { t } = useLingui();
@@ -1604,13 +1667,6 @@ function CandidateTable({
         )
       },
       {
-        accessorKey: "description",
-        header: t`Operation`,
-        cell: ({ row }) => (
-          <span className="text-sm">{row.original.description}</span>
-        )
-      },
-      {
         accessorKey: "operationQuantity",
         header: () => <div className="w-full text-right">{t`Qty`}</div>,
         cell: ({ row }) => (
@@ -1630,16 +1686,6 @@ function CandidateTable({
             </span>
           ) : null;
         }
-      },
-      {
-        id: "workCenter",
-        header: t`Work Center`,
-        cell: ({ row }) =>
-          row.original.workCenterId ? (
-            <span className="text-sm text-muted-foreground">
-              {workCenterNameById.get(row.original.workCenterId) ?? "—"}
-            </span>
-          ) : null
       },
       {
         id: "materials",
@@ -1677,7 +1723,6 @@ function CandidateTable({
       onToggle,
       allVisibleSelected,
       onToggleAllVisible,
-      workCenterNameById,
       compat
     ]
   );
@@ -2034,6 +2079,8 @@ function CapacityFill({
 function ReviewPanel({
   isAddMode,
   existingMembers,
+  existingMemberCandidates,
+  compat,
   selected,
   rules,
   batchType,
@@ -2048,6 +2095,10 @@ function ReviewPanel({
 }: {
   isAddMode: boolean;
   existingMembers: BatchBuilderBatch["members"];
+  // The same members as RPC rows (with materials) — anchor the mixed-materials
+  // warning and the in-group mismatch flags when adding to a batch.
+  existingMemberCandidates: BatchCandidate[];
+  compat: CompatInfo;
   selected: BatchCandidate[];
   rules: Required<BatchRules>;
   batchType: BatchType;
@@ -2100,9 +2151,16 @@ function ReviewPanel({
       : 0;
   const showDueSpread = dueSpreadDays >= DUE_SPREAD_WARNING_DAYS;
 
-  // Mixed materials: distinct non-empty signatures among the selection.
+  // Mixed materials: distinct non-empty signatures across the whole GROUP —
+  // the selection plus, in add-mode, the batch's existing members (adding one
+  // stainless op to an all-A36 batch is a mix even though the new pick alone
+  // has a single signature).
   const signatures = [
-    ...new Set(selected.map((c) => materialSignature(c, rules)).filter(Boolean))
+    ...new Set(
+      [...existingMemberCandidates, ...selected]
+        .map((c) => materialSignature(c, rules))
+        .filter(Boolean)
+    )
   ];
   const showMixedWarning = signatures.length >= 2;
 
@@ -2219,7 +2277,12 @@ function ReviewPanel({
             existingMembers.map((m) => (
               <HStack
                 key={m.id}
-                className="w-full justify-between gap-2 rounded-md p-2 opacity-60"
+                className={cn(
+                  "w-full justify-between gap-2 rounded-md p-2",
+                  compat.memberMismatchById.has(m.id)
+                    ? "opacity-100"
+                    : "opacity-60"
+                )}
               >
                 <VStack spacing={0} className="min-w-0">
                   <span className="text-sm font-medium truncate">
@@ -2228,6 +2291,7 @@ function ReviewPanel({
                   <span className="text-xs text-muted-foreground truncate">
                     {m.itemReadableId ?? m.description}
                   </span>
+                  <CompatBadge candidateId={m.id} compat={compat} />
                 </VStack>
                 <Badge variant="outline">
                   <Trans>Member</Trans>
@@ -2259,6 +2323,7 @@ function ReviewPanel({
                   <span className="text-xs text-muted-foreground truncate">
                     {c.itemReadableId ?? c.description}
                   </span>
+                  <CompatBadge candidateId={c.id} compat={compat} />
                 </VStack>
               </HStack>
               <HStack spacing={2} className="flex-shrink-0">

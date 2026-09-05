@@ -291,6 +291,9 @@ msgstr "{name} geri dönüyor!"
 msgid "{names} differs"
 msgstr "{names} farklıdır"
 
+msgid "{names} doesn't match the batch"
+msgstr ""
+
 msgid "{names} must match — separate load"
 msgstr "{name} geri döndü!"
 
@@ -17042,6 +17045,9 @@ msgstr "Bu Ay"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Bu operasyon henüz zamanlanmaz — bar, çakışma çözüldüğünde nerede çalışacağını işaretler. Kapasiteyi tutmaz."
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr ""
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Uygulama Hub'ınızın bu sayfası oluşturuluyor. Bunu tamamlarken komuta merkezinden başlayın."
