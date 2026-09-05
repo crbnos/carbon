@@ -1,6 +1,6 @@
 # Job Operation Batching
 
-Last tested: 2026-08-21 (feat/job-operation-batching-v2)
+Last tested: 2026-09-04 (feat/job-operation-batching-v2 — batch release lifecycle)
 Routes: ERP `/x/resources/processes`, `/x/schedule/operations`; MES `/x/operation/$operationId` (batch mode; `/x/batch/$batchId` redirects here)
 Edge fn: `batch-operations` (create/add/remove/update/dissolve/complete)
 
@@ -143,3 +143,40 @@ Full seed/cleanup SQL pattern is in the run log `.ai/runs/2026-08-21-job-operati
 - Batches page: `/x/production/batches` (nav Production → Batches) lists
   batches with status filter + member count/qty; row click opens the member
   drawer with Print load list + View on schedule board.
+
+
+### 9. Batch release lifecycle (2026-09-04 — Planned state + membership handoff)
+
+Lifecycle is now `Planned → Active("Released") → Completing → Completed`.
+Selector gotcha for this whole section: agent-browser @refs are NOT stable
+across CLI invocations here (nav buttons swallow low refs) — drive everything
+via `agent-browser eval` DOM queries (find buttons by textContent, switches via
+`input[name=…].closest(div).querySelector('[role=switch]')`, combobox options
+via `[role=option]` textContent).
+
+- **Process form**: toggling Batchable reveals a "Batch type" Select
+  (Sequential default / Simultaneous) above the compatibility card; save via
+  requestSubmit; verify `process."batchType"`.
+- **Builder**: candidates now include ops from Draft/Planned jobs (JobStatus
+  chip on those rows). Footer: "Create batch" → status `Planned`;
+  "Create & Release" → `Active` (enabled when a WC is picked OR all members
+  share one — the edge fn adoption rule).
+- **Membership-handoff floor rule** (assert via
+  `get_active_job_operations_by_location(loc,'{}')`): a Planned batch's member
+  is ABSENT even when its job is Ready (the leak, closed); a Released batch's
+  member is PRESENT even when its job is Draft; an unbatched op follows job
+  status. MES `/x/operation/{id}` for a Planned-batch member REDIRECTS to
+  /x/operations with a "not been released" flash (server-side guard).
+- **Batches drawer**: Planned shows "Not on the shop floor — release to
+  dispatch" + Release button (disabled w/o WC); Active shows Unrelease.
+  Unrelease pre-timer → Planned; after any batch event → refusal toast
+  "production has been recorded — complete the batch instead".
+- **Scheduling (batch pre-pass)**: job-release with `?schedule=1` runs
+  runLocationSchedule in-process — the deterministic way to trigger the
+  pre-pass without the Inngest wave. Assert: exactly ONE capacityReservation
+  per Released batch (`jobOperationBatchId` tag), duration = setup(max)+Σrun
+  (Sequential) vs setup(max)+max(run) (Simultaneous), zero per-member rows,
+  member ops' startDate/projectedCompletionAt identical (pinned).
+- **Job detail**: a Ready job with unbatched batchable ops shows an
+  "N awaiting batching" header chip.
+- Completion (§5-7) is UNCHANGED by the release feature — same slicing proof.

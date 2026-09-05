@@ -572,6 +572,15 @@ the completeness findings that review added:
   equivalence); no contradictions. Two non-blocking future refinements noted
   (p-batch weight/size-driven duration; non-quantity override weights).
   Status: draft, pending Brad's veto pass on the recommended items, then `/plan`.
+- 2026-09-05: Browser verification caught a runtime bug in the floor RPC fork
+  (unqualified `"id"` in the relevant_jobs CTE is ambiguous with the plpgsql
+  OUT parameter — the function threw at first call); fixed by qualifying
+  `"job"."id"`. All 8 e2e scenarios then PASSED (leak closed incl. direct-URL
+  guard; released-batch-on-Draft-job floor visibility; Sequential 120min vs
+  Simultaneous 80min single coalesced reservations; zero member over-booking;
+  unrelease refusal; unchanged proportional completion). Per Brad, the branch's
+  nine incremental migrations were then consolidated into ONE final-state
+  idempotent file: `20260905132037_job-operation-batching.sql`.
 - 2026-09-04: Implementation amendment (Fable, for veto): the priority board
   stays floor-pure — Planned batches render only on the Batches list/builder,
   not as board cards (the board + MES kanban share the floor RPC; a Planned

@@ -28,10 +28,10 @@ Core rule being implemented (memorize before any task):
 - [x] Task 12: Batch builder — Create vs Create & Release, job-status chips, duration
 - [x] Task 13: Batches list/drawer/board — Planned state, Release/Unrelease actions
 - [x] Task 14: Job detail — "operations awaiting batching" notice
-- [ ] Task 15: i18n extract + translate
+- [x] Task 15: i18n extract + translate
 - [x] Task 16: Docs sync (AGENTS.md + rules + spec changelog)
-- [ ] Task 17: Validation gates (typecheck, lint, tests, db checks)
-- [ ] Task 18: Browser verification via /test
+- [x] Task 17: Validation gates (typecheck, lint, tests, db checks)
+- [x] Task 18: Browser verification via /test
 
 ## Dependencies
 - Task 2 needs Task 1 (enum value must exist in an earlier file). Task 3 needs 1–2.

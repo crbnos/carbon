@@ -24664,6 +24664,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.batchType"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24771,6 +24774,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.batchType"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -24830,6 +24836,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.batchRules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchType"
           },
           {
             $ref: "#/parameters/body.process"
@@ -67195,6 +67204,9 @@ export default {
             $ref: "#/parameters/rowFilter.processes.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.batchType"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters"
           },
           {
@@ -87925,6 +87937,9 @@ export default {
             $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
           },
           {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -88035,6 +88050,9 @@ export default {
             $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
           },
           {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -88097,6 +88115,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.capacityReservation"
@@ -106939,7 +106960,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -106988,7 +107009,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -108825,8 +108846,8 @@ export default {
           type: "string"
         },
         status: {
-          default: "Active",
-          enum: ["Active", "Completing", "Completed"],
+          default: "Planned",
+          enum: ["Planned", "Active", "Completing", "Completed"],
           format: 'public."jobOperationBatchStatus"',
           type: "string"
         },
@@ -112553,7 +112574,8 @@ export default {
         "completeAllOnScan",
         "active",
         "requiresAbility",
-        "batchable"
+        "batchable",
+        "batchType"
       ],
       properties: {
         id: {
@@ -112650,6 +112672,12 @@ export default {
           description:
             "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
           format: "jsonb"
+        },
+        batchType: {
+          default: "Sequential",
+          enum: ["Sequential", "Simultaneous"],
+          format: 'public."batchType"',
+          type: "string"
         }
       },
       type: "object"
@@ -132584,6 +132612,11 @@ export default {
         batchRules: {
           format: "jsonb"
         },
+        batchType: {
+          enum: ["Sequential", "Simultaneous"],
+          format: 'public."batchType"',
+          type: "string"
+        },
         workCenters: {
           format: "text[]",
           items: {
@@ -142679,6 +142712,10 @@ export default {
             "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
           format: "boolean",
           type: "boolean"
+        },
+        jobOperationBatchId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -156481,6 +156518,12 @@ export default {
       name: "batchRules",
       description:
         "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.process.batchType": {
+      name: "batchType",
       required: false,
       in: "query",
       type: "string"
@@ -178607,6 +178650,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.processes.batchType": {
+      name: "batchType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.processes.workCenters": {
       name: "workCenters",
       required: false,
@@ -189850,6 +189899,12 @@ export default {
       name: "isPlaceholder",
       description:
         "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.jobOperationBatchId": {
+      name: "jobOperationBatchId",
       required: false,
       in: "query",
       type: "string"
