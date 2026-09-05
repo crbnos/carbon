@@ -2,18 +2,22 @@ import { CodeBlock } from "@/components/api/code-block";
 import { DEFAULT_MCP_ENDPOINT } from "@/components/api/config-constants";
 import { McpEndpoint } from "@/components/api/config-inline";
 import {
+  Code,
   DocEyebrow,
   DocLink,
   DocPage,
   DocTitle,
   H2,
   Lead,
-  P
+  P,
+  Row,
+  Table
 } from "@/components/api/doc";
 import { Faq, type FaqEntry } from "@/components/api/faq";
 import { ContentFooter } from "@/components/api/page-footer";
 import { highlight } from "@/lib/highlight";
 import { pageSeo, SEO } from "@/lib/seo";
+import { toolCounts } from "@/lib/tools-data";
 
 export const metadata = pageSeo({
   title: `${SEO.carbonApi.mcp.title} — Carbon`,
@@ -126,6 +130,44 @@ export default async function ConnectOverMcpPage() {
         label="Terminal · Claude Code"
       />
       <CodeBlock html={cursor} code={CURSOR} label=".cursor/mcp.json" />
+
+      <H2 id="discovery">Discovery</H2>
+      <P>
+        The server does not register all{" "}
+        {toolCounts().total.toLocaleString()} operations as tools — that
+        would flood a model's context. It exposes three meta-tools instead, and
+        the model loads only what a task needs:
+      </P>
+      <Table>
+        <Row head cols="150px 1fr" cells={["Meta-tool", "What it does"]} />
+        <Row
+          cols="150px 1fr"
+          cells={[
+            <Code key="s">search_tools</Code>,
+            "Find operations by query, module, or classification."
+          ]}
+        />
+        <Row
+          cols="150px 1fr"
+          cells={[
+            <Code key="d">describe_tool</Code>,
+            "Get an operation's input schema and description."
+          ]}
+        />
+        <Row
+          cols="150px 1fr"
+          cells={[
+            <Code key="c">call_tool</Code>,
+            "Invoke an operation by name with its arguments."
+          ]}
+        />
+      </Table>
+      <P>
+        A typical flow is <Code>search_tools</Code> → <Code>describe_tool</Code>{" "}
+        → <Code>call_tool</Code>, which keeps the model's context lean no matter
+        how large the catalog grows. The same operations are also plain HTTP
+        endpoints — see <DocLink href="/api/operations">Operations</DocLink>.
+      </P>
 
       <H2 id="ask">What you can ask</H2>
       <P>Once connected, ask in natural language:</P>

@@ -1,6 +1,7 @@
 import {
   Code,
   DocEyebrow,
+  DocLink,
   DocPage,
   DocTitle,
   H2,
@@ -33,43 +34,35 @@ export default function ApiOperationsPage() {
       <DocTitle>Operations</DocTitle>
       <Lead>
         The Carbon API is {OPERATION_COUNT.toLocaleString()} operations across{" "}
-        {MODULE_COUNT} modules — reached through one lean discovery pattern, so
-        an assistant never has to load them all at once.
+        {MODULE_COUNT} modules. Every one is callable two ways — over plain HTTP,
+        and as a tool over MCP. Same operation, same arguments, same permissions.
       </Lead>
 
-      <H2 id="discovery">Discovery</H2>
+      <H2 id="calling">Calling an operation</H2>
       <P>
-        Rather than list every operation, the server presents three meta-tools.
-        The model uses them to find and load only what a task needs:
+        Over HTTP, each operation is a POST to its module and name, with the
+        arguments as the JSON body:
       </P>
       <Table>
-        <Row head cols="150px 1fr" cells={["Meta-tool", "What it does"]} />
+        <Row head cols="150px 1fr" cells={["Transport", "How you call it"]} />
         <Row
           cols="150px 1fr"
           cells={[
-            <Code key="s">search_tools</Code>,
-            "Find operations by query, module, or classification."
+            "HTTP",
+            <Code key="h">POST /api/v1/&#123;module&#125;/&#123;operation&#125;</Code>
           ]}
         />
         <Row
           cols="150px 1fr"
           cells={[
-            <Code key="d">describe_tool</Code>,
-            "Get an operation's input schema and description."
-          ]}
-        />
-        <Row
-          cols="150px 1fr"
-          cells={[
-            <Code key="c">call_tool</Code>,
-            "Invoke an operation by name with its arguments."
+            "MCP",
+            <Code key="m">call_tool</Code>
           ]}
         />
       </Table>
       <P>
-        A typical flow is <Code>search_tools</Code> → <Code>describe_tool</Code>{" "}
-        → <Code>call_tool</Code>, which keeps the model's context lean no matter
-        how large the catalog grows.
+        Each operation page shows both, with a copyable sample. Connecting an MCP
+        client is covered in <DocLink href="/api/mcp">Connect over MCP</DocLink>.
       </P>
 
       <H2 id="classification">Classification</H2>
