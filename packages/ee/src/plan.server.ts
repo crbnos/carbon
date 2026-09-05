@@ -1,4 +1,4 @@
-import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
+import { CarbonEdition, error, IS_LOCAL_DEV, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -11,6 +11,10 @@ import {
   planMeetsRequirement,
   resolveRequirement
 } from "./plan";
+
+function isLocalDevApiKeysBypass(spec: GateSpec): boolean {
+  return IS_LOCAL_DEV && "feature" in spec && spec.feature === "API_KEYS";
+}
 
 function isBypassCompany(companyId: string): boolean {
   if (!STRIPE_BYPASS_COMPANY_IDS) return false;
@@ -73,6 +77,7 @@ export async function companyHasPlan(
   companyId: string,
   spec: GateSpec
 ): Promise<boolean> {
+  if (isLocalDevApiKeysBypass(spec)) return true;
   if (CarbonEdition !== Edition.Cloud) return true;
   if (isBypassCompany(companyId)) return true;
 
@@ -98,6 +103,7 @@ export async function requirePlan({
   message,
   ...spec
 }: RequirePlanArgs): Promise<void> {
+  if (isLocalDevApiKeysBypass(spec as GateSpec)) return;
   if (CarbonEdition !== Edition.Cloud) return;
   if (isBypassCompany(companyId)) return;
 

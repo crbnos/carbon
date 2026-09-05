@@ -13,6 +13,7 @@ import { redirect } from "react-router";
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
+  IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
@@ -299,9 +300,9 @@ export async function requirePermissions(
       }
 
       // Plan gate: API access is a Business-tier feature. Block Starter
-      // companies from authenticating with their API key. Self-hosted editions
-      // and bypass-listed companies are never gated.
-      if (CarbonEdition === Edition.Cloud) {
+      // companies from authenticating with their API key. Self-hosted editions,
+      // bypass-listed companies, and local dev stacks are never gated.
+      if (CarbonEdition === Edition.Cloud && !IS_LOCAL_DEV) {
         const isBypass = STRIPE_BYPASS_COMPANY_IDS
           ? STRIPE_BYPASS_COMPANY_IDS.split(",")
               .map((id: string) => id.trim())

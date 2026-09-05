@@ -213,6 +213,8 @@ export const path = {
       onShapeSync: `${api}/integrations/onshape/sync`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
+      solidWorksSend: `${api}/integrations/solidworks/send`,
+      solidWorksAsset: `${api}/integrations/solidworks/asset`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
       outstandingTrainings: `${api}/resources/trainings`,

@@ -30,13 +30,130 @@ const payloadValidator = z.discriminatedUnion("type", [
     companyId: z.string(),
     userId: z.string(),
   }),
+  z.object({
+    type: z.literal("solidworks"),
+    makeMethodId: z.string(),
+    data: onShapeDataValidator.array(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
 ]);
+
+function dataMappingIntegration(
+  type: "onshape" | "solidworks"
+): "onshapeData" | "solidworksData" {
+  return type === "solidworks" ? "solidworksData" : "onshapeData";
+}
 
 interface MakeMethodInfo {
   id: string;
   itemId: string;
   version: number;
   status: "Draft" | "Active" | "Archived";
+}
+
+type ItemReplenishment = {
+  replenishmentSystem: "Buy" | "Make" | "Buy and Make";
+  defaultMethodType:
+    | "Make to Order"
+    | "Purchase to Order"
+    | "Pull from Inventory";
+};
+
+function replenishmentPriority(
+  system: ItemReplenishment["replenishmentSystem"]
+): number {
+  switch (system) {
+    case "Make":
+      return 3;
+    case "Buy and Make":
+      return 2;
+    default:
+      return 1;
+  }
+}
+
+function defaultMethodForReplenishment(
+  system: ItemReplenishment["replenishmentSystem"]
+): ItemReplenishment["defaultMethodType"] {
+  if (system === "Make") return "Make to Order";
+  return "Purchase to Order";
+}
+
+/** Same part can appear on multiple BOM lines — prefer Make over Buy on the item master. */
+function mergeItemReplenishment(
+  current: ItemReplenishment | null,
+  incoming: ItemReplenishment
+): ItemReplenishment {
+  if (!current) {
+    return {
+      replenishmentSystem: incoming.replenishmentSystem,
+      defaultMethodType: defaultMethodForReplenishment(
+        incoming.replenishmentSystem
+      ),
+    };
+  }
+  if (
+    replenishmentPriority(incoming.replenishmentSystem) >
+    replenishmentPriority(current.replenishmentSystem)
+  ) {
+    return {
+      replenishmentSystem: incoming.replenishmentSystem,
+      defaultMethodType: defaultMethodForReplenishment(
+        incoming.replenishmentSystem
+      ),
+    };
+  }
+  if (
+    replenishmentPriority(incoming.replenishmentSystem) <
+    replenishmentPriority(current.replenishmentSystem)
+  ) {
+    return current;
+  }
+  return {
+    replenishmentSystem: incoming.replenishmentSystem,
+    defaultMethodType: defaultMethodForReplenishment(
+      incoming.replenishmentSystem
+    ),
+  };
+}
+
+async function mergeAndUpdateItemReplenishment(
+  trx: Transaction<DB>,
+  itemId: string,
+  incoming: ItemReplenishment,
+  userId: string
+): Promise<ItemReplenishment> {
+  const current = await trx
+    .selectFrom("item")
+    .select(["replenishmentSystem", "defaultMethodType"])
+    .where("id", "=", itemId)
+    .executeTakeFirst();
+
+  const merged = mergeItemReplenishment(
+    current
+      ? {
+          replenishmentSystem:
+            current.replenishmentSystem as ItemReplenishment["replenishmentSystem"],
+          defaultMethodType:
+            current.defaultMethodType as ItemReplenishment["defaultMethodType"],
+        }
+      : null,
+    incoming
+  );
+
+  await trx
+    .updateTable("item")
+    .set({
+      replenishmentSystem: merged.replenishmentSystem,
+      defaultMethodType: merged.defaultMethodType,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    .where("id", "=", itemId)
+    .execute();
+
+  return merged;
 }
 
 async function copyMakeMethodOperations(
@@ -172,8 +289,10 @@ serve(async (req: Request) => {
   const { type, companyId, userId } = payloadValidator.parse(payload);
 
   switch (type) {
-    case "onshape": {
+    case "onshape":
+    case "solidworks": {
       const { makeMethodId, data } = payload;
+      const dataIntegration = dataMappingIntegration(type);
 
       console.log({
         function: "sync",
@@ -256,7 +375,33 @@ serve(async (req: Request) => {
         data.map((item: { id?: string }) => item.id).filter(Boolean)
       );
 
-      const [existingMakeMethods, existingItems] = await Promise.all([
+      const existingReadableKeys = [
+        ...new Set(
+          data
+            .filter((item) => !item.id)
+            .map((item) =>
+              getReadableIdWithRevision(
+                item.readableId || item.name,
+                item.revision
+              )
+            )
+            .filter((key): key is string => Boolean(key))
+        ),
+      ];
+
+      const itemsByRevisionPromise =
+        existingReadableKeys.length > 0
+          ? client
+              .from("item")
+              .select(
+                "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
+              )
+              .eq("companyId", companyId)
+              .in("readableIdWithRevision", existingReadableKeys)
+          : Promise.resolve({ data: [], error: null });
+
+      const [existingMakeMethods, existingItems, existingItemsByRevision] =
+        await Promise.all([
         client
           .from("activeMakeMethods")
           .select("id, itemId, version, status")
@@ -269,6 +414,7 @@ serve(async (req: Request) => {
           )
           .eq("companyId", companyId)
           .in("id", Array.from(existingItemIds)),
+        itemsByRevisionPromise,
       ]);
 
       console.log({
@@ -293,6 +439,22 @@ serve(async (req: Request) => {
       const existingItemsByItemId = new Map(
         existingItems.data?.map((item) => [item.id, item]) ?? []
       );
+
+      const existingItemsByReadableIdWithRevision = new Map<
+        string,
+        NonNullable<(typeof existingItems.data)[number]>
+      >();
+      for (const item of [
+        ...(existingItems.data ?? []),
+        ...(existingItemsByRevision.data ?? []),
+      ]) {
+        if (item.readableIdWithRevision) {
+          existingItemsByReadableIdWithRevision.set(
+            item.readableIdWithRevision,
+            item
+          );
+        }
+      }
 
       try {
         interface TreeNode {
@@ -402,24 +564,17 @@ serve(async (req: Request) => {
             const externalPartId = getReadableIdWithRevision(partId, revision);
 
             const isMade = children.length > 0;
-            let itemId = id;
+            let itemId =
+              id ??
+              newlyCreatedItemsByPartId.get(externalPartId) ??
+              existingItemsByReadableIdWithRevision.get(externalPartId)?.id;
 
             if (itemId) {
-              // Update existing item
-              await trx
-                .updateTable("item")
-                .set({
-                  updatedBy: userId,
-                  updatedAt: new Date().toISOString(),
-                })
-                .where("id", "=", itemId)
-                .execute();
-
               await trx
                 .deleteFrom("externalIntegrationMapping")
                 .where("entityType", "=", "item")
                 .where("entityId", "=", itemId)
-                .where("integration", "=", "onshapeData")
+                .where("integration", "=", dataIntegration)
                 .execute();
 
               await trx
@@ -427,7 +582,7 @@ serve(async (req: Request) => {
                 .values({
                   entityType: "item",
                   entityId: itemId,
-                  integration: "onshapeData",
+                  integration: dataIntegration,
                   externalId: externalPartId,
                   metadata: data.data,
                   companyId,
@@ -450,12 +605,8 @@ serve(async (req: Request) => {
                 )
                 .execute();
             } else {
-              // Check if we've already created this part in this transaction
-              itemId = newlyCreatedItemsByPartId.get(partId);
-
-              if (!itemId) {
-                // Create new item and part
-                const item = await trx
+              // Create new item and part
+              const item = await trx
                   .insertInto("item")
                   .values({
                     readableId: partId,
@@ -474,14 +625,14 @@ serve(async (req: Request) => {
 
                 itemId = item?.id;
 
-                // Create OnShape mapping for the new item
+                // Per-row CAD metadata (Onshape or SolidWorks)
                 if (itemId) {
                   await trx
                     .insertInto("externalIntegrationMapping")
                     .values({
                       entityType: "item",
                       entityId: itemId,
-                      integration: "onshapeData",
+                      integration: dataIntegration,
                       externalId: externalPartId,
                       metadata: data.data,
                       companyId,
@@ -520,26 +671,43 @@ serve(async (req: Request) => {
                   )
                   .execute();
 
-                // Store the newly created item to avoid duplicate inserts
-                if (itemId) {
-                  newlyCreatedItemsByPartId.set(partId, itemId);
-                  // Also update our existing items map for later reference
-                  existingItemsByItemId.set(itemId, {
-                    id: itemId,
-                    readableId: partId,
-                    readableIdWithRevision: getReadableIdWithRevision(
-                      partId,
-                      revision
-                    ),
-                    revision: revision ?? "0",
-                    unitOfMeasureCode: "EA",
-                    type: "Part",
-                  });
-                }
+              // Store the newly created item to avoid duplicate inserts
+              if (itemId) {
+                newlyCreatedItemsByPartId.set(externalPartId, itemId);
+                // Also update our existing items map for later reference
+                existingItemsByItemId.set(itemId, {
+                  id: itemId,
+                  readableId: partId,
+                  readableIdWithRevision: getReadableIdWithRevision(
+                    partId,
+                    revision
+                  ),
+                  revision: revision ?? "0",
+                  unitOfMeasureCode: "EA",
+                  type: "Part",
+                });
+                existingItemsByReadableIdWithRevision.set(externalPartId, {
+                  id: itemId,
+                  readableId: partId,
+                  readableIdWithRevision: getReadableIdWithRevision(
+                    partId,
+                    revision
+                  ),
+                  revision: revision ?? "0",
+                  unitOfMeasureCode: "EA",
+                  type: "Part",
+                });
               }
             }
 
             if (!itemId) throw new Error("Failed to create item");
+
+            const itemReplenishment = await mergeAndUpdateItemReplenishment(
+              trx,
+              itemId,
+              { replenishmentSystem, defaultMethodType },
+              userId
+            );
 
             let materialMakeMethodId: string | undefined;
             const existingMakeMethod =
@@ -556,7 +724,9 @@ serve(async (req: Request) => {
               existingMakeMethod: existingMakeMethod ?? null,
             });
 
-            if (defaultMethodType === "Make to Order" || isMade) {
+            if (
+              itemReplenishment.defaultMethodType === "Make to Order" || isMade
+            ) {
               if (existingMakeMethod) {
                 if (existingMakeMethod.status === "Draft") {
                   // Draft - use existing make method directly
@@ -712,7 +882,7 @@ serve(async (req: Request) => {
                 quantity: quantity ?? 1,
                 makeMethodId: parentMakeMethodId,
                 materialMakeMethodId,
-                methodType: defaultMethodType,
+                methodType: itemReplenishment.defaultMethodType,
                 order: index,
                 itemType: existingItemsByItemId.get(itemId)?.type ?? "Part",
                 unitOfMeasureCode:

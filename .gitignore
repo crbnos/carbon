@@ -58,6 +58,10 @@ packages/database/supabase/seed.sql
 
 # Worktree-isolated dev environment
 .carbon-worktree
+
+# Client SolidWorks test files (proprietary; do not commit)
+apps/solidworks-connector/fixtures/client-assembly/*
+!apps/solidworks-connector/fixtures/client-assembly/.gitkeep
 .superpowers
 
 # Agent scratch — local-only, never commit
