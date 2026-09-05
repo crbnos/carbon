@@ -91,10 +91,13 @@ export function OperationPanel({
   samples,
   highlighted,
   httpPath,
+  responseHtml,
 }: {
   samples: Record<SampleKey, string>;
   highlighted: Record<SampleKey, string>;
   httpPath: string;
+  /** Shiki HTML for the success envelope. */
+  responseHtml?: string;
 }) {
   const [transport, setTransport] = useState<Transport>("http");
   const [lang, setLang] = useState<HttpLang>("curl");
@@ -103,7 +106,8 @@ export function OperationPanel({
   const key: SampleKey = transport === "http" ? `http.${lang}` : "mcp";
 
   return (
-    <div className="my-5 overflow-hidden rounded-xl border border-ed-dark-line bg-ed-dark-bg shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+    <div className="sticky top-22 flex flex-col gap-4">
+      <Panel>
       <div className="flex h-11 items-center justify-between gap-2 border-b border-ed-dark-line pr-2 pl-2">
         <div
           role="tablist"
@@ -144,6 +148,30 @@ export function OperationPanel({
           }}
         />
       </div>
+      </Panel>
+
+      {responseHtml && (
+        <Panel>
+          <div className="flex h-10 items-center border-b border-ed-dark-line px-3.5">
+            <span className="font-mono text-ed-12 tracking-[0.04em] text-ed-text-muted">
+              Response
+            </span>
+          </div>
+          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
+          <div
+            className="api-shiki"
+            dangerouslySetInnerHTML={{ __html: responseHtml }}
+          />
+        </Panel>
+      )}
+    </div>
+  );
+}
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-ed-dark-line bg-ed-dark-bg shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+      {children}
     </div>
   );
 }

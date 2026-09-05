@@ -42,6 +42,17 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   });
 }
 
+/**
+ * The success envelope every v1 operation returns, taken from the dispatcher
+ * (`api+/v1+/lib/dispatch.server.ts`): a Supabase result is unwrapped to `data` plus
+ * an optional `count`. The payload shape itself is per-operation and not yet
+ * generated, so it is left unspecified here rather than invented.
+ */
+const RESPONSE_ENVELOPE = `{
+  "data": {},
+  "count": null
+}`;
+
 const BADGE: Record<ToolClass, string> = {
   READ: "bg-ed-green-bg text-ed-green-strong border-ed-green-border",
   WRITE: "bg-ed-blue-bg text-ed-brand-ink border-ed-blue-border",
@@ -58,8 +69,10 @@ export default async function OperationPage(props: Params) {
   const httpPath = operationPath(t.name, mod.slug);
   const schemaJson = JSON.stringify(t.schema, null, 2);
 
-  const [schemaHtml, ...sampleHtml] = await Promise.all([
+  const responseJson = RESPONSE_ENVELOPE;
+  const [schemaHtml, responseHtml, ...sampleHtml] = await Promise.all([
     highlight(schemaJson, "json"),
+    highlight(responseJson, "json"),
     ...SAMPLE_KEYS.map((k) => highlight(samples[k], SAMPLE_GRAMMAR[k]))
   ]);
   const highlighted = Object.fromEntries(
@@ -90,23 +103,32 @@ export default async function OperationPage(props: Params) {
       </div>
       {description && <P>{description}.</P>}
 
-      <H2 id="request">Request</H2>
-      <P>
-        Call it over HTTP, or through the <Code>call_tool</Code> meta-tool over MCP —
-        both reach the same operation.
-      </P>
-      <OperationPanel
-        samples={samples}
-        highlighted={highlighted}
-        httpPath={httpPath}
-      />
+      <div className="mt-8 grid grid-cols-1 gap-x-14 gap-y-8 lg:grid-cols-2">
+        <div className="min-w-0">
+          <H2 id="parameters">Parameters</H2>
+          <SchemaTable schema={t.schema} />
 
-      <H2 id="parameters">Parameters</H2>
-      <SchemaTable schema={t.schema} />
+          <H2 id="response">Response</H2>
+          <P>
+            <Code>data</Code> holds the operation's result — a row, a list of rows,
+            or <Code>null</Code>. <Code>count</Code> is present on paginated reads.
+            A failure returns an error instead, with a message describing it.
+          </P>
 
-      <H2 id="schema">Input schema</H2>
-      <P>The raw JSON Schema the operation validates its arguments against.</P>
-      <CodeBlock html={schemaHtml} code={schemaJson} label="schema" />
+          <H2 id="schema">Input schema</H2>
+          <P>The raw JSON Schema for this operation's arguments.</P>
+          <CodeBlock html={schemaHtml} code={schemaJson} label="schema" />
+        </div>
+
+        <div className="min-w-0">
+          <OperationPanel
+            samples={samples}
+            highlighted={highlighted}
+            httpPath={httpPath}
+            responseHtml={responseHtml}
+          />
+        </div>
+      </div>
     </DocPage>
   );
 }
