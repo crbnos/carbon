@@ -21,6 +21,10 @@ import type {
   ToolPermission,
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
+import {
+  buildValidatorRegistry,
+  type ValidatorRegistry,
+} from "./validator-registry";
 
 const ROOT = path.resolve(__dirname, "../..");
 const MODULES_DIR = path.join(ROOT, "apps/erp/app/modules");
@@ -680,7 +684,8 @@ function generateDescription(funcName: string): string {
 
 function buildToolSchema(
   func: ParsedFunction,
-  modelsContent: string | null
+  modelsContent: string | null,
+  ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
   const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
 
@@ -700,14 +705,56 @@ function buildToolSchema(
     const validatorMatch = isInlineObject
       ? null
       : param.typeStr.match(/z\.infer<typeof\s+(\w+)>/);
-    if (validatorMatch && modelsContent) {
+    if (validatorMatch) {
       const validatorName = validatorMatch[1];
-      const resolved = parseValidatorFields(validatorName, modelsContent);
-      if (resolved) {
+
+      // Preferred path: the REAL validator, converted by zod itself. Carries enum
+      // values, numeric bounds and nested shapes the source-text parser cannot see.
+      const native = ctx.validators?.getSchema(ctx.module ?? "", validatorName);
+      if (native) {
+        ctx.onResolved?.(validatorName, "native");
         const propCount = Object.keys(
-          (resolved.properties as Record<string, unknown>) || {}
+          (native.properties as Record<string, unknown>) || {}
         ).length;
-        return { schema: resolved, paramCount: propCount };
+        return { schema: native, paramCount: propCount };
+      }
+
+      // Fallback: parse the validator's source text. Reached when the module failed
+      // to load or zod could not represent the validator — never a silent downgrade,
+      // the caller records it.
+      if (modelsContent) {
+        const resolved = parseValidatorFields(validatorName, modelsContent);
+        if (resolved) {
+          ctx.onResolved?.(validatorName, "textual");
+          const propCount = Object.keys(
+            (resolved.properties as Record<string, unknown>) || {}
+          ).length;
+          return { schema: resolved, paramCount: propCount };
+        }
+      }
+      ctx.onResolved?.(validatorName, "unresolved");
+    }
+
+    // `(typeof someConstArray)[number]` — a union of string literals. The textual
+    // parser flattens these to a bare "string"; the loaded const array gives the
+    // real values.
+    const constArrayMatch = param.typeStr.match(
+      /^\(?typeof\s+(\w+)\)?\[number\]$/
+    );
+    if (constArrayMatch) {
+      const values = ctx.validators?.getConstArray(
+        ctx.module ?? "",
+        constArrayMatch[1]
+      );
+      if (values) {
+        return {
+          schema: {
+            type: "object",
+            properties: { [param.name]: { type: "string", enum: values } },
+            required: param.optional ? undefined : [param.name],
+          },
+          paramCount: 1,
+        };
       }
     }
 
@@ -792,9 +839,31 @@ function loadModelsContent(mod: string): string | null {
 // Public API
 // ---------------------------------------------------------------------------
 
+/** How a `z.infer<typeof X>` param's schema was obtained, for the accuracy report. */
+export type ValidatorResolution = "native" | "textual" | "unresolved";
+
+/** Per-module state threaded into `buildToolSchema`. */
+interface SchemaBuildContext {
+  module?: string;
+  validators?: ValidatorRegistry;
+  onResolved?: (validatorName: string, how: ValidatorResolution) => void;
+}
+
 export interface BuildOptions {
   /** Optional per-module progress callback (module name, tool count). */
   onModule?: (mod: string, count: number) => void;
+  /**
+   * Pre-converted validators. When absent every `z.infer<typeof X>` param falls
+   * back to source-text parsing, which is the long-standing behavior — so callers
+   * that cannot run the async loader still get a manifest.
+   */
+  validators?: ValidatorRegistry;
+  /** Called once per `z.infer` param with how its schema was resolved. */
+  onValidatorResolved?: (
+    toolName: string,
+    validatorName: string,
+    how: ValidatorResolution
+  ) => void;
 }
 
 /**
@@ -851,7 +920,12 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         func.name,
         classification
       );
-      const { schema, paramCount } = buildToolSchema(func, modelsContent);
+      const { schema, paramCount } = buildToolSchema(func, modelsContent, {
+        module: mod,
+        validators: opts.validators,
+        onResolved: (validatorName, how) =>
+          opts.onValidatorResolved?.(toolName, validatorName, how),
+      });
       if (
         injectAuth.includes("createdBy") &&
         usesCreatedByDiscriminator(content, func.name)
@@ -877,4 +951,41 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
   }
 
   return allTools;
+}
+
+/** How each `z.infer` param's schema was resolved, per tool. */
+export interface ValidatorResolutionRecord {
+  toolName: string;
+  validatorName: string;
+  how: ValidatorResolution;
+}
+
+export interface BuildWithValidatorsResult {
+  tools: ManifestEntry[];
+  registryStats: ValidatorRegistry["stats"];
+  resolutions: ValidatorResolutionRecord[];
+}
+
+/**
+ * The production entry point: load and convert the real validators, then build the
+ * manifest against them. Falls back per-validator to source-text parsing, so a
+ * module that fails to load degrades exactly one module's schemas rather than the
+ * whole run — and `registryStats` / `resolutions` report every such case.
+ */
+export async function buildAllToolMetadataWithValidators(
+  opts: Omit<BuildOptions, "validators"> = {}
+): Promise<BuildWithValidatorsResult> {
+  const validators = await buildValidatorRegistry(MODULE_LIST);
+  const resolutions: ValidatorResolutionRecord[] = [];
+
+  const tools = buildAllToolMetadata({
+    ...opts,
+    validators,
+    onValidatorResolved: (toolName, validatorName, how) => {
+      resolutions.push({ toolName, validatorName, how });
+      opts.onValidatorResolved?.(toolName, validatorName, how);
+    },
+  });
+
+  return { tools, registryStats: validators.stats, resolutions };
 }

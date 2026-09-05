@@ -10,7 +10,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { buildAllToolMetadata } from "./lib/service-metadata";
+import { buildAllToolMetadataWithValidators } from "./lib/service-metadata";
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
@@ -18,12 +18,13 @@ const METADATA_FILE = path.join(
   "apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json"
 );
 
-export function generateToolMetadata(): void {
+export async function generateToolMetadata(): Promise<void> {
   console.log("Generating tool metadata from service files...");
 
-  const allTools = buildAllToolMetadata({
-    onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
-  });
+  const { tools: allTools, registryStats, resolutions } =
+    await buildAllToolMetadataWithValidators({
+      onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
+    });
 
   const metadata = {
     generated: new Date().toISOString(),
@@ -35,8 +36,39 @@ export function generateToolMetadata(): void {
   fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata, null, 2));
   console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
   console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)}`);
+
+  // Schema provenance. A validator that fell back to source-text parsing still
+  // produces a manifest entry, so surface it rather than letting the degrade pass
+  // silently — that fallback is the only path that can publish a lossy schema.
+  const fallbacks = resolutions.filter((r) => r.how !== "native");
+  console.log(
+    `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/15 modules`
+  );
+  if (registryStats.moduleErrors.length > 0) {
+    console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
+    for (const e of registryStats.moduleErrors) {
+      console.warn(`      ${e.module}: ${e.error}`);
+    }
+  }
+  if (registryStats.conversionFailures.length > 0) {
+    console.warn(
+      `  ⚠ ${registryStats.conversionFailures.length} validator(s) failed to convert:`
+    );
+    for (const f of registryStats.conversionFailures.slice(0, 10)) {
+      console.warn(`      ${f.module}.${f.name}: ${f.error}`);
+    }
+  }
+  if (fallbacks.length > 0) {
+    const unique = [...new Set(fallbacks.map((f) => f.validatorName))];
+    console.warn(
+      `  ⚠ ${fallbacks.length} param(s) used the source-text fallback: ${unique.slice(0, 12).join(", ")}`
+    );
+  }
 }
 
 if (require.main === module) {
-  generateToolMetadata();
+  generateToolMetadata().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }
