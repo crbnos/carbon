@@ -109,7 +109,9 @@ export const purchaseInvoiceLineValidator = z
       [...itemType, "Fixture", "G/L Account", "Fixed Asset", "Comment"],
 
       {
-        error: "Type is required"
+        errorMap: (issue, ctx) => ({
+          message: "Type is required"
+        })
       }
     ),
     purchaseOrderId: zfd.text(z.string().optional()),
@@ -269,7 +271,9 @@ export const salesInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset"], {
-      error: "Type is required"
+      errorMap: (issue, ctx) => ({
+        message: "Type is required"
+      })
     }),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
@@ -278,7 +282,9 @@ export const salesInvoiceLineValidator = z
     methodType: zfd.text(
       z
         .enum(methodType, {
-          error: "Method is required"
+          errorMap: (issue, ctx) => ({
+            message: "Method is required"
+          })
         })
         .optional()
     ),
@@ -368,7 +374,7 @@ export const memoValidator = z
     id: zfd.text(z.string().optional()),
     memoId: zfd.text(z.string().optional()),
     direction: z.enum(memoDirection, {
-      error: "Direction is required"
+      errorMap: () => ({ message: "Direction is required" })
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -403,7 +409,7 @@ export const paymentValidator = z
     id: zfd.text(z.string().optional()),
     paymentId: zfd.text(z.string().optional()),
     paymentType: z.enum(paymentType, {
-      error: "Payment type is required"
+      errorMap: () => ({ message: "Payment type is required" })
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),

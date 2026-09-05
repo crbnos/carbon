@@ -35,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     quoteLineAdditionalChargesValidator.safeParse(additionalCharges);
   if (parsedCharges.success === false) {
     return data(
-      { data: null, errors: parsedCharges.error.issues?.[0].message },
+      { data: null, errors: parsedCharges.error.errors?.[0].message },
       { status: 400 }
     );
   }

@@ -69,7 +69,7 @@ const computeNode = z.object({
   type: z.literal("compute"),
   data: z.object({
     operation: z.string(),
-    inputs: z.record(z.string(), valueOrRefSchema).default({})
+    inputs: z.record(valueOrRefSchema).default({})
   })
 });
 
@@ -99,7 +99,7 @@ const actionNode = z.object({
   // No `batch` flag: whether the step repeats is read off the wiring. See `batch.ts`.
   data: z.object({
     action: z.string(),
-    inputs: z.record(z.string(), valueOrRefSchema).default({})
+    inputs: z.record(valueOrRefSchema).default({})
   })
 });
 

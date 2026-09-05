@@ -115,7 +115,7 @@ export const AccountingSyncSchema = z.object({
   syncType: z.enum(["webhook", "scheduled", "trigger"]),
   syncDirection: SyncDirectionSchema,
   entities: z.array(z.custom<AccountingEntity>()),
-  metadata: z.record(z.string(), z.any()).optional()
+  metadata: z.record(z.any()).optional()
 });
 
 export const ENTITY_DEFINITIONS: Record<
@@ -777,7 +777,7 @@ export const SyncOperationSchema = z.object({
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
   externalId: z.string().nullable(),
-  metadata: z.record(z.string(), z.any()).nullable(),
+  metadata: z.record(z.any()).nullable(),
   createdBy: z.string(),
   createdAt: z.string(),
   updatedBy: z.string().nullable(),
@@ -879,7 +879,7 @@ export const ContactSchema = z.object({
       postalCode: z.string().nullish()
     })
   ),
-  raw: z.record(z.string(), z.any())
+  raw: z.record(z.any())
 });
 
 export const EmployeeSchema = z.object({
@@ -904,7 +904,7 @@ export const EmployeeSchema = z.object({
     })
     .optional(),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // ============================================================================
@@ -949,7 +949,7 @@ export const SalesOrderSchema = z.object({
   customerReference: withNullable(z.string()),
   lines: z.array(SalesOrderLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // Sales Invoice schemas
@@ -1000,7 +1000,7 @@ export const SalesInvoiceSchema = z.object({
   balance: z.number(),
   lines: z.array(SalesInvoiceLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // Bill (Purchase Invoice) schemas
@@ -1050,7 +1050,7 @@ export const BillSchema = z.object({
   supplierReference: withNullable(z.string()),
   lines: z.array(BillLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // Purchase Order schemas
@@ -1101,7 +1101,7 @@ export const PurchaseOrderSchema = z.object({
   supplierReference: withNullable(z.string()),
   lines: z.array(PurchaseOrderLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // ============================================================================
@@ -1132,7 +1132,7 @@ export const ItemSchema = z.object({
   isSold: z.boolean(),
   isTrackedAsInventory: z.boolean(),
   updatedAt: z.string(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // ============================================================================
@@ -1152,7 +1152,7 @@ export const InventoryAdjustmentSchema = z.object({
   inventoryAccount: z.string(), // resolved GL account from accountDefault (rawMaterialsAccount for Buy items, finishedGoodsAccount for Make / Buy and Make)
   adjustmentVarianceAccount: z.string(), // GL account code from accountDefault
   updatedAt: z.string().datetime(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });
 
 // ============================================================================
@@ -1202,5 +1202,5 @@ export const JournalEntrySchema = z.object({
   reversal: z.boolean(),
   lines: z.array(JournalEntryLineSchema),
   updatedAt: z.string(),
-  raw: z.record(z.string(), z.any()).optional()
+  raw: z.record(z.any()).optional()
 });

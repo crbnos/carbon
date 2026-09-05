@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { Transaction } from "kysely";
-import { z } from "npm:zod@^4.5.4";
+import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   getStorageUnitWithHighestQuantity,
@@ -810,7 +809,6 @@ async function createMaterialWipEntries(
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("issue");
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
@@ -990,12 +988,15 @@ serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   const payload = await req.json();
-  logger.info({ payload });
+  console.log({ payload });
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
 
-    logger.info(validatedPayload);
+    console.log({
+      function: "issue",
+      ...validatedPayload,
+    });
 
     const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
       [];
@@ -1874,9 +1875,10 @@ serve(async (req: Request) => {
             signal: AbortSignal.timeout(10_000),
           });
         } catch (rescheduleError) {
-          logger.error("Failed to trigger reschedule after scrap", {
-            error: String((rescheduleError as Error)?.stack ?? rescheduleError),
-          });
+          console.error(
+            "Failed to trigger reschedule after scrap:",
+            rescheduleError
+          );
         }
 
         return jsonResponse({
@@ -2674,9 +2676,10 @@ serve(async (req: Request) => {
               signal: AbortSignal.timeout(10_000),
             });
           } catch (rescheduleError) {
-            logger.error("Failed to trigger reschedule after scrap", {
-              error: String((rescheduleError as Error)?.stack ?? rescheduleError),
-            });
+            console.error(
+              "Failed to trigger reschedule after scrap:",
+              rescheduleError
+            );
           }
         }
 
@@ -3241,7 +3244,7 @@ serve(async (req: Request) => {
               .where("id", "=", actualMaterialId)
               .execute();
 
-            logger.info("Job material quantity updated", {
+            console.log("Job material quantity updated:", {
               materialId: actualMaterialId,
               newQuantityIssued,
             });
@@ -3740,7 +3743,7 @@ serve(async (req: Request) => {
             await trx.insertInto("itemLedger").values(ledgerEntries).execute();
           }
 
-          logger.info("Entity converted", {
+          console.log("Entity converted:", {
             trackedEntityId,
             oldRevision: oldItem.revision,
             newRevision,

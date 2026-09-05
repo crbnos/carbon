@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const parsedItems = itemsValidator.safeParse(items);
 
       if (!parsedItems.success) {
-        const errorMessages = parsedItems.error.issues.map((error) => {
+        const errorMessages = parsedItems.error.errors.map((error) => {
           const path = error.path;
           const field = path[path.length - 1];
 

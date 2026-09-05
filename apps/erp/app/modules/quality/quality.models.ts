@@ -262,7 +262,7 @@ export const issueWorkflowValidator = z.object({
 const entityAssignmentItem = z.object({
   trackedEntityId: z.string().min(1, { message: "Tracked entity is required" }),
   quantity: z
-    .number({ error: "Quantity is required" })
+    .number({ invalid_type_error: "Quantity is required" })
     .positive({ message: "Quantity must be greater than zero" })
 });
 
@@ -287,7 +287,7 @@ export const splitIssueItemValidator = z
     itemId: z.string().min(1, { message: "Item is required" }),
     splitQuantity: zfd.numeric(
       z
-        .number({ error: "Split quantity is required" })
+        .number({ invalid_type_error: "Split quantity is required" })
         .positive({ message: "Split quantity must be greater than zero" })
         .optional()
     ),
@@ -330,7 +330,7 @@ export const qualityDocumentStepValidator = z
     name: z.string().trim().min(1, { message: "Name is required" }),
     description: zfd.text(z.string().optional()),
     type: z.enum(procedureStepType, {
-      error: "Type is required"
+      errorMap: () => ({ message: "Type is required" })
     }),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
@@ -445,7 +445,7 @@ export const inspectionSampleStatusType = [
 export const inspectionValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   status: z.enum(["Passed", "Failed"], {
-    error: "Status is required"
+    errorMap: () => ({ message: "Status is required" })
   }),
   notes: zfd.text(z.string().optional())
 });
@@ -462,7 +462,7 @@ export const inspectionSampleValidator = z.object({
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: z.enum(["Pending", "Passed", "Failed"], {
-    error: "Status is required"
+    errorMap: () => ({ message: "Status is required" })
   }),
   notes: zfd.text(z.string().optional())
 });
@@ -470,7 +470,7 @@ export const inspectionSampleValidator = z.object({
 export const inspectionDispositionValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   decision: z.enum(["Accept", "Reject", "Partial"], {
-    error: "Decision is required"
+    errorMap: () => ({ message: "Decision is required" })
   }),
   notes: zfd.text(z.string().optional())
 });
@@ -482,7 +482,7 @@ export const inspectionDocumentUsages = ["Receipt"] as const;
 export const itemInspectionDocumentAssignmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   usage: z.enum(inspectionDocumentUsages, {
-    error: "Usage is required"
+    errorMap: () => ({ message: "Usage is required" })
   }),
   // Empty clears the slot.
   inspectionDocumentId: zfd.text(z.string().optional())

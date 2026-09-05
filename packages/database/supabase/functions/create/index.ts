@@ -3,8 +3,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
-import z from "npm:zod@^4.5.4";
-import { getFunctionLogger } from "../lib/logging.ts";
+import z from "npm:zod@^3.24.1";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -12,7 +11,6 @@ import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("create");
 
 // Resolves a fallback location when a caller omits locationId, so creating a
 // blank shipment degrades gracefully instead of failing payload validation.
@@ -180,7 +178,11 @@ serve(async (req: Request) => {
     case "nonConformanceTasks": {
       const { id } = payload;
 
-      logger.info({ type, id });
+      console.log({
+        function: "create",
+        type,
+        id,
+      });
 
       try {
 
@@ -349,7 +351,7 @@ serve(async (req: Request) => {
               });
             }
 
-            logger.debug({
+            console.log({
               description: nonConformance.data?.description,
               insertedContent,
             });
@@ -414,7 +416,13 @@ serve(async (req: Request) => {
     case "purchaseOrderFromJob": {
       const { jobId, purchaseOrdersBySupplierId } = payload;
 
-      logger.info({ type, jobId, companyId, userId });
+      console.log({
+        function: "create",
+        type,
+        jobId,
+        companyId,
+        userId,
+      });
       try {
 
         const [job, jobOperations] = await Promise.all([
@@ -729,7 +737,13 @@ serve(async (req: Request) => {
     case "receiptDefault": {
       const { locationId } = payload;
       let createdDocumentId;
-      logger.info({ type, locationId, companyId, userId });
+      console.log({
+        function: "create",
+        type,
+        locationId,
+        companyId,
+        userId,
+      });
       try {
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "receipt", companyId);
@@ -760,7 +774,8 @@ serve(async (req: Request) => {
         locationId: userLocationId,
       } = payload;
 
-      logger.info({
+      console.log({
+        function: "create",
         type,
         companyId,
         purchaseOrderId,
@@ -1021,7 +1036,14 @@ serve(async (req: Request) => {
     case "receiptFromInboundTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      logger.info({ type, companyId, warehouseTransferId, existingReceiptId, userId });
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        warehouseTransferId,
+        existingReceiptId,
+        userId,
+      });
 
       try {
 
@@ -1181,7 +1203,14 @@ serve(async (req: Request) => {
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      logger.info({ type, companyId, warehouseTransferId, existingReceiptId, userId });
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        warehouseTransferId,
+        existingReceiptId,
+        userId,
+      });
 
       try {
 
@@ -1348,7 +1377,15 @@ serve(async (req: Request) => {
     case "receiptLineSplit": {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
-      logger.info({ type, locationId, receiptId, receiptLineId, quantity, userId });
+      console.log({
+        function: "create",
+        type,
+        locationId,
+        receiptId,
+        receiptLineId,
+        quantity,
+        userId,
+      });
 
       try {
 
@@ -1364,7 +1401,9 @@ serve(async (req: Request) => {
             .eq("attributes->> Receipt Line", receiptLineId),
         ]);
 
-        logger.debug({ trackedEntities });
+        console.log({
+          trackedEntities,
+        });
 
         if (!receiptLine.data) throw new Error("Receipt line not found");
 
@@ -1461,7 +1500,13 @@ serve(async (req: Request) => {
     case "shipmentDefault": {
       let createdDocumentId;
       const { locationId } = payload;
-      logger.info({ type, companyId, locationId, userId });
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        locationId,
+        userId,
+      });
       try {
         const effectiveLocationId =
           locationId ?? (await getFallbackLocationId(client, companyId, userId));
@@ -1492,7 +1537,8 @@ serve(async (req: Request) => {
     case "shipmentFromWarehouseTransfer": {
       const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
 
-      logger.info({
+      console.log({
+        function: "create",
         type,
         companyId,
         warehouseTransferId,
@@ -1660,7 +1706,8 @@ serve(async (req: Request) => {
         locationId,
       } = payload;
 
-      logger.info({
+      console.log({
+        function: "create",
         type,
         companyId,
         locationId,
@@ -1853,7 +1900,8 @@ serve(async (req: Request) => {
         locationId,
       } = payload;
 
-      logger.info({
+      console.log({
+        function: "create",
         type,
         companyId,
         locationId,
@@ -2200,7 +2248,8 @@ serve(async (req: Request) => {
         locationId,
       } = payload;
 
-      logger.info({
+      console.log({
+        function: "create",
         type,
         companyId,
         locationId,
@@ -2456,7 +2505,15 @@ serve(async (req: Request) => {
     case "shipmentLineSplit": {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;
 
-      logger.info({ type, locationId, shipmentId, shipmentLineId, quantity, userId });
+      console.log({
+        function: "create",
+        type,
+        locationId,
+        shipmentId,
+        shipmentLineId,
+        quantity,
+        userId,
+      });
 
       try {
 

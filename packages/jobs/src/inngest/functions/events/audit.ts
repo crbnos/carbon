@@ -33,13 +33,13 @@ const AuditRecordSchema = z.object({
     table: z.string(),
     operation: z.enum(["INSERT", "UPDATE", "DELETE", "TRUNCATE"]),
     recordId: z.string(),
-    new: z.record(z.string(), z.any()).nullable(),
-    old: z.record(z.string(), z.any()).nullable(),
+    new: z.record(z.any()).nullable(),
+    old: z.record(z.any()).nullable(),
     timestamp: z.string()
   }),
   companyId: z.string(),
   actorId: z.string().nullish(),
-  handlerConfig: z.record(z.string(), z.any())
+  handlerConfig: z.record(z.any())
 });
 
 const AuditPayloadSchema = z.object({

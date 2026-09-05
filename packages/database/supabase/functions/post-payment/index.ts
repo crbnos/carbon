@@ -1,9 +1,8 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^4.5.4";
+import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
@@ -18,7 +17,6 @@ import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("post-payment");
 
 const payloadValidator = z.object({
   type: z.enum(["post", "void"]).default("post"),
@@ -48,7 +46,7 @@ serve(async (req: Request) => {
     const { type, paymentId, userId, companyId, fee } =
       payloadValidator.parse(payload);
 
-    logger.info({ type, paymentId, userId, companyId });
+    console.log({ function: "post-payment", type, paymentId, userId, companyId });
 
     const client = await getSupabaseServiceRole(
       req.headers.get("Authorization"),

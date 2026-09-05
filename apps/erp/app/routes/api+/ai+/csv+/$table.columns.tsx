@@ -12,7 +12,7 @@ const logger = getLogger("erp", "table-columns");
 
 const inputSchema = z.object({
   fileColumns: z.array(z.string())
-  // firstRows: z.array(z.record(z.string(), z.string())),
+  // firstRows: z.array(z.record(z.string())),
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {

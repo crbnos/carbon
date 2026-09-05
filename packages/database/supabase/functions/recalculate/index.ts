@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^4.5.4";
+import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { sql, Transaction } from "kysely";
-import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   computeJobQuantities,
@@ -16,7 +15,6 @@ import { requirePermissions } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("recalculate");
 
 const payloadValidator = z.object({
   type: z.enum(["jobMakeMethodRequirements", "jobRequirements"]),
@@ -33,7 +31,13 @@ serve(async (req: Request) => {
   try {
     const { type, id, companyId, userId } = payloadValidator.parse(payload);
 
-    logger.info({ type, id, companyId, userId });
+    console.log({
+      function: "recalculate",
+      type,
+      id,
+      companyId,
+      userId,
+    });
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
@@ -79,7 +83,7 @@ serve(async (req: Request) => {
           }
 
           if (jobMaterial.data.methodType !== "Make to Order") {
-            logger.info(
+            console.log(
               `Job material ${jobMakeMethod.data.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
             );
             return jsonResponse({ success: true });
@@ -238,9 +242,10 @@ const updateJobQuantities = async (
   const allCycleNodeIds = new Set([...flattenCycles, ...cycleNodeIds]);
   if (allCycleNodeIds.size > 0) {
     // Corrupt tree data — the nodes were skipped rather than looped on.
-    logger.error("recalculate: cyclic job method tree; skipped nodes", {
-      skippedNodeIds: [...allCycleNodeIds],
-    });
+    console.error(
+      "recalculate: cyclic job method tree; skipped node ids:",
+      [...allCycleNodeIds]
+    );
   }
 
   // jobMaterial scrap/estimated — one VALUES-join update for the whole tree

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { z } from "npm:zod@^4.5.4";
+import { z } from "npm:zod@^3.24.1";
 
 import type {
     PostgrestError,
@@ -27,7 +27,6 @@ import {
     traverseJobMethodAsync,
     traverseQuoteMethod,
 } from "../lib/methods.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
@@ -44,7 +43,6 @@ import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("get-method");
 
 // Stored configurator rules are user-authored JS that may still return legacy "Inside"/"Outside" operationType values.
 const normalizeOperationType = (value: unknown) =>
@@ -161,9 +159,7 @@ const partsValidator = z.object({
   tools: z.boolean().default(true),
   steps: z.boolean().default(true),
   workInstructions: z.boolean().default(true),
-  // prefault, not default: v4's .default() returns {} AS-IS on undefined input,
-  // which would skip every inner default and disable all six part flags.
-}).prefault({});
+}).default({});
 
 const payloadValidator = z.object({
   type: z.enum([
@@ -187,7 +183,7 @@ const payloadValidator = z.object({
   targetId: z.string(),
   companyId: z.string(),
   userId: z.string(),
-  configuration: z.record(z.string(), z.unknown()).optional(),
+  configuration: z.record(z.unknown()).optional(),
   parts: partsValidator,
   // A specific source makeMethod version (itemToJob / itemToJobMakeMethod
   // only). Absent = the item's active method, as before.
@@ -211,7 +207,8 @@ serve(async (req: Request) => {
       versionId,
     } = payloadValidator.parse(payload);
 
-    logger.info({
+    console.log({
+      function: "get-method",
       type,
       sourceId,
       targetId,
@@ -868,9 +865,7 @@ serve(async (req: Request) => {
                 const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                logger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err),
-                });
+                console.error(err);
                 return defaultValue;
               }
             }
@@ -2607,9 +2602,7 @@ serve(async (req: Request) => {
 
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                logger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err),
-                });
+                console.error(err);
                 return defaultValue;
               }
             }
@@ -2625,7 +2618,7 @@ serve(async (req: Request) => {
             node: MethodTreeItem,
             parentQuoteMakeMethodId: string | null
           ) {
-            logger.debug("[traverseMethod]", {
+            console.log("[traverseMethod]", {
               isRoot: node.data.isRoot,
               itemId: node.data.itemId,
               methodType: node.data.methodType,
@@ -2738,7 +2731,7 @@ serve(async (req: Request) => {
                 processId,
                 op.workCenterId
               );
-              logger.debug({
+              console.log({
                 processId,
                 ...operationRates,
               });
@@ -3082,7 +3075,7 @@ serve(async (req: Request) => {
               (child) => child.data.methodType === "Make to Order"
             );
 
-            logger.debug("[traverseMethod] materials", {
+            console.log("[traverseMethod] materials", {
               totalChildren: materialsWithConfiguredFields.length,
               madeMaterialsCount: madeMaterials.length,
               madeChildrenCount: madeChildren.length,
@@ -3110,7 +3103,7 @@ serve(async (req: Request) => {
                   .where("parentMaterialId", "=", materialId)
                   .execute();
 
-                logger.debug("[traverseMethod] processing made child", {
+                console.log("[traverseMethod] processing made child", {
                   index,
                   materialId,
                   newMakeMethodId,
@@ -3137,7 +3130,7 @@ serve(async (req: Request) => {
           }
 
           function logTree(node: MethodTreeItem, depth = 0) {
-            logger.debug("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
+            console.log("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
             for (const child of node.children) {
               logTree(child, depth + 1);
             }
@@ -3282,9 +3275,7 @@ serve(async (req: Request) => {
                 const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                logger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err),
-                });
+                console.error(err);
                 return defaultValue;
               }
             }
@@ -6006,13 +5997,14 @@ serve(async (req: Request) => {
           quoteOperations.error
         ) {
           if (quoteMakeMethod.error) {
-            logger.error("quoteMakeMethodError", { error: quoteMakeMethod.error });
+            console.log("quoteMakeMethodError");
+            console.log(quoteMakeMethod.error);
           }
           if (quoteMaterials.error) {
-            logger.error("quoteMaterialsError", { error: quoteMaterials.error });
+            console.log(quoteMaterials.error);
           }
           if (quoteOperations.error) {
-            logger.error("quoteOperationsError", { error: quoteOperations.error });
+            console.log(quoteOperations.error);
           }
           throw new Error("Failed to fetch quote data");
         }
@@ -6536,9 +6528,7 @@ serve(async (req: Request) => {
         ]);
 
         if (targetQuoteMakeMethod.error || !targetQuoteMakeMethod.data) {
-          logger.error("Failed to get target quote make method", {
-            error: targetQuoteMakeMethod.error,
-          });
+          console.error(targetQuoteMakeMethod.error);
           throw new Error("Failed to get target quote make method");
         }
 
@@ -7108,9 +7098,7 @@ serve(async (req: Request) => {
             ]);
 
             if (targetQuoteMakeMethod.error) {
-              logger.error("Failed to get target quote make method", {
-                error: targetQuoteMakeMethod.error,
-              });
+              console.error(targetQuoteMakeMethod.error);
               throw new Error("Failed to get target quote make method");
             }
 
@@ -8167,9 +8155,7 @@ async function hydrateConfiguration(
 
     return transformed;
   } catch (err) {
-    logger.error("configuration transform failed", {
-      error: String((err as Error)?.stack ?? err),
-    });
+    console.error(err);
     return configuration;
   }
 }

@@ -3658,23 +3658,11 @@ export async function duplicateJobOperationStep(
 export async function upsertJobOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<
-        z.infer<typeof operationStepSlideValidator>,
-        "id" | "annotations"
-      > & {
-        annotations?: z.infer<
-          typeof operationStepSlideValidator
-        >["annotations"];
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<
-        z.infer<typeof operationStepSlideValidator>,
-        "id" | "annotations"
-      > & {
-        annotations?: z.infer<
-          typeof operationStepSlideValidator
-        >["annotations"];
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -6826,23 +6814,11 @@ export async function getAssemblyInstructionStepSlides(
 export async function upsertAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<
-        z.infer<typeof operationStepSlideValidator>,
-        "id" | "annotations"
-      > & {
-        annotations?: z.infer<
-          typeof operationStepSlideValidator
-        >["annotations"];
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<
-        z.infer<typeof operationStepSlideValidator>,
-        "id" | "annotations"
-      > & {
-        annotations?: z.infer<
-          typeof operationStepSlideValidator
-        >["annotations"];
+    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
         id: string;
         updatedBy: string;
         updatedAt: string;

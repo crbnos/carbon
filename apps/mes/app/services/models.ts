@@ -144,10 +144,14 @@ export const productionEventValidator = z.object({
     .string()
     .min(1, { message: "Job Operation ID is required" }),
   action: z.enum(productionEventAction, {
-    error: "Action is required"
+    errorMap: (issue, ctx) => ({
+      message: "Action is required"
+    })
   }),
   type: z.enum(productionEventType, {
-    error: "Type is required"
+    errorMap: (issue, ctx) => ({
+      message: "Type is required"
+    })
   }),
   workCenterId: zfd.text(z.string().optional()),
   trackedEntityId: zfd.text(z.string().optional()),
@@ -234,13 +238,13 @@ export const triggerReworkValidator = z.object({
 export const maintenanceDispatchValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work Center is required" }),
   priority: z.enum(maintenanceDispatchPriority, {
-    error: "Priority is required"
+    errorMap: () => ({ message: "Priority is required" })
   }),
   severity: z.enum(maintenanceSeverity, {
-    error: "Severity is required"
+    errorMap: () => ({ message: "Severity is required" })
   }),
   oeeImpact: z.enum(oeeImpact, {
-    error: "OEE Impact is required"
+    errorMap: () => ({ message: "OEE Impact is required" })
   }),
   suspectedFailureModeId: zfd.text(z.string().optional()),
   actualFailureModeId: zfd.text(z.string().optional()),
@@ -263,7 +267,7 @@ export const qualityIssueValidator = z.object({
     .string()
     .min(1, { message: "Issue type is required" }),
   priority: z.enum(qualityIssuePriority, {
-    error: "Priority is required"
+    errorMap: () => ({ message: "Priority is required" })
   }),
   trackedEntityId: zfd.text(z.string().optional())
 });
@@ -300,7 +304,7 @@ export const inspectionSampleValidator = z.object({
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: z.enum(["Pending", "Passed", "Failed"], {
-    error: "Status is required"
+    errorMap: () => ({ message: "Status is required" })
   }),
   notes: zfd.text(z.string().optional())
 });
@@ -315,7 +319,7 @@ export const inspectionSampleValidator = z.object({
 export const inspectionDispositionValidator = z
   .object({
     decision: z.enum(["Accept", "Reject", "Partial"], {
-      error: "Decision is required"
+      errorMap: () => ({ message: "Decision is required" })
     }),
     // The job operation, for postings + redirect back to the inspection view.
     operationId: z.string().min(1, { message: "Operation is required" }),

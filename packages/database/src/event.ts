@@ -22,15 +22,15 @@ export const EventSchema = z.discriminatedUnion("operation", [
     table: z.string(),
     operation: z.enum(["UPDATE"]),
     recordId: z.string(),
-    new: z.record(z.string(), z.any()),
-    old: z.record(z.string(), z.any()),
+    new: z.record(z.any()),
+    old: z.record(z.any()),
     timestamp: z.string()
   }),
   z.object({
     table: z.string(),
     operation: z.enum(["INSERT"]),
     recordId: z.string(),
-    new: z.record(z.string(), z.any()),
+    new: z.record(z.any()),
     old: z.null(),
     timestamp: z.string()
   }),
@@ -39,7 +39,7 @@ export const EventSchema = z.discriminatedUnion("operation", [
     operation: z.enum(["DELETE", "TRUNCATE"]),
     recordId: z.string(),
     new: z.null(),
-    old: z.record(z.string(), z.any()),
+    old: z.record(z.any()),
     timestamp: z.string()
   })
 ]);
@@ -48,7 +48,7 @@ export const QueueMessageSchema = z.object({
   subscriptionId: z.string(),
   triggerType: z.enum(["ROW", "STATEMENT"]),
   handlerType: HandlerTypeSchema,
-  handlerConfig: z.record(z.string(), z.any()),
+  handlerConfig: z.record(z.any()),
   companyId: z.string(),
   actorId: z.string().nullish(), // Captured from auth.uid() at trigger time
   workflowRunId: z.string().nullish(), // Set when the write was made by a running workflow (workflow_run_id JWT claim)
@@ -75,9 +75,9 @@ export const CreateSubscriptionSchema = z.object({
   type: HandlerTypeSchema,
   // Configuration specific to the handler (URL for webhooks, WorkflowID for workflows)
   // We allow any object here since it's stored as JSONB
-  config: z.record(z.string(), z.any()).default({}),
+  config: z.record(z.any()).default({}),
   // Database-level filtering (e.g. { status: "paid" })
-  filter: z.record(z.string(), z.any()).default({}),
+  filter: z.record(z.any()).default({}),
   // Defaults to true
   active: z.boolean().default(true)
 });

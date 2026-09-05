@@ -271,11 +271,11 @@ catalogs:
       specifier: 7.2.0
       version: 7.2.0
     zod:
-      specifier: 4.5.4
-      version: 4.5.4
+      specifier: 3.25.76
+      version: 3.25.76
     zod-form-data:
-      specifier: 3.0.3
-      version: 3.0.3
+      specifier: 2.0.8
+      version: 2.0.8
     zustand:
       specifier: 5.0.12
       version: 5.0.12
@@ -535,10 +535,10 @@ importers:
         version: 1.0.7(tailwindcss@4.3.0)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -593,31 +593,31 @@ importers:
     dependencies:
       '@ai-sdk-tools/agents':
         specifier: 1.2.0
-        version: 1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(@ai-sdk-tools/cache@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(ai@5.0.172(zod@4.5.4)))(ai@5.0.172(zod@4.5.4))(zod@4.5.4)
+        version: 1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(@ai-sdk-tools/cache@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(ai@5.0.172(zod@3.25.76)))(ai@5.0.172(zod@3.25.76))(zod@3.25.76)
       '@ai-sdk-tools/artifacts':
         specifier: 1.2.0
-        version: 1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1)
+        version: 1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1)
       '@ai-sdk-tools/cache':
         specifier: 1.2.0
-        version: 1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(ai@5.0.172(zod@4.5.4))
+        version: 1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(ai@5.0.172(zod@3.25.76))
       '@ai-sdk-tools/devtools':
         specifier: 1.2.0
-        version: 1.2.0(@ai-sdk-tools/store@1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(react@18.3.1)(zod@4.5.4)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))))(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@4.5.4)
+        version: 1.2.0(@ai-sdk-tools/store@1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(react@18.3.1)(zod@3.25.76)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))))(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
       '@ai-sdk-tools/memory':
         specifier: 1.2.0
-        version: 1.2.0(@upstash/redis@1.37.0)(ai@5.0.172(zod@4.5.4))(ioredis@5.10.1)
+        version: 1.2.0(@upstash/redis@1.37.0)(ai@5.0.172(zod@3.25.76))(ioredis@5.10.1)
       '@ai-sdk-tools/store':
         specifier: 1.2.0
-        version: 1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(react@18.3.1)(zod@4.5.4)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)))
+        version: 1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(react@18.3.1)(zod@3.25.76)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)))
       '@ai-sdk/anthropic':
         specifier: 2.0.74
-        version: 2.0.74(zod@4.5.4)
+        version: 2.0.74(zod@3.25.76)
       '@ai-sdk/openai':
         specifier: 'catalog:'
-        version: 2.0.102(zod@4.5.4)
+        version: 2.0.102(zod@3.25.76)
       '@ai-sdk/react':
         specifier: 2.0.174
-        version: 2.0.174(react@18.3.1)(zod@4.5.4)
+        version: 2.0.174(react@18.3.1)(zod@3.25.76)
       '@base-ui-components/react':
         specifier: 1.0.0-rc.0
         version: 1.0.0-rc.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -716,7 +716,7 @@ importers:
         version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@modelcontextprotocol/sdk':
         specifier: 1.29.0
-        version: 1.29.0(zod@4.5.4)
+        version: 1.29.0(zod@3.25.76)
       '@monaco-editor/react':
         specifier: 4.7.0
         version: 4.7.0(monaco-editor@0.44.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -737,7 +737,7 @@ importers:
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.18.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
+        version: 7.18.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
       '@react-router/serve':
         specifier: 'catalog:'
         version: 7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
@@ -782,7 +782,7 @@ importers:
         version: 1.6.1(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@visx/responsive':
         specifier: 2.17.0
         version: 2.17.0(react@18.3.1)
@@ -791,7 +791,7 @@ importers:
         version: 12.10.2(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       ai:
         specifier: 5.0.172
-        version: 5.0.172(zod@4.5.4)
+        version: 5.0.172(zod@3.25.76)
       assert-never:
         specifier: 1.4.0
         version: 1.4.0
@@ -827,7 +827,7 @@ importers:
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       inngest:
         specifier: ^3.52.7
-        version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@4.22.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
+        version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@4.22.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
       intl-parse-accept-language:
         specifier: 'catalog:'
         version: 1.0.0
@@ -992,13 +992,13 @@ importers:
         version: 1.1.3(react@18.3.1)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
       zod-to-json-schema:
         specifier: 3.25.2
-        version: 3.25.2(zod@4.5.4)
+        version: 3.25.2(zod@3.25.76)
       zustand:
         specifier: 'catalog:'
         version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -1014,16 +1014,16 @@ importers:
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+        version: 7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
       '@tailwindcss/vite':
         specifier: 'catalog:'
-        version: 4.3.0(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.3.0(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@types/d3':
         specifier: 7.4.3
         version: 7.4.3
@@ -1083,13 +1083,13 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+        version: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
       vite-plugin-babel-macros:
         specifier: 'catalog:'
-        version: 1.0.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 1.0.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       vitest:
         specifier: 'catalog:'
-        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   apps/mes:
     dependencies:
@@ -1344,10 +1344,10 @@ importers:
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.18)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -1498,10 +1498,10 @@ importers:
         version: 1.0.7(tailwindcss@4.3.0)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -1617,10 +1617,10 @@ importers:
         version: 4.6.9
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
     devDependencies:
       '@tailwindcss/vite':
         specifier: 'catalog:'
@@ -1881,10 +1881,10 @@ importers:
         version: 7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
       zustand:
         specifier: 'catalog:'
         version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -2021,7 +2021,7 @@ importers:
         version: 4.6.9
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2164,7 +2164,7 @@ importers:
         version: 4.6.9
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2234,7 +2234,7 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: 'catalog:'
-        version: 2.0.102(zod@4.5.4)
+        version: 2.0.102(zod@3.25.76)
       '@carbon/auth':
         specifier: workspace:*
         version: link:../auth
@@ -2282,7 +2282,7 @@ importers:
         version: 2.80.0
       ai:
         specifier: 5.0.172
-        version: 5.0.172(zod@4.5.4)
+        version: 5.0.172(zod@3.25.76)
       axios:
         specifier: 1.16.0
         version: 1.16.0
@@ -2327,10 +2327,10 @@ importers:
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.18)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2425,7 +2425,7 @@ importers:
         version: 1.3.3
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zustand:
         specifier: 'catalog:'
         version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -2466,9 +2466,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      zod-form-data:
-        specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
 
   packages/glossary:
     dependencies:
@@ -2523,7 +2520,7 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: 'catalog:'
-        version: 2.0.102(zod@4.5.4)
+        version: 2.0.102(zod@3.25.76)
       '@carbon/auth':
         specifier: workspace:*
         version: link:../auth
@@ -2586,13 +2583,13 @@ importers:
         version: 2.80.0
       ai:
         specifier: 5.0.172
-        version: 5.0.172(zod@4.5.4)
+        version: 5.0.172(zod@3.25.76)
       axios:
         specifier: 1.16.0
         version: 1.16.0
       inngest:
         specifier: ^3.52.7
-        version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
+        version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
@@ -2631,7 +2628,7 @@ importers:
         version: 8.10.0
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2741,7 +2738,7 @@ importers:
         version: 2.80.0
       inngest:
         specifier: 3.54.0
-        version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
+        version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76)
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -2756,7 +2753,7 @@ importers:
         version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2903,7 +2900,7 @@ importers:
         version: 5.6.0(react@18.3.1)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zustand:
         specifier: 'catalog:'
         version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -2952,10 +2949,10 @@ importers:
         version: 7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
       zod-form-data:
         specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
+        version: 2.0.8(zod@3.25.76)
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -3360,7 +3357,7 @@ importers:
         version: 5.8.3
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
 
   packages/tiptap:
     dependencies:
@@ -3544,7 +3541,7 @@ importers:
         version: 5.1.16
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -3654,7 +3651,7 @@ importers:
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)
       zod:
         specifier: 'catalog:'
-        version: 4.5.4
+        version: 3.25.76
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -16509,10 +16506,10 @@ packages:
   yoga-layout@3.2.1:
     resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
-  zod-form-data@3.0.3:
-    resolution: {integrity: sha512-1qXJ6hayyUr3TqxfXqmm5qwCa8f/mnG/o8Itcny03iFyrwX/dZkCwfCcYoJDyQP8RxEkycw0c/ldCJXBeaCstg==}
+  zod-form-data@2.0.8:
+    resolution: {integrity: sha512-X31GkEc8uk5/L387L4TVI1z7obBbN/0MRHBHfHW3uMOWkVJeSsa+grvkTvY9qyFbNshKEnqK+jLJNlY+d7jpLw==}
     peerDependencies:
-      zod: '>= 3.25.0'
+      zod: '>= 3.11.0'
 
   zod-to-json-schema@3.25.2:
     resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
@@ -16527,9 +16524,6 @@ packages:
 
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
-
-  zod@4.5.4:
-    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
   zustand@3.7.2:
     resolution: {integrity: sha512-PIJDIZKtokhof+9+60cpockVOq05sJzHCriyvaLBmEJixseQ1a5Kdov6fWZfWOu5SK9c+FhH1jU0tntLxRJYMA==}
@@ -16578,42 +16572,42 @@ packages:
 
 snapshots:
 
-  '@ai-sdk-tools/agents@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(@ai-sdk-tools/cache@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(ai@5.0.172(zod@4.5.4)))(ai@5.0.172(zod@4.5.4))(zod@4.5.4)':
+  '@ai-sdk-tools/agents@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(@ai-sdk-tools/cache@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(ai@5.0.172(zod@3.25.76)))(ai@5.0.172(zod@3.25.76))(zod@3.25.76)':
     dependencies:
-      ai: 5.0.172(zod@4.5.4)
-      zod: 4.5.4
+      ai: 5.0.172(zod@3.25.76)
+      zod: 3.25.76
     optionalDependencies:
-      '@ai-sdk-tools/artifacts': 1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1)
-      '@ai-sdk-tools/cache': 1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(ai@5.0.172(zod@4.5.4))
+      '@ai-sdk-tools/artifacts': 1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1)
+      '@ai-sdk-tools/cache': 1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(ai@5.0.172(zod@3.25.76))
 
-  '@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1)':
+  '@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1)':
     dependencies:
-      ai: 5.0.172(zod@4.5.4)
+      ai: 5.0.172(zod@3.25.76)
       react: 18.3.1
-      zod: 4.5.4
+      zod: 4.4.3
 
-  '@ai-sdk-tools/cache@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1))(ai@5.0.172(zod@4.5.4))':
+  '@ai-sdk-tools/cache@1.2.0(@ai-sdk-tools/artifacts@1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1))(ai@5.0.172(zod@3.25.76))':
     dependencies:
-      ai: 5.0.172(zod@4.5.4)
+      ai: 5.0.172(zod@3.25.76)
     optionalDependencies:
-      '@ai-sdk-tools/artifacts': 1.2.0(ai@5.0.172(zod@4.5.4))(react@18.3.1)
+      '@ai-sdk-tools/artifacts': 1.2.0(ai@5.0.172(zod@3.25.76))(react@18.3.1)
 
-  '@ai-sdk-tools/devtools@1.2.0(@ai-sdk-tools/store@1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(react@18.3.1)(zod@4.5.4)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))))(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@4.5.4)':
+  '@ai-sdk-tools/devtools@1.2.0(@ai-sdk-tools/store@1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(react@18.3.1)(zod@3.25.76)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))))(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)':
     dependencies:
-      '@ai-sdk/react': 2.0.174(react@18.3.1)(zod@4.5.4)
+      '@ai-sdk/react': 2.0.174(react@18.3.1)(zod@3.25.76)
       '@emotion/react': 11.14.0(@types/react@18.3.28)(react@18.3.1)
       '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
       '@mui/icons-material': 7.3.10(@mui/material@7.3.10(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
       '@mui/material': 7.3.10(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/dagre': 0.7.54
       '@xyflow/react': 12.10.2(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      ai: 5.0.172(zod@4.5.4)
+      ai: 5.0.172(zod@3.25.76)
       dagre: 0.8.5
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-json-view-lite: 2.5.0(react@18.3.1)
     optionalDependencies:
-      '@ai-sdk-tools/store': 1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(react@18.3.1)(zod@4.5.4)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)))
+      '@ai-sdk-tools/store': 1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(react@18.3.1)(zod@3.25.76)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)))
     transitivePeerDependencies:
       - '@mui/material-pigment-css'
       - '@types/react'
@@ -16621,19 +16615,19 @@ snapshots:
       - supports-color
       - zod
 
-  '@ai-sdk-tools/memory@1.2.0(@upstash/redis@1.37.0)(ai@5.0.172(zod@4.5.4))(ioredis@5.10.1)':
+  '@ai-sdk-tools/memory@1.2.0(@upstash/redis@1.37.0)(ai@5.0.172(zod@3.25.76))(ioredis@5.10.1)':
     dependencies:
-      zod: 4.5.4
+      zod: 4.4.3
     optionalDependencies:
       '@upstash/redis': 1.37.0
-      ai: 5.0.172(zod@4.5.4)
+      ai: 5.0.172(zod@3.25.76)
       ioredis: 5.10.1
 
-  '@ai-sdk-tools/store@1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4))(react@18.3.1)(zod@4.5.4)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)))':
+  '@ai-sdk-tools/store@1.2.0(patch_hash=b16f28188d77cbc082143745663e4379eae4fae4380a3d6d1102b960cb829870)(@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76))(react@18.3.1)(zod@3.25.76)(zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)))':
     dependencies:
-      '@ai-sdk/react': 2.0.174(react@18.3.1)(zod@4.5.4)
+      '@ai-sdk/react': 2.0.174(react@18.3.1)(zod@3.25.76)
       '@types/node': 24.12.2
-      ai: 5.0.172(zod@4.5.4)
+      ai: 5.0.172(zod@3.25.76)
       react: 18.3.1
       zustand: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     transitivePeerDependencies:
@@ -16645,18 +16639,18 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/anthropic@2.0.74(zod@4.5.4)':
+  '@ai-sdk/anthropic@2.0.74(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
-      '@ai-sdk/provider-utils': 3.0.23(zod@4.5.4)
-      zod: 4.5.4
+      '@ai-sdk/provider-utils': 3.0.23(zod@3.25.76)
+      zod: 3.25.76
 
-  '@ai-sdk/gateway@2.0.76(zod@4.5.4)':
+  '@ai-sdk/gateway@2.0.76(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
-      '@ai-sdk/provider-utils': 3.0.23(zod@4.5.4)
+      '@ai-sdk/provider-utils': 3.0.23(zod@3.25.76)
       '@vercel/oidc': 3.1.0
-      zod: 4.5.4
+      zod: 3.25.76
 
   '@ai-sdk/openai-compatible@0.2.16(zod@3.25.76)':
     dependencies:
@@ -16670,11 +16664,11 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/openai@2.0.102(zod@4.5.4)':
+  '@ai-sdk/openai@2.0.102(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
-      '@ai-sdk/provider-utils': 3.0.23(zod@4.5.4)
-      zod: 4.5.4
+      '@ai-sdk/provider-utils': 3.0.23(zod@3.25.76)
+      zod: 3.25.76
 
   '@ai-sdk/provider-utils@2.2.8(zod@3.25.76)':
     dependencies:
@@ -16683,12 +16677,12 @@ snapshots:
       secure-json-parse: 2.7.0
       zod: 3.25.76
 
-  '@ai-sdk/provider-utils@3.0.23(zod@4.5.4)':
+  '@ai-sdk/provider-utils@3.0.23(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
-      zod: 4.5.4
+      zod: 3.25.76
 
   '@ai-sdk/provider@1.1.3':
     dependencies:
@@ -16708,15 +16702,15 @@ snapshots:
     optionalDependencies:
       zod: 3.25.76
 
-  '@ai-sdk/react@2.0.174(react@18.3.1)(zod@4.5.4)':
+  '@ai-sdk/react@2.0.174(react@18.3.1)(zod@3.25.76)':
     dependencies:
-      '@ai-sdk/provider-utils': 3.0.23(zod@4.5.4)
-      ai: 5.0.172(zod@4.5.4)
+      '@ai-sdk/provider-utils': 3.0.23(zod@3.25.76)
+      ai: 5.0.172(zod@3.25.76)
       react: 18.3.1
       swr: 2.4.1(react@18.3.1)
       throttleit: 2.1.0
     optionalDependencies:
-      zod: 4.5.4
+      zod: 3.25.76
 
   '@ai-sdk/ui-utils@1.2.11(zod@3.25.76)':
     dependencies:
@@ -17118,7 +17112,7 @@ snapshots:
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
       convert-source-map: 2.0.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 7.7.4
@@ -17138,7 +17132,7 @@ snapshots:
       '@babel/types': 7.29.0
       '@jridgewell/remapping': 2.3.5
       convert-source-map: 2.0.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 7.7.4
@@ -17308,7 +17302,7 @@ snapshots:
       '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -17321,7 +17315,7 @@ snapshots:
       '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -18340,6 +18334,16 @@ snapshots:
       - supports-color
       - typescript
 
+  '@lingui/vite-plugin@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@lingui/cli': 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)
+      '@lingui/conf': 5.9.4(typescript@5.8.3)
+      vite: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+    transitivePeerDependencies:
+      - babel-plugin-macros
+      - supports-color
+      - typescript
+
   '@lingui/vite-plugin@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@lingui/cli': 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)
@@ -18417,7 +18421,7 @@ snapshots:
 
   '@mjackson/node-fetch-server@0.2.0': {}
 
-  '@modelcontextprotocol/sdk@1.29.0(zod@4.5.4)':
+  '@modelcontextprotocol/sdk@1.29.0(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.13(hono@4.12.25)
       ajv: 8.18.0
@@ -18434,8 +18438,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.5.4
-      zod-to-json-schema: 3.25.2(zod@4.5.4)
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.2(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
 
@@ -18701,7 +18705,7 @@ snapshots:
     dependencies:
       '@oclif/core': 4.11.7
       ansis: 3.17.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       npm: 11.17.0
       npm-package-arg: 11.0.3
       npm-run-path: 5.3.0
@@ -22197,6 +22201,56 @@ snapshots:
       - tsx
       - yaml
 
+  '@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/generator': 7.29.1
+      '@babel/parser': 7.29.2
+      '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.29.0)
+      '@babel/preset-typescript': 7.28.5(@babel/core@7.29.0)
+      '@babel/traverse': 7.29.0
+      '@babel/types': 7.29.0
+      '@react-router/node': 7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@remix-run/node-fetch-server': 0.13.1
+      arg: 5.0.2
+      babel-dead-code-elimination: 1.0.12
+      chokidar: 4.0.3
+      dedent: 1.7.2(babel-plugin-macros@3.1.0)
+      es-module-lexer: 1.7.0
+      exit-hook: 2.2.1
+      isbot: 5.1.37
+      jsesc: 3.0.2
+      lodash: 4.18.1
+      p-map: 7.0.4
+      pathe: 1.1.2
+      picocolors: 1.1.1
+      pkg-types: 2.3.0
+      prettier: 3.8.1
+      react-refresh: 0.14.2
+      react-router: 7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      semver: 7.7.4
+      tinyglobby: 0.2.17
+      valibot: 1.3.1(typescript@5.8.3)
+      vite: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-node: 3.2.4(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+    optionalDependencies:
+      '@react-router/serve': 7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - '@types/node'
+      - babel-plugin-macros
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - tsx
+      - yaml
+
   '@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)':
     dependencies:
       '@babel/core': 7.29.0
@@ -22272,6 +22326,12 @@ snapshots:
   '@react-router/remix-routes-option-adapter@7.18.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)':
     dependencies:
       '@react-router/dev': 7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+    optionalDependencies:
+      typescript: 5.8.3
+
+  '@react-router/remix-routes-option-adapter@7.18.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)':
+    dependencies:
+      '@react-router/dev': 7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
     optionalDependencies:
       typescript: 5.8.3
 
@@ -23560,6 +23620,13 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 4.3.0
 
+  '@tailwindcss/vite@4.3.0(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@tailwindcss/node': 4.3.0
+      '@tailwindcss/oxide': 4.3.0
+      tailwindcss: 4.3.0
+      vite: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+
   '@tailwindcss/vite@4.3.0(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@tailwindcss/node': 4.3.0
@@ -24339,7 +24406,7 @@ snapshots:
     dependencies:
       '@types/node': 22.19.7
       tapable: 2.3.3
-      webpack: 5.108.4(esbuild@0.27.7)(lightningcss@1.32.0)(postcss@8.5.18)
+      webpack: 5.108.4(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.18)
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -24430,6 +24497,16 @@ snapshots:
   '@vercel/react-router@1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-router/dev': 7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+      '@react-router/node': 7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@vercel/static-config': 3.2.0
+      isbot: 5.1.37
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      ts-morph: 12.0.0
+
+  '@vercel/react-router@1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@react-router/dev': 7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
       '@react-router/node': 7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
       '@vercel/static-config': 3.2.0
       isbot: 5.1.37
@@ -24582,6 +24659,14 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+
+  '@vitest/mocker@4.1.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@vitest/spy': 4.1.6
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
 
   '@vitest/mocker@4.1.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
@@ -24768,13 +24853,13 @@ snapshots:
     optionalDependencies:
       react: 18.3.1
 
-  ai@5.0.172(zod@4.5.4):
+  ai@5.0.172(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 2.0.76(zod@4.5.4)
+      '@ai-sdk/gateway': 2.0.76(zod@3.25.76)
       '@ai-sdk/provider': 2.0.1
-      '@ai-sdk/provider-utils': 3.0.23(zod@4.5.4)
+      '@ai-sdk/provider-utils': 3.0.23(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
-      zod: 4.5.4
+      zod: 3.25.76
 
   ajv-formats@2.1.1(ajv@8.18.0):
     optionalDependencies:
@@ -25042,7 +25127,7 @@ snapshots:
     dependencies:
       bytes: 3.1.2
       content-type: 1.0.5
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       http-errors: 2.0.1
       iconv-lite: 0.7.2
       on-finished: 2.4.1
@@ -25909,7 +25994,7 @@ snapshots:
   engine.io-client@6.6.6:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       engine.io-parser: 5.2.3
       ws: 8.21.0
       xmlhttprequest-ssl: 2.1.2
@@ -25929,7 +26014,7 @@ snapshots:
       base64id: 2.0.0
       cookie: 0.7.2
       cors: 2.8.6
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       engine.io-parser: 5.2.3
       ws: 8.21.0
     transitivePeerDependencies:
@@ -26346,7 +26431,7 @@ snapshots:
       content-type: 1.0.5
       cookie: 0.7.2
       cookie-signature: 1.2.2
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       depd: 2.0.0
       encodeurl: 2.0.0
       escape-html: 1.0.3
@@ -26475,7 +26560,7 @@ snapshots:
 
   finalhandler@2.1.1:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
@@ -27040,14 +27125,14 @@ snapshots:
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@9.0.0:
     dependencies:
       agent-base: 9.0.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -27141,7 +27226,7 @@ snapshots:
 
   inline-style-parser@0.2.7: {}
 
-  inngest@3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@4.22.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4):
+  inngest@3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@4.22.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76):
     dependencies:
       '@bufbuild/protobuf': 2.11.0
       '@inngest/ai': 0.1.7
@@ -27160,7 +27245,7 @@ snapshots:
       canonicalize: 1.0.8
       chalk: 4.1.2
       cross-fetch: 4.1.0(encoding@0.1.13)
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       hash.js: 1.1.7
       json-stringify-safe: 5.0.1
       ms: 2.1.3
@@ -27168,7 +27253,7 @@ snapshots:
       strip-ansi: 5.2.0
       temporal-polyfill: 0.2.5
       ulid: 2.4.0
-      zod: 4.5.4
+      zod: 3.25.76
     optionalDependencies:
       express: 4.22.1
       hono: 4.12.25
@@ -27179,7 +27264,7 @@ snapshots:
       - encoding
       - supports-color
 
-  inngest@3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4):
+  inngest@3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@3.25.76):
     dependencies:
       '@bufbuild/protobuf': 2.11.0
       '@inngest/ai': 0.1.7
@@ -27198,7 +27283,7 @@ snapshots:
       canonicalize: 1.0.8
       chalk: 4.1.2
       cross-fetch: 4.1.0(encoding@0.1.13)
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       hash.js: 1.1.7
       json-stringify-safe: 5.0.1
       ms: 2.1.3
@@ -27206,7 +27291,7 @@ snapshots:
       strip-ansi: 5.2.0
       temporal-polyfill: 0.2.5
       ulid: 2.4.0
-      zod: 4.5.4
+      zod: 3.25.76
     optionalDependencies:
       express: 5.2.1
       hono: 4.12.25
@@ -27260,7 +27345,7 @@ snapshots:
     dependencies:
       '@ioredis/commands': 1.5.1
       cluster-key-slot: 1.1.2
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0
@@ -28389,7 +28474,7 @@ snapshots:
   micromark@4.0.2:
     dependencies:
       '@types/debug': 4.1.13
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       decode-named-character-reference: 1.3.0
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.3
@@ -28459,7 +28544,7 @@ snapshots:
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.48.0
-      webpack: 5.108.4(esbuild@0.27.7)(lightningcss@1.32.0)(postcss@8.5.18)
+      webpack: 5.108.4(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.18)
     optionalDependencies:
       esbuild: 0.25.0
       lightningcss: 1.32.0
@@ -29988,7 +30073,7 @@ snapshots:
 
   require-in-the-middle@7.5.2:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       module-details-from-path: 1.0.4
       resolve: 1.22.11
     transitivePeerDependencies:
@@ -29996,7 +30081,7 @@ snapshots:
 
   require-in-the-middle@8.0.1:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       module-details-from-path: 1.0.4
     transitivePeerDependencies:
       - supports-color
@@ -30113,7 +30198,7 @@ snapshots:
 
   router@2.2.0:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       depd: 2.0.0
       is-promise: 4.0.0
       parseurl: 1.3.3
@@ -30221,7 +30306,7 @@ snapshots:
 
   send@1.2.1:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
@@ -30401,7 +30486,7 @@ snapshots:
 
   socket.io-adapter@2.5.8:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
@@ -30422,7 +30507,7 @@ snapshots:
   socket.io-parser@4.2.7:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -30431,7 +30516,7 @@ snapshots:
       accepts: 1.3.8
       base64id: 2.0.0
       cors: 2.8.6
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       engine.io: 6.6.9
       socket.io-adapter: 2.5.8
       socket.io-parser: 4.2.7
@@ -30888,7 +30973,7 @@ snapshots:
   threads@1.7.0:
     dependencies:
       callsites: 3.1.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       is-observable: 2.1.0
       observable-fns: 0.6.1
     optionalDependencies:
@@ -31029,7 +31114,7 @@ snapshots:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       esbuild: 0.27.7
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -31057,7 +31142,7 @@ snapshots:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       esbuild: 0.27.7
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -31359,7 +31444,7 @@ snapshots:
   vite-node@3.2.4(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
       vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
@@ -31380,7 +31465,7 @@ snapshots:
   vite-node@3.2.4(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@8.1.1)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
       vite: 7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
@@ -31417,6 +31502,17 @@ snapshots:
       '@types/babel__core': 7.20.5
       babel-plugin-macros: 3.1.0
       vite: 7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+    transitivePeerDependencies:
+      - supports-color
+
+  vite-plugin-babel-macros@1.0.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.29.0)
+      '@babel/plugin-syntax-typescript': 7.28.6(@babel/core@7.29.0)
+      '@types/babel__core': 7.20.5
+      babel-plugin-macros: 3.1.0
+      vite: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -31512,6 +31608,22 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       lightningcss: 1.32.0
+      terser: 5.48.0
+      tsx: 4.21.0
+      yaml: 2.8.3
+
+  vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
+    dependencies:
+      lightningcss: 1.32.0
+      picomatch: 4.0.4
+      postcss: 8.5.18
+      rolldown: 1.0.3
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 26.1.0
+      esbuild: 0.27.7
+      fsevents: 2.3.3
+      jiti: 2.7.0
       terser: 5.48.0
       tsx: 4.21.0
       yaml: 2.8.3
@@ -31672,6 +31784,34 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
+  vitest@4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
+    dependencies:
+      '@vitest/expect': 4.1.6
+      '@vitest/mocker': 4.1.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+      '@vitest/pretty-format': 4.1.6
+      '@vitest/runner': 4.1.6
+      '@vitest/snapshot': 4.1.6
+      '@vitest/spy': 4.1.6
+      '@vitest/utils': 4.1.6
+      es-module-lexer: 2.3.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.4
+      std-env: 4.0.0
+      tinybench: 2.9.0
+      tinyexec: 1.2.4
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.1.0
+      vite: 8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.0
+      '@types/node': 26.1.0
+    transitivePeerDependencies:
+      - msw
+
   vitest@4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       '@vitest/expect': 4.1.6
@@ -31738,7 +31878,7 @@ snapshots:
 
   webpack-sources@3.5.1: {}
 
-  webpack@5.108.4(esbuild@0.27.7)(lightningcss@1.32.0)(postcss@8.5.18):
+  webpack@5.108.4(esbuild@0.25.0)(lightningcss@1.32.0)(postcss@8.5.18):
     dependencies:
       '@types/estree': 1.0.8
       '@types/json-schema': 7.0.15
@@ -31915,26 +32055,20 @@ snapshots:
 
   yoga-layout@3.2.1: {}
 
-  zod-form-data@3.0.3(zod@4.5.4):
+  zod-form-data@2.0.8(zod@3.25.76):
     dependencies:
       '@rvf/set-get': 7.0.2
-      zod: 4.5.4
+      zod: 3.25.76
 
   zod-to-json-schema@3.25.2(zod@3.25.76):
     dependencies:
       zod: 3.25.76
-
-  zod-to-json-schema@3.25.2(zod@4.5.4):
-    dependencies:
-      zod: 4.5.4
 
   zod@3.24.3: {}
 
   zod@3.25.76: {}
 
   zod@4.4.3: {}
-
-  zod@4.5.4: {}
 
   zustand@3.7.2(react@18.3.1):
     optionalDependencies:

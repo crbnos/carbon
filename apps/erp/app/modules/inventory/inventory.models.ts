@@ -327,7 +327,9 @@ export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   carrier: z.enum(["UPS", "FedEx", "USPS", "DHL", "Other"], {
-    error: "Carrier is required"
+    errorMap: () => ({
+      message: "Carrier is required"
+    })
   }),
   carrierAccountId: zfd.text(z.string().optional()),
   trackingUrl: zfd.text(z.string().optional())

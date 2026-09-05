@@ -59,7 +59,7 @@ relative to the function dir):
 
 ```typescript
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import z from "npm:zod@^4.5.4";
+import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";

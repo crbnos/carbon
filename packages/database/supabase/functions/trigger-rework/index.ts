@@ -1,16 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import z from "npm:zod@^4.5.4";
+import z from "npm:zod@^3.24.1";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("trigger-rework");
 
 interface TriggerReworkRequest {
   jobId: string;
@@ -112,7 +110,7 @@ async function triggerRework(
     triggeredAtJobOperationId
   );
 
-  logger.info(
+  console.info(
     `📋 Rework path: ${operationPath.length} operations to clone`
   );
 
@@ -265,7 +263,7 @@ async function triggerRework(
     sourceToCloneMap.set(sourceOp.id, clonedOps[i].id);
   });
 
-  logger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
+  console.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
 
   // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
   const [allSteps, allTools, allParams] = await Promise.all([
@@ -382,7 +380,7 @@ async function triggerRework(
       .execute();
   }
 
-  logger.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
+  console.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
 
   // 8. Record a productionQuantity entry for the rework
   await trx
@@ -460,7 +458,7 @@ serve(async (req) => {
       return errorResponse("Job not found in this company", 404);
     }
 
-    logger.info(
+    console.info(
       `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`
     );
 
@@ -485,14 +483,12 @@ serve(async (req) => {
         }),
       });
     } catch (err) {
-      logger.error("Failed to trigger reschedule after rework", {
-        error: String((err as Error)?.stack ?? err),
-      });
+      console.error("Failed to trigger reschedule after rework:", err);
     }
 
     return jsonResponse({ success: true, ...result });
   } catch (error) {
-    logger.error(
+    console.error(
       `❌ Rework failed: ${
         error instanceof Error ? error.message : String(error)
       }`

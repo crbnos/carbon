@@ -128,7 +128,9 @@ export const purchaseOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),
   purchaseOrderType: z.enum(purchaseOrderTypeType, {
-    error: "Type is required"
+    errorMap: (issue, ctx) => ({
+      message: "Type is required"
+    })
   }),
   status: z.enum(purchaseOrderStatusType).optional(),
   supplierId: z.string().min(1, { message: "Supplier is required" }),
@@ -207,7 +209,9 @@ export const purchaseOrderLineValidator = z
     purchaseOrderLineType: z.enum(
       [...itemType, "Fixture", "G/L Account", "Fixed Asset"],
       {
-        error: "Type is required"
+        errorMap: (issue, ctx) => ({
+          message: "Type is required"
+        })
       }
     ),
     itemId: zfd.text(z.string().optional()),
@@ -352,7 +356,9 @@ export const supplierApprovalValidator = z.object({
   readableId: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   supplierStatus: z.enum(supplierStatusType, {
-    error: "Supplier status is required"
+    errorMap: (issue, ctx) => ({
+      message: "Supplier status is required"
+    })
   }),
   supplierTypeId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
@@ -445,7 +451,9 @@ export const supplierQuoteValidator = z
     id: zfd.text(z.string().optional()),
     supplierQuoteId: zfd.text(z.string().optional()),
     supplierQuoteType: z.enum(purchaseOrderTypeType, {
-      error: "Type is required"
+      errorMap: (issue, ctx) => ({
+        message: "Type is required"
+      })
     }),
     supplierId: z.string().min(1, { message: "Supplier is required" }),
     supplierLocationId: zfd.text(z.string().optional()),
@@ -477,7 +485,7 @@ export const supplierQuoteLineValidator = z
     id: zfd.text(z.string().optional()),
     supplierQuoteId: z.string(),
     supplierQuoteLineType: z.enum([...itemType, "G/L Account"], {
-      error: "Type is required"
+      errorMap: () => ({ message: "Type is required" })
     }),
     itemId: zfd.text(z.string().optional()),
     accountId: zfd.text(z.string().optional()),

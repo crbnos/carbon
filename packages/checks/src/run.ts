@@ -8,7 +8,6 @@ import type {
 } from "./check";
 import { moduleShape } from "./conformance/module-shape";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
-import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -39,8 +38,7 @@ export const SERVER_CHECKS: ConformanceCheck[] = [
 export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
   noInlineFractionDigits,
-  noDbClientInService,
-  noDefaultOnEffects
+  noDbClientInService
 ];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];

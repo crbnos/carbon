@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^4.5.4";
+import { z } from "npm:zod@^3.24.1";
 
-import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
-
-const logger = getFunctionLogger("trigger");
 
 const recipientValidator = z.discriminatedUnion("type", [
   z.object({
@@ -47,7 +44,11 @@ serve(async (req: Request) => {
     const validatedPayload = payloadValidator.parse(payload);
     const { type, ...data } = validatedPayload;
 
-    logger.info({ type, ...data });
+    console.log({
+      function: "trigger",
+      type,
+      ...data,
+    });
 
     switch (type) {
       case "notify": {

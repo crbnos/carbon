@@ -4,22 +4,18 @@ import { stringToPathArray } from "./utils";
 import { createValidator } from "./validation/createValidator";
 import type { FieldErrors, Validator } from "./validation/types";
 
-// Flatten a ZodError's issues, recursing into union issues (`invalid_union`
-// carries `errors: $ZodIssue[][]`) so a nested field error surfaces at its own
-// path. A union issue with no sub-errors is kept as-is so a message survives.
-const getIssuesForError = (err: z.ZodError): z.core.$ZodIssue[] => {
-  const collect = (issues: readonly z.core.$ZodIssue[]): z.core.$ZodIssue[] =>
-    issues.flatMap((issue) =>
-      issue.code === "invalid_union" && issue.errors.length > 0
-        ? collect(issue.errors.flat())
-        : [issue]
-    );
-  return collect(err.issues);
+const getIssuesForError = (err: z.ZodError<any>): z.ZodIssue[] => {
+  return err.issues.flatMap((issue) => {
+    if ("unionErrors" in issue) {
+      return issue.unionErrors.flatMap((err) => getIssuesForError(err));
+    } else {
+      return [issue];
+    }
+  });
 };
 
-function pathToString(array: PropertyKey[]): string {
-  return array.reduce<string>(function (string: string, itemRaw: PropertyKey) {
-    const item = String(itemRaw);
+function pathToString(array: (string | number)[]): string {
+  return array.reduce<string>(function (string: string, item: string | number) {
     const prefix = string === "" ? "" : ".";
     return string + (isNaN(Number(item)) ? prefix + item : "[" + item + "]");
   }, "");
@@ -28,10 +24,10 @@ function pathToString(array: PropertyKey[]): string {
 /**
  * Create a validator using a `zod` schema.
  */
-export function validator<Schema extends z.ZodType>(
-  zodSchema: Schema,
-  parseParams?: Parameters<Schema["safeParseAsync"]>[1]
-): Validator<z.output<Schema>> {
+export function validator<T, U extends z.ZodTypeDef>(
+  zodSchema: z.Schema<T, U, unknown>,
+  parseParams?: Partial<z.ParseParams>
+): Validator<T> {
   return createValidator({
     validate: async (value) => {
       const result = await zodSchema.safeParseAsync(value, parseParams);

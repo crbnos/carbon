@@ -78,10 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const upsertAttributeValue = await upsertUserAttributeValue(client, {
-    // validator(v as ZodSchema) intentionally erases the union of attribute-value
-    // schemas; v4's ZodSchema output is `unknown` (was `any` in v3), so restore the
-    // permissive spread the runtime already relies on.
-    ...(validation.data as any),
+    ...validation.data,
     userId: targetUserId,
     updatedBy: userId
   });

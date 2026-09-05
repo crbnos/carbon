@@ -299,10 +299,9 @@ export const quoteValidator = z.object({
 });
 
 export const quoteLineAdditionalChargesValidator = z.record(
-  z.string(),
   z.object({
     description: z.string(),
-    amounts: z.record(z.string(), z.number()),
+    amounts: z.record(z.number()),
     taxable: z.boolean().default(true)
   })
 );
@@ -322,7 +321,7 @@ export const costCategoryKeys = [
 export type CostCategoryKey = (typeof costCategoryKeys)[number];
 
 export const quoteLineCategoryMarkupsValidator = z
-  .record(z.string(), z.number().min(0))
+  .record(z.number().min(0))
   .default({});
 
 export const quoteLineValidator = z.object({
@@ -331,12 +330,12 @@ export const quoteLineValidator = z.object({
   itemType: z.enum(itemType).optional(),
   itemId: z.string().min(1, { message: "Part is required" }),
   status: z.enum(quoteLineStatusType, {
-    error: "Status is required"
+    errorMap: () => ({ message: "Status is required" })
   }),
   estimatorId: zfd.text(z.string().optional()),
   description: z.string().min(1, { message: "Description is required" }),
   methodType: z.enum(methodType, {
-    error: "Method is required"
+    errorMap: () => ({ message: "Method is required" })
   }),
   customerPartId: zfd.text(z.string().optional()),
   customerPartRevision: zfd.text(z.string().optional()),
@@ -362,10 +361,14 @@ export const quoteMaterialValidator = z
       .min(1, { message: "Make method is required" }),
     order: zfd.numeric(z.number().min(0)),
     itemType: z.enum(methodItemType, {
-      error: "Item type is required"
+      errorMap: (issue, ctx) => ({
+        message: "Item type is required"
+      })
     }),
     methodType: z.enum(methodType, {
-      error: "Method type is required"
+      errorMap: (issue, ctx) => ({
+        message: "Method type is required"
+      })
     }),
     itemId: z.string().min(1, { message: "Item is required" }),
     kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
@@ -426,10 +429,14 @@ export const quoteOperationValidator = z
       .min(1, { message: "Quote Make Method is required" }),
     order: zfd.numeric(z.number().min(0)),
     operationOrder: z.enum(methodOperationOrders, {
-      error: "Operation order is required"
+      errorMap: (issue, ctx) => ({
+        message: "Operation order is required"
+      })
     }),
     operationType: z.enum(operationTypes, {
-      error: "Operation type is required"
+      errorMap: (issue, ctx) => ({
+        message: "Operation type is required"
+      })
     }),
     processId: z.string().min(1, { message: "Process is required" }),
     procedureId: zfd.text(z.string().optional()),
@@ -441,19 +448,19 @@ export const quoteOperationValidator = z
     ),
     setupUnit: z
       .enum(standardFactorType, {
-        error: "Setup unit is required"
+        errorMap: () => ({ message: "Setup unit is required" })
       })
       .optional(),
     setupTime: zfd.numeric(z.number().min(0).optional()),
     laborUnit: z
       .enum(standardFactorType, {
-        error: "Labor unit is required"
+        errorMap: () => ({ message: "Labor unit is required" })
       })
       .optional(),
     laborTime: zfd.numeric(z.number().min(0).optional()),
     machineUnit: z
       .enum(standardFactorType, {
-        error: "Machine unit is required"
+        errorMap: () => ({ message: "Machine unit is required" })
       })
       .optional(),
     machineTime: zfd.numeric(z.number().min(0).optional()),
@@ -778,7 +785,9 @@ export const salesOrderLineValidator = z
     id: zfd.text(z.string().optional()),
     salesOrderId: z.string().min(1, { message: "Order is required" }),
     salesOrderLineType: z.enum(salesOrderLineType, {
-      error: "Type is required"
+      errorMap: (issue, ctx) => ({
+        message: "Type is required"
+      })
     }),
     accountId: zfd.text(z.string().optional()),
     shippingCost: zfd.numeric(z.number().optional()),
@@ -795,7 +804,7 @@ export const salesOrderLineValidator = z
     methodType: zfd.text(
       z
         .enum(methodType, {
-          error: "Method is required"
+          errorMap: () => ({ message: "Method is required" })
         })
         .optional()
     ),

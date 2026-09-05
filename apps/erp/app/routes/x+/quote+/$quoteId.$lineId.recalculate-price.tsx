@@ -33,8 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   const categoryMarkupsByQuantityValidator = z.record(
-    z.string(),
-    z.record(z.string(), z.number().min(0))
+    z.record(z.number().min(0))
   );
   const categoryMarkupsByQuantity =
     categoryMarkupsByQuantityValidator.safeParse(
@@ -43,14 +42,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (unitPricesByQuantity.success === false) {
     return data(
-      { data: null, errors: unitPricesByQuantity.error.issues?.[0].message },
+      { data: null, errors: unitPricesByQuantity.error.errors?.[0].message },
       { status: 400 }
     );
   }
 
   if (quantities.success === false) {
     return data(
-      { data: null, errors: quantities.error.issues?.[0].message },
+      { data: null, errors: quantities.error.errors?.[0].message },
       { status: 400 }
     );
   }

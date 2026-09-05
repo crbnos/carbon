@@ -2,15 +2,13 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { Transaction } from "npm:kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import z from "npm:zod@^4.5.4";
-import { getFunctionLogger } from "../lib/logging.ts";
+import z from "npm:zod@^3.24.1";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("sync");
 
 const onShapeDataValidator = z.object({
   index: z.string(),
@@ -177,7 +175,14 @@ serve(async (req: Request) => {
     case "onshape": {
       const { makeMethodId, data } = payload;
 
-      logger.info({ type, makeMethodId, data, companyId, userId });
+      console.log({
+        function: "sync",
+        type,
+        makeMethodId,
+        data,
+        companyId,
+        userId,
+      });
 
       const client = await requirePermissions(req, companyId, userId, { update: "resources" });
 
@@ -220,7 +225,8 @@ serve(async (req: Request) => {
           const maxVersion = Number(allVersions.data?.version ?? 0);
           const newVersion = maxVersion + 1;
 
-          logger.info({
+          console.log({
+            function: "sync",
             action: "creating_top_level_draft",
             itemId: topLevelMakeMethod.data.itemId,
             maxVersion,
@@ -265,7 +271,8 @@ serve(async (req: Request) => {
           .in("id", Array.from(existingItemIds)),
       ]);
 
-      logger.info({
+      console.log({
+        function: "sync",
         action: "fetched_active_make_methods",
         count: existingMakeMethods.data?.length ?? 0,
         data: existingMakeMethods.data,
@@ -539,7 +546,8 @@ serve(async (req: Request) => {
               existingMakeMethodsByItemId.get(itemId) ||
               newlyCreatedMakeMethodsByItemId.get(itemId);
 
-            logger.info({
+            console.log({
+              function: "sync",
               action: "processing_item",
               itemId,
               partId,
@@ -564,7 +572,8 @@ serve(async (req: Request) => {
                     .orderBy("version", "desc")
                     .executeTakeFirst();
 
-                  logger.info({
+                  console.log({
+                    function: "sync",
                     action: "check_existing_draft",
                     itemId,
                     companyId,
@@ -595,7 +604,8 @@ serve(async (req: Request) => {
                     const maxVersion = Number(maxVersionRow?.version ?? 0);
                     const newVersion = maxVersion + 1;
 
-                    logger.info({
+                    console.log({
+                      function: "sync",
                       action: "creating_child_draft",
                       itemId,
                       companyId,

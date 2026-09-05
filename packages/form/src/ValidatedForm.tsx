@@ -63,7 +63,7 @@ export type FormProps<DataType, Subaction extends string | undefined> = {
   /**
    * A `Validator` object that describes how to validate the form.
    */
-  validator: z.Schema<DataType> | z.ZodObject<any> | z.ZodPipe<any, any>;
+  validator: z.Schema<DataType> | z.ZodEffects<any> | z.ZodObject<any>;
   /**
    * A submit callback that gets called when the form is submitted
    * after all validations have been run.

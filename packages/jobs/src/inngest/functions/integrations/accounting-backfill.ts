@@ -98,7 +98,7 @@ const BackfillPayloadSchema = z.object({
       vendors: z.boolean().default(true),
       items: z.boolean().default(true)
     })
-    .prefault({})
+    .default({})
 });
 
 /**
