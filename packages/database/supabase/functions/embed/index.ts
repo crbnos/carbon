@@ -67,7 +67,10 @@ serve(async (req: Request) => {
         completedJobs.push(currentJob);
       } catch (error) {
         logger.error("processJob failed", {
-          error: String((error as Error)?.stack ?? error),
+          error:
+            error instanceof Error
+              ? (error.stack ?? error.message)
+              : JSON.stringify(error),
         });
         failedJobs.push({
           ...currentJob,
@@ -84,7 +87,10 @@ serve(async (req: Request) => {
     // If the worker is terminating (e.g. wall clock limit reached),
     // add pending jobs to fail list with termination reason
     logger.error("embed worker terminating", {
-      error: String((error as Error)?.stack ?? error),
+      error:
+        error instanceof Error
+          ? (error.stack ?? error.message)
+          : JSON.stringify(error),
     });
     failedJobs.push(
       ...pendingJobs.map((job) => ({

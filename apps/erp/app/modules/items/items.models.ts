@@ -228,7 +228,7 @@ export const itemValidator = z.object({
 // validators. Default Storage Unit is optional for every type - users can
 // set it later via the pickMethod UI once they know where the item lives.
 const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(schema: T) => {
-  const refined: z.ZodType<z.infer<T>> = schema
+  const refined: z.ZodType<z.infer<T>, z.input<T>> = schema
     .refine(
       (data: z.infer<T>) =>
         data.shelfLifeDays === undefined ||
@@ -308,7 +308,7 @@ const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(schema: T) => {
           "Calculate from BOM requires a BoM - only Make or Buy and Make items qualify",
         path: ["shelfLifeCalculateFromBom"]
       }
-    ) as unknown as z.ZodType<z.infer<T>>;
+    ) as unknown as z.ZodType<z.infer<T>, z.input<T>>;
 
   return refined;
 };

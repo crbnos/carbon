@@ -53,7 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
           ...(caption !== undefined ? { caption } : {}),
           ...(sortOrder !== undefined ? { sortOrder } : {}),
           ...(size !== undefined ? { size } : {}),
-          annotations
+          ...(annotations !== undefined ? { annotations } : {})
         }
       : {
           stepId,
