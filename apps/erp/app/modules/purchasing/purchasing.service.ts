@@ -1805,6 +1805,47 @@ export async function upsertPurchaseOrderDelivery(
     .single();
 }
 
+const PURCHASE_ORDER_LINE_ITEM_TYPES = [
+  "Part",
+  "Material",
+  "Tool",
+  "Service",
+  "Consumable",
+  "Fixture"
+];
+
+/**
+ * Force the mutually-exclusive reference columns (`itemId`, `accountId`,
+ * `assetId`) to match the line's `purchaseOrderLineType`, nulling the ones that
+ * don't apply. `purchaseOrderLineType_check` requires exactly one of these set
+ * per type, but the form only submits the active tab's field and `sanitize()`
+ * turns *absent* keys into nothing (not null), so switching a G/L Account or
+ * Fixed Asset line to an item type would otherwise leave a stale `accountId`/
+ * `assetId` on the row and violate the check (23514). Setting the inapplicable
+ * ids to explicit `null` clears them on update and hardens every caller (form,
+ * public API, MCP) at once.
+ */
+function normalizePurchaseOrderLineReferences<
+  T extends {
+    purchaseOrderLineType: string;
+    itemId?: string | null;
+    accountId?: string | null;
+    assetId?: string | null;
+  }
+>(line: T): T {
+  if (PURCHASE_ORDER_LINE_ITEM_TYPES.includes(line.purchaseOrderLineType)) {
+    return { ...line, accountId: null, assetId: null };
+  }
+  if (line.purchaseOrderLineType === "G/L Account") {
+    return { ...line, itemId: null, assetId: null };
+  }
+  if (line.purchaseOrderLineType === "Fixed Asset") {
+    return { ...line, itemId: null, accountId: null };
+  }
+  // Comment (and any other non-reference type) carries no reference id.
+  return { ...line, itemId: null, accountId: null, assetId: null };
+}
+
 export async function upsertPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLine:
@@ -1819,11 +1860,13 @@ export async function upsertPurchaseOrderLine(
         customFields?: Json;
       })
 ) {
-  if ("id" in purchaseOrderLine) {
+  const normalized = normalizePurchaseOrderLineReferences(purchaseOrderLine);
+
+  if ("id" in normalized) {
     return client
       .from("purchaseOrderLine")
-      .update(sanitize(purchaseOrderLine))
-      .eq("id", purchaseOrderLine.id)
+      .update(sanitize(normalized))
+      .eq("id", normalized.id)
       .select("id")
       .single();
   }
@@ -1831,7 +1874,7 @@ export async function upsertPurchaseOrderLine(
   const existing = await client
     .from("purchaseOrderLine")
     .select("sortOrder")
-    .eq("purchaseOrderId", purchaseOrderLine.purchaseOrderId);
+    .eq("purchaseOrderId", normalized.purchaseOrderId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -1840,7 +1883,7 @@ export async function upsertPurchaseOrderLine(
 
   return client
     .from("purchaseOrderLine")
-    .insert([{ ...purchaseOrderLine, sortOrder: maxSortOrder + 1 }])
+    .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
 }

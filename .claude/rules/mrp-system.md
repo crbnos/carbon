@@ -119,9 +119,16 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 
-`locationId` is nullable on all five planning tables. Audit cols
-(`createdBy/At`, `updatedBy/At`) present except on `period` and
-`demandForecastSource` (created-only).
+`locationId` is declared `TEXT` (no `NOT NULL`) on all five planning tables, but
+it is part of the PRIMARY KEY of every one of them (see the PK column above), so
+Postgres makes it **implicitly NOT NULL** — a null `locationId` raises 23502, and
+it is also an FK to `location(id)`, so a bogus value (e.g. the empty string
+`runMrp` used to write via a `?? ""` key fallback for a source line with no
+location) raises 23503 `*_locationId_fkey` and rolls the whole run back. `runMrp`
+therefore SKIPS any source line (sales/job-material/production/PO/projection) with
+no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
+`updatedBy/At`) present except on `period` and `demandForecastSource`
+(created-only).
 
 ## Planning split functions
 
