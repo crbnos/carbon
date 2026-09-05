@@ -154,11 +154,16 @@ export async function buildValidatorRegistry(
 
   return {
     getSchema(mod, validatorName) {
-      return (
+      const found =
         schemas.get(`${mod}:${validatorName}`) ??
         schemas.get(`${FALLBACK_MODULE}:${validatorName}`) ??
-        null
-      );
+        null;
+      // Hand out a COPY. One validator backs many operations (supplierValidator
+      // backs both insertSupplier and upsertSupplier), and downstream steps mutate
+      // the schema in place — `addOperationArg` writes `_operation` onto it. Sharing
+      // the object leaked that required argument onto sibling operations that never
+      // take it.
+      return found ? (structuredClone(found) as JsonSchema) : null;
     },
     getConstArray(mod, exportName) {
       return (

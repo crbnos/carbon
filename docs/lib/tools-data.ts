@@ -21,6 +21,19 @@ interface ToolData {
 
 export const toolModules: ToolModule[] = (raw as ToolData).modules;
 
+/**
+ * Display name for an operation: the callable name minus its `{module}_` prefix.
+ * Every surface that shows an operation already states its module — the sidebar
+ * groups by it, the detail page breadcrumbs it — so the prefix is redundant noise on
+ * an already-long identifier. The FULL name stays wherever it is callable (the
+ * `call_tool` snippet, the page title) since that is the string you actually send.
+ */
+export function operationLabel(name: string, moduleSlug: string): string {
+  return name.startsWith(`${moduleSlug}_`)
+    ? name.slice(moduleSlug.length + 1)
+    : name;
+}
+
 export function getTool(slug: string): { module: ToolModule; tool: ToolItem } | null {
   for (const m of toolModules) {
     const tool = m.tools.find((t) => t.slug === slug);

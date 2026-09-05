@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-05T06:05:03.496Z",
+  "generated": "2026-09-05T06:16:36.551Z",
   "totalTools": 1495,
   "modules": 15,
   "tools": [
@@ -29342,7 +29342,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job operation step",
-      "paramCount": 11,
+      "paramCount": 10,
       "serviceParams": [
         "client",
         "jobOperationStep"
@@ -29468,7 +29468,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job operation step slide",
-      "paramCount": 9,
+      "paramCount": 8,
       "serviceParams": [
         "client",
         "slide"
@@ -29539,7 +29539,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job operation parameter",
-      "paramCount": 5,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "jobOperationParameter"
@@ -29628,7 +29628,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job operation tool",
-      "paramCount": 5,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "jobOperationTool"
@@ -32834,7 +32834,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert assembly instruction step slide",
-      "paramCount": 9,
+      "paramCount": 8,
       "serviceParams": [
         "client",
         "slide"
@@ -36398,19 +36398,10 @@
           },
           "website": {
             "type": "string"
-          },
-          "_operation": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update"
-            ],
-            "description": "Required. 'create' inserts a new record, 'update' modifies the existing record with this id."
           }
         },
         "required": [
-          "name",
-          "_operation"
+          "name"
         ]
       }
     },
@@ -41989,7 +41980,7 @@
       "module": "quality",
       "classification": "WRITE",
       "description": "upsert required action",
-      "paramCount": 3,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "requiredAction"
@@ -53487,7 +53478,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote operation step",
-      "paramCount": 11,
+      "paramCount": 10,
       "serviceParams": [
         "client",
         "quoteOperationStep"
@@ -53580,7 +53571,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote operation parameter",
-      "paramCount": 5,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "quoteOperationParameter"
@@ -53637,7 +53628,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote operation tool",
-      "paramCount": 5,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "quoteOperationTool"

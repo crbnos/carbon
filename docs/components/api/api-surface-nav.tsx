@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ToolNavModule } from "@/lib/tools-data";
+import { operationLabel, type ToolNavModule } from "@/lib/tools-data";
 
 const CLASS_DOT: Record<string, string> = {
   READ: "bg-ed-green-strong",
@@ -37,11 +37,6 @@ function Chevron({ open }: { open: boolean }) {
       <path d="M4.5 3L7.5 6L4.5 9" stroke="rgba(38,35,35,0.48)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
-
-/** Operations are grouped under their module, so drop the redundant `<module>_` prefix from the label. */
-function operationLabel(name: string, moduleSlug: string): string {
-  return name.startsWith(`${moduleSlug}_`) ? name.slice(moduleSlug.length + 1) : name;
 }
 
 function ClassDot({ c }: { c: string }) {

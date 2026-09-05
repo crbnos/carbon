@@ -241,6 +241,17 @@ export function applyConfig(
   }
   const mcp = mcpEndpointFor(base, appBase);
   out = out.split(DEFAULT_MCP_ENDPOINT).join(html ? escapeHtml(mcp) : mcp);
+  // Carbon API (`/api/v1/…`) samples are served by the APP, not the REST host, so
+  // they carry the app origin literally. Rewrite it after the MCP endpoint above —
+  // that one starts with the same origin, and replacing the longer, more specific
+  // needle first keeps this from cutting it in half.
+  const app = appOrigin(base, appBase);
+  if (app !== null && app !== DEFAULT_APP_ORIGIN) {
+    out = out.split(DEFAULT_APP_ORIGIN).join(html ? escapeHtml(app) : app);
+  } else if (app === null) {
+    const placeholder = html ? escapeHtml(HOST_PLACEHOLDER) : HOST_PLACEHOLDER;
+    out = out.split(DEFAULT_APP_ORIGIN).join(placeholder);
+  }
   if (apiKey) {
     if (html) {
       const keyEsc = escapeHtml(apiKey);
