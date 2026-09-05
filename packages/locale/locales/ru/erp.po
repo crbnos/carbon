@@ -2469,12 +2469,6 @@ msgstr "Активы, обязательства и собственный ка�
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "Сначала назначьте рабочий центр"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
@@ -3998,6 +3992,9 @@ msgstr "Скопировать всю номенклатуру и ценообр
 
 msgid "Copy API Key"
 msgstr "Скопировать API-ключ"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Скопировать уникальный идентификатор организации"
@@ -11555,6 +11552,9 @@ msgstr "Оптимизировано для быстрого предпросм�
 msgid "Optional"
 msgstr "Опционально"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "Дополнительный контекст для этого правила"
 
@@ -13939,9 +13939,6 @@ msgstr "Правила, которые автоматически коррект
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Правила, определяющие, где хранится каждый товар"
-
-msgid "Run"
-msgstr "Запуск"
 
 msgid "Run acceptance testing"
 msgstr "Провести приемочное тестирование"

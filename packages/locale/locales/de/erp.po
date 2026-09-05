@@ -2469,12 +2469,6 @@ msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten 
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "Weisen Sie zuerst einen Arbeitsplatz zu"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Drucker den Standorten zuweisen. Versand, Empfang und Arbeitplätze erben den Standort-Standard, wenn nicht anders vorgegeben."
 
@@ -3998,6 +3992,9 @@ msgstr "Kopieren Sie alle Artikel und Preise zu einem anderen Kunden oder Typ."
 
 msgid "Copy API Key"
 msgstr "API-Schlüssel kopieren"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Eindeutige Unternehmenskennung kopieren"
@@ -11555,6 +11552,9 @@ msgstr "Optimiert für schnelle Vorschaubilder – Downloads stellen immer die u
 msgid "Optional"
 msgstr "Optional"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "Optionaler Kontext für diese Regel"
 
@@ -13939,9 +13939,6 @@ msgstr "Regeln, die Preise automatisch nach Menge oder Kunde anpassen"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Regeln, die entscheiden, wo jeder Artikel gelagert wird"
-
-msgid "Run"
-msgstr "Durchlauf"
 
 msgid "Run acceptance testing"
 msgstr "Akzeptanztests durchführen"

@@ -2469,12 +2469,6 @@ msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "Önce bir iş merkezi atayın"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
@@ -3998,6 +3992,9 @@ msgstr "Tüm öğeleri ve fiyatlandırmayı başka bir müşteriye veya türe ko
 
 msgid "Copy API Key"
 msgstr "API Anahtarını Kopyala"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Şirket benzersiz tanımlayıcısını kopyala"
@@ -11555,6 +11552,9 @@ msgstr "Hızlı önizlemeler için optimize edildi — indirmeler her zaman yük
 msgid "Optional"
 msgstr "İsteğe bağlı"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "Bu kural için isteğe bağlı bağlam"
 
@@ -13939,9 +13939,6 @@ msgstr "Fiyatları miktara veya müşteriye göre otomatik olarak ayarlayan kura
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
-
-msgid "Run"
-msgstr "Çalışma"
 
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"

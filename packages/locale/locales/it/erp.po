@@ -2469,12 +2469,6 @@ msgstr "Attività, passività e patrimonio netto a una data"
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "Assegna prima un centro di lavoro"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
 
@@ -3998,6 +3992,9 @@ msgstr "Copia tutti gli articoli e la determinazione dei prezzi a un altro clien
 
 msgid "Copy API Key"
 msgstr "Copia Chiave API"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Copia identificatore univoco azienda"
@@ -11555,6 +11552,9 @@ msgstr "Ottimizzato per anteprime veloci — i download servono sempre il file c
 msgid "Optional"
 msgstr "Facoltativo"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "Contesto facoltativo per questa regola"
 
@@ -13939,9 +13939,6 @@ msgstr "Regole che regolano i prezzi automaticamente in base alla quantità o al
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Regole che decidono dove viene archiviato ogni articolo"
-
-msgid "Run"
-msgstr "Esecuzione"
 
 msgid "Run acceptance testing"
 msgstr "Esegui test di accettazione"

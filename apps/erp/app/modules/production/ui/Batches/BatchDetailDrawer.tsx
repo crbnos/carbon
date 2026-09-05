@@ -9,7 +9,14 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
   Table,
   Tbody,
   Td,
@@ -27,6 +34,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef } from "react";
 import {
   LuCirclePlay,
+  LuCopy,
+  LuEllipsisVertical,
   LuHammer,
   LuHardHat,
   LuLayers,
@@ -38,10 +47,16 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import { DateTime, EmployeeAvatar, ItemThumbnail } from "~/components";
+import {
+  DateTime,
+  EmployeeAvatar,
+  Enumerable,
+  ItemThumbnail
+} from "~/components";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 import type {
   JobOperationBatchDetail,
   JobOperationBatchEvent
@@ -177,29 +192,64 @@ export function BatchDetailDrawer({
     >
       <DrawerContent size="full">
         <DrawerHeader className="px-6 flex-shrink-0">
-          <DrawerTitle>{batch.readableId}</DrawerTitle>
-          <HStack spacing={2} className="pt-1 flex-wrap">
+          {/* Header is just identity — the batch's facts (process, work center,
+              location, created by) live in the right sidebar's Details list. */}
+          <HStack spacing={2} className="items-center">
+            <DrawerTitle>{batch.readableId}</DrawerTitle>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <IconButton
+                  aria-label={t`Copy batch number`}
+                  variant="ghost"
+                  size="sm"
+                  icon={<LuCopy />}
+                  onClick={() => copyToClipboard(batch.readableId)}
+                />
+              </TooltipTrigger>
+              <TooltipContent>{t`Copy batch number`}</TooltipContent>
+            </Tooltip>
             <BatchStatus status={batch.status} />
-            {batch.process?.name && (
-              <span className="text-sm text-muted-foreground">
-                {batch.process.name}
-              </span>
-            )}
-            {batch.workCenterName && (
-              <span className="text-sm text-muted-foreground">
-                {batch.workCenterName}
-              </span>
-            )}
-            {batch.location?.name && (
-              <span className="text-sm text-muted-foreground">
-                {batch.location.name}
-              </span>
-            )}
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Trans>Created</Trans>{" "}
-              <DateTime value={batch.createdAt} variant="date" />
-              <EmployeeAvatar employeeId={batch.createdBy} size="xs" />
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label={t`More options`}
+                  variant="secondary"
+                  size="sm"
+                  icon={<LuEllipsisVertical />}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.file.batchLoadList(batch.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuPrinter />} />
+                    {t`Print load list`}
+                  </a>
+                </DropdownMenuItem>
+                {isLive && (
+                  <DropdownMenuItem asChild>
+                    <Link to={path.to.priorityOperation}>
+                      <DropdownMenuIcon icon={<LuLayers />} />
+                      {t`View on schedule board`}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {isPreStart && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem destructive asChild>
+                      <Link to={path.to.deleteOperationBatch(batch.id)}>
+                        <DropdownMenuIcon icon={<LuTrash />} />
+                        {t`Dissolve`}
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </HStack>
           {batch.status === "Planned" && (
             <div className="pt-2">
@@ -336,11 +386,13 @@ export function BatchDetailDrawer({
               </div>
             </section>
 
-            {/* Run — the summary + time breakdown, divided from members by a rule */}
+            {/* Details — the batch's facts + time breakdown, divided from the
+                operations list by a rule. Everything that used to sit in the
+                drawer header lives here now. */}
             <section className="flex min-h-0 flex-col border-t lg:border-t-0 lg:border-l border-border/60">
               <div className="flex items-center justify-between gap-2 px-6 pt-5 pb-3">
                 <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  <Trans>Run</Trans>
+                  <Trans>Details</Trans>
                 </h2>
                 {openEvent && (
                   <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">
@@ -356,6 +408,39 @@ export function BatchDetailDrawer({
               <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent px-6 pb-6">
                 {/* At-a-glance facts, description-list style */}
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-b border-border/60 pb-5">
+                  <SummaryFact
+                    label={t`Process`}
+                    value={
+                      batch.process?.name ? (
+                        <Enumerable value={batch.process.name} />
+                      ) : (
+                        "—"
+                      )
+                    }
+                    title={batch.process?.name ?? undefined}
+                  />
+                  <SummaryFact
+                    label={t`Work center`}
+                    value={
+                      batch.workCenterName ? (
+                        <Enumerable value={batch.workCenterName} />
+                      ) : (
+                        "—"
+                      )
+                    }
+                    title={batch.workCenterName ?? undefined}
+                  />
+                  <SummaryFact
+                    label={t`Location`}
+                    value={
+                      batch.location?.name ? (
+                        <Enumerable value={batch.location.name} />
+                      ) : (
+                        "—"
+                      )
+                    }
+                    title={batch.location?.name ?? undefined}
+                  />
                   <SummaryFact
                     label={t`Operations`}
                     value={String(memberCount)}
@@ -375,8 +460,16 @@ export function BatchDetailDrawer({
                     }
                   />
                   <SummaryFact
-                    label={t`Work center`}
-                    value={batch.workCenterName ?? "—"}
+                    label={t`Created by`}
+                    value={
+                      <EmployeeAvatar employeeId={batch.createdBy} size="xs" />
+                    }
+                  />
+                  <SummaryFact
+                    label={t`Created`}
+                    value={
+                      <DateTime value={batch.createdAt} variant="relative" />
+                    }
                   />
                 </dl>
 
@@ -491,14 +584,9 @@ export function BatchDetailDrawer({
         </DrawerBody>
 
         <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-end items-center">
+          {/* Primary lifecycle actions only — secondary actions (print, view on
+              board) and the destructive Dissolve live in the header's ⋯ menu. */}
           <HStack spacing={2}>
-            {isPreStart && (
-              <Button variant="destructive" leftIcon={<LuTrash />} asChild>
-                <Link to={path.to.deleteOperationBatch(batch.id)}>
-                  {t`Dissolve`}
-                </Link>
-              </Button>
-            )}
             {batch.status === "Active" && (
               <Button
                 variant="secondary"
@@ -510,15 +598,6 @@ export function BatchDetailDrawer({
                 {t`Unrelease`}
               </Button>
             )}
-            <Button variant="secondary" leftIcon={<LuPrinter />} asChild>
-              <a
-                href={path.to.file.batchLoadList(batch.id)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t`Print load list`}
-              </a>
-            </Button>
             {isPreStart && (
               <Button variant="secondary" leftIcon={<LuPlus />} asChild>
                 <Link to={`${path.to.newOperationBatch}?batchId=${batch.id}`}>
@@ -526,45 +605,21 @@ export function BatchDetailDrawer({
                 </Link>
               </Button>
             )}
-            {isLive && (
-              <Button variant="secondary" leftIcon={<LuLayers />} asChild>
-                <Link to={path.to.priorityOperation}>
-                  {t`View on schedule board`}
-                </Link>
+            {batch.status === "Planned" && (
+              // Never gated on a work center: the scheduler auto-selects one
+              // (earliest finish among the process's work centers — the same
+              // load balancing a job's operations get) for a Released batch
+              // that lacks it. The header picker is an optional override.
+              <Button
+                variant="primary"
+                leftIcon={<LuCirclePlay />}
+                isLoading={releaseFetcher.state !== "idle"}
+                isDisabled={releaseFetcher.state !== "idle"}
+                onClick={() => submitBatchIntent("release")}
+              >
+                {t`Release`}
               </Button>
             )}
-            {batch.status === "Planned" &&
-              (batch.workCenterId ? (
-                <Button
-                  variant="primary"
-                  leftIcon={<LuCirclePlay />}
-                  isLoading={releaseFetcher.state !== "idle"}
-                  isDisabled={releaseFetcher.state !== "idle"}
-                  onClick={() => submitBatchIntent("release")}
-                >
-                  {t`Release`}
-                </Button>
-              ) : (
-                // A disabled button swallows pointer events, so the tooltip
-                // hangs on a wrapper — the server refuses a release without a
-                // work center.
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button
-                        variant="primary"
-                        leftIcon={<LuCirclePlay />}
-                        isDisabled
-                      >
-                        {t`Release`}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t`Assign a work center first`}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
           </HStack>
         </DrawerFooter>
       </DrawerContent>
@@ -573,24 +628,33 @@ export function BatchDetailDrawer({
 }
 
 // Vercel-style labeled fact: quiet uppercase key over a high-contrast value.
-function SummaryFact({ label, value }: { label: string; value: string }) {
+function SummaryFact({
+  label,
+  value,
+  title
+}: {
+  label: string;
+  value: React.ReactNode;
+  title?: string;
+}) {
   return (
     <div className="flex flex-col gap-1 min-w-0">
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd className="truncate text-sm font-medium tabular-nums" title={value}>
+      <dd className="truncate text-sm font-medium tabular-nums" title={title}>
         {value}
       </dd>
     </div>
   );
 }
 
-// A Planned batch can't be released without a work center — the server refuses,
-// and the disabled Release button only explains that on hover. This puts the
-// picker where the block is felt: assign a work center inline (intent="update"),
-// the loader revalidates, and Release enables. Constrained to the batch's own
-// process + location so it can only pick a center that can actually run it.
+// Optional pre-pick: release never waits on a work center — the scheduler
+// auto-selects the earliest-finish candidate (load balancing) for a Released
+// batch lacking one and persists it. A planner who KNOWS the machine can
+// assign it here inline (intent="update") and the auto-selection defers to
+// it. Constrained to the batch's own process + location so it can only pick
+// a center that can actually run it.
 function ReleaseWorkCenterPicker({
   batch
 }: {
@@ -625,7 +689,7 @@ function ReleaseWorkCenterPicker({
       <span className="text-xs text-muted-foreground">
         {batch.workCenterId
           ? t`Not on the shop floor — release to dispatch.`
-          : t`Assign a work center to release this batch to the shop floor.`}
+          : t`Optional — releasing auto-assigns the best available work center.`}
       </span>
     </VStack>
   );

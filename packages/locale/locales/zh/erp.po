@@ -2469,12 +2469,6 @@ msgstr "某一日期的资产、负债和所有者权益"
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "先分配一个工作中心"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
@@ -3998,6 +3992,9 @@ msgstr "将所有物料和定价复制到另一个客户或类型。"
 
 msgid "Copy API Key"
 msgstr "复制API密钥"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "复制公司唯一标识符"
@@ -11555,6 +11552,9 @@ msgstr "针对快速预览优化 — 下载始终提供原始上载的文件"
 msgid "Optional"
 msgstr "可选"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "此规则的可选上下文"
 
@@ -13939,9 +13939,6 @@ msgstr "根据数量或客户自动调整价格的规则"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "决定每个项目存储位置的规则"
-
-msgid "Run"
-msgstr "运行"
 
 msgid "Run acceptance testing"
 msgstr "运行验收测试"

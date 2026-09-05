@@ -2469,12 +2469,6 @@ msgstr "特定の日付時点での資産、負債および純資産"
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "最初に作業区を割り当ててください"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -3998,6 +3992,9 @@ msgstr "すべての品目と価格設定を別の得意先またはタイプに
 
 msgid "Copy API Key"
 msgstr "APIキーをコピー"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "会社の一意の識別子をコピー"
@@ -11555,6 +11552,9 @@ msgstr "高速プレビューに最適化されています — ダウンロー�
 msgid "Optional"
 msgstr "オプション"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "このルールのオプションコンテキスト"
 
@@ -13939,9 +13939,6 @@ msgstr "数量または得意先によって価格を自動調整するルール
 
 msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
-
-msgid "Run"
-msgstr "実行"
 
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"

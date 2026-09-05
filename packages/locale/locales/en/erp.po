@@ -2469,12 +2469,6 @@ msgstr "Assets, liabilities and equity as of a date"
 msgid "Assign a work center"
 msgstr "Assign a work center"
 
-msgid "Assign a work center first"
-msgstr "Assign a work center first"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr "Assign a work center to release this batch to the shop floor."
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
@@ -3998,6 +3992,9 @@ msgstr "Copy all items and pricing to another customer or type."
 
 msgid "Copy API Key"
 msgstr "Copy API Key"
+
+msgid "Copy batch number"
+msgstr "Copy batch number"
 
 msgid "Copy company unique identifier"
 msgstr "Copy company unique identifier"
@@ -11555,6 +11552,9 @@ msgstr "Optimized for fast previews — downloads always serve the original uplo
 msgid "Optional"
 msgstr "Optional"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr "Optional — releasing auto-assigns the best available work center."
+
 msgid "Optional context for this rule"
 msgstr "Optional context for this rule"
 
@@ -13939,9 +13939,6 @@ msgstr "Rules that adjust prices automatically by quantity or customer"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Rules that decide where each item gets stored"
-
-msgid "Run"
-msgstr "Run"
 
 msgid "Run acceptance testing"
 msgstr "Run acceptance testing"

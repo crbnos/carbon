@@ -2469,12 +2469,6 @@ msgstr "एक तारीख तक संपत्ति, देनदार�
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "पहले एक वर्क सेंटर असाइन करें"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
@@ -3998,6 +3992,9 @@ msgstr "सभी आइटम और मूल्य निर्धारण �
 
 msgid "Copy API Key"
 msgstr "API कुंजी की नकल करें"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "कंपनी के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
@@ -11555,6 +11552,9 @@ msgstr "तेज़ पूर्वावलोकन के लिए अन�
 msgid "Optional"
 msgstr "वैकल्पिक"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "इस नियम के लिए वैकल्पिक संदर्भ"
 
@@ -13939,9 +13939,6 @@ msgstr "नियम जो मात्रा या ग्राहक के 
 
 msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
-
-msgid "Run"
-msgstr "रन"
 
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"

@@ -2469,12 +2469,6 @@ msgstr "Aktywa, pasywa i kapitał własny na określony dzień"
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "Najpierw przypisz stanowisko robocze"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Przypisz drukarki do lokalizacji. Wysyłka, otrzymywanie i stanowiska robocze dziedziczą domyślne lokalizacje, chyba że nastąpi nadpisanie."
 
@@ -3998,6 +3992,9 @@ msgstr "Skopiuj wszystkie artykuły i wyceny na innego klienta lub typ."
 
 msgid "Copy API Key"
 msgstr "Skopiuj klucz API"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "Skopiuj unikalny identyfikator firmy"
@@ -11555,6 +11552,9 @@ msgstr "Zoptymalizowane pod kątem szybkich podglądów — pobieranie zawsze do
 msgid "Optional"
 msgstr "Opcjonalnie"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "Opcjonalny kontekst dla tej reguły"
 
@@ -13939,9 +13939,6 @@ msgstr "Reguły, które automatycznie dostosowują ceny na podstawie ilości lub
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Reguły decydujące o tym, gdzie każdy element jest przechowywany"
-
-msgid "Run"
-msgstr "Uruchomienie"
 
 msgid "Run acceptance testing"
 msgstr "Przeprowadź testy akceptacyjne"

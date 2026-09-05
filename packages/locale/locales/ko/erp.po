@@ -2469,12 +2469,6 @@ msgstr "특정 날짜 기준 자산, 부채 및 자본"
 msgid "Assign a work center"
 msgstr ""
 
-msgid "Assign a work center first"
-msgstr "먼저 작업장을 할당하세요"
-
-msgid "Assign a work center to release this batch to the shop floor."
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
@@ -3998,6 +3992,9 @@ msgstr "모든 품목 및 가격 책정을 다른 고객 또는 유형으로 복
 
 msgid "Copy API Key"
 msgstr "API 키 복사"
+
+msgid "Copy batch number"
+msgstr ""
 
 msgid "Copy company unique identifier"
 msgstr "회사 고유 식별자 복사"
@@ -11555,6 +11552,9 @@ msgstr "빠른 미리보기에 최적화됨 — 다운로드는 항상 원본 �
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "Optional — releasing auto-assigns the best available work center."
+msgstr ""
+
 msgid "Optional context for this rule"
 msgstr "이 규칙에 대한 선택적 컨텍스트"
 
@@ -13939,9 +13939,6 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
-
-msgid "Run"
-msgstr "실행"
 
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
