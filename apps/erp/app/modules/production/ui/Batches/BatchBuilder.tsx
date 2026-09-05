@@ -29,9 +29,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   Spinner,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   toast,
   useLocalStorage,
   VStack
@@ -739,7 +736,11 @@ export function BatchBuilder({
   const isLoading = candidatesFetcher.state !== "idle";
 
   const locationOptions = useMemo(
-    () => locations.map((l) => ({ value: l.id, label: l.name })),
+    () =>
+      locations.map((l) => ({
+        value: l.id,
+        label: <Enumerable value={l.name} />
+      })),
     [locations]
   );
   const processOptions = useMemo(
@@ -790,7 +791,7 @@ export function BatchBuilder({
     }
     return ids;
   }, [selected]);
-  const canRelease = Boolean(workCenterId) || memberWorkCenterIds.size === 1;
+  const _canRelease = Boolean(workCenterId) || memberWorkCenterIds.size === 1;
 
   return (
     <Drawer
@@ -925,32 +926,18 @@ export function BatchBuilder({
                   {t`Add to ${target.readableId}`}
                 </Button>
               ))}
-            {!isAddMode &&
-              (canRelease ? (
-                <Button
-                  variant="secondary"
-                  isDisabled={selected.length === 0 || isSubmitting}
-                  onClick={() => submit(undefined, { release: true })}
-                >
-                  {t`Create & Release`}
-                </Button>
-              ) : (
-                <Tooltip>
-                  {/* A disabled button swallows pointer and focus events, so
-                      the wrapper carries the tooltip (ItemChangeNoticeLock
-                      precedent). */}
-                  <TooltipTrigger asChild>
-                    <div tabIndex={0}>
-                      <Button variant="secondary" isDisabled>
-                        {t`Create & Release`}
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t`Select a work center to release`}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+            {!isAddMode && (
+              // Never gated on a work center: the scheduler auto-selects one
+              // (earliest finish among the process's work centers) for a
+              // Released batch that lacks it.
+              <Button
+                variant="secondary"
+                isDisabled={selected.length === 0 || isSubmitting}
+                onClick={() => submit(undefined, { release: true })}
+              >
+                {t`Create & Release`}
+              </Button>
+            )}
             <Button
               leftIcon={<LuLayers />}
               isLoading={isSubmitting}
@@ -1045,7 +1032,7 @@ function ScopeBar({
   batchReadableId?: string;
   processName: string | null;
   locationName: string | null;
-  locationOptions: { value: string; label: string }[];
+  locationOptions: { value: string; label: string | JSX.Element }[];
   processOptions: { value: string; label: string | JSX.Element }[];
   locationId: string;
   processId: string | null;
@@ -1078,7 +1065,7 @@ function ScopeBar({
       </HStack>
       <div className="w-[220px]">
         <Combobox
-          size="sm"
+          size="md"
           value={locationId}
           options={locationOptions}
           onChange={onLocationChange}
@@ -1087,7 +1074,7 @@ function ScopeBar({
       </div>
       <div className="w-[220px]">
         <Combobox
-          size="sm"
+          size="md"
           value={processId ?? ""}
           options={processOptions}
           onChange={onProcessChange}
@@ -1598,6 +1585,11 @@ function CandidateTable({
     () => [
       {
         id: "select",
+        // width:1 + shrink-to-fit so the checkbox column hugs the checkbox
+        // instead of taking a default 150px slot (matches the shared table's
+        // built-in select column).
+        size: 1,
+        minSize: 1,
         // Header and cell share the same wrapper geometry (p-3 -m-3 nets to
         // zero) so the checkboxes sit in exactly the same column; the cell's
         // padding is a real hit area, the header's is symmetry.
@@ -1639,10 +1631,14 @@ function CandidateTable({
         accessorKey: "jobReadableId",
         header: t`Job`,
         cell: ({ row }) => (
-          <HStack spacing={2} className="items-center">
-            <span className="font-medium">{row.original.jobReadableId}</span>
-            <CandidateJobStatus status={row.original.jobStatus} />
-          </HStack>
+          <span className="font-medium">{row.original.jobReadableId}</span>
+        )
+      },
+      {
+        id: "jobStatus",
+        header: t`Status`,
+        cell: ({ row }) => (
+          <CandidateJobStatus status={row.original.jobStatus} />
         )
       },
       {

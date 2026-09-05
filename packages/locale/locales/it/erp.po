@@ -2466,8 +2466,14 @@ msgstr "Cespiti"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
+msgid "Assign a work center"
+msgstr ""
+
 msgid "Assign a work center first"
 msgstr "Assegna prima un centro di lavoro"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
@@ -11055,8 +11061,8 @@ msgstr "Non configurato"
 msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza ordini di produzione per coprire la quantità"
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "Non in officina — rilascia per l'esecuzione"
+msgid "Not on the shop floor — release to dispatch."
+msgstr ""
 
 msgid "Not reached"
 msgstr "Non raggiunto"
@@ -12143,6 +12149,9 @@ msgstr "Inizio Pianificato"
 
 msgid "Planned Start Time"
 msgstr "Ora di inizio pianificata"
+
+msgid "Planned time"
+msgstr ""
 
 msgid "Planning"
 msgstr "Pianificazione"
@@ -14487,9 +14496,6 @@ msgstr "Seleziona prima una sostanza per visualizzare le opzioni disponibili"
 
 msgid "Select a team"
 msgstr "Seleziona un team"
-
-msgid "Select a work center to release"
-msgstr "Seleziona un centro di lavoro per rilasciare"
 
 msgid "Select account"
 msgstr "Seleziona account"
@@ -17398,6 +17404,9 @@ msgstr "Minuti totali"
 
 msgid "Total Price"
 msgstr "Prezzo Totale"
+
+msgid "Total quantity"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Quantità Totale"

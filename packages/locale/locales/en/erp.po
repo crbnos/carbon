@@ -2466,8 +2466,14 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
+msgid "Assign a work center"
+msgstr "Assign a work center"
+
 msgid "Assign a work center first"
 msgstr "Assign a work center first"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr "Assign a work center to release this batch to the shop floor."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
@@ -11055,8 +11061,8 @@ msgstr "Not configured"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "Not on the shop floor — release to dispatch"
+msgid "Not on the shop floor — release to dispatch."
+msgstr "Not on the shop floor — release to dispatch."
 
 msgid "Not reached"
 msgstr "Not reached"
@@ -12143,6 +12149,9 @@ msgstr "Planned Start"
 
 msgid "Planned Start Time"
 msgstr "Planned Start Time"
+
+msgid "Planned time"
+msgstr "Planned time"
 
 msgid "Planning"
 msgstr "Planning"
@@ -14487,9 +14496,6 @@ msgstr "Select a substance first to see available options"
 
 msgid "Select a team"
 msgstr "Select a team"
-
-msgid "Select a work center to release"
-msgstr "Select a work center to release"
 
 msgid "Select account"
 msgstr "Select account"
@@ -17398,6 +17404,9 @@ msgstr "Total Minutes"
 
 msgid "Total Price"
 msgstr "Total Price"
+
+msgid "Total quantity"
+msgstr "Total quantity"
 
 msgid "Total Quantity"
 msgstr "Total Quantity"

@@ -46,6 +46,7 @@ function makeBatch(
   return {
     readableId: "BAT000001",
     workCenterId: "wc1",
+    candidateWorkCenterIds: [],
     batchType: "Sequential",
     hasAnyEvent: false,
     members: workedExampleMembers(),
@@ -154,12 +155,67 @@ it("two batches on one work center place sequentially in job order", () => {
   );
 });
 
-it("a Released batch without a work center is skipped (members place individually)", () => {
+it("no work center AND no candidates → skipped (members place individually)", () => {
   const { placements, reservations } = plan([
-    makeBatch({ id: "b1", workCenterId: null })
+    makeBatch({ id: "b1", workCenterId: null, candidateWorkCenterIds: [] })
   ]);
   assertEquals(reservations.length, 0);
   assertEquals(placements.size, 0);
+});
+
+it("a batch without a work center auto-selects the emptier candidate (load balancing)", () => {
+  // wc-busy holds a 3h reservation from NOW; wc-free is open. Earliest finish
+  // picks wc-free, and the selection is reported for persistence.
+  const busyStart = NOW;
+  const busyEnd = NOW + 3 * 3_600_000;
+  const { placements, reservations, selectedWorkCenters } = plan(
+    [
+      makeBatch({
+        id: "b1",
+        workCenterId: null,
+        candidateWorkCenterIds: ["wc-busy", "wc-free"]
+      })
+    ],
+    {
+      windowsByWorkCenter: new Map([
+        ["wc-busy", [{ start: NOW, end: HORIZON }]],
+        ["wc-free", [{ start: NOW, end: HORIZON }]]
+      ]),
+      reservationsByWorkCenter: new Map([
+        ["wc-busy", [{ startAt: busyStart, endAt: busyEnd }]]
+      ])
+    }
+  );
+  assertEquals(reservations.length, 1);
+  assertEquals(reservations[0]!.workCenterId, "wc-free");
+  assertEquals(reservations[0]!.startAt, NOW);
+  assertEquals(selectedWorkCenters.get("b1"), "wc-free");
+  assertEquals(placements.get("op-a")!.workCenterId, "wc-free");
+});
+
+it("auto-selection tie-breaks deterministically by work-center id", () => {
+  const { reservations, selectedWorkCenters } = plan(
+    [
+      makeBatch({
+        id: "b1",
+        workCenterId: null,
+        candidateWorkCenterIds: ["wc-b", "wc-a"]
+      })
+    ],
+    {
+      windowsByWorkCenter: new Map([
+        ["wc-a", [{ start: NOW, end: HORIZON }]],
+        ["wc-b", [{ start: NOW, end: HORIZON }]]
+      ])
+    }
+  );
+  assertEquals(reservations[0]!.workCenterId, "wc-a");
+  assertEquals(selectedWorkCenters.get("b1"), "wc-a");
+});
+
+it("an assigned work center is never auto-reselected", () => {
+  const { selectedWorkCenters } = plan([makeBatch({ id: "b1" })]);
+  assertEquals(selectedWorkCenters.size, 0);
 });
 
 it("an all-done batch is skipped entirely", () => {

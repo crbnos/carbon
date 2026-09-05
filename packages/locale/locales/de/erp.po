@@ -2466,8 +2466,14 @@ msgstr "Vermögenswerte"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
 
+msgid "Assign a work center"
+msgstr ""
+
 msgid "Assign a work center first"
 msgstr "Weisen Sie zuerst einen Arbeitsplatz zu"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Drucker den Standorten zuweisen. Versand, Empfang und Arbeitplätze erben den Standort-Standard, wenn nicht anders vorgegeben."
@@ -11055,8 +11061,8 @@ msgstr "Nicht konfiguriert"
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "Nicht in der Werkstatt — zum Versand freigeben"
+msgid "Not on the shop floor — release to dispatch."
+msgstr ""
 
 msgid "Not reached"
 msgstr "Nicht erreicht"
@@ -12143,6 +12149,9 @@ msgstr "Geplanter Start"
 
 msgid "Planned Start Time"
 msgstr "Geplante Startzeit"
+
+msgid "Planned time"
+msgstr ""
 
 msgid "Planning"
 msgstr "Planung"
@@ -14487,9 +14496,6 @@ msgstr "Wählen Sie zunächst einen Stoff aus, um verfügbare Optionen anzuzeige
 
 msgid "Select a team"
 msgstr "Wählen Sie ein Team"
-
-msgid "Select a work center to release"
-msgstr "Wählen Sie einen Arbeitsplatz zum Freigeben"
 
 msgid "Select account"
 msgstr "Konto auswählen"
@@ -17398,6 +17404,9 @@ msgstr "Gesamtminuten"
 
 msgid "Total Price"
 msgstr "Gesamtpreis"
+
+msgid "Total quantity"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Gesamtmenge"

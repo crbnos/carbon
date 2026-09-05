@@ -2466,8 +2466,14 @@ msgstr "Активы"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
+msgid "Assign a work center"
+msgstr ""
+
 msgid "Assign a work center first"
 msgstr "Сначала назначьте рабочий центр"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
@@ -11055,8 +11061,8 @@ msgstr "Не настроено"
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "Не на цехе — запустите в диспетчеризацию"
+msgid "Not on the shop floor — release to dispatch."
+msgstr ""
 
 msgid "Not reached"
 msgstr "Не достигнуто"
@@ -12143,6 +12149,9 @@ msgstr "Запланированное начало"
 
 msgid "Planned Start Time"
 msgstr "Запланированное время начала"
+
+msgid "Planned time"
+msgstr ""
 
 msgid "Planning"
 msgstr "Планирование"
@@ -14487,9 +14496,6 @@ msgstr "Сначала выберите вещество, чтобы увиде�
 
 msgid "Select a team"
 msgstr "Выберите команду"
-
-msgid "Select a work center to release"
-msgstr "Выберите рабочий центр для запуска в работу"
 
 msgid "Select account"
 msgstr "Выберите счёт"
@@ -17398,6 +17404,9 @@ msgstr "Всего минут"
 
 msgid "Total Price"
 msgstr "Общая цена"
+
+msgid "Total quantity"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Общее количество"

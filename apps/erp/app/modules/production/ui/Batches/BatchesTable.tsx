@@ -1,5 +1,4 @@
 import {
-  Badge,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
@@ -7,11 +6,10 @@ import {
   DropdownMenuSeparator,
   MenuIcon,
   MenuItem,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+  Status,
   toast
 } from "@carbon/react";
+import { BATCH_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
@@ -48,38 +46,25 @@ const BATCH_STATUSES = [
 ] as const;
 
 // The ONE status → badge map for batches: the list, its filter options, and the
-// detail drawer all render through it. The stored `Active` value is DISPLAYED
-// as "Released" (exactly like jobs display `Ready` as "Released"); `Planned` is
-// the pre-floor state — composed, not yet dispatched.
+// detail drawer all render through it. Colors come from the shared
+// BATCH_STATUS_COLOR_MAP (same source-of-truth convention as JobStatus), so a
+// batch reads with the same color language as the jobs it dispatches. The stored
+// `Active` value is DISPLAYED as "Released" (exactly like jobs display `Ready` as
+// "Released"); `Planned` is the pre-floor state — composed, not yet dispatched.
 export function BatchStatus({ status }: { status: string | null }) {
-  switch (status) {
-    case "Completed":
-      return (
-        <Badge variant="green">
-          <Trans>Completed</Trans>
-        </Badge>
-      );
-    case "Completing":
-      return (
-        <Badge variant="yellow">
-          <Trans>Completing</Trans>
-        </Badge>
-      );
-    case "Active":
-      return (
-        <Badge variant="secondary">
-          <Trans>Released</Trans>
-        </Badge>
-      );
-    case "Planned":
-      return (
-        <Badge variant="outline">
-          <Trans>Planned</Trans>
-        </Badge>
-      );
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color =
+    BATCH_STATUS_COLOR_MAP[status as keyof typeof BATCH_STATUS_COLOR_MAP];
+  if (!color) return null;
+
+  const displayText = status === "Active" ? "Released" : status;
+  const tooltip = status === "Active" ? status : undefined;
+
+  return (
+    <Status color={color} tooltip={tooltip}>
+      {displayText}
+    </Status>
+  );
 }
 
 const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
@@ -128,32 +113,18 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>
-        {row.status === "Planned" &&
-          (row.workCenterId ? (
-            <MenuItem
-              disabled={!canUpdate}
-              onClick={() => submitBatchIntent("release", row.id)}
-            >
-              <MenuIcon icon={<LuCirclePlay />} />
-              {t`Release Batch`}
-            </MenuItem>
-          ) : (
-            // A disabled item swallows pointer events, so the tooltip hangs on
-            // a wrapper — the server refuses a release without a work center.
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <MenuItem disabled>
-                    <MenuIcon icon={<LuCirclePlay />} />
-                    {t`Release Batch`}
-                  </MenuItem>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {t`Assign a work center first`}
-              </TooltipContent>
-            </Tooltip>
-          ))}
+        {row.status === "Planned" && (
+          // No work-center gate: the scheduler auto-selects one (earliest
+          // finish among the process's work centers) for a Released batch
+          // that lacks it.
+          <MenuItem
+            disabled={!canUpdate}
+            onClick={() => submitBatchIntent("release", row.id)}
+          >
+            <MenuIcon icon={<LuCirclePlay />} />
+            {t`Release Batch`}
+          </MenuItem>
+        )}
         {row.status === "Active" && (
           <MenuItem
             disabled={!canUpdate}

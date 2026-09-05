@@ -512,10 +512,12 @@ Design-level contract (engine internals to be detailed in `/plan`):
 - [x] **Create default `Planned`, with a one-step "Create & Release"?** —
   **Answer (recommended — for veto):** yes — planning-first default preserves the
   singleton happy path.
-- [x] **Does batch release require a work center / trigger MRP?** — **Answer
-  (recommended — for veto):** require a work center (nowhere to run otherwise);
-  trigger a schedule; **no** MRP/requirements recalc (materials are per-job BOM,
-  planned at job level — Model X).
+- [x] **Does batch release require a work center / trigger MRP?** — **Answer:**
+  originally "require a work center" (recommended); **VETOED by Brad 2026-09-05**
+  ("too much friction... the work center should be selected automatically...
+  with load balancing"). Release requires only ≥1 member; the scheduler's batch
+  pre-pass auto-selects earliest-finish among the process's work centers and
+  persists it. Schedule trigger unchanged; still **no** MRP.
 - [x] **Provide `unrelease` (Active → Planned)?** — **Answer (recommended — for
   veto):** yes, but only while no `productionEvent` exists (Brad's "maximum
   flexibility" without corrupting a run).

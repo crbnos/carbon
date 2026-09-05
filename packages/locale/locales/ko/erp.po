@@ -2466,8 +2466,14 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
+msgid "Assign a work center"
+msgstr ""
+
 msgid "Assign a work center first"
 msgstr "먼저 작업장을 할당하세요"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
@@ -11055,8 +11061,8 @@ msgstr "구성되지 않음"
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "현장에 없음 — 공정 지시로 릴리스하세요"
+msgid "Not on the shop floor — release to dispatch."
+msgstr ""
 
 msgid "Not reached"
 msgstr "도달하지 않음"
@@ -12143,6 +12149,9 @@ msgstr "계획 시작"
 
 msgid "Planned Start Time"
 msgstr "계획 시작 시간"
+
+msgid "Planned time"
+msgstr ""
 
 msgid "Planning"
 msgstr "계획"
@@ -14487,9 +14496,6 @@ msgstr "먼저 재질을 선택하여 가용 옵션을 확인하세요."
 
 msgid "Select a team"
 msgstr "팀 선택"
-
-msgid "Select a work center to release"
-msgstr "릴리스할 작업장을 선택하세요"
 
 msgid "Select account"
 msgstr "계정 선택"
@@ -17398,6 +17404,9 @@ msgstr "총 분"
 
 msgid "Total Price"
 msgstr "총 가격"
+
+msgid "Total quantity"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "총 수량"

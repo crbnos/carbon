@@ -2466,8 +2466,14 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign a work center"
+msgstr ""
+
 msgid "Assign a work center first"
 msgstr "先分配一个工作中心"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
@@ -11055,8 +11061,8 @@ msgstr "未配置"
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "不在车间 — 下达以分派"
+msgid "Not on the shop floor — release to dispatch."
+msgstr ""
 
 msgid "Not reached"
 msgstr "未到达"
@@ -12143,6 +12149,9 @@ msgstr "计划开始"
 
 msgid "Planned Start Time"
 msgstr "计划开始时间"
+
+msgid "Planned time"
+msgstr ""
 
 msgid "Planning"
 msgstr "计划"
@@ -14487,9 +14496,6 @@ msgstr "请先选择物质以查看可用选项"
 
 msgid "Select a team"
 msgstr "选择班组"
-
-msgid "Select a work center to release"
-msgstr "选择工作中心以下达"
 
 msgid "Select account"
 msgstr "选择账户"
@@ -17398,6 +17404,9 @@ msgstr "总计分钟"
 
 msgid "Total Price"
 msgstr "总价格"
+
+msgid "Total quantity"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "总数量"

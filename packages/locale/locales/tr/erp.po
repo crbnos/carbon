@@ -2466,8 +2466,14 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "Assign a work center"
+msgstr ""
+
 msgid "Assign a work center first"
 msgstr "Önce bir iş merkezi atayın"
+
+msgid "Assign a work center to release this batch to the shop floor."
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
@@ -11055,8 +11061,8 @@ msgstr "Yapılandırılmadı"
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli iş emri yok"
 
-msgid "Not on the shop floor — release to dispatch"
-msgstr "Atölyede değil — çalışmaya serbest bırak"
+msgid "Not on the shop floor — release to dispatch."
+msgstr ""
 
 msgid "Not reached"
 msgstr "Ulaşılmadı"
@@ -12143,6 +12149,9 @@ msgstr "Planlanan Başlangıç"
 
 msgid "Planned Start Time"
 msgstr "Planlan Başlangıç Saati"
+
+msgid "Planned time"
+msgstr ""
 
 msgid "Planning"
 msgstr "Planlama"
@@ -14487,9 +14496,6 @@ msgstr "Kullanılabilir seçenekleri görmek için önce bir madde seç"
 
 msgid "Select a team"
 msgstr "Bir ekip seçin"
-
-msgid "Select a work center to release"
-msgstr "Serbest bırakmak için bir iş merkezi seçin"
 
 msgid "Select account"
 msgstr "Hesap Seç"
@@ -17398,6 +17404,9 @@ msgstr "Toplam Dakika"
 
 msgid "Total Price"
 msgstr "Toplam Fiyat"
+
+msgid "Total quantity"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"

@@ -1,4 +1,5 @@
 import type { DB } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
 import type { BatchType } from "@carbon/utils";
 import { batchDuration } from "@carbon/utils";
 import type { Kysely } from "kysely";
@@ -64,6 +65,13 @@ export type BatchToPlace = {
   id: string;
   readableId: string | null;
   workCenterId: string | null;
+  /**
+   * When `workCenterId` is null: the ACTIVE work centers at the location that
+   * can run the batch's process. The pre-pass auto-selects the earliest-finish
+   * candidate — the same load-balancing rule single operations get — so
+   * release never waits on a human picking a machine.
+   */
+  candidateWorkCenterIds: string[];
   batchType: BatchType;
   hasAnyEvent: boolean;
   members: BatchMemberInput[];
@@ -103,6 +111,8 @@ export function planBatchPlacements(args: {
 }): {
   placements: Map<string, BatchPlacement>;
   reservations: PlacedBatchReservation[];
+  /** batches whose work center was AUTO-selected (they had none) → chosen id */
+  selectedWorkCenters: Map<string, string>;
 } {
   const {
     batches,
@@ -116,6 +126,7 @@ export function planBatchPlacements(args: {
 
   const placements = new Map<string, BatchPlacement>();
   const reservationRows: PlacedBatchReservation[] = [];
+  const selectedWorkCenters = new Map<string, string>();
 
   // Deterministic batch order: the position of the batch's best-placed member
   // job in the run's deadline/priority order, tie-broken by batch id.
@@ -144,11 +155,14 @@ export function planBatchPlacements(args: {
   ];
 
   for (const batch of ordered) {
-    // A Released batch without a work center (legacy pre-rule rows — release
-    // now requires one) cannot be coalesced; its members place individually,
-    // exactly the pre-feature behavior. Graceful degradation, not an error.
-    if (!batch.workCenterId) continue;
-    const workCenterId = batch.workCenterId;
+    // Candidates: the assigned work center, or — when none is assigned — the
+    // process's active work centers, auto-selected by earliest finish below.
+    // No candidates at all (nothing can run the process here) degrades to
+    // per-member placement, the pre-feature behavior.
+    const candidates = batch.workCenterId
+      ? [batch.workCenterId]
+      : [...batch.candidateWorkCenterIds].sort();
+    if (candidates.length === 0) continue;
 
     const open = batch.members.filter((m) => m.isOpen);
     if (open.length === 0) continue;
@@ -174,35 +188,65 @@ export function planBatchPlacements(args: {
       }
     }
 
-    const capacity = {
-      workCenter: { id: workCenterId, alwaysOn: false },
-      windows: windowsByWorkCenter.get(workCenterId) ?? [],
-      reservations: intervalsFor(workCenterId)
-    };
+    // Earliest finish across the candidates — a busy machine yields a later
+    // finish, so this load-balances naturally (the engine's own selection
+    // rule). Ties: fewer existing reservations (the emptier machine), then id.
+    let best: {
+      workCenterId: string;
+      start: number;
+      end: number;
+      load: number;
+    } | null = null;
+    let firstConflict: string | null = null;
+    for (const candidateId of candidates) {
+      const allocation = allocateOperation({
+        durationHours,
+        earliestStart: anchor,
+        horizonEnd,
+        capacity: {
+          workCenter: { id: candidateId, alwaysOn: false },
+          windows: windowsByWorkCenter.get(candidateId) ?? [],
+          reservations: intervalsFor(candidateId)
+        },
+        timeZone
+      });
+      if (isConflict(allocation)) {
+        firstConflict ??= allocation.conflict;
+        continue;
+      }
+      const load = intervalsFor(candidateId).length;
+      if (
+        best === null ||
+        allocation.end < best.end ||
+        (allocation.end === best.end && load < best.load)
+      ) {
+        best = {
+          workCenterId: candidateId,
+          start: allocation.start,
+          end: allocation.end,
+          load
+        };
+      }
+    }
 
-    const allocation = allocateOperation({
-      durationHours,
-      earliestStart: anchor,
-      horizonEnd,
-      capacity,
-      timeZone
-    });
-
+    let workCenterId: string;
     let startAt: number;
     let endAt: number;
     let conflict: string | null = null;
     let isPlaceholder = false;
-    if (isConflict(allocation)) {
+    if (best === null) {
       // Mirror the engine's unplaceable-op pattern: a non-binding placeholder
-      // window (calendar time from the anchor) that surfaces the batch on the
-      // forecast without holding the machine.
+      // window (calendar time from the anchor) on the first candidate that
+      // surfaces the batch on the forecast without holding the machine.
+      workCenterId = candidates[0]!;
       startAt = anchor;
       endAt = anchor + durationHours * 3_600_000;
-      conflict = allocation.conflict;
+      conflict = firstConflict;
       isPlaceholder = true;
     } else {
-      startAt = allocation.start;
-      endAt = allocation.end;
+      workCenterId = best.workCenterId;
+      startAt = best.start;
+      endAt = best.end;
       const list = accumulated.get(workCenterId) ?? [];
       list.push({
         startAt,
@@ -210,6 +254,9 @@ export function planBatchPlacements(args: {
         readableJobId: batch.readableId ?? undefined
       });
       accumulated.set(workCenterId, list);
+    }
+    if (!batch.workCenterId) {
+      selectedWorkCenters.set(batch.id, workCenterId);
     }
 
     for (const m of open) {
@@ -238,7 +285,7 @@ export function planBatchPlacements(args: {
     });
   }
 
-  return { placements, reservations: reservationRows };
+  return { placements, reservations: reservationRows, selectedWorkCenters };
 }
 
 /**
@@ -280,7 +327,13 @@ export async function placeReleasedBatches(args: {
         .onRef("p.id", "=", "b.processId")
         .onRef("p.companyId", "=", "b.companyId")
     )
-    .select(["b.id", "b.readableId", "b.workCenterId", "p.batchType"])
+    .select([
+      "b.id",
+      "b.readableId",
+      "b.workCenterId",
+      "b.processId",
+      "p.batchType"
+    ])
     .where("b.companyId", "=", companyId)
     .where("b.locationId", "=", locationId)
     .where("b.status", "in", ["Active", "Completing"])
@@ -288,6 +341,30 @@ export async function placeReleasedBatches(args: {
 
   if (batchRows.length === 0) return new Map();
   const batchIds = batchRows.map((b) => b.id);
+
+  // Auto-selection candidates for batches released without a work center:
+  // the ACTIVE work centers at this location that can run the batch's process.
+  const unassignedProcessIds = [
+    ...new Set(batchRows.filter((b) => !b.workCenterId).map((b) => b.processId))
+  ];
+  const candidateRows = unassignedProcessIds.length
+    ? await db
+        .selectFrom("workCenterProcess as wcp")
+        .innerJoin("workCenter as wc", "wc.id", "wcp.workCenterId")
+        .select(["wcp.processId", "wcp.workCenterId"])
+        .where("wcp.companyId", "=", companyId)
+        .where("wcp.processId", "in", unassignedProcessIds)
+        .where("wc.companyId", "=", companyId)
+        .where("wc.locationId", "=", locationId)
+        .where("wc.active", "=", true)
+        .execute()
+    : [];
+  const candidatesByProcess = new Map<string, string[]>();
+  for (const r of candidateRows) {
+    const list = candidatesByProcess.get(r.processId) ?? [];
+    list.push(r.workCenterId);
+    candidatesByProcess.set(r.processId, list);
+  }
 
   const memberRows = await db
     .selectFrom("jobOperation")
@@ -435,14 +512,21 @@ export async function placeReleasedBatches(args: {
     id: b.id,
     readableId: b.readableId,
     workCenterId: b.workCenterId,
+    candidateWorkCenterIds: b.workCenterId
+      ? []
+      : (candidatesByProcess.get(b.processId) ?? []),
     batchType: (b.batchType ?? "Sequential") as BatchType,
     hasAnyEvent: batchesWithEvents.has(b.id),
     members: membersByBatch.get(b.id) ?? []
   }));
 
   const workCenterIds = [
-    ...new Set(batches.map((b) => b.workCenterId).filter(Boolean))
-  ] as string[];
+    ...new Set(
+      batches.flatMap((b) =>
+        b.workCenterId ? [b.workCenterId] : b.candidateWorkCenterIds
+      )
+    )
+  ];
   const [windowsByWorkCenter, liveReservations, location] = await Promise.all([
     provider.getWorkCenterAvailability(workCenterIds, now, horizonEnd),
     provider.getLiveReservations(now, []),
@@ -474,19 +558,47 @@ export async function placeReleasedBatches(args: {
     reservationsByWorkCenter.set(r.resourceId, list);
   }
 
-  const { placements, reservations } = planBatchPlacements({
-    batches,
-    orderedJobIds,
-    now,
-    horizonEnd,
-    timeZone: location?.timezone ?? "UTC",
-    windowsByWorkCenter,
-    reservationsByWorkCenter
-  });
+  const { placements, reservations, selectedWorkCenters } = planBatchPlacements(
+    {
+      batches,
+      orderedJobIds,
+      now,
+      horizonEnd,
+      timeZone: location?.timezone ?? "UTC",
+      windowsByWorkCenter,
+      reservationsByWorkCenter
+    }
+  );
 
   // One transaction: the old batch rows disappear only together with the new
   // ones appearing — the per-job runs that follow read a consistent set.
   await db.transaction().execute(async (trx) => {
+    // Persist auto-selected work centers to the batch (and its members —
+    // mirroring the edge fn's "assigning a work center writes it to every
+    // member"). The IS NULL guard defers to a human pick that landed after
+    // this wave's read; the next wave then places on theirs (sticky).
+    for (const [batchId, workCenterId] of selectedWorkCenters) {
+      const assigned = await trx
+        .updateTable("jobOperationBatch")
+        .set({
+          workCenterId,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("workCenterId", "is", null)
+        .executeTakeFirst();
+      if (Number(assigned.numUpdatedRows ?? 0) > 0) {
+        await trx
+          .updateTable("jobOperation")
+          .set({ workCenterId, updatedBy: userId })
+          .where("jobOperationBatchId", "=", batchId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+
     await trx
       .deleteFrom("capacityReservation")
       .where("companyId", "=", companyId)

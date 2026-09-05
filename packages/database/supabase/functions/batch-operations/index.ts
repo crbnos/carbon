@@ -722,15 +722,10 @@ serve(async (req: Request) => {
             (memberWorkCenters.size === 1
               ? ([...memberWorkCenters][0] as string)
               : null);
-          // Creating straight onto the floor (release: true) skips the Planned
-          // staging state, so the release invariant applies at creation time:
-          // the batch must already have a work center — explicit in the
-          // payload, or adopted from the members above.
-          if (payload.release && !workCenterId) {
-            throw new Error(
-              "A batch must have a work center before it can be released"
-            );
-          }
+          // Creating straight onto the floor (release: true) needs no work
+          // center: the scheduler's batch pre-pass auto-selects the
+          // earliest-finish candidate (load balancing, like single ops) for
+          // any Released batch still lacking one, and persists it.
           const readableId = await getNextSequence(
             trx,
             "jobOperationBatch",
@@ -971,11 +966,10 @@ serve(async (req: Request) => {
               `Cannot release a batch with status ${batch.status}`
             );
           }
-          if (!batch.workCenterId) {
-            throw new Error(
-              "A batch must have a work center before it can be released"
-            );
-          }
+          // No work-center requirement: release must never wait on a human
+          // picking a machine. The scheduler's batch pre-pass auto-selects the
+          // earliest-finish work center among the process's candidates (the
+          // same load-balancing rule single operations get) and persists it.
           const members = await trx
             .selectFrom("jobOperation")
             .select("id")

@@ -116,6 +116,13 @@ REUSES the existing batch rows instead of recomputing (the sim must agree with
 its own snapshot). A pre-pass throw degrades to per-member placement (logged),
 never abandons the location run.
 
+- **Auto work-center selection**: a Released batch with NO `workCenterId`
+  gets one from the pre-pass — earliest finish across the process's ACTIVE
+  work centers at the location (ties: fewer existing reservations, then id) —
+  persisted to the batch AND its members in the placement txn (`IS NULL`
+  guard defers to a human pick landing mid-wave). Release therefore never
+  requires a work center; no candidates at all degrades to per-member
+  placement.
 - **One reservation per Released (`Active`/`Completing`) batch**, tagged
   `capacityReservation.jobOperationBatchId`; `operationId`/`jobId` stay NOT
   NULL by anchoring on the min member op id. Placeholder semantics mirror
