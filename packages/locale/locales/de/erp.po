@@ -5477,6 +5477,12 @@ msgstr "Deaktiviert"
 msgid "Discard"
 msgstr "Verwerfen"
 
+msgid "Discard import"
+msgstr ""
+
+msgid "Discard this import?"
+msgstr ""
+
 msgid "Discarded"
 msgstr "Verworfen"
 
@@ -8721,6 +8727,9 @@ msgstr "Behalten"
 
 msgid "Keep Current"
 msgstr "Aktuell behalten"
+
+msgid "Keep editing"
+msgstr ""
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Behalten Sie die bestehenden Preise, fügen Sie nur neue Artikel hinzu."
@@ -15938,6 +15947,9 @@ msgstr "Der erwartete Prozentsatz der Ausgabe dieses Artikels, der während der 
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Das Aufwandskonto, auf das diese indirekte Ausgabenzeile gebucht wird; erforderlich, da indirekte Zeilen keinen Bestandsposten haben, von dem das Konto abgeleitet werden kann."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr ""
 
 msgid "the first 3 to 4 weeks"
 msgstr "die ersten 3 bis 4 Wochen"
