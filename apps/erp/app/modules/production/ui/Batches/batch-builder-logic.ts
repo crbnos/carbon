@@ -210,11 +210,14 @@ export const SUGGESTION_DUE_WINDOW_DAYS = 7;
 // Split a signature group into due-date clusters no wider than
 // SUGGESTION_DUE_WINDOW_DAYS. Members are sorted by due date and each joins
 // the current cluster while it stays within the window of that cluster's
-// EARLIEST due; a wider gap starts a new cluster. Members with no due date
-// cluster together at the end — nothing pins them to a week, and mixing them
-// into a dated cluster would let an undated op smuggle in date spread.
-// Day math rides the caller's `daysUntil` (an affine map of the date), so no
-// date parsing happens here.
+// EARLIEST due; a wider gap starts a new cluster. Members with NO due date are
+// the most flexible work, not the least — they cannot add due spread (spread
+// is measured over dated members only), so they ride the EARLIEST dated
+// cluster as free fill: the batch runs at its most urgent member's time, and
+// undated work might as well ride the first truck out. Only when the whole
+// group is undated do they form their own cluster. Day math rides the
+// caller's `daysUntil` (an affine map of the date), so no date parsing
+// happens here.
 export function splitByDueWindow(
   members: BatchCandidate[],
   daysUntil: (due: string) => number
@@ -241,7 +244,14 @@ export function splitByDueWindow(
     current.push(m);
   }
   if (current.length > 0) clusters.push(current);
-  if (undated.length > 0) clusters.push(undated);
+
+  if (undated.length > 0) {
+    if (clusters.length > 0) {
+      clusters[0]!.push(...undated);
+    } else {
+      clusters.push(undated);
+    }
+  }
   return clusters;
 }
 

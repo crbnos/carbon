@@ -498,15 +498,57 @@ describe("splitByDueWindow", () => {
     ]);
   });
 
-  it("clusters undated members together at the end, never into a dated cluster", () => {
-    const dated = makeCandidate("dated", { dueDate: "2026-09-01" });
+  it("undated members ride the EARLIEST dated cluster as free fill", () => {
+    // No due date = no due spread to add — the most flexible work fills the
+    // first run out rather than being quarantined into an unsuggestable
+    // singleton (the screenshot case: an undated 304 op must batch with the
+    // urgent 304 run, not with nothing).
+    const early = makeCandidate("early", { dueDate: "2026-09-01" });
+    const late = makeCandidate("late", { dueDate: "2026-09-27" });
     const none1 = makeCandidate("none1");
     const none2 = makeCandidate("none2");
-    const clusters = splitByDueWindow([none1, dated, none2], daysUntil);
+    const clusters = splitByDueWindow([none1, late, early, none2], daysUntil);
     expect(clusters.map((cl) => cl.map((m) => m.id))).toEqual([
-      ["dated"],
+      ["early", "none1", "none2"],
+      ["late"]
+    ]);
+  });
+
+  it("an all-undated group still clusters together", () => {
+    const none1 = makeCandidate("none1");
+    const none2 = makeCandidate("none2");
+    const clusters = splitByDueWindow([none1, none2], daysUntil);
+    expect(clusters.map((cl) => cl.map((m) => m.id))).toEqual([
       ["none1", "none2"]
     ]);
+  });
+
+  it("suggests an urgent + undated pair while a far-out same-material op stays separate", () => {
+    // Exactly the 304 stainless screenshot: Aug 30 (dated), Sep 27 (dated,
+    // out of window), and an undated op. Expect ONE suggestion pairing the
+    // undated op with the urgent run; the Sep op remains a singleton.
+    const aug = makeCandidate("aug", {
+      dueDate: "2026-08-30",
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+    const sep = makeCandidate("sep", {
+      dueDate: "2026-09-27",
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+    const fill = makeCandidate("fill", {
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+    const out = rankSuggestions(
+      groupsOf(["ss-304", [aug, sep, fill]]),
+      DEFAULT_RULES,
+      null,
+      daysUntil
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]?.members.map((m) => m.id).sort()).toEqual(["aug", "fill"]);
   });
 });
 
