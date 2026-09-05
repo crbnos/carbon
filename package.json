@@ -20,7 +20,9 @@
     "tsx": "catalog:",
     "turbo": "2.9.6",
     "typescript": "catalog:",
-    "vite-plugin-babel-macros": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-babel-macros": "catalog:",
+    "zod": "catalog:"
   },
   "lint-staged": {
     "(apps|packages|docs)/**/*.{js,ts,jsx,tsx}": [

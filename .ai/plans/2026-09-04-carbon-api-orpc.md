@@ -1,9 +1,17 @@
 # Carbon API on oRPC + Docs Repositioning — Implementation Plan
 
-> Status: APPROVED 2026-09-04, not yet started. Check items off in this file as you go;
+> Status: APPROVED 2026-09-04, Part A HTTP transport done+verified (MCP migration + auth
+> cache pending); Part B docs restructure done. Check items off in this file as you go;
 > run logs go in `.ai/runs/`. Read `.ai/lessons.md` and the Task Router rows in AGENTS.md
 > before starting (workflow-edge-function does NOT apply — this is app-route work, not an
 > edge function).
+>
+> 2026-09-05: Zod 4.5.4 merged to main (#1576) and merged into this branch. The follow-on
+> schema-accuracy + drill-down type-table work is planned separately in
+> `.ai/plans/2026-09-05-api-docs-type-tables.md` — it upgrades `scripts/lib/service-metadata.ts`
+> to import validators and convert via native `z.toJSONSchema(v, { io: "input" })`; the richer
+> manifest flows through `jsonSchema()`/`CarbonJsonSchemaConverter` into the v1 OpenAPI spec
+> and MCP verbatim, no transport changes.
 
 ## Context
 
