@@ -54,10 +54,10 @@ const surfaceToneClasses: Record<string, string> = {
 };
 
 // Which surface a result belongs to is read back off its URL — the flat result list
-// from fetchClient doesn't echo the index `tag`. Check /api-reference before /api.
+// from fetchClient doesn't echo the index `tag`. Check /api/data before /api.
 function surfaceOf(url: string): { label: string; key: string } {
   if (url.startsWith("/guides")) return { label: "Guide", key: "guide" };
-  if (url.startsWith("/api-reference")) return { label: "Data API", key: "data-api" };
+  if (url.startsWith("/api/data")) return { label: "Data API", key: "data-api" };
   if (url.startsWith("/api")) return { label: "API", key: "api" };
   return { label: "Reference", key: "docs" };
 }

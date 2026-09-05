@@ -20,8 +20,8 @@ const METHOD_ABBR: Record<string, string> = {
 };
 
 const DATA_API = [
-  { label: "Overview", href: "/api-reference" },
-  { label: "Authentication", href: "/api-reference/authentication" },
+  { label: "Overview", href: "/api/data" },
+  { label: "Authentication", href: "/api/data/authentication" },
 ];
 
 const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
@@ -65,9 +65,11 @@ function ResourceIcon({ kind, active }: { kind: "table" | "view"; active?: boole
 
 export function ApiNav({ tree }: { tree: NavModule[] }) {
   const pathname = usePathname();
+  // Resources live at /api/data/{module}/{resource} — index 3 and 4, since the
+  // Data API is a section INSIDE /api rather than its own root.
   const parts = pathname.split("/");
-  const activeModule = parts[2];
-  const activeResource = parts[3];
+  const activeModule = parts[3];
+  const activeResource = parts[4];
 
   const [open, setOpen] = useState<Set<string>>(() => new Set(activeModule ? [activeModule] : []));
   const activeRef = useRef<HTMLAnchorElement>(null);
@@ -128,7 +130,7 @@ export function ApiNav({ tree }: { tree: NavModule[] }) {
                 <ul className="mt-0.5 mb-1.5 ml-[13px] list-none border-l border-ed-warm-150 py-0.5 pl-2">
                   {m.resources.map((r) => {
                     const isActive = activeModule === m.slug && activeResource === r.slug;
-                    const href = `/api-reference/${m.slug}/${r.slug}`;
+                    const href = `/api/data/${m.slug}/${r.slug}`;
                     return (
                       <li key={r.slug}>
                         <Link

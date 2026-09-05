@@ -21,7 +21,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
     title: found ? `${found.resource.name} — Carbon Data API` : "Carbon Data API",
     ogTitle: found?.resource.name ?? "Carbon Data API",
     description: found?.resource.description,
-    path: `/api-reference/${module}/${resource}`,
+    path: `/api/data/${module}/${resource}`,
     eyebrow: found ? found.module.name : "Data API"
   });
 }
@@ -36,7 +36,7 @@ export default async function ResourcePage(props: Params) {
     <div className="max-w-295">
       <Breadcrumb
         items={[
-          { label: "Data API", href: "/api-reference" },
+          { label: "Data API", href: "/api/data" },
           { label: mod.name }
         ]}
       />
@@ -53,13 +53,13 @@ export default async function ResourcePage(props: Params) {
         <ViewCallout
           tableName={r.table}
           viewName={TABLE_VIEW_COMPANIONS[r.table].viewTable}
-          viewHref={`/api-reference/${TABLE_VIEW_COMPANIONS[r.table].viewModule}/${TABLE_VIEW_COMPANIONS[r.table].viewSlug}`}
+          viewHref={`/api/data/${TABLE_VIEW_COMPANIONS[r.table].viewModule}/${TABLE_VIEW_COMPANIONS[r.table].viewSlug}`}
         />
       )}
       {r.kind === "view" && VIEW_TABLE_COMPANIONS[r.table] && (
         <TableCallout
           tableName={VIEW_TABLE_COMPANIONS[r.table].tableTable}
-          tableHref={`/api-reference/${VIEW_TABLE_COMPANIONS[r.table].tableModule}/${VIEW_TABLE_COMPANIONS[r.table].tableSlug}`}
+          tableHref={`/api/data/${VIEW_TABLE_COMPANIONS[r.table].tableModule}/${VIEW_TABLE_COMPANIONS[r.table].tableSlug}`}
         />
       )}
 

@@ -101,8 +101,8 @@ function resourceIndexes(): AdvancedIndex[] {
         contents.push({ heading: undefined, content: `Fields: ${fields.join(", ")}.` });
       }
       return {
-        id: `/api-reference/${mod.slug}/${r.slug}`,
-        url: `/api-reference/${mod.slug}/${r.slug}`,
+        id: `/api/data/${mod.slug}/${r.slug}`,
+        url: `/api/data/${mod.slug}/${r.slug}`,
         title: r.name,
         description: r.description,
         tag: "resources",

@@ -26,7 +26,7 @@ const LINKS = [
   {
     label: "Data API",
     desc: "Direct REST access to every table and view",
-    href: "/api-reference"
+    href: "/api/data"
   }
 ];
 

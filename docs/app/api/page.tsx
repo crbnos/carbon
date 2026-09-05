@@ -37,13 +37,13 @@ export default function ApiOverviewPage() {
       </Lead>
       <P>
         Carbon exposes its data two ways. This is the primary one. The{" "}
-        <DocLink href="/api-reference">Data API</DocLink> is the other — direct
+        <DocLink href="/api/data">Data API</DocLink> is the other — direct
         REST access to the underlying tables and views.
       </P>
 
       <H2 id="why">Why not the tables directly</H2>
       <P>
-        The <DocLink href="/api-reference">Data API</DocLink> is the raw data
+        The <DocLink href="/api/data">Data API</DocLink> is the raw data
         plane: every table and view as a REST endpoint. It's excellent for
         reads — bulk exports, analytics, dashboards. Writes are a different
         story. Writing a row straight to a table skips the service layer, so

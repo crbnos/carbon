@@ -19,7 +19,7 @@ export const metadata = pageSeo({
   title: `${SEO.api.auth.title} — Carbon`,
   ogTitle: SEO.api.auth.title,
   description: SEO.api.auth.description,
-  path: "/api-reference/authentication",
+  path: "/api/data/authentication",
   eyebrow: "Data API"
 });
 
@@ -196,7 +196,7 @@ export default async function AuthenticationPage() {
         />
       </Table>
 
-      <ContentFooter prev={{ label: "Overview", url: "/api-reference" }} />
+      <ContentFooter prev={{ label: "Overview", url: "/api/data" }} />
     </DocPage>
   );
 }

@@ -43,18 +43,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Data API (PostgREST — the secondary data plane, demoted below the Carbon API)
   out.push({
-    url: abs("/api-reference"),
+    url: abs("/api/data"),
     changeFrequency: "monthly",
     priority: 0.5
   });
   out.push({
-    url: abs("/api-reference/authentication"),
+    url: abs("/api/data/authentication"),
     changeFrequency: "yearly",
     priority: 0.4
   });
   for (const { module, resource } of allResourceParams()) {
     out.push({
-      url: abs(`/api-reference/${module}/${resource}`),
+      url: abs(`/api/data/${module}/${resource}`),
       changeFrequency: "monthly",
       priority: 0.4
     });

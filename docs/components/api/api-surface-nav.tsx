@@ -88,7 +88,7 @@ export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
           ))}
         </div>
 
-        <p className={SECTION_LABEL}>Operations</p>
+        <p className={SECTION_LABEL}>Carbon API</p>
         {operations.map((m) => {
           const isOpen = open.has(m.slug);
           return (

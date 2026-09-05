@@ -22,7 +22,7 @@ export const metadata = pageSeo({
   title: `${SEO.api.intro.title} — Carbon`,
   ogTitle: SEO.api.intro.title,
   description: SEO.api.intro.description,
-  path: "/api-reference",
+  path: "/api/data",
   eyebrow: "Data API"
 });
 
@@ -55,7 +55,7 @@ export default async function ApiIntroPage() {
       <P>
         It's built for reads — bulk exports, analytics, dashboards. Start by
         creating an{" "}
-        <DocLink href="/api-reference/authentication">API key</DocLink>.
+        <DocLink href="/api/data/authentication">API key</DocLink>.
       </P>
 
       <Warn title="Writes belong on the Carbon API">
@@ -126,7 +126,7 @@ export default async function ApiIntroPage() {
       </P>
 
       <ContentFooter
-        next={{ label: "Authentication", url: "/api-reference/authentication" }}
+        next={{ label: "Authentication", url: "/api/data/authentication" }}
       />
     </DocPage>
   );
