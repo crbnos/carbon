@@ -2466,9 +2466,6 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
@@ -2585,6 +2582,9 @@ msgstr "Bir işi otomatik olarak başlatmak için Otomatik Serbest Bırakma etki
 
 msgid "Auto Start Job"
 msgstr "Otomatik İş Başlatma"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "Otomatik oluştur"
@@ -11058,9 +11058,6 @@ msgstr "Yapılandırılmadı"
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli iş emri yok"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "Ulaşılmadı"
 
@@ -11551,9 +11548,6 @@ msgstr "Hızlı önizlemeler için optimize edildi — indirmeler her zaman yük
 
 msgid "Optional"
 msgstr "İsteğe bağlı"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "Bu kural için isteğe bağlı bağlam"

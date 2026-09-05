@@ -2466,9 +2466,6 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -2585,6 +2582,9 @@ msgstr "ジョブを自動的に開始するには、自動リリースを有効
 
 msgid "Auto Start Job"
 msgstr "自動ジョブ開始"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "自動作成"
@@ -11058,9 +11058,6 @@ msgstr "未設定"
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "未到達"
 
@@ -11551,9 +11548,6 @@ msgstr "高速プレビューに最適化されています — ダウンロー�
 
 msgid "Optional"
 msgstr "オプション"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "このルールのオプションコンテキスト"

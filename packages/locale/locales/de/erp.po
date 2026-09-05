@@ -2466,9 +2466,6 @@ msgstr "Vermögenswerte"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Drucker den Standorten zuweisen. Versand, Empfang und Arbeitplätze erben den Standort-Standard, wenn nicht anders vorgegeben."
 
@@ -2585,6 +2582,9 @@ msgstr "Die automatische Freigabe muss aktiviert werden, um einen Fertigungsauft
 
 msgid "Auto Start Job"
 msgstr "Auftrag automatisch starten"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "Automatisch erstellen"
@@ -11058,9 +11058,6 @@ msgstr "Nicht konfiguriert"
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "Nicht erreicht"
 
@@ -11551,9 +11548,6 @@ msgstr "Optimiert für schnelle Vorschaubilder – Downloads stellen immer die u
 
 msgid "Optional"
 msgstr "Optional"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "Optionaler Kontext für diese Regel"

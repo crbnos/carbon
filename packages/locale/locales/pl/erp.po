@@ -2466,9 +2466,6 @@ msgstr "Aktywa"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Aktywa, pasywa i kapitał własny na określony dzień"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Przypisz drukarki do lokalizacji. Wysyłka, otrzymywanie i stanowiska robocze dziedziczą domyślne lokalizacje, chyba że nastąpi nadpisanie."
 
@@ -2585,6 +2582,9 @@ msgstr "Aby automatycznie uruchomić zadanie, należy włączyć automatyczne zw
 
 msgid "Auto Start Job"
 msgstr "Automatyczne uruchomienie zadania"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "Automatyczne tworzenie"
@@ -11058,9 +11058,6 @@ msgstr "Nie skonfigurowano"
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "Nieosiągnięty"
 
@@ -11551,9 +11548,6 @@ msgstr "Zoptymalizowane pod kątem szybkich podglądów — pobieranie zawsze do
 
 msgid "Optional"
 msgstr "Opcjonalnie"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "Opcjonalny kontekst dla tej reguły"

@@ -2466,9 +2466,6 @@ msgstr "Cespiti"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
 
@@ -2585,6 +2582,9 @@ msgstr "Il rilascio automatico deve essere abilitato per avviare un lavoro autom
 
 msgid "Auto Start Job"
 msgstr "Avvia automaticamente il lavoro"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "Crea automaticamente"
@@ -11058,9 +11058,6 @@ msgstr "Non configurato"
 msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza ordini di produzione per coprire la quantità"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "Non raggiunto"
 
@@ -11551,9 +11548,6 @@ msgstr "Ottimizzato per anteprime veloci — i download servono sempre il file c
 
 msgid "Optional"
 msgstr "Facoltativo"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "Contesto facoltativo per questa regola"

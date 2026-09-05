@@ -2466,9 +2466,6 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
@@ -2585,6 +2582,9 @@ msgstr "जॉब को स्वचालित रूप से शुरू 
 
 msgid "Auto Start Job"
 msgstr "ऑटो स्टार्ट जॉब"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "स्वचालित-निर्माण"
@@ -11058,9 +11058,6 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -11551,9 +11548,6 @@ msgstr "तेज़ पूर्वावलोकन के लिए अन�
 
 msgid "Optional"
 msgstr "वैकल्पिक"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "इस नियम के लिए वैकल्पिक संदर्भ"

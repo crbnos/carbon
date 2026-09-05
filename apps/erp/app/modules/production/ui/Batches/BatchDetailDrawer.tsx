@@ -251,11 +251,6 @@ export function BatchDetailDrawer({
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
-          {batch.status === "Planned" && (
-            <div className="pt-2">
-              <ReleaseWorkCenterPicker batch={batch} />
-            </div>
-          )}
           {batch.notes && (
             <HStack
               spacing={1}
@@ -419,17 +414,7 @@ export function BatchDetailDrawer({
                     }
                     title={batch.process?.name ?? undefined}
                   />
-                  <SummaryFact
-                    label={t`Work center`}
-                    value={
-                      batch.workCenterName ? (
-                        <Enumerable value={batch.workCenterName} />
-                      ) : (
-                        "—"
-                      )
-                    }
-                    title={batch.workCenterName ?? undefined}
-                  />
+                  <WorkCenterFact batch={batch} />
                   <SummaryFact
                     label={t`Location`}
                     value={
@@ -649,17 +634,15 @@ function SummaryFact({
   );
 }
 
+// The details sidebar's Work center fact — editable while the batch is
+// composable (Planned/Active pre-start), read-only once production started.
 // Optional pre-pick: release never waits on a work center — the scheduler
 // auto-selects the earliest-finish candidate (load balancing) for a Released
 // batch lacking one and persists it. A planner who KNOWS the machine can
 // assign it here inline (intent="update") and the auto-selection defers to
 // it. Constrained to the batch's own process + location so it can only pick
 // a center that can actually run it.
-function ReleaseWorkCenterPicker({
-  batch
-}: {
-  batch: JobOperationBatchDetail;
-}) {
+function WorkCenterFact({ batch }: { batch: JobOperationBatchDetail }) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ success?: boolean; message?: string }>();
   const { options } = useWorkCenters({
@@ -667,17 +650,35 @@ function ReleaseWorkCenterPicker({
     locationId: batch.locationId ?? undefined
   });
 
+  const isEditable = batch.status === "Planned" || batch.status === "Active";
+
+  if (!isEditable) {
+    return (
+      <SummaryFact
+        label={t`Work center`}
+        value={
+          batch.workCenterName ? (
+            <Enumerable value={batch.workCenterName} />
+          ) : (
+            "—"
+          )
+        }
+        title={batch.workCenterName ?? undefined}
+      />
+    );
+  }
+
   return (
-    <VStack spacing={1} className="max-w-sm">
-      <HStack spacing={2} className="w-full items-center">
-        <span className="whitespace-nowrap text-sm text-muted-foreground">
-          <Trans>Work center</Trans>
-        </span>
+    <div className="flex flex-col gap-1 min-w-0">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+        <Trans>Work center</Trans>
+      </dt>
+      <dd className="min-w-0">
         <Combobox
           size="sm"
           value={batch.workCenterId ?? ""}
           options={options}
-          placeholder={t`Assign a work center`}
+          placeholder={t`Auto-assigned on release`}
           onChange={(workCenterId) =>
             fetcher.submit(
               { intent: "update", batchId: batch.id, workCenterId },
@@ -685,12 +686,7 @@ function ReleaseWorkCenterPicker({
             )
           }
         />
-      </HStack>
-      <span className="text-xs text-muted-foreground">
-        {batch.workCenterId
-          ? t`Not on the shop floor — release to dispatch.`
-          : t`Optional — releasing auto-assigns the best available work center.`}
-      </span>
-    </VStack>
+      </dd>
+    </div>
   );
 }

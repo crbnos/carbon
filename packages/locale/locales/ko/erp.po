@@ -2466,9 +2466,6 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
@@ -2585,6 +2582,9 @@ msgstr "작업 지시를 자동으로 시작하려면 자동 릴리스를 활성
 
 msgid "Auto Start Job"
 msgstr "작업 자동 시작"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "자동 생성"
@@ -11058,9 +11058,6 @@ msgstr "구성되지 않음"
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "도달하지 않음"
 
@@ -11551,9 +11548,6 @@ msgstr "빠른 미리보기에 최적화됨 — 다운로드는 항상 원본 �
 
 msgid "Optional"
 msgstr "선택 사항"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "이 규칙에 대한 선택적 컨텍스트"

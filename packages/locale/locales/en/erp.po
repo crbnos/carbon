@@ -2466,9 +2466,6 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
-msgid "Assign a work center"
-msgstr "Assign a work center"
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
@@ -2585,6 +2582,9 @@ msgstr "Auto release must be enabled to start a job automatically"
 
 msgid "Auto Start Job"
 msgstr "Auto Start Job"
+
+msgid "Auto-assigned on release"
+msgstr "Auto-assigned on release"
 
 msgid "Auto-create"
 msgstr "Auto-create"
@@ -11058,9 +11058,6 @@ msgstr "Not configured"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr "Not on the shop floor — release to dispatch."
-
 msgid "Not reached"
 msgstr "Not reached"
 
@@ -11551,9 +11548,6 @@ msgstr "Optimized for fast previews — downloads always serve the original uplo
 
 msgid "Optional"
 msgstr "Optional"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr "Optional — releasing auto-assigns the best available work center."
 
 msgid "Optional context for this rule"
 msgstr "Optional context for this rule"

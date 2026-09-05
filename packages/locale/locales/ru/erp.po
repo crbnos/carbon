@@ -2466,9 +2466,6 @@ msgstr "Активы"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
-msgid "Assign a work center"
-msgstr ""
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
@@ -2585,6 +2582,9 @@ msgstr "Автоматический запуск в работу должен �
 
 msgid "Auto Start Job"
 msgstr "Автоматический запуск задания"
+
+msgid "Auto-assigned on release"
+msgstr ""
 
 msgid "Auto-create"
 msgstr "Автоматическое создание"
@@ -11058,9 +11058,6 @@ msgstr "Не настроено"
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
-msgid "Not on the shop floor — release to dispatch."
-msgstr ""
-
 msgid "Not reached"
 msgstr "Не достигнуто"
 
@@ -11551,9 +11548,6 @@ msgstr "Оптимизировано для быстрого предпросм�
 
 msgid "Optional"
 msgstr "Опционально"
-
-msgid "Optional — releasing auto-assigns the best available work center."
-msgstr ""
 
 msgid "Optional context for this rule"
 msgstr "Дополнительный контекст для этого правила"
