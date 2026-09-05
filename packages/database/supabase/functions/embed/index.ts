@@ -10,6 +10,27 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 const logger = getFunctionLogger("embed");
 
+/**
+ * Render a caught value for logging. Kysely's `PostgresDriver.executeQuery`
+ * rethrows non-`Error` values unchanged, so anything can land in a `catch`
+ * here — and `JSON.stringify` THROWS on a circular object or a BigInt. That
+ * throw would escape the catch block and abort failure handling before the
+ * job is recorded in `failedJobs`, turning one bad job into a silent loss of
+ * the whole batch. Always returns a string.
+ */
+function describeError(error: unknown): { detail: string; message: string } {
+  if (error instanceof Error) {
+    return { detail: error.stack ?? error.message, message: error.message };
+  }
+  let message: string;
+  try {
+    message = JSON.stringify(error) ?? String(error);
+  } catch {
+    message = String(error);
+  }
+  return { detail: message, message };
+}
+
 const jobSchema = z.object({
   jobId: z.number(),
   id: z.string(),
@@ -66,16 +87,9 @@ serve(async (req: Request) => {
         await processJob(db, currentJob);
         completedJobs.push(currentJob);
       } catch (error) {
-        logger.error("processJob failed", {
-          error:
-            error instanceof Error
-              ? (error.stack ?? error.message)
-              : JSON.stringify(error),
-        });
-        failedJobs.push({
-          ...currentJob,
-          error: error instanceof Error ? error.message : JSON.stringify(error),
-        });
+        const described = describeError(error);
+        logger.error("processJob failed", { error: described.detail });
+        failedJobs.push({ ...currentJob, error: described.message });
       }
     }
   }
@@ -86,17 +100,10 @@ serve(async (req: Request) => {
   } catch (error) {
     // If the worker is terminating (e.g. wall clock limit reached),
     // add pending jobs to fail list with termination reason
-    logger.error("embed worker terminating", {
-      error:
-        error instanceof Error
-          ? (error.stack ?? error.message)
-          : JSON.stringify(error),
-    });
+    const described = describeError(error);
+    logger.error("embed worker terminating", { error: described.detail });
     failedJobs.push(
-      ...pendingJobs.map((job) => ({
-        ...job,
-        error: error instanceof Error ? error.message : JSON.stringify(error),
-      }))
+      ...pendingJobs.map((job) => ({ ...job, error: described.message }))
     );
   }
 
