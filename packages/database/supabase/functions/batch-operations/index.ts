@@ -190,6 +190,20 @@ async function assertMaterialCompatible(
   );
   if (!BATCH_RULE_DIMENSIONS.some((d) => rules[d] === "must")) return;
 
+  // Mirror the get_batchable_operations fallback: an op's materials are its
+  // op-linked BOM lines, or — when it has none — the JOB's unassigned lines
+  // (jobOperationId IS NULL). The gate must judge the same materials the
+  // builder shows, or a visible "must" match could still be refused (and vice
+  // versa).
+  const memberOps = await trx
+    .selectFrom("jobOperation")
+    .select(["id", "jobId"])
+    .where("id", "in", jobOperationIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const jobIdByOp = new Map(memberOps.map((o) => [o.id, o.jobId]));
+  const memberJobIds = [...new Set(memberOps.map((o) => o.jobId))];
+
   const rows = await trx
     .selectFrom("jobMaterial as jm")
     .innerJoin("item as mi", (join: any) =>
@@ -204,6 +218,7 @@ async function assertMaterialCompatible(
     )
     .select([
       "jm.jobOperationId as opId",
+      "jm.jobId as jobId",
       "mi.readableId as itemReadableId",
       "m.materialSubstanceId as substanceId",
       "m.gradeId as gradeId",
@@ -211,9 +226,27 @@ async function assertMaterialCompatible(
       "m.materialFormId as formId",
       "m.finishId as finishId"
     ])
-    .where("jm.jobOperationId", "in", jobOperationIds)
     .where("jm.companyId", "=", companyId)
+    .where((eb: any) =>
+      eb.or([
+        eb("jm.jobOperationId", "in", jobOperationIds),
+        eb.and([
+          eb("jm.jobOperationId", "is", null),
+          eb("jm.jobId", "in", memberJobIds)
+        ])
+      ])
+    )
     .execute();
+
+  type MaterialRow = (typeof rows)[number];
+  const pushRow = (sets: MemberValueSets, r: MaterialRow) => {
+    if (r.itemReadableId) sets.item!.push(r.itemReadableId);
+    if (r.substanceId) sets.substance!.push(r.substanceId);
+    if (r.gradeId) sets.grade!.push(r.gradeId);
+    if (r.dimensionId) sets.dimension!.push(r.dimensionId);
+    if (r.formId) sets.form!.push(r.formId);
+    if (r.finishId) sets.finish!.push(r.finishId);
+  };
 
   const byOp = new Map<string, MemberValueSets>();
   for (const id of jobOperationIds) {
@@ -226,18 +259,27 @@ async function assertMaterialCompatible(
       finish: []
     });
   }
+  const opsWithLinkedRows = new Set(
+    rows.map((r) => r.opId).filter(Boolean) as string[]
+  );
+  const unassignedByJob = new Map<string, MaterialRow[]>();
   for (const r of rows) {
-    // jobMaterial.jobOperationId is nullable; a null-op row can't attribute to
-    // a member (and byOp is keyed by the passed ids anyway).
-    if (!r.opId) continue;
-    const sets = byOp.get(r.opId);
-    if (!sets) continue;
-    if (r.itemReadableId) sets.item!.push(r.itemReadableId);
-    if (r.substanceId) sets.substance!.push(r.substanceId);
-    if (r.gradeId) sets.grade!.push(r.gradeId);
-    if (r.dimensionId) sets.dimension!.push(r.dimensionId);
-    if (r.formId) sets.form!.push(r.formId);
-    if (r.finishId) sets.finish!.push(r.finishId);
+    if (r.opId) {
+      const sets = byOp.get(r.opId);
+      if (sets) pushRow(sets, r);
+    } else if (r.jobId) {
+      const list = unassignedByJob.get(r.jobId) ?? [];
+      list.push(r);
+      unassignedByJob.set(r.jobId, list);
+    }
+  }
+  for (const id of jobOperationIds) {
+    if (opsWithLinkedRows.has(id)) continue;
+    const jobId = jobIdByOp.get(id);
+    const fallback = jobId ? unassignedByJob.get(jobId) : undefined;
+    if (!fallback) continue;
+    const sets = byOp.get(id)!;
+    for (const r of fallback) pushRow(sets, r);
   }
 
   const violations = mustViolations(rules, Array.from(byOp.values()));

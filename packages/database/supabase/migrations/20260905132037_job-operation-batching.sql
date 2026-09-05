@@ -374,7 +374,27 @@ AS $$
         LEFT JOIN "materialGrade" mg ON mg."id" = m."gradeId"
         LEFT JOIN "materialDimension" md ON md."id" = m."dimensionId"
         LEFT JOIN "materialFinish" mfin ON mfin."id" = m."finishId"
-      WHERE jm."jobOperationId" = jo."id"
+      -- Op-linked BOM lines when the op has any; otherwise the JOB's
+      -- unassigned lines (jobOperationId IS NULL). BOMs are routinely authored
+      -- without per-operation assignment, and the planner's question is "what
+      -- stock does this job run through this process" — the op-linked line is
+      -- the precise answer, the job's unassigned lines the honest default.
+      -- Without the fallback every unassigned BOM reads "No materials", the
+      -- facet picker goes empty, and grouping degrades to the produced item.
+      WHERE jm."companyId" = jo."companyId"
+        AND (
+          jm."jobOperationId" = jo."id"
+          OR (
+            jm."jobId" = jo."jobId"
+            AND jm."jobOperationId" IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM "jobMaterial" jml
+              WHERE jml."jobId" = jo."jobId"
+                AND jml."companyId" = jo."companyId"
+                AND jml."jobOperationId" = jo."id"
+            )
+          )
+        )
     ) mats ON TRUE
   WHERE j."locationId" = location_id
     AND jo."processId" = process_id

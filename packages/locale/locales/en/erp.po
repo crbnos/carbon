@@ -3604,8 +3604,8 @@ msgstr "Complete"
 msgid "Complete All"
 msgstr "Complete All"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "Complete all quantities on barcode scan"
+msgid "Complete all quantities on kanban complete scan"
+msgstr "Complete all quantities on kanban complete scan"
 
 msgid "Complete Job"
 msgstr "Complete Job"
@@ -8023,6 +8023,9 @@ msgstr "Hours/1000 Pieces"
 msgid "Hours/Piece"
 msgstr "Hours/Piece"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 
@@ -11821,6 +11824,12 @@ msgstr "Parts"
 msgid "Parts & items"
 msgstr "Parts & items"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr "Parts run one after another — e.g. a saw or laser table."
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+
 msgid "Parts, materials, and how you classify them."
 msgstr "Parts, materials, and how you classify them."
 
@@ -14687,8 +14696,8 @@ msgstr "Sent to each recipient who has email notifications turned on."
 msgid "Sequences"
 msgstr "Sequences"
 
-msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr "Sequential — parts run one after another (saw, laser table)"
+msgid "Sequential"
+msgstr "Sequential"
 
 msgid "Serial"
 msgstr "Serial"
@@ -15127,8 +15136,8 @@ msgstr "Signing in also requires a one-time code from your authenticator app"
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 
-msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr "Simultaneous — parts run together in one load (furnace, oven, plating)"
+msgid "Simultaneous"
+msgstr "Simultaneous"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

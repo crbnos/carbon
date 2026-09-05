@@ -3604,8 +3604,8 @@ msgstr "완료"
 msgid "Complete All"
 msgstr "모두 완료"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "바코드 스캔 시 모든 수량 완료 처리"
+msgid "Complete all quantities on kanban complete scan"
+msgstr ""
 
 msgid "Complete Job"
 msgstr "작업 완료"
@@ -8023,6 +8023,9 @@ msgstr "시간/1000개"
 msgid "Hours/Piece"
 msgstr "시간/개"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr ""
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "품목을 전체적으로 재보충하는 방법(구매, 사내 생산 또는 구매 및 사내 생산)입니다. 라인별 공급 방식과 달리 품목별로 설정됩니다."
 
@@ -11821,6 +11824,12 @@ msgstr "부품"
 msgid "Parts & items"
 msgstr "부품 & 품목"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr ""
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr ""
+
 msgid "Parts, materials, and how you classify them."
 msgstr "부품, 자재 및 이를 분류하는 방법."
 
@@ -14687,8 +14696,8 @@ msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."
 msgid "Sequences"
 msgstr "채번 규칙"
 
-msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr "순차적 — 부품이 차례대로 실행됨 (톱, 레이저 테이블)"
+msgid "Sequential"
+msgstr ""
 
 msgid "Serial"
 msgstr "일련번호"
@@ -15127,8 +15136,8 @@ msgstr "로그인에는 인증자 앱의 일회용 코드도 필요합니다"
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "로그인할 때 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱의 현재 6자리 코드를 입력하세요."
 
-msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr "동시적 — 부품이 한 로드에서 함께 실행됨 (용광로, 오븐, 도금)"
+msgid "Simultaneous"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

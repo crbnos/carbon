@@ -480,6 +480,20 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 
 ## Changelog
 
+### 2026-09-05 — Materials fallback + due-window suggestion clustering
+
+Brad's live data hit the documented "ops whose jobMaterial rows lack
+jobOperationId show no material chips" limitation immediately: every candidate
+read "No materials", the facet picker was empty, and suggestions grouped by the
+produced item across a 28-day due spread. Fixed: `get_batchable_operations` and
+the edge fn's `assertMaterialCompatible` now fall back to the JOB's unassigned
+BOM lines when an op has no op-linked ones (op-linked still wins), and
+`rankSuggestions` splits each signature group into ≤7-day due-date clusters
+(`splitByDueWindow`) before scoring — suggestions are now material-labeled and
+date-tight (e.g. two same-material jobs due the same day group; the same
+material a month out becomes its own suggestion).
+
+
 ### 2026-09-04 — Scheduling HIGH risk resolved by the batch-release spec
 
 The "capacity planning collision" risk (per-op reservations N×-over-booking a

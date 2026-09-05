@@ -10,7 +10,8 @@ import {
   computeSelectionDimSets,
   groupingKey,
   materialSignature,
-  rankSuggestions
+  rankSuggestions,
+  splitByDueWindow
 } from "../app/modules/production/ui/Batches/batch-builder-logic";
 import type {
   BatchCandidate,
@@ -466,5 +467,100 @@ describe("batchPlanBreakdown (Sequential vs Simultaneous)", () => {
     expect(batchPlanBreakdown(members)).toEqual(
       batchPlanBreakdown(members, undefined, "Sequential")
     );
+  });
+});
+
+describe("splitByDueWindow", () => {
+  it("splits a signature group at gaps wider than the 7-day window", () => {
+    const augA = makeCandidate("aug-a", { dueDate: "2026-08-30" });
+    const augB = makeCandidate("aug-b", { dueDate: "2026-08-30" });
+    const sepA = makeCandidate("sep-a", { dueDate: "2026-09-27" });
+    const sepB = makeCandidate("sep-b", { dueDate: "2026-09-27" });
+
+    const clusters = splitByDueWindow([sepA, augA, sepB, augB], daysUntil);
+    expect(clusters.map((c) => c.map((m) => m.id))).toEqual([
+      ["aug-a", "aug-b"],
+      ["sep-a", "sep-b"]
+    ]);
+  });
+
+  it("keeps members within the window together and measures from the cluster's earliest due", () => {
+    const a = makeCandidate("a", { dueDate: "2026-09-01" });
+    const b = makeCandidate("b", { dueDate: "2026-09-05" });
+    // 2026-09-09 is 8 days after the cluster EARLIEST (09-01) — a new cluster
+    // even though it is only 4 days after its neighbor.
+    const c = makeCandidate("c", { dueDate: "2026-09-09" });
+    const clusters = splitByDueWindow([a, b, c], daysUntil);
+    expect(clusters.map((cl) => cl.map((m) => m.id))).toEqual([
+      ["a", "b"],
+      ["c"]
+    ]);
+  });
+
+  it("clusters undated members together at the end, never into a dated cluster", () => {
+    const dated = makeCandidate("dated", { dueDate: "2026-09-01" });
+    const none1 = makeCandidate("none1");
+    const none2 = makeCandidate("none2");
+    const clusters = splitByDueWindow([none1, dated, none2], daysUntil);
+    expect(clusters.map((cl) => cl.map((m) => m.id))).toEqual([
+      ["dated"],
+      ["none1", "none2"]
+    ]);
+  });
+});
+
+describe("rankSuggestions due-window clustering", () => {
+  // The screenshot scenario: four same-material ops, two due Aug 30 and two
+  // due Sep 27. One signature group must yield TWO suggestions — never one
+  // 28-day-spread group — with distinct keys for stable rendering.
+  it("suggests tight due-date clusters instead of one wide group", () => {
+    const augA = makeCandidate("aug-a", {
+      dueDate: "2026-08-30",
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+    const augB = makeCandidate("aug-b", {
+      dueDate: "2026-08-30",
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+    const sepA = makeCandidate("sep-a", {
+      dueDate: "2026-09-27",
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+    const sepB = makeCandidate("sep-b", {
+      dueDate: "2026-09-27",
+      setupTime: 10,
+      setupUnit: "Total Minutes"
+    });
+
+    const out = rankSuggestions(
+      groupsOf(["a36-quarter", [augA, sepA, augB, sepB]]),
+      DEFAULT_RULES,
+      null,
+      daysUntil
+    );
+
+    expect(out).toHaveLength(2);
+    const memberIds = out.map((s) => s.members.map((m) => m.id).sort());
+    expect(memberIds).toContainEqual(["aug-a", "aug-b"]);
+    expect(memberIds).toContainEqual(["sep-a", "sep-b"]);
+    // distinct keys — one signature now legally yields several suggestions
+    expect(new Set(out.map((s) => s.key)).size).toBe(2);
+    // the urgent (August) cluster outranks the September one
+    expect(out[0]?.members.map((m) => m.id).sort()).toEqual(["aug-a", "aug-b"]);
+  });
+
+  it("a group whose dates are spread too thin yields nothing", () => {
+    const a = makeCandidate("a", { dueDate: "2026-09-01" });
+    const b = makeCandidate("b", { dueDate: "2026-09-20" });
+    const out = rankSuggestions(
+      groupsOf(["thin", [a, b]]),
+      DEFAULT_RULES,
+      null,
+      daysUntil
+    );
+    expect(out).toEqual([]);
   });
 });

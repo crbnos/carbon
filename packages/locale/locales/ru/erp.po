@@ -3604,8 +3604,8 @@ msgstr "Завершить"
 msgid "Complete All"
 msgstr "Завершить все"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "Завершить все количества при сканировании штрих-кода"
+msgid "Complete all quantities on kanban complete scan"
+msgstr ""
 
 msgid "Complete Job"
 msgstr "Завершить работу"
@@ -8023,6 +8023,9 @@ msgstr "Часов/1000 Деталей"
 msgid "Hours/Piece"
 msgstr "Часов/Деталь"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr ""
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
 
@@ -11821,6 +11824,12 @@ msgstr "Детали"
 msgid "Parts & items"
 msgstr "Детали и товары"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr ""
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr ""
+
 msgid "Parts, materials, and how you classify them."
 msgstr "Детали, материалы и способы их классификации."
 
@@ -14687,8 +14696,8 @@ msgstr "Отправляется каждому получателю, у кот�
 msgid "Sequences"
 msgstr "Нумерация"
 
-msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr "Последовательно — детали выполняются одна за другой (пила, лазерный стол)"
+msgid "Sequential"
+msgstr ""
 
 msgid "Serial"
 msgstr "Серийный"
@@ -15127,8 +15136,8 @@ msgstr "При входе также требуется одноразовый �
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
-msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr "Одновременно — детали выполняются вместе в одной загрузке (печь, духовка, гальваника)"
+msgid "Simultaneous"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

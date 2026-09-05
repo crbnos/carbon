@@ -1265,7 +1265,7 @@ function SuggestionsBanner({
       <div className="flex flex-col">
         {suggestions.map((s) => (
           <button
-            key={s.sig}
+            key={s.key}
             type="button"
             onClick={() => onApply(s.members)}
             className="group flex w-full items-center gap-3 border-t border-border/60 px-3.5 py-2.5 text-left transition-colors hover:bg-emerald-500/[0.06] active:bg-emerald-500/10"

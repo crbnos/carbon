@@ -3604,8 +3604,8 @@ msgstr "完成"
 msgid "Complete All"
 msgstr "全部完成"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "在条形码扫码时完成所有数量"
+msgid "Complete all quantities on kanban complete scan"
+msgstr ""
 
 msgid "Complete Job"
 msgstr "完成工作"
@@ -8023,6 +8023,9 @@ msgstr "小时/1000件"
 msgid "Hours/Piece"
 msgstr "小时/件"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr ""
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "物料整体的补货方式（采购、自制或采购与自制），按物料设定，与按行的供料方式不同"
 
@@ -11821,6 +11824,12 @@ msgstr "零件"
 msgid "Parts & items"
 msgstr "零件和物料"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr ""
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr ""
+
 msgid "Parts, materials, and how you classify them."
 msgstr "零件、原材料及其分类方式"
 
@@ -14687,8 +14696,8 @@ msgstr "发送给打开了电子邮件通知的每个收件人。"
 msgid "Sequences"
 msgstr "编号规则"
 
-msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr "顺序 — 零件一个接一个地运行（锯床、激光工作台）"
+msgid "Sequential"
+msgstr ""
 
 msgid "Serial"
 msgstr "序列号"
@@ -15127,8 +15136,8 @@ msgstr "登录还需要来自您的身份验证器应用的一次性代码"
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
 
-msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr "同时 — 零件在一个炉次中一起运行（炉、烤箱、电镀）"
+msgid "Simultaneous"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "单点登录"

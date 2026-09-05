@@ -187,8 +187,10 @@ export function dueDateOf(candidate: BatchCandidate): string | null {
 // A ranked suggested batch: a nesting-compatible group plus the signals that
 // place it. `score` blends setup saved, due urgency, capacity fit, and how
 // specifically the group's materials match; `reason` names the dominant driver
-// for the banner copy.
+// for the banner copy. `key` is unique per suggestion — one signature can
+// yield several due-window clusters, so `sig` alone no longer identifies one.
 export type Suggestion = {
+  key: string;
   sig: string;
   members: BatchCandidate[];
   saving: number;
@@ -198,6 +200,50 @@ export type Suggestion = {
   score: number;
   reason: "urgent" | "fills" | "setup" | "group";
 };
+
+// A suggestion never spans more than a week of due dates. Same material next
+// month is next month's batch: grouping August work with late-September work
+// saves one setup but sits finished goods (or starves the later job's slot)
+// for weeks — the exact anti-pattern the amber due-spread warning flags.
+export const SUGGESTION_DUE_WINDOW_DAYS = 7;
+
+// Split a signature group into due-date clusters no wider than
+// SUGGESTION_DUE_WINDOW_DAYS. Members are sorted by due date and each joins
+// the current cluster while it stays within the window of that cluster's
+// EARLIEST due; a wider gap starts a new cluster. Members with no due date
+// cluster together at the end — nothing pins them to a week, and mixing them
+// into a dated cluster would let an undated op smuggle in date spread.
+// Day math rides the caller's `daysUntil` (an affine map of the date), so no
+// date parsing happens here.
+export function splitByDueWindow(
+  members: BatchCandidate[],
+  daysUntil: (due: string) => number
+): BatchCandidate[][] {
+  const dated = members
+    .filter((m) => dueDateOf(m) !== null)
+    .sort((a, b) => daysUntil(dueDateOf(a)!) - daysUntil(dueDateOf(b)!));
+  const undated = members.filter((m) => dueDateOf(m) === null);
+
+  const clusters: BatchCandidate[][] = [];
+  let current: BatchCandidate[] = [];
+  let currentEarliest: number | null = null;
+  for (const m of dated) {
+    const days = daysUntil(dueDateOf(m)!);
+    if (
+      currentEarliest !== null &&
+      days - currentEarliest > SUGGESTION_DUE_WINDOW_DAYS
+    ) {
+      clusters.push(current);
+      current = [];
+      currentEarliest = null;
+    }
+    if (currentEarliest === null) currentEarliest = days;
+    current.push(m);
+  }
+  if (current.length > 0) clusters.push(current);
+  if (undated.length > 0) clusters.push(undated);
+  return clusters;
+}
 
 // How many non-"ignore" dimensions this group actually matches on: a dimension
 // counts when at least one member carries a value for it. Computed from the
@@ -228,6 +274,15 @@ export function rankSuggestions(
   daysUntil: (due: string) => number
 ): Suggestion[] {
   const raw = [...groups.entries()]
+    // Same material next month is next month's batch: each signature group is
+    // first split into due-window clusters so a suggestion never spans weeks
+    // (the ≥2 filter runs per CLUSTER — a group whose dates are spread thin
+    // may yield nothing, which is correct).
+    .flatMap(([sig, g]) =>
+      splitByDueWindow(g, daysUntil).map(
+        (cluster, i) => [sig, cluster, i] as const
+      )
+    )
     .filter(([, g]) => g.length >= 2)
     // A shared signature already pins the must dimensions, but a group where
     // some members simply lack a must value could still be unsafe — never
@@ -235,7 +290,7 @@ export function rankSuggestions(
     .filter(
       ([, g]) => mustViolations(rules, g.map(candidateValueSets)).length === 0
     )
-    .map(([sig, g]) => {
+    .map(([sig, g, clusterIndex]) => {
       const saving = groupSetupSaving(g);
       const totalQuantity = g.reduce(
         (s, c) => s + (c.operationQuantity ?? 0),
@@ -253,6 +308,7 @@ export function rankSuggestions(
         repCapacity && repCapacity > 0 ? totalQuantity / repCapacity : null;
       const specificity = groupSpecificity(g, rules);
       return {
+        key: `${sig}#${clusterIndex}`,
         sig,
         members: g,
         saving,
@@ -296,6 +352,7 @@ export function rankSuggestions(
               : "group";
 
       return {
+        key: r.key,
         sig: r.sig,
         members: r.members,
         saving: r.saving,

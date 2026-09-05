@@ -3604,8 +3604,8 @@ msgstr "Concluir"
 msgid "Complete All"
 msgstr "Completar Tudo"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "Concluir todas as quantidades ao escanear código de barras"
+msgid "Complete all quantities on kanban complete scan"
+msgstr ""
 
 msgid "Complete Job"
 msgstr "Concluir Trabalho"
@@ -8023,6 +8023,9 @@ msgstr "Horas/1000 Peças"
 msgid "Hours/Piece"
 msgstr "Horas/Peça"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr ""
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Como um item é reabastecido em geral (Compra, Fabricação ou Compra e fabricação), definido por item, diferentemente do tipo de suprimento por linha."
 
@@ -11821,6 +11824,12 @@ msgstr "Peças"
 msgid "Parts & items"
 msgstr "Peças e itens"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr ""
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr ""
+
 msgid "Parts, materials, and how you classify them."
 msgstr "Peças, materiais e como você os classifica."
 
@@ -14687,8 +14696,8 @@ msgstr "Enviado a cada destinatário que tem notificações por e-mail ativadas.
 msgid "Sequences"
 msgstr "Sequências"
 
-msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr "Sequencial — peças são executadas uma após a outra (serra, mesa de laser)"
+msgid "Sequential"
+msgstr ""
 
 msgid "Serial"
 msgstr "Serial"
@@ -15127,8 +15136,8 @@ msgstr "Entrar também requer um código único do seu aplicativo autenticador"
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Iniciar sessão deixará de exigir um código. Introduza o código de 6 dígitos atual da sua aplicação autenticadora para confirmar."
 
-msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr "Simultâneo — peças são executadas juntas em um lote de produção (forno, estufa, galvanoplastia)"
+msgid "Simultaneous"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"

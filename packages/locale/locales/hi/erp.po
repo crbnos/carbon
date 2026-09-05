@@ -3604,8 +3604,8 @@ msgstr "पूर्ण करें"
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "बारकोड स्कैन पर सभी मात्राएं पूर्ण करें"
+msgid "Complete all quantities on kanban complete scan"
+msgstr ""
 
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
@@ -8023,6 +8023,9 @@ msgstr "घंटे/1000 पीस"
 msgid "Hours/Piece"
 msgstr "घंटे/टुकड़ा"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr ""
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "किसी आइटम को समग्र रूप से कैसे आपूर्ति किया जाता है (खरीद, निर्माण, या खरीद और निर्माण), प्रति आइटम सेट किया जाता है, प्रति-पंक्ति आपूर्ति प्रकार के विपरीत।"
 
@@ -11821,6 +11824,12 @@ msgstr "पार्ट्स"
 msgid "Parts & items"
 msgstr "पार्ट्स और आइटम्स"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr ""
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr ""
+
 msgid "Parts, materials, and how you classify them."
 msgstr "पार्ट्स, सामग्री, और आप उन्हें कैसे वर्गीकृत करते हैं।"
 
@@ -14687,8 +14696,8 @@ msgstr "प्रत्येक प्राप्तकर्ता को भ
 msgid "Sequences"
 msgstr "अनुक्रम"
 
-msgid "Sequential — parts run one after another (saw, laser table)"
-msgstr "क्रमिक — पार्ट्स एक के बाद एक चलते हैं (आरी, लेजर टेबल)"
+msgid "Sequential"
+msgstr ""
 
 msgid "Serial"
 msgstr "सीरीज़"
@@ -15127,8 +15136,8 @@ msgstr "साइन इन करने के लिए आपके प्र
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
 
-msgid "Simultaneous — parts run together in one load (furnace, oven, plating)"
-msgstr "समकालिक — पार्ट्स एक लोड में एक साथ चलते हैं (भट्ठी, ओवन, मढ़ाई)"
+msgid "Simultaneous"
+msgstr ""
 
 msgid "Single Sign-On"
 msgstr "सिंगल साइन-ऑन"
