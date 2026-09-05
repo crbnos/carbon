@@ -181,19 +181,13 @@ export const itemValidator = z.object({
   // purchased item. Only surfaced/edited for Buy items in the Properties panel.
   mpn: zfd.text(z.string().optional()),
   replenishmentSystem: z.enum(itemReplenishmentSystems, {
-    errorMap: (issue, ctx) => ({
-      message: "Replenishment system is required"
-    })
+    error: "Replenishment system is required"
   }),
   defaultMethodType: z.enum(methodType, {
-    errorMap: (issue, ctx) => ({
-      message: "Default method is required"
-    })
+    error: "Default method is required"
   }),
   itemTrackingType: z.enum(itemTrackingTypes, {
-    errorMap: (issue, ctx) => ({
-      message: "Part type is required"
-    })
+    error: "Part type is required"
   }),
   postingGroupId: zfd.text(z.string().optional()),
   unitOfMeasureCode: z
@@ -233,10 +227,8 @@ export const itemValidator = z.object({
 // Common storage / shelf-life refines. Shared across all item-type
 // validators. Default Storage Unit is optional for every type - users can
 // set it later via the pickMethod UI once they know where the item lives.
-const applyStorageAndShelfLifeRefines = <T extends z.AnyZodObject>(
-  schema: T
-) => {
-  const refined: z.ZodEffects<z.ZodTypeAny, z.infer<T>, z.input<T>> = schema
+const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(schema: T) => {
+  const refined: z.ZodType<z.infer<T>, z.input<T>> = schema
     .refine(
       (data: z.infer<T>) =>
         data.shelfLifeDays === undefined ||
@@ -316,7 +308,7 @@ const applyStorageAndShelfLifeRefines = <T extends z.AnyZodObject>(
           "Calculate from BOM requires a BoM - only Make or Buy and Make items qualify",
         path: ["shelfLifeCalculateFromBom"]
       }
-    ) as z.ZodEffects<z.ZodTypeAny, z.infer<T>, z.input<T>>;
+    ) as unknown as z.ZodType<z.infer<T>, z.input<T>>;
 
   return refined;
 };
@@ -437,20 +429,14 @@ export const methodMaterialValidator = z.object({
   makeMethodId: z.string().min(1, { message: "Make method is required" }),
   order: zfd.numeric(z.number().min(0)),
   itemType: z.enum(methodItemType, {
-    errorMap: (issue, ctx) => ({
-      message: "Item type is required"
-    })
+    error: "Item type is required"
   }),
   kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
   methodType: z.enum(methodType, {
-    errorMap: (issue, ctx) => ({
-      message: "Method type is required"
-    })
+    error: "Method type is required"
   }),
   sourcingType: z.enum(sourcingType, {
-    errorMap: (issue, ctx) => ({
-      message: "Sourcing type is required"
-    })
+    error: "Sourcing type is required"
   }),
   itemId: z.string().optional(),
   methodOperationId: zfd.text(z.string().optional()),
@@ -474,14 +460,10 @@ export const methodOperationValidator = z
     makeMethodId: z.string().min(0, { message: "Make method is required" }),
     order: zfd.numeric(z.number().min(0)),
     operationOrder: z.enum(methodOperationOrders, {
-      errorMap: (issue, ctx) => ({
-        message: "Operation order is required"
-      })
+      error: "Operation order is required"
     }),
     operationType: z.enum(operationTypes, {
-      errorMap: (issue, ctx) => ({
-        message: "Operation type is required"
-      })
+      error: "Operation type is required"
     }),
     processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
@@ -493,19 +475,19 @@ export const methodOperationValidator = z
     ),
     setupUnit: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Setup unit is required" })
+        error: "Setup unit is required"
       })
       .optional(),
     setupTime: zfd.numeric(z.number().min(0).optional()),
     laborUnit: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Labor unit is required" })
+        error: "Labor unit is required"
       })
       .optional(),
     laborTime: zfd.numeric(z.number().min(0).optional()),
     machineUnit: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Machine unit is required" })
+        error: "Machine unit is required"
       })
       .optional(),
     machineTime: zfd.numeric(z.number().min(0).optional()),
@@ -605,9 +587,7 @@ export const itemCostValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   itemPostingGroupId: zfd.text(z.string().optional()),
   costingMethod: z.enum(itemCostingMethods, {
-    errorMap: () => ({
-      message: "Costing method is required"
-    })
+    error: "Costing method is required"
   }),
   // standardCost: zfd.numeric(z.number().min(0)),
   unitCost: zfd.numeric(z.number().min(0))
@@ -634,9 +614,7 @@ export const itemPlanningValidator = z
     itemId: z.string().min(1, { message: "Item ID is required" }),
     locationId: z.string().min(1, { message: "Location is required" }),
     reorderingPolicy: z.enum(itemReorderingPolicies, {
-      errorMap: (issue, ctx) => ({
-        message: "Reordering policy is required"
-      })
+      error: "Reordering policy is required"
     }),
     demandAccumulationPeriod: zfd.numeric(z.number().min(1).optional()),
     demandAccumulationSafetyStock: zfd.numeric(z.number().min(0).optional()),
@@ -936,9 +914,7 @@ export const serviceValidator = applyStorageAndShelfLifeRefines(
         .string()
         .min(1, { message: "Unit of Measure is required" }),
       replenishmentSystem: z.enum(serviceReplenishmentSystems, {
-        errorMap: (issue, ctx) => ({
-          message: "Replenishment system is required"
-        })
+        error: "Replenishment system is required"
       }),
       // Services can never be shipped, received, or stocked
       itemTrackingType: z.literal("Non-Inventory")

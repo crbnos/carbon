@@ -38,10 +38,10 @@ export const createEmployeeValidator = z.object({
 // even though the browser also enforces `required`.
 export const itarEntityCertificationValidator = z.object({
   authorityToBind: z.literal(true, {
-    errorMap: () => ({ message: "You must confirm your authority to bind" })
+    error: "You must confirm your authority to bind"
   }),
   acceptRider: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the Rider" })
+    error: "You must accept the Rider"
   }),
   fullLegalName: z
     .string()
@@ -57,15 +57,13 @@ export const itarEntityCertificationValidator = z.object({
 // ITAR certification — Screen 2 (user U.S.-Person attestation).
 export const itarUserCertificationValidator = z.object({
   certifyUsPerson: z.literal(true, {
-    errorMap: () => ({ message: "You must certify that you are a U.S. Person" })
+    error: "You must certify that you are a U.S. Person"
   }),
   agreeNotify: z.literal(true, {
-    errorMap: () => ({
-      message: "You must agree to the notification requirement"
-    })
+    error: "You must agree to the notification requirement"
   }),
   understandPenalty: z.literal(true, {
-    errorMap: () => ({ message: "You must acknowledge the penalties" })
+    error: "You must acknowledge the penalties"
   }),
   fullLegalName: z
     .string()

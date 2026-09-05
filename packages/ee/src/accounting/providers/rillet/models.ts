@@ -86,7 +86,7 @@ export namespace Rillet {
     id: z.string(),
     name: z.string(),
     values: z.array(FieldValueSchema).default([]),
-    settings: z.record(z.unknown()).nullish(),
+    settings: z.record(z.string(), z.unknown()).nullish(),
     updated_at: z.string().nullish()
   });
 
