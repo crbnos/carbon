@@ -1112,9 +1112,10 @@ export async function getCapacityReservationsForResources(
   let query = client
     .from("capacityReservation")
     .select(
-      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder,
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason)`
+       jobOperation(description, hasConflict, conflictReason),
+       jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
     .is("scenarioId", null)
@@ -5929,7 +5930,7 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);

@@ -11471,6 +11471,9 @@ msgstr "परिचालन घंटे"
 msgid "Operating Income"
 msgstr "परिचालन आय"
 
+msgid "operation"
+msgstr ""
+
 msgid "Operation"
 msgstr "ऑपरेशन"
 
@@ -13352,6 +13355,10 @@ msgstr "निकालें"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "निकालें {0}"
+
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "निकालें {label}"

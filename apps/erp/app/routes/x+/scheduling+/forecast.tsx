@@ -377,6 +377,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
         })
   ]);
 
+  // A batch-tagged reservation is ONE coalesced hold for N member jobs — it
+  // must read as the BATCH (BAT… · N jobs), not as its anchor member. Member
+  // counts come from one grouped read over the visible batches.
+  const visibleBatchIds = [
+    ...new Set(
+      rows
+        .map((r) => r.jobOperationBatchId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const batchMemberRows =
+    visibleBatchIds.length > 0
+      ? await client
+          .from("jobOperation")
+          .select("jobOperationBatchId")
+          .in("jobOperationBatchId", visibleBatchIds)
+          .eq("companyId", companyId)
+      : { data: [] as { jobOperationBatchId: string | null }[] };
+  const batchMemberCounts = new Map<string, number>();
+  for (const row of batchMemberRows.data ?? []) {
+    if (!row.jobOperationBatchId) continue;
+    batchMemberCounts.set(
+      row.jobOperationBatchId,
+      (batchMemberCounts.get(row.jobOperationBatchId) ?? 0) + 1
+    );
+  }
+
   const workCenterNames = new Map(
     (workCenters.data ?? []).map((w) => [w.id, w.name])
   );
@@ -406,6 +433,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       jobReadableId: r.job?.jobId ?? r.jobId,
       operationId: r.operationId,
       operationDescription: r.jobOperation?.description ?? null,
+      batchReadableId: r.jobOperationBatch?.readableId ?? null,
+      batchMemberCount: r.jobOperationBatchId
+        ? (batchMemberCounts.get(r.jobOperationBatchId) ?? null)
+        : null,
       hasConflict: r.jobOperation?.hasConflict ?? false,
       conflictReason: r.jobOperation?.conflictReason ?? null,
       unschedulable: r.isPlaceholder ?? false,

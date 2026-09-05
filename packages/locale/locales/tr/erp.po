@@ -11471,6 +11471,9 @@ msgstr "İşletme saatleri"
 msgid "Operating Income"
 msgstr "İşletme Geliri"
 
+msgid "operation"
+msgstr ""
+
 msgid "Operation"
 msgstr "Operasyon"
 
@@ -13352,6 +13355,10 @@ msgstr "Kaldır"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
+
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "{label}'i Kaldır"

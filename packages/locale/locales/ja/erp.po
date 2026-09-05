@@ -11471,6 +11471,9 @@ msgstr "営業時間"
 msgid "Operating Income"
 msgstr "営業収益"
 
+msgid "operation"
+msgstr ""
+
 msgid "Operation"
 msgstr "操作"
 
@@ -13352,6 +13355,10 @@ msgstr "除去"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0}を除去"
+
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "{label}を除去"

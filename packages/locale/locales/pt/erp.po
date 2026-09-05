@@ -11471,6 +11471,9 @@ msgstr "Horas de Operação"
 msgid "Operating Income"
 msgstr "Receita operacional"
 
+msgid "operation"
+msgstr ""
+
 msgid "Operation"
 msgstr "Operação"
 
@@ -13352,6 +13355,10 @@ msgstr "Remover"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Remover {0}"
+
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "Remover {label}"
