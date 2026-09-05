@@ -413,9 +413,11 @@ const SalesInvoiceSummary = ({
       return acc + lineTaxAmount;
     }, 0) ?? 0;
 
-  const shippingCost =
-    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
-    (routeData?.salesInvoice?.exchangeRate ?? 1);
+  // `salesInvoiceShipment.shippingCost` is stored in BASE currency, like every
+  // other raw column on this side -- the `salesInvoices` view adds it straight
+  // onto a base subtotal built from `unitPrice`. So the base figure is the
+  // stored value and only the customer-facing one converts.
+  const shippingCost = routeData?.salesInvoiceShipment?.shippingCost ?? 0;
 
   const customerShippingCost =
     (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *

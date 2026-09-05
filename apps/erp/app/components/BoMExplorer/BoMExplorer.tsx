@@ -34,7 +34,12 @@ import { useOptimisticLocation, useQuantityFormatter } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { generateBomIds } from "~/utils/bom";
-import { MethodIcon, MethodItemTypeIcon, OnshapeStatus } from "../Icons";
+import {
+  MethodIcon,
+  MethodItemTypeIcon,
+  OnshapeStatus,
+  ReplenishmentSystemIcon
+} from "../Icons";
 import type { FlatTree, FlatTreeItem, NodeState } from "../TreeView";
 import { LevelLine, TreeView, useTree } from "../TreeView";
 
@@ -57,6 +62,7 @@ export type BoMExplorerNodeData = {
   unitOfMeasureCode?: string | null;
   externalId?: unknown;
   isPickDescendant?: boolean | null;
+  replenishmentSystem?: string | null;
 };
 
 type BoMNode = FlatTreeItem<BoMExplorerNodeData>;
@@ -625,6 +631,17 @@ function BoMNodePreview({ node }: { node: BoMNode }) {
           <span>{node.data.itemType}</span>
         </HStack>
       </VStack>
+      {node.data.replenishmentSystem && (
+        <VStack spacing={1}>
+          <span className="text-xs text-muted-foreground font-medium">
+            <Trans>Replenishment System</Trans>
+          </span>
+          <HStack className="w-full">
+            <ReplenishmentSystemIcon type={node.data.replenishmentSystem} />
+            <span>{node.data.replenishmentSystem}</span>
+          </HStack>
+        </VStack>
+      )}
       {node.data.methodType === "Make to Order" &&
         node.data.version != null && (
           <VStack spacing={1}>

@@ -620,9 +620,17 @@ serve(async (req: Request) => {
         if (purchaseOrderDelivery.error)
           throw new Error("Failed to fetch purchase order delivery");
 
+        // supplierShippingCost is a supplier-currency amount and the order's
+        // exchangeRate is foreign-units-per-base, so supplier -> base is
+        // DIVIDE. It is mixed into base line costs below and becomes the
+        // cost-ledger layer value, so multiplying inflated every foreign
+        // receipt's capitalised cost by the rate squared. Matches
+        // post-purchase-invoice (supplierShippingCost) and migration
+        // 20260702061504, which fixed the same expression in the
+        // purchaseOrders/purchaseInvoices views.
         const shippingCost =
-          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) *
-          (purchaseOrder.data?.exchangeRate ?? 1);
+          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) /
+          (purchaseOrder.data?.exchangeRate || 1);
 
         const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
           const safeReceivedQuantity =

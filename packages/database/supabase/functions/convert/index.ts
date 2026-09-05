@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -14,6 +15,7 @@ import { getRemainingQuantityToInvoice } from "../shared/short-close.ts";
 
 const pool = getConnectionPool(2);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("convert");
 
 // Supabase/PostgREST caps a single response at 1000 rows. Page through with
 // .range() so large reads (e.g. a quote's lines × quantity-break prices) are
@@ -161,13 +163,7 @@ serve(async (req: Request) => {
   try {
     const { type, id, companyId, userId } = payloadValidator.parse(payload);
 
-    console.log({
-      function: "convert",
-      type,
-      id,
-      companyId,
-      userId,
-    });
+    logger.info({ type, id, companyId, userId });
 
     const permissionsByType: Record<string, { view?: string | string[]; create?: string | string[]; update?: string | string[]; delete?: string | string[] }> = {
       methodVersionToActive: { update: "resources" },

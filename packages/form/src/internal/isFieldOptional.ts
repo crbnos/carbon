@@ -1,119 +1,84 @@
-import { type ZodSchema, z } from "zod";
+import { z } from "zod";
 import { stringToPathArray } from "../utils";
 
+// v4's wrapper generics default to the core `$ZodType` interface; every schema
+// an app hands the form library is built with the classic API, so re-viewing an
+// unwrapped child as a classic `ZodType` is sound.
+const classic = (schema: z.core.$ZodType): z.ZodType => schema as z.ZodType;
+
 type UnwrapResult = {
-  schema: ZodSchema;
+  schema: z.ZodType;
   isOptional: boolean;
   hasDefault: boolean;
 };
 
 function unwrapSchema(
-  schema: ZodSchema,
+  schema: z.ZodType,
   io: "input" | "output" = "output"
 ): UnwrapResult {
   let current = schema;
   let isOptional = false;
   let hasDefault = false;
-  const seen = new Set<ZodSchema>();
+  const seen = new Set<z.ZodType>();
 
-  while (true) {
-    if (seen.has(current)) return { schema: current, isOptional, hasDefault };
+  while (!seen.has(current)) {
     seen.add(current);
 
-    const def: any = (current as any)._zod?.def ?? (current as any)._def;
-    const type: string | undefined = def?.type ?? def?.typeName;
-
-    switch (type) {
-      // optionality wrappers
-      case "optional":
-      case "ZodOptional":
-        isOptional = true;
-        current = def.innerType;
-        continue;
-
-      case "default":
-      case "ZodDefault":
-        isOptional = true;
-        hasDefault = true;
-        current = def.innerType;
-        continue;
-
-      case "prefault":
-        isOptional = true;
-        hasDefault = true;
-        current = def.innerType;
-        continue;
-
-      case "catch":
-      case "ZodCatch":
-        isOptional = true;
-        current = def.innerType;
-        continue;
-
-      // nullable — semantically distinct from optional
-      case "nullable":
-      case "ZodNullable":
-        current = def.innerType;
-        continue;
-
-      // transparent wrappers
-      case "readonly":
-      case "ZodReadonly":
-        current = def.innerType;
-        continue;
-
-      case "nonoptional":
-        isOptional = false;
-        current = def.innerType;
-        continue;
-
-      case "promise":
-      case "ZodPromise":
-        current = def.innerType;
-        continue;
-
-      case "ZodBranded":
-        current = def.type;
-        continue;
-
-      // lazy — resolve the thunk
-      case "lazy":
-      case "ZodLazy": {
-        const inner = (current as any)._zod?.innerType ?? def.getter?.();
-        if (!inner) return { schema: current, isOptional, hasDefault };
-        current = inner;
-        continue;
-      }
-
-      // pipe — direction matters
-      case "pipe":
-      case "ZodPipeline":
-        current = io === "input" ? def.in : def.out;
-        continue;
-
-      // effects (v3 refine/transform/preprocess)
-      case "ZodEffects":
-        current = def.schema;
-        continue;
-
-      default:
-        return { schema: current, isOptional, hasDefault };
+    if (current instanceof z.ZodOptional) {
+      isOptional = true;
+      current = classic(current.unwrap());
+    } else if (
+      current instanceof z.ZodDefault ||
+      current instanceof z.ZodPrefault
+    ) {
+      isOptional = true;
+      hasDefault = true;
+      current = classic(current.unwrap());
+    } else if (current instanceof z.ZodCatch) {
+      isOptional = true;
+      current = classic(current.unwrap());
+    } else if (current instanceof z.ZodNonOptional) {
+      isOptional = false;
+      current = classic(current.unwrap());
+    } else if (
+      // nullable is semantically distinct from optional; the rest are transparent
+      current instanceof z.ZodNullable ||
+      current instanceof z.ZodReadonly ||
+      current instanceof z.ZodPromise ||
+      current instanceof z.ZodLazy
+    ) {
+      current = classic(current.unwrap());
+    } else if (current instanceof z.ZodPipe) {
+      // Direction matters — except that a preprocess pipe (zfd.text, zfd.numeric,
+      // z.preprocess) carries a bare transform on its input side, which accepts
+      // anything: whether the FIELD is required is decided by what the output
+      // side demands. Walking into the transform reported every optional zfd
+      // field as required.
+      const side =
+        io === "input" && !(current.in instanceof z.ZodTransform)
+          ? current.in
+          : current.out;
+      current = classic(side);
+    } else {
+      break;
     }
   }
+
+  return { schema: current, isOptional, hasDefault };
 }
 
 function getChildSchema(
-  schema: ZodSchema,
+  schema: z.ZodType,
   segment: string | number
-): ZodSchema | null {
+): z.ZodType | null {
   if (schema instanceof z.ZodObject) {
-    const shape = schema.shape;
     if (typeof segment !== "string") return null;
-    return shape[segment] ?? null;
+    const child = (schema.shape as Record<string, z.core.$ZodType>)[segment];
+    return child ? classic(child) : null;
   }
 
   if (schema instanceof z.ZodArray) {
-    return schema.element;
+    return classic(schema.element);
   }
 
   if (schema instanceof z.ZodTuple) {
@@ -124,26 +89,28 @@ function getChildSchema(
           ? null
           : Number(segment);
     if (index === null) return null;
-    return schema.items[index] ?? null;
+    const item = schema.def.items[index];
+    return item ? classic(item) : null;
   }
 
   if (schema instanceof z.ZodRecord) {
-    return schema._def.valueType;
+    return classic(schema.valueType);
   }
 
   return null;
 }
 
 export function isFieldOptional(
-  schema: ZodSchema | undefined,
+  schema: z.ZodType | undefined,
   fieldName: string
 ): boolean | undefined {
-  const dir = "input"; // Can be a param
+  // Fields receive caller input, so requiredness is judged on the input side.
+  const dir = "input";
 
   if (!schema || !fieldName) return undefined;
 
   const path = stringToPathArray(fieldName);
-  let current: ZodSchema | null = schema;
+  let current: z.ZodType | null = schema;
   let optionalFromParent = false;
 
   for (const segment of path) {
