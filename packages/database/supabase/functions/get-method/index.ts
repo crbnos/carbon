@@ -27,6 +27,7 @@ import {
     traverseJobMethodAsync,
     traverseQuoteMethod,
 } from "../lib/methods.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
@@ -43,6 +44,7 @@ import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("get-method");
 
 // Stored configurator rules are user-authored JS that may still return legacy "Inside"/"Outside" operationType values.
 const normalizeOperationType = (value: unknown) =>
@@ -209,8 +211,7 @@ serve(async (req: Request) => {
       versionId,
     } = payloadValidator.parse(payload);
 
-    console.log({
-      function: "get-method",
+    logger.info({
       type,
       sourceId,
       targetId,
@@ -867,7 +868,9 @@ serve(async (req: Request) => {
                 const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                console.error(err);
+                logger.error("configuration field resolver failed", {
+                  error: String((err as Error)?.stack ?? err),
+                });
                 return defaultValue;
               }
             }
@@ -2604,7 +2607,9 @@ serve(async (req: Request) => {
 
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                console.error(err);
+                logger.error("configuration field resolver failed", {
+                  error: String((err as Error)?.stack ?? err),
+                });
                 return defaultValue;
               }
             }
@@ -2620,7 +2625,7 @@ serve(async (req: Request) => {
             node: MethodTreeItem,
             parentQuoteMakeMethodId: string | null
           ) {
-            console.log("[traverseMethod]", {
+            logger.debug("[traverseMethod]", {
               isRoot: node.data.isRoot,
               itemId: node.data.itemId,
               methodType: node.data.methodType,
@@ -2733,7 +2738,7 @@ serve(async (req: Request) => {
                 processId,
                 op.workCenterId
               );
-              console.log({
+              logger.debug({
                 processId,
                 ...operationRates,
               });
@@ -3077,7 +3082,7 @@ serve(async (req: Request) => {
               (child) => child.data.methodType === "Make to Order"
             );
 
-            console.log("[traverseMethod] materials", {
+            logger.debug("[traverseMethod] materials", {
               totalChildren: materialsWithConfiguredFields.length,
               madeMaterialsCount: madeMaterials.length,
               madeChildrenCount: madeChildren.length,
@@ -3105,7 +3110,7 @@ serve(async (req: Request) => {
                   .where("parentMaterialId", "=", materialId)
                   .execute();
 
-                console.log("[traverseMethod] processing made child", {
+                logger.debug("[traverseMethod] processing made child", {
                   index,
                   materialId,
                   newMakeMethodId,
@@ -3132,7 +3137,7 @@ serve(async (req: Request) => {
           }
 
           function logTree(node: MethodTreeItem, depth = 0) {
-            console.log("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
+            logger.debug("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
             for (const child of node.children) {
               logTree(child, depth + 1);
             }
@@ -3277,7 +3282,9 @@ serve(async (req: Request) => {
                 const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                console.error(err);
+                logger.error("configuration field resolver failed", {
+                  error: String((err as Error)?.stack ?? err),
+                });
                 return defaultValue;
               }
             }
@@ -5999,14 +6006,13 @@ serve(async (req: Request) => {
           quoteOperations.error
         ) {
           if (quoteMakeMethod.error) {
-            console.log("quoteMakeMethodError");
-            console.log(quoteMakeMethod.error);
+            logger.error("quoteMakeMethodError", { error: quoteMakeMethod.error });
           }
           if (quoteMaterials.error) {
-            console.log(quoteMaterials.error);
+            logger.error("quoteMaterialsError", { error: quoteMaterials.error });
           }
           if (quoteOperations.error) {
-            console.log(quoteOperations.error);
+            logger.error("quoteOperationsError", { error: quoteOperations.error });
           }
           throw new Error("Failed to fetch quote data");
         }
@@ -6530,7 +6536,9 @@ serve(async (req: Request) => {
         ]);
 
         if (targetQuoteMakeMethod.error || !targetQuoteMakeMethod.data) {
-          console.error(targetQuoteMakeMethod.error);
+          logger.error("Failed to get target quote make method", {
+            error: targetQuoteMakeMethod.error,
+          });
           throw new Error("Failed to get target quote make method");
         }
 
@@ -7100,7 +7108,9 @@ serve(async (req: Request) => {
             ]);
 
             if (targetQuoteMakeMethod.error) {
-              console.error(targetQuoteMakeMethod.error);
+              logger.error("Failed to get target quote make method", {
+                error: targetQuoteMakeMethod.error,
+              });
               throw new Error("Failed to get target quote make method");
             }
 
@@ -8157,7 +8167,9 @@ async function hydrateConfiguration(
 
     return transformed;
   } catch (err) {
-    console.error(err);
+    logger.error("configuration transform failed", {
+      error: String((err as Error)?.stack ?? err),
+    });
     return configuration;
   }
 }

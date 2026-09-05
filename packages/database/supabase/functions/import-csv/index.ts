@@ -4,6 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { sql } from "npm:kysely@0.27.6";
 import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -14,6 +15,7 @@ import { importMethods } from "./method-import.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("import-csv");
 
 const importCsvValidator = z.object({
   table: z.enum([
@@ -955,15 +957,7 @@ serve(async (req: Request) => {
       userId,
     } = importCsvValidator.parse(payload);
 
-    console.log({
-      function: "import-csv",
-      table,
-      filePath,
-      columnMappings,
-      enumMappings,
-      companyId,
-      userId,
-    });
+    logger.info({ table, filePath, columnMappings, enumMappings, companyId, userId });
 
     const client = await requirePermissions(req, companyId, userId, { create: "resources" });
 
@@ -1145,7 +1139,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             customerInserts: customerInserts.length,
             customerUpdates: customerUpdates.length,
@@ -1346,7 +1340,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             supplierInserts: supplierInserts.length,
             supplierUpdates: supplierUpdates.length,
@@ -1973,7 +1967,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             itemInserts: itemInserts.length,
             itemUpdates: itemUpdates.length,
@@ -2140,7 +2134,7 @@ serve(async (req: Request) => {
           summary.inserted += contactInserts.length;
           summary.updated += contactUpdates.length;
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             contactInserts: contactInserts.length,
             contactUpdates: contactUpdates.length,
@@ -2260,7 +2254,7 @@ serve(async (req: Request) => {
           summary.inserted += contactInserts.length;
           summary.updated += contactUpdates.length;
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             contactInserts: contactInserts.length,
             contactUpdates: contactUpdates.length,
@@ -2373,7 +2367,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             workCenterInserts: workCenterInserts.length,
             workCenterUpdates: workCenterUpdates.length,
@@ -2482,7 +2476,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             processInserts: processInserts.length,
             processUpdates: processUpdates.length,
@@ -2789,7 +2783,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             storageUnitInserts: inserts.length,
             storageUnitUpdates: updates.length,
