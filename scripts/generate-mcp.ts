@@ -10,12 +10,24 @@
 import * as fs from "fs";
 import * as path from "path";
 
+import {
+  buildManifestDigest,
+  serializeManifestDigest
+} from "./lib/manifest-digest";
 import { buildAllToolMetadataWithValidators } from "./lib/service-metadata";
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
   ROOT,
   "apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json"
+);
+/**
+ * Committed companion to the (gitignored) manifest — see `lib/manifest-digest.ts`.
+ * Small enough to read in a diff, so a schema regression is still visible in review.
+ */
+export const DIGEST_FILE = path.join(
+  ROOT,
+  "apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"
 );
 
 export async function generateToolMetadata(): Promise<void> {
@@ -34,8 +46,13 @@ export async function generateToolMetadata(): Promise<void> {
   };
 
   fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata, null, 2));
+  fs.writeFileSync(
+    DIGEST_FILE,
+    serializeManifestDigest(buildManifestDigest(allTools))
+  );
   console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
-  console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)}`);
+  console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
+  console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
 
   // Schema provenance. A validator that fell back to source-text parsing still
   // produces a manifest entry, so surface it rather than letting the degrade pass

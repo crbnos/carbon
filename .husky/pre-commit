@@ -65,3 +65,17 @@ if [ -z "$CARBON_SKIP_BACKUP_CHECK" ] && git diff --cached --name-only | grep -q
         exit 1
     fi
 fi
+# The published operation contract lives in a GITIGNORED manifest, so its committed
+# digest is the only record a reviewer can see. Regenerate and refuse the commit if
+# a service or validator change did not update it — a stale digest is worse than
+# none, since it reads as "nothing changed".
+# Set CARBON_SKIP_MANIFEST_CHECK=1 to skip.
+if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/modules/[^/]+/[^/]+\.(service|models|mcp\.server)\.ts|scripts/(generate-mcp|lib/.*)\.ts)$'; then
+    echo "Checking the API operation manifest digest..."
+    if ! pnpm --silent check:manifest; then
+        echo ""
+        echo "Run: pnpm generate:mcp   then stage tool-manifest.digest.json"
+        echo "Skip it with: CARBON_SKIP_MANIFEST_CHECK=1 git commit ..."
+        exit 1
+    fi
+fi

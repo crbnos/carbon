@@ -14,6 +14,17 @@ service functions as ERP tools. It lives entirely under
 > `inventory_getShelf`, removed when `shelf` was renamed to `storageUnit`). The
 > live tool list is `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`;
 > `describe_tool` / `search_tools` read from it at runtime.
+>
+> That manifest is **gitignored build output** (1.3 MB, rewritten wholesale on every
+> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, which runs
+> from `postinstall` and as the turbo root task `//#generate:mcp` that `typecheck`,
+> `build` and `test` depend on — so a fresh clone regenerates it before anything
+> imports it. The committed record of the published contract is its small companion
+> `tool-manifest.digest.json`: one line per operation carrying classification,
+> permission, injectAuth, argument count and a hash of the schema, so a contract
+> change is still one visible line in review. `pnpm check:manifest` regenerates and
+> fails if the digest is stale; pre-commit runs it when a service, models or
+> generator file is staged.
 
 ## Endpoint & transport
 

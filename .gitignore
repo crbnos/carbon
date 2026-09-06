@@ -96,3 +96,8 @@ memory/daily-notes/
 
 # Legacy llm/ — consolidated into .ai/ (docs, specs, runs)
 llm/
+
+# Generated MCP/Carbon API manifest — 1.3MB, rewritten wholesale on every run.
+# Produced by `pnpm generate:mcp` (postinstall + turbo). The committed record of
+# the published contract is its small companion, tool-manifest.digest.json.
+apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
