@@ -140,6 +140,7 @@ interface ParsedParam {
   name: string;
   typeStr: string;
   optional: boolean;
+  description?: string;
 }
 
 interface ParsedFunction {
@@ -151,12 +152,36 @@ interface ParsedFunction {
 // Parsing helpers
 // ---------------------------------------------------------------------------
 
+// Comments must be structurally INERT to every scanner below: an unmatched `)`
+// inside a `/** [from, to) … */` doc ended a param scan early, and a comma
+// inside a `// …composer,` line split a parameter mid-comment — both published
+// comment text as schema property names, which strict codegen (Go's
+// oapi-codegen) rightly rejects. Returns the index just past a comment starting
+// at i, or i when none does.
+function skipComment(str: string, i: number): number {
+  if (str[i] !== "/") return i;
+  if (str[i + 1] === "/") {
+    const nl = str.indexOf("\n", i);
+    return nl === -1 ? str.length : nl;
+  }
+  if (str[i + 1] === "*") {
+    const end = str.indexOf("*/", i + 2);
+    return end === -1 ? str.length : end + 2;
+  }
+  return i;
+}
+
 function findMatchingBrace(content: string, openPos: number): number {
   const open = content[openPos];
   const close = open === "(" ? ")" : open === "{" ? "}" : open === "[" ? "]" : ">";
   let depth = 1;
   let i = openPos + 1;
   while (i < content.length && depth > 0) {
+    const j = skipComment(content, i);
+    if (j !== i) {
+      i = j;
+      continue;
+    }
     if (content[i] === open) depth++;
     else if (content[i] === close) depth--;
     i++;
@@ -169,6 +194,12 @@ function splitAtTopLevel(str: string, delimiter: string): string[] {
   let depth = 0;
   let current = "";
   for (let i = 0; i < str.length; i++) {
+    const j = skipComment(str, i);
+    if (j !== i) {
+      current += str.slice(i, j);
+      i = j - 1;
+      continue;
+    }
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
     else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
@@ -194,6 +225,11 @@ function isArrowClose(str: string, i: number): boolean {
 function findTopLevelColon(str: string): number {
   let depth = 0;
   for (let i = 0; i < str.length; i++) {
+    const j = skipComment(str, i);
+    if (j !== i) {
+      i = j - 1;
+      continue;
+    }
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
     else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
@@ -223,16 +259,33 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
 
     for (const p of paramStrings) {
       if (!p) continue;
-      const colonIdx = findTopLevelColon(p);
+      // With comment-inert splitting, a param keeps the comment that precedes
+      // it: keep a `/** doc */` as its description, drop everything else.
+      const doc = p.match(/\/\*\*([\s\S]*?)\*\//);
+      const description = doc
+        ? doc[1]
+            .split("\n")
+            .map((line) => line.replace(/^\s*\*?\s?/, "").trim())
+            .join(" ")
+            .trim() || undefined
+        : undefined;
+      const stripped = p
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .split("\n")
+        .map((line) => line.replace(/\/\/.*$/, ""))
+        .join("\n")
+        .trim();
+      if (!stripped) continue;
+      const colonIdx = findTopLevelColon(stripped);
       if (colonIdx === -1) {
-        params.push({ name: p.trim(), typeStr: "unknown", optional: false });
+        params.push({ name: stripped, typeStr: "unknown", optional: false });
         continue;
       }
-      const before = p.substring(0, colonIdx).trim();
+      const before = stripped.substring(0, colonIdx).trim();
       const optional = before.endsWith("?");
       const paramName = before.replace(/\?$/, "").trim();
-      const typeStr = p.substring(colonIdx + 1).trim();
-      params.push({ name: paramName, typeStr, optional });
+      const typeStr = stripped.substring(colonIdx + 1).trim();
+      params.push({ name: paramName, typeStr, optional, description });
     }
 
     results.push({ name, params });
@@ -354,29 +407,49 @@ function parseInlineObjectType(typeStr: string): Record<string, unknown> {
   const fields = splitObjectFields(inner);
 
   for (const field of fields) {
-    // Strip `//` line comments so an inline comment above a field (common in
-    // service arg type literals) never gets absorbed into the property key.
+    // A `/** doc */` above a field is its description — capture it for the
+    // schema, then strip EVERY comment form before reading the property name.
+    // Absorbing one into the key published names like
+    // `"/** Policy enforced… */\n expiredEntityPolicy"`, which strict codegen
+    // (Go's oapi-codegen) rightly rejects.
+    let description: string | undefined;
+    const doc = field.match(/\/\*\*([\s\S]*?)\*\//);
+    if (doc) {
+      description =
+        doc[1]
+          .split("\n")
+          .map((line) => line.replace(/^\s*\*?\s?/, "").trim())
+          .join(" ")
+          .trim() || undefined;
+    }
     const f = field
+      .replace(/\/\*[\s\S]*?\*\//g, "")
       .split("\n")
       .map((line) => line.replace(/\/\/.*$/, ""))
       .join("\n")
       .trim();
     if (!f) continue;
 
-    const optional = f.includes("?:");
-    const colonIdx = f.indexOf("?:") !== -1 ? f.indexOf("?:") : f.indexOf(":");
-    if (colonIdx === -1) continue;
-
-    const fieldName = f.substring(0, colonIdx).replace("?", "").trim();
+    // Anchor on the field's OWN name and colon. Searching for the first `?:`
+    // anywhere found the one inside a NESTED object literal first
+    // (`address: { addressLine1?: … }`), publishing the property name
+    // "address: {\n addressLine1" — which strict codegen rightly rejects.
+    const head = f.match(/^([A-Za-z_$][\w$]*)\s*(\?)?\s*:/);
+    if (!head) continue;
+    const fieldName = head[1];
+    const optional = head[2] === "?";
     if (CONTEXT_PARAMS.has(fieldName)) continue;
 
     const fieldType = f
-      .substring(colonIdx + (optional ? 2 : 1))
+      .slice(head[0].length)
       .trim()
       .replace(/;$/, "")
       .trim();
 
-    properties[fieldName] = typeToJsonSchema(fieldType);
+    const fieldSchema = typeToJsonSchema(fieldType);
+    properties[fieldName] = description
+      ? { ...fieldSchema, description }
+      : fieldSchema;
     if (!optional) required.push(fieldName);
   }
 
@@ -391,6 +464,12 @@ function splitObjectFields(inner: string): string[] {
   let current = "";
 
   for (let i = 0; i < inner.length; i++) {
+    const j = skipComment(inner, i);
+    if (j !== i) {
+      current += inner.slice(i, j);
+      i = j - 1;
+      continue;
+    }
     const ch = inner[i];
     if ("({[<".includes(ch)) depth++;
     else if (")}]>".includes(ch) && !isArrowClose(inner, i)) depth--;
@@ -827,7 +906,11 @@ function buildToolSchema(
     const propSchema = typeToJsonSchema(param.typeStr);
     const schema: Record<string, unknown> = {
       type: "object",
-      properties: { [param.name]: propSchema },
+      properties: {
+        [param.name]: param.description
+          ? { ...propSchema, description: param.description }
+          : propSchema,
+      },
       required: param.optional ? undefined : [param.name],
     };
     return { schema, paramCount: 1 };
@@ -840,7 +923,10 @@ function buildToolSchema(
     // typeToJsonSchema handles inline objects AND arrays-of-objects (`{...}[]`),
     // checking the `[]` suffix before the `{` prefix. Calling parseInlineObjectType
     // directly here dropped the suffix, publishing an array param as a bare object.
-    properties[param.name] = typeToJsonSchema(param.typeStr);
+    const propSchema = typeToJsonSchema(param.typeStr);
+    properties[param.name] = param.description
+      ? { ...propSchema, description: param.description }
+      : propSchema;
     if (!param.optional) required.push(param.name);
   }
 

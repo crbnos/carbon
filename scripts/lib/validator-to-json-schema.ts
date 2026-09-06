@@ -41,6 +41,10 @@ export function validatorToJsonSchema(validator: z.ZodType): JsonSchema {
  *    clients and the docs renderer both want a self-contained tree. A `$ref` that
  *    cannot be resolved (a genuinely recursive validator) is left in place rather
  *    than silently emptied; the caller's fallback reports it.
+ * 4. Split a multi-type `type` array (beyond `[x, "null"]`) into `anyOf` — the
+ *    same JSON Schema, but the form strict generators (Go's oapi-codegen)
+ *    actually handle. `z.union([z.boolean(), z.string()])` emits
+ *    `type: ["boolean","string"]`, which such generators reject outright.
  */
 export function normalizeJsonSchema(schema: JsonSchema): JsonSchema {
   const defs = (schema.$defs ?? schema.definitions) as
@@ -70,6 +74,17 @@ export function normalizeJsonSchema(schema: JsonSchema): JsonSchema {
     for (const [key, value] of Object.entries(obj)) {
       if (key === "$schema" || key === "$defs" || key === "definitions") continue;
       out[key] = walk(value, seenRefs);
+    }
+
+    const type = out.type;
+    if (
+      Array.isArray(type) &&
+      type.filter((t) => t !== "null").length > 1 &&
+      !out.anyOf &&
+      !out.oneOf
+    ) {
+      delete out.type;
+      out.anyOf = type.map((t) => ({ type: t }));
     }
     return out;
   };

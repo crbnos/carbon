@@ -68,9 +68,13 @@ npx openapi-ts`;
 const PYTHON_CLIENT = `pipx install openapi-python-client --include-deps
 openapi-python-client generate --url ${SPEC_URL}`;
 
+const GO_CLIENT = `go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest \\
+  -generate types,client -package carbon \\
+  -o carbon.gen.go openapi.json`;
+
 const OPENAPI_GENERATOR = `npx openapi-generator-cli generate \\
   -i ${SPEC_URL} \\
-  -g go \\
+  -g csharp \\
   -o ./carbon-client`;
 
 const HEY_API_AUTH = `import { client } from "./src/client/client.gen";
@@ -103,8 +107,8 @@ const CARDS: SdkCard[] = [
     glyph: <Brand path={siGo.path} />,
     tone: "bg-[#E5F4F9] text-[#00ADD8]",
     name: "Go",
-    desc: "openapi-generator with -g go.",
-    href: "#any-language",
+    desc: "A typed client from oapi-codegen — pure Go, no Java runtime needed.",
+    href: "#go",
     cta: "Generate"
   },
   {
@@ -143,15 +147,23 @@ const CARDS: SdkCard[] = [
 
 export default async function ApiSdksPage() {
   const counts = toolCounts();
-  const [fetchSpec, heyApiConfig, heyApi, pythonClient, openapiGenerator, heyApiAuth] =
-    await Promise.all([
-      highlight(FETCH_SPEC, "curl"),
-      highlight(HEY_API_CONFIG, "javascript"),
-      highlight(HEY_API, "curl"),
-      highlight(PYTHON_CLIENT, "curl"),
-      highlight(OPENAPI_GENERATOR, "curl"),
-      highlight(HEY_API_AUTH, "javascript")
-    ]);
+  const [
+    fetchSpec,
+    heyApiConfig,
+    heyApi,
+    pythonClient,
+    goClient,
+    openapiGenerator,
+    heyApiAuth
+  ] = await Promise.all([
+    highlight(FETCH_SPEC, "curl"),
+    highlight(HEY_API_CONFIG, "javascript"),
+    highlight(HEY_API, "curl"),
+    highlight(PYTHON_CLIENT, "curl"),
+    highlight(GO_CLIENT, "curl"),
+    highlight(OPENAPI_GENERATOR, "curl"),
+    highlight(HEY_API_AUTH, "javascript")
+  ]);
 
   return (
     <DocPage>
@@ -202,14 +214,24 @@ export default async function ApiSdksPage() {
       </P>
       <CodeBlock html={pythonClient} code={PYTHON_CLIENT} label="Terminal" />
 
-      <H2 id="any-language">Go, C#, Java, PHP, Ruby — any language</H2>
+      <H2 id="go">Go</H2>
+      <P>
+        <DocLink href="https://github.com/oapi-codegen/oapi-codegen">
+          oapi-codegen
+        </DocLink>{" "}
+        generates a typed client and request/response structs — pure Go, no
+        Java runtime. Fetch the spec first (the command above), then:
+      </P>
+      <CodeBlock html={goClient} code={GO_CLIENT} label="Terminal" />
+
+      <H2 id="any-language">C#, Java, PHP, Ruby — any language</H2>
       <P>
         <DocLink href="https://github.com/OpenAPITools/openapi-generator">
           openapi-generator
         </DocLink>{" "}
         covers 50+ languages (it needs a Java 11+ runtime). Swap{" "}
-        <Code>-g go</Code> for <Code>csharp</Code>, <Code>java</Code>,{" "}
-        <Code>php</Code>, <Code>ruby</Code>, or any other generator:
+        <Code>-g csharp</Code> for <Code>java</Code>, <Code>php</Code>,{" "}
+        <Code>ruby</Code>, or any other generator:
       </P>
       <CodeBlock
         html={openapiGenerator}
