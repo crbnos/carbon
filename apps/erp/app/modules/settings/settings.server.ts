@@ -21,19 +21,23 @@ const logger = getLogger("erp", "settings");
 
 /**
  * Drop the cached auth record for an API key so a scope change or revocation
- * takes effect immediately instead of after the cache TTL. Call BEFORE deleting
- * the row — the keyHash is unrecoverable afterwards.
+ * takes effect immediately in the common case. An in-flight auth read can still
+ * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
+ * callers that delete the row should bust AGAIN after the delete commits, using
+ * the returned keyHash (unreadable from the DB once the row is gone).
  */
 export async function invalidateApiKeyCache(
   client: SupabaseClient<Database>,
   id: string
-): Promise<void> {
+): Promise<string | null> {
   const { data } = await client
     .from("apiKey")
     .select("keyHash")
     .eq("id", id)
     .single();
-  if (data?.keyHash) await bustApiKeyCache(data.keyHash);
+  if (!data?.keyHash) return null;
+  await bustApiKeyCache(data.keyHash);
+  return data.keyHash;
 }
 
 export async function clearCustomFieldsCache(companyId?: string) {

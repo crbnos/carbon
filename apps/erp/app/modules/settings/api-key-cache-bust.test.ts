@@ -29,16 +29,21 @@ function fakeClient(row: { keyHash: string } | null) {
 }
 
 describe("invalidateApiKeyCache", () => {
-  it("busts the cache with the row's keyHash", async () => {
+  it("busts the cache with the row's keyHash and returns it for a post-delete re-bust", async () => {
     bustApiKeyCache.mockClear();
-    await invalidateApiKeyCache(fakeClient({ keyHash: "hash-1" }), "key-1");
+    const hash = await invalidateApiKeyCache(
+      fakeClient({ keyHash: "hash-1" }),
+      "key-1"
+    );
+    expect(hash).toBe("hash-1");
     expect(bustApiKeyCache).toHaveBeenCalledTimes(1);
     expect(bustApiKeyCache).toHaveBeenCalledWith("hash-1");
   });
 
-  it("does nothing when the row is missing", async () => {
+  it("does nothing and returns null when the row is missing", async () => {
     bustApiKeyCache.mockClear();
-    await invalidateApiKeyCache(fakeClient(null), "key-gone");
+    const hash = await invalidateApiKeyCache(fakeClient(null), "key-gone");
+    expect(hash).toBeNull();
     expect(bustApiKeyCache).not.toHaveBeenCalled();
   });
 });
