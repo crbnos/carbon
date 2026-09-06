@@ -76,9 +76,9 @@ export default function ApiOperationsPage() {
         the sidebar:
       </P>
       <Table>
-        <Row head cols="1fr 72px" cells={["Module", "Operations"]} />
+        <Row head cols="1fr 124px" cells={["Module", "Operations"]} />
         {MODULES.map(([name, count]) => (
-          <Row key={name} cols="1fr 72px" cells={[name, String(count)]} />
+          <Row key={name} cols="1fr 124px" cells={[name, String(count)]} />
         ))}
       </Table>
 
