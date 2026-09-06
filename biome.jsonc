@@ -13,6 +13,10 @@
       "!**/mcp*/lib/server.ts",
       "**/*.json",
       "!**/mcp*/lib/tool-metadata.json",
+      // Generated, and its ONE-LINE-PER-OPERATION layout is the point: formatting
+      // it to nine lines an operation turns a single changed schema into a
+      // nine-line hunk, which is exactly what this file exists to avoid.
+      "!**/mcp*/lib/tool-manifest.digest.json",
       "contrib/building/examples/**/*"
     ]
   },
