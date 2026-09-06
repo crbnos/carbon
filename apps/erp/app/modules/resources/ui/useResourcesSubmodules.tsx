@@ -9,6 +9,7 @@ import {
   LuMailbox,
   LuMapPin,
   LuRedoDot,
+  LuTrophy,
   LuWrench
 } from "react-icons/lu";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -84,6 +85,11 @@ export default function useResourcesSubmodules() {
           name: t`Assignments`,
           to: path.to.trainingAssignments,
           icon: <LuClipboardCheck />
+        },
+        {
+          name: t`Learn`,
+          to: path.to.learnAdmin,
+          icon: <LuTrophy />
         },
         {
           name: t`Suggestions`,

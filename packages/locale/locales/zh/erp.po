@@ -255,6 +255,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
@@ -2436,11 +2439,17 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
 msgid "Assign To"
 msgstr "分配给"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "分配给组"
@@ -5971,6 +5980,9 @@ msgstr "编辑资产"
 msgid "Edit Asset Class"
 msgstr "编辑资产类别"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "编辑分配"
 
@@ -6644,6 +6656,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "您选择的该周任何一天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
@@ -11208,6 +11223,9 @@ msgstr "未结应收账款"
 msgid "Open Audit Log"
 msgstr "打开审计日志"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "打开日期"
 
@@ -11412,6 +11430,9 @@ msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率
 
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "选项"
@@ -13653,11 +13674,17 @@ msgstr "修订版"
 msgid "Revoke"
 msgstr "撤销"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "撤销邀请"
 
 msgid "Revoke Invites"
 msgstr "撤销邀请"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

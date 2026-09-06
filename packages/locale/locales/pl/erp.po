@@ -255,6 +255,9 @@ msgstr "{hiddenCount} więcej: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} wstawiono, {updated} zaktualizowano, {0} wymagają naprawy, {1} pominięte."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linia} other {# linii}}"
 
@@ -2436,11 +2439,17 @@ msgstr "Aktywa"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Aktywa, pasywa i kapitał własny na określony dzień"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Przypisz drukarki do lokalizacji. Wysyłka, otrzymywanie i stanowiska robocze dziedziczą domyślne lokalizacje, chyba że nastąpi nadpisanie."
 
 msgid "Assign To"
 msgstr "Przypisz do"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "Przypisz do grup"
@@ -5971,6 +5980,9 @@ msgstr "Edytuj aktywa"
 msgid "Edit Asset Class"
 msgstr "Edytuj klasę środków trwałych"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "Edytuj przypisanie"
 
@@ -6644,6 +6656,9 @@ msgstr "Każde wymagane zadanie musi być Gotowe lub Pominięte zanim okres zost
 
 msgid "Every row was imported successfully."
 msgstr "Każdy wiersz został pomyślnie zaimportowany."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Wszyscy pracownicy pracujący w wybranym dniu tygodnia pracują dłużej o godziny, które ustawisz. Dotyczy to tylko wybranych departamentów i zmian."
@@ -11208,6 +11223,9 @@ msgstr "Otwarte należności"
 msgid "Open Audit Log"
 msgstr "Otwórz dziennik audytu"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "Data otwarcia"
 
@@ -11412,6 +11430,9 @@ msgstr "Opcjonalna stała stawka używana przy tłumaczeniu sald kapitału włas
 
 msgid "Optional pages & sections"
 msgstr "Opcjonalne strony i sekcje"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "Opcje"
@@ -13653,11 +13674,17 @@ msgstr "Rewizje"
 msgid "Revoke"
 msgstr "Odwołaj"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "Cofnij zaproszenie"
 
 msgid "Revoke Invites"
 msgstr "Odwołaj zaproszenia"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

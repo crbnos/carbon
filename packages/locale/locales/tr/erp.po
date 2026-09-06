@@ -255,6 +255,9 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
 
@@ -2436,11 +2439,17 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
 msgid "Assign To"
 msgstr "Ata"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "Gruplara Ata"
@@ -5971,6 +5980,9 @@ msgstr "Varlığı Düzenle"
 msgid "Edit Asset Class"
 msgstr "Varlık Sınıfını Düzenle"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "Atamayı Düzenle"
 
@@ -6644,6 +6656,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Seçtiğiniz haftanın herhangi bir gününde çalışan herkes, kendi vardiyalarının ötesinde belirlediğiniz saatler kadar kalır. Yalnızca filtrelediğiniz departmanlar ve vardiyalar etkilenir."
@@ -11208,6 +11223,9 @@ msgstr "Açık Alacak hesapları"
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "Açılış tarihi"
 
@@ -11412,6 +11430,9 @@ msgstr "Özkaynak bakiyelerini IAS 21'e göre çevirirken kullanılan isteğe ba
 
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "Seçenekler"
@@ -13653,11 +13674,17 @@ msgstr "Revizyonlar"
 msgid "Revoke"
 msgstr "İptal et"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "Davetlemeyi İptal Et"
 
 msgid "Revoke Invites"
 msgstr "Davetleri İptal Et"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

@@ -255,6 +255,9 @@ msgstr "{hiddenCount} more: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# line} other {# lines}}"
 
@@ -2436,11 +2439,17 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
+msgid "Assign a track"
+msgstr "Assign a track"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
 msgid "Assign To"
 msgstr "Assign To"
+
+msgid "Assign to groups"
+msgstr "Assign to groups"
 
 msgid "Assign to Groups"
 msgstr "Assign to Groups"
@@ -5971,6 +5980,9 @@ msgstr "Edit Asset"
 msgid "Edit Asset Class"
 msgstr "Edit Asset Class"
 
+msgid "Edit assignment"
+msgstr "Edit assignment"
+
 msgid "Edit Assignment"
 msgstr "Edit Assignment"
 
@@ -6644,6 +6656,9 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "Everyone in these groups will see the track on their Learn hub"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
@@ -11208,6 +11223,9 @@ msgstr "Open AR"
 msgid "Open Audit Log"
 msgstr "Open Audit Log"
 
+msgid "Open certificate"
+msgstr "Open certificate"
+
 msgid "Open date"
 msgstr "Open date"
 
@@ -11412,6 +11430,9 @@ msgstr "Optional fixed rate used when translating equity balances per IAS 21 (in
 
 msgid "Optional pages & sections"
 msgstr "Optional pages & sections"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "Optional. After this date an unfinished track reads as overdue."
 
 msgid "Options"
 msgstr "Options"
@@ -13653,11 +13674,17 @@ msgstr "Revisions"
 msgid "Revoke"
 msgstr "Revoke"
 
+msgid "Revoke certificate"
+msgstr "Revoke certificate"
+
 msgid "Revoke Invite"
 msgstr "Revoke Invite"
 
 msgid "Revoke Invites"
 msgstr "Revoke Invites"
+
+msgid "Revoke this certificate?"
+msgstr "Revoke this certificate?"
 
 msgid "Revoked"
 msgstr "Revoked"

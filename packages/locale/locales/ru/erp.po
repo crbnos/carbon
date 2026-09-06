@@ -255,6 +255,9 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"
 
@@ -2436,11 +2439,17 @@ msgstr "Активы"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
 msgid "Assign To"
 msgstr "Назначить"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "Назначить группам"
@@ -5971,6 +5980,9 @@ msgstr "Изменить актив"
 msgid "Edit Asset Class"
 msgstr "Изменить класс основных средств"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "Изменить назначение"
 
@@ -6644,6 +6656,9 @@ msgstr "Каждая требуемая задача должна быть Го�
 
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Все работающие в любой день недели, который вы выберете, остаются после смены на количество часов, которые вы установите. Затронуты только отделы и смены, по которым вы фильтруете."
@@ -11208,6 +11223,9 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "Дата открытия"
 
@@ -11412,6 +11430,9 @@ msgstr "Дополнительный фиксированный курс, исп
 
 msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "Параметры"
@@ -13653,11 +13674,17 @@ msgstr "Ревизии"
 msgid "Revoke"
 msgstr "Отозвать"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "Отозвать приглашение"
 
 msgid "Revoke Invites"
 msgstr "Отозвать приглашения"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

@@ -673,6 +673,49 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.LearnAssignment: {
+      const assignment = await client
+        .from("learnAssignment")
+        .select("trackTitle, dueDate")
+        .eq("id", documentId)
+        .single();
+
+      if (assignment.error) {
+        console.error("Failed to get learnAssignment", assignment.error);
+        throw assignment.error;
+      }
+
+      const trackTitle = assignment.data?.trackTitle;
+      return {
+        description: `Learning track "${trackTitle}" assigned to you`,
+        reference: trackTitle ?? undefined,
+        details: buildDetails([
+          { label: "Due", value: assignment.data?.dueDate ?? "No due date" }
+        ])
+      };
+    }
+
+    case NotificationEvent.LearnCertificateExpiring: {
+      const certificate = await client
+        .from("learnCertificate")
+        .select("trackTitle, expiresAt")
+        .eq("id", documentId)
+        .single();
+
+      if (certificate.error) {
+        console.error("Failed to get learnCertificate", certificate.error);
+        throw certificate.error;
+      }
+
+      const trackTitle = certificate.data?.trackTitle;
+      const expiresOn = certificate.data?.expiresAt?.slice(0, 10);
+      return {
+        description: `Your ${trackTitle} certificate expires on ${expiresOn}`,
+        reference: trackTitle ?? undefined,
+        details: buildDetails([{ label: "Expires", value: expiresOn }])
+      };
+    }
+
     case NotificationEvent.TrainingAssignment: {
       const trainingAssignment = await client
         .from("trainingAssignment")
@@ -1246,6 +1289,7 @@ async function buildEventContent(
 // is a system nudge and must NOT inherit "Assigned by".
 const assignmentEvents = new Set<NotificationEvent>([
   NotificationEvent.JobAssignment,
+  NotificationEvent.LearnAssignment,
   NotificationEvent.JobOperationAssignment,
   NotificationEvent.MaintenanceDispatchAssignment,
   NotificationEvent.NonConformanceAssignment,

@@ -255,6 +255,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
 
@@ -2436,11 +2439,17 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
 msgid "Assign To"
 msgstr "할당"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "그룹에 할당"
@@ -5971,6 +5980,9 @@ msgstr "자산 편집"
 msgid "Edit Asset Class"
 msgstr "자산 클래스 편집"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "할당 편집"
 
@@ -6644,6 +6656,9 @@ msgstr "기간을 마감하기 전에 모든 필수 작업을 완료하거나 �
 
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "선택한 주의 어느 날을 근무하는 모든 사람이 설정한 시간만큼 교대 시간을 초과합니다. 필터링하는 부서와 교대만 영향을 받습니다."
@@ -11208,6 +11223,9 @@ msgstr "미결 매출채권"
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "개설 날짜"
 
@@ -11412,6 +11430,9 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "옵션"
@@ -13653,11 +13674,17 @@ msgstr "리비전"
 msgid "Revoke"
 msgstr "취소"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "초대 취소"
 
 msgid "Revoke Invites"
 msgstr "초대 취소"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

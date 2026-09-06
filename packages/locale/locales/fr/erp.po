@@ -255,6 +255,9 @@ msgstr "{hiddenCount} autres : {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insérés, {updated} mis à jour, {0} nécessitent correction, {1} ignorés."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# ligne} other {# lignes}}"
 
@@ -2436,11 +2439,17 @@ msgstr "Actifs"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Actifs, passifs et capitaux propres à une date"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Attribuer des imprimantes aux sites. L'expédition, la réception et les postes de travail héritent du paramètre par défaut du site sauf s'ils sont remplacés."
 
 msgid "Assign To"
 msgstr "Attribuer à"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "Attribuer à des groupes"
@@ -5971,6 +5980,9 @@ msgstr "Modifier l'actif"
 msgid "Edit Asset Class"
 msgstr "Modifier la catégorie d'immobilisation"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "Modifier l'affectation"
 
@@ -6644,6 +6656,9 @@ msgstr "Chaque tâche requise doit être faite ou ignorée avant que la période
 
 msgid "Every row was imported successfully."
 msgstr "Chaque ligne a été importée avec succès."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Toute personne travaillant n'importe quel jour de la semaine choisie prolonge son quart des heures que vous définissez. Seuls les départements et quarts que vous filtrez sont affectés."
@@ -11208,6 +11223,9 @@ msgstr "Comptes clients ouverts"
 msgid "Open Audit Log"
 msgstr "Ouvrir le journal d'audit"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "Date d'ouverture"
 
@@ -11412,6 +11430,9 @@ msgstr "Taux fixe optionnel utilisé lors de la traduction des soldes des capita
 
 msgid "Optional pages & sections"
 msgstr "Pages et sections optionnelles"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "Options"
@@ -13653,11 +13674,17 @@ msgstr "Révisions"
 msgid "Revoke"
 msgstr "Révoquer"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "Révoquer l'invitation"
 
 msgid "Revoke Invites"
 msgstr "Révoquer les invitations"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

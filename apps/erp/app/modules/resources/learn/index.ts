@@ -10,4 +10,5 @@
 export * from "./curriculum";
 export * from "./docs";
 export * from "./gamify";
+export * from "./projection";
 export * from "./types";

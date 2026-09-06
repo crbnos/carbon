@@ -1,4 +1,5 @@
 export { default as ActivityHeatmap } from "./ActivityHeatmap";
+export * from "./Admin";
 export { default as Celebration } from "./Celebration";
 export type { ExamResultData } from "./ExamRunner";
 export { default as ExamRunner } from "./ExamRunner";

@@ -255,6 +255,9 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} जोड़े गए, {updated} अपडेट किए गए, {0} को ठीक करने की आवश्यकता है, {1} छोड़ दिए गए।"
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
 
@@ -2436,11 +2439,17 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
 msgid "Assign To"
 msgstr "को असाइन करें"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "समूहों को असाइन करें"
@@ -5971,6 +5980,9 @@ msgstr "परिसंपत्ति संपादित करें"
 msgid "Edit Asset Class"
 msgstr "परिसंपत्ति वर्ग संपादित करें"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "असाइनमेंट संपादित करें"
 
@@ -6644,6 +6656,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
@@ -11208,6 +11223,9 @@ msgstr "खुले प्राप्य खाते"
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "खोलने की तारीख"
 
@@ -11412,6 +11430,9 @@ msgstr "IAS 21 के अनुसार इक्विटी शेष को 
 
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "विकल्प"
@@ -13653,11 +13674,17 @@ msgstr "रिवीजन"
 msgid "Revoke"
 msgstr "रद्द करें"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "आमंत्रण रद्द करें"
 
 msgid "Revoke Invites"
 msgstr "आमंत्रण रद्द करें"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

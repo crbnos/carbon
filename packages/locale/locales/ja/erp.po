@@ -255,6 +255,9 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}件を追加、{updated}件を更新、{0}件を修正が必要、{1}件をスキップ。"
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr ""
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
@@ -2436,11 +2439,17 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign a track"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
 msgid "Assign To"
 msgstr "割り当て先"
+
+msgid "Assign to groups"
+msgstr ""
 
 msgid "Assign to Groups"
 msgstr "グループに割り当て"
@@ -5971,6 +5980,9 @@ msgstr "資産を編集"
 msgid "Edit Asset Class"
 msgstr "資産クラスを編集"
 
+msgid "Edit assignment"
+msgstr ""
+
 msgid "Edit Assignment"
 msgstr "割り当てを編集"
 
@@ -6644,6 +6656,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
@@ -11208,6 +11223,9 @@ msgstr "未払い売掛金"
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
 
+msgid "Open certificate"
+msgstr ""
+
 msgid "Open date"
 msgstr "開始日"
 
@@ -11412,6 +11430,9 @@ msgstr "IAS 21 に従って純資産残高を換算する際に使用するオ�
 
 msgid "Optional pages & sections"
 msgstr "オプションページとセクション"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr ""
 
 msgid "Options"
 msgstr "オプション"
@@ -13653,11 +13674,17 @@ msgstr "リビジョン"
 msgid "Revoke"
 msgstr "取り消す"
 
+msgid "Revoke certificate"
+msgstr ""
+
 msgid "Revoke Invite"
 msgstr "招待を取り消す"
 
 msgid "Revoke Invites"
 msgstr "招待を取り消す"
+
+msgid "Revoke this certificate?"
+msgstr ""
 
 msgid "Revoked"
 msgstr ""

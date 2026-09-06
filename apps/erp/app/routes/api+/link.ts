@@ -17,6 +17,12 @@ function resolve(
   documentType?: ApprovalDocumentType
 ): string | null {
   switch (event) {
+    case NotificationEvent.LearnAssignment:
+    case NotificationEvent.LearnCertificateExpiring: {
+      // Both land on the hub: the assignment id is not a route param, and the
+      // learner's next step is the same either way.
+      return path.to.learn;
+    }
     case NotificationEvent.TrainingAssignment:
     case NotificationEvent.TrainingReminder: {
       // documentId is a trainingAssignment id; the recipient is the trainee,
