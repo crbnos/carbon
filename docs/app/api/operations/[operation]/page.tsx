@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/api/breadcrumb";
 import { CodeBlock } from "@/components/api/code-block";
-import { Code, DocPage, H2, P } from "@/components/api/doc";
+import { DocPage, H2, P } from "@/components/api/doc";
 import { OperationPanel } from "@/components/api/operation-panel";
 import { SchemaTable } from "@/components/api/schema-table";
 import { highlight } from "@/lib/highlight";
@@ -84,7 +84,7 @@ export default async function OperationPage(props: Params) {
     : "";
 
   return (
-    <DocPage>
+    <DocPage wide>
       <Breadcrumb
         items={[
           { label: "Operations", href: "/api/operations" },
@@ -103,32 +103,30 @@ export default async function OperationPage(props: Params) {
       </div>
       {description && <P>{description}.</P>}
 
-      <div className="mt-8 grid grid-cols-1 gap-x-14 gap-y-8 lg:grid-cols-2">
+      {/* The request sample runs full width: in a half column the Python and
+          JavaScript samples had to wrap so hard they broke mid-token. Below it the
+          parameter table and the raw schema sit side by side — the same contract in
+          its human and machine forms. */}
+      <div className="mt-7">
+        <OperationPanel
+          samples={samples}
+          highlighted={highlighted}
+          httpPath={httpPath}
+          responseHtml={responseHtml}
+        />
+      </div>
+
+      <div className="mt-2 grid grid-cols-1 items-start gap-x-12 gap-y-8 lg:grid-cols-2">
         <div className="min-w-0">
           <H2 id="parameters">Parameters</H2>
           <SchemaTable schema={t.schema} />
-
-          <H2 id="response">Response</H2>
-          <P>
-            <Code>data</Code> holds the operation's result — a row, a list of rows,
-            or <Code>null</Code>. <Code>count</Code> is present on paginated reads.
-            A failure returns an error instead, with a message describing it.
-          </P>
-
+        </div>
+        <div className="min-w-0">
           <H2 id="schema">Input schema</H2>
-          <P>The raw JSON Schema for this operation's arguments.</P>
           <CodeBlock html={schemaHtml} code={schemaJson} label="schema" />
         </div>
-
-        <div className="min-w-0">
-          <OperationPanel
-            samples={samples}
-            highlighted={highlighted}
-            httpPath={httpPath}
-            responseHtml={responseHtml}
-          />
-        </div>
       </div>
+
     </DocPage>
   );
 }

@@ -24,7 +24,7 @@ export const metadata = pageSeo({
 
 // Counts are derived from the generated catalog, so they never drift from what the
 // server actually exposes.
-const { total: OPERATION_COUNT, modules: MODULE_COUNT, byClass: CLASS_COUNT, perModule: MODULES } =
+const { total: OPERATION_COUNT, modules: MODULE_COUNT, perModule: MODULES } =
   toolCounts();
 
 export default function ApiOperationsPage() {
@@ -64,32 +64,11 @@ export default function ApiOperationsPage() {
         Each operation page shows both, with a copyable sample. Connecting an MCP
         client is covered in <DocLink href="/api/mcp">Connect over MCP</DocLink>.
       </P>
-
-      <H2 id="classification">Classification</H2>
-      <P>Every operation is classified, so a client can gate actions by risk:</P>
-      <Table>
-        <Row head cols="130px 1fr 72px" cells={["Class", "Grants", "Count"]} />
-        <Row
-          cols="130px 1fr 72px"
-          cells={[<Code key="r">READ</Code>, "Read rows", String(CLASS_COUNT.READ)]}
-        />
-        <Row
-          cols="130px 1fr 72px"
-          cells={[
-            <Code key="w">WRITE</Code>,
-            "Create & update rows",
-            String(CLASS_COUNT.WRITE)
-          ]}
-        />
-        <Row
-          cols="130px 1fr 72px"
-          cells={[
-            <Code key="x">DESTRUCTIVE</Code>,
-            "Delete rows",
-            String(CLASS_COUNT.DESTRUCTIVE)
-          ]}
-        />
-      </Table>
+      <P>
+        Every operation is classified <Code>READ</Code>, <Code>WRITE</Code> or{" "}
+        <Code>DESTRUCTIVE</Code> — shown on each operation and accepted by{" "}
+        <Code>search_tools</Code> as a filter, so a client can gate by risk.
+      </P>
 
       <H2 id="modules">Modules</H2>
       <P>

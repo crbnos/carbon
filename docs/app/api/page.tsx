@@ -61,20 +61,9 @@ export default function ApiOverviewPage() {
       <P>
         The catalog is {OPERATION_COUNT.toLocaleString()} operations across{" "}
         {MODULE_COUNT} modules — create a job, draft a quote, adjust inventory,
-        post an invoice. Each is classified so a client can gate by risk:
+        post an invoice. Each carries a READ / WRITE / DESTRUCTIVE
+        classification, so a client can filter or gate by risk.
       </P>
-      <Table>
-        <Row head cols="140px 1fr" cells={["Class", "Grants"]} />
-        <Row cols="140px 1fr" cells={[<Code key="r">READ</Code>, "Read rows"]} />
-        <Row
-          cols="140px 1fr"
-          cells={[<Code key="w">WRITE</Code>, "Create & update rows"]}
-        />
-        <Row
-          cols="140px 1fr"
-          cells={[<Code key="x">DESTRUCTIVE</Code>, "Delete rows"]}
-        />
-      </Table>
       <P>
         Browse the full catalog under{" "}
         <DocLink href="/api/operations">Operations</DocLink>.
