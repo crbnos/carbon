@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
@@ -20,6 +21,7 @@ import { calculateCOGS } from "../shared/calculate-cogs.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("post-sales-invoice");
 
 const payloadValidator = z.object({
   type: z.enum(["post", "void"]).default("post"),
@@ -38,13 +40,7 @@ serve(async (req: Request) => {
     const { type, invoiceId, userId, companyId } =
       payloadValidator.parse(payload);
 
-    console.log({
-      function: "post-sales-invoice",
-      type,
-      invoiceId,
-      userId,
-      companyId,
-    });
+    logger.info({ type, invoiceId, userId, companyId });
 
     const client = await requirePermissions(req, companyId, userId, { update: "invoicing" });
     const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
@@ -1696,7 +1692,9 @@ serve(async (req: Request) => {
 
     return jsonResponse({ success: true });
   } catch (err) {
-    console.error(err);
+    logger.error("post-sales-invoice failed", {
+      error: String((err as Error)?.stack ?? err),
+    });
     if ("invoiceId" in payload) {
       const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "invoicing" });
       await client
