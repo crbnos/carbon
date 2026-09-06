@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { ApiNav } from "@/components/api/api-nav";
-import { ApiSurfaceNav } from "@/components/api/api-surface-nav";
+import { ContextualNav } from "@/components/api/contextual-nav";
 import { ApiConfigProvider } from "@/components/api/config-context";
 import { Configurator } from "@/components/api/configurator";
 import { MainHeader } from "@/components/main-header";
@@ -9,20 +8,16 @@ import { navTree } from "@/lib/api-data";
 import { toolsNavTree } from "@/lib/tools-data";
 
 /**
- * One layout for the whole API surface. Both APIs are the same product from a
- * reader's side — the Carbon API (service operations, the primary way to write) and
- * the Data API (raw PostgREST tables and views — the escape hatch) — so they share a
- * header entry, a sidebar and one host/API-key configurator instead of sitting in
- * two disconnected roots.
+ * One layout for the whole API surface — one header entry, one configurator, and
+ * ONE tree at a time: the sidebar is contextual (see ContextualNav), showing the
+ * Carbon API catalog everywhere except under /api/data, where the Data API's
+ * resource tree swaps in with a way back.
  */
 function ApiSidebar() {
   return (
     <>
       <Configurator />
-      <ApiSurfaceNav operations={toolsNavTree} />
-      <div className="mt-5 border-t border-ed-hairline pt-4">
-        <ApiNav tree={navTree} />
-      </div>
+      <ContextualNav operations={toolsNavTree} tree={navTree} />
     </>
   );
 }

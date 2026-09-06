@@ -8,7 +8,7 @@ import {
   termSlug,
 } from "@carbon/glossary";
 import { guideSource, source } from "@/lib/source";
-import { toolModules } from "@/lib/tools-data";
+import { operationLabel, toolModules } from "@/lib/tools-data";
 
 const GLOSSARY_URL = "/docs/glossary";
 
@@ -61,10 +61,14 @@ function toolIndexes(): AdvancedIndex[] {
       if (params.length) {
         contents.push({ heading: undefined, content: `Parameters: ${params.join(", ")}.` });
       }
+      // Title matches the operation page's own heading: the short label, with the
+      // module carried by the breadcrumb. The full callable name stays searchable —
+      // it is appended to the indexed content, so "items_getMaterial" still hits.
+      contents.push({ heading: undefined, content: tool.name });
       return {
         id: `/api/operations/${tool.slug}`,
         url: `/api/operations/${tool.slug}`,
-        title: tool.name,
+        title: operationLabel(tool.name, mod.slug),
         description: tool.description,
         tag: "tools",
         breadcrumbs: ["API", mod.name],
