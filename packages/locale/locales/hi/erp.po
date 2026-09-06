@@ -1207,7 +1207,7 @@ msgid "Add cost center"
 msgstr "लागत केंद्र जोड़ें"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "कर्मचारी जोड़ें"
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"

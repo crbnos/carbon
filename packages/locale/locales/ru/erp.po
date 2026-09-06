@@ -1207,7 +1207,7 @@ msgid "Add cost center"
 msgstr "Добавить центр затрат"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "Добавить сотрудника"
 
 msgid "Add Entry"
 msgstr "Добавить запись"
