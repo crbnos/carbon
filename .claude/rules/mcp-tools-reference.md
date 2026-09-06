@@ -15,7 +15,7 @@ service functions as ERP tools. It lives entirely under
 > live tool list is `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`;
 > `describe_tool` / `search_tools` read from it at runtime.
 >
-> That manifest is **gitignored build output** (1.3 MB, rewritten wholesale on every
+> That manifest is **gitignored build output** (1.9 MB, rewritten wholesale on every
 > run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, which runs
 > from `postinstall` and as the turbo root task `//#generate:mcp` that `typecheck`,
 > `build` and `test` depend on — so a fresh clone regenerates it before anything
@@ -138,8 +138,8 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 (falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
 plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
 functions that must import `*.server` modules — see the gotcha below — e.g.
-`production.mcp.server.ts`; `direct-executor.ts` merges its exports into the same module
-namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
+`production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
+exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
@@ -161,11 +161,11 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 - **`_operation`** (`usesCreatedByDiscriminator`): the ~96 tools whose service picks
   insert-vs-update with `if ("createdBy" in …)` get a **required**
   `_operation: "create" | "update"` in their schema — the schema is the only marker,
-  there is no parallel metadata flag. `direct-executor.ts` strips `_operation` from the
-  args (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
+  there is no parallel metadata flag. The dispatch (`api+/v1+/lib/dispatch.server.ts`)
+  strips `_operation` from the args (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
   suppresses the `createdBy` stamp when it is `"update"` — otherwise every MCP edit would
   take the insert branch. Missing/invalid `_operation` on such a tool is rejected before
-  the service is called; `call_tool.arguments` is `z.any()`, so the executor is the gate.
+  the service is called; `call_tool.arguments` is `z.any()`, so the dispatch is the gate.
 
 ## The 15 modules (current `tool-metadata.json`)
 
@@ -191,7 +191,7 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   `//` comments above the function, not inside the parameter list (a comment there
   is parsed as a property name).
 - A service whose first parameter is `db` (a Kysely transaction client) is served
-  `getDatabaseClient()` by `direct-executor.ts`, the same way `client` is served
+  `getDatabaseClient()` by `dispatch.server.ts`, the same way `client` is served
   the supabase one. A first parameter named anything else falls through to the
   positional-argument branches and receives a business argument as its client.
 - Don't enumerate individual tools in docs — `search_tools` is the source of truth.
@@ -209,6 +209,6 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   React Router's `react-router:dot-server` plugin then fails the build with *"Server-only
   module referenced by client"*. Put such MCP write functions in a server-only companion
   `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
-  and `direct-executor.ts` spreads its exports into the module namespace, so the tool names and
+  and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
   metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
   holds `issueMaterial` / `completeJob`.
