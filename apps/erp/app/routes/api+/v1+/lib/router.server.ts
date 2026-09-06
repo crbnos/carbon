@@ -18,6 +18,26 @@ const RESERVED_KEYS = new Set([
   "toJSON"
 ]);
 
+/**
+ * The success body `dispatchOperation` returns: the Supabase result unwrapped to
+ * `data`, plus `count` on paginated reads. `data` carries the operation's own
+ * reflected response schema when the generator derived one; without it the property
+ * is left unconstrained rather than described as something it might not be.
+ */
+function outputSchema(meta: ManifestEntry): Record<string, unknown> {
+  return {
+    type: "object",
+    properties: {
+      data: meta.responseSchema ?? {},
+      count: {
+        type: ["number", "null"],
+        description: "Total matching rows, present on paginated reads."
+      }
+    },
+    required: ["data"]
+  };
+}
+
 function buildProcedure(meta: ManifestEntry, id: string) {
   return base
     .use(gate(meta))
@@ -28,6 +48,7 @@ function buildProcedure(meta: ManifestEntry, id: string) {
       summary: meta.description
     })
     .input(jsonSchema(meta.schema))
+    .output(jsonSchema(outputSchema(meta)))
     .handler(({ input, context }) => dispatchOperation(meta, context, input));
 }
 

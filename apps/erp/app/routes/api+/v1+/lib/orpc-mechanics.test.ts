@@ -40,6 +40,20 @@ const ping = base
   .input(
     jsonSchema({ type: "object", properties: { name: { type: "string" } } })
   )
+  .output(
+    jsonSchema({
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          properties: { id: { type: "string" } },
+          required: ["id"]
+        },
+        count: { type: ["number", "null"] }
+      },
+      required: ["data"]
+    })
+  )
   .handler(({ input }) => ({ data: input }));
 
 const gatedMeta = meta({
@@ -149,5 +163,25 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
       paths?: Record<string, unknown>;
     };
     expect(Object.keys(spec.paths ?? {})).toContain("/demo/ping");
+  });
+
+  it("emits the response schema into the spec's 200 body", async () => {
+    // The generated router gives every procedure an `.output()` describing
+    // `{ data, count }`, where `data` carries the schema reflected from the
+    // service's return type. Without the converter reaching the output side, the
+    // spec documents requests only — which is what it did before responses existed.
+    const generator = new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    });
+    const spec = (await generator.generate(router, {
+      info: { title: "Carbon API", version: "1.0.0" }
+    })) as any;
+
+    const body =
+      spec.paths["/demo/ping"].post.responses["200"].content["application/json"]
+        .schema;
+    expect(body.properties.data.properties.id).toEqual({ type: "string" });
+    expect(body.properties.count.type).toEqual(["number", "null"]);
+    expect(body.required).toContain("data");
   });
 });
