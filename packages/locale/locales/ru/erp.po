@@ -1207,7 +1207,6 @@ msgid "Add cost center"
 msgstr "Добавить центр затрат"
 
 msgid "Add Employee"
-msgstr "Добавить сотрудника"
 msgstr ""
 
 msgid "Add Entry"
@@ -8378,16 +8377,7 @@ msgid "Invite Employees"
 msgstr "Пригласить сотрудников"
 
 msgid "Invite Expired"
-msgstr "Истек срок приглашения"
 msgstr "Приглашение истекло"
-msgid "Invite All"
-msgstr "Пригласить всех"
-
-
-msgid "Invite Multiple Employees"
-msgstr "Пригласить нескольких сотрудников"
-msgid "Invite Employees"
-msgstr "Пригласить сотрудников"
 
 msgid "Invited"
 msgstr "Приглашено"
@@ -13052,13 +13042,11 @@ msgstr "Убрать условие"
 
 msgid "Remove corrupted data and restore"
 msgstr "Убрать поврежденные данные и восстановить"
+
 msgid "Remove employee"
 msgstr "Удалить сотрудника"
 
 msgid "Remove Employee"
-msgstr "Удалить сотрудника"
-
-msgid "Remove employee"
 msgstr "Удалить сотрудника"
 
 msgid "Remove filter"

@@ -1209,9 +1209,6 @@ msgstr "原価センターを追加"
 msgid "Add Employee"
 msgstr "従業員を追加"
 
-msgid "Add Employee"
-msgstr "従業員を追加"
-
 msgid "Add Entry"
 msgstr "エントリを追加"
 
@@ -8381,14 +8378,6 @@ msgstr "従業員を招待"
 
 msgid "Invite Expired"
 msgstr "招待が期限切れになりました"
-msgid "Invite All"
-msgstr "すべて招待"
-
-
-msgid "Invite Multiple Employees"
-msgstr "複数の従業員を招待"
-msgid "Invite Employees"
-msgstr "従業員を招待"
 
 msgid "Invited"
 msgstr "招待済み"
@@ -13053,13 +13042,11 @@ msgstr "条件を除去"
 
 msgid "Remove corrupted data and restore"
 msgstr "破損データを除去して復元"
+
 msgid "Remove employee"
 msgstr "従業員を削除"
 
 msgid "Remove Employee"
-msgstr "従業員を削除"
-
-msgid "Remove employee"
 msgstr "従業員を削除"
 
 msgid "Remove filter"
