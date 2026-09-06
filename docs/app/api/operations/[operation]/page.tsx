@@ -173,7 +173,7 @@ export default async function OperationPage(props: Params) {
     <DocPage wide>
       <Breadcrumb
         items={[
-          { label: "Operations", href: "/api/operations" },
+          { label: "Carbon API", href: "/api" },
           { label: mod.name }
         ]}
       />

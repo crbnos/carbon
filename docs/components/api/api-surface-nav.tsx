@@ -16,7 +16,6 @@ const GETTING_STARTED = [
   { label: "Overview", href: "/api" },
   { label: "Connect over MCP", href: "/api/mcp" },
   { label: "Authentication", href: "/api/authentication" },
-  { label: "Operations", href: "/api/operations" },
   { label: "Client SDKs", href: "/api/sdks" },
 ];
 

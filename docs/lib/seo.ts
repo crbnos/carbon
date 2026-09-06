@@ -49,10 +49,6 @@ export const SEO = {
       title: "Carbon API authentication",
       description: "Authenticate with OAuth or a scoped API key.",
     },
-    operations: {
-      title: "Operations",
-      description: "Every Carbon operation, reached through one lean discovery pattern.",
-    },
     sdks: {
       title: "Client SDKs",
       description:

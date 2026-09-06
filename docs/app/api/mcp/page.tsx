@@ -166,7 +166,8 @@ export default async function ConnectOverMcpPage() {
         A typical flow is <Code>search_tools</Code> → <Code>describe_tool</Code>{" "}
         → <Code>call_tool</Code>, which keeps the model's context lean no matter
         how large the catalog grows. The same operations are also plain HTTP
-        endpoints — see <DocLink href="/api/operations">Operations</DocLink>.
+        endpoints — every one has a page of its own, listed by module in the
+        sidebar.
       </P>
 
       <H2 id="ask">What you can ask</H2>
@@ -184,8 +185,8 @@ export default async function ConnectOverMcpPage() {
       </ul>
       <P>
         Next: <DocLink href="/api/authentication">Authentication</DocLink> for
-        the auth flows, and <DocLink href="/api/operations">Operations</DocLink>{" "}
-        for how the assistant finds what it needs.
+        the auth flows, and <DocLink href="/api/sdks">Client SDKs</DocLink> for
+        calling the same operations from your own code.
       </P>
 
       <H2 id="faq">FAQ</H2>

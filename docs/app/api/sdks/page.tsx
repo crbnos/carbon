@@ -1,11 +1,3 @@
-import {
-  siGo,
-  siPhp,
-  siPython,
-  siRuby,
-  siSharp,
-  siTypescript
-} from "simple-icons";
 import { CodeBlock } from "@/components/api/code-block";
 import { ApiKeysLink } from "@/components/api/config-inline";
 import {
@@ -21,7 +13,8 @@ import {
   Table
 } from "@/components/api/doc";
 import { ContentFooter } from "@/components/api/page-footer";
-import { Brand, type SdkCard, SdkCardGrid } from "@/components/api/sdk-cards";
+import { SdkCardGrid } from "@/components/api/sdk-cards";
+import { sdkLanguageCards } from "@/components/api/sdk-languages";
 import { highlight } from "@/lib/highlight";
 import { pageSeo, SEO } from "@/lib/seo";
 import { toolCounts } from "@/lib/tools-data";
@@ -82,60 +75,6 @@ client.setConfig({
   auth: "<api-key>"
 });`;
 
-/* The generator languages. Every card lands on the section that generates its
- * client; the five openapi-generator languages share one section and differ only
- * by the -g value named on the card. */
-const CARDS: SdkCard[] = [
-  {
-    glyph: <Brand path={siTypescript.path} />,
-    tone: "bg-[#E8F0FB] text-[#3178C6]",
-    name: "TypeScript",
-    desc: "A fully typed client from @hey-api/openapi-ts — request and response types included.",
-    href: "#typescript",
-    cta: "Generate"
-  },
-  {
-    glyph: <Brand path={siPython.path} />,
-    tone: "bg-[#EAF1F8] text-[#3776AB]",
-    name: "Python",
-    desc: "A modern typed client with openapi-python-client — attrs models and httpx under the hood.",
-    href: "#python",
-    cta: "Generate"
-  },
-  {
-    glyph: <Brand path={siGo.path} />,
-    tone: "bg-[#E5F4F9] text-[#00ADD8]",
-    name: "Go",
-    desc: "A typed client from oapi-codegen — pure Go, no Java runtime needed.",
-    href: "#go",
-    cta: "Generate"
-  },
-  {
-    glyph: <Brand path={siSharp.path} />,
-    tone: "bg-[#EEEAF6] text-[#512BD4]",
-    name: "C#",
-    desc: "openapi-generator (Docker image, no Java install) with -g csharp.",
-    href: "#any-language",
-    cta: "Generate"
-  },
-  {
-    glyph: <Brand path={siPhp.path} />,
-    tone: "bg-[#EBECF3] text-[#777BB4]",
-    name: "PHP",
-    desc: "openapi-generator (Docker image, no Java install) with -g php.",
-    href: "#any-language",
-    cta: "Generate"
-  },
-  {
-    glyph: <Brand path={siRuby.path} />,
-    tone: "bg-ed-red-bg text-[#CC342D]",
-    name: "Ruby",
-    desc: "openapi-generator (Docker image, no Java install) with -g ruby.",
-    href: "#any-language",
-    cta: "Generate"
-  }
-];
-
 export default async function ApiSdksPage() {
   const counts = toolCounts();
   const [
@@ -166,7 +105,7 @@ export default async function ApiSdksPage() {
         language is one generator command away — nothing hand-maintained to fall
         behind.
       </Lead>
-      <SdkCardGrid cards={CARDS} />
+      <SdkCardGrid cards={sdkLanguageCards()} />
 
       <H2 id="spec">The spec</H2>
       <P>
@@ -284,7 +223,7 @@ export default async function ApiSdksPage() {
       </P>
 
       <ContentFooter
-        prev={{ label: "Operations", url: "/api/operations" }}
+        prev={{ label: "Authentication", url: "/api/authentication" }}
         editPath="docs/app/api/sdks/page.tsx"
       />
     </DocPage>

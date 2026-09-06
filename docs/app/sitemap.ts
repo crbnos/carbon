@@ -28,11 +28,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "yearly",
     priority: 0.5
   });
-  out.push({
-    url: abs("/api/operations"),
-    changeFrequency: "monthly",
-    priority: 0.5
-  });
   out.push({ url: abs("/api/sdks"), changeFrequency: "monthly", priority: 0.5 });
   for (const { tool } of allToolParams()) {
     out.push({

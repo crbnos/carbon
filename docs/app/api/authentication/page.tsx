@@ -75,7 +75,7 @@ export default function ApiAuthenticationPage() {
 
       <ContentFooter
         prev={{ label: "Connect over MCP", url: "/api/mcp" }}
-        next={{ label: "Operations", url: "/api/operations" }}
+        next={{ label: "Client SDKs", url: "/api/sdks" }}
       />
     </DocPage>
   );
