@@ -4,6 +4,7 @@ import type { ManifestEntry, ToolPermission } from "@carbon/api";
 import type { Database } from "@carbon/database";
 import { ORPCError, os } from "@orpc/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
 
 /**
  * The identity every Carbon API call runs as. Built once per request (from an API
@@ -15,9 +16,12 @@ export interface AuthedContext {
   userId: string;
   companyId: string;
   companyGroupId: string;
-  /** `"api-key"` runs the per-operation scope gate; `"oauth"` (MCP connector) does
-   *  not — its RLS/role already bounds it, exactly as MCP behaves today. */
-  authKind: "api-key" | "oauth";
+  /** `"api-key"` runs the per-operation scope gate. `"oauth"` (MCP connector) does
+   *  not — its RLS/role already bounds it, exactly as MCP behaves today. `"session"`
+   *  is an already-authorized in-process caller (the in-app agent behind the route's
+   *  requirePermissions, and the workflow engine acting as the workflow's owner) —
+   *  not "oauth" because that names a wire protocol, not a trust decision. */
+  authKind: "api-key" | "oauth" | "session";
   /** The API key's scopes: `{ "<module>_<action>": [companyId, …] }`. */
   scopes: Record<string, string[]>;
 }
@@ -46,9 +50,13 @@ export function assertScopes(
   }
 }
 
-/** Per-operation gate middleware — runs the scope check for API-key callers. */
+/** Per-operation gate middleware — runs the scope check for API-key callers.
+ *  The blocked-name guard is belt-and-braces: blocked tools are already excluded
+ *  from the manifest at generation time, so this only fires if that exclusion
+ *  ever regresses — the surface stays closed instead of silently opening. */
 export const gate = (meta: ManifestEntry) =>
   base.middleware(async ({ context, next }) => {
+    if (isMcpBlockedTool(meta.name)) throw new ORPCError("NOT_FOUND");
     if (context.authKind === "api-key") {
       assertScopes(context.scopes, context.companyId, meta.permission);
     }

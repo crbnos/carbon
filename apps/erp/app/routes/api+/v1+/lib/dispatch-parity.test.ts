@@ -62,19 +62,23 @@ vi.mock("@carbon/logger", () => ({
 }));
 
 import {
-  type ExecutorContext,
   enrichWithAuthContext,
   executeFunction
 } from "../../mcp+/lib/direct-executor";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
+import type { AuthedContext } from "./base.server";
 import { type DispatchResult, dispatchOperation } from "./dispatch.server";
 import { operationsByName } from "./operations.server";
 
-const ctx: ExecutorContext = {
-  client: spies.FAKE_CLIENT as unknown as ExecutorContext["client"],
+// Satisfies both the legacy ExecutorContext and AuthedContext, so the same object
+// drives both implementations.
+const ctx: AuthedContext = {
+  client: spies.FAKE_CLIENT as unknown as AuthedContext["client"],
   companyId: "c1",
   companyGroupId: "g1",
-  userId: "u1"
+  userId: "u1",
+  authKind: "session",
+  scopes: {}
 };
 
 type Spy = ReturnType<typeof vi.fn>;
@@ -343,12 +347,13 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
       data: { data: null, error: supabaseError }
     });
     expect(r.dispatchError).toBeInstanceOf(ORPCError);
-    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      "duplicate key value"
-    );
-    // Task 4 (D4) attaches the raw error as `.data.supabase` so callOperation can
-    // reconstruct the byte-identical `Database error:` text — the assertion is
-    // strengthened there.
+    const orpcError = r.dispatchError as ORPCError<string, unknown>;
+    expect(orpcError.message).toBe("duplicate key value");
+    // The raw error rides on the ORPCError (D4) so callOperation can reconstruct
+    // MCP's byte-identical `Database error: ${JSON.stringify(error)}` text.
+    expect(
+      (orpcError.data as { supabase?: unknown } | undefined)?.supabase
+    ).toEqual(supabaseError);
   });
 
   it("l. a single-key payload whose key matches no param is unwrapped positionally", async () => {

@@ -1,25 +1,110 @@
 // The bridge from an oRPC procedure to a Carbon service function.
 //
-// Ports the executeFunction body (positional-arg assembly from serviceParams, payload
-// stamping via enrichWithAuthContext, `_operation` handling, Supabase unwrap) so HTTP
-// and MCP share ONE dispatch. Unlike executeFunction (which returns { success, … }),
-// this THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
-// MCP's call() wrapper reconstructs its own { success:false, error } envelope.
+// Owns the executeFunction lineage in full: positional-arg assembly from
+// serviceParams, payload stamping via enrichWithAuthContext, `_operation` handling,
+// and the Supabase unwrap. HTTP, MCP, the agent and the workflow dispatcher all pass
+// through here. Unlike the legacy executor (which returned { success, … }), this
+// THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
+// callOperation reconstructs the { success:false, error } envelope.
 
-import type { ManifestEntry } from "@carbon/api";
+import type { AuthField, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
-import {
-  type ExecutorContext,
-  enrichWithAuthContext,
-  extractOperation,
-  functionRegistry,
-  type McpOperation
-} from "../../mcp+/lib/direct-executor";
+import type { AuthedContext } from "./base.server";
+import { functionRegistry } from "./registry.server";
 
 export interface DispatchResult {
   data: unknown;
   count?: number;
+}
+
+export type McpOperation = "create" | "update";
+
+/** The identity fields the payload stamp reads — satisfied by both AuthedContext
+ *  and the legacy ExecutorContext. */
+type AuthStampContext = Pick<
+  AuthedContext,
+  "userId" | "companyId" | "companyGroupId"
+>;
+
+// Stamps auth identity onto typed payloads. Carbon's services expect auth
+// fields inside the payload (predates MCP). `fields` is per-tool from
+// tool-metadata.json so reads stay clean and updates don't overwrite createdBy.
+export function enrichWithAuthContext(
+  value: unknown,
+  context: AuthStampContext,
+  fields: AuthField[],
+  operation?: McpOperation
+): unknown {
+  if (!value || typeof value !== "object") return value;
+  if (fields.length === 0) return value;
+
+  // Array payloads (e.g. the row list for upsertQuoteLinePrices) need per-element
+  // stamping — enrichment never reached inside them, so a NOT NULL createdBy on
+  // the row table failed. Only createdBy is injected into elements (and only for
+  // an insert): element keys are spread straight into an INSERT, so injecting
+  // companyId/updatedBy could add a column the row table doesn't have. The
+  // service owns companyId for these rows. createdBy is stamped AFTER the spread
+  // so a caller can't forge audit attribution by supplying it in a row.
+  if (Array.isArray(value)) {
+    if (operation === "update" || !fields.includes("createdBy")) return value;
+    return value.map((element) =>
+      element && typeof element === "object" && !Array.isArray(element)
+        ? { ...(element as Record<string, unknown>), createdBy: context.userId }
+        : element
+    );
+  }
+
+  const enriched: Record<string, unknown> = {
+    ...(value as Record<string, unknown>)
+  };
+
+  // A caller-supplied createdBy would send the service down its insert branch.
+  if (operation === "update") {
+    delete enriched.createdBy;
+  } else if (fields.includes("createdBy") && !("createdBy" in enriched)) {
+    enriched.createdBy = context.userId;
+  }
+  if (fields.includes("updatedBy")) {
+    enriched.updatedBy = context.userId;
+  }
+  if (fields.includes("companyId")) {
+    enriched.companyId = context.companyId;
+  }
+  if (fields.includes("companyGroupId")) {
+    enriched.companyGroupId = context.companyGroupId;
+  }
+
+  return enriched;
+}
+
+// Pulls the MCP-only `_operation` flag out of the args, top level or nested.
+// Returns every value it found so the caller can reject contradictory ones.
+export function extractOperation(args: Record<string, any> | undefined): {
+  operations: string[];
+  args: Record<string, any> | undefined;
+} {
+  if (!args) return { operations: [], args };
+
+  const operations: string[] = [];
+  const cleaned: Record<string, any> = {};
+
+  if (args._operation !== undefined) operations.push(String(args._operation));
+
+  for (const [key, value] of Object.entries(args)) {
+    if (key === "_operation") continue;
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const { _operation, ...rest } = value as Record<string, any>;
+      if (_operation !== undefined) {
+        operations.push(String(_operation));
+        cleaned[key] = rest;
+        continue;
+      }
+    }
+    cleaned[key] = value;
+  }
+
+  return { operations, args: cleaned };
 }
 
 function supabaseErrorMessage(error: unknown): string {
@@ -32,7 +117,7 @@ function supabaseErrorMessage(error: unknown): string {
 
 export async function dispatchOperation(
   meta: ManifestEntry,
-  context: ExecutorContext,
+  context: AuthedContext,
   input: unknown
 ): Promise<DispatchResult> {
   const rawArgs =
@@ -147,8 +232,12 @@ export async function dispatchOperation(
   if (result && typeof result === "object" && "data" in result) {
     const r = result as { data: unknown; error?: unknown; count?: number };
     if (r.error) {
+      // The raw error rides along so callOperation can reconstruct MCP's
+      // byte-identical `Database error: ${JSON.stringify(error)}` text, and HTTP
+      // callers get the Postgres code/details/hint the way Supabase REST does.
       throw new ORPCError("BAD_REQUEST", {
-        message: supabaseErrorMessage(r.error)
+        message: supabaseErrorMessage(r.error),
+        data: { supabase: r.error }
       });
     }
     return { data: r.data, count: r.count ?? undefined };
