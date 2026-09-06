@@ -12,8 +12,9 @@ published learning-science literature (retrieval practice, spacing, gamification
 backfire studies, the Brown University Rust Book experiment). Key findings: (1) the
 industry-consensus assessable atom is a unit ending in exactly one quiz OR one
 hands-on challenge, with points decaying on quiz retries but hands-on retries always
-free; (2) **no classic ERP vendor auto-grades hands-on work against the customer's
-own instance today** — only Trailhead (org API checks), HubSpot (own-account
+free; (2) **none of the ERP vendors surveyed (SAP, Odoo, NetSuite, Epicor,
+Acumatica — as of 2026-08-29) auto-grades hands-on work against the customer's
+own instance** — only Trailhead (org API checks), HubSpot (own-account
 grading), ServiceNow LabX, and Microsoft Applied Skills do it at all, which makes
 verified-in-your-own-company challenges an open differentiator for Carbon; (3) in
 mandatory/workplace contexts, competitive leaderboards and punitive mechanics have
@@ -93,8 +94,9 @@ and perishable (version-stamped, renewed by a light "what changed" quiz).
   (July 2026 FAQ) — disposable hosted sandboxes are a support burden; the pattern
   moved to bring-your-own tenant.
 - **Gap**: Odoo, NetSuite, Epicor, Acumatica, and SAP all stop at quizzes or guided
-  (unverified) exercises. **No ERP vendor checks the learner's work in the
-  learner's own ERP.** SAP even charges for practice systems by the hour (HUB360 =
+  (unverified) exercises. **None of the surveyed ERP vendors checks the learner's
+  work in the learner's own ERP** (survey scope: those five vendors, as of
+  2026-08-29). SAP even charges for practice systems by the hour (HUB360 =
   60 h/yr). Carbon's demo-template companies are exactly the free, persistent
   practice fixture this pattern needs.
 
@@ -126,10 +128,13 @@ and perishable (version-stamped, renewed by a light "what changed" quiz).
   expiry.
 - **NetSuite**: admin certs require an annual open-book New Release Quiz + re-exam
   every 3 years.
-- **Salesforce**: ran ~7 years of per-release maintenance modules (miss → cert
-  expires), then retired separate maintainer modules in 2025 as administrative
-  burden. Lesson: per-release cadence is too heavy; **one light delta-assessment
-  per year is the settled convention**.
+- **Salesforce**: maintenance modules are release-aligned — Spring / Summer /
+  Winter cycles, a missed deadline expires the credential (e.g. the Summer '25
+  maintenance deadline is 2026-08-21 per help.salesforce.com). The 2025 program
+  overhaul (Trailhead Academy + Pearson VUE) announced a move toward a "less
+  prescriptive" currency model, but as of 2026-08 the release-cycle maintenance
+  still applies. Lesson: three cycles a year is the heavy end of the spectrum;
+  **one light delta-assessment per year is the settled convention** elsewhere.
 - **Credibility (Open Badges / Credly)**: what makes a credential checkable is a
   stable verification URL exposing issuer, criteria, evidence, and issue date —
   fields the Open Badges standard formalizes. A PDF alone is a sticker.
@@ -239,8 +244,8 @@ and perishable (version-stamped, renewed by a light "what changed" quiz).
    retake cooldowns (24 h → 1–2 weeks), fresh form per attempt.
 5. **How do certificates stay credible as the product changes?** Version-stamp at
    issue; ~12-month validity; renewal = free, short, open-book "what changed"
-   quiz (Microsoft/NetSuite/SAP convention; Salesforce's heavier per-release
-   modules were retired as burden). Verification = public URL + ID exposing
+   quiz (Microsoft/NetSuite/SAP convention; Salesforce's release-aligned modules,
+   three cycles a year, are the heavier end). Verification = public URL + ID exposing
    criteria, evidence (scores, verified tasks), issuer, dates (Open Badges fields).
 6. **How do ERP vendors organize role-based training?** Role-named paths over
    app-tagged courses; Associate → Professional levels; admin-side team completion
@@ -256,8 +261,10 @@ and perishable (version-stamped, renewed by a light "what changed" quiz).
   pre-installed checker package; expire after ~6 months of inactivity.
 - Superbadges: business-scenario brief, no step-by-step instructions, 4–12 h;
   Super Sets bundle them by role. PDII required 3 superbadges until Oct 2025.
-- Certification: proctored, ~$200/$400, now delivered via Pearson VUE; 2025 program
-  restructure retired 24 certs and ended separate maintenance modules.
+- Certification: proctored, ~$200/$400, now delivered via Pearson VUE; the 2025
+  program restructure retired 24 certs and announced a less prescriptive currency
+  model, but release-aligned maintenance modules (Spring/Summer/Winter) still run
+  as of 2026-08.
 - Scale: 200K users/1.2M badges (2016) → 5M badges + 22M challenges (2020) → 20M
   badges (2021); "average" community badge count ~200.
 
@@ -320,7 +327,11 @@ and perishable (version-stamped, renewed by a light "what changed" quiz).
 The author has already built this system twice outside Carbon; the mechanics are
 proven and reusable:
 
-- **be-better-dev** (`/Users/mac/sidd-oss/be-better-dev`, server-side, shipped):
+The three are the author's private local workspaces, not in this repository; the
+constants and rules they establish are quoted inline here so the evidence is
+self-contained and reviewable without those checkouts.
+
+- **be-better-dev** (private workspace `sidd-oss/be-better-dev`, server-side, shipped):
   XP constants in one `gamify.ts` (lesson 20 XP, perfect-quiz +5, review +5, badge
   +50; level curve `50·n·(n−1)`); XP awarded once (`firstCompletion` gate, repeat =
   practice run); streak = consecutive active days anchored today-or-yesterday;
@@ -330,7 +341,7 @@ proven and reusable:
   (upsert; reseeding never touches progress), `xp_event` **append-only ledger**
   ("totals are sums, never a mutable counter"), `activity_day` upserts,
   `badge_award` unique per badge.
-- **rust-course / zero2deep** (`/Users/mac/work/rust-course`, spec + partial build):
+- **rust-course / zero2deep** (private workspace `rust-course`, spec + partial build):
   mastery states Seen → Practiced → Solid → Mastered advanced only by **cold**
   first-attempt correctness; test-out at every gate (≥80% unlocks); 12-kind
   exercise taxonomy (predict/spot-bug/fill-in/ordering/match-pairs/kata/boss);
@@ -340,7 +351,7 @@ proven and reusable:
   argv allowlist and first-failure feedback; `lesson_progress.status` where
   "locked" is computed, never stored; append-only `srs_review` so scheduler state
   is recomputable.
-- **carbon-learn** (`/Users/mac/work/carbon-learn`): 17 MDX lessons teaching
+- **carbon-learn** (private workspace `carbon-learn`): 17 MDX lessons teaching
   Carbon's own business logic; `<Predict>` commitment gates + `<Quiz>` with
   one-attempt scoring and explanations; XP 10/correct + 20/lesson, daily goal
   selectable 10/30/50/100; the recorded lesson: localStorage progress is
@@ -446,4 +457,4 @@ proven and reusable:
 - https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2021.639814/full
 - https://credsure.io/en/blog/open-badges-explained
 - https://info.credly.com/product/open-badge-3.0
-- Internal: `/Users/mac/sidd-oss/be-better-dev` (gamify.ts, learn.ts, schema/course.ts), `/Users/mac/work/rust-course` (PROMPT.md, COURSE-MAP.md, boss-suites/README.md, zero2deep schema), `/Users/mac/work/carbon-learn` (NOTES.md, progress.ts)
+- Internal (author's private workspaces, not in this repo — the relevant constants and rules are quoted in "House Prior Art" above): `be-better-dev` (gamify.ts, learn.ts, schema/course.ts), `rust-course` (PROMPT.md, COURSE-MAP.md, boss-suites/README.md, zero2deep schema), `carbon-learn` (NOTES.md, progress.ts)

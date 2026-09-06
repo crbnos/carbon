@@ -12,7 +12,8 @@ interactive, gamified learning system **inside the ERP**: role-based learning
 tracks (Fundamentals, Purchasing, Sales, Production, Inventory, Quality,
 Accounting, Planning, Admin) whose units pair doc reading with professional-level
 quizzes and **hands-on challenges verified against the learner's own company
-data** — the Trailhead "Check Challenge" model that no ERP vendor ships today.
+data** — the Trailhead "Check Challenge" model that none of the ERP vendors
+surveyed (SAP, Odoo, NetSuite, Epicor, Acumatica, as of 2026-08-29) ships today.
 Learners earn XP (append-only ledger), levels, module badges, a weekly-goal
 streak, and a private GitHub-style activity heatmap; completing a track's
 certification exam (scenario questions drawn from a bank, 80% pass, timed,
@@ -124,12 +125,16 @@ convention).
 
 ### Hands-on challenges — the differentiator
 
-A challenge is instructions + a **server-side checker**. The learner performs
-real actions in the company they're signed into ("Create a purchase order for
-any supplier with at least 2 lines and release it"), then clicks **Check my
-work**. The checker (a named function in `checkers.server.ts`, keyed by
-challenge slug) runs read-only predicate queries scoped to `companyId` +
-`createdBy = userId` + `createdAt >= attempt.startedAt`, and returns either
+A challenge is instructions + a **server-side checker**. The learner presses
+**Start challenge** (the server records `startedAt` from its own clock and
+returns the attempt id — one open attempt per learner × challenge × company,
+pressing it again returns the same attempt), performs real actions in the
+company they're signed into ("Create a purchase order for any supplier with at
+least 2 lines and release it"), then clicks **Check my work**. The checker (a
+named function in `checkers.server.ts`, keyed by challenge slug) runs read-only
+predicate queries scoped to `companyId` + `createdBy = userId` +
+`createdAt >= attempt.startedAt` (the stored server value, never client input),
+and returns either
 `passed` with evidence (the matched record ids) or the **first failing
 requirement by name** — Trailhead's exact feedback model ("No released purchase
 order with at least 2 lines was found — found PO-000123 but it is still Draft").
@@ -222,18 +227,24 @@ Constants in `gamify.ts`, numbers from the research + house prior art:
   hand-built like `KanbanLabelPDF`, QR via `generateQRCode`) links the same URL.
 - Renewal: from 30 days before expiry, a free ~10-question open-book delta quiz
   extends validity 12 months (SAP/Microsoft/NetSuite convention; Salesforce's
-  heavier per-release modules were retired as burden — deliberately avoided).
+  release-aligned maintenance modules — three cycles a year, still running as
+  of 2026 — are the heavier cadence deliberately avoided).
 
 ### Admin: assignment & reporting
 
 - `learnAssignment` mirrors `trainingAssignment`: a track assigned to
-  `groupIds[]` with an optional `dueDate`. Fires `NotificationEvent.LearnAssignment`
+  `groupIds[]` (every id verified to belong to the company; one foreign id
+  rejects the whole write) with an optional `dueDate`. Fires `NotificationEvent.LearnAssignment`
   (new additive enum value, `Training` topic) through the existing notify job;
   expiring certificates fire `LearnCertificateExpiring`; overdue assignments
   join the existing weekly digest.
 - Team dashboard under Resources: per employee × assigned track — Not started /
   In progress (n%) / Certified (expires d) / Expired / Overdue — filterable by
-  group/department, with certificate links. Gated `resources_view`.
+  group/department, with certificate links. Gated `resources_view`; the data is
+  a projection built with the service-role client, so admins never touch raw
+  XP/attempt rows. Revoking a certificate (with a reason) is an admin action on
+  the same dashboard, gated `resources_update`; the verify page shows Revoked
+  immediately.
 - Question analytics (phase 2): failure rates per question grouped by doc page —
   the Rust Book loop where quiz telemetry becomes a docs bug report (+20% score
   lift from targeted rewrites in their published experiment).
@@ -251,12 +262,18 @@ Constants in `gamify.ts`, numbers from the research + house prior art:
 | Write path for progress/XP/certificates | **No client write policies**; all writes via service-role client in route actions after server-side grading | Self-INSERT RLS (as on `trainingCompletion`) would let a crafted PostgREST call forge `passed = true` or mint XP. `itarCertification` (service-role-only writes) is the precedent. SELECT policies: self + `resources_view`. |
 | XP economy | Quiz 100/50/25 by attempt; challenge 500 flat; badge +50; certification +1000; `xpForLevel(n)=250·n·(n−1)`; constants in one `gamify.ts` | Trailhead's published numbers (hands-on pays 5×; decay kills guess-grinding; free challenge retries are the pedagogy); one-file constants is the be-better-dev house pattern. |
 | XP integrity | Append-only `learnXpEvent` ledger; totals are SUMs; awards gated once per ref | be-better-dev/zero2deep rule: a mis-award is a deletable row, never a corrupted counter; unique partial index prevents double-award. |
+| Per-question grading storage | `learnAttemptAnswer`, RLS enabled with no policies (service-role only); `learnAttempt` holds only the form and totals | A learner reading `correct` per question across retries reconstructs the key (PR #1509 review). Feedback is returned in the action response for one sitting only. |
+| Exam grading vs. content changes | Grade each answer at submission against `attempt.contentVersion`; finalize sums stored answers; a version mismatch voids the attempt (no cooldown) | Code-shipped banks change on deploy; an in-flight attempt must never be graded against content it was not served (PR #1509 review). |
+| Hands-on challenge lifecycle | Server-owned `startChallenge` (idempotent, server `startedAt`, one open attempt per learner × challenge × company) → `checkChallenge(attemptId)` re-read under the session company | The time filter needs a start the client cannot fake, and an attempt must be bound to the company it was started in (PR #1509 review). |
+| Certificate idempotency + evidence | UNIQUE `(examAttemptId, companyId)`; `challengeAttemptIds[]` + immutable `evidence` snapshot | A retried issuance must not mint a second verification code; a certificate must name the exact evidence it was issued on (PR #1509 review). |
+| Revocation | `revokeCertificate` admin action gated on `resources_update`, reason kept in `customFields` | `revokedAt`/`revokedBy` existed without any operation that could set them (PR #1509 review). |
+| Manager read path | Engine tables are self-only under RLS; admins read a service-role projection inside `resources_view`-gated routes | The RLS branch granting `resources_view` raw reads over XP/attempt rows exceeded the "status only" contract (PR #1509 review). |
 | Streak model | Weekly XP goal (default 200, user-adjustable), ISO week in company timezone, current week can't break it | GitHub removed daily streaks for punishing rest; LinkedIn Learning uses weekly goals; Duolingo's own data shows slack increases retention. Company timezone per the MRP precedent; be-better-dev's server-local-time shortcut explicitly doesn't survive multi-tenant. |
 | Leaderboards | None in v1; heatmap/streak/XP visible only to the learner; managers see assignment + certification status | Hanus & Fox 2015 (leaderboards lowered exam scores), Mollick & Rothbard (consent moderates workplace gamification). Odoo's public leaderboard rejected knowingly. |
 | Unit quiz pass bar | All questions correct (retry decays XP) | Trailhead and Academy unit-quiz semantics; the unit quiz is formative, so mastery-retry beats a partial pass. |
 | Certification exam design | ~30 Qs from ≥90-item per-track bank, stratified by topic, 80% pass, 45-min limit, one-way nav, shuffle, honor gate, fresh form, cooldowns 24h→7d | Research consensus (PSI bank ratios, AWS/Microsoft/Salesforce retake policies, Odoo/`share+/training` 80% precedent); question design is the primary anti-cheat, hands-on challenges the un-cheatable half. |
 | Certificate record | `learnCertificate` modeled on `itarCertification`: composite PK, `expiresAt`, `verificationCode`, evidence, revocation columns, service-role-only writes | Existing in-repo pattern for a tamper-proof expiring attestation; Open Badges fields (criteria, evidence, dates, issuer) drive the verify page. |
-| Expiry & renewal | 12-month validity; free ~10-question delta quiz from 30 days before expiry extends +12 months | SAP (1-year + stay-current quiz), Microsoft (free open-book renewal), NetSuite (annual release quiz); Salesforce's per-release cadence retired as burden — avoided. |
+| Expiry & renewal | 12-month validity; free ~10-question delta quiz from 30 days before expiry extends +12 months | SAP (1-year + stay-current quiz), Microsoft (free open-book renewal), NetSuite (annual release quiz); Salesforce's release-aligned maintenance cadence (Spring/Summer/Winter, still current in 2026) is heavier and deliberately avoided. |
 | Hands-on checker semantics | Read-only predicates on `companyId` + `createdBy` + `createdAt >= startedAt`; first-failure message names the missing thing; evidence ids recorded on pass; fixture test proves fail-on-empty/pass-on-solution | Trailhead's check model + rust-course's proving rule; read-only because ERP documents are real data (no auto-cleanup). |
 | Practice company | Recommended (nudge to demo-template company + show target company on every check), not required | Microsoft retired hosted sandboxes; HubSpot grades the real account; demo templates already exist (Settings → Demo Data). Enforcement would block self-serve learners. |
 | Reading surface | Link out to docs.carbon.ms sections from units (DOCS_URL constant); no iframe embedding, no content duplication | Docs stay canonical and beautiful; academy already hardcodes cross-app URLs; the agent-KB copy of docs is stripped for agents, not reader-grade. |
@@ -323,8 +340,6 @@ CREATE TABLE "learnAttempt" (
     "trackSlug" TEXT NOT NULL,
     "unitSlug" TEXT,                    -- NULL for exams/renewals
     "questionSlugs" TEXT[] NOT NULL,    -- the drawn form, in served order
-    "responses" JSONB NOT NULL DEFAULT '[]'::jsonb,
-        -- [{ "questionSlug", "selected", "correct" }] — never the answer key
     "questionCount" INTEGER NOT NULL,
     "correctCount" INTEGER,
     "passed" BOOLEAN,
@@ -332,6 +347,7 @@ CREATE TABLE "learnAttempt" (
     "startedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "submittedAt" TIMESTAMP WITH TIME ZONE,
     "expiresAt" TIMESTAMP WITH TIME ZONE, -- exam time limit deadline
+    "voidedAt" TIMESTAMP WITH TIME ZONE, -- content version changed mid-attempt; no cooldown, no score
     CONSTRAINT "learnAttempt_pkey" PRIMARY KEY ("id", "companyId"),
     CONSTRAINT "learnAttempt_companyId_fkey" FOREIGN KEY ("companyId")
         REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -340,7 +356,47 @@ CREATE INDEX "learnAttempt_cooldown_idx" ON "learnAttempt"
     ("userId", "companyId", "kind", "trackSlug", "submittedAt");
 ```
 
-### `learnChallengeAttempt` — every hands-on check (append-only)
+Grading is bound to the stored `contentVersion`: every answer is graded **at
+submission** against the bank for that version and written to
+`learnAttemptAnswer` (below); `finalizeExamAttempt` only sums stored results,
+never re-grades. If `LEARN_CONTENT_VERSION` differs from `attempt.contentVersion`
+at any answer or finalize call, the attempt is **voided** (`voidedAt` set, no
+score, no cooldown) and the learner is asked to start again on the new content.
+
+### `learnAttemptAnswer` — per-question grading, service-role only
+
+Per-question correctness never sits in a learner-readable row: a learner who
+could read `correct` per question across retries would reconstruct the answer
+key. Unit-quiz feedback (explanations + doc links) is returned in the grading
+action's response for that sitting only; exams reveal only per-topic totals.
+
+```sql
+CREATE TABLE "learnAttemptAnswer" (
+    "id" TEXT NOT NULL DEFAULT id('laa'),
+    "companyId" TEXT NOT NULL,
+    "attemptId" TEXT NOT NULL,
+    "questionSlug" TEXT NOT NULL,
+    "selected" JSONB NOT NULL,          -- option id(s) chosen
+    "correct" BOOLEAN NOT NULL,         -- graded at submission against the bank
+    "answeredAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT "learnAttemptAnswer_pkey" PRIMARY KEY ("id", "companyId"),
+    CONSTRAINT "learnAttemptAnswer_unique" UNIQUE ("attemptId", "questionSlug", "companyId"),
+    CONSTRAINT "learnAttemptAnswer_attempt_fkey" FOREIGN KEY ("attemptId", "companyId")
+        REFERENCES "learnAttempt"("id", "companyId") ON DELETE CASCADE,
+    CONSTRAINT "learnAttemptAnswer_companyId_fkey" FOREIGN KEY ("companyId")
+        REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+-- RLS enabled with NO policies at all: service-role reads and writes only.
+```
+
+### `learnChallengeAttempt` — one row per server-owned start
+
+The start is a server operation, never client input: `startChallenge` records
+`startedAt` from the server clock and returns the attempt id; `checkChallenge`
+takes that id, re-reads the row under the session's `companyId` (a mismatch is
+a 404 — an attempt is bound to the company it was started in), and updates the
+same row on every check. Exactly one open (unpassed) attempt exists per learner
+× challenge × company.
 
 ```sql
 CREATE TABLE "learnChallengeAttempt" (
@@ -349,16 +405,21 @@ CREATE TABLE "learnChallengeAttempt" (
     "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
     "trackSlug" TEXT NOT NULL,
     "challengeSlug" TEXT NOT NULL,
-    "passed" BOOLEAN NOT NULL,
-    "failedRequirement" TEXT,           -- first failing requirement key
+    "contentVersion" TEXT NOT NULL,     -- checker version the attempt runs against
+    "startedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), -- server clock only
+    "checkCount" INTEGER NOT NULL DEFAULT 0,
+    "passed" BOOLEAN NOT NULL DEFAULT false,
+    "passedAt" TIMESTAMP WITH TIME ZONE,
+    "failedRequirement" TEXT,           -- first failing requirement of the latest check
     "message" TEXT,                     -- the human-readable feedback shown
     "evidence" JSONB,                   -- matched record ids on pass
-    "startedAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-    "checkedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "lastCheckedAt" TIMESTAMP WITH TIME ZONE,
     CONSTRAINT "learnChallengeAttempt_pkey" PRIMARY KEY ("id", "companyId"),
     CONSTRAINT "learnChallengeAttempt_companyId_fkey" FOREIGN KEY ("companyId")
         REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE UNIQUE INDEX "learnChallengeAttempt_open_idx" ON "learnChallengeAttempt"
+    ("userId", "companyId", "challengeSlug") WHERE "passed" = false;
 CREATE INDEX "learnChallengeAttempt_user_idx" ON "learnChallengeAttempt"
     ("userId", "companyId", "challengeSlug", "passed");
 ```
@@ -433,7 +494,10 @@ CREATE TABLE "learnCertificate" (
     "contentVersion" TEXT NOT NULL,
     "examAttemptId" TEXT NOT NULL,
     "examScore" NUMERIC NOT NULL,       -- fraction 0..1
-    "challengeSlugs" TEXT[] NOT NULL,   -- verified hands-on evidence
+    "challengeSlugs" TEXT[] NOT NULL,   -- the track's required challenges at issue time
+    "challengeAttemptIds" TEXT[] NOT NULL, -- the exact passed learnChallengeAttempt rows
+    "evidence" JSONB NOT NULL,          -- immutable snapshot per challenge:
+                                        -- { slug, attemptId, passedAt, contentVersion, evidence }
     "verificationCode" TEXT NOT NULL DEFAULT id('lcv'),
     "issuedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -443,6 +507,9 @@ CREATE TABLE "learnCertificate" (
     "customFields" JSONB,
     CONSTRAINT "learnCertificate_pkey" PRIMARY KEY ("id", "companyId"),
     CONSTRAINT "learnCertificate_verificationCode_key" UNIQUE ("verificationCode"),
+    CONSTRAINT "learnCertificate_examAttempt_key" UNIQUE ("examAttemptId", "companyId"),
+        -- issuance is idempotent per passed exam: a retried or concurrent
+        -- issueCertificate returns the existing row instead of minting a second code
     CONSTRAINT "learnCertificate_examAttempt_fkey" FOREIGN KEY ("examAttemptId", "companyId")
         REFERENCES "learnAttempt"("id", "companyId"),
     CONSTRAINT "learnCertificate_companyId_fkey" FOREIGN KEY ("companyId")
@@ -479,7 +546,8 @@ CREATE INDEX "learnAssignment_groupIds_idx" ON "learnAssignment" USING GIN ("gro
 CREATE TABLE "learnPreference" (
     "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
     "companyId" TEXT NOT NULL,
-    "weeklyGoalXp" INTEGER NOT NULL DEFAULT 200,
+    "weeklyGoalXp" INTEGER NOT NULL DEFAULT 200
+        CHECK ("weeklyGoalXp" IN (100, 200, 500)), -- enforced at the DB, not only the validator
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     CONSTRAINT "learnPreference_pkey" PRIMARY KEY ("userId", "companyId"),
     CONSTRAINT "learnPreference_companyId_fkey" FOREIGN KEY ("companyId")
@@ -492,16 +560,24 @@ CREATE TABLE "learnPreference" (
 ```sql
 -- Pattern for learner-owned engine tables (learnUnitProgress, learnAttempt,
 -- learnChallengeAttempt, learnXpEvent, learnActivityDay, learnBadgeAward,
--- learnCertificate):
+-- learnCertificate): SELF-ONLY reads, limited to companies the user belongs to.
 ALTER TABLE "learnXpEvent" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "learnXpEvent" FOR SELECT USING (
     "userId" = (SELECT auth.uid()::text)
-    OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('resources_view'))::text[])
+    AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
 );
 -- Deliberately NO INSERT/UPDATE/DELETE policies: all writes go through the
 -- service-role client after server-side grading (itarCertification precedent).
+-- Managers never read these rows through PostgREST. The admin dashboard is a
+-- reporting PROJECTION — status per employee × track plus certificate status —
+-- built by a service function on the service-role client inside a route gated
+-- by requirePermissions({ view: "resources" }). Raw XP, streaks, answers, and
+-- misses never leave the learner's own session. Every app query additionally
+-- filters on the ACTIVE companyId (the RLS membership predicate is defense in
+-- depth for multi-company users, not the primary scope).
 
--- learnPreference: SELECT/INSERT/UPDATE for self only.
+-- learnAttemptAnswer: RLS enabled, NO policies — service-role only.
+-- learnPreference: SELECT/INSERT/UPDATE for self only (same self + membership predicate).
 -- learnAssignment: SELECT via get_companies_with_employee_role(); INSERT/UPDATE/
 -- DELETE via get_companies_with_employee_permission('resources_create'/'_update'/'_delete').
 ```
@@ -515,8 +591,10 @@ After the migration: `pnpm run generate:types` before any typecheck.
 - `learnQuizSubmissionValidator` — `{ unitSlug, attemptId, responses: [{questionSlug, selected}] }`
 - `learnExamStartValidator` — `{ trackSlug, honorAccepted: literal(true) }`
 - `learnExamAnswerValidator` — `{ attemptId, questionSlug, selected }`
-- `learnChallengeCheckValidator` — `{ challengeSlug }`
+- `learnChallengeStartValidator` — `{ challengeSlug }`
+- `learnChallengeCheckValidator` — `{ attemptId }` (never a client-supplied `startedAt`)
 - `learnAssignmentValidator` — `{ trackSlug, groupIds: array, dueDate? }`
+- `learnCertificateRevokeValidator` — `{ certificateId, reason }`
 - `learnPreferenceValidator` — `{ weeklyGoalXp: 100 | 200 | 500 }`
 
 ### `resources.service.ts` (additions — client first, `{data,error}`, never throw)
@@ -525,20 +603,35 @@ After the migration: `pnpm run generate:types` before any typecheck.
   certificates + XP total + activity for the hub (parallel reads).
 - `getLearnActivity(client, userId, companyId, sinceDay)` — heatmap rows.
 - `getLearnAssignmentsForUser(client, userId, companyId)` — via `groups_for_user`.
-- `getLearnTeamStatus(client, companyId, filters)` — admin dashboard rollup
-  (assignments × members × progress/certificates; one query with `.in()`, no N+1).
-- `upsertLearnPreference(client, ...)`, `upsertLearnAssignment(client, ...)`,
-  `deleteLearnAssignment(client, ...)`.
+- `getLearnTeamStatus(serviceRole, companyId, filters)` — admin dashboard
+  **projection** (per employee × assigned track: status, percent, certificate
+  state/expiry — never XP, streaks, or answers); one query with `.in()`, no N+1;
+  called only from routes gated on `resources_view`.
+- `upsertLearnPreference(client, ...)`, `upsertLearnAssignment(client, ...)`
+  (resolves every `groupId` with `group.companyId = companyId` and rejects the
+  whole write on any foreign id — before notifications or dashboard joins can
+  see it), `deleteLearnAssignment(client, ...)`.
 - `getLearnCertificateByCode(serviceRole, code)` — verification page read.
 - **Server-only engine** (`resources.learn.server.ts` alongside the curriculum):
-  `startQuizAttempt`, `gradeQuizAttempt`, `startExamAttempt` (draws the
-  stratified form, sets `expiresAt`, enforces cooldowns), `answerExamQuestion`,
-  `finalizeExamAttempt`, `checkChallenge` (runs the checker, records the
-  attempt), `issueCertificate` (re-verifies exam + challenges, writes
-  certificate + XP + badge + notification in one Kysely transaction),
-  `renewCertificate`. All writes via the service-role client; all XP awards
-  through one `awardXp` helper that inserts the ledger row (idempotent via the
-  unique index) and upserts `learnActivityDay`.
+  `startQuizAttempt`, `gradeQuizAttempt` (grades each answer against the bank
+  for `attempt.contentVersion`, writes `learnAttemptAnswer` rows, returns the
+  per-question feedback in the action response only), `startExamAttempt` (draws
+  the stratified form, sets `expiresAt`, enforces cooldowns),
+  `answerExamQuestion` (grades at submission; voids the attempt on a content
+  version mismatch), `finalizeExamAttempt` (sums stored answers only),
+  `startChallenge` (idempotent: returns the open attempt for user × challenge ×
+  company or creates one with a server `startedAt`), `checkChallenge(attemptId)`
+  (re-reads the attempt under the session company, runs the checker with the
+  stored `startedAt`, updates the row), `issueCertificate` (re-verifies exam +
+  challenges, snapshots the exact `learnChallengeAttempt` ids + evidence, writes
+  certificate + XP + badge + notification in one Kysely transaction; on the
+  `(examAttemptId, companyId)` unique conflict it returns the existing
+  certificate), `renewCertificate`, and `revokeCertificate` (admin,
+  `resources_update`: sets `revokedAt`/`revokedBy`, records the reason in
+  `customFields.revocationReason`, fires no XP change). All writes via the
+  service-role client; all XP awards through one `awardXp` helper that inserts
+  the ledger row (idempotent via the unique index) and upserts
+  `learnActivityDay`.
 
 ### Routes
 
@@ -635,6 +728,30 @@ Phase 1 (engine + `fundamentals` + `purchasing`):
       `correct: true` responses does not change the grade.
 - [ ] A direct PostgREST INSERT into `learnXpEvent` / `learnAttempt` /
       `learnCertificate` with a learner JWT is rejected (no write policy).
+- [ ] A learner JWT can SELECT its own `learnAttempt` rows but gets zero rows
+      from `learnAttemptAnswer` (no policy); a user holding `resources_view`
+      gets zero rows from another employee's `learnXpEvent` / `learnAttempt`
+      through PostgREST, while the admin dashboard still shows that employee's
+      track status via the projection.
+- [ ] Opening a hands-on unit and pressing "Start challenge" creates exactly
+      one open `learnChallengeAttempt` (a second press returns the same id);
+      "Check my work" with an attempt id from another company returns 404 and
+      records nothing.
+- [ ] Calling `issueCertificate` twice for the same passed exam attempt (retry
+      or concurrent) yields one `learnCertificate` row and one
+      `verificationCode`; the second call returns the first row.
+- [ ] A certificate's `challengeAttemptIds` and `evidence` name the exact
+      passed attempts; a later re-run of the challenge does not alter them.
+- [ ] An admin with `resources_update` can revoke a certificate with a reason;
+      the verify page shows Revoked immediately, the learner's hub shows the
+      certificate as Revoked, and a user without `resources_update` gets 403.
+- [ ] `upsertLearnAssignment` with one `groupId` from another company rejects
+      the whole write (no row, no notification).
+- [ ] A direct PostgREST UPDATE of `learnPreference.weeklyGoalXp` to `0` or
+      `150` fails the CHECK constraint.
+- [ ] Bumping `LEARN_CONTENT_VERSION` while an exam attempt is in flight voids
+      that attempt on the next answer (no score, no cooldown) and the learner
+      can start a new attempt immediately.
 - [ ] The "Create and release a purchase order" challenge fails with the
       message naming the first missing requirement when (a) no PO exists, (b) a
       PO exists but is Draft, (c) it has 1 line — and passes when a released
@@ -733,8 +850,9 @@ capstone challenges per track, docs-site inline quizzes (phase 3).
       leaderboard precedent. Team-aggregate views can revisit later.
 - [x] Certificate lifetime and renewal? — **Autonomous:** 12-month validity,
       version-stamped, renewed by a free short delta quiz from 30 days out —
-      the SAP/Microsoft/NetSuite convergence; Salesforce's per-release
-      maintenance was retired as burden and is deliberately avoided.
+      the SAP/Microsoft/NetSuite convergence; Salesforce's release-aligned
+      maintenance modules (three cycles a year, still current) are the heavier
+      cadence deliberately avoided.
 - [x] Pass bar? — **Autonomous:** 80% for certification exams (existing
       `PASSING_THRESHOLD = 0.8` precedent + Odoo default), unit quizzes require
       all-correct with XP decay on retries (Trailhead/Academy semantics),
@@ -770,3 +888,24 @@ capstone challenges per track, docs-site inline quizzes (phase 3).
   policies, weekly-goal streaks with no leaderboards, 12-month version-stamped
   certificates with delta-quiz renewal, code-shipped curriculum, practice
   company recommended-not-required.
+- 2026-09-06: Review round 1 (CodeRabbit on PR #1509) — accepted 11 findings,
+  all baked into the design above: (1) per-question grading moved out of the
+  learner-readable `learnAttempt.responses` into a service-role-only
+  `learnAttemptAnswer` table; (2) exam grading bound to the stored
+  `contentVersion` — answers graded at submission, finalize only sums, a
+  version mismatch voids the attempt (`voidedAt`, no cooldown); (3) hands-on
+  challenges get a server-owned `startChallenge` and `checkChallenge(attemptId)`
+  re-reads the attempt under the session company — `learnChallengeAttempt` is
+  now one row per start with a partial unique index on open attempts; (4)
+  `learnCertificate` gains UNIQUE `(examAttemptId, companyId)` so issuance is
+  idempotent, plus `challengeAttemptIds[]` and an immutable `evidence`
+  snapshot; (5) `revokeCertificate` admin action (`resources_update`) added;
+  (6) engine-table RLS is self-only **and** membership-scoped — the
+  `resources_view` raw-read branch is gone, admins read a service-role
+  projection; (7) `upsertLearnAssignment` rejects any `groupId` outside the
+  company; (8) `weeklyGoalXp` gets a DB CHECK (100/200/500); (9) Salesforce
+  maintenance-module claim corrected (release-aligned modules still run as of
+  2026) in spec + research; (10) the "no ERP vendor" claim scoped to the five
+  vendors surveyed as of 2026-08-29; (11) research prior-art references made
+  machine-independent. Declined: none. Acceptance criteria extended with nine
+  new checks covering each accepted finding.
