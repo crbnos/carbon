@@ -11,7 +11,7 @@ import { toolsNavTree } from "@/lib/tools-data";
 /**
  * One layout for the whole API surface. Both APIs are the same product from a
  * reader's side — the Carbon API (service operations, the primary way to write) and
- * the Data API (raw PostgREST tables and views, advanced reads) — so they share a
+ * the Data API (raw PostgREST tables and views — the escape hatch) — so they share a
  * header entry, a sidebar and one host/API-key configurator instead of sitting in
  * two disconnected roots.
  */

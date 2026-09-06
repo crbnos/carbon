@@ -37,19 +37,20 @@ export default function ApiOverviewPage() {
       </Lead>
       <P>
         Carbon exposes its data two ways. This is the primary one. The{" "}
-        <DocLink href="/api/data">Data API</DocLink> is the other — direct
-        REST access to the underlying tables and views.
+        <DocLink href="/api/data">Data API</DocLink> is the escape hatch —
+        direct access to the underlying tables and views, for the rare case
+        this surface doesn't cover.
       </P>
 
       <H2 id="why">Why not the tables directly</H2>
       <P>
-        The <DocLink href="/api/data">Data API</DocLink> is the raw data
-        plane: every table and view as a REST endpoint. It's excellent for
-        reads — bulk exports, analytics, dashboards. Writes are a different
-        story. Writing a row straight to a table skips the service layer, so
-        Carbon never recalculates the values that depend on it — an order total,
-        a job status, a ledger entry — and the record silently drifts out of
-        sync.
+        The <DocLink href="/api/data">Data API</DocLink> gives you every
+        table and view as a REST endpoint — and none of the service layer's
+        protections. A write straight to a table skips validation and
+        recalculation, so the values that depend on it — an order total, a job
+        status, a ledger entry — silently drift out of sync. It exists for the
+        case the Carbon API doesn't cover, when you know exactly what the
+        table touches.
       </P>
       <P>
         The Carbon API runs that logic for you. Every write goes through the

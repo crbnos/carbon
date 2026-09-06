@@ -49,21 +49,22 @@ export default async function ApiIntroPage() {
       <DocTitle>Overview</DocTitle>
       <Lead>
         The Data API is direct REST access to Carbon's tables and views — the
-        raw data plane beneath the <DocLink href="/api">Carbon API</DocLink>.
+        escape hatch beneath the <DocLink href="/api">Carbon API</DocLink>.
         Every table and view is an endpoint.
       </Lead>
       <P>
-        It's built for reads — bulk exports, analytics, dashboards. Start by
-        creating an{" "}
+        Reach for the <DocLink href="/api">Carbon API</DocLink> first. This
+        surface is for the case it doesn't cover — when you know exactly what
+        you're touching. Start by creating an{" "}
         <DocLink href="/api/data/authentication">API key</DocLink>.
       </P>
 
-      <Warn title="Writes belong on the Carbon API">
-        Writing through the Data API goes straight to the tables, skipping the
-        service layer — so Carbon never recalculates the values that depend on
-        your write (order totals, statuses, ledger entries). Treat the Data API
-        as read-mostly: bulk reads, analytics, exports. For creates and updates,
-        use the <DocLink href="/api">Carbon API</DocLink>.
+      <Warn title="You are outside the service layer">
+        Nothing here validates, recalculates, or posts. A write goes straight
+        to the table, so the values that depend on it — order totals, statuses,
+        ledger entries — are not maintained for you. Use the{" "}
+        <DocLink href="/api">Carbon API</DocLink> unless you know exactly what
+        the table touches.
       </Warn>
 
       <H2 id="client-libraries">Client libraries</H2>
@@ -95,7 +96,7 @@ export default async function ApiIntroPage() {
         <Row
           cols="1fr 1fr"
           cells={[
-            "List / retrieve / analytics",
+            "List / retrieve",
             <>The <strong>view</strong> (plural, e.g. salesInvoices)</>,
           ]}
         />

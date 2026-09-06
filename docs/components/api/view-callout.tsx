@@ -9,19 +9,19 @@ export function WriteSteerCallout() {
   return (
     <div className="my-5 rounded-xl border border-ed-amber-stroke/70 bg-ed-amber-fill px-4 py-3.5">
       <p className="m-0 text-ed-14 font-semi text-ed-amber-text">
-        Writes belong on the Carbon API
+        You are outside the service layer
       </p>
       <p className="m-0 mt-1 text-ed-14 leading-[155%] text-ed-ink/78">
-        Writing to this table over the Data API skips the service layer, so
-        Carbon won't recalculate the values that depend on it — totals,
-        statuses, ledger entries. For creates and updates use the{" "}
+        Nothing here validates, recalculates, or posts — a write to this table
+        won't maintain the values that depend on it (totals, statuses, ledger
+        entries). Reach for the{" "}
         <Link
           href="/api"
           className="font-medium text-ed-brand-ink underline decoration-ed-blue-border underline-offset-2 hover:decoration-ed-brand-ink"
         >
           Carbon API
-        </Link>
-        ; treat the Data API as read-mostly.
+        </Link>{" "}
+        first; use this surface when you know exactly what this table touches.
       </p>
     </div>
   );

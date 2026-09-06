@@ -66,11 +66,11 @@ The [Carbon API](/api) is Carbon's service layer — the safe way to read and wr
 
 ### The Data API
 
-The same key also unlocks the [Data API](/api-reference) — direct REST access to every table and view, hosted at `rest.carbon.ms` (the full endpoint catalogue is generated in the [reference](/api-reference)). The same row-level security that governs the app governs these calls: the key is scoped to its company and permissions by the database itself, not just the application layer, so it can only ever touch data its scopes allow.
+The same key also unlocks the [Data API](/api/data) — direct REST access to every table and view, hosted at `rest.carbon.ms` (the full endpoint catalogue is generated in the [reference](/api/data)). The same row-level security that governs the app governs these calls: the key is scoped to its company and permissions by the database itself, not just the application layer, so it can only ever touch data its scopes allow.
 
-The Data API writes straight to tables, so Carbon does not recalculate the derived values — totals, statuses, ledger entries — that it maintains when you write through the Carbon API. Treat it as read-mostly: bulk reads, analytics, exports. For creates and updates, prefer the Carbon API.
+The Data API writes straight to tables, so Carbon does not recalculate the derived values — totals, statuses, ledger entries — that it maintains when you write through the Carbon API. It's the escape hatch: reach for the Carbon API first, and use the Data API when it doesn't cover what you need and you know exactly what the table touches.
 
-The full endpoint catalogue, with request and response shapes per resource, lives in the generated [Data API reference](/api-reference).
+The full endpoint catalogue, with request and response shapes per resource, lives in the generated [Data API reference](/api/data).
 
 ## Keys versus webhooks
 

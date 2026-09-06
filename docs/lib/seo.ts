@@ -28,7 +28,7 @@ export const SEO = {
     intro: {
       title: "Data API",
       description:
-        "Direct REST access to Carbon's tables and views — the raw data plane under the Carbon API.",
+        "Direct REST access to Carbon's tables and views — the escape hatch under the Carbon API.",
     },
     auth: {
       title: "Data API authentication",
