@@ -121,14 +121,16 @@ function expectScopeUntouched(scopes: ReaderScope[]) {
 }
 
 /** Narrowing helper — a failing result is the only one with a requirement. */
-function failureOf(result: Awaited<ReturnType<ReturnType<typeof getChecker>>>) {
+function failureOf(
+  result: Awaited<ReturnType<NonNullable<ReturnType<typeof getChecker>>>>
+) {
   if (result.passed)
     throw new Error("expected the checker to fail, but it passed");
   return result;
 }
 
 function evidenceOf(
-  result: Awaited<ReturnType<ReturnType<typeof getChecker>>>
+  result: Awaited<ReturnType<NonNullable<ReturnType<typeof getChecker>>>>
 ) {
   if (!result.passed) {
     throw new Error(
