@@ -46,36 +46,42 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
 }
 
 /**
- * The success envelope from the dispatcher (`api+/v1+/lib/dispatch.server.ts`): a
- * Supabase result unwrapped to `data` plus an optional `count`. `data` is filled
- * with the operation's own reflected response shape when there is one, so the panel
- * shows the actual payload rather than an empty object.
- */
-/**
  * A representative value for a reflected response schema. Enums use their first
- * real value and nullables show the non-null form — a sample exists to be read, and
- * `null` everywhere teaches nothing. Arrays render a single element: one row shows
- * the shape, and repeating it only makes the panel longer.
+ * real value and nullables show the non-null form — a sample exists to be read.
+ * Anything the schema genuinely doesn't describe — a depth-capped branch, an
+ * `any` — renders as the "…" marker, never as `null`: null reads as a real value
+ * a caller might receive, while "…" reads as what it is, an omission. Arrays
+ * render a single element; one row shows the shape.
  */
+const OMITTED = "…";
+
 function exampleFromSchema(schema: unknown, depth = 0): unknown {
-  if (!schema || typeof schema !== "object" || depth > 4) return null;
+  if (!schema || typeof schema !== "object") return OMITTED;
   const s = schema as JsonSchemaNode;
 
   if (Array.isArray(s.enum) && s.enum.length > 0) return s.enum[0];
+  // Past the reflected schemas' own depth — nothing real left to show.
+  if (depth > 8) return OMITTED;
 
   const types = Array.isArray(s.type) ? s.type : s.type ? [s.type] : [];
   const primary = types.find((t) => t !== "null") ?? types[0];
 
   switch (primary) {
     case "array":
-      return s.items ? [exampleFromSchema(s.items, depth + 1)] : [];
+      return [s.items ? exampleFromSchema(s.items, depth + 1) : OMITTED];
     case "object": {
-      if (!s.properties) return {};
-      const out: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(s.properties)) {
-        out[key] = exampleFromSchema(value, depth + 1);
+      if (s.properties) {
+        const out: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(s.properties)) {
+          out[key] = exampleFromSchema(value, depth + 1);
+        }
+        return out;
       }
-      return out;
+      if (s.additionalProperties && typeof s.additionalProperties === "object") {
+        return { [OMITTED]: exampleFromSchema(s.additionalProperties, depth + 1) };
+      }
+      // A bare `{type:"object"}` is the walker's own truncation (cycle or cap).
+      return OMITTED;
     }
     case "number":
     case "integer":
@@ -84,11 +90,18 @@ function exampleFromSchema(schema: unknown, depth = 0): unknown {
       return true;
     case "string":
       return "string";
-    default:
+    case "null":
       return null;
+    default:
+      return OMITTED;
   }
 }
 
+/**
+ * The success envelope from the dispatcher (`api+/v1+/lib/dispatch.server.ts`):
+ * a Supabase result unwrapped to `data` plus an optional `count`, with `data`
+ * filled from the operation's reflected response shape.
+ */
 function responseEnvelope(responseSchema: unknown): string {
   const data = responseSchema ? exampleFromSchema(responseSchema) : {};
   return JSON.stringify({ data, count: null }, null, 2);
