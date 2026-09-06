@@ -660,7 +660,7 @@ run log at `.ai/runs/`.
 - [x] T6 — In-app agent on `callOperation`
 - [x] T7 — Workflow dispatcher on `callOperation`; `direct-executor.ts` deleted; parity test converted
 - [x] T8 — Permission-derivation tests + 20-op spot-check (+ overrides if any)
-- [~] T9 — `pnpm --filter erp build` PASSED + doc/rule sync done; live smoke (steps 1–3) BLOCKED: crbn up stack not running (only Redis up, erp.main.dev 502). Changelog note (D6) pending PR.
+- [x] T9 — live smoke PASSED on crbn up (run log: `.ai/runs/2026-09-07-orpc-live-smoke.md`), `pnpm --filter erp build` PASSED, doc/rule sync done. Changelog note (D6) still to be carried into the PR description.
 
 ## Risks and escape hatches
 
