@@ -1207,7 +1207,7 @@ msgid "Add cost center"
 msgstr "添加成本中心"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "添加员工"
 
 msgid "Add Entry"
 msgstr "添加条目"

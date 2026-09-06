@@ -1207,7 +1207,7 @@ msgid "Add cost center"
 msgstr "원가 센터 추가"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "직원 추가"
 
 msgid "Add Entry"
 msgstr "항목 추가"
