@@ -9,7 +9,7 @@ import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { authedContextFromApiKey } from "../v1+/lib/authenticate.server";
+import { authenticateApiKey } from "../v1+/lib/authenticate.server";
 import { createMcpServer } from "./lib/server";
 import type { McpContext } from "./lib/types";
 
@@ -150,7 +150,7 @@ async function resolveAuth(request: Request): Promise<{
   // so the requirePermissions-then-read-scopes dance exists once.
   const rawKey = request.headers.get("carbon-key") ?? "";
   return {
-    ctx: await authedContextFromApiKey(request.url, rawKey),
+    ctx: await authenticateApiKey(request.url, rawKey),
     request
   };
 }

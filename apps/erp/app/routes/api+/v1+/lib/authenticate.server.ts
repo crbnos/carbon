@@ -22,7 +22,7 @@ import type { AuthedContext } from "./base.server";
  * The scope read hits the same 30s cache requirePermissions just warmed — a Redis
  * hit, not a second apiKey select.
  */
-export async function authedContextFromApiKey(
+export async function authenticateApiKey(
   url: string,
   rawKey: string
 ): Promise<AuthedContext> {
@@ -65,5 +65,5 @@ export async function resolveApiKeyContext(
     );
   }
 
-  return authedContextFromApiKey(request.url, rawKey);
+  return authenticateApiKey(request.url, rawKey);
 }
