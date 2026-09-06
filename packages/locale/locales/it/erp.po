@@ -1207,7 +1207,7 @@ msgid "Add cost center"
 msgstr "Aggiungi centro di costo"
 
 msgid "Add Employee"
-msgstr "Aggiungi Dipendente"
+msgstr "Aggiungi dipendente"
 
 msgid "Add Entry"
 msgstr "Aggiungi Voce"
@@ -8373,6 +8373,9 @@ msgstr "Valutazione Inventario"
 msgid "Invite"
 msgstr "Invita"
 
+msgid "Invite Employees"
+msgstr "Invita dipendenti"
+
 msgid "Invite Expired"
 msgstr "Invito Scaduto"
 
@@ -13039,6 +13042,9 @@ msgstr "Rimuovi condizione"
 
 msgid "Remove corrupted data and restore"
 msgstr "Rimuovi i dati corrotti e ripristina"
+
+msgid "Remove employee"
+msgstr "Rimuovi dipendente"
 
 msgid "Remove Employee"
 msgstr "Rimuovi dipendente"

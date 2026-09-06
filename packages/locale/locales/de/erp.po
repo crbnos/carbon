@@ -8373,6 +8373,9 @@ msgstr "Bestandsbewertung"
 msgid "Invite"
 msgstr "Einladen"
 
+msgid "Invite Employees"
+msgstr "Mitarbeiter einladen"
+
 msgid "Invite Expired"
 msgstr "Einladung abgelaufen"
 
@@ -13039,6 +13042,9 @@ msgstr "Bedingung entfernen"
 
 msgid "Remove corrupted data and restore"
 msgstr "Beschädigte Daten entfernen und wiederherstellen"
+
+msgid "Remove employee"
+msgstr "Mitarbeiter entfernen"
 
 msgid "Remove Employee"
 msgstr "Mitarbeiter entfernen"

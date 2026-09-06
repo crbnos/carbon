@@ -8373,8 +8373,11 @@ msgstr "Оценка товарно-материального запаса"
 msgid "Invite"
 msgstr "Пригласить"
 
+msgid "Invite Employees"
+msgstr "Пригласить сотрудников"
+
 msgid "Invite Expired"
-msgstr "Истек срок приглашения"
+msgstr "Приглашение истекло"
 
 msgid "Invited"
 msgstr "Приглашено"
@@ -13039,6 +13042,9 @@ msgstr "Убрать условие"
 
 msgid "Remove corrupted data and restore"
 msgstr "Убрать поврежденные данные и восстановить"
+
+msgid "Remove employee"
+msgstr "Удалить сотрудника"
 
 msgid "Remove Employee"
 msgstr "Удалить сотрудника"

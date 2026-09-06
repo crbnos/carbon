@@ -8373,6 +8373,9 @@ msgstr "इन्वेंटरी मूल्यांकन"
 msgid "Invite"
 msgstr "आमंत्रित करें"
 
+msgid "Invite Employees"
+msgstr "कर्मचारियों को आमंत्रित करें"
+
 msgid "Invite Expired"
 msgstr "आमंत्रण समाप्त हो गया"
 
@@ -13039,6 +13042,9 @@ msgstr "शर्त निकालें"
 
 msgid "Remove corrupted data and restore"
 msgstr "भ्रष्ट डेटा निकालें और पुनर्स्थापित करें"
+
+msgid "Remove employee"
+msgstr "कर्मचारी को हटाएँ"
 
 msgid "Remove Employee"
 msgstr "कर्मचारी को हटाएँ"
