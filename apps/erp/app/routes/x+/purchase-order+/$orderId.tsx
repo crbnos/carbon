@@ -17,10 +17,13 @@ import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import { invoiceSettlementDisplayAmounts } from "~/modules/invoicing";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderDelivery,
+  getPurchaseOrderInvoiceLines,
+  getPurchaseOrderInvoicesByIds,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getSupplier,
@@ -523,6 +526,86 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }));
   const resolvedAttachments = [...defaultAttachments, ...adHocAttachments];
 
+  const invoiceLines = await getPurchaseOrderInvoiceLines(
+    client,
+    orderId,
+    companyId
+  );
+
+  if (invoiceLines.error) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error(invoiceLines.error, "Failed to load linked purchase invoices")
+      )
+    );
+  }
+
+  const invoiceIds = Array.from(
+    new Set(
+      (invoiceLines.data ?? []).map((line) => line.invoiceId).filter(Boolean)
+    )
+  ) as string[];
+
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let balanceRemaining = 0;
+  let currencyMismatchCount = 0;
+
+  if (invoiceIds.length > 0) {
+    const invoices = await getPurchaseOrderInvoicesByIds(
+      client,
+      invoiceIds,
+      companyId
+    );
+
+    if (invoices.error) {
+      throw redirect(
+        path.to.purchaseOrders,
+        await flash(
+          request,
+          error(invoices.error, "Failed to load purchase invoice totals")
+        )
+      );
+    }
+
+    const orderCurrency = purchaseOrder.data?.currencyCode;
+    // Draft/Pending are unposted; Voided/Return are non-spend. Match the
+    // invoice-view statuses that keep their stored (non-derived) values.
+    const nonPostedStatuses = new Set(["Draft", "Pending", "Voided", "Return"]);
+
+    for (const invoice of invoices.data ?? []) {
+      if (nonPostedStatuses.has(invoice.status ?? "")) {
+        continue;
+      }
+
+      const invoiceCurrency = invoice.currencyCode;
+
+      // Avoid mixing currencies in the same displayed number.
+      if (
+        orderCurrency &&
+        invoiceCurrency &&
+        invoiceCurrency !== orderCurrency
+      ) {
+        currencyMismatchCount += 1;
+        continue;
+      }
+
+      // orderTotal/balance are already company-base. The PO summary formats
+      // them with the base-currency formatter, so do not convert again.
+      const display = invoiceSettlementDisplayAmounts({
+        total: invoice.orderTotal ?? 0,
+        balance: invoice.balance,
+        convertToDocument: false
+      });
+
+      invoicedAmount += display.invoicedAmount;
+      paidAmount += display.paidAmount;
+      balanceRemaining += display.balanceRemaining;
+    }
+  }
+
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
@@ -540,7 +623,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canReopen,
     canDelete,
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    invoiceSummary: {
+      invoicedAmount,
+      paidAmount,
+      balanceRemaining,
+      currencyMismatchCount
+    }
   };
 }
 

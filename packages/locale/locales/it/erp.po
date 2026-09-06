@@ -207,6 +207,9 @@ msgstr "{count, plural, one {# conto con saldo} other {# conti con saldo}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Esclude # fattura in una valuta diversa.} other {Esclude # fatture in una valuta diversa.}}"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
@@ -2578,6 +2581,9 @@ msgstr "Backup"
 
 msgid "Balance"
 msgstr "Saldo"
+
+msgid "Balance Remaining:"
+msgstr "Saldo residuo:"
 
 msgid "Balance Sheet"
 msgstr "Stato patrimoniale"
@@ -11448,11 +11454,14 @@ msgstr "Pagina"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Pagina {pdfViewPage} di {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Importo Pagato:"
+msgid "Paid"
+msgstr "Pagato"
 
 msgid "Paid Date"
 msgstr "Data di Pagamento"
+
+msgid "Paid:"
+msgstr "Pagato:"
 
 msgid "Parameters"
 msgstr "Parametri"

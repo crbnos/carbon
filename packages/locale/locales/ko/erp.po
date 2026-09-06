@@ -207,6 +207,9 @@ msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
@@ -2578,6 +2581,9 @@ msgstr "백업"
 
 msgid "Balance"
 msgstr "잔액"
+
+msgid "Balance Remaining:"
+msgstr "잔액:"
 
 msgid "Balance Sheet"
 msgstr "재무상태표"
@@ -11448,11 +11454,14 @@ msgstr "페이지"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "{documentPageCount}페이지 중 {pdfViewPage}페이지"
 
-msgid "Paid Amount:"
-msgstr "지급액:"
+msgid "Paid"
+msgstr "지급 완료"
 
 msgid "Paid Date"
 msgstr "지급일"
+
+msgid "Paid:"
+msgstr "지급액:"
 
 msgid "Parameters"
 msgstr "파라미터"

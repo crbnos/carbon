@@ -207,6 +207,9 @@ msgstr "{count, plural, one {# счет с остатком} other {# счето
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -2578,6 +2581,9 @@ msgstr "Резервные копии"
 
 msgid "Balance"
 msgstr "Остаток"
+
+msgid "Balance Remaining:"
+msgstr "Остаток:"
 
 msgid "Balance Sheet"
 msgstr "Бухгалтерский баланс"
@@ -11448,11 +11454,14 @@ msgstr "Страница"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Страница {pdfViewPage} из {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Оплаченная сумма:"
+msgid "Paid"
+msgstr "Оплачено"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
+
+msgid "Paid:"
+msgstr "Оплачено:"
 
 msgid "Parameters"
 msgstr "Параметры"

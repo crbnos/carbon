@@ -394,6 +394,30 @@ export async function getPurchaseOrderLines(
     .order("createdAt", { ascending: true });
 }
 
+export async function getPurchaseOrderInvoiceLines(
+  client: SupabaseClient<Database>,
+  purchaseOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("purchaseInvoiceLine")
+    .select("invoiceId")
+    .eq("purchaseOrderId", purchaseOrderId)
+    .eq("companyId", companyId);
+}
+
+export async function getPurchaseOrderInvoicesByIds(
+  client: SupabaseClient<Database>,
+  invoiceIds: string[],
+  companyId: string
+) {
+  return client
+    .from("purchaseInvoices")
+    .select("id, orderTotal, balance, status, currencyCode")
+    .eq("companyId", companyId)
+    .in("id", invoiceIds);
+}
+
 export async function getPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLineId: string

@@ -207,6 +207,9 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
@@ -2578,6 +2581,9 @@ msgstr "备份"
 
 msgid "Balance"
 msgstr "余额"
+
+msgid "Balance Remaining:"
+msgstr "剩余余额："
 
 msgid "Balance Sheet"
 msgstr "资产负债表"
@@ -11448,11 +11454,14 @@ msgstr "页面"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "第 {pdfViewPage} 页，共 {documentPageCount} 页"
 
-msgid "Paid Amount:"
-msgstr "已支付金额："
+msgid "Paid"
+msgstr "已付清"
 
 msgid "Paid Date"
 msgstr "支付日期"
+
+msgid "Paid:"
+msgstr "已付："
 
 msgid "Parameters"
 msgstr "参数"

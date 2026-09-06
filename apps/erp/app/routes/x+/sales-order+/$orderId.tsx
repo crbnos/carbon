@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { invoiceSettlementDisplayAmounts } from "~/modules/invoicing";
 import {
   getCustomer,
   getOpportunity,
@@ -76,12 +77,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? getCustomer(client, salesOrder.data.customerId)
       : Promise.resolve(null),
     getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
+    getSalesOrderInvoiceLines(client, orderId, companyId)
   ]);
 
   if (invoiceLines.error) {
     throw redirect(
-      path.to.salesOrder(orderId),
+      path.to.salesOrders,
       await flash(
         request,
         error(invoiceLines.error, "Failed to load linked sales invoices")
@@ -97,14 +98,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let invoicedAmount = 0;
   let paidAmount = 0;
+  let balanceRemaining = 0;
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getSalesOrderInvoicesByIds(client, invoiceIds);
+    const invoices = await getSalesOrderInvoicesByIds(
+      client,
+      invoiceIds,
+      companyId
+    );
 
     if (invoices.error) {
       throw redirect(
-        path.to.salesOrder(orderId),
+        path.to.salesOrders,
         await flash(
           request,
           error(invoices.error, "Failed to load sales invoice totals")
@@ -113,9 +119,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
 
     const orderCurrency = salesOrder.data?.currencyCode;
+    // Draft/Pending are unposted; Voided/Return are non-revenue. Match the
+    // invoice-view statuses that keep their stored (non-derived) values.
+    const nonPostedStatuses = new Set(["Draft", "Pending", "Voided", "Return"]);
 
     for (const invoice of invoices.data ?? []) {
-      const invoiceTotal = invoice.invoiceTotal ?? 0;
+      if (nonPostedStatuses.has(invoice.status ?? "")) {
+        continue;
+      }
+
       const invoiceCurrency = invoice.currencyCode;
 
       // Avoid mixing currencies in the same displayed number.
@@ -128,10 +140,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      invoicedAmount += invoiceTotal;
-      if (invoice.status === "Paid") {
-        paidAmount += invoiceTotal;
-      }
+      // invoiceTotal/balance come from base-currency unitPrice; the summary
+      // renders in the sales order currency via the invoice exchangeRate.
+      const display = invoiceSettlementDisplayAmounts({
+        total: invoice.invoiceTotal ?? 0,
+        balance: invoice.balance,
+        exchangeRate: invoice.exchangeRate,
+        convertToDocument: true
+      });
+
+      invoicedAmount += display.invoicedAmount;
+      paidAmount += display.paidAmount;
+      balanceRemaining += display.balanceRemaining;
     }
   }
 
@@ -154,6 +174,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     invoiceSummary: {
       invoicedAmount,
       paidAmount,
+      balanceRemaining,
       currencyMismatchCount
     },
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,

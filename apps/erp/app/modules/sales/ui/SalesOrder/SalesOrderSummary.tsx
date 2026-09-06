@@ -29,7 +29,7 @@ import {
   parseDate,
   today
 } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -57,6 +57,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { INVOICE_DUST_THRESHOLD } from "~/modules/invoicing";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -86,6 +87,7 @@ const SalesOrderSummary = ({
     invoiceSummary: {
       invoicedAmount: number;
       paidAmount: number;
+      balanceRemaining: number;
       currencyMismatchCount: number;
     };
   }>(path.to.salesOrder(orderId));
@@ -131,6 +133,16 @@ const SalesOrderSummary = ({
     (routeData?.salesOrder?.shippingCost ?? 0);
   const total = subtotal + tax + convertedShippingCost;
   const permissions = usePermissions();
+
+  const paidAmount = routeData?.invoiceSummary?.paidAmount ?? 0;
+  const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
+  const currencyMismatchCount =
+    routeData?.invoiceSummary?.currencyMismatchCount ?? 0;
+  // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
+  const isFullyPaid =
+    balanceRemaining < INVOICE_DUST_THRESHOLD &&
+    paidAmount >= INVOICE_DUST_THRESHOLD &&
+    (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   const linesRequireJobs = hasLinesRequiringJobs({
     jobs: routeData?.salesOrder?.jobs as SalesOrderForProductionCheck["jobs"],
@@ -314,22 +326,37 @@ const SalesOrderSummary = ({
             </HStack>
             <HStack className="justify-between text-sm text-muted-foreground w-full">
               <span>
-                <Trans>Paid Amount:</Trans>
+                <Trans>Paid:</Trans>
               </span>
               <MotionMoney
-                value={routeData?.invoiceSummary?.paidAmount ?? 0}
+                value={paidAmount}
                 currency={routeData?.salesOrder?.currencyCode ?? "USD"}
                 decimalPlaces={currencyDecimals}
               />
             </HStack>
-            {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
+              <span>
+                <Trans>Balance Remaining:</Trans>
+              </span>
+              {isFullyPaid ? (
+                <Badge variant="secondary">
+                  <Trans>Paid</Trans>
+                </Badge>
+              ) : (
+                <MotionMoney
+                  value={balanceRemaining}
+                  currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
+                />
+              )}
+            </HStack>
+            {currencyMismatchCount > 0 && (
               <span className="text-xs text-muted-foreground">
-                Excludes {routeData?.invoiceSummary?.currencyMismatchCount}{" "}
-                invoice
-                {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 1
-                  ? "s"
-                  : ""}{" "}
-                in a different currency.
+                <Plural
+                  value={currencyMismatchCount}
+                  one="Excludes # invoice in a different currency."
+                  other="Excludes # invoices in a different currency."
+                />
               </span>
             )}
           </VStack>

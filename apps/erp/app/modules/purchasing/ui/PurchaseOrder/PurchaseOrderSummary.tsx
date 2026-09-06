@@ -16,7 +16,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -422,6 +422,12 @@ const PurchaseOrderSummary = ({
     lines: PurchaseOrderLine[];
     purchaseOrderDelivery: PurchaseOrderDelivery;
     supplier: Supplier;
+    invoiceSummary: {
+      invoicedAmount: number;
+      paidAmount: number;
+      balanceRemaining: number;
+      currencyMismatchCount: number;
+    };
   }>(path.to.purchaseOrder(orderId));
 
   const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
@@ -476,6 +482,16 @@ const PurchaseOrderSummary = ({
 
   const total = subtotal + tax + shippingCost;
   const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
+
+  const paidAmount = routeData?.invoiceSummary?.paidAmount ?? 0;
+  const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
+  const currencyMismatchCount =
+    routeData?.invoiceSummary?.currencyMismatchCount ?? 0;
+  // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
+  const isFullyPaid =
+    balanceRemaining < 0.01 &&
+    paidAmount >= 0.01 &&
+    (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   return (
     <Card>
@@ -582,7 +598,9 @@ const PurchaseOrderSummary = ({
           </HStack>
 
           <HStack className="justify-between text-xl font-semibold w-full">
-            <span>Total:</span>
+            <span>
+              <Trans>Total:</Trans>
+            </span>
             <VStack spacing={0} className="items-end">
               <span>{formatter.format(total)}</span>
               {shouldConvertCurrency && (
@@ -592,6 +610,44 @@ const PurchaseOrderSummary = ({
               )}
             </VStack>
           </HStack>
+
+          <div className="h-px bg-border my-2 w-full" />
+
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Invoiced Amount:</Trans>
+            </span>
+            <span>
+              {formatter.format(routeData?.invoiceSummary?.invoicedAmount ?? 0)}
+            </span>
+          </HStack>
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Paid:</Trans>
+            </span>
+            <span>{formatter.format(paidAmount)}</span>
+          </HStack>
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Balance Remaining:</Trans>
+            </span>
+            {isFullyPaid ? (
+              <Badge variant="secondary">
+                <Trans>Paid</Trans>
+              </Badge>
+            ) : (
+              <span>{formatter.format(balanceRemaining)}</span>
+            )}
+          </HStack>
+          {currencyMismatchCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              <Plural
+                value={currencyMismatchCount}
+                one="Excludes # invoice in a different currency."
+                other="Excludes # invoices in a different currency."
+              />
+            </span>
+          )}
         </VStack>
       </CardContent>
     </Card>
