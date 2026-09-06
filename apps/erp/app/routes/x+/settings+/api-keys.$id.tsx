@@ -8,6 +8,7 @@ import { data, redirect, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
 import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -55,6 +56,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  // A scope/expiry edit must not keep authenticating from the 30s auth cache.
+  await invalidateApiKeyCache(client, id);
 
   throw redirect(
     `${path.to.apiKeys}?${getParams(request)}`,

@@ -1,3 +1,4 @@
+import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -17,6 +18,23 @@ import type { customFieldValidator } from "./settings.models";
 
 const INTEGRATION_CACHE_TTL = 3600;
 const logger = getLogger("erp", "settings");
+
+/**
+ * Drop the cached auth record for an API key so a scope change or revocation
+ * takes effect immediately instead of after the cache TTL. Call BEFORE deleting
+ * the row — the keyHash is unrecoverable afterwards.
+ */
+export async function invalidateApiKeyCache(
+  client: SupabaseClient<Database>,
+  id: string
+): Promise<void> {
+  const { data } = await client
+    .from("apiKey")
+    .select("keyHash")
+    .eq("id", id)
+    .single();
+  if (data?.keyHash) await bustApiKeyCache(data.keyHash);
+}
 
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";

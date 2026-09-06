@@ -9,6 +9,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
 import { deleteApiKey } from "~/modules/settings";
+import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -31,6 +32,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(params, "Failed to get an id"))
     );
   }
+
+  // Bust BEFORE the delete — the keyHash is unreadable once the row is gone.
+  await invalidateApiKeyCache(client, id);
 
   const { error: deleteApiKeyError } = await deleteApiKey(client, id);
   if (deleteApiKeyError) {
