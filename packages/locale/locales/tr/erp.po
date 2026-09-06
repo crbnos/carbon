@@ -192,6 +192,9 @@ msgstr "{conflictCount} çakışma"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
@@ -2545,6 +2548,9 @@ msgstr "Yedeklemeler"
 
 msgid "Balance"
 msgstr "Bakiye"
+
+msgid "Balance Remaining:"
+msgstr "Kalan bakiye:"
 
 msgid "Balance Sheet"
 msgstr "Bilanço"
@@ -11361,11 +11367,14 @@ msgstr "Sayfa"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Sayfa {pdfViewPage} / {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Ödenen Tutar:"
+msgid "Paid"
+msgstr "Ödendi"
 
 msgid "Paid Date"
 msgstr "Ödeme Tarihi"
+
+msgid "Paid:"
+msgstr "Ödenen:"
 
 msgid "Parameters"
 msgstr "Parametreler"
