@@ -1,6 +1,5 @@
 import {
   siGo,
-  siOpenjdk,
   siPhp,
   siPython,
   siRuby,
@@ -120,14 +119,6 @@ const CARDS: SdkCard[] = [
     cta: "Generate"
   },
   {
-    glyph: <Brand path={siOpenjdk.path} />,
-    tone: "bg-ed-warm-100 text-ed-ink/70",
-    name: "Java",
-    desc: "openapi-generator (Docker image, no Java install) with -g java.",
-    href: "#any-language",
-    cta: "Generate"
-  },
-  {
     glyph: <Brand path={siPhp.path} />,
     tone: "bg-[#EBECF3] text-[#777BB4]",
     name: "PHP",
@@ -224,14 +215,14 @@ export default async function ApiSdksPage() {
       </P>
       <CodeBlock html={goClient} code={GO_CLIENT} label="Terminal" />
 
-      <H2 id="any-language">Ruby, C#, Java, PHP — any language</H2>
+      <H2 id="any-language">Ruby, C#, PHP — any language</H2>
       <P>
         <DocLink href="https://github.com/OpenAPITools/openapi-generator">
           openapi-generator
         </DocLink>{" "}
         covers 50+ languages. Its official Docker image needs no Java install —
-        swap <Code>-g ruby</Code> for <Code>csharp</Code>, <Code>java</Code>,{" "}
-        <Code>php</Code>, or any other generator (with Java 11+ installed,{" "}
+        swap <Code>-g ruby</Code> for <Code>csharp</Code>, <Code>php</Code>,
+        or any other generator (with Java 11+ installed,{" "}
         <Code>npx openapi-generator-cli</Code> takes the same flags):
       </P>
       <CodeBlock
