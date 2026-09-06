@@ -95,7 +95,7 @@
     "@carbon/utils": "workspace:*",
     "@testing-library/dom": "8.20.1",
     "@types/dompurify": "2.4.0",
-    "@types/forge-viewer": "7.89.1",
+    "@types/forge-viewer": "7.99.2",
     "@types/nprogress": "0.2.3",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
