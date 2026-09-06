@@ -8377,7 +8377,7 @@ msgid "Invite"
 msgstr "Zaproś"
 
 msgid "Invite Employees"
-msgstr ""
+msgstr "Zaproś pracowników"
 
 msgid "Invite Expired"
 msgstr "Zaproszenie wygasło"
@@ -13054,7 +13054,7 @@ msgstr "Usuń z listy warunek"
 msgid "Remove corrupted data and restore"
 msgstr "Usuń uszkodzone dane i przywróć"
 msgid "Remove employee"
-msgstr ""
+msgstr "Usuń pracownika"
 
 msgid "Remove Employee"
 msgstr "Usuń pracownika"
