@@ -71,6 +71,18 @@ function SearchGlyph({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Opening the palette from elsewhere in the tree. The palette lives in the header
+ * and owns its own state, so a sibling (the API sidebar) cannot lift it — a DOM
+ * event is the smallest bridge that does not thread context through every layout.
+ * `tag` preselects a surface pill, so "search the API" lands already filtered.
+ */
+const OPEN_SEARCH_EVENT = "carbon:open-search";
+
+export function openSearch(tag?: string): void {
+  window.dispatchEvent(new CustomEvent(OPEN_SEARCH_EVENT, { detail: { tag } }));
+}
+
 export function SearchCommand() {
   const [open, setOpen] = useState(false);
   const [tag, setTag] = useState<string | undefined>(undefined);
@@ -107,6 +119,17 @@ export function SearchCommand() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Opened from elsewhere (the API sidebar), optionally on a preselected surface.
+  useEffect(() => {
+    function onOpen(e: Event) {
+      const requested = (e as CustomEvent<{ tag?: string }>).detail?.tag;
+      if (requested !== undefined) setTag(requested);
+      setOpen(true);
+    }
+    window.addEventListener(OPEN_SEARCH_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_SEARCH_EVENT, onOpen);
   }, []);
 
   // Keep the highlighted row in range and scrolled into view as results change.

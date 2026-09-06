@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { openSearch } from "@/components/search/search-command";
 import { operationLabel, type ToolNavModule } from "@/lib/tools-data";
 
 const CLASS_DOT: Record<string, string> = {
@@ -69,7 +70,8 @@ function MidTruncatedLabel({ text }: { text: string }) {
 }
 
 /** The Carbon API sidebar: getting-started links plus the operation catalog grouped by
- *  module, with a type-to-filter across all of it. Operation slugs are the oRPC
+ *  module. Finding one goes through the global palette (the button above opens it
+ *  on the API surface); this tree is for browsing. Operation slugs are the oRPC
  *  operation ids, so each row links to `/api/operations/<slug>` — the same surface MCP
  *  `call_tool` and HTTP reach. */
 export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
@@ -83,7 +85,6 @@ export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
   }, [operations, activeOp]);
 
   const [open, setOpen] = useState<Set<string>>(() => new Set(activeOpModule ? [activeOpModule] : []));
-  const [filter, setFilter] = useState("");
   const activeRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -98,27 +99,6 @@ export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
     () => operations.reduce((n, m) => n + m.tools.length, 0),
     [operations]
   );
-
-  // At 1,495 operations, browsing is not navigation — the filter is. A match on
-  // either the short label or the full callable name keeps `sales_copyQuote`
-  // findable both ways; matching modules render force-expanded.
-  const query = filter.trim().toLowerCase();
-  const visible = useMemo(() => {
-    if (!query) return operations;
-    return operations
-      .map((m) => ({
-        ...m,
-        tools: m.tools.filter(
-          (t) =>
-            t.name.toLowerCase().includes(query) ||
-            operationLabel(t.name, m.slug).toLowerCase().includes(query)
-        ),
-      }))
-      .filter((m) => m.tools.length > 0);
-  }, [operations, query]);
-  const matchCount = query
-    ? visible.reduce((n, m) => n + m.tools.length, 0)
-    : null;
 
   return (
     <div>
@@ -136,60 +116,33 @@ export function ApiSurfaceNav({ operations }: { operations: ToolNavModule[] }) {
           ))}
         </div>
 
-        <div className="mb-2 flex h-[34px] items-center gap-2 rounded-lg border border-ed-hairline bg-white px-2.5">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="shrink-0">
-            <circle cx="7" cy="7" r="4.5" stroke="rgba(38,35,35,0.45)" strokeWidth="1.3" />
-            <path d="M10.5 10.5L13.5 13.5" stroke="rgba(38,35,35,0.45)" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-          <input
-            type="text"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder={`Filter ${totalOps.toLocaleString()} operations…`}
-            aria-label="Filter operations"
-            className="w-full min-w-0 bg-transparent text-ed-13 text-ed-ink outline-none placeholder:text-ed-text-muted"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setFilter("")}
-              aria-label="Clear filter"
-              className="shrink-0 font-mono text-ed-12 text-ed-ink/45 hover:text-ed-ink"
-            >
-              ×
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-baseline justify-between px-2 pb-[3px] pt-1.5">
+        {/* Finding an operation among 1,495 is the palette's job — it searches
+            names, parameters and descriptions across every surface. The icon opens
+            it already filtered to the API, so this tree stays a browse tree and
+            costs no vertical space. */}
+        <div className="flex items-center justify-between px-2 pb-[3px] pt-1.5">
           <p className={SECTION_LABEL}>Carbon API</p>
-          {query ? (
-            <span className="font-mono text-ed-11 tabular-nums text-ed-ink/45">
-              {matchCount} match{matchCount === 1 ? "" : "es"}
-            </span>
-          ) : (
-            <span className="flex items-center gap-[7px] text-[10px] leading-none text-ed-ink/50">
-              <span className="flex items-center gap-[3px]"><span className="h-[5px] w-[5px] rounded-full bg-ed-green-strong" />read</span>
-              <span className="flex items-center gap-[3px]"><span className="h-[5px] w-[5px] rounded-full bg-ed-brand-ink" />write</span>
-              <span className="flex items-center gap-[3px]"><span className="h-[5px] w-[5px] rounded-full bg-ed-red" />delete</span>
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={() => openSearch("tools")}
+            title={`Search ${totalOps.toLocaleString()} operations (⌘K)`}
+            aria-label="Search operations"
+            className="-mr-1 flex size-6 shrink-0 items-center justify-center rounded-md text-ed-ink/45 transition-colors hover:bg-ed-row-hover hover:text-ed-ink"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M10.5 10.5L13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
 
-        {query && visible.length === 0 && (
-          <p className="m-0 px-2 py-1.5 text-ed-13 text-ed-ink/54">
-            No operations match "{filter.trim()}".
-          </p>
-        )}
-
-        {visible.map((m) => {
-          const isOpen = query.length > 0 || open.has(m.slug);
+        {operations.map((m) => {
+          const isOpen = open.has(m.slug);
           return (
             <div key={m.slug}>
               <button
                 type="button"
                 onClick={() => {
-                  if (query) return;
                   setOpen((prev) => {
                     const next = new Set(prev);
                     if (next.has(m.slug)) next.delete(m.slug);
