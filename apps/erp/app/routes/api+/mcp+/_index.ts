@@ -1,4 +1,8 @@
-import { hashOAuthSecret, requirePermissions } from "@carbon/auth/auth.server";
+import {
+  getCompanyIdFromAPIKey,
+  hashOAuthSecret,
+  requirePermissions
+} from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
@@ -7,10 +11,10 @@ import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { createMcpServer } from "./lib/server";
+import type { McpContext } from "./lib/types";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,13 +33,6 @@ function addCorsHeaders(response: Response): Response {
     headers
   });
 }
-
-type McpContext = {
-  client: SupabaseClient;
-  companyId: string;
-  companyGroupId: string;
-  userId: string;
-};
 
 async function authenticateOAuthToken(
   accessToken: string
@@ -129,7 +126,9 @@ async function resolveAuth(request: Request): Promise<{
             companyId: oauthAuth.companyId,
             companyGroupId:
               companyResult.data?.companyGroupId ?? oauthAuth.companyId,
-            userId: oauthAuth.userId
+            userId: oauthAuth.userId,
+            authKind: "oauth" as const,
+            scopes: {}
           },
           request
         };
@@ -152,8 +151,22 @@ async function resolveAuth(request: Request): Promise<{
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {});
 
+  // The per-operation scope gate needs the key's scopes. `request` here carries the
+  // carbon-key header for both entry forms (`Bearer crbn_…` was rewritten above), and
+  // the record comes from the same 30s cache requirePermissions just warmed — a Redis
+  // hit, not a second apiKey select.
+  const rawKey = request.headers.get("carbon-key") ?? "";
+  const { data: keyRow } = await getCompanyIdFromAPIKey(rawKey);
+
   return {
-    ctx: { client, companyId, companyGroupId, userId },
+    ctx: {
+      client,
+      companyId,
+      companyGroupId,
+      userId,
+      authKind: "api-key" as const,
+      scopes: keyRow?.scopes ?? {}
+    },
     request
   };
 }
