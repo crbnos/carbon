@@ -8374,6 +8374,9 @@ msgstr "库存估价"
 msgid "Invite"
 msgstr "邀请"
 
+msgid "Invite Employees"
+msgstr ""
+
 msgid "Invite Expired"
 msgstr "邀请已过期"
 msgid "Invite All"
@@ -13048,6 +13051,8 @@ msgstr "移除条件"
 
 msgid "Remove corrupted data and restore"
 msgstr "移除损坏数据并恢复"
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove Employee"
 msgstr "移除员工"

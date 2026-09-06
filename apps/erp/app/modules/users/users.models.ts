@@ -18,6 +18,8 @@ export const createCustomerAccountValidator = z.object({
 });
 
 export const createEmployeeValidator = z.object({
+  // Client-generated; keeps per-row invite results attached after add/remove.
+  rowId: zfd.text(z.string().optional()),
   email: z
     .string()
     .min(1, { message: "Email is required" })
@@ -32,6 +34,57 @@ export const createEmployeeValidator = z.object({
   // ordinary deployments (no checkbox rendered) still validate.
   usPersonAttestation: zfd.checkbox()
 });
+
+export type BulkInviteResult = {
+  rowId: string;
+  email: string;
+  success: boolean;
+  message: string;
+};
+
+export type BulkInviteActionData = {
+  success: boolean;
+  message: string;
+  results: BulkInviteResult[];
+};
+
+export function indexBulkInviteResultsByRowId(
+  results: readonly BulkInviteResult[]
+): Map<string, BulkInviteResult> {
+  const map = new Map<string, BulkInviteResult>();
+  for (const result of results) {
+    if (result.rowId) {
+      map.set(result.rowId, result);
+    }
+  }
+  return map;
+}
+
+export function bulkInviteResultForEmailDelivery({
+  rowId,
+  email,
+  delivered
+}: {
+  rowId: string;
+  email: string;
+  delivered: boolean;
+}): BulkInviteResult {
+  if (!delivered) {
+    return {
+      rowId,
+      email,
+      success: false,
+      message: "Created, but invite email failed to send"
+    };
+  }
+
+  return {
+    rowId,
+    email,
+    success: true,
+    message: "Invited"
+  };
+}
 
 // ITAR certification — Screen 1 (entity Rider acceptance). The two checkboxes
 // must be checked; z.literal(true) rejects an unchecked/absent box server-side
