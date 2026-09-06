@@ -7,8 +7,11 @@
 import { call, ORPCError } from "@orpc/server";
 import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
-import type { DispatchResult } from "./dispatch.server";
-import { operationId, operationsByName } from "./operations.server";
+import {
+  operationId,
+  operationsByName,
+  unshapeHttpBody
+} from "./operations.server";
 import { router } from "./router.server";
 
 export type CallResult =
@@ -52,13 +55,15 @@ export async function callOperation(
   }
 
   try {
-    // The procedure's handler returns DispatchResult; the pass-through output
-    // schema erases that from inference, so restate it.
-    const result = (await call(
+    // The handler shapes the HTTP body (bare single results, `{ results, count }`
+    // lists); unshapeHttpBody reverses it so MCP/agent/workflow callers keep
+    // DispatchResult semantics.
+    const body = await call(
       procedure,
       (args as Record<string, unknown> | undefined) ?? {},
       { context }
-    )) as DispatchResult;
+    );
+    const result = unshapeHttpBody(meta, body);
     return {
       success: true,
       data: result.data,

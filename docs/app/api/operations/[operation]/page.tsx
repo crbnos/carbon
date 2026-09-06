@@ -98,13 +98,24 @@ function exampleFromSchema(schema: unknown, depth = 0): unknown {
 }
 
 /**
- * The success envelope from the dispatcher (`api+/v1+/lib/dispatch.server.ts`):
- * a Supabase result unwrapped to `data` plus an optional `count`, with `data`
- * filled from the operation's reflected response shape.
+ * The HTTP success body: single results are the payload itself; lists carry the
+ * `{ results, count }` envelope — the only place `count` means anything. Mirrors
+ * `isListOperation`/`shapeHttpBody` in the v1 surface: the split is decided by
+ * whether the reflected response schema is an array.
  */
-function responseEnvelope(responseSchema: unknown): string {
-  const data = responseSchema ? exampleFromSchema(responseSchema) : {};
-  return JSON.stringify({ data, count: null }, null, 2);
+function responseBody(responseSchema: unknown): string {
+  const schema = (responseSchema ?? undefined) as JsonSchemaNode | undefined;
+  const types = Array.isArray(schema?.type)
+    ? schema.type
+    : schema?.type
+      ? [schema.type]
+      : [];
+  const payload = schema ? exampleFromSchema(schema) : {};
+  return JSON.stringify(
+    types.includes("array") ? { results: payload, count: null } : payload,
+    null,
+    2
+  );
 }
 
 const BADGE: Record<ToolClass, string> = {
@@ -123,7 +134,7 @@ export default async function OperationPage(props: Params) {
   const httpPath = operationPath(t.name, mod.slug);
   const schemaJson = JSON.stringify(t.schema, null, 2);
 
-  const responseJson = responseEnvelope(t.responseSchema);
+  const responseJson = responseBody(t.responseSchema);
   const [schemaHtml, responseHtml, ...sampleHtml] = await Promise.all([
     highlight(schemaJson, "json"),
     highlight(responseJson, "json"),

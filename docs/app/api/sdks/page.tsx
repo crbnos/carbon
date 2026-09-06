@@ -41,9 +41,29 @@ const SPEC_URL = "https://app.carbon.ms/api/v1/openapi.json";
 
 const FETCH_SPEC = `curl ${SPEC_URL} -o openapi.json`;
 
-const HEY_API = `npx @hey-api/openapi-ts \\
-  -i ${SPEC_URL} \\
-  -o src/client`;
+const HEY_API_CONFIG = `// openapi-ts.config.ts
+import { defineConfig } from "@hey-api/openapi-ts";
+
+export default defineConfig({
+  input: "${SPEC_URL}",
+  output: "src/client",
+  plugins: [
+    "@hey-api/client-fetch",
+    {
+      name: "@hey-api/sdk",
+      operations: {
+        // One class per Carbon module: Sales.getQuotes, Production.insertJob, …
+        strategy: "byTags",
+        container: "class",
+        nestingDelimiters: /(?!)/,
+        methodName: (name) => name.split(".").pop() ?? name
+      }
+    }
+  ]
+});`;
+
+const HEY_API = `npm install -D @hey-api/openapi-ts typescript
+npx openapi-ts`;
 
 const PYTHON_CLIENT = `pipx install openapi-python-client --include-deps
 openapi-python-client generate --url ${SPEC_URL}`;
@@ -56,7 +76,7 @@ const OPENAPI_GENERATOR = `npx openapi-generator-cli generate \\
 const HEY_API_AUTH = `import { client } from "./src/client/client.gen";
 
 client.setConfig({
-  headers: { "carbon-key": "<api-key>" }
+  auth: "<api-key>"
 });`;
 
 /* The generator languages. Every card lands on the section that generates its
@@ -123,9 +143,10 @@ const CARDS: SdkCard[] = [
 
 export default async function ApiSdksPage() {
   const counts = toolCounts();
-  const [fetchSpec, heyApi, pythonClient, openapiGenerator, heyApiAuth] =
+  const [fetchSpec, heyApiConfig, heyApi, pythonClient, openapiGenerator, heyApiAuth] =
     await Promise.all([
       highlight(FETCH_SPEC, "curl"),
+      highlight(HEY_API_CONFIG, "javascript"),
       highlight(HEY_API, "curl"),
       highlight(PYTHON_CLIENT, "curl"),
       highlight(OPENAPI_GENERATOR, "curl"),
@@ -162,8 +183,14 @@ export default async function ApiSdksPage() {
         <DocLink href="https://heyapi.dev/openapi-ts/get-started">
           @hey-api/openapi-ts
         </DocLink>{" "}
-        generates a typed fetch client plus request/response types:
+        generates a typed fetch client plus request/response types, grouped one
+        class per Carbon module:
       </P>
+      <CodeBlock
+        html={heyApiConfig}
+        code={HEY_API_CONFIG}
+        label="openapi-ts.config.ts"
+      />
       <CodeBlock html={heyApi} code={HEY_API} label="Terminal" />
 
       <H2 id="python">Python</H2>
@@ -192,19 +219,21 @@ export default async function ApiSdksPage() {
 
       <H2 id="auth">Authenticate the client</H2>
       <P>
-        The spec declares two interchangeable schemes, so generated clients can
-        send a scoped API key from <ApiKeysLink>Settings → API Keys</ApiKeysLink>{" "}
-        either way: as the <Code>carbon-key</Code> header, or as a Bearer token
-        (<Code>Authorization: Bearer crbn_…</Code>). For the TypeScript client:
+        One way in: the spec declares a single Bearer scheme, so every generated
+        client sends a scoped API key from{" "}
+        <ApiKeysLink>Settings → API Keys</ApiKeysLink> as{" "}
+        <Code>Authorization: Bearer crbn_…</Code>. For the TypeScript client
+        that is one config line:
       </P>
       <CodeBlock html={heyApiAuth} code={HEY_API_AUTH} label="src/api.ts" />
 
       <H2 id="responses">What comes back</H2>
       <P>
-        Every operation responds with the same envelope, and it is in the spec —
-        generated return types already carry it: <Code>data</Code> holds the
-        result, <Code>count</Code> appears on paginated reads. Failures return
-        an error body with an HTTP status:
+        Single results are the response body itself — no envelope to unwrap.
+        List results come as <Code>{"{ results, count }"}</Code>, since a total
+        only means something on a paginated read. Both shapes are in the spec,
+        so generated return types already carry them. Failures return an error
+        body with an HTTP status:
       </P>
       <Table>
         <Row head cols="90px 1fr" cells={["Status", "Meaning"]} />

@@ -14,15 +14,15 @@ export function specOptions(): OpenAPIGeneratorGenerateOptions {
         "Carbon's service-layer API — read and write your manufacturing data the safe way."
     },
     servers: [{ url: `${getAppUrl() || ""}/api/v1` }],
-    // Two schemes with OR semantics — the server accepts either
-    // (authenticate.server.ts): the raw `carbon-key` header, or the same key as a
-    // Bearer token, which is what every doc sample shows and what the
-    // rest.carbon.ms proxy convention uses. Declaring only `carbonKey` made
-    // generated SDKs authenticate differently from every documented example.
-    security: [{ carbonKey: [] }, { bearerAuth: [] }],
+    // ONE documented way in: `Authorization: Bearer crbn_…` — the convention every
+    // doc sample and the rest.carbon.ms proxy use, and what generated SDKs will
+    // configure. The server also accepts the raw internal `carbon-key` header
+    // (authenticate.server.ts) as a compatibility alias, deliberately NOT declared
+    // here: a spec that says "either way" gives every generated client two auth
+    // stories instead of one.
+    security: [{ bearerAuth: [] }],
     components: {
       securitySchemes: {
-        carbonKey: { type: "apiKey", in: "header", name: "carbon-key" },
         bearerAuth: {
           type: "http",
           scheme: "bearer",

@@ -11,6 +11,7 @@ import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { call } from "@orpc/server";
 import { describe, expect, it } from "vitest";
 import { type AuthedContext, base, gate } from "./base.server";
+import { outputSchema, shapeHttpBody } from "./operations.server";
 import { specOptions } from "./spec-options.server";
 
 const PREFIX = "/api/v1";
@@ -42,18 +43,18 @@ const ping = base
     jsonSchema({ type: "object", properties: { name: { type: "string" } } })
   )
   .output(
-    jsonSchema({
-      type: "object",
-      properties: {
-        data: {
-          type: "object",
-          properties: { id: { type: "string" } },
-          required: ["id"]
-        },
-        count: { type: ["number", "null"] }
-      },
-      required: ["data"]
-    })
+    jsonSchema(
+      // The REAL schema builder, with a list-shaped response — pins that the
+      // converter carries the current { results, count } envelope into the spec.
+      outputSchema(
+        meta({
+          responseSchema: {
+            type: "array",
+            items: { type: "object", properties: { id: { type: "string" } } }
+          }
+        })
+      )
+    )
   )
   .handler(({ input }) => ({ data: input }));
 
@@ -167,8 +168,8 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
   });
 
   it("emits the response schema into the spec's 200 body", async () => {
-    // The generated router gives every procedure an `.output()` describing
-    // `{ data, count }`, where `data` carries the schema reflected from the
+    // Every procedure carries an `.output()`; for lists that is the
+    // `{ results, count }` envelope wrapping the schema reflected from the
     // service's return type. Without the converter reaching the output side, the
     // spec documents requests only — which is what it did before responses existed.
     const generator = new OpenAPIGenerator({
@@ -181,30 +182,69 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     const body =
       spec.paths["/demo/ping"].post.responses["200"].content["application/json"]
         .schema;
-    expect(body.properties.data.properties.id).toEqual({ type: "string" });
+    expect(body.properties.results.items.properties.id).toEqual({
+      type: "string"
+    });
     expect(body.properties.count.type).toEqual(["number", "null"]);
-    expect(body.required).toContain("data");
+    expect(body.required).toContain("results");
   });
 
-  it("declares BOTH auth schemes the server accepts, with OR semantics", async () => {
-    // authenticate.server.ts takes the raw `carbon-key` header or the same key as
-    // a Bearer token. Declaring only carbonKey made every generated SDK
-    // authenticate differently from every documented sample.
+  it("returns single results bare and lists in the { results, count } envelope", () => {
+    // Wrapping everything stacked our envelope under every generated client's own
+    // result wrapper (`res.data.data.field`). Single results are now the body
+    // itself; only lists carry the envelope, because `count` means something
+    // there. If either assertion fails, the published schema and the runtime
+    // shaping in buildProcedure's handler must change TOGETHER — both key off
+    // isListOperation.
+    const single = meta({
+      responseSchema: { type: "object", properties: { id: { type: "string" } } }
+    });
+    expect(outputSchema(single)).toEqual({
+      type: "object",
+      properties: { id: { type: "string" } }
+    });
+
+    const list = meta({
+      responseSchema: { type: "array", items: { type: "object" } }
+    });
+    const wrapped = outputSchema(list) as any;
+    expect(wrapped.properties.results.type).toBe("array");
+    expect(wrapped.properties.count.type).toEqual(["number", "null"]);
+    expect(wrapped.required).toEqual(["results"]);
+
+    // No reflected schema → bare and unconstrained, never a phantom envelope.
+    expect(outputSchema(meta({ responseSchema: undefined }))).toEqual({});
+
+    // The runtime shaping keys off the SAME bit, so it cannot disagree.
+    expect(shapeHttpBody(single, { data: { id: "x" } })).toEqual({ id: "x" });
+    expect(shapeHttpBody(list, { data: [1], count: 7 })).toEqual({
+      results: [1],
+      count: 7
+    });
+    expect(shapeHttpBody(list, { data: [] })).toEqual({
+      results: [],
+      count: null
+    });
+  });
+
+  it("declares exactly ONE auth scheme: Bearer", async () => {
+    // The server also accepts the internal `carbon-key` header as a compat alias
+    // (authenticate.server.ts), but the spec documents the ONE recommended way so
+    // every generated SDK has a single auth story. Adding a second scheme here
+    // would hand "either way" to every client generator — if that ever seems
+    // desirable again, it was tried and unified away on purpose.
     const generator = new OpenAPIGenerator({
       schemaConverters: [new CarbonJsonSchemaConverter()]
     });
     const spec = (await generator.generate(router, specOptions())) as any;
 
-    expect(spec.components.securitySchemes.carbonKey).toEqual({
-      type: "apiKey",
-      in: "header",
-      name: "carbon-key"
-    });
+    expect(Object.keys(spec.components.securitySchemes)).toEqual([
+      "bearerAuth"
+    ]);
     expect(spec.components.securitySchemes.bearerAuth).toMatchObject({
       type: "http",
       scheme: "bearer"
     });
-    // Two entries in `security` = EITHER scheme satisfies auth (OR), not both (AND).
-    expect(spec.security).toEqual([{ carbonKey: [] }, { bearerAuth: [] }]);
+    expect(spec.security).toEqual([{ bearerAuth: [] }]);
   });
 });
