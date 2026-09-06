@@ -15,7 +15,21 @@
  */
 
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const logger = getLogger("erp", "learn-checker-reader");
+
+/**
+ * A checker must never crash the page, so a failed read degrades to "no
+ * records found" — but it is LOGGED. Swallowing these silently once cost an
+ * afternoon: a JS Date leaking into a PostgREST filter returned a 400 that
+ * looked exactly like a learner who had not done the work yet.
+ */
+function empty<T>(context: string, error: unknown): T[] {
+  if (error) logger.error(`learn checker read failed: ${context}`, { error });
+  return [];
+}
 
 export type ReaderScope = {
   companyId: string;
@@ -108,7 +122,7 @@ export function makeSupabaseReader(
         .gte("createdAt", scope.since)
         .order("createdAt", NEWEST_FIRST);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("itemsCreatedBy", error);
       return data.map((row) => ({
         id: row.id,
         readableId: row.readableId ?? "",
@@ -126,7 +140,7 @@ export function makeSupabaseReader(
         .gte("createdAt", scope.since)
         .order("createdAt", NEWEST_FIRST);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("purchaseOrdersCreatedBy", error);
       return data.map((row) => ({
         id: row.id,
         purchaseOrderId: row.purchaseOrderId ?? "",
@@ -144,7 +158,7 @@ export function makeSupabaseReader(
         .eq("companyId", companyId)
         .in("purchaseOrderId", purchaseOrderIds);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("purchaseOrderLines", error);
       return data.map((row) => ({
         purchaseOrderId: row.purchaseOrderId ?? "",
         purchaseQuantity: row.purchaseQuantity ?? null,
@@ -161,7 +175,7 @@ export function makeSupabaseReader(
         .gte("createdAt", scope.since)
         .order("createdAt", NEWEST_FIRST);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("receiptsCreatedBy", error);
       return data.map((row) => ({
         id: row.id,
         receiptId: row.receiptId ?? "",
@@ -180,7 +194,7 @@ export function makeSupabaseReader(
         .eq("companyId", companyId)
         .in("receiptId", receiptIds);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("receiptLines", error);
       return data.map((row) => ({
         receiptId: row.receiptId ?? "",
         receivedQuantity: row.receivedQuantity ?? 0
@@ -203,7 +217,7 @@ export function makeSupabaseReader(
         .gte("createdAt", scope.since)
         .order("createdAt", NEWEST_FIRST);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("suppliersCreatedSince", error);
 
       const rows = data.map((row) => ({
         id: row.id,
@@ -227,7 +241,7 @@ export function makeSupabaseReader(
         .gte("createdAt", scope.since)
         .order("createdAt", NEWEST_FIRST);
 
-      if (error || !data) return [];
+      if (error || !data) return empty("supplierQuotesCreatedBy", error);
       return data.map((row) => ({
         id: row.id,
         status: row.status ?? "",

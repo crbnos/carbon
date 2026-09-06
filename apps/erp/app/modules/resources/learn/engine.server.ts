@@ -123,6 +123,19 @@ export function canStartExam(input: {
 
 // ------------------------------------------------------------------- helpers
 
+/**
+ * Normalise a value read back from Postgres into an ISO instant string.
+ *
+ * The `pg` driver decodes `timestamptz` into a JS `Date`, and interpolating one
+ * into a PostgREST filter sends `String(date)` — "Sun Sep 06 2026 18:12:37
+ * GMT+0530 (India Standard Time)" — which Postgres rejects with
+ * `time zone "gmt+0530" not recognized`. Anything that crosses from a Kysely
+ * read into a supabase-js filter goes through here first.
+ */
+function toIso(value: string | Date): string {
+  return value instanceof Date ? value.toISOString() : value;
+}
+
 async function companyTimeZone(companyId: string): Promise<string> {
   try {
     return await getCompanyTimeZone(getDatabaseClient(), companyId);
@@ -890,7 +903,10 @@ export async function checkChallenge(
     scope: {
       companyId: ctx.companyId,
       userId: ctx.userId,
-      since: attempt.startedAt
+      // Kysely hands back timestamptz as a JS Date, and PostgREST rejects
+      // `String(date)` ("time zone \"gmt+0530\" not recognized"). Every filter
+      // built from a DB timestamp has to be normalised to ISO first.
+      since: toIso(attempt.startedAt)
     },
     reader: makeSupabaseReader(serviceRole)
   });

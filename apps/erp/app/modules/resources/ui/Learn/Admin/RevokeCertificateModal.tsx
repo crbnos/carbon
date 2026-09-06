@@ -13,8 +13,8 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import { Hidden, Submit, TextArea } from "~/components/Form";
-import { learnCertificateRevokeValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { learnCertificateRevokeValidator } from "../../../resources.models";
 
 type RevokeCertificateModalProps = {
   certificateId: string;

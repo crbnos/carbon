@@ -16,8 +16,9 @@ import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { DatePicker, Hidden, Submit, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { learnAssignmentValidator, liveTracks } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { liveTracks } from "../../../learn";
+import { learnAssignmentValidator } from "../../../resources.models";
 
 type LearnAssignmentFormProps = {
   initialValues: z.infer<typeof learnAssignmentValidator>;

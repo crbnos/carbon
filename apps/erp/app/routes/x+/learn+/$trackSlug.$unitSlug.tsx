@@ -169,6 +169,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 type ActionData = {
   questions?: Awaited<ReturnType<typeof startQuizAttempt>>["questions"];
+  attemptId?: string;
   quizResult?: Exclude<
     Awaited<ReturnType<typeof gradeQuizAttempt>>,
     { voided: true }
@@ -186,6 +187,7 @@ export default function LearnUnitRoute() {
       trackTitle={loaderData.trackTitle}
       unit={loaderData.unit}
       questions={actionData?.questions ?? null}
+      attemptId={actionData?.attemptId ?? null}
       quizResult={actionData?.quizResult ?? null}
       challenge={loaderData.challenge}
       challengeState={loaderData.challengeState}

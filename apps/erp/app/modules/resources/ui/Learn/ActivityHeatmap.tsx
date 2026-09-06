@@ -1,7 +1,7 @@
 import { cn } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import { HEATMAP_WEEKS, heatmapBucket } from "~/modules/resources";
+import { HEATMAP_WEEKS, heatmapBucket } from "../../learn";
 
 type ActivityHeatmapProps = {
   days: Array<{ day: string; xp: number }>;

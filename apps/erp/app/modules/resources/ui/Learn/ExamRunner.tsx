@@ -17,8 +17,8 @@ import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuExternalLink, LuLock } from "react-icons/lu";
 import { Link } from "react-router";
-import type { LearnServedQuestion } from "~/modules/resources";
 import { path } from "~/utils/path";
+import type { LearnServedQuestion } from "../../learn";
 import Celebration from "./Celebration";
 
 export type ExamResultData = {

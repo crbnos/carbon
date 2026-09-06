@@ -6,9 +6,9 @@ import { useMemo } from "react";
 import { LuBan, LuFileBadge } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import type { LearnTeamStatus } from "~/modules/resources";
-import { learnTracks } from "~/modules/resources";
 import { path } from "~/utils/path";
+import type { LearnTeamStatus } from "../../../learn";
+import { learnTracks } from "../../../learn";
 
 export type LearnTeamRow = {
   userId: string;

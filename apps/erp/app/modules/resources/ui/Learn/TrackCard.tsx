@@ -10,8 +10,8 @@ import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { LuGraduationCap } from "react-icons/lu";
 import { Link } from "react-router";
-import type { LearnTrack } from "~/modules/resources";
 import { path } from "~/utils/path";
+import type { LearnTrack } from "../../learn";
 
 export type TrackCardState = {
   percent: number;

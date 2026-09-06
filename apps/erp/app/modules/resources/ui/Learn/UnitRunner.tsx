@@ -22,12 +22,12 @@ import {
   LuFlaskConical
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
+import { path } from "~/utils/path";
 import type {
   LearnChallengeMeta,
   LearnServedQuestion,
   LearnUnit
-} from "~/modules/resources";
-import { path } from "~/utils/path";
+} from "../../learn";
 import Celebration from "./Celebration";
 
 export type QuizFeedbackItem = {
@@ -60,6 +60,8 @@ type UnitRunnerProps = {
   trackTitle: string;
   unit: LearnUnit;
   questions: LearnServedQuestion[] | null;
+  /** The server-issued attempt the questions were drawn for. */
+  attemptId: string | null;
   quizResult: QuizResultData | null;
   challenge: LearnChallengeMeta | null;
   challengeState: ChallengeState | null;
@@ -102,10 +104,12 @@ const DocsLinks = ({ unit }: { unit: LearnUnit }) => {
 const QuizForm = ({
   trackSlug,
   unitSlug,
+  attemptId,
   questions
 }: {
   trackSlug: string;
   unitSlug: string;
+  attemptId: string;
   questions: LearnServedQuestion[];
 }) => {
   const { t } = useLingui();
@@ -136,6 +140,7 @@ const QuizForm = ({
   return (
     <form method="post" action={path.to.learnUnit(trackSlug, unitSlug)}>
       <input type="hidden" name="intent" value="submit-quiz" />
+      <input type="hidden" name="attemptId" value={attemptId} />
       <input type="hidden" name="responses" value={JSON.stringify(responses)} />
       <VStack spacing={4}>
         {questions.map((question, index) => (
@@ -444,6 +449,7 @@ const UnitRunner = ({
   trackTitle,
   unit,
   questions,
+  attemptId,
   quizResult,
   challenge,
   challengeState,
@@ -479,10 +485,11 @@ const UnitRunner = ({
             trackSlug={trackSlug}
             unitSlug={unit.slug}
           />
-        ) : questions ? (
+        ) : questions && attemptId ? (
           <QuizForm
             trackSlug={trackSlug}
             unitSlug={unit.slug}
+            attemptId={attemptId}
             questions={questions}
           />
         ) : challenge && challengeState ? (

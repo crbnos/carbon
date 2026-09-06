@@ -1,6 +1,6 @@
 import { Badge, BarProgress, HStack, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { levelForXp, xpForLevel } from "~/modules/resources";
+import { levelForXp, xpForLevel } from "../../learn";
 
 type LevelPanelProps = {
   totalXp: number;
