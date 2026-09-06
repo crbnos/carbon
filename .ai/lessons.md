@@ -1349,3 +1349,13 @@ full-screen ERP route.
 **Rule:** A component under `modules/<m>/ui/**` must import from the specific sibling module (`../../learn`, `../../../resources.models`), never from `~/modules/<m>`. The barrel is for consumers OUTSIDE the module — routes and other modules.
 
 **Applies to:** every `apps/erp/app/modules/*/ui/**` component; new module barrels that re-export `./ui`.
+
+## A plan's column names are a hypothesis — check them against `types.ts` before writing the query
+
+**Context:** the Carbon Learn plan specified twenty-one hands-on challenge checkers by naming the table and column each should assert on ("a sales order whose `quoteId` is that quote", "an accounting period moved to Closed", "an `employeeType` created by the learner").
+
+**Problem:** three of those names do not exist. `salesOrder` has no `quoteId` at all — the only link conversion preserves between a quote and its order is `opportunityId`. `accountingPeriod.status` exists but is the unrelated `Active | Inactive` flag; the close state lives in a separate `closeStatus` column (`Open | Locked | Closed`), so asserting `status === "Closed"` compiles against a string and matches nothing forever. And `employeeType` has no `createdBy` column, so "created by the learner" is not expressible — nor does `employeeTypePermission` carry a `companyId`. Every one of these fails *silently*: a PostgREST filter on a column that does not exist errors, and a filter on a real column with an impossible value returns zero rows. Both look exactly like "the learner hasn't done the work yet", which is the one outcome a checker is supposed to distinguish.
+
+**Rule:** Before writing any query a plan describes, open `packages/database/src/types.ts` and read the actual `Row` type and the actual enum values. A plan is written from memory of the domain; the generated types are the schema. When the plan's name is absent, stop and pick a schema-true assertion rather than inventing a column — and record the correction where the next person will hit it, not only in the commit.
+
+**Applies to:** any plan or spec that names tables and columns; `apps/erp/app/modules/resources/learn/checkers/**`; every new `LearnReader` method.
