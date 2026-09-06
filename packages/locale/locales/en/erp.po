@@ -8378,14 +8378,6 @@ msgstr "Invite Employees"
 
 msgid "Invite Expired"
 msgstr "Invite Expired"
-msgid "Invite All"
-msgstr "Invite All"
-
-
-msgid "Invite Multiple Employees"
-msgstr "Invite Multiple Employees"
-msgid "Invite Employees"
-msgstr "Invite Employees"
 
 msgid "Invited"
 msgstr "Invited"
@@ -13050,13 +13042,12 @@ msgstr "Remove condition"
 
 msgid "Remove corrupted data and restore"
 msgstr "Remove corrupted data and restore"
+
 msgid "Remove employee"
 msgstr "Remove employee"
 
 msgid "Remove Employee"
 msgstr "Remove Employee"
-msgid "Remove employee"
-msgstr "Remove employee"
 
 msgid "Remove filter"
 msgstr "Remove filter"

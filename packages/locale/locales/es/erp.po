@@ -1207,7 +1207,6 @@ msgid "Add cost center"
 msgstr "Agregar centro de costos"
 
 msgid "Add Employee"
-msgstr "Agregar empleado"
 msgstr ""
 
 msgid "Add Entry"
@@ -8378,16 +8377,7 @@ msgid "Invite Employees"
 msgstr "Invitar empleados"
 
 msgid "Invite Expired"
-msgstr "Invitación Vencida"
 msgstr "Invitación Expirada"
-msgid "Invite All"
-msgstr "Invitar a todos"
-
-
-msgid "Invite Multiple Employees"
-msgstr "Invitar varios empleados"
-msgid "Invite Employees"
-msgstr "Invitar empleados"
 
 msgid "Invited"
 msgstr "Invitado"
@@ -13052,14 +13042,12 @@ msgstr "Quitar condición"
 
 msgid "Remove corrupted data and restore"
 msgstr "Quitar datos dañados y restaurar"
+
 msgid "Remove employee"
 msgstr "Eliminar Empleado"
 
 msgid "Remove Employee"
 msgstr "Eliminar Empleado"
-
-msgid "Remove employee"
-msgstr "Eliminar empleado"
 
 msgid "Remove filter"
 msgstr "Quitar filtro"

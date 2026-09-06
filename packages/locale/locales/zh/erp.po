@@ -1207,7 +1207,6 @@ msgid "Add cost center"
 msgstr "添加成本中心"
 
 msgid "Add Employee"
-msgstr "添加员工"
 msgstr ""
 
 msgid "Add Entry"
@@ -8379,14 +8378,6 @@ msgstr "邀请员工"
 
 msgid "Invite Expired"
 msgstr "邀请已过期"
-msgid "Invite All"
-msgstr "全部邀请"
-
-
-msgid "Invite Multiple Employees"
-msgstr "邀请多名员工"
-msgid "Invite Employees"
-msgstr "邀请员工"
 
 msgid "Invited"
 msgstr "已邀请"
@@ -13051,12 +13042,11 @@ msgstr "移除条件"
 
 msgid "Remove corrupted data and restore"
 msgstr "移除损坏数据并恢复"
+
 msgid "Remove employee"
 msgstr "移除员工"
 
 msgid "Remove Employee"
-msgstr "移除员工"
-msgid "Remove employee"
 msgstr "移除员工"
 
 msgid "Remove filter"
