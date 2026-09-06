@@ -33,7 +33,7 @@ export const DIGEST_FILE = path.join(
 export async function generateToolMetadata(): Promise<void> {
   console.log("Generating tool metadata from service files...");
 
-  const { tools: allTools, registryStats, resolutions } =
+  const { tools: allTools, registryStats, responseStats, resolutions } =
     await buildAllToolMetadataWithValidators({
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
     });
@@ -45,7 +45,9 @@ export async function generateToolMetadata(): Promise<void> {
     tools: allTools,
   };
 
-  fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata, null, 2));
+  // Minified: this file is gitignored build output that only machines read, and
+  // response schemas roughly tripled it. The readable artifact is the digest.
+  fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata));
   fs.writeFileSync(
     DIGEST_FILE,
     serializeManifestDigest(buildManifestDigest(allTools))
@@ -60,6 +62,9 @@ export async function generateToolMetadata(): Promise<void> {
   const fallbacks = resolutions.filter((r) => r.how !== "native");
   console.log(
     `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/15 modules`
+  );
+  console.log(
+    `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
   );
   if (registryStats.moduleErrors.length > 0) {
     console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);

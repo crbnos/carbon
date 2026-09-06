@@ -4,7 +4,10 @@ import { Breadcrumb } from "@/components/api/breadcrumb";
 import { CodeBlock } from "@/components/api/code-block";
 import { DocPage, H2, P } from "@/components/api/doc";
 import { OperationPanel } from "@/components/api/operation-panel";
-import { SchemaTable } from "@/components/api/schema-table";
+import {
+  type JsonSchemaNode,
+  SchemaTable
+} from "@/components/api/schema-table";
 import { highlight } from "@/lib/highlight";
 import {
   buildOperationSamples,
@@ -43,15 +46,53 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
 }
 
 /**
- * The success envelope every v1 operation returns, taken from the dispatcher
- * (`api+/v1+/lib/dispatch.server.ts`): a Supabase result is unwrapped to `data` plus
- * an optional `count`. The payload shape itself is per-operation and not yet
- * generated, so it is left unspecified here rather than invented.
+ * The success envelope from the dispatcher (`api+/v1+/lib/dispatch.server.ts`): a
+ * Supabase result unwrapped to `data` plus an optional `count`. `data` is filled
+ * with the operation's own reflected response shape when there is one, so the panel
+ * shows the actual payload rather than an empty object.
  */
-const RESPONSE_ENVELOPE = `{
-  "data": {},
-  "count": null
-}`;
+/**
+ * A representative value for a reflected response schema. Enums use their first
+ * real value and nullables show the non-null form — a sample exists to be read, and
+ * `null` everywhere teaches nothing. Arrays render a single element: one row shows
+ * the shape, and repeating it only makes the panel longer.
+ */
+function exampleFromSchema(schema: unknown, depth = 0): unknown {
+  if (!schema || typeof schema !== "object" || depth > 4) return null;
+  const s = schema as JsonSchemaNode;
+
+  if (Array.isArray(s.enum) && s.enum.length > 0) return s.enum[0];
+
+  const types = Array.isArray(s.type) ? s.type : s.type ? [s.type] : [];
+  const primary = types.find((t) => t !== "null") ?? types[0];
+
+  switch (primary) {
+    case "array":
+      return s.items ? [exampleFromSchema(s.items, depth + 1)] : [];
+    case "object": {
+      if (!s.properties) return {};
+      const out: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(s.properties)) {
+        out[key] = exampleFromSchema(value, depth + 1);
+      }
+      return out;
+    }
+    case "number":
+    case "integer":
+      return 0;
+    case "boolean":
+      return true;
+    case "string":
+      return "string";
+    default:
+      return null;
+  }
+}
+
+function responseEnvelope(responseSchema: unknown): string {
+  const data = responseSchema ? exampleFromSchema(responseSchema) : {};
+  return JSON.stringify({ data, count: null }, null, 2);
+}
 
 const BADGE: Record<ToolClass, string> = {
   READ: "bg-ed-green-bg text-ed-green-strong border-ed-green-border",
@@ -69,7 +110,7 @@ export default async function OperationPage(props: Params) {
   const httpPath = operationPath(t.name, mod.slug);
   const schemaJson = JSON.stringify(t.schema, null, 2);
 
-  const responseJson = RESPONSE_ENVELOPE;
+  const responseJson = responseEnvelope(t.responseSchema);
   const [schemaHtml, responseHtml, ...sampleHtml] = await Promise.all([
     highlight(schemaJson, "json"),
     highlight(responseJson, "json"),

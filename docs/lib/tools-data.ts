@@ -8,6 +8,9 @@ export interface ToolItem {
   classification: ToolClass;
   description: string;
   schema: unknown;
+  /** Response `data` shape, reflected from the service's return type. Absent when
+   *  the return type yielded nothing usable (an `any`, a void, an opaque shape). */
+  responseSchema?: unknown;
 }
 export interface ToolModule {
   name: string;

@@ -12,17 +12,12 @@
 import { useState } from "react";
 import { applyConfig, useApiConfig } from "./config-context";
 import {
+  HTTP_LANG_LABELS as LANG_LABEL,
   HTTP_LANGS,
   type HttpLang,
   type SampleKey,
   type Transport,
 } from "@/lib/operation-samples";
-
-const LANG_LABEL: Record<HttpLang, string> = {
-  curl: "cURL",
-  javascript: "JavaScript",
-  python: "Python",
-};
 
 const TRANSPORT_LABEL: Record<Transport, string> = {
   http: "HTTP",

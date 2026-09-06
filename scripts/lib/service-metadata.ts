@@ -22,6 +22,10 @@ import type {
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
 import {
+  buildResponseSchemaIndex,
+  type ResponseSchemaIndex,
+} from "./response-schema";
+import {
   buildValidatorRegistry,
   type ValidatorRegistry,
 } from "./validator-registry";
@@ -858,6 +862,8 @@ export interface BuildOptions {
    * that cannot run the async loader still get a manifest.
    */
   validators?: ValidatorRegistry;
+  /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
+  responses?: ResponseSchemaIndex;
   /** Called once per `z.infer` param with how its schema was resolved. */
   onValidatorResolved?: (
     toolName: string,
@@ -933,6 +939,8 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         addOperationArg(schema);
       }
 
+      const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
+
       allTools.push({
         name: toolName,
         module: mod,
@@ -943,6 +951,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         injectAuth,
         permission,
         schema,
+        ...(responseSchema ? { responseSchema } : {}),
       });
       toolCount++;
     }
@@ -963,6 +972,7 @@ export interface ValidatorResolutionRecord {
 export interface BuildWithValidatorsResult {
   tools: ManifestEntry[];
   registryStats: ValidatorRegistry["stats"];
+  responseStats: ResponseSchemaIndex["stats"];
   resolutions: ValidatorResolutionRecord[];
 }
 
@@ -976,16 +986,23 @@ export async function buildAllToolMetadataWithValidators(
   opts: Omit<BuildOptions, "validators"> = {}
 ): Promise<BuildWithValidatorsResult> {
   const validators = await buildValidatorRegistry(MODULE_LIST);
+  const responses = buildResponseSchemaIndex(MODULE_LIST);
   const resolutions: ValidatorResolutionRecord[] = [];
 
   const tools = buildAllToolMetadata({
     ...opts,
     validators,
+    responses,
     onValidatorResolved: (toolName, validatorName, how) => {
       resolutions.push({ toolName, validatorName, how });
       opts.onValidatorResolved?.(toolName, validatorName, how);
     },
   });
 
-  return { tools, registryStats: validators.stats, resolutions };
+  return {
+    tools,
+    registryStats: validators.stats,
+    responseStats: responses.stats,
+    resolutions,
+  };
 }

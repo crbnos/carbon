@@ -40,6 +40,11 @@ export interface ManifestEntry {
    *  property is present here — that property IS the marker (there is no parallel
    *  flag), matching how the dispatcher decides today. */
   schema: Record<string, unknown>;
+  /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
+   *  service function's TypeScript return type — absent when nothing useful could
+   *  be derived (an `any`, a void, or an opaque shape). Describes the payload the
+   *  dispatcher puts in `data`, not the `{ data, count }` envelope around it. */
+  responseSchema?: Record<string, unknown>;
 }
 
 /** One module's operations, as stored in `src/manifest/{module}.json`. */

@@ -25,6 +25,8 @@ export interface DigestEntry {
   paramCount: number;
   /** Stable hash of the input schema — any shape change moves it. */
   schema: string;
+  /** Stable hash of the response schema, or "none" when none was derived. */
+  response: string;
   injectAuth: string;
   permission: string;
 }
@@ -90,6 +92,7 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         classification: t.classification,
         paramCount: t.paramCount,
         schema: stableHash(t.schema),
+        response: t.responseSchema ? stableHash(t.responseSchema) : "none",
         injectAuth: [...t.injectAuth].sort().join("+") || "none",
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
@@ -146,8 +149,11 @@ export function formatDigestDiff(diff: DigestDiff): string {
     if (before.injectAuth !== after.injectAuth) {
       parts.push(`injectAuth ${before.injectAuth} → ${after.injectAuth}`);
     }
-    if (before.schema !== after.schema && parts.length === 0) {
-      parts.push("schema changed");
+    if (before.schema !== after.schema) parts.push("input schema changed");
+    if (before.response !== after.response) {
+      if (before.response === "none") parts.push("response added");
+      else if (after.response === "none") parts.push("response LOST");
+      else parts.push("response schema changed");
     }
     lines.push(`  ~ ${name}: ${parts.join(", ")}`);
   }
