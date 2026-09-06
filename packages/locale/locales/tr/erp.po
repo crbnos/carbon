@@ -8376,7 +8376,7 @@ msgid "Invite"
 msgstr "Davet et"
 
 msgid "Invite Employees"
-msgstr ""
+msgstr "Çalışanları davet et"
 
 msgid "Invite Expired"
 msgstr "Davet Süresi Doldu"
@@ -13053,7 +13053,7 @@ msgstr "Koşulu kaldır"
 msgid "Remove corrupted data and restore"
 msgstr "Bozuk verileri kaldır ve geri yükle"
 msgid "Remove employee"
-msgstr ""
+msgstr "Çalışanı Kaldır"
 
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
