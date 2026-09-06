@@ -526,7 +526,8 @@ export async function invalidateIntegrationHealthCache(
 // Server-only (needs the service-role client for the Vault RPC). Lives here rather
 // than in settings.service.ts because that file is re-exported by the client barrel;
 // a client.server import there would leak the service-role client into the browser
-// bundle. Reached by the MCP direct-executor, which imports this module server-side.
+// bundle. Reached by the Carbon API registry (api+/v1+/lib/registry.server.ts),
+// which imports this module server-side.
 export async function updateIntegrationMetadata(
   client: SupabaseClient<Database>,
   companyId: string,

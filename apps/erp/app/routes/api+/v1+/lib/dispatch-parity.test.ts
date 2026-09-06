@@ -1,10 +1,10 @@
-// Parity harness: pins the legacy MCP executor (`executeFunction`) and the oRPC
-// dispatch (`dispatchOperation`) to identical service-call behavior, case by case,
-// against REAL manifest entries. This is the contract the direct-executor → oRPC
-// migration must not break: every case runs A/B against both implementations and
-// compares the captured service arguments element-by-element. A failure here means
-// the ported dispatch diverges from executeFunction — fix the dispatch, never the
-// expectation.
+// Dispatch contract tests, pinned against REAL manifest entries.
+//
+// History: these began as an A/B parity harness against the legacy MCP
+// `executeFunction` — every case ran both implementations and compared the captured
+// service arguments element-by-element. The executor is deleted now, so the captured
+// values stand as golden literals: they ARE executeFunction's behavior, and a change
+// here is a behavior change for MCP, the agent, the workflow engine and HTTP at once.
 
 import { ORPCError } from "@orpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +16,10 @@ const spies = vi.hoisted(() => ({
   upsertQuoteLinePrices: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
+  insertJob: vi.fn(),
+  insertIssue: vi.fn(),
+  insertPurchaseOrder: vi.fn(),
+  insertSalesOrder: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -39,12 +43,19 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({}));
 vi.mock("~/modules/items/items.service", () => ({}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
-vi.mock("~/modules/production/production.service", () => ({}));
-vi.mock("~/modules/purchasing/purchasing.service", () => ({}));
-vi.mock("~/modules/quality/quality.service", () => ({}));
+vi.mock("~/modules/production/production.service", () => ({
+  insertJob: spies.insertJob
+}));
+vi.mock("~/modules/purchasing/purchasing.service", () => ({
+  insertPurchaseOrder: spies.insertPurchaseOrder
+}));
+vi.mock("~/modules/quality/quality.service", () => ({
+  insertIssue: spies.insertIssue
+}));
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
-  upsertQuoteLinePrices: spies.upsertQuoteLinePrices
+  upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
+  insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
@@ -61,17 +72,16 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
-import {
-  enrichWithAuthContext,
-  executeFunction
-} from "../../mcp+/lib/direct-executor";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
-import { type DispatchResult, dispatchOperation } from "./dispatch.server";
+import { callOperation } from "./call.server";
+import {
+  type DispatchResult,
+  dispatchOperation,
+  enrichWithAuthContext
+} from "./dispatch.server";
 import { operationsByName } from "./operations.server";
 
-// Satisfies both the legacy ExecutorContext and AuthedContext, so the same object
-// drives both implementations.
 const ctx: AuthedContext = {
   client: spies.FAKE_CLIENT as unknown as AuthedContext["client"],
   companyId: "c1",
@@ -83,100 +93,86 @@ const ctx: AuthedContext = {
 
 type Spy = ReturnType<typeof vi.fn>;
 
-interface BothResult {
-  exec: Awaited<ReturnType<typeof executeFunction>>;
-  execCalls: unknown[][];
+interface RunResult {
   dispatch?: DispatchResult;
   dispatchError?: unknown;
-  dispatchCalls: unknown[][];
+  calls: unknown[][];
 }
 
-/** Run one case against BOTH implementations, capturing the service arguments each
- *  produced. Args are cloned per run so neither implementation can leak a mutation
- *  into the other's input. */
-async function runBoth(
+async function runDispatch(
   name: string,
   spy: Spy,
   args?: Record<string, unknown>
-): Promise<BothResult> {
+): Promise<RunResult> {
   const meta = operationsByName.get(name);
   if (!meta) throw new Error(`${name} missing from the generated manifest`);
-
-  const exec = await executeFunction(
-    name,
-    ctx,
-    args === undefined ? undefined : structuredClone(args)
-  );
-  const execCalls = spy.mock.calls.map((c) => [...c]);
-  spy.mockClear();
 
   let dispatch: DispatchResult | undefined;
   let dispatchError: unknown;
   try {
-    dispatch = await dispatchOperation(
-      meta,
-      ctx,
-      args === undefined ? undefined : structuredClone(args)
-    );
+    dispatch = await dispatchOperation(meta, ctx, args);
   } catch (err) {
     dispatchError = err;
   }
-  const dispatchCalls = spy.mock.calls.map((c) => [...c]);
+  const calls = spy.mock.calls.map((c) => [...c]);
   spy.mockClear();
 
-  return { exec, execCalls, dispatch, dispatchError, dispatchCalls };
+  return { dispatch, dispatchError, calls };
 }
 
+const allSpies = [
+  spies.getAccountLedger,
+  spies.getTrialBalance,
+  spies.upsertAccount,
+  spies.upsertQuoteLinePrices,
+  spies.generateInventoryCountLines,
+  spies.upsertNotificationPreference,
+  spies.insertJob,
+  spies.insertIssue,
+  spies.insertPurchaseOrder,
+  spies.insertSalesOrder
+];
+
 beforeEach(() => {
-  for (const spy of [
-    spies.getAccountLedger,
-    spies.getTrialBalance,
-    spies.upsertAccount,
-    spies.upsertQuoteLinePrices,
-    spies.generateInventoryCountLines,
-    spies.upsertNotificationPreference
-  ]) {
+  for (const spy of allSpies) {
     spy.mockReset();
     spy.mockResolvedValue({ data: null, error: null });
   }
 });
 
-describe("dispatch parity: executeFunction vs dispatchOperation", () => {
+describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
   it("a. passes `args` through whole and injects the context client", async () => {
-    const r = await runBoth(
+    const r = await runDispatch(
       "accounting_getAccountLedger",
       spies.getAccountLedger,
-      {
-        accountNumber: "1000",
-        limit: 5
-      }
+      { accountNumber: "1000", limit: 5 }
     );
-    expect(r.execCalls).toEqual([
+    expect(r.calls).toEqual([
       [spies.FAKE_CLIENT, { accountNumber: "1000", limit: 5 }]
     ]);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("a2. fills context positional params (companyGroupId, companyId) from context", async () => {
-    const r = await runBoth(
+    const r = await runDispatch(
       "accounting_getTrialBalance",
       spies.getTrialBalance,
-      {
-        startDate: "2026-01-01"
-      }
+      { startDate: "2026-01-01" }
     );
-    expect(r.execCalls).toEqual([
+    expect(r.calls).toEqual([
       [spies.FAKE_CLIENT, "g1", "c1", { startDate: "2026-01-01" }]
     ]);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("b. _operation create at top level: stripped, createdBy/updatedBy/companyId stamped", async () => {
-    const r = await runBoth("accounting_upsertAccount", spies.upsertAccount, {
-      _operation: "create",
-      account: { name: "Cash", number: "1000" }
-    });
-    expect(r.execCalls).toEqual([
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        _operation: "create",
+        account: { name: "Cash", number: "1000" }
+      }
+    );
+    expect(r.calls).toEqual([
       [
         spies.FAKE_CLIENT,
         {
@@ -188,14 +184,17 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
         }
       ]
     ]);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("c. _operation update nested in the payload: stripped, createdBy suppressed", async () => {
-    const r = await runBoth("accounting_upsertAccount", spies.upsertAccount, {
-      account: { _operation: "update", id: "a1", name: "Cash" }
-    });
-    const [, payload] = r.execCalls[0] as [unknown, Record<string, unknown>];
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        account: { _operation: "update", id: "a1", name: "Cash" }
+      }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect(payload).toEqual({
       id: "a1",
       name: "Cash",
@@ -203,56 +202,54 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
       companyId: "c1"
     });
     expect("createdBy" in payload).toBe(false);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("d. caller-supplied createdBy on an update is removed (no forged attribution)", async () => {
-    const r = await runBoth("accounting_upsertAccount", spies.upsertAccount, {
-      _operation: "update",
-      account: { id: "a1", createdBy: "forged" }
-    });
-    const [, payload] = r.execCalls[0] as [unknown, Record<string, unknown>];
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        _operation: "update",
+        account: { id: "a1", createdBy: "forged" }
+      }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("createdBy" in payload).toBe(false);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("e. conflicting _operation values are rejected before the service runs", async () => {
-    const r = await runBoth("accounting_upsertAccount", spies.upsertAccount, {
-      _operation: "create",
-      account: { _operation: "update", name: "x" }
-    });
-    expect(r.execCalls).toEqual([]);
-    expect(r.dispatchCalls).toEqual([]);
-    expect(r.exec).toEqual({
-      success: false,
-      error:
-        "accounting_upsertAccount received conflicting _operation values (create, update)."
-    });
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        _operation: "create",
+        account: { _operation: "update", name: "x" }
+      }
+    );
+    expect(r.calls).toEqual([]);
     expect(r.dispatchError).toBeInstanceOf(ORPCError);
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      (r.exec as { error: string }).error
+      "accounting_upsertAccount received conflicting _operation values (create, update)."
     );
   });
 
   it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {
-    const r = await runBoth("accounting_upsertAccount", spies.upsertAccount, {
-      account: { name: "x" }
-    });
-    expect(r.execCalls).toEqual([]);
-    expect(r.dispatchCalls).toEqual([]);
-    expect(r.exec).toEqual({
-      success: false,
-      error:
-        'accounting_upsertAccount requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
-    });
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        account: { name: "x" }
+      }
+    );
+    expect(r.calls).toEqual([]);
     expect(r.dispatchError).toBeInstanceOf(ORPCError);
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      (r.exec as { error: string }).error
+      'accounting_upsertAccount requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
     );
   });
 
   it("g. array payload on an insert: every object element gets createdBy stamped AFTER the spread; nothing else injected", async () => {
-    const r = await runBoth(
+    const r = await runDispatch(
       "sales_upsertQuoteLinePrices",
       spies.upsertQuoteLinePrices,
       {
@@ -264,7 +261,7 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
         ]
       }
     );
-    expect(r.execCalls).toEqual([
+    expect(r.calls).toEqual([
       [
         spies.FAKE_DB,
         "c1",
@@ -273,15 +270,14 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
         [{ quantity: 1, unitPrice: 5, createdBy: "u1" }, 42]
       ]
     ]);
-    const rows = (r.execCalls[0] as unknown[])[4] as Record<string, unknown>[];
+    const rows = (r.calls[0] as unknown[])[4] as Record<string, unknown>[];
     expect("companyId" in rows[0]).toBe(false);
     expect("updatedBy" in rows[0]).toBe(false);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("h. array payload on an update passes through untouched", () => {
     // No manifest op combines `_operation` with an array payload, so this pins the
-    // shared enrichment helper directly — the one both implementations call.
+    // enrichment helper directly.
     const rows = [{ id: "p1", createdBy: "orig" }];
     const out = enrichWithAuthContext(
       rows,
@@ -294,36 +290,29 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
   });
 
   it("i. a `db` service param receives the Kysely client from getDatabaseClient()", async () => {
-    const r = await runBoth(
+    const r = await runDispatch(
       "inventory_generateInventoryCountLines",
       spies.generateInventoryCountLines,
       { locationId: "loc1" }
     );
-    expect(r.execCalls).toEqual([[spies.FAKE_DB, { locationId: "loc1" }]]);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
+    expect(r.calls).toEqual([[spies.FAKE_DB, { locationId: "loc1" }]]);
   });
 
-  it("j. a thenable-but-not-Promise result (Supabase builder) is awaited", async () => {
+  it("j. a thenable-but-not-Promise result (Supabase builder) is awaited and unwrapped", async () => {
     spies.getAccountLedger.mockReset();
     spies.getAccountLedger.mockReturnValue({
       then: (resolve: (v: unknown) => void) =>
         resolve({ data: [{ id: "e1" }], error: null, count: 1 })
     });
-    const r = await runBoth(
+    const r = await runDispatch(
       "accounting_getAccountLedger",
       spies.getAccountLedger,
       {}
     );
-    // executeFunction returns the raw Supabase envelope; server.ts unwraps `.data.data`.
-    // dispatchOperation unwraps here. Same rows either way.
-    expect(r.exec).toEqual({
-      success: true,
-      data: { data: [{ id: "e1" }], error: null, count: 1 }
-    });
     expect(r.dispatch).toEqual({ data: [{ id: "e1" }], count: 1 });
   });
 
-  it("k. a Supabase error maps to the same failure the MCP formatter prints", async () => {
+  it("k. a Supabase error throws BAD_REQUEST carrying the raw error (D4)", async () => {
     const supabaseError = {
       message: "duplicate key value",
       code: "23505",
@@ -335,46 +324,43 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
       data: null,
       error: supabaseError
     });
-    const r = await runBoth(
+    const r = await runDispatch(
       "accounting_getAccountLedger",
       spies.getAccountLedger,
       {}
     );
-    // executeFunction "succeeds" and hands the envelope to server.ts, which prints
-    // `Database error: ${JSON.stringify(error)}`. dispatchOperation throws instead.
-    expect(r.exec).toEqual({
-      success: true,
-      data: { data: null, error: supabaseError }
-    });
     expect(r.dispatchError).toBeInstanceOf(ORPCError);
     const orpcError = r.dispatchError as ORPCError<string, unknown>;
     expect(orpcError.message).toBe("duplicate key value");
-    // The raw error rides on the ORPCError (D4) so callOperation can reconstruct
-    // MCP's byte-identical `Database error: ${JSON.stringify(error)}` text.
+    // The raw error rides on the ORPCError so callOperation can reconstruct MCP's
+    // byte-identical `Database error: ${JSON.stringify(error)}` text.
     expect(
       (orpcError.data as { supabase?: unknown } | undefined)?.supabase
     ).toEqual(supabaseError);
   });
 
   it("l. a single-key payload whose key matches no param is unwrapped positionally", async () => {
-    const r = await runBoth(
+    const r = await runDispatch(
       "account_upsertNotificationPreference",
       spies.upsertNotificationPreference,
       { args: { channel: "email", enabled: true } }
     );
-    expect(r.execCalls).toEqual([
+    expect(r.calls).toEqual([
       [spies.FAKE_CLIENT, { channel: "email", enabled: true, companyId: "c1" }]
     ]);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("m. a flat-field payload matching no param is passed whole as the positional", async () => {
-    const r = await runBoth("accounting_upsertAccount", spies.upsertAccount, {
-      _operation: "create",
-      name: "Cash",
-      number: "1000"
-    });
-    expect(r.execCalls).toEqual([
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        _operation: "create",
+        name: "Cash",
+        number: "1000"
+      }
+    );
+    expect(r.calls).toEqual([
       [
         spies.FAKE_CLIENT,
         {
@@ -386,7 +372,6 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
         }
       ]
     ]);
-    expect(r.dispatchCalls).toEqual(r.execCalls);
   });
 
   it("n. a Supabase { data, count } result keeps its count on the dispatch result", async () => {
@@ -396,15 +381,90 @@ describe("dispatch parity: executeFunction vs dispatchOperation", () => {
       error: null,
       count: 7
     });
-    const r = await runBoth(
+    const r = await runDispatch(
       "accounting_getAccountLedger",
       spies.getAccountLedger,
       {}
     );
-    expect((r.exec as { data: { count: number } }).data.count).toBe(7);
     expect(r.dispatch).toEqual({
       data: [{ id: "e1" }, { id: "e2" }],
       count: 7
+    });
+  });
+});
+
+// The exact ids the workflow engine's create actions dispatch
+// (packages/workflows/src/catalog/actions.ts). Their results must stay readable by
+// create.ts's idIn(): an `id` on the returned object, or on an element of a list.
+const WORKFLOW_CALL_IDS: Array<[string, Spy]> = [
+  ["production_insertJob", spies.insertJob],
+  ["quality_insertIssue", spies.insertIssue],
+  ["purchasing_insertPurchaseOrder", spies.insertPurchaseOrder],
+  ["sales_insertSalesOrder", spies.insertSalesOrder]
+];
+
+function idIn(payload: unknown): string | undefined {
+  // Mirror of packages/jobs/src/workflows/actions/create.ts — what the workflow
+  // engine actually runs over a dispatch result.
+  if (Array.isArray(payload)) {
+    for (const entry of payload) {
+      const id = idIn(entry);
+      if (id !== undefined) return id;
+    }
+    return undefined;
+  }
+  if (!payload || typeof payload !== "object") return undefined;
+  const id = (payload as Record<string, unknown>).id;
+  return typeof id === "string" ? id : undefined;
+}
+
+describe("callOperation (the MCP/agent/workflow entry point)", () => {
+  it.each(
+    WORKFLOW_CALL_IDS
+  )("%s returns data the workflow create action can read an id out of", async (name, spy) => {
+    spy.mockResolvedValue({ data: { id: "rec_1" }, error: null });
+    const asObject = await callOperation(name, ctx, { input: { name: "x" } });
+    expect(asObject).toEqual({ success: true, data: { id: "rec_1" } });
+    expect(idIn((asObject as { data: unknown }).data)).toBe("rec_1");
+
+    spy.mockResolvedValue({ data: [{ id: "rec_2" }], error: null });
+    const asList = await callOperation(name, ctx, { input: { name: "y" } });
+    expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
+  });
+
+  it("maps a Supabase error to the errorKind:database envelope with MCP's exact text", async () => {
+    const supabaseError = { message: "boom", code: "XX000" };
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: supabaseError
+    });
+    const result = await callOperation("accounting_getAccountLedger", ctx, {});
+    expect(result).toEqual({
+      success: false,
+      errorKind: "database",
+      error: `Database error: ${JSON.stringify(supabaseError)}`
+    });
+  });
+
+  it("returns the legacy not-found envelope for an unknown name", async () => {
+    const result = await callOperation("sales_doesNotExist", ctx, {});
+    expect(result).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: "Operation not found: sales_doesNotExist"
+    });
+  });
+
+  it("rejects unparseable string arguments the way executeFunction did", async () => {
+    const result = await callOperation(
+      "accounting_getAccountLedger",
+      ctx,
+      "{nope"
+    );
+    expect(result).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: "Invalid JSON arguments"
     });
   });
 });
@@ -417,5 +477,14 @@ describe("blocked tools (D5)", () => {
         `${name} must not be in OPERATIONS`
       ).toBe(false);
     }
+  });
+
+  it("callOperation refuses a blocked tool with the MCP disabled text", async () => {
+    const result = await callOperation("settings_seedCompany", ctx, {});
+    expect(result).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: "Tool disabled: settings_seedCompany is not available via MCP."
+    });
   });
 });
