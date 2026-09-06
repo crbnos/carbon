@@ -972,6 +972,8 @@ export const path = {
       },
       kanbanQrCode: (id: string, action: "order" | "start" | "complete") =>
         generatePath(`${file}/kanban/${id}/${action}.png`),
+      learnCertificate: (id: string) =>
+        generatePath(`${file}/learn-certificate/${id}.pdf`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (
         id: string,
@@ -1332,6 +1334,25 @@ export const path = {
       `/api/accounting/journal-line-dimensions/${lineId}`,
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
+    learn: `${x}/learn`,
+    learnAdmin: `${x}/resources/learn`,
+    learnAssignment: (id: string) =>
+      generatePath(`${x}/resources/learn/assignments/${id}`),
+    learnAssignments: `${x}/resources/learn/assignments`,
+    learnCertificateVerify: (code: string) =>
+      generatePath(`${share}/certificate/${code}`),
+    learnDeleteAssignment: (id: string) =>
+      generatePath(`${x}/resources/learn/assignments/delete/${id}`),
+    learnExam: (trackSlug: string) =>
+      generatePath(`${x}/learn/${trackSlug}/exam`),
+    learnPreferences: `${x}/learn/preferences`,
+    learnQuestionStats: `${x}/resources/learn/questions`,
+    learnRenew: (trackSlug: string) =>
+      generatePath(`${x}/learn/${trackSlug}/renew`),
+    learnRevokeCertificate: `${x}/resources/learn/revoke`,
+    learnTrack: (trackSlug: string) => generatePath(`${x}/learn/${trackSlug}`),
+    learnUnit: (trackSlug: string, unitSlug: string) =>
+      generatePath(`${x}/learn/${trackSlug}/${unitSlug}`),
     legal: {
       privacyPolicy: "https://carbon.ms/privacy",
       termsAndConditions: "https://carbon.ms/terms"
@@ -1534,6 +1555,7 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLearnAssignment: `${x}/resources/learn/assignments/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>
