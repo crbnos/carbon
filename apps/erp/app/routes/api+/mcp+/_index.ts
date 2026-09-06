@@ -1,8 +1,4 @@
-import {
-  getCompanyIdFromAPIKey,
-  hashOAuthSecret,
-  requirePermissions
-} from "@carbon/auth/auth.server";
+import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
@@ -13,6 +9,7 @@ import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { authedContextFromApiKey } from "../v1+/lib/authenticate.server";
 import { createMcpServer } from "./lib/server";
 import type { McpContext } from "./lib/types";
 
@@ -148,25 +145,12 @@ async function resolveAuth(request: Request): Promise<{
     throw make401Response(request);
   }
 
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {});
-
-  // The per-operation scope gate needs the key's scopes. `request` here carries the
-  // carbon-key header for both entry forms (`Bearer crbn_…` was rewritten above), and
-  // the record comes from the same 30s cache requirePermissions just warmed — a Redis
-  // hit, not a second apiKey select.
+  // `request` here carries the carbon-key header for both entry forms
+  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport,
+  // so the requirePermissions-then-read-scopes dance exists once.
   const rawKey = request.headers.get("carbon-key") ?? "";
-  const { data: keyRow } = await getCompanyIdFromAPIKey(rawKey);
-
   return {
-    ctx: {
-      client,
-      companyId,
-      companyGroupId,
-      userId,
-      authKind: "api-key" as const,
-      scopes: keyRow?.scopes ?? {}
-    },
+    ctx: await authedContextFromApiKey(request.url, rawKey),
     request
   };
 }

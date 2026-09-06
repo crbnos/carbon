@@ -11,6 +11,38 @@ import {
 } from "@carbon/auth/auth.server";
 import type { AuthedContext } from "./base.server";
 
+/**
+ * Authenticate a raw API key into an AuthedContext. Shared by the v1 HTTP
+ * transport and the MCP endpoint's carbon-key branch, so the
+ * requirePermissions-then-read-scopes dance exists once.
+ *
+ * requirePermissions' carbon-key branch reads the `carbon-key` header, so the key
+ * is presented that way regardless of how the caller sent it. Empty
+ * required-permissions: the per-operation scope check lives in oRPC middleware.
+ * The scope read hits the same 30s cache requirePermissions just warmed — a Redis
+ * hit, not a second apiKey select.
+ */
+export async function authedContextFromApiKey(
+  url: string,
+  rawKey: string
+): Promise<AuthedContext> {
+  const authHeaders = new Headers();
+  authHeaders.set("carbon-key", rawKey);
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(new Request(url, { headers: authHeaders }), {});
+
+  const { data: keyRow } = await getCompanyIdFromAPIKey(rawKey);
+
+  return {
+    client,
+    companyId,
+    companyGroupId,
+    userId,
+    authKind: "api-key",
+    scopes: keyRow?.scopes ?? {}
+  };
+}
+
 export async function resolveApiKeyContext(
   request: Request
 ): Promise<AuthedContext> {
@@ -33,26 +65,5 @@ export async function resolveApiKeyContext(
     );
   }
 
-  // requirePermissions' carbon-key branch reads the `carbon-key` header, so present
-  // the key that way. Empty required-permissions: the per-op scope check is separate.
-  const authHeaders = new Headers();
-  authHeaders.set("carbon-key", rawKey);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(
-      new Request(request.url, { headers: authHeaders }),
-      {}
-    );
-
-  const { data } = await getCompanyIdFromAPIKey(rawKey);
-  const scopes =
-    (data as { scopes?: Record<string, string[]> } | null)?.scopes ?? {};
-
-  return {
-    client,
-    companyId,
-    companyGroupId,
-    userId,
-    authKind: "api-key",
-    scopes
-  };
+  return authedContextFromApiKey(request.url, rawKey);
 }

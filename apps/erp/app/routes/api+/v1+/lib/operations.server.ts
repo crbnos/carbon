@@ -19,15 +19,3 @@ export const operationsByName = new Map<string, ManifestEntry>(
 export function operationId(op: ManifestEntry): string {
   return op.name.slice(op.module.length + 1);
 }
-
-/** module → { operationId → entry }, the shape the oRPC router mirrors. */
-export const operationsByModule: Record<
-  string,
-  Record<string, ManifestEntry>
-> = (() => {
-  const out: Record<string, Record<string, ManifestEntry>> = {};
-  for (const op of OPERATIONS) {
-    (out[op.module] ??= {})[operationId(op)] = op;
-  }
-  return out;
-})();

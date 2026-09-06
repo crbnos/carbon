@@ -7,12 +7,6 @@ const logger = getLogger("erp", "mcp");
  *  erased at runtime, so no server module enters a client graph through here. */
 export type McpContext = AuthedContext;
 
-export type AuthField =
-  | "companyId"
-  | "companyGroupId"
-  | "createdBy"
-  | "updatedBy";
-
 export const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
   destructiveHint: false,
