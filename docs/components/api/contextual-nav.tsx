@@ -62,9 +62,6 @@ export function ContextualNav({
             <path d="M4.5 3L7.5 6L4.5 9" stroke="rgba(38,35,35,0.48)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>
-        <p className="m-0 px-2 pt-0.5 text-ed-12 leading-[145%] text-ed-ink/45">
-          The escape hatch — direct table access.
-        </p>
       </div>
     </div>
   );

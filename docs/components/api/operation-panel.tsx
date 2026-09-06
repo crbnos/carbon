@@ -101,7 +101,7 @@ export function OperationPanel({
   const key: SampleKey = transport === "http" ? `http.${lang}` : "mcp";
 
   return (
-    <div className="sticky top-22 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <Panel>
       <div className="flex h-11 items-center justify-between gap-2 border-b border-ed-dark-line pr-2 pl-2">
         <div
@@ -147,16 +147,37 @@ export function OperationPanel({
 
       {responseHtml && (
         <Panel>
-          <div className="flex h-10 items-center border-b border-ed-dark-line px-3.5">
-            <span className="font-mono text-ed-12 tracking-[0.04em] text-ed-text-muted">
-              Response
-            </span>
-          </div>
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
-          <div
-            className="api-shiki"
-            dangerouslySetInnerHTML={{ __html: responseHtml }}
-          />
+          {/* Native <details>, collapsed by default: the request is what a reader
+              came for; the response shape is one click away. The sample stays in
+              the DOM either way, so Cmd-F and the search index still reach it. */}
+          <details className="group">
+            <summary className="flex h-10 cursor-pointer list-none items-center justify-between px-3.5 transition-colors hover:bg-ed-dark-surface/60 group-open:border-b group-open:border-ed-dark-line [&::-webkit-details-marker]:hidden">
+              <span className="font-mono text-ed-12 tracking-[0.04em] text-ed-text-muted">
+                Response
+              </span>
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+                className="transition-transform duration-200 group-open:rotate-90 motion-reduce:transition-none"
+              >
+                <path
+                  d="M4.5 3L7.5 6L4.5 9"
+                  stroke="#8C8C88"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </summary>
+            {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
+            <div
+              className="api-shiki"
+              dangerouslySetInnerHTML={{ __html: responseHtml }}
+            />
+          </details>
         </Panel>
       )}
     </div>
