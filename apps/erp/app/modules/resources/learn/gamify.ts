@@ -127,6 +127,22 @@ export function weeklyStreak(
   return streak;
 }
 
+/**
+ * The renewal quiz opens 30 days before expiry and stays open afterwards — a
+ * lapsed holder should be able to renew rather than be forced back through the
+ * full exam the day after their certificate ages out.
+ */
+export function isWithinRenewalWindow(
+  expiresAt: string,
+  now: string,
+  windowDays: number = RENEWAL_WINDOW_DAYS
+): boolean {
+  const opens = new Date(
+    new Date(expiresAt).getTime() - windowDays * 24 * 60 * 60 * 1000
+  ).toISOString();
+  return now >= opens;
+}
+
 /** Deterministic 32-bit hash so a seed string yields a repeatable shuffle. */
 function hashSeed(seed: string): number {
   let h = 2166136261;

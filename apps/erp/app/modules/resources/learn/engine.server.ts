@@ -55,7 +55,6 @@ import {
   MODULE_BADGE_XP,
   quizXpForPassAttempt,
   RENEWAL_QUESTION_COUNT,
-  RENEWAL_WINDOW_DAYS,
   RENEWAL_XP
 } from "./gamify";
 import type {
@@ -1155,17 +1154,6 @@ async function extendCertificateForRenewal(input: Ctx & { trackSlug: string }) {
       day
     });
   });
-}
-
-export function isWithinRenewalWindow(
-  expiresAt: string,
-  now: string,
-  windowDays: number = RENEWAL_WINDOW_DAYS
-): boolean {
-  const opens = new Date(
-    new Date(expiresAt).getTime() - windowDays * 24 * 60 * 60 * 1000
-  ).toISOString();
-  return now >= opens;
 }
 
 export async function revokeCertificate(input: {

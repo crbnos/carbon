@@ -10,12 +10,11 @@ import { describe, expect, it } from "vitest";
 import {
   canStartExam,
   isExpectedExamQuestion,
-  isWithinRenewalWindow,
   nextExamQuestion,
   scoreAttempt,
   shouldVoid
 } from "./engine.server";
-import { LEARN_CONTENT_VERSION } from "./gamify";
+import { isWithinRenewalWindow, LEARN_CONTENT_VERSION } from "./gamify";
 
 describe("shouldVoid", () => {
   it("passes an attempt served by the current content version", () => {
