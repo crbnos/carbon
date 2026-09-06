@@ -244,6 +244,9 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
   const nullableMatch = t.match(/^(.+?)\s*\|\s*null$/);
   if (nullableMatch) {
     const inner = typeToJsonSchema(nullableMatch[1].trim());
+    if (Array.isArray(inner.anyOf)) {
+      return { anyOf: [...(inner.anyOf as unknown[]), { type: "null" }] };
+    }
     if (inner.type) {
       return { ...inner, type: [inner.type, "null"] };
     }
@@ -257,6 +260,24 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
       type: "string",
       enum: literalParts.map((p) => p.slice(1, -1)),
     };
+  }
+
+  // General union: "string | string[]" and friends. MUST run before the
+  // array-suffix check below — a union whose last member is an array ends with
+  // "[]", and slicing two characters off the whole union recursed on garbage
+  // ("string | string"), publishing `any[]` where the type was `string[]`.
+  if (literalParts.length > 1) {
+    const members: Record<string, unknown>[] = [];
+    const seen = new Set<string>();
+    for (const part of literalParts) {
+      const member = typeToJsonSchema(part);
+      const key = JSON.stringify(member);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      members.push(member);
+    }
+    if (members.length === 1) return members[0];
+    return { anyOf: members };
   }
 
   // Primitives
