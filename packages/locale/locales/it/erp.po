@@ -8375,6 +8375,9 @@ msgstr "Valutazione Inventario"
 msgid "Invite"
 msgstr "Invita"
 
+msgid "Invite Employees"
+msgstr ""
+
 msgid "Invite Expired"
 msgstr "Invito Scaduto"
 msgid "Invite All"
@@ -13049,6 +13052,8 @@ msgstr "Rimuovi condizione"
 
 msgid "Remove corrupted data and restore"
 msgstr "Rimuovi i dati corrotti e ripristina"
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove Employee"
 msgstr "Rimuovi dipendente"

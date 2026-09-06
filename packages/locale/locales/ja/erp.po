@@ -8376,6 +8376,9 @@ msgstr "在庫評価"
 msgid "Invite"
 msgstr "招待"
 
+msgid "Invite Employees"
+msgstr ""
+
 msgid "Invite Expired"
 msgstr "招待が期限切れになりました"
 msgid "Invite All"
@@ -13050,6 +13053,8 @@ msgstr "条件を除去"
 
 msgid "Remove corrupted data and restore"
 msgstr "破損データを除去して復元"
+msgid "Remove employee"
+msgstr ""
 
 msgid "Remove Employee"
 msgstr "従業員を削除"

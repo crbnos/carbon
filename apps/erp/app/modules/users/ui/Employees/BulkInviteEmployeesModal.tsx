@@ -16,37 +16,38 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { nanoid } from "nanoid";
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { IoMdAdd, IoMdClose } from "react-icons/io";
 import { LuCheck, LuCircleAlert } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
-import { Boolean, Input, Location, Select, Submit } from "~/components/Form";
+import {
+  Boolean,
+  Hidden,
+  Input,
+  Location,
+  Select,
+  Submit
+} from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
 import type { getEmployeeTypes } from "~/modules/users";
 import {
+  type BulkInviteActionData,
+  type BulkInviteResult,
   bulkCreateEmployeeValidator,
-  type createEmployeeValidator
+  type createEmployeeValidator,
+  indexBulkInviteResultsByRowId
 } from "~/modules/users";
 import { path } from "~/utils/path";
 
-export type BulkInviteResult = {
-  index: number;
-  email: string;
-  success: boolean;
-  message: string;
-};
-
-export type BulkInviteActionData = {
-  success: boolean;
-  message: string;
-  results: BulkInviteResult[];
-};
+export type { BulkInviteActionData, BulkInviteResult };
 
 type EmployeeRow = z.infer<typeof createEmployeeValidator>;
 
 const emptyEmployee = (locationId?: string | null): EmployeeRow => ({
+  rowId: nanoid(),
   email: "",
   firstName: "",
   lastName: "",
@@ -57,12 +58,10 @@ const emptyEmployee = (locationId?: string | null): EmployeeRow => ({
 
 function EmployeeRows({
   defaultLocationId,
-  resultsByIndex,
-  onRowsChange
+  resultsByRowId
 }: {
   defaultLocationId?: string | null;
-  resultsByIndex: Map<number, BulkInviteResult>;
-  onRowsChange: () => void;
+  resultsByRowId: Map<string, BulkInviteResult>;
 }) {
   const { t } = useLingui();
   const { isControlledEnvironment } = useFlags();
@@ -83,21 +82,16 @@ function EmployeeRows({
     useFieldArray<EmployeeRow>("employees");
 
   const onAdd = () => {
-    onRowsChange();
     flushSync(() => {
       push(emptyEmployee(defaultLocationId));
     });
   };
 
-  const onRemove = (index: number) => {
-    onRowsChange();
-    remove(index);
-  };
-
   return (
     <VStack spacing={4} className="w-full">
       {items.map((item, index) => {
-        const result = resultsByIndex.get(index);
+        const rowId = item.defaultValue.rowId ?? "";
+        const result = resultsByRowId.get(rowId);
         return (
           <div
             key={item.key}
@@ -123,12 +117,13 @@ function EmployeeRows({
                       aria-label={t`Remove employee`}
                       icon={<IoMdClose />}
                       variant="ghost"
-                      onClick={() => onRemove(index)}
+                      onClick={() => remove(index)}
                     />
                   )}
                 </HStack>
               </div>
             )}
+            <Hidden name={`employees[${index}].rowId`} value={rowId} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
               <div className="md:col-span-2">
                 <Input name={`employees[${index}].email`} label={t`Email`} />
@@ -144,12 +139,14 @@ function EmployeeRows({
               <Select
                 name={`employees[${index}].employeeType`}
                 label={t`Employee Type`}
+                termId="create-employee-employee-type"
                 options={employeeTypeOptions}
                 placeholder={t`Select Employee Type`}
               />
               <Location
                 name={`employees[${index}].locationId`}
                 label={t`Location`}
+                termId="create-employee-location"
               />
               {isControlledEnvironment && (
                 <div className="md:col-span-2">
@@ -187,13 +184,10 @@ const BulkInviteEmployeesModal = () => {
   const formFetcher = useFetcher<BulkInviteActionData>();
   const [results, setResults] = useState<BulkInviteResult[]>([]);
 
-  const resultsByIndex = useMemo(() => {
-    const map = new Map<number, BulkInviteResult>();
-    for (const result of results) {
-      map.set(result.index, result);
-    }
-    return map;
-  }, [results]);
+  const resultsByRowId = useMemo(
+    () => indexBulkInviteResultsByRowId(results),
+    [results]
+  );
 
   useEffect(() => {
     if (formFetcher.state === "submitting") {
@@ -214,6 +208,10 @@ const BulkInviteEmployeesModal = () => {
   }, [formFetcher.data, formFetcher.state]);
 
   const defaultLocationId = defaults?.locationId ?? undefined;
+  const defaultEmployees = useMemo(
+    () => [emptyEmployee(defaultLocationId)],
+    [defaultLocationId]
+  );
 
   return (
     <Modal
@@ -229,7 +227,7 @@ const BulkInviteEmployeesModal = () => {
           action={path.to.bulkInviteEmployees}
           validator={bulkCreateEmployeeValidator}
           defaultValues={{
-            employees: [emptyEmployee(defaultLocationId)]
+            employees: defaultEmployees
           }}
           fetcher={formFetcher}
           className="flex flex-col h-full"
@@ -243,8 +241,7 @@ const BulkInviteEmployeesModal = () => {
           <ModalBody>
             <EmployeeRows
               defaultLocationId={defaultLocationId}
-              resultsByIndex={resultsByIndex}
-              onRowsChange={() => setResults([])}
+              resultsByRowId={resultsByRowId}
             />
           </ModalBody>
           <ModalFooter>

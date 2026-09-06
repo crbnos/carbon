@@ -1,13 +1,14 @@
 import {
   assertIsPost,
   CONTROLLED_ENVIRONMENT,
-  getAppUrl,
   RESEND_DOMAIN,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
@@ -22,10 +23,14 @@ import type {
 import { redirect } from "react-router";
 import {
   BulkInviteEmployeesModal,
-  bulkCreateEmployeeValidator
+  type BulkInviteResult,
+  bulkCreateEmployeeValidator,
+  bulkInviteResultForEmailDelivery
 } from "~/modules/users";
-import type { BulkInviteResult } from "~/modules/users/ui/Employees/BulkInviteEmployeesModal";
-import { createEmployeeAccount } from "~/modules/users/users.server";
+import {
+  createEmployeeAccount,
+  getSsoInviteDomainError
+} from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
@@ -67,10 +72,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const results: BulkInviteResult[] = [];
+  const serviceRole = getCarbonServiceRole();
 
-  for (const [index, employee] of employees.entries()) {
+  for (const employee of employees) {
     const email = employee.email.toLowerCase();
     const {
+      rowId = "",
       firstName,
       lastName,
       locationId,
@@ -80,11 +87,28 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (CONTROLLED_ENVIRONMENT && !usPersonAttestation) {
       results.push({
-        index,
+        rowId,
         email,
         success: false,
         message:
           "You must confirm a reasonable basis that this individual is a U.S. person"
+      });
+      continue;
+    }
+
+    // Once SSO is active for the company, an employee invite outside its
+    // covered domains is refused before anything is created or emailed.
+    const ssoDomainError = await getSsoInviteDomainError(
+      serviceRole,
+      companyId,
+      email
+    );
+    if (ssoDomainError) {
+      results.push({
+        rowId,
+        email,
+        success: false,
+        message: ssoDomainError
       });
       continue;
     }
@@ -104,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!result.success) {
       logger.error(result);
       results.push({
-        index,
+        rowId,
         email,
         success: false,
         message: result.message ?? "Failed to create employee account"
@@ -113,6 +137,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     try {
+      const inviteLink = await getSsoAwareInviteLink(
+        serviceRole,
+        email,
+        result.code,
+        companyId
+      );
+
       const emailResult = await sendEmail({
         from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
         to: email,
@@ -127,7 +158,7 @@ export async function action({ request }: ActionFunctionArgs) {
             email,
             name: `${firstName} ${lastName}`.trim(),
             companyName: company.data.name,
-            inviteLink: `${getAppUrl()}/invite/${result.code}`,
+            inviteLink,
             ip,
             location,
             controlledEnvironment: CONTROLLED_ENVIRONMENT
@@ -137,31 +168,34 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (emailResult.error) {
         logger.error(emailResult.error.message ?? "Email send failed");
-        results.push({
-          index,
-          email,
-          success: false,
-          message: "Created, but invite email failed to send"
-        });
+        results.push(
+          bulkInviteResultForEmailDelivery({
+            rowId,
+            email,
+            delivered: false
+          })
+        );
         continue;
       }
 
-      results.push({
-        index,
-        email,
-        success: true,
-        message: "Invited"
-      });
+      results.push(
+        bulkInviteResultForEmailDelivery({
+          rowId,
+          email,
+          delivered: true
+        })
+      );
     } catch (emailError) {
       logger.error(
         emailError instanceof Error ? emailError.message : "Email send failed"
       );
-      results.push({
-        index,
-        email,
-        success: false,
-        message: "Created, but invite email failed to send"
-      });
+      results.push(
+        bulkInviteResultForEmailDelivery({
+          rowId,
+          email,
+          delivered: false
+        })
+      );
     }
   }
 

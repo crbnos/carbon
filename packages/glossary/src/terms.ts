@@ -1816,7 +1816,7 @@ export const terms = {
     definition: msg`The specific contact on the selected supplier who will own this portal account; their email becomes the sign-in identifier.`
   },
 
-  // ── Users: Create employee (CreateEmployeeModal) ────────────────────────
+  // ── Users: Create employee (BulkInviteEmployeesModal) ────────────────────────
   "create-employee-employee-type": {
     term: msg`Employee Type`,
     definition: msg`The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template.`
