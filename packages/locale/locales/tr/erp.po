@@ -5687,7 +5687,7 @@ msgid "Docs & videos"
 msgstr "Dokümanlar ve videolar"
 
 msgid "Docs to revisit"
-msgstr ""
+msgstr "Gözden geçirilecek dokümantasyon"
 
 msgid "Document"
 msgstr "Belge"
@@ -12797,13 +12797,13 @@ msgid "Question {0} of {1}"
 msgstr "Soru {0}/{1}"
 
 msgid "Question performance"
-msgstr ""
+msgstr "Soru performansı"
 
 msgid "Questions"
-msgstr ""
+msgstr "Sorular"
 
 msgid "Questions answered correctly less than 60% of the time"
-msgstr ""
+msgstr "Doğru yanıtlanma oranı %60'ın altında olan sorular"
 
 msgid "Queued"
 msgstr "Kuyrukta"

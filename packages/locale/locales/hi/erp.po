@@ -5687,7 +5687,7 @@ msgid "Docs & videos"
 msgstr "डॉक्स और वीडियो"
 
 msgid "Docs to revisit"
-msgstr ""
+msgstr "दोबारा देखने योग्य दस्तावेज़"
 
 msgid "Document"
 msgstr "दस्तावेज़"
@@ -12797,13 +12797,13 @@ msgid "Question {0} of {1}"
 msgstr "प्रश्न {0} का {1}"
 
 msgid "Question performance"
-msgstr ""
+msgstr "प्रश्न प्रदर्शन"
 
 msgid "Questions"
-msgstr ""
+msgstr "प्रश्न"
 
 msgid "Questions answered correctly less than 60% of the time"
-msgstr ""
+msgstr "ऐसे प्रश्न जिनका सही उत्तर 60% से कम बार दिया गया"
 
 msgid "Queued"
 msgstr "कतार में"

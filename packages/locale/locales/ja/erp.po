@@ -5687,7 +5687,7 @@ msgid "Docs & videos"
 msgstr "ドキュメント＆動画"
 
 msgid "Docs to revisit"
-msgstr ""
+msgstr "見直すドキュメント"
 
 msgid "Document"
 msgstr "文書"
@@ -12797,13 +12797,13 @@ msgid "Question {0} of {1}"
 msgstr "質問 {0} / {1}"
 
 msgid "Question performance"
-msgstr ""
+msgstr "設問の正答率"
 
 msgid "Questions"
-msgstr ""
+msgstr "設問"
 
 msgid "Questions answered correctly less than 60% of the time"
-msgstr ""
+msgstr "正答率が 60% 未満の設問"
 
 msgid "Queued"
 msgstr "キュー待ち"

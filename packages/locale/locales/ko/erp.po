@@ -5687,7 +5687,7 @@ msgid "Docs & videos"
 msgstr "문서 및 동영상"
 
 msgid "Docs to revisit"
-msgstr ""
+msgstr "다시 볼 문서"
 
 msgid "Document"
 msgstr "문서"
@@ -12797,13 +12797,13 @@ msgid "Question {0} of {1}"
 msgstr "질문 {0}/{1}"
 
 msgid "Question performance"
-msgstr ""
+msgstr "문항 정답률"
 
 msgid "Questions"
-msgstr ""
+msgstr "문항"
 
 msgid "Questions answered correctly less than 60% of the time"
-msgstr ""
+msgstr "정답률이 60% 미만인 문항"
 
 msgid "Queued"
 msgstr "대기열"

@@ -5687,7 +5687,7 @@ msgid "Docs & videos"
 msgstr "文档和视频"
 
 msgid "Docs to revisit"
-msgstr ""
+msgstr "需要修订的文档"
 
 msgid "Document"
 msgstr "文件"
@@ -12797,13 +12797,13 @@ msgid "Question {0} of {1}"
 msgstr "问题 {0}/{1}"
 
 msgid "Question performance"
-msgstr ""
+msgstr "题目正确率"
 
 msgid "Questions"
-msgstr ""
+msgstr "题目"
 
 msgid "Questions answered correctly less than 60% of the time"
-msgstr ""
+msgstr "正确率低于 60% 的题目"
 
 msgid "Queued"
 msgstr "排队中"
