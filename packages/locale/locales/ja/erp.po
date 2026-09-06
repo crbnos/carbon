@@ -192,6 +192,9 @@ msgstr "{conflictCount} 個の競合"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
@@ -2545,6 +2548,9 @@ msgstr "バックアップ"
 
 msgid "Balance"
 msgstr "残高"
+
+msgid "Balance Remaining:"
+msgstr "残額:"
 
 msgid "Balance Sheet"
 msgstr "貸借対照表"
@@ -11361,11 +11367,14 @@ msgstr "ページ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "支払済み金額:"
+msgid "Paid"
+msgstr "支払済"
 
 msgid "Paid Date"
 msgstr "支払日"
+
+msgid "Paid:"
+msgstr "支払済:"
 
 msgid "Parameters"
 msgstr "パラメータ"

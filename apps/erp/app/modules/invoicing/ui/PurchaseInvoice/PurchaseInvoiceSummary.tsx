@@ -572,7 +572,7 @@ const PurchaseInvoiceSummary = ({
               <Trans>Balance Remaining:</Trans>
             </span>
             {isFullyPaid ? (
-              <Badge variant="green">
+              <Badge variant="secondary">
                 <Trans>Paid</Trans>
               </Badge>
             ) : (

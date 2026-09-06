@@ -192,6 +192,9 @@ msgstr "{conflictCount} विरोध"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
@@ -2545,6 +2548,9 @@ msgstr "बैकअप"
 
 msgid "Balance"
 msgstr "शेष राशि"
+
+msgid "Balance Remaining:"
+msgstr "शेष राशि:"
 
 msgid "Balance Sheet"
 msgstr "तुलन पत्र"
@@ -11361,11 +11367,14 @@ msgstr "पृष्ठ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "भुगतान की गई राशि:"
+msgid "Paid"
+msgstr "भुगतान किया"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
+
+msgid "Paid:"
+msgstr "भुगतान:"
 
 msgid "Parameters"
 msgstr "पैरामीटर"
