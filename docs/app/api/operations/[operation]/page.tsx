@@ -98,19 +98,40 @@ function exampleFromSchema(schema: unknown, depth = 0): unknown {
 }
 
 /**
+ * Whether an operation returns a body worth showing. A write that reflects as
+ * `{type:"null"}` returns nothing (327 of them do), and 65 operations reflect no
+ * schema at all — rendering either as a `null` or `{}` sample invited the reader
+ * to unwrap a value that does not exist. No body, no Response section.
+ */
+function hasResponseBody(schema: unknown): boolean {
+  if (!schema || typeof schema !== "object") return false;
+  const s = schema as JsonSchemaNode;
+
+  if (Array.isArray(s.anyOf)) return s.anyOf.some(hasResponseBody);
+
+  const types = Array.isArray(s.type) ? s.type : s.type ? [s.type] : [];
+  if (types.length > 0) return types.some((t) => t !== "null");
+
+  // No `type` and no union: only a shape (properties/items) carries anything.
+  return Boolean(s.properties || s.items || s.additionalProperties);
+}
+
+/**
  * The HTTP success body: single results are the payload itself; lists carry the
  * `{ results, count }` envelope — the only place `count` means anything. Mirrors
  * `isListOperation`/`shapeHttpBody` in the v1 surface: the split is decided by
- * whether the reflected response schema is an array.
+ * whether the reflected response schema is an array. Null when the operation
+ * returns no body — the panel drops its Response section entirely.
  */
-function responseBody(responseSchema: unknown): string {
-  const schema = (responseSchema ?? undefined) as JsonSchemaNode | undefined;
-  const types = Array.isArray(schema?.type)
+function responseBody(responseSchema: unknown): string | null {
+  if (!hasResponseBody(responseSchema)) return null;
+  const schema = responseSchema as JsonSchemaNode;
+  const types = Array.isArray(schema.type)
     ? schema.type
-    : schema?.type
+    : schema.type
       ? [schema.type]
       : [];
-  const payload = schema ? exampleFromSchema(schema) : {};
+  const payload = exampleFromSchema(schema);
   return JSON.stringify(
     types.includes("array") ? { results: payload, count: null } : payload,
     null,
@@ -137,7 +158,7 @@ export default async function OperationPage(props: Params) {
   const responseJson = responseBody(t.responseSchema);
   const [schemaHtml, responseHtml, ...sampleHtml] = await Promise.all([
     highlight(schemaJson, "json"),
-    highlight(responseJson, "json"),
+    responseJson ? highlight(responseJson, "json") : undefined,
     ...SAMPLE_KEYS.map((k) => highlight(samples[k], SAMPLE_GRAMMAR[k]))
   ]);
   const highlighted = Object.fromEntries(
