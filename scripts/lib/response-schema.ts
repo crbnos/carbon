@@ -120,11 +120,32 @@ export function typeToJsonSchema(
     // Cycle: the type is already being expanded further up this branch.
     if (seen.has(key)) return { type: "object" };
 
+    const nextSeen = new Set(seen).add(key);
+
+    // `Record<K, V>` / any index signature. TypeScript reports these as an object
+    // with ZERO NAMED PROPERTIES, so a plain property walk emits a bare
+    // `{type:"object"}` and the map's value type is lost — that alone accounted for
+    // 9 operations with no usable response, plus every Record nested inside one
+    // that otherwise worked. `additionalProperties` is the JSON Schema equivalent,
+    // and the docs SchemaTable already renders it as `Record<string, …>`.
+    const indexValue =
+      type.getStringIndexType() ?? type.getNumberIndexType() ?? undefined;
+    if (indexValue) {
+      return {
+        type: "object",
+        additionalProperties: typeToJsonSchema(
+          indexValue,
+          at,
+          depth + 1,
+          nextSeen
+        )
+      };
+    }
+
     const properties = type.getProperties();
     if (properties.length === 0) return { type: "object" };
     if (properties.length > MAX_PROPERTIES) return { type: "object" };
 
-    const nextSeen = new Set(seen).add(key);
     const shape: Record<string, unknown> = {};
     const required: string[] = [];
     for (const property of properties) {
@@ -178,8 +199,27 @@ function unionToJsonSchema(
     return inner;
   }
 
-  const anyOf = concrete.map((t) => typeToJsonSchema(t, at, depth + 1, seen));
+  // Dedupe: `boolean` is internally `true | false`, so a MIXED union (the `Json`
+  // type is the common one — string | number | boolean | object | array) yields two
+  // identical `{type:"boolean"}` members. The all-boolean shortcut above only fires
+  // when every member is a boolean literal, so mixed unions need this.
+  const anyOf = dedupe(
+    concrete.map((t) => typeToJsonSchema(t, at, depth + 1, seen))
+  );
+  if (anyOf.length === 1 && !nullable) return anyOf[0];
   return nullable ? { anyOf: [...anyOf, { type: "null" }] } : { anyOf };
+}
+
+function dedupe(schemas: JsonSchema[]): JsonSchema[] {
+  const seen = new Set<string>();
+  const out: JsonSchema[] = [];
+  for (const schema of schemas) {
+    const key = JSON.stringify(schema);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(schema);
+  }
+  return out;
 }
 
 export interface ResponseSchemaIndex {
@@ -191,7 +231,8 @@ export interface ResponseSchemaIndex {
 function isUseful(schema: JsonSchema): boolean {
   const keys = Object.keys(schema);
   if (keys.length === 0) return false;
-  // `{ type: "object" }` with no properties says nothing a reader can use.
+  // `{ type: "object" }` alone says nothing a reader can use — but the same shape
+  // carrying `additionalProperties` is a typed map and does.
   return !(keys.length === 1 && schema.type === "object");
 }
 
