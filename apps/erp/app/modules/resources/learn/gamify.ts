@@ -16,7 +16,7 @@ import type { LearnExamBlueprint } from "./types";
  * Certificates are stamped with it, and an in-flight attempt whose version no
  * longer matches is voided rather than graded against content it never saw.
  */
-export const LEARN_CONTENT_VERSION = "2026.09.1";
+export const LEARN_CONTENT_VERSION = "2026.09.2";
 
 /** XP for a unit quiz by the attempt number on which it was PASSED. */
 export const QUIZ_XP_BY_PASS_ATTEMPT = [100, 50, 25] as const;

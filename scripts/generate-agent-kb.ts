@@ -147,6 +147,11 @@ function stripComponentsFromProse(body: string): string {
   out = out.replace(/<Figure\b[^>]*\/>/g, "");
   out = out.replace(/<Figure\b[^>]*>[\s\S]*?<\/Figure>/g, "");
 
+  // <Quiz> is reader-facing practice, not knowledge: its options are
+  // deliberately-plausible wrong answers. Without this the catch-all below
+  // would keep the option text and teach the agent the distractors.
+  out = out.replace(/<Quiz\b[^>]*>[\s\S]*?<\/Quiz>/g, "");
+
   // <AgentContext> is agent-only: invisible on the site (renders null), but its inner
   // content is meant FOR this KB. Unwrap it — keep the content, drop the tags.
   out = out.replace(/<\/?AgentContext\b[^>]*>/g, "");

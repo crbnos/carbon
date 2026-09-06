@@ -1347,6 +1347,10 @@ export const path = {
       generatePath(`${x}/learn/${trackSlug}/exam`),
     learnPreferences: `${x}/learn/preferences`,
     learnQuestionStats: `${x}/resources/learn/questions`,
+    // A SIBLING of the team dashboard, not a child: `learn.tsx` renders an
+    // <Outlet> for its drawers, so `learn.questions` would stack this table
+    // underneath the team table instead of replacing it.
+    learnQuestions: `${x}/resources/learn-questions`,
     learnRenew: (trackSlug: string) =>
       generatePath(`${x}/learn/${trackSlug}/renew`),
     learnRevokeCertificate: `${x}/resources/learn/revoke`,

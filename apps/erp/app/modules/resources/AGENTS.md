@@ -14,6 +14,7 @@ Locations, work centers, processes, abilities (skills), partners, contractors, e
 - **Maintenance Schedule** — preventive maintenance plan with frequency, priority, estimated duration, and required spare parts. `takesWorkCenterOffline` marks the PM as blocking the machine; the nightly generator (`packages/jobs/.../scheduled/dispatch.ts`) copies it onto each generated dispatch and sets `plannedEndTime = plannedStartTime + estimatedDuration` (so the offline window is bounded — the validator requires a duration when offline is on).
 - **Failure Mode** — categorized failure type used by maintenance dispatches and quality NCRs.
 - **Training** — training programs with assignments, quiz questions, and frequency-based recertification. Completion tracked via `trainingCompletion`.
+- **Learn** — Carbon's own role-based curriculum (tracks → modules → units), shipped in code under `learn/`: nine live tracks (`fundamentals` plus one per role), one file each under `learn/tracks/`. Units end in a scenario quiz or a hands-on challenge verified against the learner's real records; a track's exam issues a version-stamped `learnCertificate` with a public verification URL. Distinct from **Training**, which is the customer's own SOP content. See `.claude/rules/learn-system.md`.
 
 ## Safety
 
@@ -36,8 +37,8 @@ Locations, work centers, processes, abilities (skills), partners, contractors, e
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test -- --testPathPattern=resources
+pnpm --filter erp run typecheck                       # the package is `erp`, not `@carbon/erp`
+pnpm --filter erp exec vitest run app/modules/resources/learn   # apps/erp has no `test` script
 ```
 
 ## Key Data Model
@@ -58,6 +59,10 @@ pnpm --filter @carbon/erp test -- --testPathPattern=resources
 | `maintenanceSchedule` / `maintenanceScheduleItem` | Preventive maintenance plans with spare parts; `takesWorkCenterOffline` + `estimatedDuration` flow into generated dispatches (offline flag + `plannedEndTime = plannedStartTime + estimatedDuration`) |
 | `maintenanceFailureMode` | Failure categories shared with quality module |
 | `training` / `trainingAssignment` / `trainingQuestion` / `trainingCompletion` | Training programs with quizzes and completion tracking |
+| `learnUnitProgress` / `learnAttempt` / `learnAttemptAnswer` | Carbon Learn progress and grading; `learnAttemptAnswer` is service-role only (RLS on, no policies) |
+| `learnChallengeAttempt` | One row per server-owned hands-on challenge start; partial unique index keeps one open attempt per learner × challenge |
+| `learnXpEvent` / `learnActivityDay` / `learnBadgeAward` | Append-only XP ledger, daily rollup, module badges — learner-private |
+| `learnCertificate` / `learnAssignment` / `learnPreference` | Certificates (unique per exam attempt), group assignments, weekly-goal setting |
 | `suggestion` / `suggestions` (view) | Employee suggestions |
 
 ## Key Service Functions
@@ -75,6 +80,10 @@ pnpm --filter @carbon/erp test -- --testPathPattern=resources
 - `getFailureModes` / `upsertFailureMode` — failure categorization
 - `getTraining(s)` / `getTrainingAssignment(s)` / `getTrainingAssignmentStatus` / `getOutstandingTrainingsForUser` / `getTrainingGrantedAbilityId` — training management (`getTrainingGrantedAbilityId` returns the ability a completion grants, so the completion routes can `notifyScheduleInputsChanged` for that operator pool)
 - `getSuggestion(s)` — suggestion management
+- `getLearnOverview`-shaped reads (`getLearnUnitProgress` / `getLearnXpTotal` / `getLearnActivity` / `getLearnBadges` / `getLearnCertificates` / `getLearnPreference` / `getLearnChallengeAttempts` / `getLearnExamAttempts`) — learner hub data
+- `getLearnTeamStatus`-shaped admin reads (`getLearnAssignments` / `getLearnAssignment` / `getLearnQuestionStats`) plus `upsertLearnAssignment` (rejects group ids outside the company) and `deleteLearnAssignment`. `getLearnQuestionStats` backs the question report at `/x/resources/learn-questions`, which aggregates only and hides any question with fewer than five attempts
+- `getLearnCertificateById` / `getLearnCertificateByCode` — certificate PDF and the public verification page
+- Grading, XP, and certificate WRITES live in `learn/engine.server.ts`, not here — the engine is the only writer
 
 ## Key Exports
 

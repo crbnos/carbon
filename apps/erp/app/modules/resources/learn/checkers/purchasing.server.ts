@@ -10,21 +10,10 @@ import type { LearnCheckResult } from "../types";
 import type {
   LearnPurchaseOrderLineRow,
   LearnPurchaseOrderRow,
-  LearnReader,
-  LearnReceiptRow,
-  ReaderScope
+  LearnReceiptRow
 } from "./reader.server";
-
-type CheckerContext = { scope: ReaderScope; reader: LearnReader };
-
-const fail = (
-  failedRequirement: string,
-  message: string
-): LearnCheckResult => ({
-  passed: false,
-  failedRequirement,
-  message
-});
+import type { CheckerContext } from "./shared.server";
+import { fail } from "./shared.server";
 
 /**
  * "Released" is a SET, never one value. A purchase order's status is computed

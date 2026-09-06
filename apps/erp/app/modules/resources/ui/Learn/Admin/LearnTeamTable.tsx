@@ -1,9 +1,17 @@
-import { BarProgress, HStack, MenuIcon, MenuItem, Status } from "@carbon/react";
+import {
+  BarProgress,
+  Button,
+  HStack,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { LuBan, LuFileBadge } from "react-icons/lu";
+import { LuBan, LuChartBar, LuFileBadge } from "react-icons/lu";
+import { Link } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -164,11 +172,14 @@ const LearnTeamTable = ({ data, count, onRevoke }: LearnTeamTableProps) => {
       title={t`Learn`}
       table="learnTeam"
       primaryAction={
-        permissions.can("create", "resources") ? (
-          <HStack>
+        <HStack>
+          <Button variant="secondary" leftIcon={<LuChartBar />} asChild>
+            <Link to={path.to.learnQuestions}>{t`Question performance`}</Link>
+          </Button>
+          {permissions.can("create", "resources") && (
             <New label={t`Assignment`} to={path.to.newLearnAssignment} />
-          </HStack>
-        ) : undefined
+          )}
+        </HStack>
       }
       renderContextMenu={renderContextMenu}
       withSearch

@@ -9,23 +9,61 @@ import type {
   LearnServedQuestion,
   LearnTrackSlug
 } from "../types";
+import { questions as accounting } from "./accounting.server";
+import { questions as admin } from "./admin.server";
 import { questions as fundamentals } from "./fundamentals.server";
+import { questions as inventory } from "./inventory.server";
+import { questions as planning } from "./planning.server";
+import { questions as production } from "./production.server";
 import { questions as purchasing } from "./purchasing.server";
+import { questions as quality } from "./quality.server";
+import { questions as sales } from "./sales.server";
 
 export const banks: Record<LearnTrackSlug, LearnQuestion[]> = {
   fundamentals,
   purchasing,
-  accounting: [],
-  sales: [],
-  inventory: [],
-  production: [],
-  planning: [],
-  quality: [],
-  admin: []
+  accounting,
+  sales,
+  inventory,
+  production,
+  planning,
+  quality,
+  admin
 };
 
 export function bankForTrack(slug: LearnTrackSlug): LearnQuestion[] {
   return banks[slug] ?? [];
+}
+
+export type LearnQuestionMeta = {
+  trackSlug: LearnTrackSlug;
+  unitSlug: string;
+  topic: string;
+  prompt: string;
+  docsUrl: string;
+};
+
+/**
+ * What an ADMIN may see about a question: where it lives and which docs page it
+ * is drawn from. Deliberately no answer and no explanation — the analytics
+ * report is a signal about the DOCS, and a manager who can read the answer key
+ * is a manager who can coach somebody through an exam.
+ */
+export function questionMeta(
+  questionSlug: string
+): LearnQuestionMeta | undefined {
+  for (const trackSlug of Object.keys(banks) as LearnTrackSlug[]) {
+    const question = banks[trackSlug].find((q) => q.slug === questionSlug);
+    if (!question) continue;
+    return {
+      trackSlug,
+      unitSlug: question.unitSlug,
+      topic: question.topic,
+      prompt: question.prompt,
+      docsUrl: question.docsUrl
+    };
+  }
+  return undefined;
 }
 
 export function questionsForUnit(

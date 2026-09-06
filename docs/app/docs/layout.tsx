@@ -123,7 +123,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
   },
   {
     label: "People & access",
-    slugs: ["people", "training", "permissions", "account"],
+    slugs: ["people", "training", "learn", "permissions", "account"],
   },
   {
     label: "System",

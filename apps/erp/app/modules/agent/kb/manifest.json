@@ -904,6 +904,29 @@
       ]
     },
     {
+      "slug": "docs/reference/learn",
+      "title": "Learn",
+      "description": "Role-based learning tracks built on these docs, with scenario quizzes, hands-on challenges verified against your own records, XP, and certificates your manager can check.",
+      "keywords": ["learn", "docs", "reference"],
+      "headings": [
+        "Tracks, modules, and units",
+        "Quizzes",
+        "Hands-on challenges",
+        "The certification exam",
+        "Certificates",
+        "Assigning tracks",
+        "XP, levels, badges, and streaks",
+        "Related",
+        "Troubleshooting",
+        "\"No purchase order created by you since you started this challenge\"",
+        "A challenge check says a record is still Draft",
+        "The exam is locked",
+        "\"Cooling down\"",
+        "An attempt was voided",
+        "A learner's XP or streak is not on the admin dashboard"
+      ]
+    },
+    {
       "slug": "docs/reference/maintenance",
       "title": "Maintenance",
       "description": "Keeping work centers running: reactive and preventive maintenance dispatches.",

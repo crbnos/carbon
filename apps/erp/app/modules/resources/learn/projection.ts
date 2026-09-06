@@ -7,6 +7,7 @@
  * dashboard route has no way to accidentally select a column it should not.
  */
 
+import { round } from "@carbon/utils";
 import type { LearnTeamStatus } from "./types";
 
 export type ProjectionAssignment = {
@@ -91,7 +92,7 @@ export function computeTeamStatus(input: {
 
       const key = `${userId}:${assignment.trackSlug}`;
       const completed = progressByKey.get(key) ?? 0;
-      const percent = total === 0 ? 0 : Math.floor((completed / total) * 100);
+      const percent = total === 0 ? 0 : round((completed / total) * 100, 0);
       const certificate = certByKey.get(key);
 
       let status: LearnTeamStatus;

@@ -5686,6 +5686,9 @@ msgstr "Docs"
 msgid "Docs & videos"
 msgstr "Docs & videos"
 
+msgid "Docs to revisit"
+msgstr "Docs to revisit"
+
 msgid "Document"
 msgstr "Document"
 
@@ -12792,6 +12795,15 @@ msgstr "Question"
 #. placeholder {1}: questions.length
 msgid "Question {0} of {1}"
 msgstr "Question {0} of {1}"
+
+msgid "Question performance"
+msgstr "Question performance"
+
+msgid "Questions"
+msgstr "Questions"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "Questions answered correctly less than 60% of the time"
 
 msgid "Queued"
 msgstr "Queued"

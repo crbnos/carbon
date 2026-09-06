@@ -29,6 +29,29 @@ A receipt line soft-links back to the purchase order line it fulfills. Posting a
 Receive an item flagged for inspection and its units land **On Hold**, with an inbound inspection opened at *Pending* — they don't become available stock until the inspection clears.
 </Callout>
 
+<Quiz>
+  <QuizQuestion
+    prompt="Accounting is switched off for the company. You post a receipt. What happens?"
+    answer="b"
+    explanation="Posting a receipt always updates inventory. The ledger entries are written only when accounting is enabled — stock and the general ledger advance on different switches."
+  >
+    <QuizOption id="a">Nothing — posting requires accounting to be on</QuizOption>
+    <QuizOption id="b">Inventory updates; only the ledger entries are skipped</QuizOption>
+    <QuizOption id="c">The receipt is queued until accounting is enabled</QuizOption>
+    <QuizOption id="d">Stock updates and a journal is written anyway</QuizOption>
+  </QuizQuestion>
+  <QuizQuestion
+    prompt="You receive an item that is flagged for inspection. Where does the stock land?"
+    answer="c"
+    explanation="Inspected parts are received but quarantined: the units land On Hold with an inbound inspection opened at Pending, and are not available stock until quality clears them."
+  >
+    <QuizOption id="a">Straight into available stock</QuizOption>
+    <QuizOption id="b">It is rejected at the door</QuizOption>
+    <QuizOption id="c">On Hold, with an inbound inspection at Pending</QuizOption>
+    <QuizOption id="d">In the supplier's consignment bin</QuizOption>
+  </QuizQuestion>
+</Quiz>
+
 ## Related
 
 <Cards>

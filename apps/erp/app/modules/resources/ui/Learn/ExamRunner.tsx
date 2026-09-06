@@ -13,6 +13,7 @@ import {
   useInterval,
   VStack
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuExternalLink, LuLock } from "react-icons/lu";
@@ -72,6 +73,7 @@ const Countdown = ({ expiresAt }: { expiresAt: string }) => {
         "text-sm font-mono tabular-nums",
         urgent ? "text-destructive font-semibold" : "text-muted-foreground"
       )}
+      role="timer"
       aria-label={t`Time remaining`}
     >
       {minutes}:{String(seconds).padStart(2, "0")}
@@ -125,9 +127,7 @@ const ExamRunner = ({
                     result.passed ? "text-emerald-500" : "text-destructive"
                   )}
                 >
-                  {Math.floor(
-                    (result.correctCount / result.questionCount) * 100
-                  )}
+                  {round((result.correctCount / result.questionCount) * 100, 0)}
                   %
                 </span>
                 <span className="text-sm text-muted-foreground tabular-nums">

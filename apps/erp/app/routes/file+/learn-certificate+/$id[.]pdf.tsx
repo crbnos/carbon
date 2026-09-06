@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { LearnCertificatePDF } from "@carbon/documents/pdf";
 import { generateQRCode } from "@carbon/documents/qr";
 import { getLogger } from "@carbon/logger";
+import { round } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getLearnCertificateById } from "~/modules/resources";
@@ -72,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       verifyUrl={verifyUrl}
       qrDataUrl={qrDataUrl}
       contentVersion={certificate.data.contentVersion}
-      examScorePercent={`${Math.round(Number(certificate.data.examScore) * 100)}%`}
+      examScorePercent={`${round(Number(certificate.data.examScore) * 100, 0)}%`}
       challengeCount={certificate.data.challengeSlugs?.length ?? 0}
       status={status}
     />

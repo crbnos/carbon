@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useUser } from "~/hooks";
@@ -101,7 +101,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (c) => c.trackSlug === track.slug
     );
     trackState[track.slug] = {
-      percent: total === 0 ? 0 : Math.floor((completed / total) * 100),
+      percent: total === 0 ? 0 : round((completed / total) * 100, 0),
       certified: Boolean(
         certificate &&
           !certificate.revokedAt &&

@@ -7,18 +7,8 @@
  */
 
 import type { LearnCheckResult } from "../types";
-import type { LearnReader, ReaderScope } from "./reader.server";
-
-type CheckerContext = { scope: ReaderScope; reader: LearnReader };
-
-const fail = (
-  failedRequirement: string,
-  message: string
-): LearnCheckResult => ({
-  passed: false,
-  failedRequirement,
-  message
-});
+import type { CheckerContext } from "./shared.server";
+import { fail } from "./shared.server";
 
 /**
  * `fundamentals-create-item` — requirements, in curriculum order:

@@ -64,6 +64,29 @@ Note what posting does *not* do: it never marks the invoice **"Paid"**. As on th
 Posting settles the accounting against the order and receipt; it doesn't disburse cash. The bill waits at **"Open"** until you post a payment (a **"Disbursement"**) and apply it via a settlement, which is what records the outflow and flips the bill to **"Paid"**.
 </Callout>
 
+<Quiz>
+  <QuizQuestion
+    prompt="You post the supplier's invoice against the order. What is the bill's status immediately afterwards?"
+    answer="b"
+    explanation="Posting settles the accounting against the order and receipt; it does not disburse cash. The bill waits at Open until a payment is posted and applied through a settlement."
+  >
+    <QuizOption id="a">Paid</QuizOption>
+    <QuizOption id="b">Open</QuizOption>
+    <QuizOption id="c">Partially Paid</QuizOption>
+    <QuizOption id="d">Completed</QuizOption>
+  </QuizQuestion>
+  <QuizQuestion
+    prompt="Where do the order, the receipt, and the supplier's bill get reconciled?"
+    answer="a"
+    explanation="The three-way match happens on the shared purchase order line. There is deliberately no direct invoice-to-receipt link, and a receipt is not even required before you bill."
+  >
+    <QuizOption id="a">On the shared purchase order line</QuizOption>
+    <QuizOption id="b">On a receipt-to-invoice match record</QuizOption>
+    <QuizOption id="c">On the supplier's account</QuizOption>
+    <QuizOption id="d">In a nightly reconciliation job</QuizOption>
+  </QuizQuestion>
+</Quiz>
+
 <Divider />
 
 That's RFQ to bill end to end: one part shopped to several suppliers, ordered from the best, received into stock, and billed against the very same order line — the buy-side mirror of quote to cash, reconciled on the order, not on paperwork.

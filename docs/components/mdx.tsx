@@ -5,6 +5,7 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
 import type { ComponentProps } from "react";
 import { Checklist, Check } from "@/components/checklist";
+import { Quiz, QuizOption, QuizQuestion } from "@/components/quiz";
 import { Field, FieldTable } from "@/components/editorial/field-table";
 import { Glossary } from "@/components/editorial/glossary";
 // Figure/Screenshot + the shared Zoomable island so the Reference gets the same
@@ -74,6 +75,9 @@ export function getMDXComponents(components?: MDXComponents) {
     FeatureCallout,
     Checklist,
     Check,
+    Quiz,
+    QuizQuestion,
+    QuizOption,
     Frame,
     Eyebrow,
     AgentContext,

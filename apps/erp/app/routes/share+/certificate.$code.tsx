@@ -8,7 +8,7 @@ import {
   Status,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, round } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { getLearnCertificateByCode } from "~/modules/resources";
@@ -63,7 +63,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
       issuedAt: result.data.issuedAt,
       expiresAt: result.data.expiresAt,
       contentVersion: result.data.contentVersion,
-      examScorePercent: `${Math.round(Number(result.data.examScore) * 100)}%`,
+      examScorePercent: `${round(Number(result.data.examScore) * 100, 0)}%`,
       challengeSlugs: result.data.challengeSlugs ?? [],
       verificationCode: result.data.verificationCode
     }
