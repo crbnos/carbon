@@ -19,26 +19,39 @@ function unwrapSchema(
   let current = schema;
   let isOptional = false;
   let hasDefault = false;
+  // The OUTERMOST optionality wrapper decides, so an inner one can't overrule
+  // it. `z.string().optional().nonoptional()` rejects undefined — the field is
+  // required — but unwrapping continues into the `ZodOptional` underneath, and
+  // letting that write `isOptional` again reported the field as optional. The
+  // mirror case (`.nonoptional().optional()`) accepts undefined and must stay
+  // optional. Only the first decision is recorded either way.
+  let decided = false;
+  const decide = (optional: boolean) => {
+    if (!decided) {
+      isOptional = optional;
+      decided = true;
+    }
+  };
   const seen = new Set<z.ZodType>();
 
   while (!seen.has(current)) {
     seen.add(current);
 
     if (current instanceof z.ZodOptional) {
-      isOptional = true;
+      decide(true);
       current = classic(current.unwrap());
     } else if (
       current instanceof z.ZodDefault ||
       current instanceof z.ZodPrefault
     ) {
-      isOptional = true;
+      decide(true);
       hasDefault = true;
       current = classic(current.unwrap());
     } else if (current instanceof z.ZodCatch) {
-      isOptional = true;
+      decide(true);
       current = classic(current.unwrap());
     } else if (current instanceof z.ZodNonOptional) {
-      isOptional = false;
+      decide(false);
       current = classic(current.unwrap());
     } else if (
       // nullable is semantically distinct from optional; the rest are transparent

@@ -76,4 +76,39 @@ describe("no-default-on-effects", () => {
     expect(violation?.snippet).toBe(".default(5);");
     expect(violation?.line).toBe(2);
   });
+  it("ignores a chain written inside a string literal", () => {
+    const src = `const msg = "use z.string().transform(f).default(1) instead";`;
+    expect(noDefaultOnEffects.scan("a.ts", src)).toHaveLength(0);
+  });
+
+  it("ignores a chain written inside a comment", () => {
+    const src = [
+      "// z.string().transform(Number).default(5) is the bad shape",
+      "/* also z.string().transform(Number).default(5) */",
+      "const v = z.string();"
+    ].join("\n");
+    expect(noDefaultOnEffects.scan("a.ts", src)).toHaveLength(0);
+  });
+
+  it("still flags a violation when a comment sits between the effect and .default()", () => {
+    // Regression: `receiverBefore` stops at `/`, so an unmasked comment here
+    // hid the violation entirely — the silent direction.
+    const src = [
+      "const v = z.string().transform(Number)",
+      "  // explain the default",
+      "  .default(5);"
+    ].join("\n");
+    expect(noDefaultOnEffects.scan("a.ts", src)).toHaveLength(1);
+  });
+
+  it("reports the real line number despite a preceding block comment", () => {
+    const src = [
+      "/* a",
+      "   multi-line",
+      "   comment */",
+      "const v = z.string().transform(Number).default(5);"
+    ].join("\n");
+    const [violation] = noDefaultOnEffects.scan("a.ts", src);
+    expect(violation?.line).toBe(4);
+  });
 });
