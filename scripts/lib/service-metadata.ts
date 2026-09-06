@@ -122,7 +122,15 @@ const PERMISSION_MODULE_MAP: Record<string, string | null> = {
 // Per-tool permission overrides, for operations whose route gates on a DIFFERENT
 // module than their service module (spot-checked against the real routes). Keep
 // this hand-curated list small and grounded — each entry needs a verified route.
-const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {};
+const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
+  // API-key management is an admin capability: every route in the family —
+  // x+/settings+/api-keys.tsx (list loader), api-keys.new.tsx, api-keys.$id.tsx,
+  // api-keys.delete.$id.tsx — gates on { update: "users" }, not "settings".
+  // Deriving "settings" would let a settings-scoped key mint new API keys.
+  settings_getApiKeys: { module: "users", actions: ["update"] },
+  settings_upsertApiKey: { module: "users", actions: ["update"] },
+  settings_deleteApiKey: { module: "users", actions: ["update"] },
+};
 
 // ---------------------------------------------------------------------------
 // Types

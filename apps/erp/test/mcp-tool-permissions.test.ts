@@ -14,9 +14,33 @@ type Tool = {
   permission: { module: string | null; actions: string[] };
 };
 
-const tools = metadata.tools as Tool[];
+const allTools = metadata.tools as Tool[];
+
+// PERMISSION_OVERRIDES in scripts/lib/service-metadata.ts — route-verified
+// exceptions that win over the derivation rules. Pinned exactly below and
+// excluded from the rule-based assertions.
+const OVERRIDDEN = new Set([
+  "settings_getApiKeys",
+  "settings_upsertApiKey",
+  "settings_deleteApiKey"
+]);
+
+const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
 
 const funcName = (t: Tool) => t.name.slice(t.module.length + 1).toLowerCase();
+
+describe("permission overrides", () => {
+  it("API-key management gates on users_update, matching its ERP routes", () => {
+    for (const name of OVERRIDDEN) {
+      const t = allTools.find((t) => t.name === name);
+      expect(t, name).toBeDefined();
+      expect(t?.permission, name).toEqual({
+        module: "users",
+        actions: ["update"]
+      });
+    }
+  });
+});
 
 describe("permission module mapping", () => {
   it("maps items_* to the 'parts' permission module", () => {
