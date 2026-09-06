@@ -11,6 +11,7 @@ import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { call } from "@orpc/server";
 import { describe, expect, it } from "vitest";
 import { type AuthedContext, base, gate } from "./base.server";
+import { specOptions } from "./spec-options.server";
 
 const PREFIX = "/api/v1";
 
@@ -183,5 +184,27 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     expect(body.properties.data.properties.id).toEqual({ type: "string" });
     expect(body.properties.count.type).toEqual(["number", "null"]);
     expect(body.required).toContain("data");
+  });
+
+  it("declares BOTH auth schemes the server accepts, with OR semantics", async () => {
+    // authenticate.server.ts takes the raw `carbon-key` header or the same key as
+    // a Bearer token. Declaring only carbonKey made every generated SDK
+    // authenticate differently from every documented sample.
+    const generator = new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    });
+    const spec = (await generator.generate(router, specOptions())) as any;
+
+    expect(spec.components.securitySchemes.carbonKey).toEqual({
+      type: "apiKey",
+      in: "header",
+      name: "carbon-key"
+    });
+    expect(spec.components.securitySchemes.bearerAuth).toMatchObject({
+      type: "http",
+      scheme: "bearer"
+    });
+    // Two entries in `security` = EITHER scheme satisfies auth (OR), not both (AND).
+    expect(spec.security).toEqual([{ carbonKey: [] }, { bearerAuth: [] }]);
   });
 });

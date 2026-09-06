@@ -53,6 +53,11 @@ export const SEO = {
       title: "Operations",
       description: "Every Carbon operation, reached through one lean discovery pattern.",
     },
+    sdks: {
+      title: "Client SDKs",
+      description:
+        "Generate a typed client in any language from the Carbon API's OpenAPI spec.",
+    },
   },
   // Per-guide blurb, keyed by flow slug — shared by every chapter of that guide.
   guides: {

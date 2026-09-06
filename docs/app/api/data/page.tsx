@@ -13,7 +13,6 @@ import {
   Row
 } from "@/components/api/doc";
 import { ContentFooter } from "@/components/api/page-footer";
-import { SdkCards } from "@/components/api/sdk-cards";
 import { apiBase } from "@/lib/api-data";
 import { highlight } from "@/lib/highlight";
 import { pageSeo, SEO } from "@/lib/seo";
@@ -67,14 +66,6 @@ export default async function ApiIntroPage() {
         the table touches.
       </Warn>
 
-      <H2 id="client-libraries">Client libraries</H2>
-      <P>
-        The Data API is standard REST, so it works from any language. The
-        recommended client is the JavaScript SDK, built on{" "}
-        <Code>supabase-js</Code>.
-      </P>
-      <SdkCards />
-
       <H2 id="tables-and-views">Tables &amp; views</H2>
       <P>
         The API exposes both <strong>tables</strong> (read/write) and{" "}
@@ -116,7 +107,11 @@ export default async function ApiIntroPage() {
       </P>
 
       <H2 id="quickstart">Quickstart</H2>
-      <P>Save your key and the API URL as environment variables:</P>
+      <P>
+        The Data API is standard REST — call it from any language, or use{" "}
+        <Code>supabase-js</Code> as shown here. Save your key and the API URL as
+        environment variables:
+      </P>
       <CodeBlock html={env} code={ENV} label=".env" />
       <P>Then initialize the client:</P>
       <CodeBlock html={init} code={INIT} label="lib/carbon.ts" />

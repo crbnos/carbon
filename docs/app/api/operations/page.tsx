@@ -82,7 +82,9 @@ export default function ApiOperationsPage() {
         ))}
       </Table>
 
-      <ContentFooter prev={{ label: "Authentication", url: "/api/authentication" }} />
+      <ContentFooter
+        prev={{ label: "Authentication", url: "/api/authentication" }}
+        next={{ label: "Client SDKs", url: "/api/sdks" }} />
     </DocPage>
   );
 }

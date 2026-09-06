@@ -17,6 +17,7 @@ const GETTING_STARTED = [
   { label: "Connect over MCP", href: "/api/mcp" },
   { label: "Authentication", href: "/api/authentication" },
   { label: "Operations", href: "/api/operations" },
+  { label: "Client SDKs", href: "/api/sdks" },
 ];
 
 const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
