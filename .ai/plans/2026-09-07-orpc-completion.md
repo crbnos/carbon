@@ -652,15 +652,15 @@ run log at `.ai/runs/`.
 
 ## Progress
 
-- [ ] T1 — Parity harness: `dispatch-parity.test.ts` A/B against `executeFunction`
-- [ ] T2 — API-key auth cache (`packages/auth/src/services/api-key.server.ts`, 30s, negative caching)
-- [ ] T3 — Cache busting from the api-keys route actions + test
-- [ ] T4 — `registry.server.ts`, enrichment moved into `dispatch.server.ts`, `call.server.ts`, `authKind: "session"`, blocked-name guard in `gate`
-- [ ] T5 — MCP `call_tool` on `callOperation` (+ `resolveAuth` carries `authKind`/`scopes`)
-- [ ] T6 — In-app agent on `callOperation`
-- [ ] T7 — Workflow dispatcher on `callOperation`; `direct-executor.ts` deleted; parity test converted
-- [ ] T8 — Permission-derivation tests + 20-op spot-check (+ overrides if any)
-- [ ] T9 — Live smoke on `crbn up`, `pnpm --filter erp build`, doc/rule sync, changelog note
+- [x] T1 — Parity harness: `dispatch-parity.test.ts` A/B against `executeFunction`
+- [x] T2 — API-key auth cache (`packages/auth/src/services/api-key.server.ts`, 30s, negative caching)
+- [x] T3 — Cache busting from the api-keys route actions + test
+- [x] T4 — `registry.server.ts`, enrichment moved into `dispatch.server.ts`, `call.server.ts`, `authKind: "session"`, blocked-name guard in `gate`
+- [x] T5 — MCP `call_tool` on `callOperation` (+ `resolveAuth` carries `authKind`/`scopes`)
+- [x] T6 — In-app agent on `callOperation`
+- [x] T7 — Workflow dispatcher on `callOperation`; `direct-executor.ts` deleted; parity test converted
+- [x] T8 — Permission-derivation tests + 20-op spot-check (+ overrides if any)
+- [~] T9 — `pnpm --filter erp build` PASSED + doc/rule sync done; live smoke (steps 1–3) BLOCKED: crbn up stack not running (only Redis up, erp.main.dev 502). Changelog note (D6) pending PR.
 
 ## Risks and escape hatches
 

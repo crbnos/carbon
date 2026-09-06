@@ -176,24 +176,24 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
 
 ### Phase 0 — spike (½ day, throwaway branch ok)
 
-- [ ] Add `@orpc/server @orpc/contract @orpc/openapi @orpc/client @orpc/openapi-client` at
+- [x] Add `@orpc/server @orpc/contract @orpc/openapi @orpc/client @orpc/openapi-client` at
       `^1.15.0` (workspace catalog if the repo uses one; check `pnpm-workspace.yaml`).
-- [ ] Hand-build a 3-procedure router + splat resource route `apps/erp/app/routes/api+/v1+/$.ts`.
+- [x] Hand-build a 3-procedure router + splat resource route `apps/erp/app/routes/api+/v1+/$.ts`.
       Verify: (a) splat registers under a `+` folder in remix-flat-routes (NO existing splat in
       repo — if it fails try `api.v1.$.ts` flat name); (b) `handler.handle(request, { prefix:
       "/api/v1", context })` matches; (c) a thrown `Response` (429/403) from the action
       propagates with headers intact; (d) custom Standard-Schema converter output appears
       correctly in `OpenAPIGenerator` output.
-- [ ] Record findings in `.ai/runs/`; adjust the sketches below before proceeding.
+- [x] Record findings in `.ai/runs/`; adjust the sketches below before proceeding.
 
 ### Phase 1 — codegen + `packages/api`
 
-- [ ] Extract the parse core of `scripts/generate-mcp.ts` into `scripts/lib/service-metadata.ts`
+- [x] Extract the parse core of `scripts/generate-mcp.ts` into `scripts/lib/service-metadata.ts`
       exporting `buildAllToolMetadata(): ToolMetadata[]` (pure, no fs writes). **Verification:
       one-time diff of the new build-time output against the last committed tool-metadata.json —
       identical apart from the new `permission` field and per-module sharding — then delete the
       committed file and gitignore the output path.**
-- [ ] Add per-op `permission: { module: string | null, actions: ("view"|"create"|"update"|"delete")[] }`:
+- [x] Add per-op `permission: { module: string | null, actions: ("view"|"create"|"update"|"delete")[] }`:
       - service-module → permission-module map: `items → "parts"`; `account`, `shared` → `null`;
         all others identity.
       - verb → actions: READ → `["view"]`; `insert|create|add|new|copy|duplicate|generate` →
@@ -203,7 +203,11 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
       - Unit-test the mapping in `scripts/` tests. Spot-check ~20 ops against the actual route
         permissions they correspond to (some production ops gate on `"quality"` in routes —
         record exceptions as a hand-curated override map in `service-metadata.ts`).
-- [~] `generate-mcp.ts` now writes the manifest as gitignored, build-time per-module shards into
+- [~] **DEFERRED (D1 in `.ai/plans/2026-09-07-orpc-completion.md`)** — the manifest stays one
+  gitignored file (1.9 MB as of 2026-09-07) with the committed digest as the review contract.
+  Revisit when erp typecheck regresses measurably against it, the server bundle carries it
+  twice, or it passes ~4 MB; sharding then belongs with Docs Phase 2's generator work.
+  Original item: `generate-mcp.ts` writes the manifest as gitignored, build-time per-module shards into
       `packages/api/src/manifest/{module}.json` (op → {schema, classification, description,
       serviceParams, injectAuth, permission, hasOperationFlag}) — replacing the committed
       `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` (deleted from git after the
@@ -224,7 +228,7 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
       (`tool-manifest.digest.json`, one line per operation) plus `pnpm check:manifest`
       and a pre-commit gate, because gitignoring the manifest otherwise removes the only
       place a contract regression is visible in review.
-- [ ] Create `packages/api` (`@carbon/api`) — internal workspace package (NOT published to npm;
+- [x] Create `packages/api` (`@carbon/api`) — internal workspace package (NOT published to npm;
       user decision — the public contract is the served OpenAPI spec, from which customers
       generate clients in any language). Keep it app-free anyway: the erp server, spec generator,
       and docs build all consume it, and app imports must not leak into the docs build.
@@ -262,15 +266,15 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
       `scripts/generate-openapi.mjs` (build-time spec for docs; NOT committed;
       `securitySchemes: carbon-key apiKey header`).
       Wire into turbo build + the `generate:mcp` chain.
-- [ ] Verify: `pnpm generate:mcp` deterministic (run twice, no diff);
+- [x] Verify: `pnpm generate:mcp` deterministic (run twice, no diff);
       `pnpm exec turbo run typecheck --filter=@carbon/api`;
       `pnpm --filter @carbon/api test` (converter, reserved-key assert, permission derivation).
 
 ### Phase 2 — server + MCP/agent migration
 
-- [ ] `apps/erp/app/routes/api+/lib/operation-gate.server.ts`: `getOperationMeta(name)`
+- [x] `apps/erp/app/routes/api+/lib/operation-gate.server.ts`: `getOperationMeta(name)`
       (module-lazy shard import), `requiredPermissionsFor(meta)`, `assertScopes`.
-- [ ] `apps/erp/app/routes/api+/v1+/lib/base.server.ts` (AuthedContext + gate/withDb middleware),
+- [x] `apps/erp/app/routes/api+/v1+/lib/base.server.ts` (AuthedContext + gate/withDb middleware),
       `lib/router.server.ts` (15 `os.prefix().lazy()` entries), hand-written
       `lib/modules/{module}.server.ts` segments (~15 lines each: import service namespace +
       manifest shard, loop `buildModuleRouter(shard, namespace)` from a shared helper — no
@@ -279,19 +283,19 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
       `lib/dispatch.server.ts` (the bridge: positional args from `serviceParams`, payload
       stamping per `injectAuth` incl. array elements + `_operation` extraction — port the logic
       from `enrichWithAuthContext`, keep its unit-testable core pure).
-- [ ] `apps/erp/app/routes/api+/v1+/$.ts`: action = key auth (rewrite `Bearer crbn_…` →
+- [x] `apps/erp/app/routes/api+/v1+/$.ts`: action = key auth (rewrite `Bearer crbn_…` →
       `carbon-key`, then `requirePermissions(request, {})` for client/rate-limit/plan — the
       per-op scope check lives in gate middleware, so pass the key's scopes into context) →
       `handler.handle` → envelope. OAuth bearers → 401 pointing at MCP (v1 = API keys only).
       Loader: `OPTIONS` 204, else 405. No CORS (keys don't belong in browsers) — document it.
-- [ ] `apps/erp/app/routes/api+/v1+/openapi[.]json.ts`: GET serving the memoized generated spec,
+- [x] `apps/erp/app/routes/api+/v1+/openapi[.]json.ts`: GET serving the memoized generated spec,
       `servers: [getAppUrl() + "/api/v1"]`.
-- [ ] Migrate MCP `call_tool` (`api+/mcp+/lib/server.ts`) and agent (`agent.tools.ts`) to
+- [x] Migrate MCP `call_tool` (`api+/mcp+/lib/server.ts`) and agent (`agent.tools.ts`) to
       `call(router[module][op], args, { context })`; `resolveAuth` output shaped into
       `AuthedContext` (`authKind: "oauth"` skips scope gate). Delete the `ExecutorContext`
       assembly; shrink/remove `direct-executor.ts` (keep `functionRegistry` only if segments
       don't fully replace it).
-- [ ] **API-key auth cache** (promoted from backlog, user decision): short-TTL (~30s) cache of
+- [x] **API-key auth cache** (promoted from backlog, user decision): short-TTL (~30s) cache of
       the resolved key row (scopes, companyId, plan, expiry, rate-limit config) keyed by
       `keyHash`, in the carbon-key branch of `requirePermissions`
       (`packages/auth/src/services/auth.server.ts`) via `@carbon/kv` — cuts the per-request DB
@@ -301,11 +305,11 @@ Why NOT zod-validator-referencing contracts (do not revisit): most ops don't tak
       import server-only modules like `@carbon/kv`): bust from the api-keys route actions
       (`x+/settings+/api-keys*.tsx`) or a `settings.server.ts` helper. Accepted tradeoff:
       revocation lags ≤ TTL. Add a test for the busting path.
-- [ ] **Parity tests**: for a representative op per classification and per `injectAuth` variant,
+- [x] **Parity tests**: for a representative op per classification and per `injectAuth` variant,
       assert `call()` result === old `executeFunction` result (fixture the service fn via an
       injectable dispatch). Changelog note: under-scoped API keys now 403 on MCP where RLS
       previously allowed.
-- [ ] Verify: `pnpm exec turbo run typecheck --filter=erp --filter=@carbon/api`;
+- [x] Verify: `pnpm exec turbo run typecheck --filter=erp --filter=@carbon/api`;
       `pnpm --filter erp test`; `pnpm run lint`. Live smoke against `crbn up` stack (do NOT
       rebuild the db; use the user's running stack): curl 200 (READ op), 403 (missing scope),
       429 (hammer), 404 (blocked op + unknown op), `GET /api/v1/openapi.json` valid JSON;

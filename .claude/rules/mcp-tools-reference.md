@@ -89,26 +89,47 @@ registered individually:
 | `describe_tool` | Return the JSON-Schema + classification + description for one tool name. |
 | `call_tool` | Execute any ERP tool: `{ name, arguments }`. `arguments` may arrive as a JSON string and is normalized to an object. |
 
-## How `call_tool` actually runs a tool (`lib/direct-executor.ts`)
+## How `call_tool` actually runs a tool (the canonical oRPC dispatch)
 
 `call_tool` does **not** go back through the MCP protocol — it calls
-`executeFunction(name, ctx, args)` directly:
+`callOperation(name, ctx, args)` from `api+/v1+/lib/call.server.ts`, the ONE
+server-side entry point shared by MCP, the in-app agent, and the workflow
+dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
+`direct-executor.ts` any more; it was deleted when all three callers migrated.
 
-- Tool name is `"<module>_<funcName>"`; split on the first `_`. `functionRegistry`
-  maps the 15 modules to their `~/modules/<module>/<module>.service` namespace.
+- `callOperation` resolves the manifest entry (`operationsByName`) and runs the
+  real oRPC procedure via server-side `call()` — gate middleware included, so an
+  **API-key** caller is scope-checked per operation (403 when the key lacks
+  `<module>_<action>` for the company). OAuth-connector and in-process
+  (`authKind: "session"`) callers skip the scope gate; RLS/role bounds them.
+- The service registry lives at `api+/v1+/lib/registry.server.ts` (the 15 module
+  namespaces); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
-  `["client", "args"]`) and `injectAuth`. The executor builds the positional
-  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`;
-  payload params are stamped with auth fields via `enrichWithAuthContext`. When a
-  payload param is an **array** of rows, `enrichWithAuthContext` stamps
-  `createdBy` into each element (insert only) — the top-level stamp never reached
-  inside, so a NOT NULL `createdBy` on the row table (e.g. `quoteLinePrice`) used
-  to fail. Only `createdBy` is injected per element; `companyId`/`updatedBy` are
-  left to the service, since element keys spread straight into an INSERT.
-- Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are rejected
-  in both `call_tool` and the executor. Currently only `settings_seedCompany`.
-- Supabase query builders returned by services are awaited; result is
-  `{ success, data | error }`. Supabase `{ data, error, count }` shape is unwrapped.
+  `["client", "args"]`) and `injectAuth`. The dispatch builds the positional
+  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
+  service whose param is `db` is handed `getDatabaseClient()`; payload params are
+  stamped with auth fields via `enrichWithAuthContext` (now in
+  `dispatch.server.ts`). When a payload param is an **array** of rows,
+  `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
+  the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
+  table (e.g. `quoteLinePrice`) used to fail. Only `createdBy` is injected per
+  element; `companyId`/`updatedBy` are left to the service, since element keys
+  spread straight into an INSERT.
+- Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are
+  rejected in `call_tool`, in `callOperation`, and (belt-and-braces) in the
+  `gate()` middleware — though the primary gate is that the generator excludes
+  them from the manifest entirely.
+- Supabase query builders returned by services are awaited and the
+  `{ data, error, count }` envelope is **unwrapped by the dispatch**:
+  `callOperation` returns `{ success: true, data, count? }` or
+  `{ success: false, error, errorKind: "database" | "execution" }`. A Supabase
+  failure keeps MCP's exact `Database error: ${JSON.stringify(error)}` text
+  (the raw error rides on `ORPCError.data.supabase`), and HTTP callers get the
+  Postgres `code`/`details`/`hint` in the 400 body.
+- The dispatch behavior is pinned by
+  `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the
+  deleted `executeFunction`) — a change there is a behavior change for MCP,
+  the agent, workflows and HTTP at once.
 
 ## Tool metadata & the generator (`scripts/generate-mcp.ts`)
 
