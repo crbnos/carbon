@@ -72,10 +72,10 @@ const GO_CLIENT = `go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codeg
   -generate types,client -package carbon \\
   -o carbon.gen.go openapi.json`;
 
-const OPENAPI_GENERATOR = `npx openapi-generator-cli generate \\
+const OPENAPI_GENERATOR = `docker run --rm -v $PWD:/local openapitools/openapi-generator-cli generate \\
   -i ${SPEC_URL} \\
-  -g csharp \\
-  -o ./carbon-client`;
+  -g ruby \\
+  -o /local/carbon-client`;
 
 const HEY_API_AUTH = `import { client } from "./src/client/client.gen";
 
@@ -115,7 +115,7 @@ const CARDS: SdkCard[] = [
     glyph: <Brand path={siSharp.path} />,
     tone: "bg-[#EEEAF6] text-[#512BD4]",
     name: "C#",
-    desc: "openapi-generator with -g csharp.",
+    desc: "openapi-generator (Docker image, no Java install) with -g csharp.",
     href: "#any-language",
     cta: "Generate"
   },
@@ -123,7 +123,7 @@ const CARDS: SdkCard[] = [
     glyph: <Brand path={siOpenjdk.path} />,
     tone: "bg-ed-warm-100 text-ed-ink/70",
     name: "Java",
-    desc: "openapi-generator with -g java.",
+    desc: "openapi-generator (Docker image, no Java install) with -g java.",
     href: "#any-language",
     cta: "Generate"
   },
@@ -131,7 +131,7 @@ const CARDS: SdkCard[] = [
     glyph: <Brand path={siPhp.path} />,
     tone: "bg-[#EBECF3] text-[#777BB4]",
     name: "PHP",
-    desc: "openapi-generator with -g php.",
+    desc: "openapi-generator (Docker image, no Java install) with -g php.",
     href: "#any-language",
     cta: "Generate"
   },
@@ -139,7 +139,7 @@ const CARDS: SdkCard[] = [
     glyph: <Brand path={siRuby.path} />,
     tone: "bg-ed-red-bg text-[#CC342D]",
     name: "Ruby",
-    desc: "openapi-generator with -g ruby.",
+    desc: "openapi-generator (Docker image, no Java install) with -g ruby.",
     href: "#any-language",
     cta: "Generate"
   }
@@ -224,14 +224,15 @@ export default async function ApiSdksPage() {
       </P>
       <CodeBlock html={goClient} code={GO_CLIENT} label="Terminal" />
 
-      <H2 id="any-language">C#, Java, PHP, Ruby — any language</H2>
+      <H2 id="any-language">Ruby, C#, Java, PHP — any language</H2>
       <P>
         <DocLink href="https://github.com/OpenAPITools/openapi-generator">
           openapi-generator
         </DocLink>{" "}
-        covers 50+ languages (it needs a Java 11+ runtime). Swap{" "}
-        <Code>-g csharp</Code> for <Code>java</Code>, <Code>php</Code>,{" "}
-        <Code>ruby</Code>, or any other generator:
+        covers 50+ languages. Its official Docker image needs no Java install —
+        swap <Code>-g ruby</Code> for <Code>csharp</Code>, <Code>java</Code>,{" "}
+        <Code>php</Code>, or any other generator (with Java 11+ installed,{" "}
+        <Code>npx openapi-generator-cli</Code> takes the same flags):
       </P>
       <CodeBlock
         html={openapiGenerator}
