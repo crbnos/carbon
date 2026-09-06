@@ -4,6 +4,7 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { getAppUrl } from "@carbon/env";
+import { Ratelimit, redis } from "@carbon/kv";
 import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -55,6 +56,36 @@ async function authenticateOAuthToken(
   };
 }
 
+/**
+ * OAuth (connector) callers get the same allowance an API key gets by default —
+ * 60 requests/minute — but through the app's Redis limiter rather than the
+ * Postgres one: `apiKeyRateLimit` has an FK to `apiKey`, so it cannot count a
+ * synthetic per-user id, and this route only exists in the Node app where Redis
+ * is the house tool (the login limiter is the precedent). Keyed by USER, not by
+ * token, so minting extra tokens does not multiply the allowance. Without this,
+ * the OAuth branch was the one authenticated path with no rate limit at all —
+ * it never touches requirePermissions, where the API-key limit lives.
+ */
+const OAUTH_RATE_LIMIT = 60;
+const oauthRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(OAUTH_RATE_LIMIT, "1 m")
+});
+
+function make429Response(reset: number, remaining: number): Response {
+  const retryAfterSeconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+  return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+    status: 429,
+    headers: {
+      "X-RateLimit-Limit": OAUTH_RATE_LIMIT.toString(),
+      "X-RateLimit-Remaining": remaining.toString(),
+      "X-RateLimit-Reset": reset.toString(),
+      "Retry-After": retryAfterSeconds.toString(),
+      ...corsHeaders
+    }
+  });
+}
+
 function make401Response(request: Request): Response {
   const origin = getAppUrl() || new URL(request.url).origin;
   return new Response(null, {
@@ -80,6 +111,11 @@ async function resolveAuth(request: Request): Promise<{
     if (!token.startsWith("crbn_")) {
       const oauthAuth = await authenticateOAuthToken(token);
       if (oauthAuth) {
+        const rl = await oauthRatelimit.limit(`mcp-oauth:${oauthAuth.userId}`);
+        if (!rl.success) {
+          throw make429Response(rl.reset, rl.remaining);
+        }
+
         const client = await getUserScopedClient(oauthAuth.userId);
         const companyResult = await client
           .from("company")
