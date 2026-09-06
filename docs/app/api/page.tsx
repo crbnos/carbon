@@ -1,14 +1,11 @@
 import {
-  Code,
   DocEyebrow,
   DocLink,
   DocPage,
   DocTitle,
   H2,
   Lead,
-  P,
-  Row,
-  Table
+  P
 } from "@/components/api/doc";
 import { ContentFooter } from "@/components/api/page-footer";
 import { pageSeo, SEO } from "@/lib/seo";
@@ -40,22 +37,6 @@ export default function ApiOverviewPage() {
         <DocLink href="/api/data">Data API</DocLink> is the escape hatch —
         direct access to the underlying tables and views, for the rare case
         this surface doesn't cover.
-      </P>
-
-      <H2 id="why">Why not the tables directly</H2>
-      <P>
-        The <DocLink href="/api/data">Data API</DocLink> gives you every
-        table and view as a REST endpoint — and none of the service layer's
-        protections. A write straight to a table skips validation and
-        recalculation, so the values that depend on it — an order total, a job
-        status, a ledger entry — silently drift out of sync. It exists for the
-        case the Carbon API doesn't cover, when you know exactly what the
-        table touches.
-      </P>
-      <P>
-        The Carbon API runs that logic for you. Every write goes through the
-        same validation, recalculation, and posting the app itself uses, so the
-        data stays consistent.
       </P>
 
       <H2 id="operations">Operations</H2>
