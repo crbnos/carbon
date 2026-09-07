@@ -19,6 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Subheading,
   Tabs,
   TabsContent,
   TabsList,
@@ -132,7 +133,9 @@ export function DocumentTemplateEditor({
           >
             <ScrollArea className="h-full bg-card">
               <div className="flex flex-col gap-1.5 p-3">
-                <h2 className={RAIL_HEADING}>Configure</h2>
+                <Subheading as="h2" variant="heavy" className="block">
+                  Configure
+                </Subheading>
                 <BlockConfig />
               </div>
             </ScrollArea>
@@ -143,15 +146,8 @@ export function DocumentTemplateEditor({
   );
 }
 
-const RAIL_HEADING =
-  "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
-
 /** Sentinel option for the preview picker — falls back to sample data. */
 const SAMPLE_DATA_VALUE = "__sample__";
-
-/** Tiny caption above a toolbar picker. */
-const PICKER_LABEL =
-  "text-[10px] font-medium uppercase tracking-wide text-muted-foreground";
 
 /**
  * Left rail: block layers (incl. the Header block + Footer row) and a tab group
@@ -170,7 +166,9 @@ function ControlRail() {
     <div className="flex h-full flex-col bg-card">
       {/* Fixed Blocks header with the inline add-block button. */}
       <div className="flex shrink-0 items-center justify-between px-3 pt-3 pb-1">
-        <h2 className={RAIL_HEADING}>Blocks</h2>
+        <Subheading as="h2" variant="heavy" className="block">
+          Blocks
+        </Subheading>
         <AddBlockMenu />
       </div>
 
@@ -204,7 +202,9 @@ function ControlRail() {
           <ScrollArea className="max-h-[45vh]">
             <TabsContent value="style" className="flex flex-col gap-5 p-3 pt-4">
               <section className="flex flex-col gap-3">
-                <h3 className={RAIL_HEADING}>Typography</h3>
+                <Subheading as="h3" variant="heavy" className="block">
+                  Typography
+                </Subheading>
                 <FontConfig />
               </section>
             </TabsContent>
@@ -214,7 +214,9 @@ function ControlRail() {
                 className="flex flex-col gap-5 p-3 pt-4"
               >
                 <section className="flex flex-col gap-2">
-                  <h3 className={RAIL_HEADING}>Theme colors</h3>
+                  <Subheading as="h3" variant="heavy" className="block">
+                    Theme colors
+                  </Subheading>
                   <ThemeConfig />
                 </section>
               </TabsContent>
@@ -313,7 +315,7 @@ function EditorToolbar({
       </div>
       {previewEntities.length > 0 && (
         <div className="flex min-w-0 max-w-[280px] flex-1 flex-col items-center gap-0.5 self-end">
-          <span className={PICKER_LABEL}>Preview data</span>
+          <Subheading variant="heavy">Preview data</Subheading>
           <Select
             value={previewId ?? SAMPLE_DATA_VALUE}
             onValueChange={(value) =>
@@ -374,7 +376,7 @@ function LabelSizePicker() {
 
   return (
     <div className="flex flex-col items-start gap-0.5">
-      <span className={PICKER_LABEL}>Preview size</span>
+      <Subheading variant="heavy">Preview size</Subheading>
       <Select value={labelSizeId} onValueChange={setLabelSizeId}>
         <SelectTrigger size="sm" className="w-[160px]">
           <SelectValue placeholder="Label size" />

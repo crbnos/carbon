@@ -75,7 +75,7 @@ export default function NewIssueWorkflowRoute() {
   };
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))] bg-card">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] bg-card">
       <IssueWorkflowForm
         initialValues={initialValues}
         requiredActions={requiredActions}

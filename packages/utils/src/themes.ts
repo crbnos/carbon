@@ -10,7 +10,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "220 4% 97%",
+        background: "220 4% 95%",
         foreground: "220 10% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "220 10% 3.9%",
@@ -36,7 +36,7 @@ export const themes = [
       },
       dark: {
         // Vercel/Geist-inspired dark mode - pure black base
-        background: "0 6.8% 6.1%",
+        background: "0 6.8% 8.1%",
         foreground: "0 0% 93%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 93%",
@@ -71,7 +71,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 4% 97%",
+        background: "0 4% 95%",
         foreground: "0 0% 3.9%",
         card: "0 0% 93%",
         "card-foreground": "0 0% 3.9%",
@@ -96,7 +96,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 6.8% 6.1%",
+        background: "20 6.8% 8.1%",
         foreground: "0 0% 98%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 98%",
@@ -131,7 +131,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 4% 97%",
+        background: "0 4% 95%",
         foreground: "0 0% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "0 0% 3.9%",
@@ -156,7 +156,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "0 6.8% 6.1%",
+        background: "0 6.8% 8.1%",
         foreground: "0 0% 98%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 98%",
@@ -191,7 +191,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "17 4% 97%",
+        background: "17 4% 95%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
@@ -216,7 +216,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 6.8% 6.1%",
+        background: "20 6.8% 8.1%",
         foreground: "20 9.1% 97.8%",
         card: "20 10% 3.9%",
         "card-foreground": "60 9.1% 97.8%",
@@ -251,7 +251,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "47.9 4% 97%",
+        background: "47.9 4% 95%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
@@ -276,7 +276,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "61 6.8% 6.1%",
+        background: "61 6.8% 8.1%",
         foreground: "61 9.1% 97.8%",
         card: "61 10% 3.9%",
         "card-foreground": "61 9.1% 97.8%",
@@ -313,7 +313,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "171 4% 97%",
+        background: "171 4% 95%",
         foreground: "171 10% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "171 10% 3.9%",
@@ -338,7 +338,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "171 6.8% 6.1%",
+        background: "171 6.8% 8.1%",
         foreground: "0 0% 95%",
         popover: "171 0% 9%",
         "popover-foreground": "171 0% 95%",
@@ -373,7 +373,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "237 4% 97%",
+        background: "237 4% 95%",
         foreground: "237 98% 4.9%",
         card: "0 0% 100%",
         "card-foreground": "237 98% 4.9%",
@@ -398,7 +398,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "220 6.8% 6.1%",
+        background: "220 6.8% 8.1%",
         foreground: "220 0% 95%",
         popover: "216 0% 9%",
         "popover-foreground": "220 0% 95%",
@@ -433,7 +433,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "238 4% 97%",
+        background: "238 4% 95%",
         foreground: "224 71.4% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "224 71.4% 4.1%",
@@ -458,7 +458,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "263 6.8% 3.1%",
+        background: "263 6.8% 8.1%",
         foreground: "263 20% 98%",
         card: "263 41.4 5%",
         "card-foreground": "210 20% 98%",

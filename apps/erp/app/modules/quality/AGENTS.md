@@ -53,7 +53,7 @@ pnpm --filter @carbon/erp test
 | `inspectionSamplingPlan` / `inspectionMeasurement` | Per-inspection resolved feature plans (n/Ac/Re) and per sample × feature readings |
 | `itemInspectionDocumentAssignment` | Item × usage slot → inspection document (v1 usage: `Receipt`) |
 | `gauge` / `gaugeCalibrationRecord` / `gaugeType` | Measurement instrument tracking |
-| `qualityDocument` / `qualityDocumentStep` | Versioned SOPs with ordered steps |
+| `qualityDocument` / `qualityDocumentStep` | Versioned SOPs. The document body is the editor content; `qualityDocumentStep` rows remain in the schema but have no authoring UI (the steps sidebar was removed) |
 | `riskRegister` / `riskRegisters` (view) | Risk/opportunity tracking by source |
 
 ## Key Service Functions

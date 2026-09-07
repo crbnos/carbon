@@ -58,7 +58,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `accountingPeriodBalance` | Cumulative per-account GL balance snapshots. `closeAccountingPeriod` calls `snapshotAccountingPeriodBalances` inside its close transaction (after the flip to Closed) to write them; `reopenAccountingPeriod` deletes them (`endingBalanceDate` ≥ period `endDate`) before flipping back to Open. Read by `accountTreeBalancesByCompany` (snapshot + delta; full-scan fallback when empty) and `accountTreeBalancePeriodSeries` (multi-period: base snapshot before the range start + one bounded scan bucketed by period ends; single uniform branch). Balance RPCs exclude Draft journals. |
 | `periodCloseTaskDefinition` / `periodCloseTask` | NetSuite-style close checklist: company-level task templates + per-period instances (seeded via `seed-company`) |
 | `accountDefault` | Default GL account mappings (AR, AP, inventory, etc.) |
-| `currency` / `currencyCode` / `exchangeRateHistory` | Multi-currency with historical rates |
+| `currency` / `currencyCode` | Per-group currency config (decimalPlaces, active, historicalExchangeRate); rates live in the global `exchangeRate` store + per-company `exchangeRateOverride` |
 | `paymentTerm` | Payment terms (Net 30, 2/10 Net 30, etc.) |
 | `costCenter` | Hierarchical cost allocation units |
 | `dimension` / `dimensionValue` | Analytical dimensions and custom values |
@@ -80,13 +80,16 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 - `getAccountPeriodSeries` — thin wrapper for the `accountTreeBalancePeriodSeries` RPC (period ends must come from `computeReportPeriodBuckets`)
 - `getReportPins` / `upsertReportPin` — per-user pin overrides for the reports hub
 - `createJournalEntry` / `saveJournalEntryWithLines` / `postJournalEntry` / `reverseJournalEntry` — journal lifecycle
+- `createOpeningBalanceJournal` / `getExistingOpeningBalanceEntry` — Opening Balances, an **inline mode on the Chart of Accounts page** (`charts.tsx` action; the "Opening Balances" primary button toggles `openingBalanceMode` in `ChartOfAccountsTree`, replacing each leaf account's balance cell with a numeric input and hiding Add Group/Add Account; Post opens `OpeningBalancePostModal` to collect the as-of date). Posts ONE balanced journal (`journalEntrySourceType` `'Opening Balance'`) from per-account natural-balance amounts, auto-plugging the net difference to `accountDefault.retainedEarningsAccount`; reuses `getNextSequence`→`createJournalEntry`→`saveJournalEntryWithLines`→`postJournalEntry`. `getExistingOpeningBalanceEntry` returns the current **Posted** opening-balance entry (Reversed does not count), which gates re-entry: the charts loader hides the button when one exists, and the charts action re-checks server-side. `'Opening Balance'` is `syncable:false` in `@carbon/ee` POSTING_POLICY — like `Manual`, it never syncs (the external ledger owns opening balances).
 - `getOrCreateAccountingPeriod` / `getCurrentAccountingPeriod` — period management (lazy create on posting)
 - `createFiscalYearPeriods` — generate the 12 monthly periods for a fiscal year (idempotent; from `fiscalYearSettings.startMonth`)
 - `lockAccountingPeriod` / `unlockAccountingPeriod` / `closeAccountingPeriod` / `reopenAccountingPeriod` — Open↔Locked↔Closed transitions (sequential close/reopen)
 - `getPeriodCloseChecklist` / `closePeriodWithChecklist` / `completeCloseTask` / `skipCloseTask` — the close checklist (instantiates tasks, evaluates auto-checks, gates the close)
 - `getAccountingPeriodDeletability` / `deleteAccountingPeriod` — delete an empty, open period (blocks Locked/Closed or periods with journals)
 - `getFiscalCalendarCommitted` — is the fiscal calendar committed (any posting or Locked/Closed period)? Gates editing the fiscal start month
-- `getCurrencies` / `getBaseCurrency` / `getCurrencyByCode` — currency lookups
+- `getCurrencies` / `getBaseCurrency` / `getCurrencyByCode` — currency config lookups (decimals/active; no rate — `currency.exchangeRate` was dropped)
+- `getExchangeRate` / `getExchangeRates` — per-company rate resolution (RPC `get_exchange_rate(s)`: base=1, `exchangeRateOverride` wins, else global `exchangeRate` market-store ratio; missing = error, never 1)
+- `upsertExchangeRateOverride` / `deleteExchangeRateOverride` — per-company user rate pins (always beat the daily feed)
 - `translateCompanyBalances` — balance translation for multi-currency consolidation
 - `getDimensions` / `getActiveDimensionsWithValues` / `saveJournalLineDimensions` — dimension management
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
@@ -96,13 +99,13 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 ## Key Exports
 
 ```typescript
-import { getCurrencyByCode, getPaymentTermsList, getDefaultAccounts } from "~/modules/accounting";
+import { getExchangeRate, getPaymentTermsList, getDefaultAccounts } from "~/modules/accounting";
 ```
 
 ## Related Modules
 
 - **purchasing** — purchase invoices post to AP; receipts create inventory GL entries
-- **sales** — sales invoices post to AR; quotes use `getCurrencyByCode` for exchange rates
+- **sales** — sales invoices post to AR; quotes use `getExchangeRate` for exchange rates
 - **inventory** — inventory movements create GL entries via posting groups
 - **items** — `itemPostingGroup` maps item categories to GL accounts
 - **people** — employees used as dimension values; cost center assignments

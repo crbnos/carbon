@@ -149,7 +149,11 @@ const PurchaseInvoiceLineForm = ({
     taxAmount: initialValues.supplierTaxAmount ?? 0,
     taxPercent: initialValues.taxPercent ?? 0,
     priceBreaks: [],
-    fallbackUnitPrice: initialValues.supplierUnitPrice ?? 0
+    // fallbackUnitPrice is BASE currency, matching what resolveSupplierPrice
+    // expects. initialValues.supplierUnitPrice is the SUPPLIER's, so divide.
+    fallbackUnitPrice:
+      (initialValues.supplierUnitPrice ?? 0) /
+      (routeData?.purchaseInvoice?.exchangeRate || 1)
   });
 
   // Re-derive the tax amount when the line's base changes — never on mount, so
@@ -355,10 +359,12 @@ const PurchaseInvoiceLineForm = ({
         const itemReplenishment = item?.data?.itemReplenishment;
         const exchangeRate = routeData?.purchaseInvoice?.exchangeRate ?? 1;
         const initialQty = supplierPart?.data?.minimumOrderQuantity ?? 1;
+        // BASE currency: supplierPart.unitPrice and itemCost.unitCost are both
+        // stored in base. resolveSupplierPrice converts to the supplier's.
         const baseFallback =
           supplierPart?.data?.unitPrice !== null &&
           supplierPart?.data?.unitPrice !== undefined
-            ? supplierPart.data.unitPrice / exchangeRate
+            ? supplierPart.data.unitPrice
             : (itemCost?.unitCost ?? 0);
 
         const breaks = supplierPart?.data?.id

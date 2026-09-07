@@ -67,7 +67,8 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       filter,
       isClearable,
       isLoading,
-      isReadOnly,
+      isReadOnly: isReadOnlyProp,
+      disabled,
       placeholder,
       emptyMessage,
       onChange,
@@ -78,6 +79,10 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // Treat the native `disabled` prop as equivalent to `isReadOnly`. The type
+    // accepts `disabled` (it extends button props), so callers reasonably pass
+    // it — honor it instead of silently overwriting it below.
+    const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const isInlinePreview = !!inline;
     const selectedOption = useMemo(

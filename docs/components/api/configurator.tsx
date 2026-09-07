@@ -1,8 +1,10 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { useState } from "react";
-import { DEFAULT_API_BASE, useApiConfig } from "./config-context";
+import { useEffect, useRef, useState } from "react";
+import { parseBaseUrl } from "./base-url-parse";
+import { DEFAULT_API_BASE, DEFAULT_APP_ORIGIN } from "./config-constants";
+import { HOST_PLACEHOLDER, useApiConfig } from "./config-context";
 
 function ServerIcon({ className }: { className?: string }) {
   return (
@@ -42,28 +44,6 @@ function EyeIcon({ off }: { off: boolean }) {
   );
 }
 
-/** Validate/normalize a user-entered base URL. Returns the cleaned URL or an error message. */
-function parseBaseUrl(raw: string): { url: string } | { error: string } {
-  const v = raw.trim();
-  if (!v) return { error: "Enter a URL" };
-  const withScheme = /^https?:\/\//i.test(v) ? v : `https://${v}`;
-  let u: URL;
-  try {
-    u = new URL(withScheme);
-  } catch {
-    return { error: "Not a valid URL" };
-  }
-  if (u.protocol !== "http:" && u.protocol !== "https:") {
-    return { error: "Use http:// or https://" };
-  }
-  const host = u.hostname;
-  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-  if (host !== "localhost" && !isIp && !host.includes(".")) {
-    return { error: "Enter a valid host (e.g. rest.carbon.ms)" };
-  }
-  return { url: (u.origin + u.pathname).replace(/\/+$/, "") };
-}
-
 function ModeCard({
   active,
   onClick,
@@ -97,26 +77,50 @@ function ModeCard({
 }
 
 export function Configurator() {
-  const { base, setBase, isDefault, apiKey, setApiKey } = useApiConfig();
+  const {
+    base,
+    setBase,
+    isDefault,
+    isUnknown,
+    apiKey,
+    setApiKey,
+    openRequest,
+  } = useApiConfig();
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"cloud" | "self">("cloud");
+  const [mode, setMode] = useState<"unknown" | "cloud" | "self">("unknown");
   const [url, setUrl] = useState("");
   const [key, setKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [urlError, setUrlError] = useState("");
-  const host = base.replace(/^https?:\/\//, "");
+  // With no instance configured the trigger shows the placeholder rather than a
+  // hostname, so the sidebar states plainly that the host is not yet known.
+  const host = base === null ? HOST_PLACEHOLDER : base.replace(/^https?:\/\//, "");
 
   // Seed the draft from current config whenever the dialog opens.
   const onOpenChange = (next: boolean) => {
     if (next) {
-      setMode(isDefault ? "cloud" : "self");
-      setUrl(isDefault ? "" : base);
+      setMode(isUnknown ? "unknown" : isDefault ? "cloud" : "self");
+      setUrl(isUnknown || isDefault ? "" : (base ?? ""));
       setKey(apiKey);
       setShowKey(false);
       setUrlError("");
     }
     setOpen(next);
   };
+
+  // A <your-host> click anywhere in the tree bumps openRequest; open in response.
+  // Two Configurators are mounted at once (sidebar + mobile drawer) and both see
+  // the bump, so each answers only when its own trigger is the visible one —
+  // otherwise a single click would open two dialogs. Skipped on mount so the
+  // dialog doesn't spring open on first paint.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const seenRequest = useRef(openRequest);
+  useEffect(() => {
+    if (openRequest === seenRequest.current) return;
+    seenRequest.current = openRequest;
+    const el = triggerRef.current;
+    if (el && (el.offsetWidth || el.offsetHeight)) onOpenChange(true);
+  }, [openRequest]);
 
   const save = () => {
     if (mode === "self") {
@@ -126,15 +130,17 @@ export function Configurator() {
         return;
       }
       setBase(result.url);
+    } else if (mode === "cloud") {
+      setBase(DEFAULT_API_BASE, DEFAULT_APP_ORIGIN);
     } else {
-      setBase(DEFAULT_API_BASE);
+      setBase(null);
     }
     setApiKey(key);
     setOpen(false);
   };
 
   const reset = () => {
-    setMode("cloud");
+    setMode("unknown");
     setUrl("");
     setKey("");
     setUrlError("");
@@ -144,6 +150,7 @@ export function Configurator() {
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Trigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           className="group mb-3.5 flex w-full items-center gap-2 rounded-lg border border-ed-warm-300 bg-white px-2.5 py-2 text-left text-ed-ink/58 transition-colors hover:border-ed-warm-500 data-[state=open]:border-ed-warm-500"
         >
@@ -198,7 +205,8 @@ export function Configurator() {
               <p className="m-0 mb-2 font-mono text-ed-11 font-semibold uppercase tracking-[0.07em] text-ed-ink/50">
                 Environment
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <ModeCard active={mode === "unknown"} onClick={() => setMode("unknown")} title="Not sure" sub="<your-host>" />
                 <ModeCard active={mode === "cloud"} onClick={() => setMode("cloud")} title="Carbon Cloud" sub="rest.carbon.ms" />
                 <ModeCard active={mode === "self"} onClick={() => setMode("self")} title="Self-hosted" sub="Your instance" />
               </div>

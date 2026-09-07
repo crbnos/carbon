@@ -29,7 +29,7 @@ The steps run in a fixed order (`apps/erp/app/utils/path.ts:2103-2109`):
 
 Two more steps appear conditionally, and only in specific circumstances (`apps/erp/app/routes/onboarding+/_layout.tsx:49-53`):
 
-- **Industry** — shown only to internal Carbon staff accounts. It offers a demo-data template or a backup restore, so a seeded example company can be stood up. Regular sign-ups never see it.
+- **Industry** — shown only to internal Carbon staff accounts. It offers a [demo-data template](/docs/platform/demo-data) or a [backup](/docs/platform/backups) restore, so a seeded example company can be stood up. Regular sign-ups never see it.
 - **Plan** — shown only on Carbon Cloud, the hosted version at [app.carbon.ms](https://app.carbon.ms). It routes you to Stripe checkout to pick a plan before you enter the app. Self-hosted installs skip it entirely and go straight to `/x`.
 
 <Callout type="note" title="The company step does a lot of quiet work">

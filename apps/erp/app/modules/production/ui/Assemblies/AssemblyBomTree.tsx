@@ -19,6 +19,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -613,9 +614,9 @@ export default function AssemblyBomTree({
                 onWheel={(e) => e.stopPropagation()}
                 onTouchMove={(e) => e.stopPropagation()}
               >
-                <p className="px-2 py-1.5 text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+                <Subheading variant="heavy" className="block px-2 py-1.5">
                   Add {selectedNodeIds.length} to step
-                </p>
+                </Subheading>
                 <ul className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
                   {stepList.map((entry) => (
                     <li key={entry.id}>

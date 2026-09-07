@@ -18,7 +18,7 @@ import {
   getLineTotal,
   getTotal
 } from "../utils/sales-order";
-import { getMoneyFormatter } from "../utils/shared";
+import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -66,6 +66,14 @@ const SalesOrderEmail = ({
   // The DOCUMENT's currency, not the company's — a supplier priced in JPY must
   // not be emailed as "$20.00". Decimals come from that currency's row.
   const formatter = getMoneyFormatter(
+    locale,
+    currencyDecimals,
+    salesOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
+  );
+  // A unit price is a RATE, not a settlement amount: the currency's
+  // decimals are its FLOOR, not its ceiling, so a sub-cent price does not
+  // print as 0.00. The PDFs already split these two kinds.
+  const rateFormatter = getRateFormatter(
     locale,
     currencyDecimals,
     salesOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
@@ -266,7 +274,11 @@ const SalesOrderEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.salesOrderLineType === "Comment"
                       ? "-"
-                      : formatter.format(line.unitPrice ?? 0)}
+                      : // `formatter` is the DOCUMENT currency (above), and
+                        // salesOrderLine.unitPrice is stored in BASE --
+                        // convertedUnitPrice is the document-currency mirror,
+                        // and it is what getLineTotal already sums.
+                        rateFormatter.format(line.convertedUnitPrice ?? 0)}
                   </Text>
                 </Column>
                 <Column className="text-right pr-5 align-top w-[100px]">

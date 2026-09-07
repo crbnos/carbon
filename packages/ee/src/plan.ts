@@ -26,10 +26,7 @@ export type Feature = keyof typeof FEATURE_PLANS;
  * Integration ids that bypass the `INTEGRATIONS` plan gate. Add ids here for
  * integrations that should remain available on every plan.
  */
-export const INTEGRATION_WHITELIST = new Set<IntegrationID>([
-  "email",
-  "exchange-rates-v1"
-]);
+export const INTEGRATION_WHITELIST = new Set<IntegrationID>(["email"]);
 
 export function isIntegrationWhitelisted(id: string) {
   return INTEGRATION_WHITELIST.has(id as IntegrationID);

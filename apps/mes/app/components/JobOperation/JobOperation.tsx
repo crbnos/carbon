@@ -676,7 +676,7 @@ export const JobOperation = ({
                     {operation.reworkId && <Badge variant="red">Rework</Badge>}
                   </HStack>
                   <p className="text-muted-foreground line-clamp-1">
-                    {operation.itemDescription}{" "}
+                    {operation.itemReadableId}
                   </p>
                 </div>
               </HStack>
@@ -1156,7 +1156,7 @@ export const JobOperation = ({
                                             "opacity-50 hover:opacity-100"
                                         )}
                                       >
-                                        <Td>
+                                        <Td className="max-w-[20vw]">
                                           <HStack
                                             spacing={2}
                                             className="justify-between min-w-0"
@@ -1357,7 +1357,7 @@ export const JobOperation = ({
                                                   "opacity-50 hover:opacity-100"
                                               )}
                                             >
-                                              <Td className="pl-10">
+                                              <Td className="pl-10 max-w-[20vw]">
                                                 <HStack
                                                   spacing={2}
                                                   className="justify-between min-w-0"

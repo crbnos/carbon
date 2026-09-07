@@ -20,6 +20,7 @@ import {
   IconButton,
   ScrollArea,
   Status,
+  Subheading,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -156,7 +157,7 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
   );
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))] bg-card">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] bg-card">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
@@ -280,17 +281,13 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                 )}
                 {rule.message && (
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide font-medium text-muted-foreground">
-                      Message
-                    </span>
+                    <Subheading variant="heavy">Message</Subheading>
                     <p className="text-sm">{rule.message}</p>
                   </div>
                 )}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide font-medium text-muted-foreground">
-                      Triggers
-                    </span>
+                    <Subheading variant="heavy">Triggers</Subheading>
                     <SurfaceChips
                       surfaces={rule.surfaces}
                       targetType={rule.targetType}
@@ -298,9 +295,7 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                   </div>
                   {showAssignments && (
                     <div className="flex flex-col gap-1">
-                      <span className="text-xs uppercase tracking-wide font-medium text-muted-foreground">
-                        Assignments
-                      </span>
+                      <Subheading variant="heavy">Assignments</Subheading>
                       <span className="tabular-nums text-sm">
                         {rule.assignmentCount ?? 0}
                       </span>

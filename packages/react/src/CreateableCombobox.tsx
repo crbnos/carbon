@@ -53,7 +53,8 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       options,
       selected,
       isClearable,
-      isReadOnly,
+      isReadOnly: isReadOnlyProp,
+      disabled,
       placeholder,
       emptyMessage,
       onChange,
@@ -67,6 +68,9 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // Treat the native `disabled` prop as equivalent to `isReadOnly` — the type
+    // accepts it (extends button props), so honor it rather than swallow it.
+    const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
 
@@ -115,7 +119,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           </span>
         )}
 
-        <Popover open={open} onOpenChange={setOpen}>
+        {/* In inline mode the trigger is a non-button HStack, so its `disabled`
+            is inert — guard onOpenChange so no surface can open while read-only. */}
+        <Popover
+          open={open}
+          onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
+        >
           <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
               <HStack>

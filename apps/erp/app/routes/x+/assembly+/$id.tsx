@@ -520,9 +520,9 @@ export default function AssemblyInstructionRoute() {
 
   return (
     <PanelProvider key={id}>
-      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <AssemblyInstructionHeader />
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
               explorer={
@@ -547,7 +547,7 @@ export default function AssemblyInstructionRoute() {
                 />
               }
               content={
-                <div className="relative bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] w-full">
+                <div className="relative bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full">
                   {glbPath && graphPath && isPlanning && (
                     <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
                       <Spinner className="h-3.5 w-3.5" />

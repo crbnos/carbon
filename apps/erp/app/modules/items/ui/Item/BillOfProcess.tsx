@@ -24,6 +24,7 @@ import {
   IconButton,
   Label,
   Loading,
+  Subheading,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -3639,9 +3640,9 @@ function OperationPreview({
       ) : null}
 
       <div className="flex flex-col gap-1 border-t pt-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <Subheading variant="heavy">
           <Trans>Tools</Trans>
-        </span>
+        </Subheading>
         {stepTools.length > 0 ? (
           stepTools.map((tl, i) => {
             const tool = allTools.find((x) => x.id === tl.toolId);

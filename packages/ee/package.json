@@ -10,7 +10,6 @@
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./rules": "./src/rules/index.ts",
     "./rules.server": "./src/rules/server.ts",
-    "./exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
     "./jira": "./src/jira/lib/index.ts",
     "./jira.server": "./src/jira/lib/index.server.ts",
     "./linear": "./src/linear/lib/index.ts",

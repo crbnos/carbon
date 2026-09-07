@@ -8908,7 +8908,6 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           decimalPlaces: number
-          exchangeRate: number
           historicalExchangeRate: number | null
           id: string
           tags: string[] | null
@@ -8923,7 +8922,6 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           decimalPlaces?: number
-          exchangeRate?: number
           historicalExchangeRate?: number | null
           id?: string
           tags?: string[] | null
@@ -8938,7 +8936,6 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           decimalPlaces?: number
-          exchangeRate?: number
           historicalExchangeRate?: number | null
           id?: string
           tags?: string[] | null
@@ -14494,35 +14491,67 @@ export type Database = {
           },
         ]
       }
-      exchangeRateHistory: {
+      exchangeRate: {
         Row: {
-          companyGroupId: string
+          createdAt: string
+          currencyCode: string
+          effectiveDate: string
+          id: string
+          rate: number
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string
+          currencyCode: string
+          effectiveDate: string
+          id?: string
+          rate: number
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string
+          currencyCode?: string
+          effectiveDate?: string
+          id?: string
+          rate?: number
+          updatedAt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchangeRate_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      exchangeRateOverride: {
+        Row: {
+          companyId: string
           createdAt: string
           createdBy: string
           currencyCode: string
-          effectiveDate: string
           id: string
           rate: number
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
-          companyGroupId: string
+          companyId: string
           createdAt?: string
           createdBy: string
           currencyCode: string
-          effectiveDate: string
           id?: string
           rate: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
-          companyGroupId?: string
+          companyId?: string
           createdAt?: string
           createdBy?: string
           currencyCode?: string
-          effectiveDate?: string
           id?: string
           rate?: number
           updatedAt?: string | null
@@ -14530,18 +14559,109 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exchangeRateHistory_companyGroupId_fkey"
-            columns: ["companyGroupId"]
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "companyGroup"
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "exchangeRateHistory_currencyCode_fkey"
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_currencyCode_fkey"
             columns: ["currencyCode"]
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -62854,7 +62974,7 @@ export type Database = {
           createdBy: string | null
           customFields: Json | null
           decimalPlaces: number | null
-          exchangeRate: number | null
+          historicalExchangeRate: number | null
           id: string | null
           name: string | null
           tags: string[] | null
@@ -68460,14 +68580,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -70122,14 +70242,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73549,6 +73669,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -73557,13 +73684,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -78164,6 +78284,25 @@ export type Database = {
           tableName: string
         }[]
       }
+      get_exchange_rate: {
+        Args: {
+          p_as_of?: string
+          p_company_id: string
+          p_currency_code: string
+        }
+        Returns: number
+      }
+      get_exchange_rates: {
+        Args: { p_company_id: string }
+        Returns: {
+          active: boolean
+          currencyCode: string
+          decimalPlaces: number
+          rate: number
+          rateUpdatedAt: string
+          source: string
+        }[]
+      }
       get_foreign_key_map: {
         Args: { p_table_names: string[] }
         Returns: {
@@ -78337,6 +78476,7 @@ export type Database = {
           order: number
           parentMaterialId: string
           quantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           storageUnitId: string
           unitCost: number
@@ -79094,6 +79234,7 @@ export type Database = {
           quoteLineId: string
           quoteMakeMethodId: string
           quoteMaterialMakeMethodId: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           storageUnitId: string
           unitCost: number
@@ -79452,6 +79593,7 @@ export type Database = {
           p_company_id: string
           p_period_end: string
           p_period_start?: string
+          p_target_currency: string
         }
         Returns: {
           averageRate: number
@@ -80498,6 +80640,7 @@ export type Database = {
         | "Debit Memo"
         | "Non-Conformance"
         | "Inbound Inspection"
+        | "Opening Balance"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -81907,6 +82050,7 @@ export const Constants = {
         "Debit Memo",
         "Non-Conformance",
         "Inbound Inspection",
+        "Opening Balance",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [

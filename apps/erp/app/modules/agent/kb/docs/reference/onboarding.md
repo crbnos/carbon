@@ -18,7 +18,7 @@ The steps run in a fixed order (`apps/erp/app/utils/path.ts:2103-2109`):
 
 Two more steps appear conditionally, and only in specific circumstances (`apps/erp/app/routes/onboarding+/_layout.tsx:49-53`):
 
-- **Industry** — shown only to internal Carbon staff accounts. It offers a demo-data template or a backup restore, so a seeded example company can be stood up. Regular sign-ups never see it.
+- **Industry** — shown only to internal Carbon staff accounts. It offers a `docs/platform/demo-data` or a `docs/platform/backups` restore, so a seeded example company can be stood up. Regular sign-ups never see it.
 - **Plan** — shown only on Carbon Cloud, the hosted version at [app.carbon.ms](https://app.carbon.ms). It routes you to Stripe checkout to pick a plan before you enter the app. Self-hosted installs skip it entirely and go straight to `/x`.
 
 Saving the company doesn't just insert one row. It also creates a **"Headquarters"** location from the address you entered (with your local timezone), links your user to the company as an employee, and seeds the tenant's baseline: chart of accounts, default posting accounts, numbering sequences, payment terms, and units of measure. This all happens under the hood via `provisionOnboardingCompany` and a background seed job (`apps/erp/app/services/onboarding.server.ts`; seed via `seedCompany` at `apps/erp/app/modules/settings/settings.service.ts:751-765`).

@@ -28,6 +28,7 @@ import type { ExpressionBuilder } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -1213,14 +1214,19 @@ export async function getJobsBySalesOrderLine(
 
 export async function getJobsList(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  statuses?: Database["public"]["Enums"]["jobStatus"][]
 ) {
   return fetchAllFromTable<{
     id: string;
     jobId: string;
-  }>(client, "job", "id, jobId", (query) =>
-    query.eq("companyId", companyId).order("jobId")
-  );
+  }>(client, "job", "id, jobId", (query) => {
+    let filtered = query.eq("companyId", companyId);
+    if (statuses && statuses.length > 0) {
+      filtered = filtered.in("status", statuses);
+    }
+    return filtered.order("jobId");
+  });
 }
 
 export async function getJobMakeMethodById(
@@ -3652,11 +3658,23 @@ export async function duplicateJobOperationStep(
 export async function upsertJobOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -3928,13 +3946,14 @@ export async function setJobOperationToolStepLink(
 
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
-  type: "itemToJob" | "quoteLineToJob",
+  type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3946,12 +3965,13 @@ export async function upsertJobMethod(
   }
 ) {
   const body: {
-    type: "itemToJob" | "quoteLineToJob";
+    type: "itemToJob" | "quoteLineToJob" | "jobToJob";
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3973,6 +3993,11 @@ export async function upsertJobMethod(
     body.configuration = jobMethod.configuration;
   }
 
+  // A specific source method version (itemToJob only); absent = active method
+  if (jobMethod.versionId) {
+    body.versionId = jobMethod.versionId;
+  }
+
   // Only add parts if it exists
   if (jobMethod.parts !== undefined) {
     body.parts = jobMethod.parts;
@@ -3982,7 +4007,15 @@ export async function upsertJobMethod(
     body
   });
   if (getMethodResult.error) {
-    return getMethodResult;
+    return {
+      data: null,
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          getMethodResult.error,
+          "Failed to get job method"
+        )
+      } as PostgrestError
+    };
   }
   return recalculateJobRequirements(client, {
     id: jobMethod.targetId,
@@ -3999,6 +4032,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4016,6 +4050,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4037,6 +4072,11 @@ export async function upsertJobMaterialMakeMethod(
     body.configuration = jobMaterial.configuration;
   }
 
+  // A specific source method version; absent = active method
+  if (jobMaterial.versionId) {
+    body.versionId = jobMaterial.versionId;
+  }
+
   // Only add parts if it exists
   if (jobMaterial.parts !== undefined) {
     body.parts = jobMaterial.parts;
@@ -4049,7 +4089,12 @@ export async function upsertJobMaterialMakeMethod(
   if (error) {
     return {
       data: null,
-      error: { message: "Failed to pull method" } as PostgrestError
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          error,
+          "Failed to pull method"
+        )
+      } as PostgrestError
     };
   }
 
@@ -6781,11 +6826,23 @@ export async function getAssemblyInstructionStepSlides(
 export async function upsertAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;

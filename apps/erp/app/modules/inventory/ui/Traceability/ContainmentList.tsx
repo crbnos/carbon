@@ -1,4 +1,4 @@
-import { cn } from "@carbon/react";
+import { cn, Subheading } from "@carbon/react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
@@ -42,9 +42,7 @@ export function ContainmentList({ items }: Props) {
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {item.priority && (
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {item.priority}
-                </span>
+                <Subheading variant="heavy">{item.priority}</Subheading>
               )}
               <LuExternalLink className="size-3 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
             </div>

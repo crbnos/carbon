@@ -1,4 +1,5 @@
 import { CodeBlock } from "@/components/api/code-block";
+import { DEFAULT_MCP_ENDPOINT } from "@/components/api/config-constants";
 import { McpEndpoint } from "@/components/api/config-inline";
 import {
   DocEyebrow,
@@ -22,7 +23,9 @@ export const metadata = pageSeo({
   eyebrow: "MCP"
 });
 
-const ENDPOINT = "https://app.carbon.ms/api/mcp";
+// Sourced from the config so the samples below stay in lockstep with what
+// applyConfig() rewrites at render — a divergent literal would never substitute.
+const ENDPOINT = DEFAULT_MCP_ENDPOINT;
 
 const CLAUDE_CODE = `claude mcp add --transport http carbon \\
   ${ENDPOINT} \\

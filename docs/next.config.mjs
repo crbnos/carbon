@@ -31,12 +31,12 @@ const config = {
     "*.ngrok.app",
     "*.ngrok.io",
   ],
-  // Serve the first guide at "/" without changing the URL — a server-side rewrite,
-  // not a client/redirect bounce. `beforeFiles` runs ahead of the app router so it
-  // takes precedence (app/page.tsx is removed).
+  // Serve the Architecture reference at "/" without changing the URL — a server-side
+  // rewrite, not a client/redirect bounce. `beforeFiles` runs ahead of the app router
+  // so it takes precedence (app/page.tsx is removed).
   async rewrites() {
     return {
-      beforeFiles: [{ source: "/", destination: "/guides/order" }],
+      beforeFiles: [{ source: "/", destination: "/docs/platform/architecture" }],
     };
   },
   // Deployment moved under Self-hosting as the "AWS with SST" recipe; keep the old

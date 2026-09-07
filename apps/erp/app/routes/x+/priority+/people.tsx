@@ -12,7 +12,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import {
@@ -590,43 +590,45 @@ export default function SchedulePeopleRoute() {
     [weekAssignments, departmentId, displayedWorkCenterIds]
   );
 
-  // the department's own people (employeeJob) and the shift's own people
-  // (employeeShift), plus anyone already assigned — so a filter can never hide
-  // someone you actually scheduled
+  // The department filter never HIDES people from the roster — it floats the
+  // department's own people (employeeJob) to the top of the list and leaves
+  // everyone else in place below them (a stable partition), so the whole roster
+  // stays draggable. Only the shift filter still narrows the roster, and even
+  // then anyone already assigned stays visible so a filter can't hide someone
+  // you actually scheduled.
+  const orderDepartmentFirst = useCallback(
+    (list: typeof employees) =>
+      departmentId
+        ? [
+            ...list.filter(
+              (employee) => employeeDepartments[employee.id] === departmentId
+            ),
+            ...list.filter(
+              (employee) => employeeDepartments[employee.id] !== departmentId
+            )
+          ]
+        : list,
+    [departmentId, employeeDepartments]
+  );
+  const filterByShift = useCallback(
+    (list: typeof employees, assigned: Set<string>) =>
+      shiftId
+        ? list.filter(
+            (employee) =>
+              assigned.has(employee.id) ||
+              fitsShiftFilter(employee.id, shiftId, employeeShiftId)
+          )
+        : list,
+    [shiftId, employeeShiftId]
+  );
   const employeesForBoard = useMemo(() => {
-    if (!departmentId && !shiftId) return employees;
     const assigned = new Set(boardAssignments.map((a) => a.employeeId));
-    return employees.filter(
-      (employee) =>
-        assigned.has(employee.id) ||
-        ((!departmentId || employeeDepartments[employee.id] === departmentId) &&
-          fitsShiftFilter(employee.id, shiftId, employeeShiftId))
-    );
-  }, [
-    employees,
-    departmentId,
-    employeeDepartments,
-    boardAssignments,
-    shiftId,
-    employeeShiftId
-  ]);
+    return orderDepartmentFirst(filterByShift(employees, assigned));
+  }, [employees, boardAssignments, filterByShift, orderDepartmentFirst]);
   const employeesForMatrix = useMemo(() => {
-    if (!departmentId && !shiftId) return employees;
     const assigned = new Set(matrixAssignments.map((a) => a.employeeId));
-    return employees.filter(
-      (employee) =>
-        assigned.has(employee.id) ||
-        ((!departmentId || employeeDepartments[employee.id] === departmentId) &&
-          fitsShiftFilter(employee.id, shiftId, employeeShiftId))
-    );
-  }, [
-    employees,
-    departmentId,
-    employeeDepartments,
-    matrixAssignments,
-    shiftId,
-    employeeShiftId
-  ]);
+    return orderDepartmentFirst(filterByShift(employees, assigned));
+  }, [employees, matrixAssignments, filterByShift, orderDepartmentFirst]);
 
   const shortDate = (value: string) =>
     formatDate(value, { month: "short", day: "numeric" }, locale);
@@ -728,6 +730,8 @@ export default function SchedulePeopleRoute() {
             weekDates={weekDates}
             locationTimeZone={locationTimeZone}
             employees={employeesForMatrix}
+            departmentId={departmentId}
+            employeeDepartments={employeeDepartments}
             workCenters={displayedWorkCenters}
             assignments={matrixAssignments}
             absences={weekAbsences}

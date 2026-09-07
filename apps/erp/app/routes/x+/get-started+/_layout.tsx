@@ -105,9 +105,7 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
   "default-accounts": path.to.accountingDefaults,
   "cost-centers": path.to.costCenters,
   "payment-terms": path.to.paymentTerms,
-  // Exchange rates are set up by installing the integration, so deep-link to
-  // the integrations page pre-filtered to it rather than the rates list.
-  "exchange-rates": `${path.to.integrations}?search=exchange`,
+  "exchange-rates": path.to.exchangeRates,
   "fiscal-year": path.to.fiscalYears,
   "accounting-periods": path.to.accountingPeriods,
   "asset-classes": path.to.assetClasses,

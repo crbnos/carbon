@@ -246,7 +246,7 @@ export default function ProcedureExplorer() {
   );
   return (
     <>
-      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height))] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <Tabs
           defaultValue="attributes"
           className="w-full flex-1 h-full flex flex-col"
