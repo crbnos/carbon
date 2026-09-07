@@ -8805,6 +8805,9 @@ msgstr "Операция заказа"
 msgid "Job Operation"
 msgstr "Операция заказа"
 
+msgid "Job operation batch"
+msgstr "Серия операции"
+
 msgid "Job Operations"
 msgstr "Операции заказа"
 
@@ -15680,6 +15683,9 @@ msgstr "Цена поставщика за единицу"
 msgid "Supplier updated"
 msgstr "Поставщик обновлен"
 
+msgid "Supplier warranty term"
+msgstr "Условия гарантии поставщика"
+
 msgid "Supplier:"
 msgstr "Поставщик:"
 
@@ -18268,6 +18274,9 @@ msgstr "Предупреждать, когда лицо, проверяющее 
 
 msgid "Warning"
 msgstr "Предупреждение"
+
+msgid "Warranty term"
+msgstr "Условия гарантии"
 
 msgid "Watch"
 msgstr "Смотреть"

@@ -8805,6 +8805,9 @@ msgstr "指図工程"
 msgid "Job Operation"
 msgstr "指図工程"
 
+msgid "Job operation batch"
+msgstr "工程バッチ"
+
 msgid "Job Operations"
 msgstr "指図工程"
 
@@ -15680,6 +15683,9 @@ msgstr "仕入先単価"
 msgid "Supplier updated"
 msgstr "仕入先が更新されました"
 
+msgid "Supplier warranty term"
+msgstr "仕入先保証条件"
+
 msgid "Supplier:"
 msgstr "仕入先："
 
@@ -18268,6 +18274,9 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 
 msgid "Warning"
 msgstr "警告"
+
+msgid "Warranty term"
+msgstr "保証条件"
 
 msgid "Watch"
 msgstr "見る"

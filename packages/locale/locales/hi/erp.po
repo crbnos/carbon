@@ -8805,6 +8805,9 @@ msgstr "जॉब ऑपरेशन"
 msgid "Job Operation"
 msgstr "जॉब ऑपरेशन"
 
+msgid "Job operation batch"
+msgstr "ऑपरेशन बैच"
+
 msgid "Job Operations"
 msgstr "जॉब ऑपरेशन"
 
@@ -15680,6 +15683,9 @@ msgstr "आपूर्तिकर्ता इकाई मूल्य"
 msgid "Supplier updated"
 msgstr "आपूर्तिकर्ता अपडेट किया गया"
 
+msgid "Supplier warranty term"
+msgstr "आपूर्तिकर्ता वारंटी शर्तें"
+
 msgid "Supplier:"
 msgstr "आपूर्तिकर्ता:"
 
@@ -18268,6 +18274,9 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 
 msgid "Warning"
 msgstr "चेतावनी"
+
+msgid "Warranty term"
+msgstr "वारंटी शर्तें"
 
 msgid "Watch"
 msgstr "देखें"

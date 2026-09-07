@@ -8805,6 +8805,9 @@ msgstr "工单工序"
 msgid "Job Operation"
 msgstr "工单工序"
 
+msgid "Job operation batch"
+msgstr "工序生产批次"
+
 msgid "Job Operations"
 msgstr "工单工序"
 
@@ -15680,6 +15683,9 @@ msgstr "供应商单价"
 msgid "Supplier updated"
 msgstr "供应商已更新"
 
+msgid "Supplier warranty term"
+msgstr "供应商保修条件"
+
 msgid "Supplier:"
 msgstr "供应商："
 
@@ -18268,6 +18274,9 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 
 msgid "Warning"
 msgstr "警告"
+
+msgid "Warranty term"
+msgstr "保修条件"
 
 msgid "Watch"
 msgstr "观看"

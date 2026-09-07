@@ -950,7 +950,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     sourcingType: { kind: "primitive", of: "string" },
     mpn: { kind: "primitive", of: "string" },
     revisionStatus: { kind: "primitive", of: "string" },
-    changeOrderId: { kind: "primitive", of: "string" }
+    changeOrderId: { kind: "primitive", of: "string" },
+    warrantyTermId: { kind: "primitive", of: "string" },
+    supplierWarrantyTermId: { kind: "primitive", of: "string" }
   },
   job: {
     id: { kind: "primitive", of: "string" },
@@ -1035,6 +1037,7 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     reworkId: { kind: "primitive", of: "string" },
     assemblyInstructionId: { kind: "primitive", of: "string" },
     inspectionDocumentId: { kind: "primitive", of: "string" },
+    jobOperationBatchId: { kind: "primitive", of: "string" },
     readyAt: { kind: "primitive", of: "date" },
     projectedCompletionAt: { kind: "primitive", of: "date" }
   },
@@ -1456,7 +1459,8 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Inbound Transfer",
       "Outbound Transfer",
       "Manufacturing Consumption",
-      "Manufacturing Output"
+      "Manufacturing Output",
+      "Repair Order"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },
@@ -1497,7 +1501,8 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Purchase Invoice",
       "Purchase Return Order",
       "Inbound Transfer",
-      "Outbound Transfer"
+      "Outbound Transfer",
+      "Repair Order"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },

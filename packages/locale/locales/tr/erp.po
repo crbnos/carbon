@@ -8805,6 +8805,9 @@ msgstr "İş emri operasyonu"
 msgid "Job Operation"
 msgstr "İş emri operasyonu"
 
+msgid "Job operation batch"
+msgstr "Operasyon partisi"
+
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
 
@@ -15680,6 +15683,9 @@ msgstr "Tedarikçi Birim Fiyatı"
 msgid "Supplier updated"
 msgstr "Tedarikçi güncellendi"
 
+msgid "Supplier warranty term"
+msgstr "Tedarikçi garanti koşulu"
+
 msgid "Supplier:"
 msgstr "Tedarikçi:"
 
@@ -18268,6 +18274,9 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 
 msgid "Warning"
 msgstr "Uyarı"
+
+msgid "Warranty term"
+msgstr "Garanti koşulu"
 
 msgid "Watch"
 msgstr "İzle"

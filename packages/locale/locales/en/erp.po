@@ -8805,6 +8805,9 @@ msgstr "Job operation"
 msgid "Job Operation"
 msgstr "Job Operation"
 
+msgid "Job operation batch"
+msgstr "Job operation batch"
+
 msgid "Job Operations"
 msgstr "Job Operations"
 
@@ -15680,6 +15683,9 @@ msgstr "Supplier Unit Price"
 msgid "Supplier updated"
 msgstr "Supplier updated"
 
+msgid "Supplier warranty term"
+msgstr "Supplier warranty term"
+
 msgid "Supplier:"
 msgstr "Supplier:"
 
@@ -18268,6 +18274,9 @@ msgstr "Warn when the person inspecting an inbound item is the same person who r
 
 msgid "Warning"
 msgstr "Warning"
+
+msgid "Warranty term"
+msgstr "Warranty term"
 
 msgid "Watch"
 msgstr "Watch"

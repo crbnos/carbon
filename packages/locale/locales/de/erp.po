@@ -8805,6 +8805,9 @@ msgstr "Auftragsvorgang"
 msgid "Job Operation"
 msgstr "Auftragsvorgang"
 
+msgid "Job operation batch"
+msgstr "Arbeitsgang-Los"
+
 msgid "Job Operations"
 msgstr "Auftragsvorgang­änge"
 
@@ -15680,6 +15683,9 @@ msgstr "Lieferanten-Einzelpreis"
 msgid "Supplier updated"
 msgstr "Lieferant aktualisiert"
 
+msgid "Supplier warranty term"
+msgstr "Lieferantengarantiebedingung"
+
 msgid "Supplier:"
 msgstr "Lieferant:"
 
@@ -18268,6 +18274,9 @@ msgstr "Warnen Sie, wenn die Person, die einen eingegangenen Artikel prüft, die
 
 msgid "Warning"
 msgstr "Warnung"
+
+msgid "Warranty term"
+msgstr "Garantiebedingung"
 
 msgid "Watch"
 msgstr "Ansehen"

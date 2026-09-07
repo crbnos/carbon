@@ -8805,6 +8805,9 @@ msgstr "작업 지시 공정"
 msgid "Job Operation"
 msgstr "작업 지시 공정"
 
+msgid "Job operation batch"
+msgstr "공정 배치"
+
 msgid "Job Operations"
 msgstr "작업 지시 공정"
 
@@ -15680,6 +15683,9 @@ msgstr "공급업체 단가"
 msgid "Supplier updated"
 msgstr "공급업체가 업데이트되었습니다"
 
+msgid "Supplier warranty term"
+msgstr "공급업체 보증 조건"
+
 msgid "Supplier:"
 msgstr "공급업체:"
 
@@ -18268,6 +18274,9 @@ msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리�
 
 msgid "Warning"
 msgstr "경고"
+
+msgid "Warranty term"
+msgstr "보증 조건"
 
 msgid "Watch"
 msgstr "시청"

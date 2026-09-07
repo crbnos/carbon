@@ -8805,6 +8805,9 @@ msgstr "Operación de la orden"
 msgid "Job Operation"
 msgstr "Operación de la Orden"
 
+msgid "Job operation batch"
+msgstr "Lote de producción de operación"
+
 msgid "Job Operations"
 msgstr "Operaciones de la Orden"
 
@@ -15680,6 +15683,9 @@ msgstr "Precio Unitario del Proveedor"
 msgid "Supplier updated"
 msgstr "Proveedor actualizado"
 
+msgid "Supplier warranty term"
+msgstr "Condiciones de garantía del proveedor"
+
 msgid "Supplier:"
 msgstr "Proveedor:"
 
@@ -18268,6 +18274,9 @@ msgstr "Advertir cuando la persona que inspecciona un artículo entrante es la m
 
 msgid "Warning"
 msgstr "Advertencia"
+
+msgid "Warranty term"
+msgstr "Condiciones de garantía"
 
 msgid "Watch"
 msgstr "Ver"

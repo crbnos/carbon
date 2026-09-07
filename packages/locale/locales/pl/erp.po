@@ -8805,6 +8805,9 @@ msgstr "Operacja zlecenia"
 msgid "Job Operation"
 msgstr "Operacja zlecenia"
 
+msgid "Job operation batch"
+msgstr "Partia produkcyjna operacji"
+
 msgid "Job Operations"
 msgstr "Operacje zlecenia"
 
@@ -15680,6 +15683,9 @@ msgstr "Cena jednostkowa dostawcy"
 msgid "Supplier updated"
 msgstr "Dostawca zaktualizowany"
 
+msgid "Supplier warranty term"
+msgstr "Warunki gwarancji dostawcy"
+
 msgid "Supplier:"
 msgstr "Dostawca:"
 
@@ -18268,6 +18274,9 @@ msgstr "Ostrzegaj, gdy osoba sprawdzająca przychodzący towar jest tą samą os
 
 msgid "Warning"
 msgstr "Ostrzeżenie"
+
+msgid "Warranty term"
+msgstr "Warunki gwarancji"
 
 msgid "Watch"
 msgstr "Obejrzyj"
