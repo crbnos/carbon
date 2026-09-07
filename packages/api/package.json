@@ -10,7 +10,7 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
     "lint": "biome lint --write ",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
