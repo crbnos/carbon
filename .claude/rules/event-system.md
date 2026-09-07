@@ -41,6 +41,31 @@ The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in t
 
 `handlerType` CHECK now allows all six: `WEBHOOK, WORKFLOW, SYNC, SEARCH, AUDIT, EMBEDDING` (widened across `20260204080000` → `20260212152709` → `20260326120000`).
 
+**RLS is company-scoped, and the RPCs are guarded separately.** Until
+`20260907152418_event-subscription-tenant-rls.sql` the table's only policy was
+`FOR ALL USING (auth.role() = 'authenticated')` — no `companyId`, and (a permissive
+`FOR ALL` policy's `USING` doubling as its `WITH CHECK`) no write guard, so any signed-in
+user of any company could read, plant or delete another company's subscriptions over
+PostgREST. A planted `WEBHOOK` row is standing exfiltration: `config.url` is where the
+dispatcher POSTs the victim's records. It is now the standard four policies on
+`settings_view/create/update/delete`, matching `webhook`, whose rows most of these are
+derived from.
+
+Fixing the policy alone would not have closed it. `create_event_system_subscription`,
+`delete_event_system_subscription` and `delete_event_system_subscriptions_by_name` are
+`SECURITY DEFINER`, so they bypass RLS entirely, and PostgREST exposes them at `/rpc/`;
+each took a company id and never checked it. All three now call
+`require_event_subscription_company_access(companyId)`, which raises unless the caller
+holds SOME `settings_*` permission on that company — some, not one specific action,
+because the webhook interceptor arrives under `settings_create/update/delete` while
+`syncAuditSubscriptions` arrives under `settings_view`. It is a no-op for `service_role`
+and for direct Postgres connections (`session_user <> 'authenticator'`), which is what
+keeps the jobs, edge functions, Kysely writers and the `SECURITY DEFINER` company-creation
+triggers working. Same shape as `get_demand_projections` (`20260715195226`).
+
+`@carbon/checks`' `no-untenanted-rls-policy` fails a new migration that writes a policy
+whose only predicate is the signed-in test.
+
 ### PL/pgSQL functions (in `_event_system_impl` + later)
 - `dispatch_event_batch()` — AFTER STATEMENT. Reads transition tables (`batched_new`/`batched_old`), filters by active subscriptions, builds payload, `pgmq.send_batch('event_system', ...)`. Captures `actorId := auth.uid()::TEXT` (added `20260212153753`; NULL for service-role) and `workflowRunId` from the `workflow_run_id` JWT claim (`20260810100000`). UPDATE pairs transition rows on the table's **full** primary key via `get_primary_key_columns()` (`20260717143448`, restored in `20260810100000` after `20260721184852` copied the older single-column pairing forward). Uses `clock_timestamp()` per event so batched events get unique microsecond timestamps (`20260427120000`).
 - `dispatch_event_interceptors()` — BEFORE ROW. Runs named sync interceptor functions inline (data-integrity, not async).
@@ -53,7 +78,7 @@ The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in t
 - `get_primary_key_column(table)` — dynamic PK lookup (`20260212165827`).
 
 ### RPC (callable from app)
-`create_event_system_subscription(p_name, p_table, p_company_id, p_operations[], p_handler_type, p_config?, p_filter?, p_active?)` → `TABLE(id, name, handlerType, table)`; `delete_event_system_subscription(p_subscription_id)`; `delete_event_system_subscriptions_by_name(p_company_id, p_name)`; plus search helpers `upsert_to_search_index(...)` / `delete_from_search_index(p_company_id, p_entity_type, p_entity_id)`.
+`create_event_system_subscription(p_name, p_table, p_company_id, p_operations[], p_handler_type, p_config?, p_filter?, p_active?)` → `TABLE(id, name, handlerType, table)`; `delete_event_system_subscription(p_subscription_id)` (guards on the row's own `companyId`; a miss is still a silent no-op); `delete_event_system_subscriptions_by_name(p_company_id, p_name)`; all three tenant-guarded since `20260907152418` — see above; plus search helpers `upsert_to_search_index(...)` / `delete_from_search_index(p_company_id, p_entity_type, p_entity_id)`.
 
 ### Misc
 - Queue: PGMQ queue **`event_system`**.
