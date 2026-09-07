@@ -112,77 +112,74 @@ export function WorkflowBuilder({
   }, []);
 
   return (
-    <ResizablePanelGroup
-      direction="horizontal"
-      autoSaveId="workflow-builder"
-      className="flex-1 overflow-hidden"
-    >
-      {!isReadOnly && (
-        <ResizablePanel
-          id="palette"
-          order={1}
-          defaultSize={14}
-          minSize={10}
-          maxSize={22}
-        >
-          <NodePalette />
-        </ResizablePanel>
-      )}
-      {!isReadOnly && <ResizableHandle withHandle />}
-      <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
-        <div
-          className="relative h-full"
-          onKeyDown={onKeyDown}
-          onDrop={onDrop}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = "move";
-          }}
-        >
-          <ReactFlow<BuilderNode, BuilderEdge>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            isValidConnection={isValidConnection}
-            onNodeClick={(_, node) => setSelected(node.id)}
-            onPaneClick={() => setSelected(null)}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            proOptions={proOptions}
-            minZoom={0.25}
-            maxZoom={2}
-            fitViewOptions={FIT_VIEW_OPTIONS}
-            {...(initialViewport
-              ? { defaultViewport: initialViewport }
-              : { fitView: true })}
-            onMoveEnd={onMoveEnd}
-            nodesDraggable={canMoveNodes}
-            nodesConnectable={!isReadOnly}
-            elementsSelectable
-            // Delete only. Backspace is too easy to hit by accident, and there
-            // is no undo — autosave persists the deletion a second later.
-            deleteKeyCode={isReadOnly ? null : ["Delete"]}
-            onlyRenderVisibleElements
-            defaultEdgeOptions={{ type: "workflow" }}
-            panOnScroll={panOnScroll}
-            zoomOnScroll={!panOnScroll}
+    <>
+      {showResults && <TestRunPanel />}
+      <ResizablePanelGroup
+        direction="horizontal"
+        autoSaveId="workflow-builder"
+        className="flex-1 overflow-hidden"
+      >
+        {!isReadOnly && (
+          <ResizablePanel
+            id="palette"
+            order={1}
+            defaultSize={14}
+            minSize={10}
+            maxSize={22}
           >
-            <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
-            <BuilderControls
+            <NodePalette />
+          </ResizablePanel>
+        )}
+        {!isReadOnly && <ResizableHandle withHandle />}
+        <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
+          <div
+            className="relative h-full"
+            onKeyDown={onKeyDown}
+            onDrop={onDrop}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }}
+          >
+            <ReactFlow<BuilderNode, BuilderEdge>
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              isValidConnection={isValidConnection}
+              onNodeClick={(_, node) => setSelected(node.id)}
+              onPaneClick={() => setSelected(null)}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              proOptions={proOptions}
+              minZoom={0.25}
+              maxZoom={2}
+              fitViewOptions={FIT_VIEW_OPTIONS}
+              {...(initialViewport
+                ? { defaultViewport: initialViewport }
+                : { fitView: true })}
+              onMoveEnd={onMoveEnd}
+              nodesDraggable={canMoveNodes}
+              nodesConnectable={!isReadOnly}
+              elementsSelectable
+              // Delete only. Backspace is too easy to hit by accident, and there
+              // is no undo — autosave persists the deletion a second later.
+              deleteKeyCode={isReadOnly ? null : ["Delete"]}
+              onlyRenderVisibleElements
+              defaultEdgeOptions={{ type: "workflow" }}
               panOnScroll={panOnScroll}
-              onTogglePanOnScroll={togglePanOnScroll}
-            />
-          </ReactFlow>
-        </div>
-      </ResizablePanel>
-      {showResults && <ResizableHandle withHandle />}
-      {showResults && (
-        <ResizablePanel id="results" order={3} defaultSize={24} minSize={18}>
-          <TestRunPanel />
+              zoomOnScroll={!panOnScroll}
+            >
+              <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
+              <BuilderControls
+                panOnScroll={panOnScroll}
+                onTogglePanOnScroll={togglePanOnScroll}
+              />
+            </ReactFlow>
+          </div>
         </ResizablePanel>
-      )}
-    </ResizablePanelGroup>
+      </ResizablePanelGroup>
+    </>
   );
 }
