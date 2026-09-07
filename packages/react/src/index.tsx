@@ -155,8 +155,10 @@ import { generateHTML, HTML } from "./HTML";
 import type {
   Modifier,
   Shortcut,
-  ShortcutDefinition
+  ShortcutDefinition,
+  ShortcutInput
 } from "./hooks/useShortcutKeys";
+import { KeyboardKeys } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -344,6 +346,7 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
+import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 import { VStack } from "./VStack";
@@ -569,7 +572,10 @@ export {
   SelectTrigger,
   SelectValue,
   Separator,
+  KeyboardKeys,
   ShortcutKey,
+  hasOpenDialog,
+  isInsideTopmostDialog,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -662,6 +668,7 @@ export type {
   OperatingSystemPlatform,
   Shortcut,
   ShortcutDefinition,
+  ShortcutInput,
   SubheadingProps,
   TextareaProps,
   ExpiredEntityPolicy,

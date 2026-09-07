@@ -17410,7 +17410,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Başlıksız"
 
 msgid "Untitled Diagram"
 msgstr "Başlıksız Diyagram"

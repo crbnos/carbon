@@ -667,6 +667,9 @@ export function RecordModal({
                 (attribute.type === "File" && !filePath)
               }
               rightIcon={<LuCircleCheck />}
+              // Focus in a field submits natively on Enter; this covers focus
+              // elsewhere in the modal and renders the ↵ badge.
+              shortcut="enter"
               type="submit"
             >
               <Trans>Record</Trans>
