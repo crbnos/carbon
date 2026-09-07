@@ -1329,3 +1329,33 @@ full-screen ERP route.
 **Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
 
 **Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/database/supabase/functions/**` writers of the constrained column.
+
+## A Kysely-read timestamptz is a JS Date — interpolating it into a PostgREST filter breaks in non-UTC zones
+
+**Context:** Carbon Learn's hands-on challenge checkers read `learnChallengeAttempt.startedAt` via Kysely, then passed it to a supabase-js filter as `.gte("createdAt", scope.since)` to find records the learner created after starting.
+
+**Problem:** the `pg` driver decodes `timestamptz` into a JS `Date` (only NUMERIC has a custom parser registered in `functions/lib/postgres/index.ts`). supabase-js stringifies a `Date` with `String(date)`, which is the runtime-local format — `Sun Sep 06 2026 18:12:37 GMT+0530 (India Standard Time)`. PostgREST forwards it and Postgres fails with `time zone "gmt+0530" not recognized` (22023). The query returns an error, not rows. **On a UTC machine the same code works** (`GMT+0000 (Coordinated Universal Time)` parses), so it passes CI and fails only for developers and deployments outside UTC. It was invisible for another reason too: the reader did `if (error || !data) return []`, so a hard 400 was indistinguishable from "the learner hasn't done the work yet" — the UI cheerfully said "No purchase order created by you since you started".
+
+**Rule:** Anything read back from Kysely/`pg` that will be interpolated into a supabase-js/PostgREST filter must be normalised to an ISO string first (`value instanceof Date ? value.toISOString() : value`) — never rely on implicit stringification. And never swallow a query error into an empty array without logging it: a failed read and a genuinely empty read must be distinguishable, or you will debug the wrong layer. (`toIso` in `learn/engine.server.ts`, `empty(context, error)` in `learn/checkers/reader.server.ts`.)
+
+**Applies to:** any code mixing a Kysely read with a supabase-js filter; `apps/erp/app/modules/resources/learn/**`; any `catch`/`if (error) return []` in a read helper.
+
+## A `ui/**` component importing its own module barrel is a cycle that 500s SSR with "element type is invalid"
+
+**Context:** `apps/erp/app/modules/resources/ui/Learn/*.tsx` imported types and constants from `~/modules/resources` — the module barrel — for tidiness.
+
+**Problem:** `modules/resources/index.ts` re-exports `./ui`, so `ui/Learn/LearnHub.tsx` → `~/modules/resources` → `./ui` → `./Learn` → `LearnHub.tsx` is a cycle. Under SSR the partially-initialised module hands React an object instead of a component and the route dies with `Element type is invalid: expected a string ... but got: object` — a message that points at JSX, not at imports, so the search starts in the wrong place. The client bundle often survives it, so it can look like a server-only bug.
+
+**Rule:** A component under `modules/<m>/ui/**` must import from the specific sibling module (`../../learn`, `../../../resources.models`), never from `~/modules/<m>`. The barrel is for consumers OUTSIDE the module — routes and other modules.
+
+**Applies to:** every `apps/erp/app/modules/*/ui/**` component; new module barrels that re-export `./ui`.
+
+## A plan's column names are a hypothesis — check them against `types.ts` before writing the query
+
+**Context:** the Carbon Learn plan specified twenty-one hands-on challenge checkers by naming the table and column each should assert on ("a sales order whose `quoteId` is that quote", "an accounting period moved to Closed", "an `employeeType` created by the learner").
+
+**Problem:** three of those names do not exist. `salesOrder` has no `quoteId` at all — the only link conversion preserves between a quote and its order is `opportunityId`. `accountingPeriod.status` exists but is the unrelated `Active | Inactive` flag; the close state lives in a separate `closeStatus` column (`Open | Locked | Closed`), so asserting `status === "Closed"` compiles against a string and matches nothing forever. And `employeeType` has no `createdBy` column, so "created by the learner" is not expressible — nor does `employeeTypePermission` carry a `companyId`. Every one of these fails *silently*: a PostgREST filter on a column that does not exist errors, and a filter on a real column with an impossible value returns zero rows. Both look exactly like "the learner hasn't done the work yet", which is the one outcome a checker is supposed to distinguish.
+
+**Rule:** Before writing any query a plan describes, open `packages/database/src/types.ts` and read the actual `Row` type and the actual enum values. A plan is written from memory of the domain; the generated types are the schema. When the plan's name is absent, stop and pick a schema-true assertion rather than inventing a column — and record the correction where the next person will hit it, not only in the commit.
+
+**Applies to:** any plan or spec that names tables and columns; `apps/erp/app/modules/resources/learn/checkers/**`; every new `LearnReader` method.

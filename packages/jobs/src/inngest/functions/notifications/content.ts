@@ -673,6 +673,64 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.LearnAssignment: {
+      // Service-role reads bypass RLS, so `documentId` alone would let a
+      // mis-routed event put another tenant's track title in a notification.
+      // Fail closed rather than widening the read when the company is absent.
+      if (!opts?.companyId) {
+        throw new Error("LearnAssignment notification requires a companyId");
+      }
+
+      const assignment = await client
+        .from("learnAssignment")
+        .select("trackTitle, dueDate")
+        .eq("id", documentId)
+        .eq("companyId", opts.companyId)
+        .single();
+
+      if (assignment.error) {
+        console.error("Failed to get learnAssignment", assignment.error);
+        throw assignment.error;
+      }
+
+      const trackTitle = assignment.data?.trackTitle;
+      return {
+        description: `Learning track "${trackTitle}" assigned to you`,
+        reference: trackTitle ?? undefined,
+        details: buildDetails([
+          { label: "Due", value: assignment.data?.dueDate ?? "No due date" }
+        ])
+      };
+    }
+
+    case NotificationEvent.LearnCertificateExpiring: {
+      if (!opts?.companyId) {
+        throw new Error(
+          "LearnCertificateExpiring notification requires a companyId"
+        );
+      }
+
+      const certificate = await client
+        .from("learnCertificate")
+        .select("trackTitle, expiresAt")
+        .eq("id", documentId)
+        .eq("companyId", opts.companyId)
+        .single();
+
+      if (certificate.error) {
+        console.error("Failed to get learnCertificate", certificate.error);
+        throw certificate.error;
+      }
+
+      const trackTitle = certificate.data?.trackTitle;
+      const expiresOn = certificate.data?.expiresAt?.slice(0, 10);
+      return {
+        description: `Your ${trackTitle} certificate expires on ${expiresOn}`,
+        reference: trackTitle ?? undefined,
+        details: buildDetails([{ label: "Expires", value: expiresOn }])
+      };
+    }
+
     case NotificationEvent.TrainingAssignment: {
       const trainingAssignment = await client
         .from("trainingAssignment")
@@ -1246,6 +1304,7 @@ async function buildEventContent(
 // is a system nudge and must NOT inherit "Assigned by".
 const assignmentEvents = new Set<NotificationEvent>([
   NotificationEvent.JobAssignment,
+  NotificationEvent.LearnAssignment,
   NotificationEvent.JobOperationAssignment,
   NotificationEvent.MaintenanceDispatchAssignment,
   NotificationEvent.NonConformanceAssignment,

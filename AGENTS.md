@@ -92,6 +92,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |
 | Items / Parts / BOM | `.claude/rules/material-tables.md` + `modules/items/AGENTS.md` |
 | Issues (NCR, CAPA, ECO, RMA) | `.claude/rules/issue-module.md` |
+| Learn (learning tracks, XP, certification) | `.claude/rules/learn-system.md` + `modules/resources/AGENTS.md` |
 | Traceability / lot tracking | `.claude/rules/traceability-model.md` |
 | Revision system | `.claude/rules/revision-system.md` |
 | Item supersession (phase-out / successor swaps) | `.claude/rules/supersession-system.md` |

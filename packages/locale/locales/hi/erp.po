@@ -97,6 +97,15 @@ msgstr "{0} जॉब बनाए गए"
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
+#. placeholder {0}: unit.estimatedMinutes
+msgid "{0} min"
+msgstr "{0} मिनट"
+
+#. placeholder {0}: result.correctCount
+#. placeholder {1}: result.questionCount
+msgid "{0} of {1} correct"
+msgstr "{0} में से {1} सही"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -125,6 +134,11 @@ msgstr "{0} पंजीकृत"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} पंक्तियाँ"
+
+#. placeholder {0}: track.exam.questionCount
+#. placeholder {1}: track.exam.timeLimitMinutes
+msgid "{0} scenario questions, {1} minutes, one question at a time. You need 80% to pass."
+msgstr "{0} परिदृश्य प्रश्न, {1} मिनट, एक बार में एक प्रश्न। पास करने के लिए आपको 80% की आवश्यकता है।"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -156,6 +170,11 @@ msgstr "{0} मान"
 msgid "{0} values missing"
 msgstr "{0} मान गायब हैं"
 
+#. placeholder {0}: ceiling - totalXp
+#. placeholder {1}: level + 1
+msgid "{0} XP to level {1}"
+msgstr "स्तर {1} के लिए {0} XP"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}द"
@@ -186,6 +205,9 @@ msgstr "{0}घंटे आवश्यक"
 msgid "{0}h staffed"
 msgstr "{0}h स्टाफ किया गया"
 
+msgid "{activeDays} active days"
+msgstr "{activeDays} सक्रिय दिन"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} पार्ट्स छोड़ दिए गए — उनके पास पहले से ही खुली जॉब हैं"
 
@@ -194,6 +216,12 @@ msgstr "{apOverduePct}% देय राशि का"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "प्राप्य राशि का {arOverduePct}%"
+
+msgid "{badgeCount} badge"
+msgstr "{badgeCount} बैज"
+
+msgid "{badgeCount} badges"
+msgstr "{badgeCount} बैज"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
@@ -227,6 +255,9 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} जोड़े गए, {updated} अपडेट किए गए, {0} को ठीक करने की आवश्यकता है, {1} छोड़ दिए गए।"
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "{learnerName} का {trackTitle} प्रमाणपत्र तुरंत रद्द के रूप में पढ़ा जाएगा, इसके सार्वजनिक सत्यापन पृष्ठ सहित। कारण प्रमाणपत्र पर दर्ज है।"
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
 
@@ -258,6 +289,9 @@ msgstr "{orderLabel} को रिवीजन {0} के रूप में �
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
 
+msgid "{questionCount} scenario questions, {timeLimitMinutes} minutes. One question at a time, and you cannot go back. You need 80% to pass."
+msgstr "{questionCount} परिदृश्य प्रश्न, {timeLimitMinutes} मिनट। एक बार में एक प्रश्न, और आप वापस नहीं जा सकते। पास करने के लिए आपको 80% की आवश्यकता है।"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
 
@@ -276,6 +310,9 @@ msgstr "{total} चरण लाइव होने के लिए"
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# इकाई} other {# इकाइयाँ}}"
 
+msgid "{trackTitle} certification"
+msgstr "{trackTitle} प्रमाणन"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
 
@@ -288,8 +325,20 @@ msgstr "{updatedJobCount} जॉब अपडेट किए गए"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
 
+msgid "{value} XP — a unit a week"
+msgstr "{value} XP — सप्ताह में एक"
+
+msgid "{value} XP — ambitious"
+msgstr "{value} XP — महत्वाकांक्षी"
+
+msgid "{value} XP — steady"
+msgstr "{value} XP — स्थिर"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# पंक्ति अपेक्षित मात्रा से भिन्न है} other {# पंक्तियां अपेक्षित मात्रा से भिन्न हैं}}"
+
+msgid "{weekXp} of {goalXp} XP this week"
+msgstr "{weekXp}/{goalXp} XP इस सप्ताह"
 
 msgid "{years}yr"
 msgstr "{years}वर्ष"
@@ -303,10 +352,20 @@ msgstr "कुल का %"
 msgid "% of Total"
 msgstr "कुल का %"
 
+msgid "← {trackTitle}"
+msgstr "← {trackTitle}"
+
+msgid "← All tracks"
+msgstr "← सभी ट्रैक"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} अप्रचलित {1} से पुनर्निर्देशित"
+
+#. placeholder {0}: result.xpAwarded
+msgid "+{0} XP"
+msgstr "+{0} XP"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -833,6 +892,9 @@ msgstr "किसी शिपमेंट की स्थिति में �
 msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
 
+msgid "A short open-book check on what has changed. Passing extends your certificate by 12 months."
+msgstr "बदलावों की एक संक्षिप्त खुली पुस्तक जांच। पास करने से आपका प्रमाणपत्र 12 महीने के लिए बढ़ाया जाता है।"
+
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 msgstr "एक संतुलित जर्नल प्रविष्टि नीचे दी गई तारीख के अनुसार पोस्ट की जाएगी, अंतर को प्रतिधारित आय में समायोजित करते हुए।"
 
@@ -883,6 +945,9 @@ msgstr "एक टूल एक भौतिक आइटम है जिसक
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
+
+msgid "A week counts toward your streak when you reach this much XP. Weeks, not days — so a weekend off never breaks it."
+msgstr "जब आप इतना XP तक पहुँचते हैं तो एक सप्ताह आपकी धारा में गिना जाता है। सप्ताह, दिन नहीं — इसलिए सप्ताहांत की छुट्टी इसे कभी नहीं तोड़ती।"
 
 msgid "abilities"
 msgstr "कौशल"
@@ -2374,11 +2439,17 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
+msgid "Assign a track"
+msgstr "एक ट्रैक असाइन करें"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
 msgid "Assign To"
 msgstr "को असाइन करें"
+
+msgid "Assign to groups"
+msgstr "समूहों को असाइन करें"
 
 msgid "Assign to Groups"
 msgstr "समूहों को असाइन करें"
@@ -2564,6 +2635,9 @@ msgstr "अनुमोदन की प्रतीक्षा में"
 msgid "Back"
 msgstr "वापस"
 
+msgid "Back to the track"
+msgstr "ट्रैक पर वापस"
+
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -2575,6 +2649,9 @@ msgstr "बैकअप विफल रहा"
 
 msgid "Backups"
 msgstr "बैकअप"
+
+msgid "Badges"
+msgstr "बैज"
 
 msgid "Balance"
 msgstr "शेष राशि"
@@ -2884,6 +2961,9 @@ msgstr "स्थान के अनुसार"
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
+msgid "By topic"
+msgstr "विषय के अनुसार"
+
 msgid "CAD Model"
 msgstr "CAD मॉडल"
 
@@ -3031,6 +3111,9 @@ msgstr "क्षमता"
 msgid "Capacity reservation"
 msgstr "क्षमता आरक्षण"
 
+msgid "Capstone"
+msgstr "समापन परियोजना"
+
 msgid "Caption"
 msgstr "कैप्शन"
 
@@ -3143,14 +3226,31 @@ msgstr "सर्ट संस्करण"
 msgid "Certificate Number"
 msgstr "प्रमाणपत्र संख्या"
 
+msgid "Certificate renewed"
+msgstr "प्रमाणपत्र नवीनीकृत"
+
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
+
+msgid "Certificates"
+msgstr "प्रमाणपत्र"
+
+msgid "Certification exam"
+msgstr "प्रमाणन परीक्षा"
 
 msgid "Certified"
 msgstr "प्रमाणित"
 
+#. placeholder {0}: formatDate(examGate.expiresAt.slice(0, 10), undefined, locale)
+#. placeholder {0}: formatDate(state.expiresAt.slice(0, 10), undefined, locale)
+msgid "Certified until {0}"
+msgstr "{0} तक प्रमाणित"
+
 msgid "Chain"
 msgstr "श्रृंखला"
+
+msgid "Challenges look at real records you create here. If you would rather not add practice data to this company, ask an admin to set up a demo company from Settings → Demo Data and switch to it first."
+msgstr "चुनौतियाँ आप यहाँ बनाए गए वास्तविक रिकॉर्ड पर नज़र डालती हैं। यदि आप इस कंपनी में अभ्यास डेटा जोड़ना नहीं चाहते हैं, तो एक व्यवस्थापक से सेटिंग्स → डेमो डेटा से एक डेमो कंपनी सेटअप करने के लिए कहें और पहले उस पर स्विच करें।"
 
 msgid "Champion users are available for training and data validation"
 msgstr "चैंपियन उपयोगकर्ता प्रशिक्षण और डेटा सत्यापन के लिए उपलब्ध हैं"
@@ -3203,6 +3303,9 @@ msgstr "प्रकार परिवर्तित करें"
 msgid "Change Type"
 msgstr "प्रकार बदलें"
 
+msgid "Change weekly goal"
+msgstr "साप्ताहिक लक्ष्य बदलें"
+
 msgid "Changed By"
 msgstr "द्वारा परिवर्तित"
 
@@ -3230,6 +3333,12 @@ msgstr "खातों का चार्ट"
 msgid "Chat"
 msgstr "चैट"
 
+msgid "Check my answers"
+msgstr "मेरे उत्तर जांचें"
+
+msgid "Check my work"
+msgstr "मेरे काम की जांच करें"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक किसी भी आइटम के लिए आइटम लेजर की जांच करें जिसमें नकारात्मक ऑन-हैंड मात्रा है — आमतौर पर एक लापता प्राप्ति या एक गलत क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए माल की लागत को विकृत करती है। एक बार समीक्षा के बाद इसे हो गया के रूप में चिह्नित करें, या कारण के साथ छोड़ दें।"
 
@@ -3256,6 +3365,9 @@ msgstr "यह देखने के लिए बाईं ओर की प�
 
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
+
+msgid "Choose all that apply"
+msgstr "सभी लागू विकल्प चुनें"
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
@@ -3487,6 +3599,9 @@ msgstr "नौकरी पूरी करें"
 
 msgid "Complete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर पूरा करें"
+
+msgid "Complete these hands-on challenges first:"
+msgstr "पहले ये व्यावहारिक चुनौतियाँ पूर्ण करें:"
 
 msgid "Completed"
 msgstr "पूर्ण"
@@ -3840,6 +3955,9 @@ msgstr "परिवर्तित कर रहे हैं…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
+
+msgid "Cooling down"
+msgstr "ठंडा हो रहा है"
 
 msgid "Copied link to clipboard"
 msgstr "क्लिपबोर्ड में लिंक कॉपी किया गया"
@@ -5568,6 +5686,9 @@ msgstr "दस्तावेज़"
 msgid "Docs & videos"
 msgstr "डॉक्स और वीडियो"
 
+msgid "Docs to revisit"
+msgstr "दोबारा देखने योग्य दस्तावेज़"
+
 msgid "Document"
 msgstr "दस्तावेज़"
 
@@ -5613,6 +5734,9 @@ msgstr "डाउनलोड करें"
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "ठीक करने के लिए {0} पंक्ति(यों) डाउनलोड करें"
+
+msgid "Download certificate"
+msgstr "प्रमाणपत्र डाउनलोड करें"
 
 msgid "Download CSV"
 msgstr "CSV डाउनलोड करें"
@@ -5695,6 +5819,7 @@ msgstr "देय"
 msgid "Due (by due date)"
 msgstr "देय (देय तारीख तक)"
 
+#. placeholder {0}: formatDate(state.dueDate, undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -5857,6 +5982,9 @@ msgstr "परिसंपत्ति संपादित करें"
 
 msgid "Edit Asset Class"
 msgstr "परिसंपत्ति वर्ग संपादित करें"
+
+msgid "Edit assignment"
+msgstr "असाइनमेंट संपादित करें"
 
 msgid "Edit Assignment"
 msgstr "असाइनमेंट संपादित करें"
@@ -6520,6 +6648,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every question has to be right to pass this unit. Read the explanations below, then try again — the XP is lower on a retry, but understanding it is the point."
+msgstr "इस खंड को पास करने के लिए हर प्रश्न सही होना चाहिए। नीचे दिए गए स्पष्टीकरणों को पढ़ें, फिर फिर से प्रयास करें — पुनः प्रयास पर XP कम है, लेकिन इसे समझना मुख्य बात है।"
+
 msgid "Every required action has already been added."
 msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
 
@@ -6528,6 +6659,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "इन समूहों में सभी को अपने लर्न हब पर ट्रैक दिखेगा"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
@@ -6540,6 +6674,9 @@ msgstr "बाकी सब कुछ"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "बाकी सब कुछ लोग, आयात, एकीकरण और API को कवर करता है — कुछ भी जो आपके वर्कफ़्लो में से एक नहीं है।"
+
+msgid "Evidence recorded:"
+msgstr "साक्ष्य दर्ज किया गया:"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
@@ -6674,6 +6811,7 @@ msgstr "समाप्त बैच"
 msgid "Expires"
 msgstr "समाप्त होता है"
 
+#. placeholder {0}: formatDate(certificate.expiresAt.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -7210,8 +7348,14 @@ msgstr "तैयार माल"
 msgid "Finish"
 msgstr "फिनिश"
 
+msgid "Finish a module to earn your first badge"
+msgstr "अपना पहला बैज अर्जित करने के लिए एक मॉड्यूल पूरा करें"
+
 msgid "Finish onboarding"
 msgstr "ऑनबोर्डिंग समाप्त करें"
+
+msgid "Finish the track's hands-on challenges before sitting the exam."
+msgstr "परीक्षा बैठने से पहले ट्रैक की व्यावहारिक चुनौतियों को पूरा करें।"
 
 msgid "Finish To"
 msgstr "समाप्त करने के लिए"
@@ -7724,6 +7868,9 @@ msgstr "आवर्ती और उलट जर्नल प्रविष�
 msgid "Hands-on"
 msgstr "हैंड्स-ऑन"
 
+msgid "Hands-on checks run in {companyName}"
+msgstr "व्यावहारिक जाँच {companyName} में चलती हैं"
+
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "पहले 3–4 हफ्तों के लिए व्यावहारिक, तेज़ प्रतिक्रिया समर्थन"
 
@@ -7957,6 +8104,9 @@ msgstr "I (शिथिल)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "मेरे पास यह मानने का उचित आधार है कि यह व्यक्ति 22 CFR 120.62 में परिभाषित अनुसार एक U.S. व्यक्ति है"
+
+msgid "I will answer on my own, without help from another person or from anyone else's answers."
+msgstr "मैं अपने दम पर उत्तर दूंगा, किसी अन्य व्यक्ति की मदद के बिना या किसी और के उत्तरों से।"
 
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
@@ -8655,6 +8805,9 @@ msgstr "जॉब ऑपरेशन"
 msgid "Job Operation"
 msgstr "जॉब ऑपरेशन"
 
+msgid "Job operation batch"
+msgstr "ऑपरेशन बैच"
+
 msgid "Job Operations"
 msgstr "जॉब ऑपरेशन"
 
@@ -8882,8 +9035,14 @@ msgstr "लीड टाइम:"
 msgid "Learn"
 msgstr "सीखें"
 
+msgid "Learn Carbon"
+msgstr "Carbon सीखें"
+
 msgid "Learn more"
 msgstr "अधिक जानें"
+
+msgid "Learning activity for the last {weeks} weeks: {activeDays} active days, {totalXp} XP"
+msgstr "पिछले {weeks} सप्ताह के लिए शिक्षण गतिविधि: {activeDays} सक्रिय दिन, {totalXp} XP"
 
 msgid "Leave any related receipts untouched"
 msgstr "किसी भी संबंधित रसीदों को अछूता छोड़ें"
@@ -8911,6 +9070,9 @@ msgstr "बचे हुए पार्ट्स का पता चला"
 
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "बची हुई सामग्री पूरी जॉब पूरी होने पर वापस आती है।"
+
+msgid "Less"
+msgstr "कम"
 
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
@@ -8941,6 +9103,9 @@ msgstr "आइए अपना खाता सेट अप करें"
 
 msgid "Letter"
 msgstr "अक्षर"
+
+msgid "Level"
+msgstr "स्तर"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "त्वरित मूल्यह्रास से आस्थगित कर के लिए देयता खाता"
@@ -10778,6 +10943,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
+msgid "Not passed"
+msgstr "उत्तीर्ण नहीं"
+
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -10897,6 +11065,9 @@ msgstr "का"
 msgid "of {0}h"
 msgstr "का {0}h"
 
+msgid "of {goalXp} XP"
+msgstr "{goalXp} XP का"
+
 msgid "Off — handled outside the sync"
 msgstr "बंद — सिंक के बाहर संभाला गया"
 
@@ -11010,6 +11181,9 @@ msgstr "केवल खाली, खुली अवधियों को ह
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
 
+msgid "Only you can see your activity, XP, and streak."
+msgstr "केवल आप अपनी गतिविधि, XP और स्ट्रीक देख सकते हैं।"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
@@ -11054,6 +11228,9 @@ msgstr "खुले प्राप्य खाते"
 
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
+
+msgid "Open certificate"
+msgstr "प्रमाण पत्र खोलें"
 
 msgid "Open date"
 msgstr "खोलने की तारीख"
@@ -11259,6 +11436,9 @@ msgstr "IAS 21 के अनुसार इक्विटी शेष को 
 
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "वैकल्पिक। इस तारीख के बाद एक अधूरा ट्रैक अतिदेय के रूप में दिखाई देता है।"
 
 msgid "Options"
 msgstr "विकल्प"
@@ -11540,6 +11720,9 @@ msgstr "पक्ष प्रकार"
 
 msgid "Pass"
 msgstr "पास"
+
+msgid "Pass a track's exam to earn a certificate"
+msgstr "प्रमाण पत्र अर्जित करने के लिए ट्रैक की परीक्षा में उत्तीर्ण हों"
 
 msgid "Passed"
 msgstr "उत्तीर्ण"
@@ -12609,6 +12792,22 @@ msgstr "त्रैमासिक"
 msgid "Question"
 msgstr "प्रश्न"
 
+#. placeholder {0}: current.index + 1
+#. placeholder {0}: index + 1
+#. placeholder {1}: current.total
+#. placeholder {1}: questions.length
+msgid "Question {0} of {1}"
+msgstr "प्रश्न {0} का {1}"
+
+msgid "Question performance"
+msgstr "प्रश्न प्रदर्शन"
+
+msgid "Questions"
+msgstr "प्रश्न"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "ऐसे प्रश्न जिनका सही उत्तर 60% से कम बार दिया गया"
+
 msgid "Queued"
 msgstr "कतार में"
 
@@ -12708,11 +12907,17 @@ msgstr "फिर से भेजें"
 msgid "Reactivate"
 msgstr "पुनः सक्रिय करें"
 
+msgid "Read this first"
+msgstr "पहले यह पढ़ें"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "इसे पूरी तरह पढ़ें — Carbon आपके सेटअप के लिए क्या करेगा और क्या नहीं करेगा। जब यह सही लगे, तो नीचे सहमत के रूप में चिह्नित करें।"
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "इसे पूरी तरह पढ़ें। जब यह सही हो, तो नीचे साइन ऑफ करें। यह वह विवरण है जिसकी ओर आपका व्यावसायिक समझौता इशारा करता है, यहाँ कोई कीमत या कानूनी शर्तें नहीं हैं।"
+
+msgid "Read why"
+msgstr "पढ़ें क्यों"
 
 msgid "Readable"
 msgstr "पठनीय"
@@ -13107,6 +13312,12 @@ msgstr "वर्कफ़्लो का नाम बदलें"
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
 
+msgid "Renew now"
+msgstr "अभी नवीनीकृत करें"
+
+msgid "Renew your certificate"
+msgstr "अपने प्रमाण पत्र को नवीनीकृत करें"
+
 msgid "Reopen"
 msgstr "फिर से खोलें"
 
@@ -13478,11 +13689,20 @@ msgstr "रिवीजन"
 msgid "Revoke"
 msgstr "रद्द करें"
 
+msgid "Revoke certificate"
+msgstr "प्रमाण पत्र रद्द करें"
+
 msgid "Revoke Invite"
 msgstr "आमंत्रण रद्द करें"
 
 msgid "Revoke Invites"
 msgstr "आमंत्रण रद्द करें"
+
+msgid "Revoke this certificate?"
+msgstr "इस प्रमाण पत्र को रद्द करें?"
+
+msgid "Revoked"
+msgstr "रद्द किया गया"
 
 msgid "Rework"
 msgstr "पुनः कार्य"
@@ -14997,6 +15217,9 @@ msgstr "शुरू करें"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} दिन की निःशुल्क परीक्षण शुरू करें"
 
+msgid "Start challenge"
+msgstr "चुनौती शुरू करें"
+
 msgid "Start counting"
 msgstr "गिनती शुरू करें"
 
@@ -15026,6 +15249,15 @@ msgstr "वित्तीय वर्ष की शुरुआत"
 
 msgid "Start of Tax Year"
 msgstr "कर वर्ष की शुरुआत"
+
+msgid "Start the exam"
+msgstr "परीक्षा शुरू करें"
+
+msgid "Start the quiz"
+msgstr "क्विज़ शुरू करें"
+
+msgid "Start the renewal quiz"
+msgstr "नवीनीकरण क्विज़ शुरू करें"
 
 msgid "Start Time"
 msgstr "शुरुआत का समय"
@@ -15450,6 +15682,9 @@ msgstr "आपूर्तिकर्ता इकाई मूल्य"
 
 msgid "Supplier updated"
 msgstr "आपूर्तिकर्ता अपडेट किया गया"
+
+msgid "Supplier warranty term"
+msgstr "आपूर्तिकर्ता वारंटी शर्तें"
 
 msgid "Supplier:"
 msgstr "आपूर्तिकर्ता:"
@@ -16863,6 +17098,9 @@ msgstr "दिन का समय"
 msgid "Time off"
 msgstr "छुट्टी"
 
+msgid "Time remaining"
+msgstr "शेष समय"
+
 msgid "Timecard"
 msgstr "टाइमकार्ड"
 
@@ -17181,6 +17419,9 @@ msgstr "ट्रिगर किया गया"
 msgid "Triggers"
 msgstr "ट्रिगर"
 
+msgid "Try again"
+msgstr "फिर से प्रयास करें"
+
 msgid "Tuesday"
 msgstr "मंगलवार"
 
@@ -17282,6 +17523,9 @@ msgstr "अद्वितीय, बड़े अक्षरों में, 
 
 msgid "Unit"
 msgstr "इकाई"
+
+msgid "Unit complete"
+msgstr "इकाई पूरी हुई"
 
 msgid "Unit Cost"
 msgstr "इकाई लागत"
@@ -17410,7 +17654,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "शीर्षकहीन"
 
 msgid "Untitled Diagram"
 msgstr "बिना शीर्षक वाला आरेख"
@@ -17739,6 +17983,9 @@ msgstr "सत्यापन त्रुटि"
 msgid "Verification failed"
 msgstr "सत्यापन विफल रहा"
 
+msgid "Verification page"
+msgstr "सत्यापन पृष्ठ"
+
 msgid "Verified"
 msgstr "सत्यापित"
 
@@ -18028,6 +18275,9 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 msgid "Warning"
 msgstr "चेतावनी"
 
+msgid "Warranty term"
+msgstr "वारंटी शर्तें"
+
 msgid "Watch"
 msgstr "देखें"
 
@@ -18039,6 +18289,9 @@ msgstr "हमने प्रत्येक कॉलम को स्वच�
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "हम तेजी से समस्याओं को प्राथमिकता देते हैं और ठीक करते हैं जबकि आपकी टीम सिस्टम में स्थिर होती है"
+
+msgid "We will check the records you create in {companyName}, from the moment you start."
+msgstr "हम {companyName} में आपके द्वारा बनाए गए रिकॉर्ड की जांच करेंगे, जिस क्षण आप शुरू करते हैं।"
 
 msgid "We've sent a verification code to {email}"
 msgstr "हमने {email} को एक सत्यापन कोड भेजा है"
@@ -18100,11 +18353,17 @@ msgstr "सप्ताह 8 कटओवर"
 msgid "Week of {0}"
 msgstr "{0} का सप्ताह"
 
+msgid "week streak"
+msgstr "सप्ताह की स्ट्रीक"
+
 msgid "Weekly"
 msgstr "साप्ताहिक"
 
 msgid "Weekly demand"
 msgstr "साप्ताहिक मांग"
+
+msgid "Weekly XP goal"
+msgstr "साप्ताहिक XP लक्ष्य"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -18566,6 +18825,9 @@ msgstr "कार्य फोन"
 msgid "Work shift tracking is active."
 msgstr "कार्य शिफ्ट ट्रैकिंग सक्रिय है।"
 
+msgid "Work through a track, prove it on real work in Carbon, and earn a certificate your manager can verify."
+msgstr "एक ट्रैक के माध्यम से काम करें, इसे Carbon में वास्तविक कार्य पर साबित करें, और एक प्रमाण पत्र अर्जित करें जिसे आपका प्रबंधक सत्यापित कर सके।"
+
 msgid "Workflow"
 msgstr "वर्कफ़्लो"
 
@@ -18639,6 +18901,17 @@ msgstr "आप किसी भी समय थीम सेटिंग के
 msgid "You can only see this key once. Store it safely."
 msgstr "आप इस कुंजी को केवल एक बार देख सकते हैं। इसे सुरक्षित रूप से संग्रहीत करें।"
 
+#. placeholder {0}: gate.until.slice(0, 10)
+msgid "You can retake the exam after {0}."
+msgstr "आप {0} के बाद परीक्षा दोबारा दे सकते हैं।"
+
+#. placeholder {0}: formatDate(examGate.until.slice(0, 10), undefined, locale)
+msgid "You can retake the exam after {0}. Use the time to revisit the units you found hardest."
+msgstr "आप {0} के बाद परीक्षा दोबारा दे सकते हैं। समय का उपयोग उन इकाइयों को फिर से देखने के लिए करें जो आपको सबसे कठिन लगीं।"
+
+msgid "You cannot return to a question once you answer it."
+msgstr "एक बार जब आप प्रश्न का उत्तर दे दें तो आप उस पर वापस नहीं जा सकते।"
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "आपने <0/> पर साइन इन किया। आप नीचे अपने कार्य समाप्ति का समय संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
@@ -18679,6 +18952,9 @@ msgstr "आप नेतृत्व करते हैं"
 
 msgid "You name a project owner with decision authority"
 msgstr "आप निर्णय लेने के अधिकार वाले परियोजना स्वामी का नाम देते हैं"
+
+msgid "You need 80% to certify. Your per-topic scores are below — revisit the weakest ones, then come back when the cooldown ends."
+msgstr "प्रमाणित करने के लिए आपको 80% की आवश्यकता है। आपके प्रति-विषय स्कोर नीचे दिए गए हैं — सबसे कमजोर को फिर से देखें, फिर तब वापस आएं जब शीतलन समाप्त हो जाए।"
 
 msgid "You received this item"
 msgstr "आपने यह आइटम प्राप्त किया"
@@ -18790,6 +19066,9 @@ msgstr "आपकी टीम, संरचना, और पहुंच।"
 
 msgid "Your vendor list"
 msgstr "आपकी विक्रेता सूची"
+
+msgid "Your weekly goal"
+msgstr "आपका साप्ताहिक लक्ष्य"
 
 msgid "yourself"
 msgstr "अपने आप"

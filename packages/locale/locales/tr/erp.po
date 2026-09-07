@@ -97,6 +97,15 @@ msgstr "{0} iş emri oluşturuldu"
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
+#. placeholder {0}: unit.estimatedMinutes
+msgid "{0} min"
+msgstr "{0} dk"
+
+#. placeholder {0}: result.correctCount
+#. placeholder {1}: result.questionCount
+msgid "{0} of {1} correct"
+msgstr "{0} / {1} doğru"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -125,6 +134,11 @@ msgstr "{0} kaydedildi"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} satır"
+
+#. placeholder {0}: track.exam.questionCount
+#. placeholder {1}: track.exam.timeLimitMinutes
+msgid "{0} scenario questions, {1} minutes, one question at a time. You need 80% to pass."
+msgstr "{0} senaryo sorusu, {1} dakika, birer birer sorular. Geçmek için %80 gerekli."
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -156,6 +170,11 @@ msgstr "{0} değer"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+#. placeholder {0}: ceiling - totalXp
+#. placeholder {1}: level + 1
+msgid "{0} XP to level {1}"
+msgstr "Seviye {1}'e ulaşmak için {0} XP"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}g"
@@ -186,6 +205,9 @@ msgstr "{0}s gerekli"
 msgid "{0}h staffed"
 msgstr "{0}s personel kaynaklandı"
 
+msgid "{activeDays} active days"
+msgstr "{activeDays} aktif gün"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — bunların zaten açık iş emirleri var"
 
@@ -194,6 +216,12 @@ msgstr "{apOverduePct}% borçlar"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% alacakların"
+
+msgid "{badgeCount} badge"
+msgstr "{badgeCount} rozet"
+
+msgid "{badgeCount} badges"
+msgstr "{badgeCount} rozet"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
@@ -227,6 +255,9 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "{learnerName}'nin {trackTitle} sertifikası derhal iptal edilmiş olarak gösterilecek, genel doğrulama sayfasında da dahil olmak üzere. Nedeni sertifikada kaydedilmiştir."
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
 
@@ -258,6 +289,9 @@ msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacakt
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
+msgid "{questionCount} scenario questions, {timeLimitMinutes} minutes. One question at a time, and you cannot go back. You need 80% to pass."
+msgstr "{questionCount} senaryo sorusu, {timeLimitMinutes} dakika. Birer birer sorular ve geri dönüş yapılamaz. Geçmek için %80 gerekli."
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
 
@@ -276,6 +310,9 @@ msgstr "{total} aşama canlı yayına alınacak"
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
 
+msgid "{trackTitle} certification"
+msgstr "{trackTitle} sertifikası"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
@@ -288,8 +325,20 @@ msgstr "{updatedJobCount} iş emri güncellendi"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} yüklendi — alanlar belgeden dolduruldu."
 
+msgid "{value} XP — a unit a week"
+msgstr "{value} XP — haftada bir seviye"
+
+msgid "{value} XP — ambitious"
+msgstr "{value} XP — iddialı"
+
+msgid "{value} XP — steady"
+msgstr "{value} XP — düzenli"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# satır beklenen miktardan farklıdır} other {# satır beklenen miktardan farklıdır}}"
+
+msgid "{weekXp} of {goalXp} XP this week"
+msgstr "Bu hafta {weekXp} / {goalXp} XP"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -303,10 +352,20 @@ msgstr "Toplamın %"
 msgid "% of Total"
 msgstr "% Toplam"
 
+msgid "← {trackTitle}"
+msgstr "← {trackTitle}"
+
+msgid "← All tracks"
+msgstr "← Tüm Eğitim Parçaları"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
+
+#. placeholder {0}: result.xpAwarded
+msgid "+{0} XP"
+msgstr "+{0} XP"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -833,6 +892,9 @@ msgstr "Sevkiyatın durumu değişti"
 msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
 
+msgid "A short open-book check on what has changed. Passing extends your certificate by 12 months."
+msgstr "Değişenlerin kısa açık kitap kontrolü. Geçmek sertifikayı 12 ay uzatır."
+
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 msgstr "Aşağıdaki tarih itibarıyla tek bir dengeli yevmiye kaydı muhasebeleştirilecek; fark Dağıtılmamış kârlara kaydedilecektir."
 
@@ -883,6 +945,9 @@ msgstr "Takım, birden fazla iş emri arasında kullanılabilen bir parça yapma
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
+
+msgid "A week counts toward your streak when you reach this much XP. Weeks, not days — so a weekend off never breaks it."
+msgstr "Bu kadar XP'ye ulaştığınızda bir hafta serinize sayılır. Günler değil, haftalar — bu nedenle hafta sonu molası serinizi kesmez."
 
 msgid "abilities"
 msgstr "yetkinlikler"
@@ -2374,11 +2439,17 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "Assign a track"
+msgstr "Eğitim Parçası Ata"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
 msgid "Assign To"
 msgstr "Ata"
+
+msgid "Assign to groups"
+msgstr "Gruplara Ata"
 
 msgid "Assign to Groups"
 msgstr "Gruplara Ata"
@@ -2564,6 +2635,9 @@ msgstr "Onay bekliyor"
 msgid "Back"
 msgstr "Geri"
 
+msgid "Back to the track"
+msgstr "Eğitim Parçasına Dön"
+
 msgid "Back to traceability"
 msgstr "İzlenebilirliğe geri dön"
 
@@ -2575,6 +2649,9 @@ msgstr "Yedekleme başarısız oldu"
 
 msgid "Backups"
 msgstr "Yedeklemeler"
+
+msgid "Badges"
+msgstr "Rozetler"
 
 msgid "Balance"
 msgstr "Bakiye"
@@ -2884,6 +2961,9 @@ msgstr "Konuma Göre"
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
 
+msgid "By topic"
+msgstr "Konuya Göre"
+
 msgid "CAD Model"
 msgstr "CAD Modeli"
 
@@ -3031,6 +3111,9 @@ msgstr "Kapasite"
 msgid "Capacity reservation"
 msgstr "Kapasite Rezervasyonu"
 
+msgid "Capstone"
+msgstr "Kapstone Proje"
+
 msgid "Caption"
 msgstr "Başlık"
 
@@ -3143,14 +3226,31 @@ msgstr "Sertifika Versiyonu"
 msgid "Certificate Number"
 msgstr "Sertifika Numarası"
 
+msgid "Certificate renewed"
+msgstr "Sertifika Yenilendi"
+
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Certificates"
+msgstr "Sertifikalar"
+
+msgid "Certification exam"
+msgstr "Sertifika Sınavı"
 
 msgid "Certified"
 msgstr "Sertifikalı"
 
+#. placeholder {0}: formatDate(examGate.expiresAt.slice(0, 10), undefined, locale)
+#. placeholder {0}: formatDate(state.expiresAt.slice(0, 10), undefined, locale)
+msgid "Certified until {0}"
+msgstr "{0} tarihine kadar sertifikalı"
+
 msgid "Chain"
 msgstr "Zincir"
+
+msgid "Challenges look at real records you create here. If you would rather not add practice data to this company, ask an admin to set up a demo company from Settings → Demo Data and switch to it first."
+msgstr "Zorluklar, burada oluşturduğunuz gerçek kayıtlara bakar. Bu şirkete pratik verisi eklemek istemiyorsanız, bir yöneticiye Ayarlar → Demo Verisi'nden bir demo şirketi kurup ona geçmesini isteyin."
 
 msgid "Champion users are available for training and data validation"
 msgstr "Şampiyon kullanıcılar eğitim ve veri doğrulaması için kullanılabilir"
@@ -3203,6 +3303,9 @@ msgstr "Türü değiştir"
 msgid "Change Type"
 msgstr "Tipi Değiştir"
 
+msgid "Change weekly goal"
+msgstr "Haftalık Hedefi Değiştir"
+
 msgid "Changed By"
 msgstr "Değiştiren"
 
@@ -3230,6 +3333,12 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
+msgid "Check my answers"
+msgstr "Cevaplarımı Kontrol Et"
+
+msgid "Check my work"
+msgstr "Çalışmamı Kontrol Et"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok kartı için stok kartı defterini kontrol edin — genellikle eksik bir mal kabul veya envanter değerini ve satılan malın maliyetini bozan sıra dışı bir muhasebeleştirme. İncelendikten sonra bitti olarak işaretleyin veya bir gerekçeyle atlayın."
 
@@ -3256,6 +3365,9 @@ msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı 
 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
+
+msgid "Choose all that apply"
+msgstr "Geçerli Olanların Tümünü Seçin"
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
@@ -3487,6 +3599,9 @@ msgstr "İşi Tamamla"
 
 msgid "Complete Stock Transfer"
 msgstr "Stok Transferini Tamamla"
+
+msgid "Complete these hands-on challenges first:"
+msgstr "Önce şu uygulamalı zorlukları tamamlayın:"
 
 msgid "Completed"
 msgstr "Tamamlandı"
@@ -3840,6 +3955,9 @@ msgstr "Dönüştürülüyor…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
+
+msgid "Cooling down"
+msgstr "Soğuma Döneminde"
 
 msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
@@ -5568,6 +5686,9 @@ msgstr "Belgeler"
 msgid "Docs & videos"
 msgstr "Dokümanlar ve videolar"
 
+msgid "Docs to revisit"
+msgstr "Gözden geçirilecek dokümantasyon"
+
 msgid "Document"
 msgstr "Belge"
 
@@ -5613,6 +5734,9 @@ msgstr "İndir"
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "{0} satır(lar)ı düzeltmek için indirin"
+
+msgid "Download certificate"
+msgstr "Sertifikayı İndir"
 
 msgid "Download CSV"
 msgstr "CSV İndir"
@@ -5695,6 +5819,7 @@ msgstr "Vade"
 msgid "Due (by due date)"
 msgstr "Vadesi (vade tarihine göre)"
 
+#. placeholder {0}: formatDate(state.dueDate, undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vadesi {0}"
@@ -5857,6 +5982,9 @@ msgstr "Varlığı Düzenle"
 
 msgid "Edit Asset Class"
 msgstr "Varlık Sınıfını Düzenle"
+
+msgid "Edit assignment"
+msgstr "Atamayı Düzenle"
 
 msgid "Edit Assignment"
 msgstr "Atamayı Düzenle"
@@ -6520,6 +6648,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every question has to be right to pass this unit. Read the explanations below, then try again — the XP is lower on a retry, but understanding it is the point."
+msgstr "Bu bölümü geçmek için her sorunun cevabı doğru olmalıdır. Aşağıdaki açıklamaları okuyun, sonra tekrar deneyin — yeniden denemede XP daha düşüktür, ancak anlamak önemlidir."
+
 msgid "Every required action has already been added."
 msgstr "Gerekli olan tüm eylemler zaten eklendi."
 
@@ -6528,6 +6659,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "Bu gruplardaki herkes kendi Öğren merkezinde bu eğitim parçasını görecek"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Seçtiğiniz haftanın herhangi bir gününde çalışan herkes, kendi vardiyalarının ötesinde belirlediğiniz saatler kadar kalır. Yalnızca filtrelediğiniz departmanlar ve vardiyalar etkilenir."
@@ -6540,6 +6674,9 @@ msgstr "Her şey başka"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Geri kalan her şey personel, içe aktarmalar, entegrasyonlar ve API'yi kapsar — iş akışlarınızdan biri olmayan herhangi bir şey."
+
+msgid "Evidence recorded:"
+msgstr "Kanıt Kaydedildi:"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Toplamda {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB'ı aşıyor — göndermek için bazı ekler kaldırın."
@@ -6674,6 +6811,7 @@ msgstr "Süresi doldu partiler"
 msgid "Expires"
 msgstr "Süresi Doluyor"
 
+#. placeholder {0}: formatDate(certificate.expiresAt.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -7210,8 +7348,14 @@ msgstr "Bitmiş ürünler"
 msgid "Finish"
 msgstr "Bitiş"
 
+msgid "Finish a module to earn your first badge"
+msgstr "İlk rozetinizi kazanmak için bir modülü tamamlayın"
+
 msgid "Finish onboarding"
 msgstr "Onboarding'ı bitir"
+
+msgid "Finish the track's hands-on challenges before sitting the exam."
+msgstr "Sınavı almadan önce parçanın uygulamalı zorlukları tamamlayın."
 
 msgid "Finish To"
 msgstr "Bitirmek İçin"
@@ -7724,6 +7868,9 @@ msgstr "Tekrarlayan ve iptal edilen muhasebe fişlerini işle"
 msgid "Hands-on"
 msgstr "Uygulamalı"
 
+msgid "Hands-on checks run in {companyName}"
+msgstr "Uygulamalı kontroller {companyName} içinde çalışır"
+
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "İlk 3–4 hafta boyunca uygulamalı, hızlı yanıt veren destek"
 
@@ -7957,6 +8104,9 @@ msgstr "I (Gevşetilmiş)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "Bu kişinin 22 CFR 120.62'de tanımlanan şekilde ABD vatandaşı olduğuna inanmak için makul bir temelem var"
+
+msgid "I will answer on my own, without help from another person or from anyone else's answers."
+msgstr "Başka bir kişinin veya başka birinin cevaplarından yardım almadan kendi başıma cevap vereceğim."
 
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
@@ -8655,6 +8805,9 @@ msgstr "İş emri operasyonu"
 msgid "Job Operation"
 msgstr "İş emri operasyonu"
 
+msgid "Job operation batch"
+msgstr "Operasyon partisi"
+
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
 
@@ -8882,8 +9035,14 @@ msgstr "Tedarik süresi:"
 msgid "Learn"
 msgstr "Öğren"
 
+msgid "Learn Carbon"
+msgstr "Carbon'u Öğrenin"
+
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
+
+msgid "Learning activity for the last {weeks} weeks: {activeDays} active days, {totalXp} XP"
+msgstr "Son {weeks} hafta için öğrenme aktivitesi: {activeDays} aktif gün, {totalXp} XP"
 
 msgid "Leave any related receipts untouched"
 msgstr "İlgili tüm makbuzları dokunulmamış bırakır"
@@ -8911,6 +9070,9 @@ msgstr "Artık Parçalar Tespit Edildi"
 
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Kalan hazırlanan malzeme tüm iş tamamlandığında geri döner."
+
+msgid "Less"
+msgstr "Daha Az"
 
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
@@ -8941,6 +9103,9 @@ msgstr "Hesabınızı kuralım"
 
 msgid "Letter"
 msgstr "Harf"
+
+msgid "Level"
+msgstr "Seviye"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Hızlandırılmış amortisman nedeniyle ertelenen vergiler için borç hesabı"
@@ -10778,6 +10943,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli iş emri yok"
 
+msgid "Not passed"
+msgstr "Geçmedi"
+
 msgid "Not reached"
 msgstr "Ulaşılmadı"
 
@@ -10897,6 +11065,9 @@ msgstr "adet"
 msgid "of {0}h"
 msgstr "başında {0}s"
 
+msgid "of {goalXp} XP"
+msgstr "{goalXp} XP'den"
+
 msgid "Off — handled outside the sync"
 msgstr "Kapalı — senkronizasyon dışında işlenir"
 
@@ -11010,6 +11181,9 @@ msgstr "Yalnızca boş, açık dönemler silinebilir."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Yalnızca nitelikli çalışanlar bu işlem için planlanabilir ve çalıştırılabilir"
 
+msgid "Only you can see your activity, XP, and streak."
+msgstr "Yalnızca siz aktivitelerinizi, XP'nizi ve serilerinizi görebilirsiniz."
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
 
@@ -11054,6 +11228,9 @@ msgstr "Açık Alacak hesapları"
 
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
+
+msgid "Open certificate"
+msgstr "Sertifikayı Aç"
 
 msgid "Open date"
 msgstr "Açılış tarihi"
@@ -11259,6 +11436,9 @@ msgstr "Özkaynak bakiyelerini IAS 21'e göre çevirirken kullanılan isteğe ba
 
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "İsteğe bağlı. Bu tarihten sonra tamamlanmamış bir parça gecikmiş olarak görünür."
 
 msgid "Options"
 msgstr "Seçenekler"
@@ -11540,6 +11720,9 @@ msgstr "Taraf Türü"
 
 msgid "Pass"
 msgstr "Geçerli"
+
+msgid "Pass a track's exam to earn a certificate"
+msgstr "Sertifika kazanmak için bir parçanın sınavını geçin"
 
 msgid "Passed"
 msgstr "Geçti"
@@ -12609,6 +12792,22 @@ msgstr "Üç Aylık"
 msgid "Question"
 msgstr "Soru"
 
+#. placeholder {0}: current.index + 1
+#. placeholder {0}: index + 1
+#. placeholder {1}: current.total
+#. placeholder {1}: questions.length
+msgid "Question {0} of {1}"
+msgstr "Soru {0}/{1}"
+
+msgid "Question performance"
+msgstr "Soru performansı"
+
+msgid "Questions"
+msgstr "Sorular"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "Doğru yanıtlanma oranı %60'ın altında olan sorular"
+
 msgid "Queued"
 msgstr "Kuyrukta"
 
@@ -12708,11 +12907,17 @@ msgstr "Yeniden gönder"
 msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
 
+msgid "Read this first"
+msgstr "Bunu önce okuyun"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Bunu okuyun — Carbon'un kurulumunuz için neler yapacağını ve yapmayacağını öğrenin. Doğru görünüyorsa, aşağıda kabul ettiğinizi işaretleyin."
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "Bunu baştan sona oku. Doğru olduğunda, altta imzala. Bu, ticari anlaşmanın işaret ettiği beyan olup, burada fiyat veya yasal şart yoktur."
+
+msgid "Read why"
+msgstr "Nedeni okuyun"
 
 msgid "Readable"
 msgstr "Okunabilir"
@@ -13107,6 +13312,12 @@ msgstr "İş Akışını Yeniden Adlandır"
 msgid "Rendering label preview..."
 msgstr "Etiket önizlemesi oluşturuluyor..."
 
+msgid "Renew now"
+msgstr "Şimdi Yenile"
+
+msgid "Renew your certificate"
+msgstr "Sertifikanızı Yenileyin"
+
 msgid "Reopen"
 msgstr "Yeniden Aç"
 
@@ -13478,11 +13689,20 @@ msgstr "Revizyonlar"
 msgid "Revoke"
 msgstr "İptal et"
 
+msgid "Revoke certificate"
+msgstr "Sertifikayı İptal Et"
+
 msgid "Revoke Invite"
 msgstr "Davetlemeyi İptal Et"
 
 msgid "Revoke Invites"
 msgstr "Davetleri İptal Et"
+
+msgid "Revoke this certificate?"
+msgstr "Bu sertifikayı iptal et?"
+
+msgid "Revoked"
+msgstr "İptal Edildi"
 
 msgid "Rework"
 msgstr "Yeniden İşleme"
@@ -14997,6 +15217,9 @@ msgstr "Başlat"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} Gün Ücretsiz Deneme Başlat"
 
+msgid "Start challenge"
+msgstr "Zorluğu Başlat"
+
 msgid "Start counting"
 msgstr "Saymaya başla"
 
@@ -15026,6 +15249,15 @@ msgstr "Mali Yıl Başlangıcı"
 
 msgid "Start of Tax Year"
 msgstr "Vergi Yılı Başlangıcı"
+
+msgid "Start the exam"
+msgstr "Sınavı Başlat"
+
+msgid "Start the quiz"
+msgstr "Testi Başlat"
+
+msgid "Start the renewal quiz"
+msgstr "Yenileme Testini Başlat"
 
 msgid "Start Time"
 msgstr "Başlangıç Saati"
@@ -15450,6 +15682,9 @@ msgstr "Tedarikçi Birim Fiyatı"
 
 msgid "Supplier updated"
 msgstr "Tedarikçi güncellendi"
+
+msgid "Supplier warranty term"
+msgstr "Tedarikçi garanti koşulu"
 
 msgid "Supplier:"
 msgstr "Tedarikçi:"
@@ -16863,6 +17098,9 @@ msgstr "Günün saati"
 msgid "Time off"
 msgstr "Ara"
 
+msgid "Time remaining"
+msgstr "Kalan Zaman"
+
 msgid "Timecard"
 msgstr "Çalışma Saati Kaydı"
 
@@ -17181,6 +17419,9 @@ msgstr "Tarafından tetiklendi"
 msgid "Triggers"
 msgstr "Tetikleyiciler"
 
+msgid "Try again"
+msgstr "Tekrar Deneyin"
+
 msgid "Tuesday"
 msgstr "Salı"
 
@@ -17282,6 +17523,9 @@ msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
 
 msgid "Unit"
 msgstr "Birim"
+
+msgid "Unit complete"
+msgstr "Ünite Tamamlandı"
 
 msgid "Unit Cost"
 msgstr "Birim Maliyeti"
@@ -17410,7 +17654,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Başlıksız"
 
 msgid "Untitled Diagram"
 msgstr "Başlıksız Diyagram"
@@ -17739,6 +17983,9 @@ msgstr "Doğrulama Hatası"
 msgid "Verification failed"
 msgstr "Doğrulama başarısız"
 
+msgid "Verification page"
+msgstr "Doğrulama Sayfası"
+
 msgid "Verified"
 msgstr "Doğrulandı"
 
@@ -18028,6 +18275,9 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 msgid "Warning"
 msgstr "Uyarı"
 
+msgid "Warranty term"
+msgstr "Garanti koşulu"
+
 msgid "Watch"
 msgstr "İzle"
 
@@ -18039,6 +18289,9 @@ msgstr "Her sütunu otomatik olarak eşleştirdik. Devam etmeden önce aşağıd
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Sorunları hızlı bir şekilde sınıflandırıp çözeriz ve ekibiniz sisteme alışırken yanınızdayız"
+
+msgid "We will check the records you create in {companyName}, from the moment you start."
+msgstr "Başladığınız andan itibaren {companyName} içinde oluşturduğunuz kayıtları kontrol edeceğiz."
 
 msgid "We've sent a verification code to {email}"
 msgstr "Doğrulama kodunu {email} adresine gönderdik"
@@ -18100,11 +18353,17 @@ msgstr "8. Hafta geçişi"
 msgid "Week of {0}"
 msgstr "{0} haftası"
 
+msgid "week streak"
+msgstr "hafta serisi"
+
 msgid "Weekly"
 msgstr "Haftalık"
 
 msgid "Weekly demand"
 msgstr "Haftalık talep"
+
+msgid "Weekly XP goal"
+msgstr "Haftalık XP Hedefi"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -18566,6 +18825,9 @@ msgstr "İş Telefonu"
 msgid "Work shift tracking is active."
 msgstr "Çalışma vardiyası takibi aktif."
 
+msgid "Work through a track, prove it on real work in Carbon, and earn a certificate your manager can verify."
+msgstr "Bir parçayı tamamlayın, Carbon'da gerçek işte kanıtlayın ve yöneticinizin doğrulayabileceği bir sertifika kazanın."
+
 msgid "Workflow"
 msgstr "İş Akışı"
 
@@ -18639,6 +18901,17 @@ msgstr "Kullanıcı arayüzü stilini tema ayarları aracılığıyla istediğin
 msgid "You can only see this key once. Store it safely."
 msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde saklayın."
 
+#. placeholder {0}: gate.until.slice(0, 10)
+msgid "You can retake the exam after {0}."
+msgstr "{0}'dan sonra sınavı yeniden alabilirsiniz."
+
+#. placeholder {0}: formatDate(examGate.until.slice(0, 10), undefined, locale)
+msgid "You can retake the exam after {0}. Use the time to revisit the units you found hardest."
+msgstr "{0}'dan sonra sınavı yeniden alabilirsiniz. Zamanı en zor bulduğunuz üniteleri tekrar ziyaret etmek için kullanın."
+
+msgid "You cannot return to a question once you answer it."
+msgstr "Bir soruyu cevapladıktan sonra ona geri dönemezsiniz."
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "Saatinizi <0/> tarihinde kaydettiniz. Aşağıda çıkış saatinizi düzenleyebilir veya hala çalışmakta olduğunuzu onaylayabilirsiniz."
 
@@ -18675,6 +18948,9 @@ msgstr "Siz yönetiyorsunuz"
 
 msgid "You name a project owner with decision authority"
 msgstr "Bir proje sahibini karar verme yetkisiyle atarsınız"
+
+msgid "You need 80% to certify. Your per-topic scores are below — revisit the weakest ones, then come back when the cooldown ends."
+msgstr "Sertifika almak için %80'e ihtiyacınız var. Konuya göre puanlarınız aşağıda — en zayıf olanları tekrar ziyaret edin, sonra bekleme süresi bittiğinde geri dönün."
 
 msgid "You received this item"
 msgstr "Bu ürünü siz aldınız"
@@ -18786,6 +19062,9 @@ msgstr "Takımınız, yapı ve erişim."
 
 msgid "Your vendor list"
 msgstr "Satıcı listeniz"
+
+msgid "Your weekly goal"
+msgstr "Haftalık hedefiniz"
 
 msgid "yourself"
 msgstr "kendiniz"

@@ -2,6 +2,8 @@ import { isValidTimeZone } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { operationTypes, standardFactorType } from "../shared";
+import { WEEKLY_GOAL_OPTIONS } from "./learn/gamify";
+import { learnTrackSlugs } from "./learn/types";
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -354,6 +356,98 @@ export const trainingCompletionValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   period: zfd.text(z.string().optional())
 });
+
+// ---------------------------------------------------------------- Carbon Learn
+// Every learner-facing write is graded server-side, so these validators only
+// carry what the client is allowed to assert: an attempt id it was given, and
+// the option ids it picked. Never a `startedAt`, never a `correct` flag.
+
+export const learnQuizSubmissionValidator = z.object({
+  attemptId: z.string().min(1, { message: "Attempt is required" }),
+  responses: z
+    .string()
+    .min(1, { message: "Answer at least one question" })
+    .transform((value, ctx) => {
+      try {
+        const parsed = JSON.parse(value) as Array<{
+          questionSlug: string;
+          selected: string | string[];
+        }>;
+        if (!Array.isArray(parsed)) throw new Error("not an array");
+        return parsed.filter(
+          (r) => typeof r?.questionSlug === "string" && r.selected !== undefined
+        );
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid responses"
+        });
+        return z.NEVER;
+      }
+    })
+});
+
+export const learnExamStartValidator = z.object({
+  trackSlug: z.enum(learnTrackSlugs, {
+    error: "Track is required"
+  }),
+  honorAccepted: z.literal("on", {
+    error: "You must accept the honor statement"
+  })
+});
+
+export const learnExamAnswerValidator = z.object({
+  attemptId: z.string().min(1, { message: "Attempt is required" }),
+  questionSlug: z.string().min(1, { message: "Question is required" }),
+  selected: z.union([z.string(), z.array(z.string())])
+});
+
+export const learnExamFinalizeValidator = z.object({
+  attemptId: z.string().min(1, { message: "Attempt is required" })
+});
+
+export const learnChallengeStartValidator = z.object({
+  challengeSlug: z.string().min(1, { message: "Challenge is required" })
+});
+
+export const learnChallengeCheckValidator = z.object({
+  attemptId: z.string().min(1, { message: "Attempt is required" })
+});
+
+export const learnRenewalStartValidator = z.object({
+  certificateId: z.string().min(1, { message: "Certificate is required" })
+});
+
+export const learnAssignmentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  trackSlug: z.enum(learnTrackSlugs, {
+    error: "Track is required"
+  }),
+  // A multiselect posts one FormData entry per selection. `zfd.repeatable` is
+  // what collects them into an array; a bare `z.array` sees a single string and
+  // rejects a perfectly valid multi-group submission.
+  groupIds: zfd.repeatable(
+    z.array(z.string()).min(1, { message: "At least one group is required" })
+  ),
+  dueDate: zfd.text(z.string().optional())
+});
+
+export const learnCertificateRevokeValidator = z.object({
+  certificateId: z.string().min(1, { message: "Certificate is required" }),
+  reason: z.string().trim().min(1, { message: "A reason is required" })
+});
+
+export const learnPreferenceValidator = z.object({
+  weeklyGoalXp: zfd.numeric(
+    z
+      .number()
+      .refine((n) => (WEEKLY_GOAL_OPTIONS as readonly number[]).includes(n), {
+        message: "Choose 100, 200 or 500"
+      })
+  )
+});
+
+export type LearnAssignment = z.infer<typeof learnAssignmentValidator>;
 
 export const trainingFrequency = ["Once", "Quarterly", "Annual"] as const;
 

@@ -8,6 +8,7 @@ import { SAMPLE_ISSUE } from "./issue.samples";
 import JobTravelerPDF, { JobTravelerPageContent } from "./JobTravelerPDF";
 import { SAMPLE_JOB_TRAVELER } from "./jobTraveler.samples";
 import KanbanLabelPDF from "./KanbanLabelPDF";
+import LearnCertificatePDF from "./LearnCertificatePDF";
 import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
@@ -32,6 +33,7 @@ export {
   JobTravelerPageContent,
   JobTravelerPDF,
   KanbanLabelPDF,
+  LearnCertificatePDF,
   PackingSlipPDF,
   ProductLabelPDF,
   PurchaseOrderPDF,

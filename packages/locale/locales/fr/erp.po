@@ -97,6 +97,15 @@ msgstr "{0} ordres de fabrication créés"
 msgid "{0} lines to map"
 msgstr "{0} lignes à mapper"
 
+#. placeholder {0}: unit.estimatedMinutes
+msgid "{0} min"
+msgstr "{0} min"
+
+#. placeholder {0}: result.correctCount
+#. placeholder {1}: result.questionCount
+msgid "{0} of {1} correct"
+msgstr "{0} sur {1} correctes"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -125,6 +134,11 @@ msgstr "{0} enregistré"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} lignes"
+
+#. placeholder {0}: track.exam.questionCount
+#. placeholder {1}: track.exam.timeLimitMinutes
+msgid "{0} scenario questions, {1} minutes, one question at a time. You need 80% to pass."
+msgstr "{0} questions de scénario, {1} minutes, une question à la fois. Vous avez besoin de 80 % pour réussir."
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -156,6 +170,11 @@ msgstr "{0} valeurs"
 msgid "{0} values missing"
 msgstr "{0} valeurs manquantes"
 
+#. placeholder {0}: ceiling - totalXp
+#. placeholder {1}: level + 1
+msgid "{0} XP to level {1}"
+msgstr "{0} XP pour passer au niveau {1}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}j"
@@ -186,6 +205,9 @@ msgstr "{0}h requis"
 msgid "{0}h staffed"
 msgstr "{0}h pourvus"
 
+msgid "{activeDays} active days"
+msgstr "{activeDays} jours actifs"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} pièces ignorées – elles ont déjà des ordres de fabrication ouverts"
 
@@ -194,6 +216,12 @@ msgstr "{apOverduePct}% des dettes fournisseurs"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% des créances clients"
+
+msgid "{badgeCount} badge"
+msgstr "{badgeCount} badge"
+
+msgid "{badgeCount} badges"
+msgstr "{badgeCount} badges"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Envisagez de pointer cette pièce directement vers le successeur final."
@@ -227,6 +255,9 @@ msgstr "{hiddenCount} autres : {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insérés, {updated} mis à jour, {0} nécessitent correction, {1} ignorés."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "Le certificat {trackTitle} de {learnerName} sera immédiatement affiché comme révoqué, y compris sur sa page de vérification publique. La raison est enregistrée sur le certificat."
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# ligne} other {# lignes}}"
 
@@ -258,6 +289,9 @@ msgstr "{orderLabel} sera rouvert pour modification en tant que révision {0}. L
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Supprimer définitivement # ligne ?} other {Supprimer définitivement # lignes ?}}"
 
+msgid "{questionCount} scenario questions, {timeLimitMinutes} minutes. One question at a time, and you cannot go back. You need 80% to pass."
+msgstr "{questionCount} questions de scénario, {timeLimitMinutes} minutes. Une question à la fois, et vous ne pouvez pas revenir en arrière. Vous avez besoin de 80 % pour réussir."
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase restante} other {# phases restantes}}"
 
@@ -276,6 +310,9 @@ msgstr "{total} phases pour être en direct"
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unité} other {# unités}}"
 
+msgid "{trackTitle} certification"
+msgstr "Certification {trackTitle}"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non comptabilisées}}"
 
@@ -288,8 +325,20 @@ msgstr "{updatedJobCount} ordres de fabrication mis à jour"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} téléchargé — champs remplis à partir du document."
 
+msgid "{value} XP — a unit a week"
+msgstr "{value} XP — une unité par semaine"
+
+msgid "{value} XP — ambitious"
+msgstr "{value} XP — ambitieux"
+
+msgid "{value} XP — steady"
+msgstr "{value} XP — régulier"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# ligne diffère de la quantité attendue} other {# lignes diffèrent de la quantité attendue}}"
+
+msgid "{weekXp} of {goalXp} XP this week"
+msgstr "{weekXp} sur {goalXp} XP cette semaine"
 
 msgid "{years}yr"
 msgstr "{years}an"
@@ -303,10 +352,20 @@ msgstr "% du total"
 msgid "% of Total"
 msgstr "% du Total"
 
+msgid "← {trackTitle}"
+msgstr "← {trackTitle}"
+
+msgid "← All tracks"
+msgstr "← Tous les parcours"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} redirigé depuis {1} obsolète"
+
+#. placeholder {0}: result.xpAwarded
+msgid "+{0} XP"
+msgstr "+{0} XP"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -833,6 +892,9 @@ msgstr "Le statut d'une expédition change"
 msgid "A shipment's tracking number changes"
 msgstr "Le numéro de suivi d'une expédition change"
 
+msgid "A short open-book check on what has changed. Passing extends your certificate by 12 months."
+msgstr "Une courte vérification à livre ouvert sur ce qui a changé. La réussite prolonge votre certificat de 12 mois."
+
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 msgstr "Une seule ligne d'écriture équilibrée sera comptabilisée à la date indiquée ci-dessous, la différence étant imputée au Report à nouveau."
 
@@ -883,6 +945,9 @@ msgstr "Un Outil est un Article physique utilisé pour fabriquer une Pièce qui 
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Un Utilisateur enregistre la date de Péremption pour chaque Lot de production ou numéro de série quand les marchandises sont reçues. À utiliser quand les Fournisseurs expédient des Lots avec différentes dates de péremption."
+
+msgid "A week counts toward your streak when you reach this much XP. Weeks, not days — so a weekend off never breaks it."
+msgstr "Une semaine compte pour votre série quand vous atteignez ce montant de XP. Des semaines, pas des jours — donc un weekend de congé ne l'interrompt jamais."
 
 msgid "abilities"
 msgstr "Compétences"
@@ -2374,11 +2439,17 @@ msgstr "Actifs"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Actifs, passifs et capitaux propres à une date"
 
+msgid "Assign a track"
+msgstr "Attribuer un parcours"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Attribuer des imprimantes aux sites. L'expédition, la réception et les postes de travail héritent du paramètre par défaut du site sauf s'ils sont remplacés."
 
 msgid "Assign To"
 msgstr "Attribuer à"
+
+msgid "Assign to groups"
+msgstr "Attribuer aux groupes"
 
 msgid "Assign to Groups"
 msgstr "Attribuer à des groupes"
@@ -2564,6 +2635,9 @@ msgstr "En attente d'approbation"
 msgid "Back"
 msgstr "Retour"
 
+msgid "Back to the track"
+msgstr "Retour au parcours"
+
 msgid "Back to traceability"
 msgstr "Retour à la traçabilité"
 
@@ -2575,6 +2649,9 @@ msgstr "La sauvegarde a échoué"
 
 msgid "Backups"
 msgstr "Sauvegardes"
+
+msgid "Badges"
+msgstr "Badges"
 
 msgid "Balance"
 msgstr "Solde"
@@ -2884,6 +2961,9 @@ msgstr "Par Emplacement"
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
 
+msgid "By topic"
+msgstr "Par sujet"
+
 msgid "CAD Model"
 msgstr "Modèle CAO"
 
@@ -3031,6 +3111,9 @@ msgstr "Capacité"
 msgid "Capacity reservation"
 msgstr "Réservation de capacité"
 
+msgid "Capstone"
+msgstr "Projet culminant"
+
 msgid "Caption"
 msgstr "Légende"
 
@@ -3143,14 +3226,31 @@ msgstr "Version de certification"
 msgid "Certificate Number"
 msgstr "Numéro de Certificat"
 
+msgid "Certificate renewed"
+msgstr "Certificat renouvelé"
+
 msgid "Certificate uploaded"
 msgstr "Certificat téléchargé"
+
+msgid "Certificates"
+msgstr "Certificats"
+
+msgid "Certification exam"
+msgstr "Examen de certification"
 
 msgid "Certified"
 msgstr "Certifié"
 
+#. placeholder {0}: formatDate(examGate.expiresAt.slice(0, 10), undefined, locale)
+#. placeholder {0}: formatDate(state.expiresAt.slice(0, 10), undefined, locale)
+msgid "Certified until {0}"
+msgstr "Certifié jusqu'au {0}"
+
 msgid "Chain"
 msgstr "Chaîner"
+
+msgid "Challenges look at real records you create here. If you would rather not add practice data to this company, ask an admin to set up a demo company from Settings → Demo Data and switch to it first."
+msgstr "Les défis examinent les enregistrements réels que vous créez ici. Si vous préférez ne pas ajouter de données de pratique à cette société, demandez à un administrateur de configurer une société de démonstration à partir de Paramètres → Données de démonstration et basculez-la en premier."
 
 msgid "Champion users are available for training and data validation"
 msgstr "Les utilisateurs champions sont disponibles pour la formation et la validation des données"
@@ -3203,6 +3303,9 @@ msgstr "Modifier le type"
 msgid "Change Type"
 msgstr "Changer le type"
 
+msgid "Change weekly goal"
+msgstr "Modifier l'objectif hebdomadaire"
+
 msgid "Changed By"
 msgstr "Modifié par"
 
@@ -3230,6 +3333,12 @@ msgstr "Plan comptable"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check my answers"
+msgstr "Vérifier mes réponses"
+
+msgid "Check my work"
+msgstr "Vérifier mon travail"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Vérifiez le registre des articles pour tous les articles ayant une quantité disponible négative à la fin de la période — généralement un reçu manquant ou une comptabilisation désordonnée qui fausse la valeur des stocks et le coût des marchandises vendues. Marquez comme fait une fois examiné, ou ignorez avec une raison."
 
@@ -3256,6 +3365,9 @@ msgstr "Choisissez une ligne à gauche pour voir d'où son stock peut provenir."
 
 msgid "Choose a serial number"
 msgstr "Choisir un numéro de série"
+
+msgid "Choose all that apply"
+msgstr "Cochez tout ce qui s'applique"
 
 msgid "Choose another file"
 msgstr "Choisir un autre fichier"
@@ -3487,6 +3599,9 @@ msgstr "Terminer le travail"
 
 msgid "Complete Stock Transfer"
 msgstr "Terminer le transfert de stock"
+
+msgid "Complete these hands-on challenges first:"
+msgstr "Terminer d'abord ces défis pratiques :"
 
 msgid "Completed"
 msgstr "Terminé"
@@ -3840,6 +3955,9 @@ msgstr "Conversion en cours…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire sur une ligne de commande, reçu ou facture — acheter en cartons de 12, stocker en unités."
+
+msgid "Cooling down"
+msgstr "Refroidissement"
 
 msgid "Copied link to clipboard"
 msgstr "Lien copié dans le presse-papiers"
@@ -5568,6 +5686,9 @@ msgstr "Documentation"
 msgid "Docs & videos"
 msgstr "Docs et vidéos"
 
+msgid "Docs to revisit"
+msgstr "Documentation à revoir"
+
 msgid "Document"
 msgstr "Document"
 
@@ -5613,6 +5734,9 @@ msgstr "Télécharger"
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "Télécharger {0} ligne(s) à corriger"
+
+msgid "Download certificate"
+msgstr "Télécharger le certificat"
 
 msgid "Download CSV"
 msgstr "Télécharger CSV"
@@ -5695,6 +5819,7 @@ msgstr "Échéance"
 msgid "Due (by due date)"
 msgstr "À échéance (selon la date d'échéance)"
 
+#. placeholder {0}: formatDate(state.dueDate, undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Échéance {0}"
@@ -5857,6 +5982,9 @@ msgstr "Modifier l'actif"
 
 msgid "Edit Asset Class"
 msgstr "Modifier la catégorie d'immobilisation"
+
+msgid "Edit assignment"
+msgstr "Modifier l'attribution"
 
 msgid "Edit Assignment"
 msgstr "Modifier l'affectation"
@@ -6520,6 +6648,9 @@ msgstr "Tous les tests dans le périmètre réussissent dans votre système conf
 msgid "Every match"
 msgstr "Chaque correspondance"
 
+msgid "Every question has to be right to pass this unit. Read the explanations below, then try again — the XP is lower on a retry, but understanding it is the point."
+msgstr "Chaque question doit être correcte pour réussir cette unité. Lisez les explications ci-dessous, puis réessayez — le XP est inférieur lors d'une nouvelle tentative, mais la compréhension est l'essentiel."
+
 msgid "Every required action has already been added."
 msgstr "Chaque action requise a déjà été ajoutée."
 
@@ -6528,6 +6659,9 @@ msgstr "Chaque tâche requise doit être faite ou ignorée avant que la période
 
 msgid "Every row was imported successfully."
 msgstr "Chaque ligne a été importée avec succès."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "Tous les utilisateurs de ces groupes verront le parcours sur leur centre d'apprentissage"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Toute personne travaillant n'importe quel jour de la semaine choisie prolonge son quart des heures que vous définissez. Seuls les départements et quarts que vous filtrez sont affectés."
@@ -6540,6 +6674,9 @@ msgstr "Tout le reste"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Tout le reste couvre les personnes, les importations, les intégrations et l'API — tout ce qui n'est pas l'un de vos flux de travail."
+
+msgid "Evidence recorded:"
+msgstr "Preuve enregistrée :"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Dépasse {PO_EMAIL_ATTACHMENT_LIMIT_MB} Mo au total — supprimez certaines pièces jointes pour envoyer."
@@ -6674,6 +6811,7 @@ msgstr "Lots Expirés"
 msgid "Expires"
 msgstr "Expire"
 
+#. placeholder {0}: formatDate(certificate.expiresAt.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -7210,8 +7348,14 @@ msgstr "Produits finis"
 msgid "Finish"
 msgstr "Finition"
 
+msgid "Finish a module to earn your first badge"
+msgstr "Terminez un Module pour gagner votre premier badge"
+
 msgid "Finish onboarding"
 msgstr "Terminer l'intégration"
+
+msgid "Finish the track's hands-on challenges before sitting the exam."
+msgstr "Terminez les défis pratiques du parcours avant de passer l'examen."
 
 msgid "Finish To"
 msgstr "Terminer vers"
@@ -7724,6 +7868,9 @@ msgstr "Gérer les écritures comptables récurrentes et contrepassées"
 msgid "Hands-on"
 msgstr "Pratique"
 
+msgid "Hands-on checks run in {companyName}"
+msgstr "Les vérifications pratiques s'exécutent dans {companyName}"
+
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Support pratique et réactif pendant les 3–4 premières semaines"
 
@@ -7957,6 +8104,9 @@ msgstr "I (réduit)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "J'ai une base raisonnable de croire que cet individu est une personne des États-Unis tel que défini dans 22 CFR 120.62"
+
+msgid "I will answer on my own, without help from another person or from anyone else's answers."
+msgstr "Je répondrai seul, sans aide d'une autre personne ou des réponses de quelqu'un d'autre."
 
 msgid "I'm Still Working"
 msgstr "Je travaille toujours"
@@ -8655,6 +8805,9 @@ msgstr "Opération d'OF"
 msgid "Job Operation"
 msgstr "Opération d'OF"
 
+msgid "Job operation batch"
+msgstr "Lot de production d'opération"
+
 msgid "Job Operations"
 msgstr "Opérations d'OF"
 
@@ -8882,8 +9035,14 @@ msgstr "Délai d'approvisionnement :"
 msgid "Learn"
 msgstr "Apprendre"
 
+msgid "Learn Carbon"
+msgstr "Apprendre Carbon"
+
 msgid "Learn more"
 msgstr "En savoir plus"
+
+msgid "Learning activity for the last {weeks} weeks: {activeDays} active days, {totalXp} XP"
+msgstr "Activité d'apprentissage des {weeks} dernières semaines : {activeDays} jours actifs, {totalXp} XP"
 
 msgid "Leave any related receipts untouched"
 msgstr "Laisser les reçus connexes intacts"
@@ -8911,6 +9070,9 @@ msgstr "Pièces excédentaires détectées"
 
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Le matériel préparé restant revient quand l'ensemble du travail est terminé."
+
+msgid "Less"
+msgstr "Moins"
 
 msgid "Less manual work"
 msgstr "Moins de travail manuel"
@@ -8941,6 +9103,9 @@ msgstr "Configurons votre compte"
 
 msgid "Letter"
 msgstr "Lettre"
+
+msgid "Level"
+msgstr "Niveau"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Compte de passif pour les impôts différés des amortissements accélérés"
@@ -10778,6 +10943,9 @@ msgstr "Non configuré"
 msgid "Not enough jobs to cover quantity"
 msgstr "Pas assez d'ordres de fabrication pour couvrir la quantité"
 
+msgid "Not passed"
+msgstr "Non réussi"
+
 msgid "Not reached"
 msgstr "Non atteint"
 
@@ -10897,6 +11065,9 @@ msgstr "de"
 msgid "of {0}h"
 msgstr "de {0}h"
 
+msgid "of {goalXp} XP"
+msgstr "sur {goalXp} XP"
+
 msgid "Off — handled outside the sync"
 msgstr "Off — géré en dehors de la synchronisation"
 
@@ -11010,6 +11181,9 @@ msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Seuls les employés qualifiés peuvent être planifiés pour et exécuter ce processus"
 
+msgid "Only you can see your activity, XP, and streak."
+msgstr "Seul vous pouvez voir votre activité, XP et votre série."
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape a autorisé la connexion, mais son enregistrement a échoué. Réessayez de vous connecter."
 
@@ -11054,6 +11228,9 @@ msgstr "Comptes clients ouverts"
 
 msgid "Open Audit Log"
 msgstr "Ouvrir le journal d'audit"
+
+msgid "Open certificate"
+msgstr "Ouvrir le certificat"
 
 msgid "Open date"
 msgstr "Date d'ouverture"
@@ -11259,6 +11436,9 @@ msgstr "Taux fixe optionnel utilisé lors de la traduction des soldes des capita
 
 msgid "Optional pages & sections"
 msgstr "Pages et sections optionnelles"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "Optionnel. Après cette date, un parcours inachevé s'affiche comme En retard."
 
 msgid "Options"
 msgstr "Options"
@@ -11540,6 +11720,9 @@ msgstr "Type de tiers"
 
 msgid "Pass"
 msgstr "Réussir"
+
+msgid "Pass a track's exam to earn a certificate"
+msgstr "Réussissez l'examen d'un parcours pour obtenir un certificat"
 
 msgid "Passed"
 msgstr "Réussi"
@@ -12609,6 +12792,22 @@ msgstr "Trimestriel"
 msgid "Question"
 msgstr "Question"
 
+#. placeholder {0}: current.index + 1
+#. placeholder {0}: index + 1
+#. placeholder {1}: current.total
+#. placeholder {1}: questions.length
+msgid "Question {0} of {1}"
+msgstr "Question {0} sur {1}"
+
+msgid "Question performance"
+msgstr "Performance des questions"
+
+msgid "Questions"
+msgstr "Questions"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "Questions auxquelles il est répondu correctement moins de 60 % du temps"
+
 msgid "Queued"
 msgstr "En file d'attente"
 
@@ -12708,11 +12907,17 @@ msgstr "Renvoyer"
 msgid "Reactivate"
 msgstr "Réactiver"
 
+msgid "Read this first"
+msgstr "Lire ceci d'abord"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Lisez ceci attentivement — ce que Carbon fera et ne fera pas pour votre configuration. Quand cela vous convient, marquez-le comme accepté ci-dessous."
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "Lisez ceci attentivement. Quand c'est correct, validez en bas. C'est la déclaration à laquelle votre accord commercial fait référence, sans prix ni conditions légales ici."
+
+msgid "Read why"
+msgstr "Lire pourquoi"
 
 msgid "Readable"
 msgstr "Lisible"
@@ -13107,6 +13312,12 @@ msgstr "Renommer le flux de travail"
 msgid "Rendering label preview..."
 msgstr "Rendu de l'aperçu de l'étiquette..."
 
+msgid "Renew now"
+msgstr "Renouveler maintenant"
+
+msgid "Renew your certificate"
+msgstr "Renouveler votre certificat"
+
 msgid "Reopen"
 msgstr "Rouvrir"
 
@@ -13478,11 +13689,20 @@ msgstr "Révisions"
 msgid "Revoke"
 msgstr "Révoquer"
 
+msgid "Revoke certificate"
+msgstr "Révoquer le certificat"
+
 msgid "Revoke Invite"
 msgstr "Révoquer l'invitation"
 
 msgid "Revoke Invites"
 msgstr "Révoquer les invitations"
+
+msgid "Revoke this certificate?"
+msgstr "Révoquer ce certificat ?"
+
+msgid "Revoked"
+msgstr "Révoqué"
 
 msgid "Rework"
 msgstr "Retouche"
@@ -14997,6 +15217,9 @@ msgstr "Démarrer"
 msgid "Start {0} Day Free Trial"
 msgstr "Commencer l'essai gratuit de {0} jours"
 
+msgid "Start challenge"
+msgstr "Démarrer le défi"
+
 msgid "Start counting"
 msgstr "Commencer le comptage"
 
@@ -15026,6 +15249,15 @@ msgstr "Début de l'exercice comptable"
 
 msgid "Start of Tax Year"
 msgstr "Début de l'année fiscale"
+
+msgid "Start the exam"
+msgstr "Démarrer l'examen"
+
+msgid "Start the quiz"
+msgstr "Démarrer le quiz"
+
+msgid "Start the renewal quiz"
+msgstr "Démarrer le quiz de renouvellement"
 
 msgid "Start Time"
 msgstr "Heure de début"
@@ -15450,6 +15682,9 @@ msgstr "Prix unitaire du fournisseur"
 
 msgid "Supplier updated"
 msgstr "Fournisseur mis à jour"
+
+msgid "Supplier warranty term"
+msgstr "Condition de garantie fournisseur"
 
 msgid "Supplier:"
 msgstr "Fournisseur :"
@@ -16863,6 +17098,9 @@ msgstr "Heure du jour"
 msgid "Time off"
 msgstr "Congé"
 
+msgid "Time remaining"
+msgstr "Temps restant"
+
 msgid "Timecard"
 msgstr "Feuille de temps"
 
@@ -17181,6 +17419,9 @@ msgstr "Déclenché par"
 msgid "Triggers"
 msgstr "Déclencheurs"
 
+msgid "Try again"
+msgstr "Réessayer"
+
 msgid "Tuesday"
 msgstr "Mardi"
 
@@ -17282,6 +17523,9 @@ msgstr "Unique, en majuscules, sans espaces (10 caractères max.)"
 
 msgid "Unit"
 msgstr "Unité"
+
+msgid "Unit complete"
+msgstr "Unité terminée"
 
 msgid "Unit Cost"
 msgstr "Coût unitaire"
@@ -17410,7 +17654,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Type de document d'origine non pris en charge : {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Sans titre"
 
 msgid "Untitled Diagram"
 msgstr "Diagramme sans titre"
@@ -17739,6 +17983,9 @@ msgstr "Erreur de vérification"
 msgid "Verification failed"
 msgstr "Vérification échouée"
 
+msgid "Verification page"
+msgstr "Page de vérification"
+
 msgid "Verified"
 msgstr "Vérifié"
 
@@ -18028,6 +18275,9 @@ msgstr "Avertir lorsque la personne inspectant un article entrant est la même p
 msgid "Warning"
 msgstr "Avertissement"
 
+msgid "Warranty term"
+msgstr "Condition de garantie"
+
 msgid "Watch"
 msgstr "Regarder"
 
@@ -18039,6 +18289,9 @@ msgstr "Nous avons automatiquement mis en correspondance chaque colonne. Vérifi
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Nous trions et résolvons les problèmes rapidement pendant que votre équipe s'adapte"
+
+msgid "We will check the records you create in {companyName}, from the moment you start."
+msgstr "Nous vérifierons les enregistrements que vous créez dans {companyName}, à partir du moment où vous commencez."
 
 msgid "We've sent a verification code to {email}"
 msgstr "Nous avons envoyé un code de vérification à {email}"
@@ -18100,11 +18353,17 @@ msgstr "Basculement semaine 8"
 msgid "Week of {0}"
 msgstr "Semaine du {0}"
 
+msgid "week streak"
+msgstr "série de semaines"
+
 msgid "Weekly"
 msgstr "Hebdomadaire"
 
 msgid "Weekly demand"
 msgstr "Besoins hebdomadaires"
+
+msgid "Weekly XP goal"
+msgstr "Objectif XP hebdomadaire"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -18566,6 +18825,9 @@ msgstr "Téléphone professionnel"
 msgid "Work shift tracking is active."
 msgstr "Le suivi de l'équipe est actif."
 
+msgid "Work through a track, prove it on real work in Carbon, and earn a certificate your manager can verify."
+msgstr "Suivez un parcours, prouvez-le sur du travail réel dans Carbon, et gagnez un certificat que votre responsable peut vérifier."
+
 msgid "Workflow"
 msgstr "Flux de travail"
 
@@ -18639,6 +18901,17 @@ msgstr "Vous pouvez modifier le style de l'interface utilisateur à tout moment 
 msgid "You can only see this key once. Store it safely."
 msgstr "Vous ne pouvez voir cette clé qu'une seule fois. Conservez-la en sécurité."
 
+#. placeholder {0}: gate.until.slice(0, 10)
+msgid "You can retake the exam after {0}."
+msgstr "Vous pouvez reprendre l'examen après {0}."
+
+#. placeholder {0}: formatDate(examGate.until.slice(0, 10), undefined, locale)
+msgid "You can retake the exam after {0}. Use the time to revisit the units you found hardest."
+msgstr "Vous pouvez reprendre l'examen après {0}. Utilisez le temps pour revoir les unités que vous avez trouvées les plus difficiles."
+
+msgid "You cannot return to a question once you answer it."
+msgstr "Vous ne pouvez pas revenir à une question une fois que vous y avez répondu."
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "Vous êtes connecté à <0/>. Vous pouvez modifier votre heure de déconnexion ci-dessous ou confirmer que vous travaillez toujours."
 
@@ -18675,6 +18948,9 @@ msgstr "Vous menez"
 
 msgid "You name a project owner with decision authority"
 msgstr "Vous nommez un propriétaire de projet avec autorité décisionnelle."
+
+msgid "You need 80% to certify. Your per-topic scores are below — revisit the weakest ones, then come back when the cooldown ends."
+msgstr "Vous avez besoin de 80 % pour certifier. Vos scores par sujet sont ci-dessous — revisitez les plus faibles, puis revenez quand le délai d'attente se termine."
 
 msgid "You received this item"
 msgstr "Vous avez reçu cet article"
@@ -18786,6 +19062,9 @@ msgstr "Votre équipe, structure et accès."
 
 msgid "Your vendor list"
 msgstr "Votre liste de fournisseurs"
+
+msgid "Your weekly goal"
+msgstr "Votre objectif hebdomadaire"
 
 msgid "yourself"
 msgstr "vous-même"

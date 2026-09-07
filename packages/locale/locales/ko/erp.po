@@ -97,6 +97,15 @@ msgstr "{0}개의 작업 지시 생성됨"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: unit.estimatedMinutes
+msgid "{0} min"
+msgstr "{0}분"
+
+#. placeholder {0}: result.correctCount
+#. placeholder {1}: result.questionCount
+msgid "{0} of {1} correct"
+msgstr "{0}개 중 {1}개 정답"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -125,6 +134,11 @@ msgstr "{0} 등록됨"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 행"
+
+#. placeholder {0}: track.exam.questionCount
+#. placeholder {1}: track.exam.timeLimitMinutes
+msgid "{0} scenario questions, {1} minutes, one question at a time. You need 80% to pass."
+msgstr "{0}개의 시나리오 질문, {1}분. 한 번에 한 문제씩 풀며, 80%를 달성해야 통과합니다."
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -156,6 +170,11 @@ msgstr "{0}개 값"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+#. placeholder {0}: ceiling - totalXp
+#. placeholder {1}: level + 1
+msgid "{0} XP to level {1}"
+msgstr "레벨 {1}까지 {0} XP"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -186,6 +205,9 @@ msgstr "{0}h 필요"
 msgid "{0}h staffed"
 msgstr "{0}시간 인원배치"
 
+msgid "{activeDays} active days"
+msgstr "{activeDays} 활동일"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품 건너뜀 — 이미 미결 작업 지시가 있음"
 
@@ -194,6 +216,12 @@ msgstr "매입채무의 {apOverduePct}%"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "매출채권의 {arOverduePct}%"
+
+msgid "{badgeCount} badge"
+msgstr "{badgeCount}개 배지"
+
+msgid "{badgeCount} badges"
+msgstr "{badgeCount}개 배지"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
@@ -227,6 +255,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "{learnerName}의 {trackTitle} 인증서는 즉시 취소됨으로 표시되며, 공개 인증 페이지에서도 그렇게 표시됩니다. 취소 사유는 인증서에 기록됩니다."
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
 
@@ -258,6 +289,9 @@ msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열�
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
 
+msgid "{questionCount} scenario questions, {timeLimitMinutes} minutes. One question at a time, and you cannot go back. You need 80% to pass."
+msgstr "{questionCount}개의 시나리오 질문, {timeLimitMinutes}분. 한 번에 한 문제씩 풀며, 뒤로 돌아갈 수 없습니다. 80%를 달성해야 통과합니다."
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
 
@@ -276,6 +310,9 @@ msgstr "도입까지 {total}단계"
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 단위} other {# 단위}}"
 
+msgid "{trackTitle} certification"
+msgstr "{trackTitle} 자격증"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
 
@@ -288,8 +325,20 @@ msgstr "{updatedJobCount}개의 작업 지시 업데이트됨"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
 
+msgid "{value} XP — a unit a week"
+msgstr "{value} XP — 매주 한 번"
+
+msgid "{value} XP — ambitious"
+msgstr "{value} XP — 야심 찬"
+
+msgid "{value} XP — steady"
+msgstr "{value} XP — 꾸준한"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 라인이 예상 수량과 다릅니다} other {# 라인이 예상 수량과 다릅니다}}"
+
+msgid "{weekXp} of {goalXp} XP this week"
+msgstr "이번 주 {goalXp} XP 중 {weekXp}"
 
 msgid "{years}yr"
 msgstr "{years}년"
@@ -303,10 +352,20 @@ msgstr "총계의 %"
 msgid "% of Total"
 msgstr "전체의 %"
 
+msgid "← {trackTitle}"
+msgstr "← {trackTitle}"
+
+msgid "← All tracks"
+msgstr "← 모든 트랙"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ 대체된 {1}에서 {0}(으)로 전환됨"
+
+#. placeholder {0}: result.xpAwarded
+msgid "+{0} XP"
+msgstr "+{0} XP"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -833,6 +892,9 @@ msgstr "출하의 상태가 변경됨"
 msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
 
+msgid "A short open-book check on what has changed. Passing extends your certificate by 12 months."
+msgstr "변화된 내용을 확인하는 간단한 검사입니다. 통과하면 인증서가 12개월 연장됩니다."
+
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 msgstr "하나의 균형잡힌 분개가 아래의 날짜로 전기되며, 차액은 이익잉여금으로 상계됩니다."
 
@@ -883,6 +945,9 @@ msgstr "공구는 여러 작업 지시에 걸쳐 사용될 수 있는 부품을 
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유통기한을 기록합니다. 공급업체가 다른 유통기한을 가진 로트로 배송할 때 사용합니다."
+
+msgid "A week counts toward your streak when you reach this much XP. Weeks, not days — so a weekend off never breaks it."
+msgstr "이 정도의 XP를 달성하면 연속 기록에 포함됩니다. 일 단위가 아니라 주 단위로 계산되므로, 주말에 쉬어도 기록이 끊어지지 않습니다."
 
 msgid "abilities"
 msgstr "역량"
@@ -2374,11 +2439,17 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
+msgid "Assign a track"
+msgstr "트랙 할당"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
 msgid "Assign To"
 msgstr "할당"
+
+msgid "Assign to groups"
+msgstr "그룹에 할당"
 
 msgid "Assign to Groups"
 msgstr "그룹에 할당"
@@ -2564,6 +2635,9 @@ msgstr "승인 대기 중"
 msgid "Back"
 msgstr "뒤로"
 
+msgid "Back to the track"
+msgstr "트랙으로 돌아가기"
+
 msgid "Back to traceability"
 msgstr "추적성으로 돌아가기"
 
@@ -2575,6 +2649,9 @@ msgstr "백업 실패"
 
 msgid "Backups"
 msgstr "백업"
+
+msgid "Badges"
+msgstr "배지"
 
 msgid "Balance"
 msgstr "잔액"
@@ -2884,6 +2961,9 @@ msgstr "위치별"
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
+msgid "By topic"
+msgstr "주제별"
+
 msgid "CAD Model"
 msgstr "CAD 모델"
 
@@ -3031,6 +3111,9 @@ msgstr "용량"
 msgid "Capacity reservation"
 msgstr "용량 예약"
 
+msgid "Capstone"
+msgstr "캡스톤"
+
 msgid "Caption"
 msgstr "캡션"
 
@@ -3143,14 +3226,31 @@ msgstr "인증 버전"
 msgid "Certificate Number"
 msgstr "인증서 번호"
 
+msgid "Certificate renewed"
+msgstr "인증서 갱신됨"
+
 msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
+
+msgid "Certificates"
+msgstr "인증서"
+
+msgid "Certification exam"
+msgstr "자격증 시험"
 
 msgid "Certified"
 msgstr "인증됨"
 
+#. placeholder {0}: formatDate(examGate.expiresAt.slice(0, 10), undefined, locale)
+#. placeholder {0}: formatDate(state.expiresAt.slice(0, 10), undefined, locale)
+msgid "Certified until {0}"
+msgstr "{0}까지 인증됨"
+
 msgid "Chain"
 msgstr "체인"
+
+msgid "Challenges look at real records you create here. If you would rather not add practice data to this company, ask an admin to set up a demo company from Settings → Demo Data and switch to it first."
+msgstr "챌린지는 여기서 생성한 실제 레코드를 봅니다. 이 회사에 연습 데이터를 추가하지 않으려면 관리자에게 설정 → 데모 데이터에서 데모 회사를 설정하도록 요청한 후 먼저 전환하세요."
 
 msgid "Champion users are available for training and data validation"
 msgstr "주요 사용자는 교육 및 데이터 검증에 사용 가능합니다"
@@ -3203,6 +3303,9 @@ msgstr "변경 유형"
 msgid "Change Type"
 msgstr "변경 유형"
 
+msgid "Change weekly goal"
+msgstr "주간 목표 변경"
+
 msgid "Changed By"
 msgstr "변경자"
 
@@ -3230,6 +3333,12 @@ msgstr "계정과목표"
 msgid "Chat"
 msgstr "채팅"
 
+msgid "Check my answers"
+msgstr "내 답안 확인"
+
+msgid "Check my work"
+msgstr "내 작업 확인"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 기준 음수 현재고 수량이 있는 품목에 대해 품목 장부를 확인하십시오 — 일반적으로 입고 누락 또는 순서 없는 전기로 인해 재고 관리 가치 및 매출원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유를 포함하여 건너뜁니다."
 
@@ -3256,6 +3365,9 @@ msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는�
 
 msgid "Choose a serial number"
 msgstr "시리얼 번호를 선택하십시오"
+
+msgid "Choose all that apply"
+msgstr "해당하는 모두 선택"
 
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
@@ -3487,6 +3599,9 @@ msgstr "작업 완료"
 
 msgid "Complete Stock Transfer"
 msgstr "재고 이동 완료"
+
+msgid "Complete these hands-on challenges first:"
+msgstr "이 실습 챌린지를 먼저 완료 처리하세요:"
 
 msgid "Completed"
 msgstr "완료됨"
@@ -3840,6 +3955,9 @@ msgstr "변환 중…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
+
+msgid "Cooling down"
+msgstr "냉각 중"
 
 msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
@@ -5568,6 +5686,9 @@ msgstr "문서"
 msgid "Docs & videos"
 msgstr "문서 및 동영상"
 
+msgid "Docs to revisit"
+msgstr "다시 볼 문서"
+
 msgid "Document"
 msgstr "문서"
 
@@ -5613,6 +5734,9 @@ msgstr "다운로드"
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "수정할 {0}개 행 다운로드"
+
+msgid "Download certificate"
+msgstr "인증서 다운로드"
 
 msgid "Download CSV"
 msgstr "CSV 다운로드"
@@ -5695,6 +5819,7 @@ msgstr "기한"
 msgid "Due (by due date)"
 msgstr "기한 (기한일 기준)"
 
+#. placeholder {0}: formatDate(state.dueDate, undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -5857,6 +5982,9 @@ msgstr "자산 편집"
 
 msgid "Edit Asset Class"
 msgstr "자산 클래스 편집"
+
+msgid "Edit assignment"
+msgstr "할당 편집"
 
 msgid "Edit Assignment"
 msgstr "할당 편집"
@@ -6520,6 +6648,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every question has to be right to pass this unit. Read the explanations below, then try again — the XP is lower on a retry, but understanding it is the point."
+msgstr "모든 질문에 올바른 답을 해야 이 단위를 통과합니다. 아래 설명을 읽고 다시 시도하세요. 재시도 시 XP가 더 적지만, 이해하는 것이 중요합니다."
+
 msgid "Every required action has already been added."
 msgstr "필요한 모든 작업이 이미 추가되었습니다."
 
@@ -6528,6 +6659,9 @@ msgstr "기간을 마감하기 전에 모든 필수 작업을 완료하거나 �
 
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "이 그룹의 모든 사람이 자신의 학습 허브에서 트랙을 볼 수 있습니다."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "선택한 주의 어느 날을 근무하는 모든 사람이 설정한 시간만큼 교대 시간을 초과합니다. 필터링하는 부서와 교대만 영향을 받습니다."
@@ -6540,6 +6674,9 @@ msgstr "그 외 모든 것"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "그 외 모든 것은 인원, 가져오기, 연동 및 API를 다룹니다 — 워크플로 중 하나가 아닌 모든 것입니다."
+
+msgid "Evidence recorded:"
+msgstr "기록된 증거:"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
@@ -6674,6 +6811,7 @@ msgstr "만료된 배치"
 msgid "Expires"
 msgstr "만료"
 
+#. placeholder {0}: formatDate(certificate.expiresAt.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -7210,8 +7348,14 @@ msgstr "마감"
 msgid "Finish"
 msgstr "마감"
 
+msgid "Finish a module to earn your first badge"
+msgstr "모듈을 완료하여 첫 번째 배지를 획득하세요"
+
 msgid "Finish onboarding"
 msgstr "온보딩 완료"
+
+msgid "Finish the track's hands-on challenges before sitting the exam."
+msgstr "시험을 응시하기 전에 트랙의 실습 과제를 완료하세요."
 
 msgid "Finish To"
 msgstr "종료 시점"
@@ -7724,6 +7868,9 @@ msgstr "반복 및 역분개 전표 처리"
 msgid "Hands-on"
 msgstr "밀착형"
 
+msgid "Hands-on checks run in {companyName}"
+msgstr "{companyName}에서 실습 검사를 진행합니다"
+
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "첫 3–4주간 밀착형으로 신속하게 대응하는 지원"
 
@@ -7957,6 +8104,9 @@ msgstr "I (수월한 검사)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
+
+msgid "I will answer on my own, without help from another person or from anyone else's answers."
+msgstr "다른 사람의 도움이나 누군가의 답변 없이 스스로 답변하겠습니다."
 
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
@@ -8655,6 +8805,9 @@ msgstr "작업 지시 공정"
 msgid "Job Operation"
 msgstr "작업 지시 공정"
 
+msgid "Job operation batch"
+msgstr "공정 배치"
+
 msgid "Job Operations"
 msgstr "작업 지시 공정"
 
@@ -8882,8 +9035,14 @@ msgstr "리드타임:"
 msgid "Learn"
 msgstr "학습"
 
+msgid "Learn Carbon"
+msgstr "Carbon 배우기"
+
 msgid "Learn more"
 msgstr "자세히 알아보기"
+
+msgid "Learning activity for the last {weeks} weeks: {activeDays} active days, {totalXp} XP"
+msgstr "지난 {weeks}주의 학습 활동: {activeDays}활동일, {totalXp} XP"
 
 msgid "Leave any related receipts untouched"
 msgstr "관련 입고는 그대로 둡니다"
@@ -8911,6 +9070,9 @@ msgstr "잔여 부품 발견됨"
 
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "남은 스테이징 재료는 전체 작업이 완료될 때 반환됩니다."
+
+msgid "Less"
+msgstr "적게"
 
 msgid "Less manual work"
 msgstr "수작업 감소"
@@ -8941,6 +9103,9 @@ msgstr "계정을 설정해봅시다"
 
 msgid "Letter"
 msgstr "레터"
+
+msgid "Level"
+msgstr "레벨"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "가속 감가상각으로 인한 이연법인세 부채 계정"
@@ -10778,6 +10943,9 @@ msgstr "구성되지 않음"
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
+msgid "Not passed"
+msgstr "불합격"
+
 msgid "Not reached"
 msgstr "도달하지 않음"
 
@@ -10897,6 +11065,9 @@ msgstr "중"
 msgid "of {0}h"
 msgstr "{0}h 중"
 
+msgid "of {goalXp} XP"
+msgstr "{goalXp} XP 중"
+
 msgid "Off — handled outside the sync"
 msgstr "끔 — 동기화 외부에서 처리됨"
 
@@ -11010,6 +11181,9 @@ msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "자격이 있는 직원만 이 프로세스를 예약하고 실행할 수 있습니다."
 
+msgid "Only you can see your activity, XP, and streak."
+msgstr "오직 당신만 당신의 활동, XP, 연속 기록을 볼 수 있습니다."
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
@@ -11054,6 +11228,9 @@ msgstr "미결 매출채권"
 
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
+
+msgid "Open certificate"
+msgstr "인증서 열기"
 
 msgid "Open date"
 msgstr "개설 날짜"
@@ -11259,6 +11436,9 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "선택사항입니다. 이 날짜 이후 미완료된 트랙은 기한 초과로 표시됩니다."
 
 msgid "Options"
 msgstr "옵션"
@@ -11540,6 +11720,9 @@ msgstr "당사자 유형"
 
 msgid "Pass"
 msgstr "합격"
+
+msgid "Pass a track's exam to earn a certificate"
+msgstr "트랙의 시험에 합격하여 인증서를 획득하세요"
 
 msgid "Passed"
 msgstr "통과"
@@ -12609,6 +12792,22 @@ msgstr "분기별"
 msgid "Question"
 msgstr "질문"
 
+#. placeholder {0}: current.index + 1
+#. placeholder {0}: index + 1
+#. placeholder {1}: current.total
+#. placeholder {1}: questions.length
+msgid "Question {0} of {1}"
+msgstr "질문 {0}/{1}"
+
+msgid "Question performance"
+msgstr "문항 정답률"
+
+msgid "Questions"
+msgstr "문항"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "정답률이 60% 미만인 문항"
+
 msgid "Queued"
 msgstr "대기열"
 
@@ -12708,11 +12907,17 @@ msgstr "다시 보내기"
 msgid "Reactivate"
 msgstr "재활성화"
 
+msgid "Read this first"
+msgstr "먼저 이것을 읽으세요"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Carbon이 귀사의 설정에서 무엇을 하고 무엇을 하지 않을지 내용을 확인하세요. 내용이 맞다면 아래에서 동의로 표시하세요."
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "내용을 확인하세요. 맞다면 하단에서 서명하세요. 이 문서는 상업 계약에서 참조하는 진술서이며, 여기에는 가격이나 법률 조건이 포함되어 있지 않습니다."
+
+msgid "Read why"
+msgstr "이유를 읽으세요"
 
 msgid "Readable"
 msgstr "읽을 수 있음"
@@ -13107,6 +13312,12 @@ msgstr "워크플로우 이름 바꾸기"
 msgid "Rendering label preview..."
 msgstr "라벨 미리보기 생성 중..."
 
+msgid "Renew now"
+msgstr "지금 갱신하세요"
+
+msgid "Renew your certificate"
+msgstr "인증서 갱신"
+
 msgid "Reopen"
 msgstr "다시 열기"
 
@@ -13478,11 +13689,20 @@ msgstr "리비전"
 msgid "Revoke"
 msgstr "취소"
 
+msgid "Revoke certificate"
+msgstr "인증서 취소"
+
 msgid "Revoke Invite"
 msgstr "초대 취소"
 
 msgid "Revoke Invites"
 msgstr "초대 취소"
+
+msgid "Revoke this certificate?"
+msgstr "이 인증서를 취소하시겠습니까?"
+
+msgid "Revoked"
+msgstr "취소됨"
 
 msgid "Rework"
 msgstr "재작업"
@@ -14997,6 +15217,9 @@ msgstr "시작"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}일 무료 체험 시작"
 
+msgid "Start challenge"
+msgstr "과제 시작"
+
 msgid "Start counting"
 msgstr "실사 시작"
 
@@ -15026,6 +15249,15 @@ msgstr "회계연도 시작"
 
 msgid "Start of Tax Year"
 msgstr "회계연도 시작"
+
+msgid "Start the exam"
+msgstr "시험 시작"
+
+msgid "Start the quiz"
+msgstr "퀴즈 시작"
+
+msgid "Start the renewal quiz"
+msgstr "갱신 퀴즈 시작"
 
 msgid "Start Time"
 msgstr "시작 시간"
@@ -15450,6 +15682,9 @@ msgstr "공급업체 단가"
 
 msgid "Supplier updated"
 msgstr "공급업체가 업데이트되었습니다"
+
+msgid "Supplier warranty term"
+msgstr "공급업체 보증 조건"
 
 msgid "Supplier:"
 msgstr "공급업체:"
@@ -16863,6 +17098,9 @@ msgstr "하루 중 시간"
 msgid "Time off"
 msgstr "휴무"
 
+msgid "Time remaining"
+msgstr "남은 시간"
+
 msgid "Timecard"
 msgstr "근무기록"
 
@@ -17181,6 +17419,9 @@ msgstr "트리거된 사람/것"
 msgid "Triggers"
 msgstr "트리거"
 
+msgid "Try again"
+msgstr "다시 시도하세요"
+
 msgid "Tuesday"
 msgstr "화요일"
 
@@ -17282,6 +17523,9 @@ msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
 
 msgid "Unit"
 msgstr "단위"
+
+msgid "Unit complete"
+msgstr "단위 완료"
 
 msgid "Unit Cost"
 msgstr "단위원가"
@@ -17410,7 +17654,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "제목 없음"
 
 msgid "Untitled Diagram"
 msgstr "제목 없는 다이어그램"
@@ -17739,6 +17983,9 @@ msgstr "확인 오류"
 msgid "Verification failed"
 msgstr "검증 실패"
 
+msgid "Verification page"
+msgstr "검증 페이지"
+
 msgid "Verified"
 msgstr "확인됨"
 
@@ -18028,6 +18275,9 @@ msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리�
 msgid "Warning"
 msgstr "경고"
 
+msgid "Warranty term"
+msgstr "보증 조건"
+
 msgid "Watch"
 msgstr "시청"
 
@@ -18039,6 +18289,9 @@ msgstr "각 열을 자동으로 매칭했습니다. 계속하기 전에 아래 �
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "팀이 적응하는 동안 저희가 이슈를 신속하게 분류하고 해결합니다"
+
+msgid "We will check the records you create in {companyName}, from the moment you start."
+msgstr "{companyName}에서 당신이 생성하는 기록을 시작 순간부터 확인합니다."
 
 msgid "We've sent a verification code to {email}"
 msgstr "{email}로 인증 코드를 보냈습니다"
@@ -18100,11 +18353,17 @@ msgstr "8주차 전환"
 msgid "Week of {0}"
 msgstr "{0} 주"
 
+msgid "week streak"
+msgstr "주 연속 기록"
+
 msgid "Weekly"
 msgstr "매주"
 
 msgid "Weekly demand"
 msgstr "매주 소요량"
+
+msgid "Weekly XP goal"
+msgstr "매주 XP 목표"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -18566,6 +18825,9 @@ msgstr "직장 전화번호"
 msgid "Work shift tracking is active."
 msgstr "작업 교대 추적이 활성화되었습니다."
 
+msgid "Work through a track, prove it on real work in Carbon, and earn a certificate your manager can verify."
+msgstr "트랙을 진행하고, Carbon에서 실제 작업으로 입증한 후, 당신의 관리자가 검증할 수 있는 인증서를 획득하세요."
+
 msgid "Workflow"
 msgstr "워크플로"
 
@@ -18639,6 +18901,17 @@ msgstr "테마 설정을 통해 언제든지 UI 스타일을 변경할 수 있�
 msgid "You can only see this key once. Store it safely."
 msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하세요."
 
+#. placeholder {0}: gate.until.slice(0, 10)
+msgid "You can retake the exam after {0}."
+msgstr "{0} 후에 시험을 다시 응시할 수 있습니다."
+
+#. placeholder {0}: formatDate(examGate.until.slice(0, 10), undefined, locale)
+msgid "You can retake the exam after {0}. Use the time to revisit the units you found hardest."
+msgstr "{0} 후에 시험을 다시 응시할 수 있습니다. 그 시간을 사용하여 가장 어려웠던 단원들을 다시 검토하세요."
+
+msgid "You cannot return to a question once you answer it."
+msgstr "답변한 후에는 질문으로 돌아갈 수 없습니다."
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "당신은 <0/>에 근무를 시작했습니다. 아래에서 근무 종료 시간을 편집하거나 아직 작업 중임을 확인할 수 있습니다."
 
@@ -18675,6 +18948,9 @@ msgstr "귀사가 주도"
 
 msgid "You name a project owner with decision authority"
 msgstr "의사결정 권한이 있는 프로젝트 책임자를 지정합니다"
+
+msgid "You need 80% to certify. Your per-topic scores are below — revisit the weakest ones, then come back when the cooldown ends."
+msgstr "인증을 위해 80%가 필요합니다. 당신의 주제별 점수는 아래와 같습니다 — 가장 약한 부분들을 다시 검토한 후 쿨다운이 끝나면 돌아오세요."
 
 msgid "You received this item"
 msgstr "이 품목을 입고받았습니다"
@@ -18786,6 +19062,9 @@ msgstr "팀 구성, 조직, 권한."
 
 msgid "Your vendor list"
 msgstr "공급업체 목록"
+
+msgid "Your weekly goal"
+msgstr "매주 목표"
 
 msgid "yourself"
 msgstr "본인"

@@ -164,6 +164,14 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
+  [NotificationEvent.LearnAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.LearnCertificateExpiring]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
   [NotificationEvent.TrainingAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack

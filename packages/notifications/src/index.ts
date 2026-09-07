@@ -47,6 +47,10 @@ export enum NotificationEvent {
   TrainingReminder = "training-reminder",
   SupplierQuoteAssignment = "supplier-quote-assignment",
   SupplierQuoteResponse = "supplier-quote-response",
+  // Carbon Learn: a track assigned to a group, and the yearly nudge before a
+  // certificate lapses.
+  LearnAssignment = "learn-assignment",
+  LearnCertificateExpiring = "learn-certificate-expiring",
   TrainingAssignment = "training-assignment",
   ResourceTrainingAssignment = "resource-training-assignment",
   // Text authored by a customer's workflow; carries no source document to read.
@@ -106,6 +110,7 @@ export function isRecurringNotificationEvent(
   event: NotificationEvent
 ): boolean {
   switch (event) {
+    case NotificationEvent.LearnCertificateExpiring:
     case NotificationEvent.TrainingReminder:
       return true;
     default:
@@ -153,6 +158,8 @@ export function getNotificationTopic(
     case NotificationEvent.NonConformanceAssignment:
     case NotificationEvent.RiskAssignment:
       return NotificationTopic.Quality;
+    case NotificationEvent.LearnAssignment:
+    case NotificationEvent.LearnCertificateExpiring:
     case NotificationEvent.ProcedureAssignment:
     case NotificationEvent.TrainingAssignment:
     case NotificationEvent.TrainingReminder:
@@ -231,6 +238,10 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Risk assigned to you";
     case NotificationEvent.ProcedureAssignment:
       return "Procedure assigned to you";
+    case NotificationEvent.LearnAssignment:
+      return "Learning track assigned to you";
+    case NotificationEvent.LearnCertificateExpiring:
+      return "Your Carbon certificate is expiring";
     case NotificationEvent.TrainingAssignment:
       return "Training assigned to you";
     case NotificationEvent.TrainingReminder:
@@ -286,6 +297,10 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View gauge";
     case NotificationEvent.QuoteExpired:
       return "View quote";
+    case NotificationEvent.LearnAssignment:
+      return "Open Learn";
+    case NotificationEvent.LearnCertificateExpiring:
+      return "Renew now";
     case NotificationEvent.TrainingReminder:
       return "View training";
     case NotificationEvent.DigitalQuoteResponse:

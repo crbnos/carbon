@@ -97,6 +97,15 @@ msgstr "已创建{0}个工单"
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
 
+#. placeholder {0}: unit.estimatedMinutes
+msgid "{0} min"
+msgstr "{0} 分钟"
+
+#. placeholder {0}: result.correctCount
+#. placeholder {1}: result.questionCount
+msgid "{0} of {1} correct"
+msgstr "{0}/{1} 正确"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -125,6 +134,11 @@ msgstr "{0}已登记"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
+
+#. placeholder {0}: track.exam.questionCount
+#. placeholder {1}: track.exam.timeLimitMinutes
+msgid "{0} scenario questions, {1} minutes, one question at a time. You need 80% to pass."
+msgstr "{0} 道场景问题，{1} 分钟，一次一个问题。需要 80% 才能及格。"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -156,6 +170,11 @@ msgstr "{0} 个值"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: ceiling - totalXp
+#. placeholder {1}: level + 1
+msgid "{0} XP to level {1}"
+msgstr "{0} XP 至第 {1} 级"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}天"
@@ -186,6 +205,9 @@ msgstr "{0}h 需要"
 msgid "{0}h staffed"
 msgstr "{0}小时配置人员"
 
+msgid "{activeDays} active days"
+msgstr "{activeDays} 天活动"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}个零件已跳过——它们已有未结的工单"
 
@@ -194,6 +216,12 @@ msgstr "应付款项的{apOverduePct}%"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "应收款项的{arOverduePct}%"
+
+msgid "{badgeCount} badge"
+msgstr "{badgeCount} 个徽章"
+
+msgid "{badgeCount} badges"
+msgstr "{badgeCount} 个徽章"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
@@ -227,6 +255,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "{learnerName} 的 {trackTitle} 证书将立即显示为已撤销，包括在其公开验证页面上。原因记录在证书上。"
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
@@ -258,6 +289,9 @@ msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
+msgid "{questionCount} scenario questions, {timeLimitMinutes} minutes. One question at a time, and you cannot go back. You need 80% to pass."
+msgstr "{questionCount} 道场景问题，{timeLimitMinutes} 分钟。一次一个问题，无法返回。需要 80% 才能及格。"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
@@ -276,6 +310,9 @@ msgstr "{total}个阶段即可正式运行"
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
 
+msgid "{trackTitle} certification"
+msgstr "{trackTitle} 认证"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
@@ -288,8 +325,20 @@ msgstr "已更新{updatedJobCount}个工单"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "已上传{uploadedFileName}——字段从文件填充。"
 
+msgid "{value} XP — a unit a week"
+msgstr "{value} XP——每周一份"
+
+msgid "{value} XP — ambitious"
+msgstr "{value} XP——进阶"
+
+msgid "{value} XP — steady"
+msgstr "{value} XP——稳定"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {#行与预期数量不同} other {#行与预期数量不同}}"
+
+msgid "{weekXp} of {goalXp} XP this week"
+msgstr "{weekXp}/{goalXp} XP（本周）"
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -303,10 +352,20 @@ msgstr "占总计的%"
 msgid "% of Total"
 msgstr "占总计的%"
 
+msgid "← {trackTitle}"
+msgstr "← {trackTitle}"
+
+msgid "← All tracks"
+msgstr "← 所有课程"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} 从已淘汰的 {1} 重定向"
+
+#. placeholder {0}: result.xpAwarded
+msgid "+{0} XP"
+msgstr "+{0} XP"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -833,6 +892,9 @@ msgstr "发货单的状态已更改"
 msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
 
+msgid "A short open-book check on what has changed. Passing extends your certificate by 12 months."
+msgstr "关于变化内容的简短开卷测验。通过可将您的证书延期 12 个月。"
+
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 msgstr "一条平衡的分录将以下面的日期过账，差额冲至未分配利润。"
 
@@ -883,6 +945,9 @@ msgstr "刀具是用于制造零件的物理物料，可在多个工单中使用
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收货时记录每个生产批次或序列号的有效期。当供应商发运具有不同有效期的批次时使用。"
+
+msgid "A week counts toward your streak when you reach this much XP. Weeks, not days — so a weekend off never breaks it."
+msgstr "当达到此 XP 数时，该周计入您的连胜记录。以周为单位而非日——周末休息不会中断您的连胜。"
 
 msgid "abilities"
 msgstr "技能"
@@ -2374,11 +2439,17 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign a track"
+msgstr "分配课程"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
 msgid "Assign To"
 msgstr "分配给"
+
+msgid "Assign to groups"
+msgstr "分配给组"
 
 msgid "Assign to Groups"
 msgstr "分配给组"
@@ -2564,6 +2635,9 @@ msgstr "等待审批"
 msgid "Back"
 msgstr "返回"
 
+msgid "Back to the track"
+msgstr "返回课程"
+
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -2575,6 +2649,9 @@ msgstr "备份失败"
 
 msgid "Backups"
 msgstr "备份"
+
+msgid "Badges"
+msgstr "徽章"
 
 msgid "Balance"
 msgstr "余额"
@@ -2884,6 +2961,9 @@ msgstr "按位置"
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
+msgid "By topic"
+msgstr "按主题"
+
 msgid "CAD Model"
 msgstr "CAD 模型"
 
@@ -3031,6 +3111,9 @@ msgstr "产能"
 msgid "Capacity reservation"
 msgstr "产能预留"
 
+msgid "Capstone"
+msgstr "顶点项目"
+
 msgid "Caption"
 msgstr "标题"
 
@@ -3143,14 +3226,31 @@ msgstr "证书版本"
 msgid "Certificate Number"
 msgstr "证书编号"
 
+msgid "Certificate renewed"
+msgstr "证书已续期"
+
 msgid "Certificate uploaded"
 msgstr "证书已上传"
+
+msgid "Certificates"
+msgstr "证书"
+
+msgid "Certification exam"
+msgstr "认证考试"
 
 msgid "Certified"
 msgstr "已认证"
 
+#. placeholder {0}: formatDate(examGate.expiresAt.slice(0, 10), undefined, locale)
+#. placeholder {0}: formatDate(state.expiresAt.slice(0, 10), undefined, locale)
+msgid "Certified until {0}"
+msgstr "认证有效期至 {0}"
+
 msgid "Chain"
 msgstr "链"
+
+msgid "Challenges look at real records you create here. If you would rather not add practice data to this company, ask an admin to set up a demo company from Settings → Demo Data and switch to it first."
+msgstr "挑战基于您在此处创建的真实记录。如果您不想向此公司添加练习数据，请要求管理员从\"设置\"→\"演示数据\"设置演示公司，然后先切换到该公司。"
 
 msgid "Champion users are available for training and data validation"
 msgstr "冠军用户可用于培训和数据验证"
@@ -3203,6 +3303,9 @@ msgstr "变更类型"
 msgid "Change Type"
 msgstr "更改类型"
 
+msgid "Change weekly goal"
+msgstr "更改每周目标"
+
 msgid "Changed By"
 msgstr "更改者"
 
@@ -3230,6 +3333,12 @@ msgstr "会计科目表"
 msgid "Chat"
 msgstr "聊天"
 
+msgid "Check my answers"
+msgstr "检查我的答案"
+
+msgid "Check my work"
+msgstr "检查我的作业"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
 
@@ -3256,6 +3365,9 @@ msgstr "选择左侧的行以查看其库存可能来自何处。"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
+
+msgid "Choose all that apply"
+msgstr "选择所有适用的"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
@@ -3487,6 +3599,9 @@ msgstr "完成工作"
 
 msgid "Complete Stock Transfer"
 msgstr "完成库存转移"
+
+msgid "Complete these hands-on challenges first:"
+msgstr "先完成这些实践挑战："
 
 msgid "Completed"
 msgstr "已完成"
@@ -3840,6 +3955,9 @@ msgstr "转换中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
+
+msgid "Cooling down"
+msgstr "恢复中"
 
 msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
@@ -5568,6 +5686,9 @@ msgstr "文档"
 msgid "Docs & videos"
 msgstr "文档和视频"
 
+msgid "Docs to revisit"
+msgstr "需要修订的文档"
+
 msgid "Document"
 msgstr "文件"
 
@@ -5613,6 +5734,9 @@ msgstr "下载"
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "下载{0}行进行修复"
+
+msgid "Download certificate"
+msgstr "下载证书"
 
 msgid "Download CSV"
 msgstr "下载 CSV"
@@ -5695,6 +5819,7 @@ msgstr "到期"
 msgid "Due (by due date)"
 msgstr "截止期限（按截止日期）"
 
+#. placeholder {0}: formatDate(state.dueDate, undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "截止日期 {0}"
@@ -5857,6 +5982,9 @@ msgstr "编辑资产"
 
 msgid "Edit Asset Class"
 msgstr "编辑资产类别"
+
+msgid "Edit assignment"
+msgstr "编辑任务"
 
 msgid "Edit Assignment"
 msgstr "编辑分配"
@@ -6520,6 +6648,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了您的数据。
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every question has to be right to pass this unit. Read the explanations below, then try again — the XP is lower on a retry, but understanding it is the point."
+msgstr "必须答对所有问题才能通过此单元。请阅读下面的解释，然后重试——重试时获得的 XP 较少，但理解才是重点。"
+
 msgid "Every required action has already been added."
 msgstr "每个必需的操作已添加。"
 
@@ -6528,6 +6659,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "这些组中的所有人都将在其学习中心看到此课程"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "您选择的该周任何一天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
@@ -6540,6 +6674,9 @@ msgstr "其他所有内容"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属于您的工作流的内容。"
+
+msgid "Evidence recorded:"
+msgstr "证据已记录："
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 删除一些附件进行发送。"
@@ -6674,6 +6811,7 @@ msgstr "已过期的生产批次"
 msgid "Expires"
 msgstr "过期"
 
+#. placeholder {0}: formatDate(certificate.expiresAt.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -7210,8 +7348,14 @@ msgstr "成品"
 msgid "Finish"
 msgstr "完成"
 
+msgid "Finish a module to earn your first badge"
+msgstr "完成一个模块，赚取你的第一个徽章"
+
 msgid "Finish onboarding"
 msgstr "完成入职"
+
+msgid "Finish the track's hands-on challenges before sitting the exam."
+msgstr "在参加考试前，完成该课程的动手挑战。"
 
 msgid "Finish To"
 msgstr "完成至"
@@ -7724,6 +7868,9 @@ msgstr "处理循环和冲销凭证"
 msgid "Hands-on"
 msgstr "动手实践"
 
+msgid "Hands-on checks run in {companyName}"
+msgstr "动手检查在 {companyName} 中运行"
+
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "动手操作、快速响应的支持，为期前3-4周"
 
@@ -7957,6 +8104,9 @@ msgstr "I（放宽检验）"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "我有合理的理由相信该个人是根据 22 CFR 120.62 定义的美国人"
+
+msgid "I will answer on my own, without help from another person or from anyone else's answers."
+msgstr "我将独立作答，不接受他人帮助或他人答案。"
 
 msgid "I'm Still Working"
 msgstr "我仍在工作"
@@ -8655,6 +8805,9 @@ msgstr "工单工序"
 msgid "Job Operation"
 msgstr "工单工序"
 
+msgid "Job operation batch"
+msgstr "工序生产批次"
+
 msgid "Job Operations"
 msgstr "工单工序"
 
@@ -8882,8 +9035,14 @@ msgstr "提前期："
 msgid "Learn"
 msgstr "学习"
 
+msgid "Learn Carbon"
+msgstr "学习 Carbon"
+
 msgid "Learn more"
 msgstr "了解更多"
+
+msgid "Learning activity for the last {weeks} weeks: {activeDays} active days, {totalXp} XP"
+msgstr "过去 {weeks} 周的学习活动：{activeDays} 个活跃日，{totalXp} XP"
 
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
@@ -8911,6 +9070,9 @@ msgstr "检测到剩余零件"
 
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "当整个工单完成时，剩余的暂存原材料将被退回。"
+
+msgid "Less"
+msgstr "更少"
 
 msgid "Less manual work"
 msgstr "更少的手动工作"
@@ -8941,6 +9103,9 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
+
+msgid "Level"
+msgstr "等级"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速折旧产生的递延所得税的负债账户"
@@ -10778,6 +10943,9 @@ msgstr "未配置"
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
+msgid "Not passed"
+msgstr "未通过"
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -10897,6 +11065,9 @@ msgstr "的"
 msgid "of {0}h"
 msgstr "共 {0}h"
 
+msgid "of {goalXp} XP"
+msgstr "的 {goalXp} XP"
+
 msgid "Off — handled outside the sync"
 msgstr "关闭 — 在同步外处理"
 
@@ -11010,6 +11181,9 @@ msgstr "仅可删除空的、未结会计期间。"
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "只有合格的员工才能被安排和运行此流程"
 
+msgid "Only you can see your activity, XP, and streak."
+msgstr "只有你可以看到你的活动、XP 和连续记录。"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
 
@@ -11054,6 +11228,9 @@ msgstr "未结应收账款"
 
 msgid "Open Audit Log"
 msgstr "打开审计日志"
+
+msgid "Open certificate"
+msgstr "打开证书"
 
 msgid "Open date"
 msgstr "打开日期"
@@ -11259,6 +11436,9 @@ msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率
 
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "可选。此日期之后，未完成的课程将显示为已逾期。"
 
 msgid "Options"
 msgstr "选项"
@@ -11540,6 +11720,9 @@ msgstr "方当事人类型"
 
 msgid "Pass"
 msgstr "合格"
+
+msgid "Pass a track's exam to earn a certificate"
+msgstr "通过课程考试获得证书"
 
 msgid "Passed"
 msgstr "已通过"
@@ -12609,6 +12792,22 @@ msgstr "每季度"
 msgid "Question"
 msgstr "问题"
 
+#. placeholder {0}: current.index + 1
+#. placeholder {0}: index + 1
+#. placeholder {1}: current.total
+#. placeholder {1}: questions.length
+msgid "Question {0} of {1}"
+msgstr "问题 {0}/{1}"
+
+msgid "Question performance"
+msgstr "题目正确率"
+
+msgid "Questions"
+msgstr "题目"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "正确率低于 60% 的题目"
+
 msgid "Queued"
 msgstr "排队中"
 
@@ -12708,11 +12907,17 @@ msgstr "重新发送"
 msgid "Reactivate"
 msgstr "重新激活"
 
+msgid "Read this first"
+msgstr "先读这个"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "仔细阅读此内容——Carbon将为您的设置做什么和不做什么。当看起来正确时，在下面标记同意。"
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "通读此内容。确认无误后，在底部签署。这是您商业协议所指向的声明，不包含价格或法律条款。"
+
+msgid "Read why"
+msgstr "了解原因"
 
 msgid "Readable"
 msgstr "可读"
@@ -13107,6 +13312,12 @@ msgstr "重命名工作流"
 msgid "Rendering label preview..."
 msgstr "正在渲染标签预览..."
 
+msgid "Renew now"
+msgstr "立即续期"
+
+msgid "Renew your certificate"
+msgstr "续期你的证书"
+
 msgid "Reopen"
 msgstr "重新打开"
 
@@ -13478,11 +13689,20 @@ msgstr "修订版"
 msgid "Revoke"
 msgstr "撤销"
 
+msgid "Revoke certificate"
+msgstr "撤销证书"
+
 msgid "Revoke Invite"
 msgstr "撤销邀请"
 
 msgid "Revoke Invites"
 msgstr "撤销邀请"
+
+msgid "Revoke this certificate?"
+msgstr "撤销此证书？"
+
+msgid "Revoked"
+msgstr "已撤销"
 
 msgid "Rework"
 msgstr "返工"
@@ -14997,6 +15217,9 @@ msgstr "开始"
 msgid "Start {0} Day Free Trial"
 msgstr "开始 {0} 天免费试用"
 
+msgid "Start challenge"
+msgstr "开始挑战"
+
 msgid "Start counting"
 msgstr "开始盘点"
 
@@ -15026,6 +15249,15 @@ msgstr "会计年度开始"
 
 msgid "Start of Tax Year"
 msgstr "税年开始"
+
+msgid "Start the exam"
+msgstr "开始考试"
+
+msgid "Start the quiz"
+msgstr "开始测验"
+
+msgid "Start the renewal quiz"
+msgstr "开始续期测验"
 
 msgid "Start Time"
 msgstr "开始时间"
@@ -15450,6 +15682,9 @@ msgstr "供应商单价"
 
 msgid "Supplier updated"
 msgstr "供应商已更新"
+
+msgid "Supplier warranty term"
+msgstr "供应商保修条件"
 
 msgid "Supplier:"
 msgstr "供应商："
@@ -16863,6 +17098,9 @@ msgstr "一天中的时间"
 msgid "Time off"
 msgstr "休息时间"
 
+msgid "Time remaining"
+msgstr "剩余时间"
+
 msgid "Timecard"
 msgstr "时间卡"
 
@@ -17181,6 +17419,9 @@ msgstr "触发者"
 msgid "Triggers"
 msgstr "触发器"
 
+msgid "Try again"
+msgstr "重试"
+
 msgid "Tuesday"
 msgstr "星期二"
 
@@ -17282,6 +17523,9 @@ msgstr "唯一、大写、无空格（最多 10 个字符）"
 
 msgid "Unit"
 msgstr "单位"
+
+msgid "Unit complete"
+msgstr "单元已完成"
 
 msgid "Unit Cost"
 msgstr "单位成本"
@@ -17410,7 +17654,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "未命名"
 
 msgid "Untitled Diagram"
 msgstr "未命名图表"
@@ -17739,6 +17983,9 @@ msgstr "验证错误"
 msgid "Verification failed"
 msgstr "验证失败"
 
+msgid "Verification page"
+msgstr "验证页面"
+
 msgid "Verified"
 msgstr "已验证"
 
@@ -18028,6 +18275,9 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 msgid "Warning"
 msgstr "警告"
 
+msgid "Warranty term"
+msgstr "保修条件"
+
 msgid "Watch"
 msgstr "观看"
 
@@ -18039,6 +18289,9 @@ msgstr "我们自动匹配了每一列。继续前请查看下面的值。"
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "在您的班组适应期间，我们快速分类和修复问题"
+
+msgid "We will check the records you create in {companyName}, from the moment you start."
+msgstr "我们将检查你在 {companyName} 中创建的记录，从你开始的那一刻起。"
 
 msgid "We've sent a verification code to {email}"
 msgstr "我们已向 {email} 发送了验证码"
@@ -18100,11 +18353,17 @@ msgstr "第8周切换"
 msgid "Week of {0}"
 msgstr "{0} 的周"
 
+msgid "week streak"
+msgstr "周连续"
+
 msgid "Weekly"
 msgstr "每周"
 
 msgid "Weekly demand"
 msgstr "每周需求"
+
+msgid "Weekly XP goal"
+msgstr "每周 XP 目标"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -18566,6 +18825,9 @@ msgstr "工作电话"
 msgid "Work shift tracking is active."
 msgstr "班次跟踪已启用。"
 
+msgid "Work through a track, prove it on real work in Carbon, and earn a certificate your manager can verify."
+msgstr "完成课程，在 Carbon 中的实际工作中证明掌握，并获得经理可以验证的证书。"
+
 msgid "Workflow"
 msgstr "工作流"
 
@@ -18639,6 +18901,17 @@ msgstr "您可以随时通过主题设置更改UI样式"
 msgid "You can only see this key once. Store it safely."
 msgstr "您只能看到此密钥一次。请妥善保管。"
 
+#. placeholder {0}: gate.until.slice(0, 10)
+msgid "You can retake the exam after {0}."
+msgstr "你可以在 {0} 后重新参加考试。"
+
+#. placeholder {0}: formatDate(examGate.until.slice(0, 10), undefined, locale)
+msgid "You can retake the exam after {0}. Use the time to revisit the units you found hardest."
+msgstr "你可以在 {0} 后重新参加考试。利用这段时间重新学习你认为最难的单元。"
+
+msgid "You cannot return to a question once you answer it."
+msgstr "回答问题后，你无法返回该问题。"
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "您于 <0/> 打卡上班。您可以在下方编辑打卡下班时间，或确认您仍在工作。"
 
@@ -18679,6 +18952,9 @@ msgstr "你主导"
 
 msgid "You name a project owner with decision authority"
 msgstr "你指定一个具有决定权的项目负责人"
+
+msgid "You need 80% to certify. Your per-topic scores are below — revisit the weakest ones, then come back when the cooldown ends."
+msgstr "你需要达到 80% 才能获得认证。你的按主题分数如下——重新学习最薄弱的部分，然后在冷却时间结束后回来。"
 
 msgid "You received this item"
 msgstr "您收到了此项目"
@@ -18790,6 +19066,9 @@ msgstr "您的班组、结构和访问权限。"
 
 msgid "Your vendor list"
 msgstr "您的供应商列表"
+
+msgid "Your weekly goal"
+msgstr "您的每周目标"
 
 msgid "yourself"
 msgstr "你自己"

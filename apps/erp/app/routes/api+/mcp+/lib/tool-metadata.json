@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-05T20:25:36.076Z",
-  "totalTools": 1495,
+  "generated": "2026-09-07T02:32:12.286Z",
+  "totalTools": 1513,
   "modules": 15,
   "tools": [
     {
@@ -36963,7 +36963,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance dispatch event",
-      "paramCount": 41,
+      "paramCount": 52,
       "serviceParams": [
         "client",
         "event"
@@ -37073,6 +37073,39 @@
           "period": {
             "type": "string"
           },
+          "attemptId": {
+            "type": "string"
+          },
+          "responses": {
+            "type": "string"
+          },
+          "trackSlug": {
+            "type": "string"
+          },
+          "honorAccepted": {
+            "type": "string"
+          },
+          "questionSlug": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "string"
+          },
+          "challengeSlug": {
+            "type": "string"
+          },
+          "certificateId": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "weeklyGoalXp": {
+            "type": "number"
+          },
           "name": {
             "type": "string"
           },
@@ -37136,6 +37169,15 @@
           "groupIds",
           "trainingAssignmentId",
           "employeeId",
+          "attemptId",
+          "responses",
+          "trackSlug",
+          "honorAccepted",
+          "questionSlug",
+          "selected",
+          "challengeSlug",
+          "certificateId",
+          "reason",
           "name",
           "description",
           "defaultStandardFactor",
@@ -37245,7 +37287,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance schedule",
-      "paramCount": 8,
+      "paramCount": 19,
       "serviceParams": [
         "client",
         "schedule"
@@ -37282,6 +37324,39 @@
           "period": {
             "type": "string"
           },
+          "attemptId": {
+            "type": "string"
+          },
+          "responses": {
+            "type": "string"
+          },
+          "trackSlug": {
+            "type": "string"
+          },
+          "honorAccepted": {
+            "type": "string"
+          },
+          "questionSlug": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "string"
+          },
+          "challengeSlug": {
+            "type": "string"
+          },
+          "certificateId": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "weeklyGoalXp": {
+            "type": "number"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -37297,6 +37372,15 @@
           "groupIds",
           "trainingAssignmentId",
           "employeeId",
+          "attemptId",
+          "responses",
+          "trackSlug",
+          "honorAccepted",
+          "questionSlug",
+          "selected",
+          "challengeSlug",
+          "certificateId",
+          "reason",
           "_operation"
         ]
       }
@@ -37590,6 +37674,472 @@
           "alwaysOn",
           "_operation"
         ]
+      }
+    },
+    {
+      "name": "resources_getLearnUnitProgress",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn unit progress",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId",
+        "trackSlug"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "trackSlug": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "resources_getLearnXpTotal",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn xp total",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "resources_getLearnActivity",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn activity",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId",
+        "sinceDay"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sinceDay": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sinceDay"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnBadges",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn badges",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "resources_getLearnCertificates",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn certificates",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "resources_getLearnPreference",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn preference",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "resources_upsertLearnPreference",
+      "module": "resources",
+      "classification": "WRITE",
+      "description": "upsert learn preference",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "preference"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "weeklyGoalXp": {
+            "type": "number"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "weeklyGoalXp",
+          "updatedAt"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnChallengeAttempts",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn challenge attempts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId",
+        "trackSlug"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "trackSlug": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "resources_getLearnExamAttempts",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn exam attempts",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId",
+        "trackSlug"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "trackSlug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "trackSlug"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnAssignmentsForUser",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn assignments for user",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "resources_getLearnAssignments",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn assignments",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          }
+        },
+        "required": [
+          "search"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnAssignment",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn assignment",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "resources_upsertLearnAssignment",
+      "module": "resources",
+      "classification": "WRITE",
+      "description": "upsert learn assignment",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "assignment"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "trackSlug": {
+            "type": "string"
+          },
+          "trackTitle": {
+            "type": "string"
+          },
+          "groupIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "trackSlug",
+          "trackTitle",
+          "groupIds"
+        ]
+      }
+    },
+    {
+      "name": "resources_deleteLearnAssignment",
+      "module": "resources",
+      "classification": "DESTRUCTIVE",
+      "description": "delete learn assignment",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnCertificateById",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn certificate by id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnCertificateByCode",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn certificate by code",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "verificationCode"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "verificationCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "verificationCode"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnCertificatesExpiring",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn certificates expiring",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "fromIso",
+        "toIso"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "fromIso": {
+            "type": "string"
+          },
+          "toIso": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fromIso",
+          "toIso"
+        ]
+      }
+    },
+    {
+      "name": "resources_getLearnQuestionStats",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get learn question stats",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {

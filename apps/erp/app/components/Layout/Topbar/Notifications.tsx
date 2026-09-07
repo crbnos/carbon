@@ -482,6 +482,15 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.LearnAssignment:
+    case NotificationEvent.LearnCertificateExpiring:
+      return (
+        <Notification
+          icon={<LuGraduationCap />}
+          to={path.to.learn}
+          {...props}
+        />
+      );
     case NotificationEvent.TrainingAssignment:
     case NotificationEvent.TrainingReminder:
       return (

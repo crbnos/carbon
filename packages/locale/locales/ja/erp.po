@@ -97,6 +97,15 @@ msgstr "{0} 件の製造指図が作成されました"
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
+#. placeholder {0}: unit.estimatedMinutes
+msgid "{0} min"
+msgstr "{0}分"
+
+#. placeholder {0}: result.correctCount
+#. placeholder {1}: result.questionCount
+msgid "{0} of {1} correct"
+msgstr "{0} / {1} 正解"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -125,6 +134,11 @@ msgstr "{0}登録済み"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
+
+#. placeholder {0}: track.exam.questionCount
+#. placeholder {1}: track.exam.timeLimitMinutes
+msgid "{0} scenario questions, {1} minutes, one question at a time. You need 80% to pass."
+msgstr "{0} 個のシナリオ問題、{1} 分、1 問ずつ。80% の正解が必要です。"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -156,6 +170,11 @@ msgstr "{0}個の値"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: ceiling - totalXp
+#. placeholder {1}: level + 1
+msgid "{0} XP to level {1}"
+msgstr "{0} XP でレベル {1} へ"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}日"
@@ -186,6 +205,9 @@ msgstr "{0}時間が必要"
 msgid "{0}h staffed"
 msgstr "{0}時間配置"
 
+msgid "{activeDays} active days"
+msgstr "{activeDays} アクティブな日"
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行中の製造指図があります"
 
@@ -194,6 +216,12 @@ msgstr "{apOverduePct}%の買掛金"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
+
+msgid "{badgeCount} badge"
+msgstr "{badgeCount} バッジ"
+
+msgid "{badgeCount} badges"
+msgstr "{badgeCount} バッジ"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
@@ -227,6 +255,9 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}件を追加、{updated}件を更新、{0}件を修正が必要、{1}件をスキップ。"
 
+msgid "{learnerName}'s {trackTitle} certificate will immediately read as revoked, including on its public verification page. The reason is recorded on the certificate."
+msgstr "{learnerName} さんの {trackTitle} 証明書は取り消されたものとして表示されます。公開検証ページでも同様です。理由は証明書に記録されます。"
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
@@ -258,6 +289,9 @@ msgstr "{orderLabel} はリビジョン {0} として編集のため再度オー
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
 
+msgid "{questionCount} scenario questions, {timeLimitMinutes} minutes. One question at a time, and you cannot go back. You need 80% to pass."
+msgstr "{questionCount} 個のシナリオ問題、{timeLimitMinutes} 分。1 問ずつ、戻ることはできません。80% の正解が必要です。"
+
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
 
@@ -276,6 +310,9 @@ msgstr "{total}個のフェーズをライブにする"
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
 
+msgid "{trackTitle} certification"
+msgstr "{trackTitle} 認定"
+
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
@@ -288,8 +325,20 @@ msgstr "{updatedJobCount} 件の製造指図が更新されました"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} がアップロードされました — フィールドは文書から入力されました。"
 
+msgid "{value} XP — a unit a week"
+msgstr "{value} XP — 毎週1個"
+
+msgid "{value} XP — ambitious"
+msgstr "{value} XP — 野心的"
+
+msgid "{value} XP — steady"
+msgstr "{value} XP — 安定的"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "{weekXp} of {goalXp} XP this week"
+msgstr "今週 {weekXp} / {goalXp} XP"
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -303,10 +352,20 @@ msgstr "全体の %"
 msgid "% of Total"
 msgstr "総量比"
 
+msgid "← {trackTitle}"
+msgstr "← {trackTitle}"
+
+msgid "← All tracks"
+msgstr "← すべてのトラック"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} は廃止された {1} からリダイレクトされました"
+
+#. placeholder {0}: result.xpAwarded
+msgid "+{0} XP"
+msgstr "+{0} XP"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -833,6 +892,9 @@ msgstr "出荷のステータスが変更される"
 msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
 
+msgid "A short open-book check on what has changed. Passing extends your certificate by 12 months."
+msgstr "変更内容の簡単なオープンブック確認。合格すると、証明書が 12 ヶ月間延長されます。"
+
 msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
 msgstr "1 つの仕訳行が以下の日付で転記され、差分が利益剰余金にオフセットされます。"
 
@@ -883,6 +945,9 @@ msgstr "工具は部品を製造するために使用され、複数の製造指
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
+
+msgid "A week counts toward your streak when you reach this much XP. Weeks, not days — so a weekend off never breaks it."
+msgstr "この量の XP に達するとストリークにカウントされます。日ではなく週なので、週末の休みはストリークを破りません。"
 
 msgid "abilities"
 msgstr "スキル"
@@ -2374,11 +2439,17 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign a track"
+msgstr "トラックを割り当て"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
 msgid "Assign To"
 msgstr "割り当て先"
+
+msgid "Assign to groups"
+msgstr "グループに割り当て"
 
 msgid "Assign to Groups"
 msgstr "グループに割り当て"
@@ -2564,6 +2635,9 @@ msgstr "承認待ち"
 msgid "Back"
 msgstr "戻る"
 
+msgid "Back to the track"
+msgstr "トラックに戻る"
+
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -2575,6 +2649,9 @@ msgstr "バックアップに失敗しました"
 
 msgid "Backups"
 msgstr "バックアップ"
+
+msgid "Badges"
+msgstr "バッジ"
 
 msgid "Balance"
 msgstr "残高"
@@ -2884,6 +2961,9 @@ msgstr "場所別"
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
 
+msgid "By topic"
+msgstr "トピックごと"
+
 msgid "CAD Model"
 msgstr "CADモデル"
 
@@ -3031,6 +3111,9 @@ msgstr "容量"
 msgid "Capacity reservation"
 msgstr "キャパシティ予約"
 
+msgid "Capstone"
+msgstr "キャップストーン"
+
 msgid "Caption"
 msgstr "キャプション"
 
@@ -3143,14 +3226,31 @@ msgstr "認定バージョン"
 msgid "Certificate Number"
 msgstr "証明書番号"
 
+msgid "Certificate renewed"
+msgstr "証明書が更新されました"
+
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Certificates"
+msgstr "証明書"
+
+msgid "Certification exam"
+msgstr "認定試験"
 
 msgid "Certified"
 msgstr "認定済み"
 
+#. placeholder {0}: formatDate(examGate.expiresAt.slice(0, 10), undefined, locale)
+#. placeholder {0}: formatDate(state.expiresAt.slice(0, 10), undefined, locale)
+msgid "Certified until {0}"
+msgstr "{0} まで有効"
+
 msgid "Chain"
 msgstr "チェーン"
+
+msgid "Challenges look at real records you create here. If you would rather not add practice data to this company, ask an admin to set up a demo company from Settings → Demo Data and switch to it first."
+msgstr "チャレンジは、ここで作成した実際のレコードを参照します。この会社に練習データを追加したくない場合は、管理者に依頼して 設定 → デモ データ からデモ会社を設定し、最初にそれに切り替えてください。"
 
 msgid "Champion users are available for training and data validation"
 msgstr "チャンピオンユーザーは教育訓練とデータ検証に利用可能です"
@@ -3203,6 +3303,9 @@ msgstr "種類を変更"
 msgid "Change Type"
 msgstr "タイプを変更"
 
+msgid "Change weekly goal"
+msgstr "週間目標を変更"
+
 msgid "Changed By"
 msgstr "変更者"
 
@@ -3230,6 +3333,12 @@ msgstr "勘定科目表"
 msgid "Chat"
 msgstr "チャット"
 
+msgid "Check my answers"
+msgstr "回答を確認"
+
+msgid "Check my work"
+msgstr "作業を確認"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
 
@@ -3256,6 +3365,9 @@ msgstr "左側の行を選択して、在庫がどこから来るかを確認し
 
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
+
+msgid "Choose all that apply"
+msgstr "当てはまるものをすべて選択"
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
@@ -3487,6 +3599,9 @@ msgstr "ジョブを完了"
 
 msgid "Complete Stock Transfer"
 msgstr "在庫移動を完了"
+
+msgid "Complete these hands-on challenges first:"
+msgstr "まず、これらの実践的なチャレンジを完了してください："
 
 msgid "Completed"
 msgstr "完了"
@@ -3840,6 +3955,9 @@ msgstr "変換中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
+
+msgid "Cooling down"
+msgstr "クーリング ダウン"
 
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
@@ -5568,6 +5686,9 @@ msgstr "ドキュメント"
 msgid "Docs & videos"
 msgstr "ドキュメント＆動画"
 
+msgid "Docs to revisit"
+msgstr "見直すドキュメント"
+
 msgid "Document"
 msgstr "文書"
 
@@ -5613,6 +5734,9 @@ msgstr "ダウンロード"
 #. placeholder {0}: errors.length
 msgid "Download {0} row(s) to fix"
 msgstr "{0}行をダウンロードして修正"
+
+msgid "Download certificate"
+msgstr "証明書をダウンロード"
 
 msgid "Download CSV"
 msgstr "CSVをダウンロード"
@@ -5695,6 +5819,7 @@ msgstr "期限"
 msgid "Due (by due date)"
 msgstr "期限（期限日による）"
 
+#. placeholder {0}: formatDate(state.dueDate, undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
@@ -5857,6 +5982,9 @@ msgstr "資産を編集"
 
 msgid "Edit Asset Class"
 msgstr "資産クラスを編集"
+
+msgid "Edit assignment"
+msgstr "割り当てを編集"
 
 msgid "Edit Assignment"
 msgstr "割り当てを編集"
@@ -6520,6 +6648,9 @@ msgstr "スコープ内のすべてのテストが、設定されたシステム
 msgid "Every match"
 msgstr "すべてのマッチ"
 
+msgid "Every question has to be right to pass this unit. Read the explanations below, then try again — the XP is lower on a retry, but understanding it is the point."
+msgstr "このユニットに合格するには、すべての質問に正しく答える必要があります。下の説明を読んでからもう一度試してください。再試行時の XP は低くなりますが、理解することが重要です。"
+
 msgid "Every required action has already been added."
 msgstr "すべての必須アクションが既に追加されています。"
 
@@ -6528,6 +6659,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
+
+msgid "Everyone in these groups will see the track on their Learn hub"
+msgstr "これらのグループのすべてのメンバーは、Learn ハブでトラックを表示できます。"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
@@ -6540,6 +6674,9 @@ msgstr "その他すべて"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "その他はすべて、人員、インポート、連携、およびAPI（ワークフロー以外のすべて）をカバーしています。"
+
+msgid "Evidence recorded:"
+msgstr "証拠が記録されました:"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MBを超えています。送信するために一部の添付ファイルを除去してください。"
@@ -6674,6 +6811,7 @@ msgstr "期限切れバッチ"
 msgid "Expires"
 msgstr "有効期限"
 
+#. placeholder {0}: formatDate(certificate.expiresAt.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatDate(expiresAt)
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
@@ -7210,8 +7348,14 @@ msgstr "完成品"
 msgid "Finish"
 msgstr "仕上げ"
 
+msgid "Finish a module to earn your first badge"
+msgstr "モジュールを完了して最初のバッジを獲得します"
+
 msgid "Finish onboarding"
 msgstr "オンボーディングを完了"
+
+msgid "Finish the track's hands-on challenges before sitting the exam."
+msgstr "試験を受ける前に、トラックの実践的なチャレンジを完了してください。"
 
 msgid "Finish To"
 msgstr "完成先"
@@ -7724,6 +7868,9 @@ msgstr "繰り返しおよび逆仕訳の処理"
 msgid "Hands-on"
 msgstr "ハンズオン"
 
+msgid "Hands-on checks run in {companyName}"
+msgstr "実践的なチェックが {companyName} で実行されます"
+
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "最初の3～4週間のハンズオン、迅速対応サポート"
 
@@ -7957,6 +8104,9 @@ msgstr "I(ゆるい検査)"
 
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
+
+msgid "I will answer on my own, without help from another person or from anyone else's answers."
+msgstr "他の個人の助けやその他の誰かの答えなしに、自分自身で答えることを約束します。"
 
 msgid "I'm Still Working"
 msgstr "まだ働いています"
@@ -8655,6 +8805,9 @@ msgstr "指図工程"
 msgid "Job Operation"
 msgstr "指図工程"
 
+msgid "Job operation batch"
+msgstr "工程バッチ"
+
 msgid "Job Operations"
 msgstr "指図工程"
 
@@ -8882,8 +9035,14 @@ msgstr "リードタイム:"
 msgid "Learn"
 msgstr "学ぶ"
 
+msgid "Learn Carbon"
+msgstr "Carbon を学習"
+
 msgid "Learn more"
 msgstr "詳細情報"
+
+msgid "Learning activity for the last {weeks} weeks: {activeDays} active days, {totalXp} XP"
+msgstr "過去 {weeks} 週間の学習アクティビティ: {activeDays} 日間のアクティブ、{totalXp} XP"
 
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
@@ -8911,6 +9070,9 @@ msgstr "余剰部品が検出されました"
 
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
+
+msgid "Less"
+msgstr "より少ない"
 
 msgid "Less manual work"
 msgstr "手作業を減らす"
@@ -8941,6 +9103,9 @@ msgstr "アカウントをセットアップしましょう"
 
 msgid "Letter"
 msgstr "文字"
+
+msgid "Level"
+msgstr "レベル"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速度的な減価償却による繰延税金の負債勘定"
@@ -10778,6 +10943,9 @@ msgstr "未設定"
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
+msgid "Not passed"
+msgstr "不合格"
+
 msgid "Not reached"
 msgstr "未到達"
 
@@ -10897,6 +11065,9 @@ msgstr "の"
 msgid "of {0}h"
 msgstr "{0}h中"
 
+msgid "of {goalXp} XP"
+msgstr "{goalXp} XP のうち"
+
 msgid "Off — handled outside the sync"
 msgstr "オフ — 同期外で処理"
 
@@ -11010,6 +11181,9 @@ msgstr "空のオープン期間のみ削除できます。"
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "資格のある従業員のみがこのプロセスをスケジュールして実行できます"
 
+msgid "Only you can see your activity, XP, and streak."
+msgstr "あなただけがあなたのアクティビティ、XP、およびストリークを表示できます。"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -11054,6 +11228,9 @@ msgstr "未払い売掛金"
 
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
+
+msgid "Open certificate"
+msgstr "証明書を開く"
 
 msgid "Open date"
 msgstr "開始日"
@@ -11259,6 +11436,9 @@ msgstr "IAS 21 に従って純資産残高を換算する際に使用するオ�
 
 msgid "Optional pages & sections"
 msgstr "オプションページとセクション"
+
+msgid "Optional. After this date an unfinished track reads as overdue."
+msgstr "オプション。 この日付以降、未完了のトラックは期限超過として表示されます。"
 
 msgid "Options"
 msgstr "オプション"
@@ -11540,6 +11720,9 @@ msgstr "取引先タイプ"
 
 msgid "Pass"
 msgstr "合格"
+
+msgid "Pass a track's exam to earn a certificate"
+msgstr "トラックの試験に合格して証明書を獲得"
 
 msgid "Passed"
 msgstr "合格"
@@ -12609,6 +12792,22 @@ msgstr "四半期ごと"
 msgid "Question"
 msgstr "質問"
 
+#. placeholder {0}: current.index + 1
+#. placeholder {0}: index + 1
+#. placeholder {1}: current.total
+#. placeholder {1}: questions.length
+msgid "Question {0} of {1}"
+msgstr "質問 {0} / {1}"
+
+msgid "Question performance"
+msgstr "設問の正答率"
+
+msgid "Questions"
+msgstr "設問"
+
+msgid "Questions answered correctly less than 60% of the time"
+msgstr "正答率が 60% 未満の設問"
+
 msgid "Queued"
 msgstr "キュー待ち"
 
@@ -12708,11 +12907,17 @@ msgstr "再送信"
 msgid "Reactivate"
 msgstr "再度有効化"
 
+msgid "Read this first"
+msgstr "これを最初にお読みください"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "これを読んでください — Carbonがあなたのセットアップで何ができて何ができないかを確認してください。問題なければ、下記で同意済みとしてマークしてください。"
 
 msgid "Read this through. When it's right, sign off at the bottom. It's the statement your commercial agreement points to, with no prices or legal terms here."
 msgstr "これを読み通してください。正しいと思ったら、下部で署名してください。これはあなたの商業契約が指す声明であり、価格や法的条件は含まれていません。"
+
+msgid "Read why"
+msgstr "理由をお読みください"
 
 msgid "Readable"
 msgstr "読み取り可能"
@@ -13107,6 +13312,12 @@ msgstr "ワークフロー名を変更"
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
 
+msgid "Renew now"
+msgstr "今すぐ更新"
+
+msgid "Renew your certificate"
+msgstr "証明書を更新"
+
 msgid "Reopen"
 msgstr "再オープン"
 
@@ -13478,11 +13689,20 @@ msgstr "リビジョン"
 msgid "Revoke"
 msgstr "取り消す"
 
+msgid "Revoke certificate"
+msgstr "証明書を取り消す"
+
 msgid "Revoke Invite"
 msgstr "招待を取り消す"
 
 msgid "Revoke Invites"
 msgstr "招待を取り消す"
+
+msgid "Revoke this certificate?"
+msgstr "この証明書を取り消しますか?"
+
+msgid "Revoked"
+msgstr "取り消しました"
 
 msgid "Rework"
 msgstr "手直し"
@@ -14997,6 +15217,9 @@ msgstr "開始"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}日間の無料トライアルを開始"
 
+msgid "Start challenge"
+msgstr "チャレンジを開始"
+
 msgid "Start counting"
 msgstr "カウントを開始"
 
@@ -15026,6 +15249,15 @@ msgstr "会計年度の開始"
 
 msgid "Start of Tax Year"
 msgstr "税年度の開始"
+
+msgid "Start the exam"
+msgstr "試験を開始"
+
+msgid "Start the quiz"
+msgstr "クイズを開始"
+
+msgid "Start the renewal quiz"
+msgstr "更新クイズを開始"
 
 msgid "Start Time"
 msgstr "開始時刻"
@@ -15450,6 +15682,9 @@ msgstr "仕入先単価"
 
 msgid "Supplier updated"
 msgstr "仕入先が更新されました"
+
+msgid "Supplier warranty term"
+msgstr "仕入先保証条件"
 
 msgid "Supplier:"
 msgstr "仕入先："
@@ -16863,6 +17098,9 @@ msgstr "時間"
 msgid "Time off"
 msgstr "休み時間"
 
+msgid "Time remaining"
+msgstr "残り時間"
+
 msgid "Timecard"
 msgstr "タイムカード"
 
@@ -17181,6 +17419,9 @@ msgstr "トリガー元"
 msgid "Triggers"
 msgstr "トリガー"
 
+msgid "Try again"
+msgstr "もう一度試す"
+
 msgid "Tuesday"
 msgstr "火曜日"
 
@@ -17282,6 +17523,9 @@ msgstr "一意、大文字、スペースなし（最大10文字）"
 
 msgid "Unit"
 msgstr "単位"
+
+msgid "Unit complete"
+msgstr "ユニット完了"
 
 msgid "Unit Cost"
 msgstr "単位原価"
@@ -17410,7 +17654,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "無題"
 
 msgid "Untitled Diagram"
 msgstr "無題の図"
@@ -17739,6 +17983,9 @@ msgstr "認証エラー"
 msgid "Verification failed"
 msgstr "検証に失敗しました"
 
+msgid "Verification page"
+msgstr "検証ページ"
+
 msgid "Verified"
 msgstr "検証済み"
 
@@ -18028,6 +18275,9 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 msgid "Warning"
 msgstr "警告"
 
+msgid "Warranty term"
+msgstr "保証条件"
+
 msgid "Watch"
 msgstr "見る"
 
@@ -18039,6 +18289,9 @@ msgstr "各列を自動マッチングしました。続行する前に下の値
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "チームが新しいシステムに慣れている間、問題を素早く分類して修正します"
+
+msgid "We will check the records you create in {companyName}, from the moment you start."
+msgstr "あなたが開始した時点から、{companyName} で作成したレコードを確認します。"
 
 msgid "We've sent a verification code to {email}"
 msgstr "検証コードを {email} に送信しました"
@@ -18100,11 +18353,17 @@ msgstr "第8週のカットオーバー"
 msgid "Week of {0}"
 msgstr "{0} の週"
 
+msgid "week streak"
+msgstr "週間ストリーク"
+
 msgid "Weekly"
 msgstr "毎週"
 
 msgid "Weekly demand"
 msgstr "毎週所要量"
+
+msgid "Weekly XP goal"
+msgstr "毎週 XP ゴール"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -18566,6 +18825,9 @@ msgstr "仕事用電話"
 msgid "Work shift tracking is active."
 msgstr "勤務シフト追跡がアクティブです。"
 
+msgid "Work through a track, prove it on real work in Carbon, and earn a certificate your manager can verify."
+msgstr "トラックを進み、Carbon での実際の作業でそれを証明し、マネージャーが検証できる証明書を獲得します。"
+
 msgid "Workflow"
 msgstr "ワークフロー"
 
@@ -18639,6 +18901,17 @@ msgstr "テーマ設定からいつでもUIスタイルを変更できます"
 msgid "You can only see this key once. Store it safely."
 msgstr "このキーは一度だけ表示されます。安全に保管してください。"
 
+#. placeholder {0}: gate.until.slice(0, 10)
+msgid "You can retake the exam after {0}."
+msgstr "{0} の後に試験を再受験できます。"
+
+#. placeholder {0}: formatDate(examGate.until.slice(0, 10), undefined, locale)
+msgid "You can retake the exam after {0}. Use the time to revisit the units you found hardest."
+msgstr "{0} の後に試験を再受験できます。その時間を使って、最も難しいと感じたユニットを再訪してください。"
+
+msgid "You cannot return to a question once you answer it."
+msgstr "回答した質問には戻ることができません。"
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "<0/>に出勤しました。下の退勤時刻を編集するか、まだ作業中であることを確認できます。"
 
@@ -18675,6 +18948,9 @@ msgstr "あなたがリード"
 
 msgid "You name a project owner with decision authority"
 msgstr "意思決定権を持つプロジェクト責任者を指名します"
+
+msgid "You need 80% to certify. Your per-topic scores are below — revisit the weakest ones, then come back when the cooldown ends."
+msgstr "認定には 80% が必要です。トピックごとのスコアは以下の通りです — 最も弱いものを再訪してから、クールダウンが終了したときに戻ってください。"
 
 msgid "You received this item"
 msgstr "あなたがこのアイテムを受け取りました"
@@ -18786,6 +19062,9 @@ msgstr "あなたのチーム、構造、およびアクセス。"
 
 msgid "Your vendor list"
 msgstr "あなたのベンダーリスト"
+
+msgid "Your weekly goal"
+msgstr "毎週の目標"
 
 msgid "yourself"
 msgstr "自分自身"

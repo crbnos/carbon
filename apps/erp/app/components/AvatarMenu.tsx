@@ -30,6 +30,7 @@ import {
   LuCheck,
   LuCreditCard,
   LuFileText,
+  LuGraduationCap,
   LuHouse,
   LuLanguages,
   LuLogOut,
@@ -212,6 +213,13 @@ const AvatarMenu = () => {
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to={path.to.learn}>
+              <DropdownMenuIcon icon={<LuGraduationCap />} />
+              <Trans>Learn Carbon</Trans>
+            </Link>
+          </DropdownMenuItem>
+
           <DropdownMenuItem asChild>
             <Link to={path.to.profile}>
               <DropdownMenuIcon icon={<LuUser />} />

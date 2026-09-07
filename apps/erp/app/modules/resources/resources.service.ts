@@ -4,6 +4,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { LEARN_QUESTION_REPORT_MIN_ATTEMPTS } from "./learn/gamify";
 import type {
   failureModeValidator,
   locationValidator,
@@ -2050,4 +2051,366 @@ export async function upsertWorkCenter(
   }
 
   return workCenterUpdate;
+}
+
+// ---------------------------------------------------------------- Carbon Learn
+// Reads only. Every learner write (progress, XP, attempts, certificates) goes
+// through the engine in `learn/engine.server.ts` on the service-role client
+// after server-side grading — the engine tables carry no client write policies,
+// so a forged PostgREST call has nothing to write to.
+
+export async function getLearnUnitProgress(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  trackSlug?: string
+) {
+  let query = client
+    .from("learnUnitProgress")
+    .select("*")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+
+  if (trackSlug) {
+    query = query.eq("trackSlug", trackSlug);
+  }
+
+  return query;
+}
+
+/**
+ * The ledger is append-only and small per user, so the total is a SUM in TS.
+ * PostgREST cannot aggregate without a view, and a mutable counter column is
+ * exactly what the ledger exists to avoid.
+ */
+export async function getLearnXpTotal(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  const result = await client
+    .from("learnXpEvent")
+    .select("amount")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+
+  if (result.error) return { data: 0, error: result.error };
+  const total = (result.data ?? []).reduce((sum, row) => sum + row.amount, 0);
+  return { data: total, error: null };
+}
+
+export async function getLearnActivity(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  sinceDay: string
+) {
+  return client
+    .from("learnActivityDay")
+    .select("day, xp, units, seconds")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .gte("day", sinceDay)
+    .order("day", { ascending: true });
+}
+
+export async function getLearnBadges(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("learnBadgeAward")
+    .select("*")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .order("awardedAt", { ascending: false });
+}
+
+export async function getLearnCertificates(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("learnCertificate")
+    .select("*")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .order("issuedAt", { ascending: false });
+}
+
+export async function getLearnPreference(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("learnPreference")
+    .select("*")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function upsertLearnPreference(
+  client: SupabaseClient<Database>,
+  preference: {
+    userId: string;
+    companyId: string;
+    weeklyGoalXp: number;
+    updatedAt: string;
+  }
+) {
+  return client
+    .from("learnPreference")
+    .upsert(preference, { onConflict: "userId,companyId" })
+    .select("weeklyGoalXp")
+    .single();
+}
+
+export async function getLearnChallengeAttempts(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  trackSlug?: string
+) {
+  let query = client
+    .from("learnChallengeAttempt")
+    .select("*")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+
+  if (trackSlug) {
+    query = query.eq("trackSlug", trackSlug);
+  }
+
+  return query.order("startedAt", { ascending: false });
+}
+
+/** Exam attempts for a track — this is what the cooldown is computed from. */
+export async function getLearnExamAttempts(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  trackSlug: string
+) {
+  return client
+    .from("learnAttempt")
+    .select("id, passed, submittedAt, voidedAt, expiresAt, questionCount")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .eq("trackSlug", trackSlug)
+    .eq("kind", "Certification Exam")
+    .order("startedAt", { ascending: false });
+}
+
+export async function getLearnAssignmentsForUser(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  const groups = await client.rpc("groups_for_user", { uid: userId });
+  if (groups.error) return { data: [], error: groups.error };
+
+  const groupIds = (groups.data ?? [])
+    .map((g: unknown) =>
+      typeof g === "string" ? g : (g as { group_id?: string })?.group_id
+    )
+    .filter((id): id is string => Boolean(id));
+
+  if (groupIds.length === 0) return { data: [], error: null };
+
+  return client
+    .from("learnAssignment")
+    .select("*")
+    .eq("companyId", companyId)
+    .overlaps("groupIds", groupIds);
+}
+
+export async function getLearnAssignments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("learnAssignment")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("trackTitle", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getLearnAssignment(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("learnAssignment")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/**
+ * Every group id is verified to belong to this company BEFORE the write.
+ * `users_for_groups` resolves ids globally, so an assignment carrying a foreign
+ * group would fan notifications out to another tenant's people and pull them
+ * into this company's dashboard.
+ */
+export async function upsertLearnAssignment(
+  client: SupabaseClient<Database>,
+  assignment: {
+    id?: string;
+    trackSlug: string;
+    trackTitle: string;
+    groupIds: string[];
+    dueDate?: string | null;
+    companyId: string;
+    createdBy?: string;
+    updatedBy?: string;
+    updatedAt?: string;
+  }
+) {
+  const groups = await client
+    .from("group")
+    .select("id")
+    .eq("companyId", assignment.companyId)
+    .in("id", assignment.groupIds);
+
+  if (groups.error) return { data: null, error: groups.error };
+
+  const found = new Set((groups.data ?? []).map((g) => g.id));
+  const foreign = assignment.groupIds.filter((id) => !found.has(id));
+  if (foreign.length > 0) {
+    return {
+      data: null,
+      error: {
+        message: `One or more groups do not belong to this company: ${foreign.join(", ")}`
+      }
+    };
+  }
+
+  const { id, createdBy, ...rest } = assignment;
+
+  if (id) {
+    return client
+      .from("learnAssignment")
+      .update(sanitize(rest))
+      .eq("id", id)
+      .eq("companyId", assignment.companyId)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("learnAssignment")
+    .insert([{ ...rest, createdBy: createdBy as string }])
+    .select("id")
+    .single();
+}
+
+export async function deleteLearnAssignment(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("learnAssignment")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export async function getLearnCertificateById(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("learnCertificate")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** Public verification page read — by unguessable code, no company scope. */
+export async function getLearnCertificateByCode(
+  client: SupabaseClient<Database>,
+  verificationCode: string
+) {
+  return client
+    .from("learnCertificate")
+    .select("*")
+    .eq("verificationCode", verificationCode)
+    .maybeSingle();
+}
+
+export async function getLearnCertificatesExpiring(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  fromIso: string,
+  toIso: string
+) {
+  return client
+    .from("learnCertificate")
+    .select("*")
+    .eq("companyId", companyId)
+    .is("revokedAt", null)
+    .gte("expiresAt", fromIso)
+    .lte("expiresAt", toIso);
+}
+
+/**
+ * Per-question failure rates, aggregated across the company. Deliberately
+ * carries no userId: this report exists to find documentation that fails to
+ * teach, not to name learners who missed a question.
+ */
+export async function getLearnQuestionStats(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const result = await client
+    .from("learnAttemptAnswer")
+    .select("questionSlug, correct")
+    .eq("companyId", companyId);
+
+  if (result.error) return { data: [], error: result.error };
+
+  const byQuestion = new Map<string, { attempts: number; correct: number }>();
+  for (const row of result.data ?? []) {
+    const entry = byQuestion.get(row.questionSlug) ?? {
+      attempts: 0,
+      correct: 0
+    };
+    entry.attempts += 1;
+    if (row.correct) entry.correct += 1;
+    byQuestion.set(row.questionSlug, entry);
+  }
+
+  // The five-attempt floor lives HERE, not in the route: this function is also
+  // exposed as an MCP tool, and a correct-rate on a question only two people
+  // have answered identifies those people.
+  const data = Array.from(byQuestion.entries())
+    .filter(([, v]) => v.attempts >= LEARN_QUESTION_REPORT_MIN_ATTEMPTS)
+    .map(([questionSlug, v]) => ({
+      questionSlug,
+      attempts: v.attempts,
+      correctRate: v.attempts === 0 ? 0 : v.correct / v.attempts
+    }));
+
+  return { data, error: null };
 }
