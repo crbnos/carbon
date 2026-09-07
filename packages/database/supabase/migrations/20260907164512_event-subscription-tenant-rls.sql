@@ -14,7 +14,7 @@
 --      four-policy pattern (below).
 --   2. The SECURITY DEFINER RPCs that maintain this table bypass RLS and are
 --      auto-exposed as PostgREST RPCs — an equivalent cross-tenant vector — so
---      each gains an in-function tenant guard (below).
+--      each gains an in-function authorization guard (below).
 
 -- ---------------------------------------------------------------------------
 -- 1. Tenant-scoped RLS policies
@@ -63,34 +63,72 @@ FOR DELETE USING (
 );
 
 -- ---------------------------------------------------------------------------
--- 2. In-function tenant guard on the SECURITY DEFINER RPCs
+-- 2. In-function authorization guard on the SECURITY DEFINER RPCs
 --
 -- The RLS above scopes DIRECT PostgREST table access, but the three RPCs that
 -- maintain "eventSystemSubscription" bypass RLS and are auto-exposed as
 -- PostgREST RPCs. They took a companyId / row id with NO caller check, so an
--- authenticated user could still create_event_system_subscription(...) for ANY
--- company (plant a WEBHOOK pointing config.url at an attacker server — the
--- disclosure's INSERT PoC), or delete for ANY company (integration DoS).
+-- authenticated user could create_event_system_subscription(...) — even for
+-- their OWN company, without any settings permission — with handlerType WEBHOOK
+-- and an attacker-controlled config.url, forwarding company records externally
+-- (and for ANY company, cross-tenant, as in the disclosure's INSERT PoC).
 --
--- They cannot be revoked from `authenticated`: the audit-log settings UI
--- (enableAuditLog / syncAuditSubscriptions in @carbon/database/src/audit.ts) and
--- the sync_webhook_subscription trigger both call them from an authenticated
--- context. So each gains an in-function tenant guard: allow when the request is
--- the service role, OR the caller is an employee of the target company.
--- auth.role() / the claims read by get_companies_with_employee_role() come from
+-- can_manage_event_subscription() centralizes the rule:
+--   * service role                       -> always allowed
+--   * WEBHOOK (external url + secret)     -> a settings write permission
+--       (create OR update OR delete). The sync_webhook_subscription trigger
+--       recreates the row (delete+create) on every webhook write, and the writer
+--       may hold only ONE of those perms (INSERT=create, UPDATE=update,
+--       DELETE=delete), so any of the three must satisfy it — this mirrors the
+--       "webhook" table's own per-verb policies while never breaking the trigger.
+--   * internal handler types (AUDIT, SYNC, SEARCH, EMBEDDING, WORKFLOW)
+--       -> employee membership, so the audit-sync loader (gated only on
+--       settings_view) keeps working.
+--
+-- auth.role() / the claims read by the get_companies_* helpers come from
 -- request-scoped GUCs that SECURITY DEFINER does not reset, so the guard sees the
 -- ORIGINAL caller even through the (also SECURITY DEFINER) webhook trigger.
--- Membership — not a granular settings_* permission — is used deliberately: it is
--- the minimum that blocks cross-tenant while leaving every legitimate same-company
--- caller (the audit UI's settings_view-only loader included) working as before.
--- get_companies_with_employee_role() returns NULL for a non-employee, and
--- `= ANY(NULL)` is NULL (which an IF treats as false, skipping the RAISE), so the
--- array is COALESCEd to empty to reject non-employees.
+-- get_companies_*() returns NULL for a non-member, and `= ANY(NULL)` is NULL
+-- (which an IF treats as false, skipping the RAISE), so each array is COALESCEd
+-- to empty to reject non-members.
 --
--- Bodies are forked verbatim from 20260204080000_async-search-triggers.sql; only
--- the guard is prepended. Signatures/return types are unchanged, so
--- CREATE OR REPLACE preserves existing grants and dependents.
+-- All four functions pin search_path (public, pg_temp last) — required for a
+-- SECURITY DEFINER function that references unqualified relations, else a
+-- pg_temp relation could shadow "eventSystemSubscription" and bypass the guard.
+--
+-- RPC bodies are forked verbatim from 20260204080000_async-search-triggers.sql;
+-- only the guard + search_path are added. Signatures/return types are unchanged,
+-- so CREATE OR REPLACE preserves existing grants and dependents.
 -- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION can_manage_event_subscription(
+  p_company_id TEXT,
+  p_handler_type TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF (SELECT auth.role()) = 'service_role' THEN
+    RETURN TRUE;
+  END IF;
+
+  IF p_handler_type = 'WEBHOOK' THEN
+    RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings_create'))::text[], ARRAY[]::text[]))
+        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings_update'))::text[], ARRAY[]::text[]))
+        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings_delete'))::text[], ARRAY[]::text[]));
+  END IF;
+
+  RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_role())::text[], ARRAY[]::text[]));
+END;
+$$;
+
+-- Internal predicate only — the three SECURITY DEFINER RPCs call it as owner, so
+-- it need not (and should not) be a directly callable PostgREST RPC.
+REVOKE ALL ON FUNCTION can_manage_event_subscription(TEXT, TEXT) FROM PUBLIC;
+
 
 CREATE OR REPLACE FUNCTION create_event_system_subscription(
   p_name TEXT,
@@ -102,11 +140,14 @@ CREATE OR REPLACE FUNCTION create_event_system_subscription(
   p_filter JSONB DEFAULT '{}',
   p_active BOOLEAN DEFAULT TRUE
 )
-RETURNS TABLE (id TEXT, name TEXT, "handlerType" TEXT, "table" TEXT) AS $$
+RETURNS TABLE (id TEXT, name TEXT, "handlerType" TEXT, "table" TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
-  IF (SELECT auth.role()) <> 'service_role'
-     AND NOT (p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_role())::text[], ARRAY[]::text[]))) THEN
-    RAISE EXCEPTION 'Not authorized to manage event subscriptions for company %', p_company_id
+  IF NOT can_manage_event_subscription(p_company_id, p_handler_type) THEN
+    RAISE EXCEPTION 'Not authorized to manage % event subscriptions for company %', p_handler_type, p_company_id
       USING ERRCODE = '42501';
   END IF;
 
@@ -132,17 +173,22 @@ BEGIN
     "eventSystemSubscription"."handlerType",
     "eventSystemSubscription"."table";
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 
 CREATE OR REPLACE FUNCTION delete_event_system_subscription(
   p_subscription_id TEXT
 )
-RETURNS VOID AS $$
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 DECLARE
   v_company_id TEXT;
+  v_handler_type TEXT;
 BEGIN
-  SELECT "companyId" INTO v_company_id
+  SELECT "companyId", "handlerType" INTO v_company_id, v_handler_type
   FROM "eventSystemSubscription"
   WHERE "id" = p_subscription_id;
 
@@ -151,25 +197,37 @@ BEGIN
     RETURN;
   END IF;
 
-  IF (SELECT auth.role()) <> 'service_role'
-     AND NOT (v_company_id = ANY (COALESCE((SELECT get_companies_with_employee_role())::text[], ARRAY[]::text[]))) THEN
-    RAISE EXCEPTION 'Not authorized to manage event subscriptions for company %', v_company_id
+  IF NOT can_manage_event_subscription(v_company_id, v_handler_type) THEN
+    RAISE EXCEPTION 'Not authorized to manage % event subscriptions for company %', v_handler_type, v_company_id
       USING ERRCODE = '42501';
   END IF;
 
   DELETE FROM "eventSystemSubscription" WHERE "id" = p_subscription_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 
 CREATE OR REPLACE FUNCTION delete_event_system_subscriptions_by_name(
   p_company_id TEXT,
   p_name TEXT
 )
-RETURNS VOID AS $$
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_handler_type TEXT;
 BEGIN
-  IF (SELECT auth.role()) <> 'service_role'
-     AND NOT (p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_role())::text[], ARRAY[]::text[]))) THEN
+  -- A (companyId, name) group is one handler type in practice; if any matching
+  -- row is WEBHOOK, require the stricter WEBHOOK gate. NULL (no rows) falls
+  -- through to the membership gate on a delete that affects nothing.
+  SELECT CASE WHEN bool_or("handlerType" = 'WEBHOOK') THEN 'WEBHOOK' ELSE max("handlerType") END
+  INTO v_handler_type
+  FROM "eventSystemSubscription"
+  WHERE "companyId" = p_company_id AND "name" = p_name;
+
+  IF NOT can_manage_event_subscription(p_company_id, COALESCE(v_handler_type, '')) THEN
     RAISE EXCEPTION 'Not authorized to manage event subscriptions for company %', p_company_id
       USING ERRCODE = '42501';
   END IF;
@@ -177,4 +235,4 @@ BEGIN
   DELETE FROM "eventSystemSubscription"
   WHERE "companyId" = p_company_id AND "name" = p_name;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
