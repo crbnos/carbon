@@ -47,13 +47,19 @@ function tally<K extends string>(
 
 /**
  * `invite.permissions` is JSONB shaped `{ "<module>_<action>": [companyId] }`.
- * An invite with the key present but every array empty grants nothing, so the
- * count is of keys that actually carry a company.
+ * A non-empty array is not enough: an invitation raised in this company whose
+ * grants all name a DIFFERENT company gives the new starter nothing here, and
+ * counting it would pass the challenge on an invitation that grants no access.
+ * `"0"` is the wildcard meaning every company.
  */
-function countGrantedPermissions(permissions: unknown): number {
+function countGrantedPermissions(
+  permissions: unknown,
+  companyId: string
+): number {
   if (!permissions || typeof permissions !== "object") return 0;
   return Object.values(permissions as Record<string, unknown>).filter(
-    (value) => Array.isArray(value) && value.length > 0
+    (value) =>
+      Array.isArray(value) && value.some((id) => id === companyId || id === "0")
   ).length;
 }
 
@@ -428,11 +434,13 @@ export function makeSupabaseReader(
 
     /**
      * `supplier.createdBy` is NULLABLE — a supplier can arrive by import, by an
-     * edge function, or from a portal, and filtering on it would fail a learner
-     * who genuinely created one. So this filters on company + `since` only, and
-     * hoists the rows the learner demonstrably created to the front. The
-     * checker takes the first row and therefore prefers their own supplier
-     * whenever one exists.
+     * edge function, or from a portal — so filtering on it outright would fail
+     * a learner who genuinely created one down an unattributed path.
+     *
+     * But a certification must not pass somebody on a colleague's work, so the
+     * fallback is narrow: the learner's own rows first, then only rows with NO
+     * recorded author. A supplier demonstrably created by a DIFFERENT user is
+     * dropped entirely.
      */
     async suppliersCreatedSince(scope) {
       const { data, error } = await client
@@ -450,10 +458,11 @@ export function makeSupabaseReader(
         createdBy: row.createdBy ?? null
       }));
 
-      // Stable partition: the learner's own first, each group still newest-first.
+      // Stable partition: the learner's own first, then unattributed rows.
+      // Someone else's supplier is never a candidate.
       return [
         ...rows.filter((row) => row.createdBy === scope.userId),
-        ...rows.filter((row) => row.createdBy !== scope.userId)
+        ...rows.filter((row) => row.createdBy === null)
       ];
     },
 
@@ -898,7 +907,10 @@ export function makeSupabaseReader(
         id: row.id,
         email: row.email ?? "",
         role: row.role ?? null,
-        permissionCount: countGrantedPermissions(row.permissions)
+        permissionCount: countGrantedPermissions(
+          row.permissions,
+          scope.companyId
+        )
       }));
     }
   };

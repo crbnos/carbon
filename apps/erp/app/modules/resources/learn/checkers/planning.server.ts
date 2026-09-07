@@ -11,8 +11,18 @@ import type { LearnItemPlanningRow } from "./reader.server";
 import type { CheckerContext } from "./shared.server";
 import { fail } from "./shared.server";
 
-/** The default. Leaving it here means the learner changed nothing that plans. */
-const MANUAL = "Manual Reorder";
+/**
+ * An ALLOWLIST, not "anything but Manual Reorder". The reader maps a missing policy to `""`,
+ * which passes an exclusion test and then falls through `missingNumbersFor`'s
+ * default branch — a false pass on a certification challenge. The column is
+ * NOT NULL today, so this is not reachable from real data; it is here so the
+ * checker cannot be broken by a reader that is.
+ */
+const PLANNING_POLICIES = new Set([
+  "Demand-Based Reorder",
+  "Fixed Reorder Quantity",
+  "Maximum Quantity"
+]);
 
 /**
  * Each policy needs different numbers, and a policy set without them plans
@@ -57,7 +67,9 @@ export async function checkSetReorderPolicy({
     );
   }
 
-  const planned = rows.filter((row) => row.reorderingPolicy !== MANUAL);
+  const planned = rows.filter((row) =>
+    PLANNING_POLICIES.has(row.reorderingPolicy)
+  );
   if (planned.length === 0) {
     return fail(
       "policy-not-manual",
@@ -98,7 +110,9 @@ export async function checkRunMrpAndReview({
 }: CheckerContext): Promise<LearnCheckResult> {
   const rows = await reader.itemPlanningUpdatedBy(scope);
   const planned = rows.filter(
-    (row) => row.reorderingPolicy !== MANUAL && missingNumbersFor(row) === null
+    (row) =>
+      PLANNING_POLICIES.has(row.reorderingPolicy) &&
+      missingNumbersFor(row) === null
   );
 
   if (planned.length === 0) {

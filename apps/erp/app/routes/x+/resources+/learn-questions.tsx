@@ -8,6 +8,7 @@ import type { LearnQuestionStatRow } from "~/modules/resources";
 import {
   getLearnQuestionStats,
   getTrack,
+  LEARN_QUESTION_WEAK_THRESHOLD,
   LearnQuestionStatsTable
 } from "~/modules/resources";
 import { questionMeta } from "~/modules/resources/learn/banks/index.server";
@@ -20,16 +21,6 @@ export const handle: Handle = {
   module: "resources"
 };
 
-/**
- * A question is only reported once enough people have answered it that no
- * single learner can be identified from the rate. Five is the floor — below it
- * a "20% correct" row on a four-person team is one named person's result.
- */
-const MINIMUM_ATTEMPTS = 5;
-
-/** Below this, the question is telling you the docs page is unclear. */
-const WEAK_THRESHOLD = 0.6;
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
     view: "resources",
@@ -41,9 +32,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const stats = await getLearnQuestionStats(serviceRole, companyId);
 
+  // The five-attempt floor is applied by `getLearnQuestionStats` itself, so the
+  // MCP tool and this page cannot disagree about it.
   const rows: LearnQuestionStatRow[] = [];
   for (const stat of stats.data ?? []) {
-    if (stat.attempts < MINIMUM_ATTEMPTS) continue;
     const meta = questionMeta(stat.questionSlug);
     // A slug with no meta is a question retired since it was answered. It is
     // history, not a docs signal — there is no page left to send anyone to.
@@ -66,7 +58,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     rows,
     count: rows.length,
-    weakCount: rows.filter((row) => row.correctRate < WEAK_THRESHOLD).length
+    weakCount: rows.filter(
+      (row) => row.correctRate < LEARN_QUESTION_WEAK_THRESHOLD
+    ).length
   };
 }
 

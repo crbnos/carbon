@@ -1265,6 +1265,17 @@ describe("planning-set-reorder-policy", () => {
     ).toBe("policy-set");
   });
 
+  it("refuses an unset policy rather than reading it as a planning one", async () => {
+    // An exclusion test (`!== "Manual Reorder"`) would let "" through and then
+    // find no missing numbers, passing a certification challenge on nothing.
+    const { reader } = makeFakeReader({
+      itemPlanning: [{ ...PLANNED_ITEM, reorderingPolicy: "" }]
+    });
+    expect(
+      failureOf(await check({ scope: SCOPE, reader })).failedRequirement
+    ).toBe("policy-not-manual");
+  });
+
   it("refuses a part left on the manual default", async () => {
     const { reader } = makeFakeReader({
       itemPlanning: [{ ...PLANNED_ITEM, reorderingPolicy: "Manual Reorder" }]

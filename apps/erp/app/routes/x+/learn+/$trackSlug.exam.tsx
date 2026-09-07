@@ -128,7 +128,11 @@ export default function LearnExamRoute() {
   const loaderData = useLoaderData<typeof loader>();
   const actionData = useActionData<any>();
 
+  // Both come off `result`, which is what `finalizeExamAttempt` returns — the
+  // verification code was previously read off the action's top level, where it
+  // never existed, so the public link never rendered.
   const certificateId = actionData?.result?.certificateId ?? null;
+  const verificationCode = actionData?.result?.verificationCode ?? null;
 
   return (
     <ExamRunner
@@ -141,8 +145,8 @@ export default function LearnExamRoute() {
       result={actionData?.result ?? null}
       gate={actionData?.gate ?? null}
       verifyUrl={
-        certificateId && actionData?.verificationCode
-          ? `${ERP_URL}${path.to.learnCertificateVerify(actionData.verificationCode)}`
+        certificateId && verificationCode
+          ? `${ERP_URL}${path.to.learnCertificateVerify(verificationCode)}`
           : null
       }
     />

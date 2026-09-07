@@ -674,10 +674,18 @@ async function buildEventContent(
     }
 
     case NotificationEvent.LearnAssignment: {
+      // Service-role reads bypass RLS, so `documentId` alone would let a
+      // mis-routed event put another tenant's track title in a notification.
+      // Fail closed rather than widening the read when the company is absent.
+      if (!opts?.companyId) {
+        throw new Error("LearnAssignment notification requires a companyId");
+      }
+
       const assignment = await client
         .from("learnAssignment")
         .select("trackTitle, dueDate")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (assignment.error) {
@@ -696,10 +704,17 @@ async function buildEventContent(
     }
 
     case NotificationEvent.LearnCertificateExpiring: {
+      if (!opts?.companyId) {
+        throw new Error(
+          "LearnCertificateExpiring notification requires a companyId"
+        );
+      }
+
       const certificate = await client
         .from("learnCertificate")
         .select("trackTitle, expiresAt")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (certificate.error) {

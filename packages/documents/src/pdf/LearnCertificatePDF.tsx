@@ -1,5 +1,6 @@
 import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
-import { createTw } from "react-pdf-tailwind";
+import { useTw } from "./blocks/tw";
+import { getSafeFontFamily } from "./fonts";
 
 interface LearnCertificatePDFProps {
   companyName: string;
@@ -16,15 +17,6 @@ interface LearnCertificatePDFProps {
   challengeCount: number;
   status: "Active" | "Expired" | "Revoked";
 }
-
-const tw = createTw({
-  theme: {
-    fontFamily: { sans: ["Helvetica", "Arial", "sans-serif"] },
-    extend: {
-      colors: { gray: { 400: "#9a9a9a", 500: "#7d7d7d", 700: "#3f3f3f" } }
-    }
-  }
-});
 
 const formatDay = (iso: string) => iso.slice(0, 10);
 
@@ -46,82 +38,102 @@ const LearnCertificatePDF = ({
   examScorePercent,
   challengeCount,
   status
-}: LearnCertificatePDFProps) => (
-  <Document title={`${trackTitle} — ${learnerName}`}>
-    <Page size="A4" orientation="landscape" style={tw("p-0 bg-white")}>
-      <View style={tw("flex-1 m-8 border border-gray-400 p-10 flex flex-col")}>
-        <View style={tw("flex flex-row justify-between items-start")}>
-          <View>
-            <Text
-              style={{ ...tw("text-gray-500"), fontSize: 10, letterSpacing: 2 }}
-            >
-              CERTIFICATE OF COMPLETION
+}: LearnCertificatePDFProps) => {
+  // Component-scoped, so the certificate picks up the document theme's grays
+  // when one is provided and the shared default palette when it is not.
+  const tw = useTw();
+
+  return (
+    <Document title={`${trackTitle} — ${learnerName}`}>
+      <Page
+        size="A4"
+        orientation="landscape"
+        style={{
+          ...tw("p-0 bg-white"),
+          fontFamily: getSafeFontFamily("Inter")
+        }}
+      >
+        <View
+          style={tw("flex-1 m-8 border border-gray-200 p-10 flex flex-col")}
+        >
+          <View style={tw("flex flex-row justify-between items-start")}>
+            <View>
+              <Text
+                style={{
+                  ...tw("text-gray-600"),
+                  fontSize: 10,
+                  letterSpacing: 2
+                }}
+              >
+                CERTIFICATE OF COMPLETION
+              </Text>
+              <Text style={{ ...tw("text-gray-800 mt-1"), fontSize: 12 }}>
+                {companyName}
+              </Text>
+            </View>
+            {status !== "Active" && (
+              <Text
+                style={{
+                  ...tw("text-gray-600 border border-gray-200 px-2 py-1"),
+                  fontSize: 10,
+                  letterSpacing: 1
+                }}
+              >
+                {status.toUpperCase()}
+              </Text>
+            )}
+          </View>
+
+          <View style={tw("mt-10")}>
+            <Text style={{ ...tw("text-gray-600"), fontSize: 11 }}>
+              This certifies that
             </Text>
-            <Text style={{ ...tw("text-gray-700 mt-1"), fontSize: 12 }}>
-              {companyName}
+            <Text style={{ fontSize: 30, fontWeight: "bold", marginTop: 6 }}>
+              {learnerName}
+            </Text>
+            <Text style={{ ...tw("text-gray-600 mt-6"), fontSize: 11 }}>
+              has completed the Carbon learning track
+            </Text>
+            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 6 }}>
+              {trackTitle}
             </Text>
           </View>
-          {status !== "Active" && (
+
+          <View style={tw("mt-8")}>
             <Text
-              style={{
-                ...tw("text-gray-500 border border-gray-400 px-2 py-1"),
-                fontSize: 10,
-                letterSpacing: 1
-              }}
+              style={{ ...tw("text-gray-800"), fontSize: 10, lineHeight: 1.5 }}
             >
-              {status.toUpperCase()}
-            </Text>
-          )}
-        </View>
-
-        <View style={tw("mt-10")}>
-          <Text style={{ ...tw("text-gray-500"), fontSize: 11 }}>
-            This certifies that
-          </Text>
-          <Text style={{ fontSize: 30, fontWeight: "bold", marginTop: 6 }}>
-            {learnerName}
-          </Text>
-          <Text style={{ ...tw("text-gray-500 mt-6"), fontSize: 11 }}>
-            has completed the Carbon learning track
-          </Text>
-          <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 6 }}>
-            {trackTitle}
-          </Text>
-        </View>
-
-        <View style={tw("mt-8")}>
-          <Text
-            style={{ ...tw("text-gray-700"), fontSize: 10, lineHeight: 1.5 }}
-          >
-            Certification exam passed with {examScorePercent}, and{" "}
-            {challengeCount} hands-on{" "}
-            {challengeCount === 1 ? "challenge" : "challenges"} verified against
-            real records created in Carbon.
-          </Text>
-        </View>
-
-        <View style={tw("flex-1")} />
-
-        <View style={tw("flex flex-row justify-between items-end")}>
-          <View>
-            <Text style={{ ...tw("text-gray-500"), fontSize: 9 }}>
-              Issued {formatDay(issuedAt)} · Valid until {formatDay(expiresAt)}
-            </Text>
-            <Text style={{ ...tw("text-gray-500 mt-1"), fontSize: 9 }}>
-              Content version {contentVersion}
-            </Text>
-            <Text style={{ ...tw("text-gray-500 mt-3"), fontSize: 9 }}>
-              Verify at {verifyUrl}
-            </Text>
-            <Text style={{ ...tw("text-gray-400 mt-1"), fontSize: 8 }}>
-              {verificationCode}
+              Certification exam passed with {examScorePercent}, and{" "}
+              {challengeCount} hands-on{" "}
+              {challengeCount === 1 ? "challenge" : "challenges"} verified
+              against real records created in Carbon.
             </Text>
           </View>
-          <Image src={qrDataUrl} style={{ width: 84, height: 84 }} />
+
+          <View style={tw("flex-1")} />
+
+          <View style={tw("flex flex-row justify-between items-end")}>
+            <View>
+              <Text style={{ ...tw("text-gray-600"), fontSize: 9 }}>
+                Issued {formatDay(issuedAt)} · Valid until{" "}
+                {formatDay(expiresAt)}
+              </Text>
+              <Text style={{ ...tw("text-gray-600 mt-1"), fontSize: 9 }}>
+                Content version {contentVersion}
+              </Text>
+              <Text style={{ ...tw("text-gray-600 mt-3"), fontSize: 9 }}>
+                Verify at {verifyUrl}
+              </Text>
+              <Text style={{ ...tw("text-gray-600 mt-1"), fontSize: 8 }}>
+                {verificationCode}
+              </Text>
+            </View>
+            <Image src={qrDataUrl} style={{ width: 84, height: 84 }} />
+          </View>
         </View>
-      </View>
-    </Page>
-  </Document>
-);
+      </Page>
+    </Document>
+  );
+};
 
 export default LearnCertificatePDF;

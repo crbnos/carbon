@@ -305,4 +305,45 @@ CREATE POLICY "DELETE" ON "public"."learnAssignment" FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('resources_delete'))::text[])
 );
 
+-- `learnAssignment` is the ONE Learn table a client may write, and its policies
+-- can only reason about `companyId` — not about what is INSIDE `groupIds`. A
+-- user with `resources_create` could therefore POST an assignment naming a
+-- group from another company through PostgREST, bypassing the service-layer
+-- check in `upsertLearnAssignment`, and the admin dashboard would then resolve
+-- that group's members and surface another tenant's employees.
+--
+-- The service check stays (it produces a readable error); this is the backstop
+-- that holds when the service is not in the path.
+CREATE OR REPLACE FUNCTION public.learn_assignment_groups_in_company()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  foreign_group TEXT;
+BEGIN
+  SELECT g_id INTO foreign_group
+  FROM unnest(NEW."groupIds") AS g_id
+  WHERE NOT EXISTS (
+    SELECT 1 FROM "group"
+    WHERE "group"."id" = g_id
+      AND "group"."companyId" = NEW."companyId"
+  )
+  LIMIT 1;
+
+  IF foreign_group IS NOT NULL THEN
+    RAISE EXCEPTION
+      'Group % does not belong to company %', foreign_group, NEW."companyId"
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER "learnAssignment_groups_in_company"
+BEFORE INSERT OR UPDATE OF "groupIds", "companyId" ON "public"."learnAssignment"
+FOR EACH ROW EXECUTE FUNCTION public.learn_assignment_groups_in_company();
+
 NOTIFY pgrst, 'reload schema';

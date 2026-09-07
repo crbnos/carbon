@@ -63,6 +63,30 @@ Nine tracks ship live: `fundamentals` plus one per role (`purchasing`,
 
 ## Gotchas that already bit
 
+- **`toIso` is needed on EVERY Kysely-read timestamp, not just the one that
+  bit first.** Four sites need it: the challenge scope's `startedAt`, the exam's
+  `expiresAt` (a `Date` compared against an ISO string never expires the
+  sitting), each failed attempt's `submittedAt` (default `sort()` on `Date`
+  objects orders by weekday NAME, so the cooldown anchors to the wrong attempt),
+  and a certificate's `expiresAt` (`parseAbsolute` throws on a non-string, so a
+  passed renewal silently extends nothing).
+- **A voided attempt must be refused in `finalizeExamAttempt` too.** Guarding
+  only `!attempt` lets a voided sitting reach the scoring path and mint a
+  certificate stamped with the CURRENT content version off answers graded
+  against a retired bank.
+- **`learnAssignment` is the one client-writable Learn table**, and its RLS can
+  only see `companyId` — not what is inside `groupIds`. The
+  `learnAssignment_groups_in_company` trigger is what stops a PostgREST write
+  naming another company's group, which the dashboard would then resolve members
+  for. `upsertLearnAssignment` still validates (it gives a readable error); the
+  trigger is the backstop for when the service is not in the path.
+- **A challenge must never pass somebody on a colleague's work.**
+  `suppliersCreatedSince` falls back only to rows with NO recorded author —
+  never to one demonstrably created by a different user. `countGrantedPermissions`
+  counts only grants naming this company (or the `"0"` wildcard).
+- **The question report's five-attempt floor lives in the SERVICE**, not the
+  route: `getLearnQuestionStats` is also exposed as an MCP tool, and a
+  route-level filter leaves that path unguarded.
 - **Normalise DB timestamps before a PostgREST filter.** Kysely decodes
   `timestamptz` to a JS `Date`; `String(date)` is the runtime-local format and
   Postgres rejects it (`time zone "gmt+0530" not recognized`). Use `toIso()`.

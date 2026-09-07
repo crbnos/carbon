@@ -423,9 +423,12 @@ export const learnAssignmentValidator = z.object({
   trackSlug: z.enum(learnTrackSlugs, {
     error: "Track is required"
   }),
-  groupIds: z
-    .array(z.string())
-    .min(1, { message: "At least one group is required" }),
+  // A multiselect posts one FormData entry per selection. `zfd.repeatable` is
+  // what collects them into an array; a bare `z.array` sees a single string and
+  // rejects a perfectly valid multi-group submission.
+  groupIds: zfd.repeatable(
+    z.array(z.string()).min(1, { message: "At least one group is required" })
+  ),
   dueDate: zfd.text(z.string().optional())
 });
 

@@ -580,7 +580,7 @@ export async function startExamAttempt(
         (c: { challengeSlug: string }) => c.challengeSlug
       ),
       failedExamSubmittedAt: exams.flatMap((e) =>
-        e.passed === false && e.submittedAt ? [e.submittedAt] : []
+        e.passed === false && e.submittedAt ? [toIso(e.submittedAt)] : []
       ),
       now
     });
@@ -684,7 +684,8 @@ export async function answerExamQuestion(
   }
 
   const now = datetime.timestamp();
-  if (attempt.expiresAt && now > attempt.expiresAt) return { done: true };
+  if (attempt.expiresAt && now > toIso(attempt.expiresAt))
+    return { done: true };
 
   const answered = await db
     .selectFrom("learnAttemptAnswer")
@@ -751,6 +752,8 @@ export async function finalizeExamAttempt(
   questionCount: number;
   perTopic: Array<{ topic: string; correct: number; total: number }>;
   certificateId: string | null;
+  verificationCode: string | null;
+  voided?: boolean;
 }> {
   const db = getDatabaseClient();
 
@@ -763,6 +766,21 @@ export async function finalizeExamAttempt(
     .executeTakeFirst();
 
   if (!attempt) throw new Response("Not found", { status: 404 });
+
+  // A voided attempt was graded against a bank that has since been retired.
+  // Scoring it would mint a certificate stamped with the CURRENT content
+  // version off answers to questions the learner never saw.
+  if (attempt.voidedAt) {
+    return {
+      passed: false,
+      correctCount: 0,
+      questionCount: attempt.questionCount,
+      perTopic: [],
+      certificateId: null,
+      verificationCode: null,
+      voided: true
+    };
+  }
 
   const answers = await db
     .selectFrom("learnAttemptAnswer")
@@ -804,14 +822,17 @@ export async function finalizeExamAttempt(
   }
 
   let certificateId: string | null = null;
+  let verificationCode: string | null = null;
   if (passed && attempt.kind === "Certification Exam") {
-    certificateId = await issueCertificate({
+    const certificate = await issueCertificate({
       companyId: ctx.companyId,
       userId: ctx.userId,
       trackSlug: attempt.trackSlug,
       examAttemptId: attempt.id,
       examScore: ratio
     });
+    certificateId = certificate.id;
+    verificationCode = certificate.verificationCode;
   }
 
   if (passed && attempt.kind === "Renewal Quiz") {
@@ -830,7 +851,8 @@ export async function finalizeExamAttempt(
       topic,
       ...v
     })),
-    certificateId
+    certificateId,
+    verificationCode
   };
 }
 
@@ -1013,7 +1035,7 @@ export async function issueCertificate(
     examAttemptId: string;
     examScore: number;
   }
-): Promise<string> {
+): Promise<{ id: string; verificationCode: string }> {
   const track = getTrack(input.trackSlug);
   if (!track) throw new Response("Not found", { status: 404 });
 
@@ -1027,14 +1049,15 @@ export async function issueCertificate(
 
   const existing = await db
     .selectFrom("learnCertificate")
-    .select("id")
+    .select(["id", "verificationCode"])
     .where("examAttemptId", "=", input.examAttemptId)
     .where("companyId", "=", input.companyId)
     .executeTakeFirst();
 
-  if (existing) return existing.id;
+  if (existing) return existing;
 
   let certificateId = "";
+  let verificationCode = "";
 
   await db.transaction().execute(async (trx) => {
     // Re-verify inside the transaction — never trust the caller's word that
@@ -1099,11 +1122,12 @@ export async function issueCertificate(
       .onConflict((oc: any) =>
         oc.columns(["examAttemptId", "companyId"]).doNothing()
       )
-      .returning("id")
+      .returning(["id", "verificationCode"])
       .execute();
 
     if (inserted.length > 0) {
       certificateId = inserted[0].id;
+      verificationCode = inserted[0].verificationCode;
       await awardXp(trx, {
         companyId: input.companyId,
         userId: input.userId,
@@ -1115,15 +1139,16 @@ export async function issueCertificate(
     }
   });
 
-  if (certificateId) return certificateId;
+  if (certificateId) return { id: certificateId, verificationCode };
 
-  const raced = await db
+  // The onConflict above did nothing, so a concurrent finalize won the race.
+  // Read back what it minted rather than reporting a certificate-less pass.
+  return await db
     .selectFrom("learnCertificate")
-    .select("id")
+    .select(["id", "verificationCode"])
     .where("examAttemptId", "=", input.examAttemptId)
     .where("companyId", "=", input.companyId)
     .executeTakeFirstOrThrow();
-  return raced.id;
 }
 
 async function extendCertificateForRenewal(input: Ctx & { trackSlug: string }) {
@@ -1144,7 +1169,7 @@ async function extendCertificateForRenewal(input: Ctx & { trackSlug: string }) {
 
   if (!certificate) return;
 
-  const expiresAt = parseAbsolute(certificate.expiresAt, tz)
+  const expiresAt = parseAbsolute(toIso(certificate.expiresAt), tz)
     .add({ months: CERTIFICATE_VALIDITY_MONTHS })
     .toAbsoluteString();
 

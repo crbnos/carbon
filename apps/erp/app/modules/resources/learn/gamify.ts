@@ -18,6 +18,16 @@ import type { LearnExamBlueprint } from "./types";
  */
 export const LEARN_CONTENT_VERSION = "2026.09.2";
 
+/**
+ * A question is only reported once this many people have answered it. Below the
+ * floor a correct-rate on a small team names the individuals behind it, so the
+ * report would leak exactly what the learner-private contract protects.
+ */
+export const LEARN_QUESTION_REPORT_MIN_ATTEMPTS = 5;
+
+/** Below this correct-rate, the question is telling you the docs are unclear. */
+export const LEARN_QUESTION_WEAK_THRESHOLD = 0.6;
+
 /** XP for a unit quiz by the attempt number on which it was PASSED. */
 export const QUIZ_XP_BY_PASS_ATTEMPT = [100, 50, 25] as const;
 export const CHALLENGE_XP = 500;

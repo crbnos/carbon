@@ -4,6 +4,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { LEARN_QUESTION_REPORT_MIN_ATTEMPTS } from "./learn/gamify";
 import type {
   failureModeValidator,
   locationValidator,
@@ -2400,11 +2401,16 @@ export async function getLearnQuestionStats(
     byQuestion.set(row.questionSlug, entry);
   }
 
-  const data = Array.from(byQuestion.entries()).map(([questionSlug, v]) => ({
-    questionSlug,
-    attempts: v.attempts,
-    correctRate: v.attempts === 0 ? 0 : v.correct / v.attempts
-  }));
+  // The five-attempt floor lives HERE, not in the route: this function is also
+  // exposed as an MCP tool, and a correct-rate on a question only two people
+  // have answered identifies those people.
+  const data = Array.from(byQuestion.entries())
+    .filter(([, v]) => v.attempts >= LEARN_QUESTION_REPORT_MIN_ATTEMPTS)
+    .map(([questionSlug, v]) => ({
+      questionSlug,
+      attempts: v.attempts,
+      correctRate: v.attempts === 0 ? 0 : v.correct / v.attempts
+    }));
 
   return { data, error: null };
 }

@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LuExternalLink, LuLock } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
@@ -108,6 +108,16 @@ const ExamRunner = ({
 }: ExamRunnerProps) => {
   const { t } = useLingui();
   const [selected, setSelected] = useState<string | string[]>("");
+
+  // The exam advances by POSTing and re-rendering with the next question, but
+  // `selected` is component state and survives that. Without this reset the
+  // previous answer stays applied: on a single -> multi change `answered` reads
+  // true before the learner has picked anything, so Next enables and submits an
+  // option id belonging to a question they were never shown.
+  const questionSlug = current?.question.slug;
+  useEffect(() => {
+    setSelected(current?.question.kind === "multi" ? [] : "");
+  }, [questionSlug, current?.question.kind]);
   const action =
     mode === "renewal"
       ? path.to.learnRenew(trackSlug)
