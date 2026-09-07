@@ -38,29 +38,6 @@ The status is computed from the state of its lines, never set by hand.
   <Status name="Rejected" terminal>Sign-off was declined.</Status>
 </StatusFlow>
 
-<Quiz>
-  <QuizQuestion
-    prompt="Every line on an order has been fully invoiced, but only some of the goods have arrived. What status does the order show?"
-    answer="c"
-    explanation="'To Receive' names what is still owed, not what is done. Status is computed from the lines every time — you never type it."
-  >
-    <QuizOption id="a">To Receive and Invoice</QuizOption>
-    <QuizOption id="b">To Invoice</QuizOption>
-    <QuizOption id="c">To Receive</QuizOption>
-    <QuizOption id="d">Completed</QuizOption>
-  </QuizQuestion>
-  <QuizQuestion
-    prompt="A line on a released order shows 'This line cannot be received'. What kind of line is it?"
-    answer="b"
-    explanation="Only item lines carry a receivable quantity. Comment and G/L account lines have nothing to receive."
-  >
-    <QuizOption id="a">A Part line with no supplier</QuizOption>
-    <QuizOption id="b">A comment or G/L account line</QuizOption>
-    <QuizOption id="c">A line with a conversion factor</QuizOption>
-    <QuizOption id="d">An outside processing line</QuizOption>
-  </QuizQuestion>
-</Quiz>
-
 ## Related
 
 <Cards>

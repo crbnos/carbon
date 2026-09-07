@@ -76,7 +76,7 @@ Sampling decides *how many* to inspect. An **inspection template** decides *what
   - **File**: An attachment — a photo, a scan, a cert.
   - **Inspection**: A nested inspection reference.
 
-The step validator (`qualityDocumentStepValidator`, `quality.models.ts:591`) enforces the type-specific rules: a **Measurement** step must have a unit of measure, a **List** step must have at least one non-empty option, and when both `minValue` and `maxValue` are set the max must be greater than or equal to the min.
+The step validator (`qualityDocumentStepValidator`, `quality.models.ts:591`) enforces the type-specific rules: a **Measurement** step must have a unit of measure, a **List** step must have at least one non-empty option, and when both `minValue` and `maxValue` are set the max must be greater than or equal to the min. This same step model backs versioned quality documents (SOPs and work instructions), so an inspection template and a procedure share their building blocks.
 
 ## FAI, inspection documents, and balloons
 

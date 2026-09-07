@@ -5,7 +5,6 @@ import { type IllustrationKey, illustrations } from "./illustrations";
 import { Status, StatusFlow } from "./status-flow";
 import { Term } from "./term";
 import { Zoomable } from "./zoomable";
-import { Quiz, QuizOption, QuizQuestion } from "@/components/quiz";
 
 /* The editorial MDX component map. Guide chapters are authored as MDX and rendered
  * through these — markdown elements get the warm-paper prose styling, and the custom
@@ -272,9 +271,6 @@ function HorizontalRule() {
 }
 
 export const editorialMdxComponents = {
-  Quiz,
-  QuizQuestion,
-  QuizOption,
   p: Paragraph,
   ul: UnorderedList,
   li: ListItem,
