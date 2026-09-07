@@ -770,7 +770,21 @@ export async function finalizeExamAttempt(
   // A voided attempt was graded against a bank that has since been retired.
   // Scoring it would mint a certificate stamped with the CURRENT content
   // version off answers to questions the learner never saw.
-  if (attempt.voidedAt) {
+  //
+  // `voidedAt` alone is not enough: a deploy landing between the final answer
+  // and this call leaves the row un-voided but the content already moved on,
+  // so the version is re-checked here and the row marked, exactly as
+  // `answerExamQuestion` does.
+  if (shouldVoid(attempt.contentVersion) && !attempt.voidedAt) {
+    await db
+      .updateTable("learnAttempt")
+      .set({ voidedAt: datetime.timestamp() })
+      .where("id", "=", attempt.id)
+      .where("companyId", "=", ctx.companyId)
+      .execute();
+  }
+
+  if (attempt.voidedAt || shouldVoid(attempt.contentVersion)) {
     return {
       passed: false,
       correctCount: 0,
