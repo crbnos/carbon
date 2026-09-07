@@ -175,7 +175,13 @@ export function BuilderHeader({
   };
 
   return (
-    <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b px-4">
+    <header
+      // The workflow layout's ground is bg-background — GRAY in the light
+      // themes — so a transparent header reads as a gray strip between the
+      // palette and canvas, which are card-colored. bg-card is white in light
+      // and the standard dark surface in dark, matching the rest of the chrome.
+      className="flex h-[var(--topbar-height)] shrink-0 items-center gap-3 border-b bg-card px-4"
+    >
       <WorkflowTitle workflow={workflow} />
 
       {isReadOnly && (
