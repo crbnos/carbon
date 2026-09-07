@@ -8,9 +8,9 @@ import type { ManifestEntry } from "@carbon/api";
 import { CarbonJsonSchemaConverter, jsonSchema } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
-import { call } from "@orpc/server";
+import { call, ORPCError } from "@orpc/server";
 import { describe, expect, it } from "vitest";
-import { type AuthedContext, base, gate } from "./base.server";
+import { type AuthedContext, base, gate, mapThrownErrors } from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
 import { specOptions } from "./spec-options.server";
 
@@ -69,7 +69,34 @@ const gated = base
   .input(jsonSchema({ type: "object", properties: {} }))
   .handler(() => ({ data: "ok" }));
 
-const router = { demo: { ping }, parts: { getParts: gated } };
+/** Procedures that throw, to pin how each error class reaches the wire. */
+const thrower = (name: string, path: `/${string}`, err: () => never) =>
+  base
+    .use(mapThrownErrors)
+    .use(gate(meta({ name })))
+    .route({ method: "POST", path, summary: name })
+    .input(jsonSchema({ type: "object", properties: {} }))
+    .handler(() => err());
+
+const domainThrow = thrower("demo_domain", "/demo/domain", () => {
+  throw new Error("Purchase order line not found");
+});
+const bugThrow = thrower("demo_bug", "/demo/bug", () => {
+  throw new TypeError("materials.map is not a function");
+});
+const orpcThrow = thrower("demo_orpc", "/demo/orpc", () => {
+  throw new ORPCError("CONFLICT", { message: "already posted" });
+});
+
+const router = {
+  demo: {
+    ping,
+    domain: domainThrow,
+    bug: bugThrow,
+    orpc: orpcThrow
+  },
+  parts: { getParts: gated }
+};
 const handler = new OpenAPIHandler(router);
 
 function ctx(overrides: Partial<AuthedContext> = {}): AuthedContext {
@@ -121,6 +148,44 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
       { context: ctx() }
     );
     expect(result).toEqual({ data: { name: "y" } });
+  });
+
+  // A service's deliberate throw used to reach the wire as an opaque 500 with the
+  // message dropped (oRPC keeps it only as `cause`, which the encoder never
+  // serializes) — while the same call over MCP returned the real text, because
+  // callOperation reads err.message itself. These pin the two apart by error class.
+  async function post(path: string) {
+    const request = new Request(`https://x.test${PREFIX}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}"
+    });
+    const { response } = await handler.handle(request, {
+      prefix: PREFIX,
+      context: ctx()
+    });
+    return {
+      status: response?.status,
+      body: (await response?.json()) as { message?: string }
+    };
+  }
+
+  it("surfaces a deliberate Error as 422 carrying its message", async () => {
+    const { status, body } = await post("/demo/domain");
+    expect(status).toBe(422);
+    expect(body.message).toBe("Purchase order line not found");
+  });
+
+  it("keeps a TypeError opaque — a programming bug must not leak detail", async () => {
+    const { status, body } = await post("/demo/bug");
+    expect(status).toBe(500);
+    expect(body.message).not.toContain("materials.map");
+  });
+
+  it("passes an ORPCError through untouched", async () => {
+    const { status, body } = await post("/demo/orpc");
+    expect(status).toBe(409);
+    expect(body.message).toBe("already posted");
   });
 
   it("403s an API-key caller missing the required scope", async () => {

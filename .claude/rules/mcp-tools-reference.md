@@ -104,12 +104,39 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   (`authKind: "session"`) callers skip the scope gate; RLS/role bounds them.
 - The service registry lives at `api+/v1+/lib/registry.server.ts` (the 15 module
   namespaces); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
+- **Input is validated** against the operation's own schema before dispatch.
+  `router.server.ts` wires `.input(jsonSchemaInput(meta.schema))` from
+  `@carbon/api/schema`, which converts the manifest's JSON Schema back to zod at
+  first use (`z.fromJSONSchema`; no validator library is involved). Because
+  `callOperation` runs the real procedure, this covers MCP, the agent and
+  workflows as well as HTTP — a malformed payload gets a 400 naming the field
+  instead of silently reaching a service. `.output()` deliberately keeps the
+  pass-through `jsonSchema()`: `shapeHttpBody` rewrites the body, so a correct
+  response does not match the declared response schema. The validator preserves
+  unknown keys (no generated schema sets `additionalProperties: false`) and
+  accepts a lone wrapper's contents sent flat, since the dispatcher does too.
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
   `["client", "args"]`) and `injectAuth`. The dispatch builds the positional
   arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
   service whose param is `db` is handed `getDatabaseClient()`; payload params are
   stamped with auth fields via `enrichWithAuthContext` (now in
-  `dispatch.server.ts`). When a payload param is an **array** of rows,
+  `dispatch.server.ts`). A param literally named `args` is stamped too, and
+  which wire shape it takes is read off the operation's schema: a declared `args`
+  object means the body wraps it (`{ args: {...} }`) and the inner object is
+  unwrapped; a flat schema means the body already IS the args object. A flat body
+  is still accepted either way. A param the schema declares as a **scalar** is
+  passed `undefined` when no key matches rather than being handed the whole
+  payload object — that fallback made `deleteApiKey` run `.eq("id", {...})` and
+  return `200 null`. Reading a key by the param's own name is likewise gated
+  (`addressesWholeParam`): a service whose sole payload param is a destructured
+  object can share its name with one of that object's FIELDS —
+  `insertNote(client, note: { note, documentId, … })` — and reading `body.note`
+  there handed the service the note STRING instead of the record. The schema
+  decides: a wrapper op declares one property named for the param, so read it; an
+  op listing the param's own fields is describing it, so pass the whole body.
+  `_operation` and any property that is itself another serviceParam (`args`, and
+  scalar siblings like `locationId`) don't count toward that, since each is
+  addressed on its own pass. When a payload param is an **array** of rows,
   `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
   the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
   table (e.g. `quoteLinePrice`) used to fail. Only `createdBy` is injected per
@@ -118,7 +145,40 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 - Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are
   rejected in `call_tool`, in `callOperation`, and (belt-and-braces) in the
   `gate()` middleware — though the primary gate is that the generator excludes
-  them from the manifest entirely.
+  them from the manifest entirely. Tenant-level operations belong here:
+  `settings_insertCompany` and `settings_deleteSubsidiary` are both bare
+  `company` writes whose only scoping is a companyId the dispatcher fills from
+  the caller's own key, so an empty body would create or destroy a tenant. Their
+  "internal users only" gate lives in the settings ROUTE (`isInternalEmail`),
+  which no API/MCP call passes through. So do operations whose table carries
+  **user-scoped RLS** (`"createdBy"::uuid = auth.uid()` — `note`,
+  `maintenanceDispatchComment` and the six `*Favorite` tables, migration
+  `20260228000000_rls-refactor-3.sql`). An API key authenticates with the
+  `carbon-key` header rather than a Supabase JWT, so `auth.uid()` is NULL and the
+  predicate never matches. The failure splits by verb, and the silent half is the
+  reason these are blocked rather than left to fail: an INSERT raises a visible RLS
+  error, but an UPDATE/DELETE matching zero rows is not an error — PostgREST
+  returns success, so `deleteNote` answered `200` while the row stayed untouched.
+  `*_upsertMaintenanceDispatchComment` and `shared_insertNote` are deliberately NOT
+  blocked: their INSERT path is companyId-scoped and works. The upserts' `update`
+  branch still no-ops silently — making it work is an RLS decision, not an app-code
+  one.
+- **A thrown service error is mapped to a 422 carrying its message** by the
+  `mapThrownErrors` middleware (`lib/base.server.ts`), composed ahead of `gate`
+  in `router.server.ts`. Services are meant to return the Supabase
+  `{ data, error }` envelope, but ~51 of them `throw` instead; oRPC rewrites any
+  non-`ORPCError` throw to a 500 and keeps the message only as `cause`, which the
+  encoder drops — so HTTP answered a bad id opaquely while MCP showed the real
+  text (`callOperation` reads `err.message` itself). Classification is by
+  constructor, since the ERP service layer has no domain-error class: a plain
+  `Error` is surfaced, while `TypeError`/`ReferenceError`/`RangeError`/
+  `SyntaxError` keep their opaque 500 because they mean Carbon has a bug. The
+  mapper must never attach `data.supabase` — `callOperation` keys its
+  `Database error:` envelope off that field.
+- `eliminationClient` is a **context param**, filled from `context.client` (which
+  is what the service itself defaults it to). Left out of the generator's
+  `CONTEXT_PARAMS` it became a required field a caller cannot express — a
+  Supabase client — so the two consolidated-balance ops failed every call.
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
   `callOperation` returns `{ success: true, data, count? }` or

@@ -36,7 +36,10 @@ if git diff --cached --name-only | grep -q '\.service\.ts$'; then
         echo "✗ MCP tool metadata could not be regenerated. Nothing was staged."
         exit 1
     fi
-    git add apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
+    # The manifest itself is gitignored (see 633f134b0b) — the DIGEST is what is
+    # committed, and `git add` on an ignored path exits 1, which failed this hook
+    # for every commit that touched a *.service.ts.
+    git add apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json
 fi
 
 # Demo-dataset drift only shows up when the datasets actually run. This dry-runs

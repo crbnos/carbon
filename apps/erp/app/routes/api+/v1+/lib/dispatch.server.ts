@@ -62,7 +62,14 @@ export function enrichWithAuthContext(
   // A caller-supplied createdBy would send the service down its insert branch.
   if (operation === "update") {
     delete enriched.createdBy;
-  } else if (fields.includes("createdBy") && !("createdBy" in enriched)) {
+  } else if (fields.includes("createdBy")) {
+    // Overwrite rather than only filling a gap. A caller-supplied createdBy used
+    // to survive, so any create could be attributed to a different user — the
+    // array branch above has always stamped AFTER the spread for exactly that
+    // reason, and the two shapes must not disagree. Nothing depends on the
+    // caller's value: every operation that injects createdBy is create-shaped
+    // (insert/upsert/create/copy/…), and an upsert's update path is handled by
+    // the branch above.
     enriched.createdBy = context.userId;
   }
   if (fields.includes("updatedBy")) {
@@ -105,6 +112,73 @@ export function extractOperation(args: Record<string, any> | undefined): {
   }
 
   return { operations, args: cleaned };
+}
+
+const SCALAR_PARAM_TYPES = new Set(["string", "number", "integer", "boolean"]);
+
+// The declared JSON-Schema type of a top-level parameter, when that type is a
+// scalar. `["string","null"]` unions are common in the manifest, so the null
+// member is ignored rather than treated as a non-scalar.
+function declaredScalarParam(
+  meta: ManifestEntry,
+  name: string
+): string | undefined {
+  const prop = (
+    meta.schema as { properties?: Record<string, { type?: unknown }> }
+  )?.properties?.[name];
+  const raw = Array.isArray(prop?.type)
+    ? (prop.type as unknown[]).find((t) => t !== "null")
+    : prop?.type;
+  return typeof raw === "string" && SCALAR_PARAM_TYPES.has(raw)
+    ? raw
+    : undefined;
+}
+
+/** Params the loop fills from context rather than from the request body. */
+const CONTEXT_PARAM_NAMES = new Set([
+  "client",
+  "db",
+  "userId",
+  "companyId",
+  "companyGroupId",
+  "eliminationClient",
+  "args"
+]);
+
+/**
+ * Is `paramName` a key the caller genuinely addresses, or does it just happen to
+ * collide with a field of the object this param expects?
+ *
+ * A service whose sole payload param is a destructured object can share its name
+ * with one of that object's own fields — `upsertMaintenanceDispatchComment(client,
+ * comment: { maintenanceDispatchId, comment, … })`. Reading `body.comment` there
+ * hands the service the comment STRING where it wants the whole record.
+ *
+ * The schema tells the two apart. A wrapper op declares exactly one property, named
+ * for the param (`{ data: {...}, _operation }`) — read it. An op whose schema lists
+ * the param's own FIELDS is describing the object, not addressing it — pass the whole
+ * body instead. `_operation` is a synthetic discriminator and any property that is
+ * itself another serviceParam (`args`, plus scalar siblings like `locationId`) is
+ * addressed on its own pass, so neither counts toward that decision.
+ */
+function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
+  const properties = (meta.schema as { properties?: Record<string, unknown> })
+    ?.properties;
+  // Not a declared property at all, so a key of this name can only be the caller
+  // nesting the payload under it — the documented `{ account: {...} }` wrapper.
+  // There is nothing to confuse it with.
+  if (!properties || !(paramName in properties)) return true;
+
+  const payloadParams = meta.serviceParams.filter(
+    (p) => !CONTEXT_PARAM_NAMES.has(p)
+  );
+  if (payloadParams.length !== 1 || payloadParams[0] !== paramName) return true;
+
+  const own = Object.keys(properties).filter(
+    (k) =>
+      k !== "_operation" && !(k !== paramName && meta.serviceParams.includes(k))
+  );
+  return own.length === 1 && own[0] === paramName;
 }
 
 function supabaseErrorMessage(error: unknown): string {
@@ -175,9 +249,36 @@ export async function dispatchOperation(
       functionArgs.push(context.companyId);
     } else if (paramName === "companyGroupId") {
       functionArgs.push(context.companyGroupId);
+    } else if (paramName === "eliminationClient") {
+      // A second client for consolidation reads; the service defaults it to its
+      // own `client`, so the request-scoped one is the right fill. It is context,
+      // never caller-supplied — a caller cannot express a Supabase client in JSON.
+      functionArgs.push(context.client);
     } else if (paramName === "args") {
-      functionArgs.push(normalizedArgs || {});
-    } else if (normalizedArgs && paramName in normalizedArgs) {
+      // Two wire shapes, told apart by the operation's own schema. When it
+      // declares an `args` object the body is `{ args: {...} }` and the inner
+      // object is what the service wants; otherwise the schema is flat and the
+      // body already IS the args object. A flat body is still accepted for the
+      // former (18 ops mix `args` with sibling top-level params, and the extra
+      // keys are inert — setGenericQueryFilters reads only filters/sorts/
+      // offset/limit).
+      const wrapped = normalizedArgs?.args;
+      const value =
+        (meta.schema as { properties?: Record<string, unknown> })?.properties
+          ?.args &&
+        wrapped &&
+        typeof wrapped === "object" &&
+        !Array.isArray(wrapped)
+          ? wrapped
+          : normalizedArgs || {};
+      functionArgs.push(
+        enrichWithAuthContext(value, context, meta.injectAuth, operation)
+      );
+    } else if (
+      normalizedArgs &&
+      paramName in normalizedArgs &&
+      addressesWholeParam(meta, paramName)
+    ) {
       functionArgs.push(
         enrichWithAuthContext(
           normalizedArgs[paramName],
@@ -186,6 +287,23 @@ export async function dispatchOperation(
           operation
         )
       );
+    } else if (
+      declaredScalarParam(meta, paramName) &&
+      addressesWholeParam(meta, paramName)
+    ) {
+      // The param is a scalar and no key matched it. The object fallbacks below
+      // would hand the service the whole payload as an id — deleteApiKey ran
+      // `.eq("id", { apiKeyId })`, matched nothing and returned 200 null, a
+      // silent no-op on a destructive operation. `undefined` keeps the
+      // positional arity intact; a MISSING REQUIRED scalar is rejected earlier
+      // by input validation, and the 23 ops with an OPTIONAL scalar param
+      // legitimately reach here.
+      //
+      // The addressesWholeParam guard matters: on a collision op the schema
+      // entry sharing this param's name describes a FIELD of the object it
+      // wants, so it looks scalar here — without it we would push `undefined`
+      // instead of falling through to the whole-object path below.
+      functionArgs.push(undefined);
     } else if (
       normalizedArgs &&
       Object.keys(normalizedArgs).length === 1 &&

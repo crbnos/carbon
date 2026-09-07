@@ -683,7 +683,11 @@ run log at `.ai/runs/`.
 
 ## Out of scope (do not fold in)
 
-Per-module manifest shards (D1); Ajv request validation; OAuth bearer auth on `/api/v1`;
+> Request validation is no longer deferred — it landed after this plan, via
+> `jsonSchemaInput()` in `@carbon/api` using zod's `fromJSONSchema`, so it needed
+> no Ajv and no new dependency. See `.claude/rules/mcp-tools-reference.md`.
+
+Per-module manifest shards (D1); OAuth bearer auth on `/api/v1`;
 READ→GET routing with ETag/Cache-Control; oRPC batch plugin and the MCP `call_tools` batch
 meta-tool; typed client outputs; Docs Phase 2 (`operations-data.generated.ts`, HTTP transport
 tabs); the `/api-reference` → `/data-api` cutover.

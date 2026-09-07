@@ -3,8 +3,8 @@
 // router for both OpenAPIHandler (HTTP) and server-side call() (MCP/agent).
 
 import type { ManifestEntry } from "@carbon/api";
-import { jsonSchema } from "@carbon/api/schema";
-import { base, gate } from "./base.server";
+import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
+import { base, gate, mapThrownErrors } from "./base.server";
 import { dispatchOperation } from "./dispatch.server";
 import {
   OPERATIONS,
@@ -26,6 +26,9 @@ const RESERVED_KEYS = new Set([
 function buildProcedure(meta: ManifestEntry, id: string) {
   return (
     base
+      // Outside the gate so it also covers anything the gate itself throws
+      // through — it re-raises ORPCErrors untouched, so 403s/404s are unaffected.
+      .use(mapThrownErrors)
       .use(gate(meta))
       .route({
         method: "POST",
@@ -33,7 +36,9 @@ function buildProcedure(meta: ManifestEntry, id: string) {
         tags: [meta.module],
         summary: meta.description
       })
-      .input(jsonSchema(meta.schema))
+      // Input validates; output does NOT — shapeHttpBody rewrites the body, so a
+      // correct response does not match the declared response schema.
+      .input(jsonSchemaInput(meta.schema))
       .output(jsonSchema(outputSchema(meta)))
       // callOperation reverses this shaping with the same static bit, so
       // MCP/agent/workflow callers still see DispatchResult semantics.

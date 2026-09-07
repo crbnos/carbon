@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // A scope/expiry edit must not keep authenticating from the 30s auth cache.
-  await invalidateApiKeyCache(client, id);
+  await invalidateApiKeyCache(id, companyId);
 
   throw redirect(
     `${path.to.apiKeys}?${getParams(request)}`,

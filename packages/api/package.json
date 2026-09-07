@@ -16,7 +16,8 @@
   "dependencies": {
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
-    "@orpc/openapi-client": "catalog:"
+    "@orpc/openapi-client": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",

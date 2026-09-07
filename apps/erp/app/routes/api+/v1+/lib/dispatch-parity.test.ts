@@ -20,6 +20,13 @@ const spies = vi.hoisted(() => ({
   insertIssue: vi.fn(),
   insertPurchaseOrder: vi.fn(),
   insertSalesOrder: vi.fn(),
+  getDepartments: vi.fn(),
+  deleteApiKey: vi.fn(),
+  upsertJob: vi.fn(),
+  insertNote: vi.fn(),
+  upsertStockTransfer: vi.fn(),
+  getInventoryItems: vi.fn(),
+  updateRevision: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -37,14 +44,21 @@ vi.mock("~/modules/accounting/accounting.ee.service", () => ({
 }));
 vi.mock("~/modules/documents/documents.service", () => ({}));
 vi.mock("~/modules/inventory/inventory.service", () => ({
-  generateInventoryCountLines: spies.generateInventoryCountLines
+  generateInventoryCountLines: spies.generateInventoryCountLines,
+  upsertStockTransfer: spies.upsertStockTransfer,
+  getInventoryItems: spies.getInventoryItems
 }));
 vi.mock("~/modules/invoicing/invoicing.service", () => ({}));
-vi.mock("~/modules/items/items.service", () => ({}));
-vi.mock("~/modules/people/people.service", () => ({}));
+vi.mock("~/modules/items/items.service", () => ({
+  updateRevision: spies.updateRevision
+}));
+vi.mock("~/modules/people/people.service", () => ({
+  getDepartments: spies.getDepartments
+}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
-  insertJob: spies.insertJob
+  insertJob: spies.insertJob,
+  upsertJob: spies.upsertJob
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
@@ -57,8 +71,12 @@ vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   insertSalesOrder: spies.insertSalesOrder
 }));
-vi.mock("~/modules/settings/settings.service", () => ({}));
-vi.mock("~/modules/shared/shared.service", () => ({}));
+vi.mock("~/modules/settings/settings.service", () => ({
+  deleteApiKey: spies.deleteApiKey
+}));
+vi.mock("~/modules/shared/shared.service", () => ({
+  insertNote: spies.insertNote
+}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => spies.FAKE_DB
@@ -130,7 +148,14 @@ const allSpies = [
   spies.insertJob,
   spies.insertIssue,
   spies.insertPurchaseOrder,
-  spies.insertSalesOrder
+  spies.insertSalesOrder,
+  spies.getDepartments,
+  spies.deleteApiKey,
+  spies.upsertJob,
+  spies.insertNote,
+  spies.upsertStockTransfer,
+  spies.getInventoryItems,
+  spies.updateRevision
 ];
 
 beforeEach(() => {
@@ -141,14 +166,18 @@ beforeEach(() => {
 });
 
 describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
-  it("a. passes `args` through whole and injects the context client", async () => {
+  // The `companyId` in a. and a2. is the fix for the `args` branch skipping
+  // enrichWithAuthContext. getAccountLedger's args type REQUIRES companyId; without
+  // the stamp it took neither its companyId nor its companyIds branch and the query
+  // went out unscoped in application code, leaning entirely on RLS.
+  it("a. passes a flat-schema `args` through whole and stamps injectAuth fields", async () => {
     const r = await runDispatch(
       "accounting_getAccountLedger",
       spies.getAccountLedger,
       { accountNumber: "1000", limit: 5 }
     );
     expect(r.calls).toEqual([
-      [spies.FAKE_CLIENT, { accountNumber: "1000", limit: 5 }]
+      [spies.FAKE_CLIENT, { accountNumber: "1000", limit: 5, companyId: "c1" }]
     ]);
   });
 
@@ -159,7 +188,12 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       { startDate: "2026-01-01" }
     );
     expect(r.calls).toEqual([
-      [spies.FAKE_CLIENT, "g1", "c1", { startDate: "2026-01-01" }]
+      [
+        spies.FAKE_CLIENT,
+        "g1",
+        "c1",
+        { startDate: "2026-01-01", companyId: "c1" }
+      ]
     ]);
   });
 
@@ -215,6 +249,37 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     );
     const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("createdBy" in payload).toBe(false);
+  });
+
+  it("d2. caller-supplied createdBy on a CREATE is overwritten, not honoured", async () => {
+    // It used to be stamped only when absent, so a create could be attributed to
+    // any other user (verified live: a record stored createdBy "system" rather
+    // than the key's own user). The array branch always overwrote; both shapes
+    // must agree.
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      {
+        _operation: "create",
+        account: { name: "Cash", createdBy: "forged-user" }
+      }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload.createdBy).toBe("u1");
+  });
+
+  it("d3. an array payload overwrites a per-element createdBy too", async () => {
+    const r = await runDispatch(
+      "sales_upsertQuoteLinePrices",
+      spies.upsertQuoteLinePrices,
+      {
+        quoteId: "q1",
+        lineId: "l1",
+        quoteLinePrices: [{ quantity: 1, createdBy: "forged-user" }]
+      }
+    );
+    const rows = r.calls[0]?.at(-1) as Record<string, unknown>[];
+    expect(rows[0].createdBy).toBe("u1");
   });
 
   it("e. conflicting _operation values are rejected before the service runs", async () => {
@@ -295,7 +360,17 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       spies.generateInventoryCountLines,
       { locationId: "loc1" }
     );
-    expect(r.calls).toEqual([[spies.FAKE_DB, { locationId: "loc1" }]]);
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_DB,
+        {
+          locationId: "loc1",
+          companyId: "c1",
+          createdBy: "u1",
+          updatedBy: "u1"
+        }
+      ]
+    ]);
   });
 
   it("j. a thenable-but-not-Promise result (Supabase builder) is awaited and unwrapped", async () => {
@@ -391,17 +466,179 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       count: 7
     });
   });
+
+  // o-q: the `args` positional. Which of the two wire shapes an operation uses is
+  // read off its own schema — a declared `args` object means the body wraps it.
+  // Passing the wrapper through unopened left every filter undefined, so searches
+  // returned unfiltered lists and getDocuments 400d on `.eq("active", undefined)`.
+  it("o. an operation whose schema declares `args` gets the wrapper unwrapped", async () => {
+    const r = await runDispatch("people_getDepartments", spies.getDepartments, {
+      args: { search: "Engineering", limit: 10 }
+    });
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        "c1",
+        { search: "Engineering", limit: 10, companyId: "c1" }
+      ]
+    ]);
+  });
+
+  it("p. the same operation still accepts a flat body (18 ops mix `args` with siblings)", async () => {
+    const r = await runDispatch("people_getDepartments", spies.getDepartments, {
+      search: "Engineering"
+    });
+    expect(r.calls).toEqual([
+      [spies.FAKE_CLIENT, "c1", { search: "Engineering", companyId: "c1" }]
+    ]);
+  });
+
+  it("q. an `args` wrapper is NOT unwrapped when the schema is flat", async () => {
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      { args: { accountId: "a1" } }
+    );
+    expect(r.calls).toEqual([
+      [spies.FAKE_CLIENT, { args: { accountId: "a1" }, companyId: "c1" }]
+    ]);
+  });
+
+  // r-s: a declared SCALAR param must never receive an object. deleteApiKey ran
+  // `.eq("id", { apiKeyId })`, matched nothing and returned 200 null — a silent
+  // no-op on a destructive operation.
+  it("r. a scalar param with no matching key is passed as undefined, not an object", async () => {
+    const r = await runDispatch("settings_deleteApiKey", spies.deleteApiKey, {
+      apiKeyId: "api_1"
+    });
+    expect(r.calls).toEqual([[spies.FAKE_CLIENT, undefined]]);
+  });
+
+  it("r2. the scalar is still used when the caller sends the declared name", async () => {
+    const r = await runDispatch("settings_deleteApiKey", spies.deleteApiKey, {
+      id: "api_1"
+    });
+    expect(r.calls).toEqual([[spies.FAKE_CLIENT, "api_1"]]);
+  });
+
+  // t-w: a service whose sole payload param is a destructured object can share its
+  // name with one of that object's own FIELDS. Reading `body.note` there handed
+  // insertNote the note STRING where it wants the whole record, so the insert went
+  // in malformed. The schema tells the two apart: a wrapper op declares one property
+  // named for the param; an op listing the param's own fields is describing it.
+  it("t. a param colliding with one of its object's own fields gets the whole payload", async () => {
+    const r = await runDispatch("shared_insertNote", spies.insertNote, {
+      note: "the note text",
+      documentId: "doc_1"
+    });
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          note: "the note text",
+          documentId: "doc_1",
+          companyId: "c1",
+          createdBy: "u1",
+          updatedBy: "u1"
+        }
+      ]
+    ]);
+  });
+
+  it("u. the same holds for updateRevision, whose `revision` field shares the param name", async () => {
+    const r = await runDispatch("items_updateRevision", spies.updateRevision, {
+      id: "item_1",
+      revision: "B"
+    });
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        { id: "item_1", revision: "B", companyId: "c1", updatedBy: "u1" }
+      ]
+    ]);
+  });
+
+  it("v. a genuine wrapper op still has its wrapper unwrapped", async () => {
+    // `stockTransfer` IS the schema's only declared property, so a body of
+    // { stockTransfer: {...} } addresses the param — extract it, don't nest it.
+    const r = await runDispatch(
+      "inventory_upsertStockTransfer",
+      spies.upsertStockTransfer,
+      {
+        _operation: "create",
+        stockTransfer: { locationId: "loc_1", stockTransferId: "st_1" }
+      }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload).toMatchObject({
+      locationId: "loc_1",
+      stockTransferId: "st_1",
+      companyId: "c1"
+    });
+    expect("stockTransfer" in payload).toBe(false);
+  });
+
+  it("w. a scalar sibling alongside `args` is still read by name", async () => {
+    // props are ['locationId','args'] — `args` is handled on its own pass, so
+    // locationId remains the sole own property and must still be extracted.
+    const r = await runDispatch(
+      "inventory_getInventoryItems",
+      spies.getInventoryItems,
+      { locationId: "loc_1", args: { search: "x" } }
+    );
+    const [, locationId] = r.calls[0] as [unknown, unknown];
+    expect(locationId).toBe("loc_1");
+  });
+
+  it("s. an absent OPTIONAL scalar keeps positional arity without swallowing the payload", async () => {
+    const r = await runDispatch("production_upsertJob", spies.upsertJob, {
+      job: { id: "j1" }
+    });
+    const [client, job, status] = r.calls[0] as [unknown, unknown, unknown];
+    expect(client).toBe(spies.FAKE_CLIENT);
+    expect(job).toMatchObject({ id: "j1", companyId: "c1" });
+    expect(status).toBeUndefined();
+  });
 });
 
 // The exact ids the workflow engine's create actions dispatch
 // (packages/workflows/src/catalog/actions.ts). Their results must stay readable by
 // create.ts's idIn(): an `id` on the returned object, or on an element of a list.
-const WORKFLOW_CALL_IDS: Array<[string, Spy]> = [
-  ["production_insertJob", spies.insertJob],
-  ["quality_insertIssue", spies.insertIssue],
-  ["purchasing_insertPurchaseOrder", spies.insertPurchaseOrder],
-  ["sales_insertSalesOrder", spies.insertSalesOrder]
+//
+// The payloads are the ones runCreateAction actually builds — the catalog's
+// required inputs, flat, with nulls dropped. callOperation runs the real oRPC
+// procedure, so these also pin that input validation accepts what the workflow
+// engine sends. job.create is the load-bearing one: it sends `insertJob`'s inner
+// fields at the top level even though that schema declares an `input` wrapper.
+const WORKFLOW_CALL_IDS: Array<[string, Spy, Record<string, unknown>]> = [
+  ["production_insertJob", spies.insertJob, { itemId: "item_1", quantity: 5 }],
+  [
+    "quality_insertIssue",
+    spies.insertIssue,
+    {
+      name: "n",
+      priority: "High",
+      source: "Internal",
+      locationId: "loc_1",
+      nonConformanceTypeId: "nct_1"
+    }
+  ],
+  [
+    "purchasing_insertPurchaseOrder",
+    spies.insertPurchaseOrder,
+    { supplierId: "sup_1" }
+  ],
+  ["sales_insertSalesOrder", spies.insertSalesOrder, { customerId: "cust_1" }]
 ];
+
+/** A schema-valid getAccountLedger payload (every field is required). */
+const LEDGER_ARGS = {
+  accountId: "acc_1",
+  startDate: "2026-01-01",
+  endDate: "2026-01-31",
+  limit: 5,
+  offset: 0
+};
 
 function idIn(payload: unknown): string | undefined {
   // Mirror of packages/jobs/src/workflows/actions/create.ts — what the workflow
@@ -421,14 +658,14 @@ function idIn(payload: unknown): string | undefined {
 describe("callOperation (the MCP/agent/workflow entry point)", () => {
   it.each(
     WORKFLOW_CALL_IDS
-  )("%s returns data the workflow create action can read an id out of", async (name, spy) => {
+  )("%s returns data the workflow create action can read an id out of", async (name, spy, args) => {
     spy.mockResolvedValue({ data: { id: "rec_1" }, error: null });
-    const asObject = await callOperation(name, ctx, { input: { name: "x" } });
+    const asObject = await callOperation(name, ctx, args);
     expect(asObject).toEqual({ success: true, data: { id: "rec_1" } });
     expect(idIn((asObject as { data: unknown }).data)).toBe("rec_1");
 
     spy.mockResolvedValue({ data: [{ id: "rec_2" }], error: null });
-    const asList = await callOperation(name, ctx, { input: { name: "y" } });
+    const asList = await callOperation(name, ctx, args);
     expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
   });
 
@@ -438,7 +675,11 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
       data: null,
       error: supabaseError
     });
-    const result = await callOperation("accounting_getAccountLedger", ctx, {});
+    const result = await callOperation(
+      "accounting_getAccountLedger",
+      ctx,
+      LEDGER_ARGS
+    );
     expect(result).toEqual({
       success: false,
       errorKind: "database",

@@ -59,6 +59,12 @@ const CONTEXT_PARAMS = new Set([
   "createdBy",
   "updatedBy",
   "companyGroupId",
+  // A second Supabase client for consolidation reads. Not caller-supplied — the
+  // service defaults it to `client`, and the dispatcher fills it from context.
+  // Left out of this set it became a REQUIRED field the caller cannot express,
+  // so every call to the two consolidated-balance ops failed with
+  // `client.from is not a function`.
+  "eliminationClient",
 ]);
 
 const DESCRIPTION_OVERRIDES: Record<string, string> = {
@@ -238,6 +244,64 @@ function findTopLevelColon(str: string): number {
   return -1;
 }
 
+// A bare defaulted parameter (`hardDelete = true`, no type annotation) has no
+// top-level colon, so findTopLevelColon can't split it — the whole "name = value"
+// string was pushed as the param NAME, publishing a schema property literally
+// called "hardDelete = true" and marking it required. A defaulted param is
+// optional by definition; a caller who omits it gets the function's own
+// default, so a schema requiring the literal `= value` text can never be
+// satisfied. Excludes `=>` (arrow) and comparison operators (`==`, `!=`, `<=`,
+// `>=`) so a default value that is itself a lambda or comparison isn't split.
+function findTopLevelEquals(str: string): number {
+  let depth = 0;
+  for (let i = 0; i < str.length; i++) {
+    const j = skipComment(str, i);
+    if (j !== i) {
+      i = j - 1;
+      continue;
+    }
+    const ch = str[i];
+    if ("({[<".includes(ch)) depth++;
+    else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
+    if (ch === "=" && depth === 0) {
+      const prev = str[i - 1];
+      const next = str[i + 1];
+      if (next === ">" || next === "=" || "!<>=".includes(prev)) continue;
+      return i;
+    }
+  }
+  return -1;
+}
+
+// Best-effort type from a default-value literal, so the schema property carries
+// something more useful than "unknown". Falls back to "unknown" for anything
+// that isn't a simple boolean/number/string literal (an identifier, a call, …).
+function inferTypeFromDefaultLiteral(literal: string): string {
+  const t = literal.trim();
+  if (t === "true" || t === "false") return "boolean";
+  if (/^-?\d+(\.\d+)?$/.test(t)) return "number";
+  if (/^["'`].*["'`]$/.test(t)) return "string";
+  return "unknown";
+}
+
+// A destructuring pattern is not a name. Storing the raw source text — braces and
+// newlines included — put it verbatim into the manifest's `serviceParams`, so merely
+// reformatting a signature changed the committed digest and failed `check:manifest`
+// for no real reason. Substitute a stable synthetic name.
+//
+// Safe because nothing reads a param name for meaning: `computeInjectAuth` and the
+// permission lookup key off the FUNCTION name and classification. The two consumers
+// that DO match on it are `CONTEXT_PARAMS` and the dispatcher's `args` branch, so the
+// synthetic name only has to avoid those — `destructured` does.
+function destructuredParamName(raw: string, existing: ParsedParam[]): string {
+  if (!raw.startsWith("{")) return raw;
+  const base = "destructured";
+  if (!existing.some((p) => p.name === base)) return base;
+  let i = 2;
+  while (existing.some((p) => p.name === `${base}${i}`)) i++;
+  return `${base}${i}`;
+}
+
 function parseExportedFunctions(content: string): ParsedFunction[] {
   const results: ParsedFunction[] = [];
   const regex = /export\s+(?:async\s+)?function\s+(\w+)\s*\(/g;
@@ -278,14 +342,35 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
       if (!stripped) continue;
       const colonIdx = findTopLevelColon(stripped);
       if (colonIdx === -1) {
-        params.push({ name: stripped, typeStr: "unknown", optional: false });
+        const eqIdx = findTopLevelEquals(stripped);
+        if (eqIdx === -1) {
+          params.push({
+            name: destructuredParamName(stripped, params),
+            typeStr: "unknown",
+            optional: false
+          });
+        } else {
+          const paramName = stripped.substring(0, eqIdx).trim();
+          const defaultLiteral = stripped.substring(eqIdx + 1).trim();
+          params.push({
+            name: paramName,
+            typeStr: inferTypeFromDefaultLiteral(defaultLiteral),
+            optional: true,
+            description
+          });
+        }
         continue;
       }
       const before = stripped.substring(0, colonIdx).trim();
       const optional = before.endsWith("?");
-      const paramName = before.replace(/\?$/, "").trim();
+      const rawName = before.replace(/\?$/, "").trim();
       const typeStr = stripped.substring(colonIdx + 1).trim();
-      params.push({ name: paramName, typeStr, optional, description });
+      params.push({
+        name: destructuredParamName(rawName, params),
+        typeStr,
+        optional,
+        description
+      });
     }
 
     results.push({ name, params });
@@ -813,10 +898,19 @@ function buildToolSchema(
     // type is an inline object literal (`{ ... }`) that merely CONTAINS a nested
     // `z.infer<...>` field — that object should be flattened, not replaced by the
     // nested schema.
-    const isInlineObject = param.typeStr.trim().startsWith("{");
-    const validatorMatch = isInlineObject
-      ? null
-      : param.typeStr.match(/z\.infer<typeof\s+(\w+)>/);
+    const trimmedType = param.typeStr.trim();
+    const isInlineObject = trimmedType.startsWith("{");
+    // The regex is unanchored, so it also matches a `z.infer<…>` NESTED inside a
+    // wrapper — and returning the validator's schema verbatim then drops the
+    // wrapper. `insertSalesOrderLines(client, lines: (Omit<z.infer<…>> & {…})[])`
+    // published a single line's fields flat, so a caller following the schema sent
+    // one object where the service does `.map()`. Anything array-suffixed or
+    // parenthesized falls through to typeToJsonSchema, which handles `[]`.
+    const isWrappedType = trimmedType.endsWith("[]") || trimmedType.startsWith("(");
+    const validatorMatch =
+      isInlineObject || isWrappedType
+        ? null
+        : param.typeStr.match(/z\.infer<typeof\s+(\w+)>/);
     if (validatorMatch) {
       const validatorName = validatorMatch[1];
 

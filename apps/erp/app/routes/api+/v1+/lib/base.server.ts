@@ -62,3 +62,51 @@ export const gate = (meta: ManifestEntry) =>
     }
     return next();
   });
+
+/** Errors a service raises deliberately are worth reporting; the ones the JS
+ *  runtime raises for us mean Carbon has a bug and must stay opaque. */
+const PROGRAMMING_ERRORS: ReadonlyArray<Function> = [
+  TypeError,
+  ReferenceError,
+  RangeError,
+  SyntaxError
+];
+
+/**
+ * Turn a service's deliberate `throw new Error(...)` into a 422 that carries its
+ * message.
+ *
+ * Carbon's services are meant to return the Supabase `{ data, error }` envelope
+ * (dispatchOperation maps that to a 400 with the Postgres detail), but ~51 of
+ * them throw instead — "Purchase order line not found", "Invalid type: x",
+ * "No labels provided". oRPC's `toORPCError` rewrites any non-ORPCError throw to
+ * INTERNAL_SERVER_ERROR and keeps the message only as `cause`, which the encoder
+ * never serializes. So HTTP answered a bad id with an opaque 500 while the same
+ * call over MCP returned the real text — `callOperation` catches and reads
+ * `err.message` itself. This closes that gap at the one point both surfaces share.
+ *
+ * Classification is by constructor because the ERP service layer has no domain
+ * error class: a plain `Error` was written by a person and is safe to surface (their
+ * messages carry ids and enum values, never credentials); a `TypeError` and friends
+ * mean a real defect, so those keep their 500 with the detail withheld.
+ *
+ * Deliberately does NOT attach `data.supabase` — `callOperation` keys its
+ * `Database error:` envelope off that field, and MCP's output must not change.
+ */
+export const mapThrownErrors = base.middleware(async ({ next }) => {
+  try {
+    return await next();
+  } catch (err) {
+    if (err instanceof ORPCError) throw err;
+    if (
+      err instanceof Error &&
+      !PROGRAMMING_ERRORS.some((ctor) => err instanceof ctor)
+    ) {
+      throw new ORPCError("UNPROCESSABLE_CONTENT", {
+        message: err.message,
+        cause: err
+      });
+    }
+    throw err;
+  }
+});

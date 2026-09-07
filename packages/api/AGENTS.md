@@ -11,9 +11,18 @@ zod round-trip. Internal workspace package — never published to npm.
   `pnpm generate:mcp` (turbo root task `//#generate:mcp`; `typecheck`/`build`/`test`
   depend on it). Change the generator (`scripts/lib/service-metadata.ts`) and these
   types together.
-- Keep `jsonSchema()` a pass-through validator (never rejects) — that is parity with
-  MCP's no-validation behavior. Opt-in request validation (Ajv) is a separate,
-  deliberate future change, not a tweak here.
+- Keep `jsonSchema()` a pass-through validator (never rejects). It is the **output**
+  wrapper: `shapeHttpBody` rewrites the HTTP body, so a correct response does not
+  match the operation's declared response schema and validating it would reject
+  real responses.
+- `jsonSchemaInput()` is the **input** wrapper and DOES validate, via
+  `z.fromJSONSchema` (zod is already a workspace dependency — no Ajv, no
+  JSON-Schema validator library). Keep it permissive in the two ways the
+  dispatcher depends on: unknown keys are preserved, not stripped, and a lone
+  required wrapper's contents may be sent flat (the workflow engine's
+  `job.create` sends `insertJob`'s inner fields at the top level). An
+  unconvertible schema falls back to pass-through rather than failing every
+  request to that operation.
 - Keep `@orpc/openapi` imports in `schema.ts` type-only — it is a devDependency, and
   the runtime module must not pull it in.
 

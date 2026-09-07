@@ -1,5 +1,8 @@
 import type { Database } from "@carbon/database";
-import { checkApiKeyRateLimit } from "@carbon/database/ratelimit";
+import {
+  ApiKeyNotFoundError,
+  checkApiKeyRateLimit
+} from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
@@ -225,6 +228,13 @@ export async function requirePermissions(
 
   if (apiKey) {
     const company = await getCompanyIdFromAPIKey(apiKey);
+    // An unknown key used to fall out of this branch entirely and land in
+    // requireAuthSession, which redirects to /login — a 302 to an HTML page as
+    // the answer to an authenticated API call. A caller presenting a key is on
+    // the machine path; it gets a 401, never a login redirect.
+    if (!company.data) {
+      throw new Response("Invalid API key", { status: 401 });
+    }
     if (company.data) {
       const apiKeyData = company.data as unknown as ApiKeyRecord;
       const companyId = apiKeyData.companyId;
@@ -238,12 +248,22 @@ export async function requirePermissions(
 
       // Check rate limit via Postgres function
       const serviceRole = getCarbonServiceRole();
-      const rl = await checkApiKeyRateLimit(
-        serviceRole,
-        apiKeyData.id,
-        apiKeyData.rateLimit,
-        apiKeyData.rateLimitWindow
-      );
+      let rl: Awaited<ReturnType<typeof checkApiKeyRateLimit>>;
+      try {
+        rl = await checkApiKeyRateLimit(
+          serviceRole,
+          apiKeyData.id,
+          apiKeyData.rateLimit,
+          apiKeyData.rateLimitWindow
+        );
+      } catch (err) {
+        // The key was deleted while its auth record was still cached — that is a
+        // revoked credential, not a server error.
+        if (err instanceof ApiKeyNotFoundError) {
+          throw new Response("Invalid API key", { status: 401 });
+        }
+        throw err;
+      }
       if (!rl.success) {
         throw new Response("Rate limit exceeded", {
           status: 429,

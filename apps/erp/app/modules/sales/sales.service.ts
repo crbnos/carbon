@@ -1169,18 +1169,6 @@ export async function getQuote(
   return client.from("quotes").select("*").eq("id", quoteId).single();
 }
 
-export async function getQuoteFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("quoteFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
 export async function getQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1617,18 +1605,6 @@ export async function getSalesOrderCustomerDetails(
     .single();
 }
 
-export async function getSalesOrderFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrderFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
 export async function getSalesOrderRelatedItems(
   client: SupabaseClient<Database>,
   salesOrderId: string,
@@ -1842,18 +1818,6 @@ export async function getSalesRFQ(
   id: string
 ) {
   return client.from("salesRfqs").select("*").eq("id", id).single();
-}
-
-export async function getSalesRFQFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("salesRfqFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
 }
 
 export async function getSalesRFQs(

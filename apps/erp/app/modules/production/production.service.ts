@@ -8569,16 +8569,7 @@ export async function getInspectionDocuments(
   companyId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (
-        columns: string,
-        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
-      ) => any;
-    };
-  };
-
-  let query = documentClient
+  let query = client
     .from("inspectionDocuments")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);

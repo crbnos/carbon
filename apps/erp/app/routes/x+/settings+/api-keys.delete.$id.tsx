@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Bust BEFORE the delete — the keyHash is unreadable once the row is gone.
-  const keyHash = await invalidateApiKeyCache(client, id);
+  const keyHash = await invalidateApiKeyCache(id, companyId);
 
   const { error: deleteApiKeyError } = await deleteApiKey(client, id);
   if (deleteApiKeyError) {

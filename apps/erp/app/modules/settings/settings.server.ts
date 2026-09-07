@@ -25,16 +25,23 @@ const logger = getLogger("erp", "settings");
  * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
  * callers that delete the row should bust AGAIN after the delete commits, using
  * the returned keyHash (unreadable from the DB once the row is gone).
+ *
+ * The lookup is service-role and scoped by companyId. apiKey's RLS SELECT
+ * requires `settings_view`, but the routes that revoke or rescope a key gate on
+ * `users_update` — with the caller's own client the row was invisible, so this
+ * returned null and the bust silently did nothing, leaving a reduced scope live
+ * for the full TTL.
  */
 export async function invalidateApiKeyCache(
-  client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ): Promise<string | null> {
-  const { data } = await client
+  const { data } = await getCarbonServiceRole()
     .from("apiKey")
     .select("keyHash")
     .eq("id", id)
-    .single();
+    .eq("companyId", companyId)
+    .maybeSingle();
   if (!data?.keyHash) return null;
   await bustApiKeyCache(data.keyHash);
   return data.keyHash;
