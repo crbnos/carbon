@@ -9,9 +9,12 @@ import {
   TextractClient,
 } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-textract/mod.ts";
 
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
+
+const logger = getFunctionLogger("textract");
 
 const AWS_REGION = Deno.env.get("AWS_REGION");
 const AWS_ACCESS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID");
@@ -56,10 +59,7 @@ serve(async (req: Request) => {
   try {
     const { path } = payloadValidator.parse(payload);
 
-    console.log({
-      function: "textract",
-      path,
-    });
+    logger.info({ path });
 
     const supabase = await getSupabaseServiceRole(
       req.headers.get("Authorization")
@@ -74,7 +74,7 @@ serve(async (req: Request) => {
           Key: s3Key,
         })
       );
-      console.log("File already exists in S3, skipping upload");
+      logger.info("File already exists in S3, skipping upload");
     } catch (error) {
       if (error.name === "NotFound") {
         // File doesn't exist, proceed with download and upload
@@ -93,7 +93,7 @@ serve(async (req: Request) => {
             Body: data,
           })
         );
-        console.log("File uploaded to S3");
+        logger.info("File uploaded to S3");
       } else {
         // Unexpected error
         throw error;

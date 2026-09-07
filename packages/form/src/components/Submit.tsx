@@ -63,6 +63,12 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
       ({ currentLocation, nextLocation }) =>
         withBlocker &&
         isTouched &&
+        // The form's own save is not "leaving with unsaved changes": a form
+        // whose action posts to a DIFFERENT route (e.g. the Add Company modal
+        // on /x posting to /x/settings/company/new) submits via a cross-pathname
+        // navigation, which this blocker would otherwise intercept — blocking
+        // the save itself behind the Unsaved-changes dialog.
+        !isSubmitting &&
         currentLocation.pathname !== nextLocation.pathname
     );
 
