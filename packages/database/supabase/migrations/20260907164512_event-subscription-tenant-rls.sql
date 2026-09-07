@@ -73,7 +73,9 @@ FOR DELETE USING (
 -- and an attacker-controlled config.url, forwarding company records externally
 -- (and for ANY company, cross-tenant, as in the disclosure's INSERT PoC).
 --
--- can_manage_event_subscription() centralizes the rule:
+-- util.can_manage_event_subscription() centralizes the rule (in the internal
+-- `util` schema — like util.wake_event_queue() — so it is never exposed as a
+-- PostgREST RPC; anon/authenticated have no USAGE on util):
 --   * service role                       -> always allowed
 --   * WEBHOOK (external url + secret)     -> a settings write permission
 --       (create OR update OR delete). The sync_webhook_subscription trigger
@@ -101,7 +103,9 @@ FOR DELETE USING (
 -- so CREATE OR REPLACE preserves existing grants and dependents.
 -- ---------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION can_manage_event_subscription(
+CREATE SCHEMA IF NOT EXISTS util;
+
+CREATE OR REPLACE FUNCTION util.can_manage_event_subscription(
   p_company_id TEXT,
   p_handler_type TEXT
 )
@@ -125,9 +129,8 @@ BEGIN
 END;
 $$;
 
--- Internal predicate only — the three SECURITY DEFINER RPCs call it as owner, so
--- it need not (and should not) be a directly callable PostgREST RPC.
-REVOKE ALL ON FUNCTION can_manage_event_subscription(TEXT, TEXT) FROM PUBLIC;
+-- Internal predicate only — the three SECURITY DEFINER RPCs call it as owner.
+REVOKE ALL ON FUNCTION util.can_manage_event_subscription(TEXT, TEXT) FROM PUBLIC;
 
 
 CREATE OR REPLACE FUNCTION create_event_system_subscription(
@@ -146,7 +149,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  IF NOT can_manage_event_subscription(p_company_id, p_handler_type) THEN
+  IF NOT util.can_manage_event_subscription(p_company_id, p_handler_type) THEN
     RAISE EXCEPTION 'Not authorized to manage % event subscriptions for company %', p_handler_type, p_company_id
       USING ERRCODE = '42501';
   END IF;
@@ -197,7 +200,7 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT can_manage_event_subscription(v_company_id, v_handler_type) THEN
+  IF NOT util.can_manage_event_subscription(v_company_id, v_handler_type) THEN
     RAISE EXCEPTION 'Not authorized to manage % event subscriptions for company %', v_handler_type, v_company_id
       USING ERRCODE = '42501';
   END IF;
@@ -227,7 +230,7 @@ BEGIN
   FROM "eventSystemSubscription"
   WHERE "companyId" = p_company_id AND "name" = p_name;
 
-  IF NOT can_manage_event_subscription(p_company_id, COALESCE(v_handler_type, '')) THEN
+  IF NOT util.can_manage_event_subscription(p_company_id, COALESCE(v_handler_type, '')) THEN
     RAISE EXCEPTION 'Not authorized to manage event subscriptions for company %', p_company_id
       USING ERRCODE = '42501';
   END IF;
