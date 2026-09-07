@@ -55,7 +55,7 @@
 set -euo pipefail
 # Private, unpredictable error-log path (a fixed /tmp name is symlink-attackable
 # and can be pre-created by another local user).
-RESTORE_LOG="$(mktemp "${TMPDIR:-/tmp}/restore-errors.XXXXXX.log")"
+RESTORE_LOG="$(mktemp "${TMPDIR:-/tmp}/restore-errors.XXXXXX")"
 RESTORE_INCOMPLETE=""
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
