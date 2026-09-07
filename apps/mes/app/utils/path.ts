@@ -64,7 +64,7 @@ export const path = {
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
-      batchLoadList: (id: string) => `${getAppUrl()}${file}/batch/${id}.pdf`,
+      batchList: (id: string) => `${getAppUrl()}${file}/batch/${id}.pdf`,
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
       operationLabelsPdf: (
         id: string,

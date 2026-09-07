@@ -221,12 +221,12 @@ export function BatchDetailDrawer({
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild>
                   <a
-                    href={path.to.file.batchLoadList(batch.id)}
+                    href={path.to.file.batchList(batch.id)}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <DropdownMenuIcon icon={<LuPrinter />} />
-                    {t`Print load list`}
+                    {t`Print batch list`}
                   </a>
                 </DropdownMenuItem>
                 {isLive && (

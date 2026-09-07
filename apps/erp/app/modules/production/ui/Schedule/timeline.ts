@@ -43,4 +43,16 @@ export type TimelineNodeDetail = {
    */
   jobId?: string;
   jobReadableId?: string;
+  /**
+   * Set when this reservation is a Released operation batch's coalesced hold.
+   * The panel opens the batch (not the anchor member's job) when present.
+   */
+  batchId?: string | null;
+  /**
+   * The engine's estimated work content (hours) for this reservation. `0` on an
+   * unschedulable placeholder means the operations carry no setup/labor/machine
+   * time — the reason the batch can't be scheduled. Distinct from `workMs`,
+   * which is dropped when zero.
+   */
+  estimatedWorkHours?: number | null;
 };

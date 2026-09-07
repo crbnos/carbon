@@ -74,6 +74,7 @@ type JobsTableProps = {
 };
 
 const defaultColumnVisibility = {
+  batches: false,
   description: false,
   createdAt: false,
   createdBy: false,
@@ -260,6 +261,42 @@ const JobsTable = memo((props: JobsTableProps) => {
         }
       },
       {
+        accessorKey: "status",
+        header: t`Status`,
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const dueDate = row.original.dueDate;
+          return (
+            <HStack spacing={1}>
+              <JobStatus status={status} />
+              {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
+                status ?? ""
+              ) && (
+                <>
+                  {dueDate && isSameDay(parseDate(dueDate), todaysDate) && (
+                    <JobStatus status="Due Today" />
+                  )}
+                  {dueDate && parseDate(dueDate) < todaysDate && (
+                    <JobStatus status="Overdue" />
+                  )}
+                </>
+              )}
+            </HStack>
+          );
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: jobStatus.map((status) => ({
+              value: status,
+              label: <JobStatus status={status} />
+            }))
+          },
+          pluralHeader: t`Statuses`,
+          icon: <LuUsers />
+        }
+      },
+      {
         id: "batches",
         header: t`Batches`,
         cell: ({ row }) => {
@@ -361,42 +398,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           }
         }
       },
-      {
-        accessorKey: "status",
-        header: t`Status`,
-        cell: ({ row }) => {
-          const status = row.original.status;
-          const dueDate = row.original.dueDate;
-          return (
-            <HStack spacing={1}>
-              <JobStatus status={status} />
-              {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
-                status ?? ""
-              ) && (
-                <>
-                  {dueDate && isSameDay(parseDate(dueDate), todaysDate) && (
-                    <JobStatus status="Due Today" />
-                  )}
-                  {dueDate && parseDate(dueDate) < todaysDate && (
-                    <JobStatus status="Overdue" />
-                  )}
-                </>
-              )}
-            </HStack>
-          );
-        },
-        meta: {
-          filter: {
-            type: "static",
-            options: jobStatus.map((status) => ({
-              value: status,
-              label: <JobStatus status={status} />
-            }))
-          },
-          pluralHeader: t`Statuses`,
-          icon: <LuUsers />
-        }
-      },
+
       {
         id: "assignee",
         header: t`Assignee`,

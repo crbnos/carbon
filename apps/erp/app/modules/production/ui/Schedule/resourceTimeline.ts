@@ -45,6 +45,8 @@ export type ResourceTimelineReservation = {
    */
   batchReadableId?: string | null;
   batchMemberCount?: number | null;
+  /** Raw batch id — lets the detail panel open the batch itself. */
+  batchId?: string | null;
   hasConflict: boolean;
   conflictReason: string | null;
   /**
@@ -386,7 +388,9 @@ export function buildResourceTimeline(input: {
       scheduleNote: r.scheduleNote ?? null,
       workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
       jobId: r.jobId,
-      jobReadableId: r.jobReadableId
+      jobReadableId: r.jobReadableId,
+      batchId: r.batchId ?? null,
+      estimatedWorkHours: r.workHours ?? null
     };
     return {
       id: r.id,

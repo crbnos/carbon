@@ -126,7 +126,15 @@ never abandons the location run.
 - **One reservation per Released (`Active`/`Completing`) batch**, tagged
   `capacityReservation.jobOperationBatchId`; `operationId`/`jobId` stay NOT
   NULL by anchoring on the min member op id. Placeholder semantics mirror
-  unplaceable ops (`isPlaceholder = true` when no slot; never blocks).
+  unplaceable ops (`isPlaceholder = true` when no slot; never blocks). A batch
+  whose open members all carry ZERO time standards is a placeholder too, not a
+  skip: `NO_ESTIMATE_PLACEHOLDER_HOURS` (1h) gives the forecast a drawable
+  window (snapped forward to the WC's next working window via
+  `nextWorkingInstant`, so it never draws on a weekend), `workHours` stays 0,
+  and members carry
+  `composeBatchNoEstimatesConflict` naming the data gap — a Released batch
+  must never silently vanish (its reservation is its ONLY forecast surface,
+  and zero-estimate ops are how the batch dropped off the forecast unnoticed).
 - **Duration** = `@carbon/utils` `batchDuration`: `setup(max, zero once any
   batch event exists) + Σ run` (Sequential) or `+ max run` (Simultaneous) per
   `process.batchType`, run_i = `max(labor, machine)` net of remaining fraction.
@@ -146,6 +154,14 @@ never abandons the location run.
   rows — a Released batch may legitimately anchor a Draft job (membership
   handoff pulls members ahead of their jobs). `loadOrderedBatch` widens job
   loading with Released-batch member jobs so they regen in the same wave.
+  Those sparing rules make the batch's OWN lifecycle the only retirement
+  path, so a status trigger on `jobOperationBatch`
+  (`20260907155426_cleanup-reservations-on-batch-exit.sql`, mirroring the
+  terminal-job trigger) deletes the tagged rows on `→ Completed` and on
+  unrelease (`→ Planned`) — without it a finished batch kept blocking the
+  work center and an unreleased one double-booked it against the members'
+  per-op placements. Dissolve needs no trigger: the FK's column-list
+  `SET NULL` untags the row and the anchor job's next regen sweeps it.
 - `Planned` batches are NOT coalesced — members place per-op exactly as before
   release (bounded residual over-book, gone at release). Employee finiteness
   for batches is deliberately absent in v1 (WC reservation only).
@@ -401,8 +417,10 @@ branch).** An op that could not be placed at all (no qualified operator, no
 feasible slot, horizon-exhausted) has `hasConflict/conflictReason` stamped and a
 fallback work center — and now also emits a **non-binding placeholder**
 `capacityReservation` (`isPlaceholder = true`, `20260818044654_…`): pinned at the
-op's earliest start for its work-content duration in calendar time, on the
-fallback WC. It exists so the **Forecast** (which is 100% reservation-driven)
+op's earliest start (snapped forward to the fallback WC's next working window via
+`nextWorkingInstant`, so the marker never draws on a night/weekend the `now`
+anchor happened to fall in) for its work-content duration in calendar time, on
+the fallback WC. It exists so the **Forecast** (which is 100% reservation-driven)
 shows the op instead of the job silently ending after its last placeable op, and
 so `job.projectedCompletionAt` extends to it and successors chain after it
 (`placedEndByOperation`). It is deliberately NOT added to the in-run

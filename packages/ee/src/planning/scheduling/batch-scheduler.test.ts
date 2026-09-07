@@ -270,6 +270,31 @@ it("no feasible slot degrades to a placeholder window that never blocks", () => 
   assert(p.conflict, "members carry the allocation conflict");
 });
 
+it("a zero-estimate batch still auto-selects and surfaces as a placeholder", () => {
+  const { placements, reservations, selectedWorkCenters } = plan([
+    makeBatch({
+      id: "b1",
+      workCenterId: null,
+      candidateWorkCenterIds: ["wc1"],
+      members: [
+        makeMember({ id: "op-a", jobId: "job-a", setupSeconds: 0 }),
+        makeMember({ id: "op-b", jobId: "job-b", setupSeconds: 0 })
+      ]
+    })
+  ]);
+  assertEquals(reservations.length, 1);
+  const r = reservations[0]!;
+  assertEquals(r.isPlaceholder, true);
+  assertEquals(r.workHours, 0); // honest: the placeholder holds no capacity
+  assert(r.endAt > r.startAt, "the window is wide enough to draw");
+  assertEquals(selectedWorkCenters.get("b1"), "wc1");
+  const p = placements.get("op-a")!;
+  assert(
+    p.conflict?.includes("no estimated time"),
+    "members carry the no-estimate conflict"
+  );
+});
+
 // --- selector integration: members take the batch window --------------------
 
 function makeOp(

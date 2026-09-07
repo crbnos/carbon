@@ -70,6 +70,7 @@ import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
 import JobStatus from "../Jobs/JobStatus";
 import {
+  type BatchAddTarget,
   batchPlanBreakdown,
   candidateValueSets,
   computeGuideMismatches,
@@ -751,6 +752,7 @@ export function BatchBuilder({
       })),
     [processes]
   );
+
   // Only centers that can RUN the scoped process, at the batch's location —
   // offering the paint booth for a welding batch is master-data nonsense. When
   // a company never linked its work centers to processes, fall back to the
@@ -801,7 +803,7 @@ export function BatchBuilder({
       }}
     >
       <DrawerContent size="full">
-        <DrawerHeader className="px-4 flex-shrink-0">
+        <DrawerHeader>
           <DrawerTitle>
             {isAddMode ? (
               <Trans>Add operations to {batch.readableId}</Trans>
@@ -834,6 +836,11 @@ export function BatchBuilder({
               processId={processId}
               onLocationChange={(id) => onScopeChange({ locationId: id })}
               onProcessChange={(id) => onScopeChange({ processId: id })}
+              dimensions={facetDimensions}
+              facets={facets}
+              onFacetChange={(key, values) =>
+                setFacets((prev) => ({ ...prev, [key]: values }))
+              }
             />
           }
           left={
@@ -860,9 +867,6 @@ export function BatchBuilder({
                 onSearchChange={setSearch}
                 facets={facets}
                 dimensions={facetDimensions}
-                onFacetChange={(key, values) =>
-                  setFacets((prev) => ({ ...prev, [key]: values }))
-                }
                 dueWindow={dueWindow}
                 onDueWindowChange={setDueWindow}
                 suggestions={suggestions}
@@ -904,7 +908,7 @@ export function BatchBuilder({
           }
         />
 
-        <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-end items-center">
+        <DrawerFooter className="flex-shrink-0 sm:justify-end items-center">
           <HStack spacing={2}>
             <Button
               variant="ghost"
@@ -913,19 +917,13 @@ export function BatchBuilder({
             >
               {t`Clear`}
             </Button>
-            {!isAddMode &&
-              selected.length > 0 &&
-              addTargets.slice(0, 2).map((target) => (
-                <Button
-                  key={target.batchId}
-                  variant="secondary"
-                  leftIcon={<LuPlus />}
-                  isDisabled={isSubmitting}
-                  onClick={() => submit(target.batchId)}
-                >
-                  {t`Add to ${target.readableId}`}
-                </Button>
-              ))}
+            {!isAddMode && selected.length > 0 && addTargets.length > 0 && (
+              <AddToBatchButton
+                targets={addTargets}
+                isDisabled={isSubmitting}
+                onSelect={(batchId) => submit(batchId)}
+              />
+            )}
             {!isAddMode && (
               // Never gated on a work center: the scheduler auto-selects one
               // (earliest finish among the process's work centers) for a
@@ -952,6 +950,72 @@ export function BatchBuilder({
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+/**
+ * Footer control for adding the current selection to an EXISTING Active batch.
+ * A searchable popover, not a button-per-batch — a process at a busy location
+ * can have hundreds of open batches, and a row of buttons neither fits nor lets
+ * you find one by id.
+ */
+function AddToBatchButton({
+  targets,
+  isDisabled,
+  onSelect
+}: {
+  targets: BatchAddTarget[];
+  isDisabled: boolean;
+  onSelect: (batchId: string) => void;
+}) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          role="combobox"
+          variant="secondary"
+          leftIcon={<LuPlus />}
+          isDisabled={isDisabled}
+        >
+          {t`Add to batch`}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-[280px] p-0"
+        // Portaled outside the drawer — stop the scroll-lock's document
+        // listener from swallowing wheel events (see conventions-ui.md).
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
+        <Command>
+          <CommandInput placeholder={t`Search batches…`} />
+          <CommandEmpty>{t`No batches`}</CommandEmpty>
+          <CommandGroup className="max-h-[280px] overflow-auto">
+            {targets.map((target) => (
+              <CommandItem
+                key={target.batchId}
+                value={target.readableId}
+                onSelect={() => {
+                  setOpen(false);
+                  onSelect(target.batchId);
+                }}
+              >
+                <div className="flex w-full items-center justify-between gap-2">
+                  <span className="truncate">{target.readableId}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {t`${target.memberCount} ops`}
+                  </span>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -1026,7 +1090,10 @@ function ScopeBar({
   locationId,
   processId,
   onLocationChange,
-  onProcessChange
+  onProcessChange,
+  dimensions,
+  facets,
+  onFacetChange
 }: {
   isAddMode: boolean;
   batchReadableId?: string;
@@ -1038,8 +1105,14 @@ function ScopeBar({
   processId: string | null;
   onLocationChange: (id: string) => void;
   onProcessChange: (id: string) => void;
+  dimensions: FacetDimension[];
+  facets: Record<string, string[]>;
+  onFacetChange: (key: string, values: string[]) => void;
 }) {
   const { t } = useLingui();
+  const activeDimensions = dimensions.filter(
+    (d) => (facets[d.key]?.length ?? 0) > 0
+  );
   if (isAddMode) {
     return (
       <HStack spacing={2} className="items-center">
@@ -1056,32 +1129,57 @@ function ScopeBar({
     );
   }
   return (
-    <HStack spacing={2} className="items-center flex-wrap">
-      <HStack spacing={2} className="items-center">
-        <StepBadge step={1} active />
-        <span className="text-sm font-medium">
-          <Trans>Scope</Trans>
-        </span>
+    <VStack spacing={2} className="w-full">
+      <HStack spacing={2} className="items-center flex-wrap">
+        <HStack spacing={2} className="items-center">
+          <StepBadge step={1} active />
+          <span className="text-sm font-medium">
+            <Trans>Scope</Trans>
+          </span>
+        </HStack>
+        <div className="w-[220px]">
+          <Combobox
+            size="md"
+            value={locationId}
+            options={locationOptions}
+            onChange={onLocationChange}
+            placeholder={t`Location`}
+          />
+        </div>
+        <div className="w-[220px]">
+          <Combobox
+            size="md"
+            value={processId ?? ""}
+            options={processOptions}
+            onChange={onProcessChange}
+            placeholder={t`Batchable process`}
+          />
+        </div>
+        {/* The Filter button adds filters over the process's batch compatibility
+            fields (material, substance, grade, dimension, form, finish) — only
+            meaningful once a process is picked. Active filters render on their
+            own row below, in the app-standard segmented style. */}
+        {processId && dimensions.length > 0 && (
+          <FacetPicker
+            dimensions={dimensions}
+            facets={facets}
+            onFacetChange={onFacetChange}
+          />
+        )}
       </HStack>
-      <div className="w-[220px]">
-        <Combobox
-          size="md"
-          value={locationId}
-          options={locationOptions}
-          onChange={onLocationChange}
-          placeholder={t`Location`}
-        />
-      </div>
-      <div className="w-[220px]">
-        <Combobox
-          size="md"
-          value={processId ?? ""}
-          options={processOptions}
-          onChange={onProcessChange}
-          placeholder={t`Batchable process`}
-        />
-      </div>
-    </HStack>
+      {processId && activeDimensions.length > 0 && (
+        <HStack spacing={2} className="flex-wrap gap-y-2">
+          {activeDimensions.map((d) => (
+            <FacetChip
+              key={d.key}
+              dimension={d}
+              selected={facets[d.key] ?? []}
+              onChange={(values) => onFacetChange(d.key, values)}
+            />
+          ))}
+        </HStack>
+      )}
+    </VStack>
   );
 }
 
@@ -1157,7 +1255,14 @@ function FacetPicker({
       }}
     >
       <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost" leftIcon={<LuListFilter />}>
+        {/* Matches the shared tables/schedule Filter button (dashed secondary,
+            right-aligned filter glyph). */}
+        <Button
+          role="combobox"
+          variant="secondary"
+          rightIcon={<LuListFilter />}
+          className="!border-dashed border-border"
+        >
           {t`Filter`}
         </Button>
       </PopoverTrigger>
@@ -1197,7 +1302,9 @@ function FacetPicker({
   );
 }
 
-// An active facet as a removable, click-to-edit pill.
+// An active facet, styled like the app's shared ActiveFilter: a segmented
+// button group — [dimension] [is any of] [values ▾] [×] — matching the tables
+// and schedule pages.
 function FacetChip({
   dimension,
   selected,
@@ -1208,25 +1315,31 @@ function FacetChip({
   onChange: (values: string[]) => void;
 }) {
   const { t } = useLingui();
-  const labels = selected
-    .map((v) => dimension.options.find((o) => o.value === v)?.label ?? v)
-    .join(", ");
+  const [open, setOpen] = useState(false);
+  const valueLabel =
+    selected.length > 1
+      ? t`${selected.length} selected`
+      : (dimension.options.find((o) => o.value === selected[0])?.label ??
+        selected[0]);
 
   return (
-    <HStack
-      spacing={0}
-      className="items-center gap-1 rounded-full border bg-card py-0.5 pl-2.5 pr-1 text-xs"
-    >
-      <Popover>
+    <HStack spacing={0}>
+      <Button className="rounded-r-none" size="sm" variant="secondary">
+        {dimension.label}
+      </Button>
+      <Button className="rounded-none border-l-0" size="sm" variant="secondary">
+        <Trans>is any of</Trans>
+      </Button>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <button type="button" className="flex items-center gap-1 min-w-0">
-            <span className="text-muted-foreground flex-shrink-0">
-              {dimension.label}
-            </span>
-            <span className="max-w-[180px] truncate font-medium" title={labels}>
-              {labels}
-            </span>
-          </button>
+          <Button
+            className="rounded-none max-w-[200px]"
+            role="combobox"
+            variant="secondary"
+            size="sm"
+          >
+            <span className="truncate">{valueLabel}</span>
+          </Button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
@@ -1241,14 +1354,15 @@ function FacetChip({
           />
         </PopoverContent>
       </Popover>
-      <IconButton
-        aria-label={t`Clear filter`}
-        variant="ghost"
+      <Button
+        aria-label={t`Remove filter`}
+        className="rounded-l-none border-l-0 px-1 w-6"
         size="sm"
-        className="size-5 min-w-0 rounded-full"
-        icon={<LuX className="size-3" />}
+        variant="secondary"
         onClick={() => onChange([])}
-      />
+      >
+        <LuX />
+      </Button>
     </HStack>
   );
 }
@@ -1365,7 +1479,6 @@ function ComposePanel({
   onSearchChange,
   facets,
   dimensions,
-  onFacetChange,
   dueWindow,
   onDueWindowChange,
   suggestions,
@@ -1389,7 +1502,6 @@ function ComposePanel({
   onSearchChange: (v: string) => void;
   facets: Record<string, string[]>;
   dimensions: FacetDimension[];
-  onFacetChange: (key: string, values: string[]) => void;
   dueWindow: number | null;
   onDueWindowChange: (days: number | null) => void;
   suggestions: Suggestion[];
@@ -1487,21 +1599,6 @@ function ComposePanel({
               </Button>
             ))}
           </HStack>
-          {activeDimensions.map((d) => (
-            <FacetChip
-              key={d.key}
-              dimension={d}
-              selected={facets[d.key] ?? []}
-              onChange={(values) => onFacetChange(d.key, values)}
-            />
-          ))}
-          {dimensions.length > 0 && (
-            <FacetPicker
-              dimensions={dimensions}
-              facets={facets}
-              onFacetChange={onFacetChange}
-            />
-          )}
         </HStack>
         {view === "table" && suggestions.length > 0 && (
           <SuggestionsBanner

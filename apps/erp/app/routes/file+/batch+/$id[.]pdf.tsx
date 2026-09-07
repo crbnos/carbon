@@ -1,14 +1,14 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { BatchLoadListMember } from "@carbon/documents/pdf";
-import { BatchLoadListPDF } from "@carbon/documents/pdf";
+import type { BatchListMember } from "@carbon/documents/pdf";
+import { BatchListPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompany } from "~/modules/settings";
 
-const logger = getLogger("erp", "batch-load-list", "pdf");
+const logger = getLogger("erp", "batch-list", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Permissionless like the job traveler: shop-floor people without ERP
@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null);
 
   const stream = await renderToStream(
-    <BatchLoadListPDF
+    <BatchListPDF
       // The documents Company type is the `companies` view row; getCompany
       // returns the base table row (same fields the Header reads). Same cast
       // the traveler route uses.
@@ -82,7 +82,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       processName={batch.data.process?.name ?? null}
       workCenterName={workCenterName}
       members={(members.data ?? []).map(
-        (m): BatchLoadListMember => ({
+        (m): BatchListMember => ({
           id: m.id,
           jobReadableId: m.job?.jobId ?? null,
           itemReadableId: m.jobMakeMethod?.item?.readableIdWithRevision ?? null,

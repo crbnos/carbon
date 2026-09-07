@@ -1,5 +1,9 @@
 import type { BatchPlacement } from "./batch-scheduler.ts";
-import { type CalendarWindow, intersectWindows } from "./calendar-utils.ts";
+import {
+  type CalendarWindow,
+  intersectWindows,
+  nextWorkingInstant
+} from "./calendar-utils.ts";
 import {
   classifyLatePlacement,
   composeBatchPredecessorConflict,
@@ -880,14 +884,21 @@ export class WorkCenterSelector {
         // hold the machine against other jobs. Chaining placedEndByOperation
         // still makes successors wait for it (they can't run before it does).
         if (durationHours > 0 && fallbackWc) {
-          const placeholderEnd = earliestMs + durationHours * 3_600_000;
+          // Snap the marker onto a working day so it never renders on a night or
+          // weekend just because the earliest start fell there — it holds no
+          // capacity, so this only moves where the bar is drawn.
+          const placeholderStart = nextWorkingInstant(
+            ctx.capacityByWorkCenter.get(fallbackWc)?.windows ?? [],
+            earliestMs
+          );
+          const placeholderEnd = placeholderStart + durationHours * 3_600_000;
           this.plannedReservations.push({
             resourceKind: "WorkCenter",
             resourceId: fallbackWc,
             operationId: op.id,
-            startAt: earliestStart,
+            startAt: placeholderStart,
             endAt: placeholderEnd,
-            earliestStartAt: earliestStart,
+            earliestStartAt: placeholderStart,
             scheduleNote: conflictReason,
             workHours: durationHours,
             isPlaceholder: true

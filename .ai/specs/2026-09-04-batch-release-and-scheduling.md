@@ -583,6 +583,30 @@ the completeness findings that review added:
   unrelease refusal; unchanged proportional completion). Per Brad, the branch's
   nine incremental migrations were then consolidated into ONE final-state
   idempotent file: `20260905132037_job-operation-batching.sql`.
+- 2026-09-06: "Released batch missing from the forecast" (BAT000005) root-caused
+  to TWO stacked causes. (1) Environment: a stale Inngest dev-server app
+  registration ("unreachable", 0 functions — recorded while the ERP was down
+  during a stack restart) silently swallowed every `schedule.inputs.changed`
+  event; fixed with a re-register `PUT /api/inngest`. (2) Engine: the batch
+  pre-pass skipped any batch whose members carry zero setup/labor/machine time
+  (`durationSeconds <= 0 → continue`) — no reservation, no auto work-center,
+  invisible on the reservation-driven forecast. Fixed: a zero-estimate Released
+  batch now emits a flagged 1h placeholder (`NO_ESTIMATE_PLACEHOLDER_HOURS`,
+  `workHours` 0, never blocks), still auto-selects the work center, and members
+  carry `composeBatchNoEstimatesConflict` ("add setup, labor, or machine time").
+  Verified e2e: wave run auto-assigned the Laser Table and the forecast renders
+  "BAT000005 · 2 jobs" with the can't-be-scheduled flag + sidebar reason.
+- 2026-09-07: While verifying the dependency story (downstream ops chain after
+  the batch window via `placedEndByOperation` + persisted member
+  `projectedCompletionAt`; graph itself untouched), found the coalesced
+  reservation had NO retirement path of its own — the sparing rules
+  (per-job-delete skip + snapshot escapes) meant a Completed batch kept
+  blocking the work center and an unreleased one double-booked it. Fixed with
+  `20260907155426_cleanup-reservations-on-batch-exit.sql`: a `jobOperationBatch`
+  status trigger (mirroring the terminal-job cleanup) deletes tagged rows on
+  `→ Completed` and `→ Planned`, plus a one-time orphan sweep; dissolve
+  self-heals via the FK's column-list SET NULL. Both paths verified in a
+  rolled-back transaction.
 - 2026-09-04: Implementation amendment (Fable, for veto): the priority board
   stays floor-pure — Planned batches render only on the Batches list/builder,
   not as board cards (the board + MES kanban share the floor RPC; a Planned

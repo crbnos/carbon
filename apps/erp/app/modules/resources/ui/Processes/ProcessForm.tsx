@@ -16,6 +16,7 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  Subheading,
   toast,
   useDisclosure,
   VStack
@@ -117,6 +118,9 @@ const ProcessForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
+                <Subheading variant="heavy" className="block">
+                  <Trans>Basic Information</Trans>
+                </Subheading>
                 <Input name="name" label={t`Process Name`} />
                 <Select
                   name="processType"
@@ -146,19 +150,21 @@ const ProcessForm = ({
                   label={t`Work Centers`}
                   termId="work-center"
                 />
+
+                {/* SupplierProcesses renders its own section (heading + list)
+                    only for Outside Processing, gating on processType. */}
                 <SupplierProcesses processId={initialValues.id} />
+
+                <Subheading variant="heavy" className="block pt-2">
+                  <Trans>Scheduling</Trans>
+                </Subheading>
                 <Boolean
                   name="requiresAbility"
                   label={t`Requires Ability`}
                   description={t`Only qualified employees can be scheduled for and run this process`}
                   bordered
                 />
-                <Boolean
-                  name="completeAllOnScan"
-                  label={t`Complete all quantities on barcode scan`}
-                  description={t`When using kanbans, the complete barcode will complete all quantities of an operation instead of just one`}
-                  bordered
-                />
+
                 <Boolean
                   name="batchable"
                   label={t`Batchable`}
@@ -166,6 +172,16 @@ const ProcessForm = ({
                   bordered
                 />
                 <BatchCompatibilityRules />
+
+                <Subheading variant="heavy" className="block pt-2">
+                  <Trans>Kanban</Trans>
+                </Subheading>
+                <Boolean
+                  name="completeAllOnScan"
+                  label={t`Complete all quantities on kanban complete scan`}
+                  description={t`When using kanbans, the complete barcode will complete all quantities of an operation instead of just one`}
+                  bordered
+                />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>
@@ -204,11 +220,13 @@ function BatchCompatibilityRules() {
   const batchTypeOptions = [
     {
       value: "Sequential",
-      label: t`Sequential — parts run one after another (saw, laser table)`
+      label: t`Sequential`,
+      helper: t`Parts run one after another — e.g. a saw or laser table.`
     },
     {
       value: "Simultaneous",
-      label: t`Simultaneous — parts run together in one load (furnace, oven, plating)`
+      label: t`Simultaneous`,
+      helper: t`Parts run together in one load — e.g. a furnace, oven, or plating bath.`
     }
   ];
 
@@ -256,6 +274,7 @@ function BatchCompatibilityRules() {
       <Select
         name="batchType"
         label={t`Batch type`}
+        termId="batch-type"
         options={batchTypeOptions}
       />
       <div className="flex flex-col gap-3 w-full rounded-md border border-border p-3">
@@ -308,14 +327,14 @@ function SupplierProcesses({ processId }: { processId?: string }) {
 
   return (
     <>
+      <Subheading variant="heavy" className="block pt-2">
+        <LabelWithHelp termId="process-suppliers" variant="inline">
+          <Trans>Suppliers</Trans>
+        </LabelWithHelp>
+      </Subheading>
       <div className="flex flex-col gap-2 w-full">
         {processes.length > 0 && (
           <>
-            <label className="text-muted-foreground text-xs">
-              <LabelWithHelp termId="process-suppliers">
-                {t`Suppliers`}
-              </LabelWithHelp>
-            </label>
             {processes.map((sp) => (
               <HStack
                 key={sp.id}

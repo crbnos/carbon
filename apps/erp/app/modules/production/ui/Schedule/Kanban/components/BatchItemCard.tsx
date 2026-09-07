@@ -16,6 +16,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import {
   LuCircleCheck,
   LuEllipsisVertical,
@@ -30,6 +31,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { CustomerAvatar, OperationStatusIcon } from "~/components";
+import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
@@ -153,186 +155,207 @@ export function BatchItemCard({
     });
   };
 
-  return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "max-w-[330px]",
-        KANBAN_CARD_SHELL,
-        isPlanned && "border-dashed",
-        isOverlay && "ring-2 ring-primary",
-        isDragging && "ring-2 ring-primary opacity-30"
-      )}
-    >
-      <CardHeader className="flex flex-col justify-between relative gap-2">
-        <div className="flex w-full max-w-full justify-between items-start gap-0">
-          <HStack spacing={2} className="min-w-0">
-            <LuLayers className="text-muted-foreground size-4 flex-shrink-0" />
-            <Badge>{item.batchReadableId}</Badge>
-            {isPlanned && <Badge variant="outline">{t`Planned`}</Badge>}
-            {isCompleting && <Badge variant="yellow">{t`Completing`}</Badge>}
-            <span className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">
-              {members.length} · {totalQty}
-            </span>
-          </HStack>
-          <HStack spacing={1} className="flex-shrink-0 -mr-2">
-            {!isCompleting && (
-              <IconButton
-                aria-label={t`Move batch`}
-                icon={<LuGripVertical />}
-                variant="ghost"
-                {...attributes}
-                {...listeners}
-                className="cursor-grab"
-              />
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <a href={path.to.external.mesBatch(item.batchId)}>
-                    <DropdownMenuIcon icon={<LuPlay />} />
-                    {t`Open in MES`}
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href={path.to.file.batchLoadList(item.batchId)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuPrinter />} />
-                    {t`Print load list`}
-                  </a>
-                </DropdownMenuItem>
-                {!isCompleting && (
-                  <DropdownMenuItem
-                    destructive
-                    onClick={() => {
-                      const fd = new FormData();
-                      fd.set("intent", "dissolve");
-                      fd.set("batchId", item.batchId);
-                      submitBatch(fd);
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuTrash />} />
-                    {t`Dissolve batch`}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </HStack>
-        </div>
-        {isCompleting && (
-          <a
-            href={path.to.external.mesBatch(item.batchId)}
-            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            {t`Completion in progress — retry in Shop Floor`}
-          </a>
-        )}
-        {displaySettings.showProgress && totalTarget > 0 && (
-          <HStack>
-            <BarProgress
-              segments={[
-                { value: totalCompleted, className: "bg-emerald-500" },
-                { value: totalReworked, className: "bg-yellow-500" },
-                { value: totalScrapped, className: "bg-red-500" }
-              ]}
-              max={totalTarget || 1}
-              progress={
-                totalCompleted ? (totalCompleted / totalTarget) * 100 : 0
-              }
-            />
-            <LuCircleCheck className="text-muted-foreground w-4 h-4" />
-          </HStack>
-        )}
-      </CardHeader>
-      <CardContent className="gap-2 text-left text-sm">
-        {/* Aggregated summary rows — the operation card's information design,
-            carried onto the batch rather than dropped. */}
-        {displaySettings.showStatus && (
-          <HStack className="justify-start space-x-2">
-            {/* Read-only: a batch has N members, so the status is a rolled-up
-                summary, not an editable per-operation control. */}
-            <OperationStatusIcon status={status ?? "Todo"} className="size-4" />
-            <span className="text-sm">{status}</span>
-          </HStack>
-        )}
-        <CardSummaryRows
-          showDuration={displaySettings.showDuration && totalDuration > 0}
-          duration={totalDuration}
-          showDueDate={displaySettings.showDueDate}
-          deadlineType={earliest?.deadlineType}
-          dueDate={earliest?.dueDate}
-          isOverdue={isOverdue}
-          formatRelativeTime={formatRelativeTime}
-        />
-        {displaySettings.showCustomer && distinctCustomers.length > 0 && (
-          <HStack className="justify-start space-x-2">
-            <LuSquareUser className="text-muted-foreground" />
-            {distinctCustomers.length === 1 ? (
-              <CustomerAvatar customerId={distinctCustomers[0]} />
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                {t`${distinctCustomers.length} customers`}
-              </span>
-            )}
-          </HStack>
-        )}
-        {displaySettings.showMaterial && materialChips.length > 0 && (
-          <CardMaterialChips chips={materialChips} />
-        )}
+  // Removing a member sends its operation back to the schedule to run on its
+  // own — easy to trigger by accident on a dense board, so it's confirmed.
+  const [removing, setRemoving] = useState<OperationItem | null>(null);
 
-        {/* The member jobs in the batch — each still individually removable. */}
-        <div className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground">
-          <LuUsers className="size-3.5" />
-          <span>{t`Jobs`}</span>
-        </div>
-        {members.map((m) => (
-          <div
-            key={m.id}
-            className="group flex items-center justify-between gap-2 rounded-md border border-border/60 px-2 py-1.5"
-          >
-            <div className="min-w-0">
-              <span className="block truncate text-xs font-medium">
-                {m.jobReadableId}
+  return (
+    <>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          "max-w-[330px]",
+          KANBAN_CARD_SHELL,
+          isPlanned && "border-dashed",
+          isOverlay && "ring-2 ring-primary",
+          isDragging && "ring-2 ring-primary opacity-30"
+        )}
+      >
+        <CardHeader className="flex flex-col justify-between relative gap-2">
+          <div className="flex w-full max-w-full justify-between items-start gap-0">
+            <HStack spacing={2} className="min-w-0">
+              <LuLayers className="text-muted-foreground size-4 flex-shrink-0" />
+              <Badge>{item.batchReadableId}</Badge>
+              {isPlanned && <Badge variant="outline">{t`Planned`}</Badge>}
+              {isCompleting && <Badge variant="yellow">{t`Completing`}</Badge>}
+              <span className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">
+                {members.length} · {totalQty}
               </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {m.itemReadableId}
-              </span>
-            </div>
-            <HStack spacing={1} className="flex-shrink-0">
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {m.quantity ?? 0}
-              </span>
+            </HStack>
+            <HStack spacing={1} className="flex-shrink-0 -mr-2">
               {!isCompleting && (
                 <IconButton
-                  aria-label={t`Remove from batch`}
-                  icon={<LuX />}
+                  aria-label={t`Move batch`}
+                  icon={<LuGripVertical />}
                   variant="ghost"
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                  onClick={() => {
-                    const fd = new FormData();
-                    fd.set("intent", "remove");
-                    fd.set("batchId", item.batchId);
-                    fd.append("jobOperationIds", m.id);
-                    submitBatch(fd);
-                  }}
+                  {...attributes}
+                  {...listeners}
+                  className="cursor-grab"
                 />
               )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    aria-label={t`More options`}
+                    icon={<LuEllipsisVertical />}
+                    variant="secondary"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem asChild>
+                    <a href={path.to.external.mesBatch(item.batchId)}>
+                      <DropdownMenuIcon icon={<LuPlay />} />
+                      {t`Open in MES`}
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.file.batchList(item.batchId)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuPrinter />} />
+                      {t`Print batch list`}
+                    </a>
+                  </DropdownMenuItem>
+                  {!isCompleting && (
+                    <DropdownMenuItem
+                      destructive
+                      onClick={() => {
+                        const fd = new FormData();
+                        fd.set("intent", "dissolve");
+                        fd.set("batchId", item.batchId);
+                        submitBatch(fd);
+                      }}
+                    >
+                      <DropdownMenuIcon icon={<LuTrash />} />
+                      {t`Dissolve batch`}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </HStack>
           </div>
-        ))}
-      </CardContent>
-    </Card>
+          {isCompleting && (
+            <a
+              href={path.to.external.mesBatch(item.batchId)}
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              {t`Completion in progress — retry in Shop Floor`}
+            </a>
+          )}
+          {displaySettings.showProgress && totalTarget > 0 && (
+            <HStack>
+              <BarProgress
+                segments={[
+                  { value: totalCompleted, className: "bg-emerald-500" },
+                  { value: totalReworked, className: "bg-yellow-500" },
+                  { value: totalScrapped, className: "bg-red-500" }
+                ]}
+                max={totalTarget || 1}
+                progress={
+                  totalCompleted ? (totalCompleted / totalTarget) * 100 : 0
+                }
+              />
+              <LuCircleCheck className="text-muted-foreground w-4 h-4" />
+            </HStack>
+          )}
+        </CardHeader>
+        <CardContent className="gap-2 text-left text-sm">
+          {/* Aggregated summary rows — the operation card's information design,
+            carried onto the batch rather than dropped. */}
+          {displaySettings.showStatus && (
+            <HStack className="justify-start space-x-2">
+              {/* Read-only: a batch has N members, so the status is a rolled-up
+                summary, not an editable per-operation control. */}
+              <OperationStatusIcon
+                status={status ?? "Todo"}
+                className="size-4"
+              />
+              <span className="text-sm">{status}</span>
+            </HStack>
+          )}
+          <CardSummaryRows
+            showDuration={displaySettings.showDuration && totalDuration > 0}
+            duration={totalDuration}
+            showDueDate={displaySettings.showDueDate}
+            deadlineType={earliest?.deadlineType}
+            dueDate={earliest?.dueDate}
+            isOverdue={isOverdue}
+            formatRelativeTime={formatRelativeTime}
+          />
+          {displaySettings.showCustomer && distinctCustomers.length > 0 && (
+            <HStack className="justify-start space-x-2">
+              <LuSquareUser className="text-muted-foreground" />
+              {distinctCustomers.length === 1 ? (
+                <CustomerAvatar customerId={distinctCustomers[0]} />
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  {t`${distinctCustomers.length} customers`}
+                </span>
+              )}
+            </HStack>
+          )}
+          {displaySettings.showMaterial && materialChips.length > 0 && (
+            <CardMaterialChips chips={materialChips} />
+          )}
+
+          {/* The member jobs in the batch — each still individually removable. */}
+          <div className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+            <LuUsers className="size-3.5" />
+            <span>{t`Jobs`}</span>
+          </div>
+          {members.map((m) => (
+            <div
+              key={m.id}
+              className="group flex items-center justify-between gap-2 rounded-md border border-border/60 px-2 py-1.5"
+            >
+              <div className="min-w-0">
+                <span className="block truncate text-xs font-medium">
+                  {m.jobReadableId}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {m.itemReadableId}
+                </span>
+              </div>
+              <HStack spacing={1} className="flex-shrink-0">
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {m.quantity ?? 0}
+                </span>
+                {!isCompleting && (
+                  <IconButton
+                    aria-label={t`Remove from batch`}
+                    icon={<LuX />}
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                    onClick={() => setRemoving(m)}
+                  />
+                )}
+              </HStack>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      {removing && (
+        <ConfirmDelete
+          action={path.to.priorityBatchingUpdate}
+          title={t`Remove from batch`}
+          name={removing.jobReadableId ?? t`operation`}
+          text={t`Remove ${
+            removing.jobReadableId ?? "this operation"
+          } from this batch? Its operation goes back to the schedule to run on its own.`}
+          deleteText={t`Remove`}
+          fields={{
+            intent: "remove",
+            batchId: item.batchId,
+            jobOperationIds: removing.id
+          }}
+          onCancel={() => setRemoving(null)}
+          onSubmit={() => setRemoving(null)}
+        />
+      )}
+    </>
   );
 }

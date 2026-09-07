@@ -1714,8 +1714,12 @@ export const terms = {
     definition: msg`The outside suppliers that perform this process; each gets a row of pricing and lead-time inputs on the supplier process form.`
   },
   "process-complete-all-on-scan": {
-    term: msg`Complete all quantities on barcode scan`,
+    term: msg`Complete all quantities on kanban complete scan`,
     definition: msg`When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials.`
+  },
+  "batch-type": {
+    term: msg`Batch type`,
+    definition: msg`How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath).`
   },
 
   // ── Resources: Work centers (WorkCenterForm) ────────────────────────────

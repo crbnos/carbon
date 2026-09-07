@@ -247,3 +247,15 @@ export function composeBatchPredecessorConflict(args: {
     : "an earlier operation";
   return `${batch} is scheduled to start before ${predecessor} in this job is projected to finish — the next replan re-anchors the batch`;
 }
+
+/**
+ * A Released batch whose open members all carry zero setup/labor/machine
+ * time. It cannot be sized, so it holds a flagged placeholder instead of
+ * capacity; the fix is data entry, not rescheduling.
+ */
+export function composeBatchNoEstimatesConflict(
+  batchReadableId: string | null
+): string {
+  const batch = batchReadableId ? `Batch ${batchReadableId}` : "The batch";
+  return `${batch} has no estimated time — add setup, labor, or machine time to its operations to schedule it`;
+}

@@ -434,6 +434,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       operationId: r.operationId,
       operationDescription: r.jobOperation?.description ?? null,
       batchReadableId: r.jobOperationBatch?.readableId ?? null,
+      batchId: r.jobOperationBatchId ?? null,
       batchMemberCount: r.jobOperationBatchId
         ? (batchMemberCounts.get(r.jobOperationBatchId) ?? null)
         : null,

@@ -4,6 +4,8 @@ import type { BatchType } from "@carbon/utils";
 import { batchDuration } from "@carbon/utils";
 import type { Kysely } from "kysely";
 import type { CalendarWindow } from "./calendar-utils.ts";
+import { nextWorkingInstant } from "./calendar-utils.ts";
+import { composeBatchNoEstimatesConflict } from "./conflict-messages.ts";
 import { msToInstantIso, toInstantMs } from "./date-utils.ts";
 import { calculateDurationBreakdown } from "./duration-calculator.ts";
 import type { KyselyMasterDataProvider } from "./master-data-provider.ts";
@@ -34,6 +36,14 @@ import { allocateOperation, isConflict } from "./slot-allocator.ts";
  * reserves the work center only (one crew on one machine; documented
  * optimism for ability-gated batchable processes).
  */
+
+/**
+ * Placeholder window for a Released batch whose members have no time
+ * standards: wide enough for the forecast to draw a bar, honest about
+ * holding nothing (`workHours` 0, `isPlaceholder` — never blocks the
+ * machine).
+ */
+const NO_ESTIMATE_PLACEHOLDER_HOURS = 1;
 
 export type BatchPlacement = {
   batchId: string;
@@ -178,8 +188,13 @@ export function planBatchPlacements(args: {
       batch.batchType,
       { hasAnyEvent: batch.hasAnyEvent }
     );
-    if (durationSeconds <= 0) continue;
     const durationHours = durationSeconds / 3_600;
+    // Zero duration = the open members carry no time standards at all. The
+    // batch cannot be sized, but a Released batch must never silently vanish
+    // — this reservation is its ONLY forecast surface — so it skips the slot
+    // search and takes the placeholder branch below, flagged with the data
+    // gap instead of a capacity conflict.
+    const hasNoEstimates = durationSeconds <= 0;
 
     let anchor = now;
     for (const m of open) {
@@ -198,7 +213,10 @@ export function planBatchPlacements(args: {
       load: number;
     } | null = null;
     let firstConflict: string | null = null;
-    for (const candidateId of candidates) {
+    if (hasNoEstimates) {
+      firstConflict = composeBatchNoEstimatesConflict(batch.readableId);
+    }
+    for (const candidateId of hasNoEstimates ? [] : candidates) {
       const allocation = allocateOperation({
         durationHours,
         earliestStart: anchor,
@@ -237,10 +255,21 @@ export function planBatchPlacements(args: {
     if (best === null) {
       // Mirror the engine's unplaceable-op pattern: a non-binding placeholder
       // window (calendar time from the anchor) on the first candidate that
-      // surfaces the batch on the forecast without holding the machine.
+      // surfaces the batch on the forecast without holding the machine. A
+      // no-estimate batch's work content is zero, so it takes a nominal hour
+      // — wide enough for the timeline to draw a bar; `workHours` stays 0.
       workCenterId = candidates[0]!;
-      startAt = anchor;
-      endAt = anchor + durationHours * 3_600_000;
+      // Snap the marker onto a working day so it never renders on a night or
+      // weekend just because `now` (the anchor) fell there — it holds no
+      // capacity, so this only moves where the bar is drawn.
+      startAt = nextWorkingInstant(
+        windowsByWorkCenter.get(workCenterId) ?? [],
+        anchor
+      );
+      const placeholderHours = hasNoEstimates
+        ? NO_ESTIMATE_PLACEHOLDER_HOURS
+        : durationHours;
+      endAt = startAt + placeholderHours * 3_600_000;
       conflict = firstConflict;
       isPlaceholder = true;
     } else {

@@ -12,7 +12,7 @@ const COL_ITEM = "w-3/12 text-left pr-4";
 const COL_DESCRIPTION = "w-5/12 text-left pr-4";
 const COL_QUANTITY = "w-2/12 text-right";
 
-export interface BatchLoadListMember {
+export interface BatchListMember {
   id: string;
   jobReadableId: string | null;
   itemReadableId: string | null;
@@ -21,7 +21,7 @@ export interface BatchLoadListMember {
   quantity: number | null;
 }
 
-interface BatchLoadListPDFProps {
+interface BatchListPDFProps {
   company: Company;
   batch: {
     readableId: string | null;
@@ -30,24 +30,24 @@ interface BatchLoadListPDFProps {
   };
   processName: string | null;
   workCenterName: string | null;
-  members: BatchLoadListMember[];
+  members: BatchListMember[];
   locale?: string;
 }
 
 /**
- * The batch load sheet an operator works a shared run from: which jobs' parts
+ * The batch list an operator works a shared run from: which jobs' parts
  * are in this furnace load / laser nest / plating rack, and how many of each.
  * Hand-built (no template engine) — a fixed operational document, not a
  * customer-facing one.
  */
-export const BatchLoadListPDF = ({
+export const BatchListPDF = ({
   company,
   batch,
   processName,
   workCenterName,
   members,
   locale
-}: BatchLoadListPDFProps) => {
+}: BatchListPDFProps) => {
   const totalQuantity = members.reduce((sum, m) => sum + (m.quantity ?? 0), 0);
 
   const tableHeader = (
@@ -65,17 +65,17 @@ export const BatchLoadListPDF = ({
 
   return (
     <Template
-      title="Batch Load List"
+      title="Batch List"
       meta={{
         author: "Carbon",
-        keywords: "batch load list",
-        subject: "Batch Load List"
+        keywords: "batch list",
+        subject: "Batch List"
       }}
       footerDocumentId={batch.readableId}
     >
       <Header
         company={company}
-        title="Batch Load List"
+        title="Batch List"
         documentId={batch.readableId}
       />
 

@@ -243,9 +243,9 @@ const WorkCenterForm = ({
                   <Hidden name="alwaysOn" value="on" />
                 )}
 
-                <p className="text-xs font-mono uppercase font-light text-muted-foreground pt-2">
+                <Subheading variant="heavy" className="block pt-2">
                   <Trans>Batching</Trans>
-                </p>
+                </Subheading>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                   <Number
                     name="batchCapacity"
