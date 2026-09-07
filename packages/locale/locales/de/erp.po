@@ -17410,7 +17410,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Unbenannt"
 
 msgid "Untitled Diagram"
 msgstr "Unbenanntes Diagramm"

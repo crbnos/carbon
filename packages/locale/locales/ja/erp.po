@@ -17410,7 +17410,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "無題"
 
 msgid "Untitled Diagram"
 msgstr "無題の図"

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1481,
+  "totalTools": 1482,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none"},
@@ -392,6 +392,7 @@
     {"name":"items_findChangeNoticesForItem","classification":"READ","paramCount":2,"schema":"bdfe8d67fc22","response":"e0196d4b0041","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_findOtherOpenChangeNoticesForItem","classification":"READ","paramCount":2,"schema":"8a1da983320d","response":"e0196d4b0041","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getBomHasShelfLifeManagedInput","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"7cb541e84f22","injectAuth":"companyId","permission":"parts:view"},
+    {"name":"items_getBomItemAttributes","classification":"READ","paramCount":1,"schema":"c4ca22fd1816","response":"eb258ef68905","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getChangeNotice","classification":"READ","paramCount":1,"schema":"29578070edb2","response":"09c0b464284c","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getChangeNoticeActions","classification":"READ","paramCount":1,"schema":"29578070edb2","response":"949f86b5cda3","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getChangeNoticeAffectedItems","classification":"READ","paramCount":1,"schema":"29578070edb2","response":"5483e69d7515","injectAuth":"companyId","permission":"parts:view"},
@@ -470,7 +471,7 @@
     {"name":"items_getOpenPurchaseOrderLines","classification":"READ","paramCount":2,"schema":"ade4704d7338","response":"ee9244a3a03b","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getOpenSalesOrderLines","classification":"READ","paramCount":2,"schema":"ade4704d7338","response":"ee9244a3a03b","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getPart","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"85d85a501c26","injectAuth":"companyId","permission":"parts:view"},
-    {"name":"items_getParts","classification":"READ","paramCount":4,"schema":"53339fd228e4","response":"7e89b01c25f6","injectAuth":"companyId","permission":"parts:view"},
+    {"name":"items_getParts","classification":"READ","paramCount":4,"schema":"53339fd228e4","response":"b134f22017b9","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getPartsList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"f674f76b8278","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getPartUsedIn","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"bc331becb999","injectAuth":"companyId","permission":"parts:view"},
     {"name":"items_getPickMethod","classification":"READ","paramCount":2,"schema":"ade4704d7338","response":"781e7f3fc24f","injectAuth":"companyId","permission":"parts:view"},
