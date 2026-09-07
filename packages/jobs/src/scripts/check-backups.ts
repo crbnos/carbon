@@ -66,6 +66,11 @@ const RERUN_HINT =
  * under plain `tsx`. Owning the pool is also what lets this script close it and exit.
  */
 function connect(): { db: Kysely<KyselyDatabase>; pool: pg.Pool } {
+  // The package script loads `.env` BEFORE `.env.local`, because Node's
+  // `--env-file` gives the LAST file precedence and `.env.local` (written by
+  // `crbn up`, carrying this worktree's real port) has to win. Reversed, a
+  // stale `SUPABASE_DB_URL` in `.env` points at a port nothing is listening on
+  // and this whole check silently reports "skipped" forever.
   const connectionString = process.env.SUPABASE_DB_URL;
   if (!connectionString) {
     skip("SUPABASE_DB_URL is not set (is your local stack up?)");

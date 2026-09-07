@@ -59,7 +59,7 @@
   "name": "@carbon/jobs",
   "private": true,
   "scripts": {
-    "db:check:backups": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=../../.env src/scripts/check-backups.ts",
+    "db:check:backups": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local src/scripts/check-backups.ts",
     "dev:jobs": "pnpm dlx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
