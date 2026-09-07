@@ -12,6 +12,16 @@ export interface WorkCenterRate {
   processes: string[] | null;
 }
 
+// Mirrors json-2-csv's preventCsvInjection rule: strip formula-leading
+// characters (=, +, -, @, tab, CR — optionally behind leading whitespace) from
+// non-numeric strings so a hand-built CSV cell can't execute in a spreadsheet.
+export function stripCsvFormulaPrefix(value: string): string {
+  if (value === "" || !Number.isNaN(Number(value))) {
+    return value;
+  }
+  return value.replace(/^[ \t\r]*[=+\-@\t\r]+/g, "");
+}
+
 export function resolveOperationRates(
   workCenterId: string | null,
   processId: string,
