@@ -1,7 +1,18 @@
 import type { ReactNode } from "react";
 
-export function DocPage({ children }: { children: ReactNode }) {
-  return <div className="max-w-190">{children}</div>;
+/**
+ * `max-w-190` (760px) is a PROSE measure — right for paragraphs, wrong for a
+ * reference layout that puts a request sample and two columns of tables side by
+ * side. Those pass `wide` to use the column the page actually has.
+ */
+export function DocPage({
+  children,
+  wide = false
+}: {
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  return <div className={wide ? "w-full" : "max-w-190"}>{children}</div>;
 }
 
 export function DocEyebrow({ children }: { children: ReactNode }) {

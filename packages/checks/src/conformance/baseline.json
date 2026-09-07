@@ -408,6 +408,7 @@
   "no-raw-rounding::apps/erp/app/modules/workflows/ui/Runs/WorkflowRunSteps.tsx::return `${(ms / 1000).toFixed(1)}s`;",
   "no-raw-rounding::apps/erp/app/routes/_oauth+/register.ts::client_id_issued_at: Math.floor(Date.now() / 1000),",
   "no-raw-rounding::apps/erp/app/routes/api+/items.$itemId.recalculate-cost.ts::message: `Unit cost updated to ${unitCost.toFixed(2)}`",
+  "no-raw-rounding::apps/erp/app/routes/api+/mcp+/_index.ts::const retryAfterSeconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000));",
   "no-raw-rounding::apps/erp/app/routes/api+/quality.kpi.$key.ts::const days = Math.floor(",
   "no-raw-rounding::apps/erp/app/routes/api+/quality.kpi.$key.ts::const week = Math.ceil(",
   "no-raw-rounding::apps/erp/app/routes/api+/quality.kpi.$key.ts::const weeksOpen = Math.floor(",

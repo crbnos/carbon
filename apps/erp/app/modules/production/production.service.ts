@@ -3659,11 +3659,23 @@ export async function duplicateJobOperationStep(
 export async function upsertJobOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -7128,11 +7140,23 @@ export async function getAssemblyInstructionStepSlides(
 export async function upsertAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -8859,16 +8883,7 @@ export async function getInspectionDocuments(
   companyId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (
-        columns: string,
-        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
-      ) => any;
-    };
-  };
-
-  let query = documentClient
+  let query = client
     .from("inspectionDocuments")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);

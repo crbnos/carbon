@@ -1327,6 +1327,13 @@ as the breakdown. Name the two so they cannot be confused (`violations` vs
 (`findExportScopeViolationsDetailed`, `computeScopeExclusions`, `totalExcludedRows`),
 `Manifest.excludedRowsByTable`, and any future "N things are wrong" surface.
 
+## Browser-testing MES flows that write data
+
+- **Context:** Verifying AssemblyView keyboard shortcuts with agent-browser while editing the same file (Vite HMR live).
+- **Problem:** Step records appeared at timestamps with no corresponding keypress; hours went into suspecting the new code. Cause: overlapping test sessions — a page left open across HMR edits (sometimes with a modal up) replays/refires interactions, and interleaved key presses land on freshly auto-advanced steps.
+- **Rule:** When a browser test writes rows, run it as a closed loop: wipe the rows, reload the page fresh, then check the DB after EVERY single action before pressing the next key. Never diagnose from an accumulated tail of prior test sessions.
+- **Applies to:** agent-browser verification of any MES/ERP flow with side effects, especially while HMR is live.
+
 ## Full-screen height calcs must subtract the app-shell inset
 
 **Context:** The ERP app shell (`apps/erp/app/routes/x+/_layout.tsx`, PR #1551) moved
@@ -1389,3 +1396,23 @@ full-screen ERP route.
 **Rule:** In the scheduling engine, degenerate input never `continue`s past a persistence step — it emits the flagged placeholder shape (`isPlaceholder = true`, honest `workHours`, a `conflictReason` naming the DATA gap and its fix) so the entity stays visible and self-diagnosing. Match the unplaceable-op precedent; give the placeholder a nominal drawable window when true content is zero.
 
 **Applies to:** `packages/ee/src/planning/scheduling/batch-scheduler.ts`, `work-center-selector.ts` placeholder branches, and any future pre-pass/what-if that turns entities into reservations or timeline rows.
+
+## A shared executor acquires callers nobody planned for — grep every importer before deleting one
+
+**Context:** The oRPC migration plan said MCP `call_tool` and the in-app agent were the two consumers of the MCP `direct-executor.ts`, so once both moved to `callOperation` the file could be deleted. A pre-deletion grep found a THIRD caller: `apps/erp/app/routes/api+/inngest.ts` registered `executeFunction` as the workflow engine's `setWorkflowDispatch` seam — every customer workflow `*.create` action ran through it.
+
+**Problem:** A convenient shared function gets wired into new seams (dependency-injection slots, dispatchers, adapters) without its own file ever changing, so the mental list of "who uses this" goes stale. Deleting it on the strength of the plan's caller list would have broken customer workflow create actions in production while every named caller kept working.
+
+**Rule:** Before deleting or changing the contract of any shared executor/service entry point, grep the WHOLE repo for its name (not just imports of its file — injection sites pass it by value: `setX(fn)`, `register(fn)`, config objects), and treat each hit as a caller to migrate in the same change. A DI/seam registration is a caller even though the dependency arrow points away from the file.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/call.server.ts` (the shared entry point now), `packages/jobs/src/workflows/actions/dispatcher.ts`, any `set*`/`register*` seam.
+
+## In a bulk API sweep, a 4xx carrying a service's generic fallback string is a finding, not a pass
+
+**Context:** The 1,495-operation API sweep triaged all 274 WRITE-op 400s as "reached the DB, expected FK rejections" and flagged only 500s. `inventory_insertManualInventoryAdjustment` came back 400 with `"Failed to create manual inventory adjustment"` and was waved through — but that string is the service's FALLBACK for an edge-function error whose real message was suppressed. A customer later hit exactly this: the published schema advertised 12 `adjustmentType` values (the validator spread `itemLedgerTypes` into its enum) while the `post-inventory-adjustment` edge function accepts 5, so every LLM-guided "add stock" call failed undiagnosably.
+
+**Problem:** Bucketing sweep results by status code alone treats "the request was validly rejected" and "the error was swallowed somewhere in the chain" as the same outcome. The ops most likely to be broken-by-contract-drift are precisely the ones that fail with a generic message, because the generic message IS the symptom of a suppressed real error.
+
+**Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
+
+**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.

@@ -16,7 +16,8 @@ import { recalculateJobOperationDependencies } from "./production.service";
 // part of the client bundle and React Router's dot-server plugin rejects any
 // `.server` reference reachable from it. This module is server-only (never
 // re-exported by the barrel) and is pulled into the MCP tool set by
-// `scripts/generate-mcp.ts` + `direct-executor.ts`, which run server-side only.
+// `scripts/generate-mcp.ts` + the Carbon API registry
+// (`api+/v1+/lib/registry.server.ts`), which run server-side only.
 //
 // The MCP executor injects companyId/userId from the OAuth token but performs no
 // per-tool permission check, and some of these writes reach privileged paths (a

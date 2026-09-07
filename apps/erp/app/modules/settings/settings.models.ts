@@ -53,12 +53,12 @@ export const apiKeyPermissionModules = {
 export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
 /**
- * Scopes (`${module}_${action}`) that must be opted into individually. Bulk
- * toggles ("select all" / a module row) never enable these, and they stay off
- * by default — deleting accounting records is destructive enough that granting
- * it to an API key has to be a deliberate, per-checkbox choice.
+ * Permission keys (`${module}_${action}`) that are opt-in only: they must be
+ * enabled by clicking their own cell and are never turned on by the "all
+ * modules" or per-row select-all checkboxes. Deleting accounting data via the
+ * API is high-risk, so it stays deselected unless explicitly chosen.
  */
-export const apiKeyOptInScopes = ["accounting_delete"] as const;
+export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -429,7 +429,7 @@ export type Theme = (typeof themes)[number];
 export const themeValidator = z.object({
   next: zfd.text(z.string().optional()),
   theme: z.enum(themes, {
-    errorMap: (issue, ctx) => ({ message: "Theme is required" })
+    error: "Theme is required"
   })
 });
 

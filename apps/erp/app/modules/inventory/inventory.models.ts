@@ -160,8 +160,14 @@ export const inventoryAdjustmentValidator = z
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
+    // Exactly the types the post-inventory-adjustment edge function accepts —
+    // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
+    // schema here, so API/MCP callers were offered "Purchase" etc. and every
+    // such call failed with the generic fallback message. Keep in sync with
+    // the edge function's payloadValidator.
     adjustmentType: z.enum([
-      ...itemLedgerTypes,
+      "Positive Adjmt.",
+      "Negative Adjmt.",
       "Set Quantity",
       "Scrap",
       "Unscrap"
@@ -327,9 +333,7 @@ export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   carrier: z.enum(["UPS", "FedEx", "USPS", "DHL", "Other"], {
-    errorMap: () => ({
-      message: "Carrier is required"
-    })
+    error: "Carrier is required"
   }),
   carrierAccountId: zfd.text(z.string().optional()),
   trackingUrl: zfd.text(z.string().optional())

@@ -14,6 +14,17 @@ service functions as ERP tools. It lives entirely under
 > `inventory_getShelf`, removed when `shelf` was renamed to `storageUnit`). The
 > live tool list is `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`;
 > `describe_tool` / `search_tools` read from it at runtime.
+>
+> That manifest is **gitignored build output** (1.9 MB, rewritten wholesale on every
+> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, which runs
+> from `postinstall` and as the turbo root task `//#generate:mcp` that `typecheck`,
+> `build` and `test` depend on — so a fresh clone regenerates it before anything
+> imports it. The committed record of the published contract is its small companion
+> `tool-manifest.digest.json`: one line per operation carrying classification,
+> permission, injectAuth, argument count and a hash of the schema, so a contract
+> change is still one visible line in review. `pnpm check:manifest` regenerates and
+> fails if the digest is stale; pre-commit runs it when a service, models or
+> generator file is staged.
 
 ## Endpoint & transport
 
@@ -78,26 +89,107 @@ registered individually:
 | `describe_tool` | Return the JSON-Schema + classification + description for one tool name. |
 | `call_tool` | Execute any ERP tool: `{ name, arguments }`. `arguments` may arrive as a JSON string and is normalized to an object. |
 
-## How `call_tool` actually runs a tool (`lib/direct-executor.ts`)
+## How `call_tool` actually runs a tool (the canonical oRPC dispatch)
 
 `call_tool` does **not** go back through the MCP protocol — it calls
-`executeFunction(name, ctx, args)` directly:
+`callOperation(name, ctx, args)` from `api+/v1+/lib/call.server.ts`, the ONE
+server-side entry point shared by MCP, the in-app agent, and the workflow
+dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
+`direct-executor.ts` any more; it was deleted when all three callers migrated.
 
-- Tool name is `"<module>_<funcName>"`; split on the first `_`. `functionRegistry`
-  maps the 15 modules to their `~/modules/<module>/<module>.service` namespace.
+- `callOperation` resolves the manifest entry (`operationsByName`) and runs the
+  real oRPC procedure via server-side `call()` — gate middleware included, so an
+  **API-key** caller is scope-checked per operation (403 when the key lacks
+  `<module>_<action>` for the company). OAuth-connector and in-process
+  (`authKind: "session"`) callers skip the scope gate; RLS/role bounds them.
+- The service registry lives at `api+/v1+/lib/registry.server.ts` (the 15 module
+  namespaces); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
+- **Input is validated** against the operation's own schema before dispatch.
+  `router.server.ts` wires `.input(jsonSchemaInput(meta.schema))` from
+  `@carbon/api/schema`, which converts the manifest's JSON Schema back to zod at
+  first use (`z.fromJSONSchema`; no validator library is involved). Because
+  `callOperation` runs the real procedure, this covers MCP, the agent and
+  workflows as well as HTTP — a malformed payload gets a 400 naming the field
+  instead of silently reaching a service. `.output()` deliberately keeps the
+  pass-through `jsonSchema()`: `shapeHttpBody` rewrites the body, so a correct
+  response does not match the declared response schema. The validator preserves
+  unknown keys (no generated schema sets `additionalProperties: false`) and
+  accepts a lone wrapper's contents sent flat, since the dispatcher does too.
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
-  `["client", "args"]`) and `injectAuth`. The executor builds the positional
-  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`;
-  payload params are stamped with auth fields via `enrichWithAuthContext`. When a
-  payload param is an **array** of rows, `enrichWithAuthContext` stamps
-  `createdBy` into each element (insert only) — the top-level stamp never reached
-  inside, so a NOT NULL `createdBy` on the row table (e.g. `quoteLinePrice`) used
-  to fail. Only `createdBy` is injected per element; `companyId`/`updatedBy` are
-  left to the service, since element keys spread straight into an INSERT.
-- Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are rejected
-  in both `call_tool` and the executor. Currently only `settings_seedCompany`.
-- Supabase query builders returned by services are awaited; result is
-  `{ success, data | error }`. Supabase `{ data, error, count }` shape is unwrapped.
+  `["client", "args"]`) and `injectAuth`. The dispatch builds the positional
+  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
+  service whose param is `db` is handed `getDatabaseClient()`; payload params are
+  stamped with auth fields via `enrichWithAuthContext` (now in
+  `dispatch.server.ts`). A param literally named `args` is stamped too, and
+  which wire shape it takes is read off the operation's schema: a declared `args`
+  object means the body wraps it (`{ args: {...} }`) and the inner object is
+  unwrapped; a flat schema means the body already IS the args object. A flat body
+  is still accepted either way. A param the schema declares as a **scalar** is
+  passed `undefined` when no key matches rather than being handed the whole
+  payload object — that fallback made `deleteApiKey` run `.eq("id", {...})` and
+  return `200 null`. Reading a key by the param's own name is likewise gated
+  (`addressesWholeParam`): a service whose sole payload param is a destructured
+  object can share its name with one of that object's FIELDS —
+  `insertNote(client, note: { note, documentId, … })` — and reading `body.note`
+  there handed the service the note STRING instead of the record. The schema
+  decides: a wrapper op declares one property named for the param, so read it; an
+  op listing the param's own fields is describing it, so pass the whole body.
+  `_operation` and any property that is itself another serviceParam (`args`, and
+  scalar siblings like `locationId`) don't count toward that, since each is
+  addressed on its own pass. When a payload param is an **array** of rows,
+  `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
+  the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
+  table (e.g. `quoteLinePrice`) used to fail. Only `createdBy` is injected per
+  element; `companyId`/`updatedBy` are left to the service, since element keys
+  spread straight into an INSERT.
+- Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are
+  rejected in `call_tool`, in `callOperation`, and (belt-and-braces) in the
+  `gate()` middleware — though the primary gate is that the generator excludes
+  them from the manifest entirely. Tenant-level operations belong here:
+  `settings_insertCompany` and `settings_deleteSubsidiary` are both bare
+  `company` writes whose only scoping is a companyId the dispatcher fills from
+  the caller's own key, so an empty body would create or destroy a tenant. Their
+  "internal users only" gate lives in the settings ROUTE (`isInternalEmail`),
+  which no API/MCP call passes through. So do operations whose table carries
+  **user-scoped RLS** (`"createdBy"::uuid = auth.uid()` — `note`,
+  `maintenanceDispatchComment` and the six `*Favorite` tables, migration
+  `20260228000000_rls-refactor-3.sql`). An API key authenticates with the
+  `carbon-key` header rather than a Supabase JWT, so `auth.uid()` is NULL and the
+  predicate never matches. The failure splits by verb, and the silent half is the
+  reason these are blocked rather than left to fail: an INSERT raises a visible RLS
+  error, but an UPDATE/DELETE matching zero rows is not an error — PostgREST
+  returns success, so `deleteNote` answered `200` while the row stayed untouched.
+  `*_upsertMaintenanceDispatchComment` and `shared_insertNote` are deliberately NOT
+  blocked: their INSERT path is companyId-scoped and works. The upserts' `update`
+  branch still no-ops silently — making it work is an RLS decision, not an app-code
+  one.
+- **A thrown service error is mapped to a 422 carrying its message** by the
+  `mapThrownErrors` middleware (`lib/base.server.ts`), composed ahead of `gate`
+  in `router.server.ts`. Services are meant to return the Supabase
+  `{ data, error }` envelope, but ~51 of them `throw` instead; oRPC rewrites any
+  non-`ORPCError` throw to a 500 and keeps the message only as `cause`, which the
+  encoder drops — so HTTP answered a bad id opaquely while MCP showed the real
+  text (`callOperation` reads `err.message` itself). Classification is by
+  constructor, since the ERP service layer has no domain-error class: a plain
+  `Error` is surfaced, while `TypeError`/`ReferenceError`/`RangeError`/
+  `SyntaxError` keep their opaque 500 because they mean Carbon has a bug. The
+  mapper must never attach `data.supabase` — `callOperation` keys its
+  `Database error:` envelope off that field.
+- `eliminationClient` is a **context param**, filled from `context.client` (which
+  is what the service itself defaults it to). Left out of the generator's
+  `CONTEXT_PARAMS` it became a required field a caller cannot express — a
+  Supabase client — so the two consolidated-balance ops failed every call.
+- Supabase query builders returned by services are awaited and the
+  `{ data, error, count }` envelope is **unwrapped by the dispatch**:
+  `callOperation` returns `{ success: true, data, count? }` or
+  `{ success: false, error, errorKind: "database" | "execution" }`. A Supabase
+  failure keeps MCP's exact `Database error: ${JSON.stringify(error)}` text
+  (the raw error rides on `ORPCError.data.supabase`), and HTTP callers get the
+  Postgres `code`/`details`/`hint` in the 400 body.
+- The dispatch behavior is pinned by
+  `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the
+  deleted `executeFunction`) — a change there is a behavior change for MCP,
+  the agent, workflows and HTTP at once.
 
 ## Tool metadata & the generator (`scripts/generate-mcp.ts`)
 
@@ -106,8 +198,8 @@ registered individually:
 (falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
 plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
 functions that must import `*.server` modules — see the gotcha below — e.g.
-`production.mcp.server.ts`; `direct-executor.ts` merges its exports into the same module
-namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
+`production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
+exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
@@ -129,11 +221,11 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 - **`_operation`** (`usesCreatedByDiscriminator`): the ~96 tools whose service picks
   insert-vs-update with `if ("createdBy" in …)` get a **required**
   `_operation: "create" | "update"` in their schema — the schema is the only marker,
-  there is no parallel metadata flag. `direct-executor.ts` strips `_operation` from the
-  args (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
+  there is no parallel metadata flag. The dispatch (`api+/v1+/lib/dispatch.server.ts`)
+  strips `_operation` from the args (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
   suppresses the `createdBy` stamp when it is `"update"` — otherwise every MCP edit would
   take the insert branch. Missing/invalid `_operation` on such a tool is rejected before
-  the service is called; `call_tool.arguments` is `z.any()`, so the executor is the gate.
+  the service is called; `call_tool.arguments` is `z.any()`, so the dispatch is the gate.
 
 ## The 15 modules (current `tool-metadata.json`)
 
@@ -159,7 +251,7 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   `//` comments above the function, not inside the parameter list (a comment there
   is parsed as a property name).
 - A service whose first parameter is `db` (a Kysely transaction client) is served
-  `getDatabaseClient()` by `direct-executor.ts`, the same way `client` is served
+  `getDatabaseClient()` by `dispatch.server.ts`, the same way `client` is served
   the supabase one. A first parameter named anything else falls through to the
   positional-argument branches and receives a business argument as its client.
 - Don't enumerate individual tools in docs — `search_tools` is the source of truth.
@@ -177,6 +269,6 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   React Router's `react-router:dot-server` plugin then fails the build with *"Server-only
   module referenced by client"*. Put such MCP write functions in a server-only companion
   `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
-  and `direct-executor.ts` spreads its exports into the module namespace, so the tool names and
+  and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
   metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
   holds `issueMaterial` / `completeJob`.

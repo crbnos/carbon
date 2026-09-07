@@ -1976,7 +1976,7 @@ export const terms = {
   "api-key": {
     term: msg`API key`,
     definition: msg`A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's.`,
-    href: "/docs/reference/api-keys"
+    href: "/docs/building/api-keys"
   },
   notification: {
     term: msg`Notification`,

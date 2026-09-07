@@ -19,12 +19,13 @@ export type UsePermissionMatrixOptions = {
   /** Initial permission state as a flat boolean map (e.g. { "sales_view": true }) */
   initialState?: Record<string, boolean>;
   /**
-   * Keys (`${module}_${action}`) that can only be toggled individually. Bulk
-   * toggles ("toggle all" / "toggle row") skip them, and they are excluded from
-   * the aggregate all/some/row checks so the master and row checkboxes ignore
-   * them entirely. Still fully toggleable via `toggleCell`.
+   * Permission keys (`${module}_${action}`) that are opt-in only: excluded from
+   * the "select all" and per-row select-all toggles, and ignored when computing
+   * whether a row/the whole matrix is fully checked. They can still be toggled
+   * individually via `toggleCell`. Bulk-clearing (unchecking select-all) does
+   * turn them off — a permission can always be revoked in bulk, just not granted.
    */
-  optIn?: readonly string[];
+  bulkExcludedKeys?: readonly string[];
 };
 
 export type UsePermissionMatrixReturn = {
@@ -77,8 +78,13 @@ const HIDDEN_MODULES = new Set(["items", "timecards"]);
 export function usePermissionMatrix({
   modules,
   initialState,
-  optIn
+  bulkExcludedKeys
 }: UsePermissionMatrixOptions): UsePermissionMatrixReturn {
+  const excludedKeys = useMemo(
+    () => new Set(bulkExcludedKeys ?? []),
+    [bulkExcludedKeys]
+  );
+
   const sortedModules = useMemo<[string, readonly PermissionAction[]][]>(
     () =>
       Object.entries(modules).sort(([a], [b]) => a.localeCompare(b)) as [
@@ -87,8 +93,6 @@ export function usePermissionMatrix({
       ][],
     [modules]
   );
-
-  const optInKeys = useMemo(() => new Set(optIn ?? []), [optIn]);
 
   const [permissions, setPermissionsRaw] = useState<Record<string, boolean>>(
     () => initialState ?? buildDefaultState(modules)
@@ -99,15 +103,14 @@ export function usePermissionMatrix({
     []
   );
 
-  // Derived state — opt-in keys are excluded so the master checkbox ignores them
-  const allKeys = useMemo(
-    () => Object.keys(permissions).filter((k) => !optInKeys.has(k)),
-    [permissions, optInKeys]
-  );
-  const allChecked = useMemo(
-    () => allKeys.length > 0 && allKeys.every((k) => permissions[k]),
-    [allKeys, permissions]
-  );
+  // Derived state
+  const allKeys = useMemo(() => Object.keys(permissions), [permissions]);
+  // "All checked" ignores opt-in keys, so the header/row checkboxes can read as
+  // fully checked once every non-opt-in permission is granted.
+  const allChecked = useMemo(() => {
+    const bulkKeys = allKeys.filter((k) => !excludedKeys.has(k));
+    return bulkKeys.length > 0 && bulkKeys.every((k) => permissions[k]);
+  }, [allKeys, permissions, excludedKeys]);
   const someChecked = useMemo(
     () => allKeys.some((k) => permissions[k]),
     [allKeys, permissions]
@@ -134,55 +137,63 @@ export function usePermissionMatrix({
     (mod: string) => {
       setPermissionsRaw((prev) => {
         const moduleActions = modules[mod] ?? [];
-        const rowKeys = moduleActions
-          .map((a) => `${mod}_${a}`)
-          .filter((k) => !optInKeys.has(k));
-        const allRowChecked = rowKeys.every((k) => prev[k]);
+        const rowKeys = moduleActions.map((a) => `${mod}_${a}`);
+        const bulkRowKeys = rowKeys.filter((k) => !excludedKeys.has(k));
+        const allRowChecked =
+          bulkRowKeys.length > 0 && bulkRowKeys.every((k) => prev[k]);
         const next = { ...prev };
-        for (const k of rowKeys) {
-          next[k] = !allRowChecked;
+        if (allRowChecked) {
+          // Clear the whole row, including opt-in keys — revoking is always fine.
+          for (const k of rowKeys) next[k] = false;
+        } else {
+          // Grant the non-opt-in keys; leave opt-in keys as the user set them.
+          for (const k of bulkRowKeys) next[k] = true;
         }
         return next;
       });
     },
-    [modules, optInKeys]
+    [modules, excludedKeys]
   );
 
   const toggleAll = useCallback(() => {
     setPermissionsRaw((prev) => {
-      const keys = Object.keys(prev).filter((k) => !optInKeys.has(k));
-      const currentAllChecked = keys.length > 0 && keys.every((k) => prev[k]);
-      const next = { ...prev };
-      for (const k of keys) {
-        next[k] = !currentAllChecked;
+      const keys = Object.keys(prev);
+      const bulkKeys = keys.filter((k) => !excludedKeys.has(k));
+      const currentAllChecked =
+        bulkKeys.length > 0 && bulkKeys.every((k) => prev[k]);
+      const next: Record<string, boolean> = { ...prev };
+      if (currentAllChecked) {
+        // Clear everything, including opt-in keys — revoking is always fine.
+        for (const k of keys) next[k] = false;
+      } else {
+        // Grant the non-opt-in keys; leave opt-in keys as the user set them.
+        for (const k of bulkKeys) next[k] = true;
       }
       return next;
     });
-  }, [optInKeys]);
+  }, [excludedKeys]);
 
   const isRowAllChecked = useCallback(
     (mod: string) => {
-      const moduleActions = (modules[mod] ?? []).filter(
-        (a) => !optInKeys.has(`${mod}_${a}`)
+      const moduleActions = modules[mod] ?? [];
+      const bulkActions = moduleActions.filter(
+        (a) => !excludedKeys.has(`${mod}_${a}`)
       );
       return (
-        moduleActions.length > 0 &&
-        moduleActions.every((a) => permissions[`${mod}_${a}`])
+        bulkActions.length > 0 &&
+        bulkActions.every((a) => permissions[`${mod}_${a}`])
       );
     },
-    [modules, permissions, optInKeys]
+    [modules, permissions, excludedKeys]
   );
 
   const isRowIndeterminate = useCallback(
     (mod: string) => {
-      const moduleActions = (modules[mod] ?? []).filter(
-        (a) => !optInKeys.has(`${mod}_${a}`)
-      );
+      const moduleActions = modules[mod] ?? [];
       const some = moduleActions.some((a) => permissions[`${mod}_${a}`]);
-      const all = moduleActions.every((a) => permissions[`${mod}_${a}`]);
-      return some && !all;
+      return some && !isRowAllChecked(mod);
     },
-    [modules, permissions, optInKeys]
+    [modules, permissions, isRowAllChecked]
   );
 
   return {

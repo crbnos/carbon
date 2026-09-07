@@ -6,7 +6,7 @@ import { zfd } from "zod-form-data";
 export const approvalDecisionValidator = z.object({
   id: zfd.text(z.string().optional()),
   decision: z.enum(["Approved", "Rejected"], {
-    errorMap: () => ({ message: "Decision is required" })
+    error: "Decision is required"
   }),
   decisionNotes: zfd.text(z.string().optional())
 });
@@ -32,7 +32,7 @@ export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
 
 export const approvalFiltersValidator = z.object({
   documentType: z.enum(approvalDocumentType, {
-    errorMap: () => ({ message: "Document type is required" })
+    error: "Document type is required"
   }),
   status: zfd.text(z.string().optional()),
   dateFrom: zfd.text(z.string().optional()),
@@ -42,7 +42,7 @@ export const approvalFiltersValidator = z.object({
 export const approvalRequestValidator = z.object({
   id: zfd.text(z.string().optional()),
   documentType: z.enum(approvalDocumentType, {
-    errorMap: () => ({ message: "Document type is required" })
+    error: "Document type is required"
   }),
   documentId: zfd.text(
     z.string().min(1, { message: "Document ID is required" })
@@ -53,7 +53,7 @@ export const approvalRequestValidator = z.object({
 export const approvalRuleValidator = z.object({
   id: zfd.text(z.string().optional()),
   documentType: z.enum(approvalDocumentType, {
-    errorMap: () => ({ message: "Document type is required" })
+    error: "Document type is required"
   }),
   approverGroupIds: z.array(
     z.string().min(1, { message: "Invalid selection" })
@@ -313,7 +313,7 @@ export const operationStepValidator = z
         return textToTiptap(String(val));
       }),
     type: z.enum(procedureStepType, {
-      errorMap: () => ({ message: "Type is required" })
+      error: "Type is required"
     }),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
@@ -457,7 +457,7 @@ export const savedViewValidator = z.object({
 export const savedViewStateValidator = z.object({
   columnOrder: z.array(z.string()),
   columnPinning: z.any(),
-  columnVisibility: z.record(z.boolean()),
+  columnVisibility: z.record(z.string(), z.boolean()),
   filters: z.array(z.string()).optional(),
   sorts: z.array(z.string()).optional()
 });

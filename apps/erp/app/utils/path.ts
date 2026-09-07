@@ -1410,7 +1410,7 @@ export const path = {
     materials: `${x}/items/materials`,
     materialType: (id: string) => generatePath(`${x}/items/types/${id}`),
     materialTypes: `${x}/items/types`,
-    mcpDocs: withDocsHost("https://docs.carbon.ms/mcp"),
+    mcpDocs: withDocsHost("https://docs.carbon.ms/api/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
     // list lives in the invoicing nav beside Payments; details mirror payments.
     memo: (id: string) => generatePath(`${x}/credits/${id}`),

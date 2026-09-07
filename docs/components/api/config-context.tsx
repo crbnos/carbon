@@ -39,9 +39,12 @@ type Ctx = {
   /** null = the reader's instance is unknown; render HOST_PLACEHOLDER instead. */
   base: string | null;
   setBase: (v: string | null, app?: string | null) => void;
-  /** App host (Settings, MCP). Configured separately from the REST host upstream,
-   *  so it is carried explicitly rather than guessed from `base`. */
+  /** App host (Settings, MCP, and every `/api/v1` sample). Configured separately
+   *  from the REST host upstream, so it is carried explicitly rather than guessed
+   *  from `base` — and settable on its own, since the Carbon API surface picks a
+   *  region while the Data API surface picks a REST host. */
   appBase: string | null;
+  setAppBase: (v: string | null) => void;
   isDefault: boolean;
   isUnknown: boolean;
   apiKey: string;
@@ -57,6 +60,7 @@ const ApiConfigCtx = createContext<Ctx>({
   base: null,
   setBase: () => {},
   appBase: null,
+  setAppBase: () => {},
   isDefault: false,
   isUnknown: true,
   apiKey: "",
@@ -81,13 +85,17 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
       // Precedence: a choice the reader saved themselves outranks the `?host=`
       // hint from a referring app, which outranks "unknown".
       const savedBase = localStorage.getItem(BASE_STORAGE_KEY);
+      const savedApp = localStorage.getItem(APP_STORAGE_KEY);
       const savedKey = localStorage.getItem(KEY_STORAGE_KEY);
       if (savedKey) setApiKeyState(savedKey);
+      // Read on its own: the Carbon API surface saves a region (app origin) without
+      // ever touching the REST base, so gating this on `savedBase` dropped that
+      // choice on every reload.
+      if (savedApp) setAppBaseState(savedApp);
 
       if (savedBase) {
         // Saved by the reader in the dialog, so the key may be shown against it.
         setBaseState(savedBase);
-        setAppBaseState(localStorage.getItem(APP_STORAGE_KEY));
         return;
       }
 
@@ -117,6 +125,18 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
+  /** The Carbon API surface's own setter: `/api/v1` samples, the MCP endpoint and
+   *  the Settings links all hang off the app origin, and none of them care which
+   *  REST host the Data API surface is pointed at. */
+  const setAppBase = (v: string | null) => {
+    const val = v === null ? null : v.trim().replace(/\/+$/, "");
+    setAppBaseState(val || null);
+    try {
+      if (val) localStorage.setItem(APP_STORAGE_KEY, val);
+      else localStorage.removeItem(APP_STORAGE_KEY);
+    } catch {}
+  };
+
   /** Saving through the dialog is what makes a host the reader's OWN choice, so this
    *  is the only path that persists one or lets the key be shown against it.
    *  `app` is the instance's app host when known (the ERP passes it; the two are
@@ -124,24 +144,20 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
   const setBase = (v: string | null, app: string | null = null) => {
     if (v === null) {
       setBaseState(null);
-      setAppBaseState(null);
       setBaseFromLink(false);
       try {
         localStorage.removeItem(BASE_STORAGE_KEY);
-        localStorage.removeItem(APP_STORAGE_KEY);
       } catch {}
       return;
     }
     const val = (v || "").trim().replace(/\/+$/, "");
     if (!val) return;
     setBaseState(val);
-    setAppBaseState(app);
     setBaseFromLink(false);
     try {
       localStorage.setItem(BASE_STORAGE_KEY, val);
-      if (app) localStorage.setItem(APP_STORAGE_KEY, app);
-      else localStorage.removeItem(APP_STORAGE_KEY);
     } catch {}
+    if (app) setAppBase(app);
   };
 
   const setApiKey = (v: string) => {
@@ -159,6 +175,7 @@ export function ApiConfigProvider({ children }: { children: React.ReactNode }) {
         base,
         setBase,
         appBase,
+        setAppBase,
         isDefault: base === DEFAULT_API_BASE,
         isUnknown: base === null,
         // Withheld while the host came from a link rather than the reader, and for
@@ -241,6 +258,17 @@ export function applyConfig(
   }
   const mcp = mcpEndpointFor(base, appBase);
   out = out.split(DEFAULT_MCP_ENDPOINT).join(html ? escapeHtml(mcp) : mcp);
+  // Carbon API (`/api/v1/…`) samples are served by the APP, not the REST host, so
+  // they carry the app origin literally. Rewrite it after the MCP endpoint above —
+  // that one starts with the same origin, and replacing the longer, more specific
+  // needle first keeps this from cutting it in half.
+  const app = appOrigin(base, appBase);
+  if (app !== null && app !== DEFAULT_APP_ORIGIN) {
+    out = out.split(DEFAULT_APP_ORIGIN).join(html ? escapeHtml(app) : app);
+  } else if (app === null) {
+    const placeholder = html ? escapeHtml(HOST_PLACEHOLDER) : HOST_PLACEHOLDER;
+    out = out.split(DEFAULT_APP_ORIGIN).join(placeholder);
+  }
   if (apiKey) {
     if (html) {
       const keyEsc = escapeHtml(apiKey);
