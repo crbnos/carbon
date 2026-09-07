@@ -28,7 +28,13 @@ ensureLoggingConfigured();
 //
 // Controlled (ITAR) environments never initialize analytics — no data about a
 // U.S.-Persons-only environment leaves it, even if the key is set.
-if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
+//
+// The key must be a real PostHog project key (`phc_…`), not just non-empty: a
+// placeholder value (e.g. a masked "****" in a local .env) passes a truthiness
+// check, and initializing with it makes posthog-js inject its remote-config
+// <script> into the document before hydrateRoot(document) runs — an extra DOM
+// node React can't match, so the ENTIRE document fails hydration.
+if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
     api_host: POSTHOG_API_HOST
   });

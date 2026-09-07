@@ -3743,13 +3743,41 @@ export async function upsertItemPlanning(
 export async function upsertItemPurchasing(
   client: SupabaseClient<Database>,
   itemPurchasing: z.infer<typeof itemPurchasingValidator> & {
+    companyId: string;
     updatedBy: string;
   }
 ) {
+  const { companyId, ...update } = itemPurchasing;
+
+  // `purchasingUnitOfMeasureCode` and `conversionFactor` are a property of the
+  // preferred supplier's supplierPart, not free-form input — the form submits
+  // them only as (client-derived) hidden fields. Re-derive them server-side so
+  // a forged submission can't persist a conversion factor that disagrees with
+  // the supplier part (which drives PO quantities and costs). The
+  // ("itemId","supplierId","companyId") unique constraint makes the lookup
+  // single; `.single()` rejects a preferred supplier with no matching part.
+  if (update.preferredSupplierId) {
+    const supplierPart = await client
+      .from("supplierPart")
+      .select("supplierUnitOfMeasureCode, conversionFactor")
+      .eq("companyId", companyId)
+      .eq("itemId", update.itemId)
+      .eq("supplierId", update.preferredSupplierId)
+      .single();
+    if (supplierPart.error) return supplierPart;
+    update.purchasingUnitOfMeasureCode =
+      supplierPart.data.supplierUnitOfMeasureCode ?? undefined;
+    update.conversionFactor = supplierPart.data.conversionFactor ?? 1;
+  } else {
+    // No preferred supplier → identity conversion, no purchasing UoM override.
+    update.purchasingUnitOfMeasureCode = undefined;
+    update.conversionFactor = 1;
+  }
+
   return client
     .from("itemReplenishment")
-    .update(sanitize(itemPurchasing))
-    .eq("itemId", itemPurchasing.itemId);
+    .update(sanitize(update))
+    .eq("itemId", update.itemId);
 }
 
 export async function upsertItemSupersession(
@@ -4293,11 +4321,23 @@ export async function duplicateMethodOperationStep(
 export async function upsertMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;

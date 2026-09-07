@@ -148,6 +148,6 @@ catalog:
   vite-plugin-babel-macros: 1.0.6
   vitest: 4.1.6
   wait-on: 7.2.0
-  zod: 3.25.76
-  zod-form-data: 2.0.8
+  zod: 4.5.4
+  zod-form-data: 3.0.3
   zustand: 5.0.12
