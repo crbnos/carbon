@@ -93,6 +93,10 @@ msgstr "{0} draft journal entries"
 msgid "{0} jobs created"
 msgstr "{0} jobs created"
 
+#. placeholder {0}: payload.detail
+msgid "{0} lines past due"
+msgstr "{0} lines past due"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
@@ -1095,8 +1099,20 @@ msgstr "Activation fee · we advise"
 msgid "Active"
 msgstr "Active"
 
+msgid "Active jobs"
+msgstr "Active jobs"
+
 msgid "Active Jobs"
 msgstr "Active Jobs"
+
+msgid "Active jobs due in the next seven days"
+msgstr "Active jobs due in the next seven days"
+
+msgid "Active jobs grouped by status"
+msgstr "Active jobs grouped by status"
+
+msgid "Active jobs past their due date"
+msgstr "Active jobs past their due date"
 
 msgid "Active Statuses"
 msgstr "Active Statuses"
@@ -1340,6 +1356,9 @@ msgstr "Add to stock for future use"
 
 msgid "Add tools"
 msgstr "Add tools"
+
+msgid "Add widgets"
+msgstr "Add widgets"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1705,8 +1724,14 @@ msgstr "AP Aging"
 msgid "AP Clerk"
 msgstr "AP Clerk"
 
+msgid "AP outstanding"
+msgstr "AP outstanding"
+
 msgid "AP Outstanding"
 msgstr "AP Outstanding"
+
+msgid "AP overdue"
+msgstr "AP overdue"
 
 msgid "AP Overdue"
 msgstr "AP Overdue"
@@ -1844,8 +1869,14 @@ msgstr "AR Aging"
 msgid "AR Clerk"
 msgstr "AR Clerk"
 
+msgid "AR outstanding"
+msgstr "AR outstanding"
+
 msgid "AR Outstanding"
 msgstr "AR Outstanding"
+
+msgid "AR overdue"
+msgstr "AR overdue"
 
 msgid "AR Overdue"
 msgstr "AR Overdue"
@@ -3263,6 +3294,9 @@ msgstr "Choose another file"
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
 
+msgid "Choose which widgets appear on your home page."
+msgstr "Choose which widgets appear on your home page."
+
 msgid "Choose your style"
 msgstr "Choose your style"
 
@@ -4533,6 +4567,12 @@ msgstr "Customer"
 msgid "Customer Accounts"
 msgstr "Customer Accounts"
 
+msgid "Customer balances not yet paid"
+msgstr "Customer balances not yet paid"
+
+msgid "Customer balances past their due date"
+msgstr "Customer balances past their due date"
+
 msgid "Customer contact"
 msgstr "Customer contact"
 
@@ -4658,6 +4698,9 @@ msgstr "Customizations, training, and integrations"
 
 msgid "Customize"
 msgstr "Customize"
+
+msgid "Customize analytics"
+msgstr "Customize analytics"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
@@ -7103,6 +7146,9 @@ msgstr "Failed to upload PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Failed to upload thumbnail"
 
+msgid "Failed workflow runs"
+msgstr "Failed workflow runs"
+
 msgid "Failure"
 msgstr "Failure"
 
@@ -7252,6 +7298,9 @@ msgstr "First Name"
 msgid "First Operation"
 msgstr "First Operation"
 
+msgid "First-pass yield"
+msgstr "First-pass yield"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "First-year additional deduction taken before the regular MACRS schedule begins."
 
@@ -7308,6 +7357,9 @@ msgstr "Fixture ID"
 
 msgid "Flags"
 msgstr "Flags"
+
+msgid "Follow page range"
+msgstr "Follow page range"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
@@ -7751,6 +7803,9 @@ msgstr "Hide raw"
 msgid "Hide system quantities until the review step"
 msgstr "Hide system quantities until the review step"
 
+msgid "Hide widget"
+msgstr "Hide widget"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Hide, pin and reorder columns"
 
@@ -7810,6 +7865,9 @@ msgstr "Hours at this station"
 
 msgid "Hours not yet assigned"
 msgstr "Hours not yet assigned"
+
+msgid "Hours of production time per work center in the period"
+msgstr "Hours of production time per work center in the period"
 
 msgid "Hours per Week"
 msgstr "Hours per Week"
@@ -8223,6 +8281,9 @@ msgstr "Inspection document"
 msgid "Inspection Level"
 msgstr "Inspection Level"
 
+msgid "Inspection pass rate"
+msgstr "Inspection pass rate"
+
 msgid "Inspection Plan"
 msgstr "Inspection Plan"
 
@@ -8237,6 +8298,9 @@ msgstr "Inspection Status"
 
 msgid "Inspections"
 msgstr "Inspections"
+
+msgid "Inspections passed as a share of those dispositioned"
+msgstr "Inspections passed as a share of those dispositioned"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Inspections, nonconformance, and CAPA"
@@ -8369,6 +8433,9 @@ msgstr "Inventory Unit of Measure"
 
 msgid "Inventory Valuation"
 msgstr "Inventory Valuation"
+
+msgid "Inventory value"
+msgstr "Inventory value"
 
 msgid "Invite"
 msgstr "Invite"
@@ -8535,6 +8602,12 @@ msgstr "Issued Date"
 msgid "Issues"
 msgstr "Issues"
 
+msgid "Issues by type"
+msgstr "Issues by type"
+
+msgid "Issues opened"
+msgstr "Issues opened"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "It will stop running until you publish a version again. Nothing is deleted."
 
@@ -8673,6 +8746,15 @@ msgstr "Jobs"
 msgid "Jobs Assigned to Me"
 msgstr "Jobs Assigned to Me"
 
+msgid "Jobs by status"
+msgstr "Jobs by status"
+
+msgid "Jobs due this week"
+msgstr "Jobs due this week"
+
+msgid "Jobs planned, ready, in progress or paused"
+msgstr "Jobs planned, ready, in progress or paused"
+
 msgid "Jobs Required"
 msgstr "Jobs Required"
 
@@ -8804,8 +8886,20 @@ msgstr "Labor Unit"
 msgid "Language"
 msgstr "Language"
 
+msgid "Last 12 months"
+msgstr "Last 12 months"
+
+msgid "Last 30 days"
+msgstr "Last 30 days"
+
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
+
+msgid "Last 7 days"
+msgstr "Last 7 days"
+
+msgid "Last 90 days"
+msgstr "Last 90 days"
 
 msgid "Last attempt"
 msgstr "Last attempt"
@@ -8857,6 +8951,9 @@ msgstr "Last used"
 
 msgid "Late in the evening, {name}."
 msgstr "Late in the evening, {name}."
+
+msgid "Late jobs"
+msgstr "Late jobs"
 
 msgid "Latest operation end"
 msgstr "Latest operation end"
@@ -8998,6 +9095,9 @@ msgstr "Lines need internal part numbers"
 
 msgid "Lines need prices or lead times"
 msgstr "Lines need prices or lead times"
+
+msgid "Lines shipped on or before their promised date"
+msgstr "Lines shipped on or before their promised date"
 
 msgid "Lineside"
 msgstr "Lineside"
@@ -9773,6 +9873,9 @@ msgstr "Money owed to you"
 msgid "Money you owe"
 msgstr "Money you owe"
 
+msgid "Month to date"
+msgstr "Month to date"
+
 msgid "Monthly"
 msgstr "Monthly"
 
@@ -9799,6 +9902,9 @@ msgstr "More overtime"
 
 msgid "Morning, {name}."
 msgstr "Morning, {name}."
+
+msgid "Most frequent issue types in the period"
+msgstr "Most frequent issue types in the period"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Most things get caught and resolved here. Name it plainly."
@@ -9858,6 +9964,9 @@ msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
+
+msgid "My active operations"
+msgstr "My active operations"
 
 msgid "My Documents"
 msgstr "My Documents"
@@ -10044,6 +10153,9 @@ msgstr "New Invoice"
 
 msgid "New Issue"
 msgstr "New Issue"
+
+msgid "New issues over the period"
+msgstr "New issues over the period"
 
 msgid "New Item Group"
 msgstr "New Item Group"
@@ -10912,6 +11024,9 @@ msgstr "OK"
 msgid "Oldest first"
 msgstr "Oldest first"
 
+msgid "Oldest overdue orders first"
+msgstr "Oldest overdue orders first"
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 
@@ -10962,6 +11077,9 @@ msgstr "On-hand counts"
 
 msgid "On-hand floor to maintain for service use at this location"
 msgstr "On-hand floor to maintain for service use at this location"
+
+msgid "On-hand inventory at cost"
+msgstr "On-hand inventory at cost"
 
 msgid "On-hand inventory remains"
 msgstr "On-hand inventory remains"
@@ -11055,6 +11173,9 @@ msgstr "Open AR"
 msgid "Open Audit Log"
 msgstr "Open Audit Log"
 
+msgid "Open backlog"
+msgstr "Open backlog"
+
 msgid "Open date"
 msgstr "Open date"
 
@@ -11076,6 +11197,9 @@ msgstr "Open in change notices {ids}. Release them to create new versions or rev
 msgid "Open in MES"
 msgstr "Open in MES"
 
+msgid "Open issues"
+msgstr "Open issues"
+
 msgid "Open Issues"
 msgstr "Open Issues"
 
@@ -11094,6 +11218,9 @@ msgstr "Open menu"
 msgid "Open navigation"
 msgstr "Open navigation"
 
+msgid "Open orders with a line past its promised date"
+msgstr "Open orders with a line past its promised date"
+
 msgid "Open payables by supplier and age"
 msgstr "Open payables by supplier and age"
 
@@ -11105,6 +11232,9 @@ msgstr "Open purchase orders"
 
 msgid "Open Purchase Orders"
 msgstr "Open Purchase Orders"
+
+msgid "Open quotes"
+msgstr "Open quotes"
 
 msgid "Open Quotes"
 msgstr "Open Quotes"
@@ -11208,6 +11338,9 @@ msgstr "Operations / steps"
 
 msgid "Operations Type"
 msgstr "Operations Type"
+
+msgid "Operations you currently have running"
+msgstr "Operations you currently have running"
 
 msgid "Operator"
 msgstr "Operator"
@@ -11318,6 +11451,9 @@ msgstr "Orders"
 msgid "Orders submitted"
 msgstr "Orders submitted"
 
+msgid "Orders, quotes and RFQs where you are the assignee"
+msgstr "Orders, quotes and RFQs where you are the assignee"
+
 msgid "Origin"
 msgstr "Origin"
 
@@ -11371,6 +11507,9 @@ msgstr "Overall result"
 
 msgid "Overdue"
 msgstr "Overdue"
+
+msgid "Overdue purchase orders"
+msgstr "Overdue purchase orders"
 
 msgid "Overhead Absorption"
 msgstr "Overhead Absorption"
@@ -12179,6 +12318,9 @@ msgstr "Production quantity"
 msgid "Production Quantity"
 msgstr "Production Quantity"
 
+msgid "Production quantity without rework or scrap"
+msgstr "Production quantity without rework or scrap"
+
 msgid "Production variance"
 msgstr "Production variance"
 
@@ -12382,6 +12524,9 @@ msgstr "Purchase order removed successfully"
 msgid "Purchase Order Type"
 msgstr "Purchase Order Type"
 
+msgid "Purchase order value over the period"
+msgstr "Purchase order value over the period"
+
 msgid "Purchase orders"
 msgstr "Purchase orders"
 
@@ -12390,6 +12535,9 @@ msgstr "Purchase Orders"
 
 msgid "Purchase Orders and Planning"
 msgstr "Purchase Orders and Planning"
+
+msgid "Purchase orders not yet received and invoiced"
+msgstr "Purchase orders not yet received and invoiced"
 
 msgid "Purchase orders required"
 msgstr "Purchase orders required"
@@ -12408,6 +12556,9 @@ msgstr "Purchase Price Variance (default)"
 
 msgid "Purchase Qty"
 msgstr "Purchase Qty"
+
+msgid "Purchase spend"
+msgstr "Purchase spend"
 
 msgid "Purchase Tax Payable"
 msgstr "Purchase Tax Payable"
@@ -12429,6 +12580,9 @@ msgstr "Purchased"
 
 msgid "Purchases"
 msgstr "Purchases"
+
+msgid "Purchases by supplier"
+msgstr "Purchases by supplier"
 
 msgid "purchasing"
 msgstr "purchasing"
@@ -12603,6 +12757,9 @@ msgstr "Quantity-based pricing tiers for this override; the unit price applied i
 msgid "Quantity: {0}"
 msgstr "Quantity: {0}"
 
+msgid "Quarter to date"
+msgstr "Quarter to date"
+
 msgid "Quarterly"
 msgstr "Quarterly"
 
@@ -12665,6 +12822,9 @@ msgstr "Quoted Date"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Quotes in draft or sent to the customer"
+msgstr "Quotes in draft or sent to the customer"
 
 msgid "Quoting and sales orders"
 msgstr "Quoting and sales orders"
@@ -12948,6 +13108,9 @@ msgstr "Register Existing Asset"
 
 msgid "Registered"
 msgstr "Registered"
+
+msgid "Registered and in-progress issues"
+msgstr "Registered and in-progress issues"
 
 msgid "Registration failed"
 msgstr "Registration failed"
@@ -13414,6 +13577,9 @@ msgstr "Revenue"
 msgid "Revenue and expenses over a period"
 msgstr "Revenue and expenses over a period"
 
+msgid "Revenue trend"
+msgstr "Revenue trend"
+
 msgid "Reverse all inventory adjustments"
 msgstr "Reverse all inventory adjustments"
 
@@ -13720,6 +13886,9 @@ msgstr "Sales Discounts"
 msgid "Sales Discounts (default)"
 msgstr "Sales Discounts (default)"
 
+msgid "Sales documents assigned to me"
+msgstr "Sales documents assigned to me"
+
 msgid "Sales Funnel"
 msgstr "Sales Funnel"
 
@@ -13765,14 +13934,23 @@ msgstr "Sales Order Location"
 msgid "Sales Order Number"
 msgstr "Sales Order Number"
 
+msgid "Sales order value over the period"
+msgstr "Sales order value over the period"
+
 msgid "Sales orders"
 msgstr "Sales orders"
 
 msgid "Sales Orders"
 msgstr "Sales Orders"
 
+msgid "Sales orders not yet shipped and invoiced"
+msgstr "Sales orders not yet shipped and invoiced"
+
 msgid "Sales Person"
 msgstr "Sales Person"
+
+msgid "Sales revenue"
+msgstr "Sales revenue"
 
 msgid "Sales Revenue"
 msgstr "Sales Revenue"
@@ -13954,6 +14132,9 @@ msgstr "Scrap"
 msgid "Scrap / Cost of Quality"
 msgstr "Scrap / Cost of Quality"
 
+msgid "Scrap as a share of production plus scrap quantities"
+msgstr "Scrap as a share of production plus scrap quantities"
+
 msgid "Scrap Percent"
 msgstr "Scrap Percent"
 
@@ -13971,6 +14152,9 @@ msgstr "Scrap Quantity"
 
 msgid "Scrap Quantity Per Job"
 msgstr "Scrap Quantity Per Job"
+
+msgid "Scrap rate"
+msgstr "Scrap rate"
 
 msgid "scrap reason"
 msgstr "scrap reason"
@@ -14945,6 +15129,9 @@ msgstr "Specific Items"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Spend by supplier, item, or category — your biggest cost drivers"
 
+msgid "Spend trend"
+msgstr "Spend trend"
+
 msgid "Split"
 msgstr "Split"
 
@@ -15336,6 +15523,12 @@ msgstr "Supplier Accounts"
 
 msgid "Supplier added and selected"
 msgstr "Supplier added and selected"
+
+msgid "Supplier balances not yet paid"
+msgstr "Supplier balances not yet paid"
+
+msgid "Supplier balances past their due date"
+msgstr "Supplier balances past their due date"
 
 msgid "Supplier contact"
 msgstr "Supplier contact"
@@ -16977,6 +17170,9 @@ msgstr "tools"
 msgid "Tools"
 msgstr "Tools"
 
+msgid "Top suppliers by purchase order value in the period"
+msgstr "Top suppliers by purchase order value in the period"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 
@@ -17006,6 +17202,12 @@ msgstr "Total Hours"
 
 msgid "Total Minutes"
 msgstr "Total Minutes"
+
+msgid "Total of purchase orders placed in the period"
+msgstr "Total of purchase orders placed in the period"
+
+msgid "Total of sales orders placed in the period"
+msgstr "Total of sales orders placed in the period"
 
 msgid "Total Price"
 msgstr "Total Price"
@@ -17658,6 +17860,9 @@ msgstr "Users on covered domains can sign in only with SAML SSO; magic link, Goo
 msgid "Users to Update"
 msgstr "Users to Update"
 
+msgid "Utilization"
+msgstr "Utilization"
+
 msgid "Valid From"
 msgstr "Valid From"
 
@@ -17687,6 +17892,9 @@ msgstr "Value Snapshot"
 
 msgid "Value source by surface"
 msgstr "Value source by surface"
+
+msgid "Value still to ship on open sales orders"
+msgstr "Value still to ship on open sales orders"
 
 msgid "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
 msgstr "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
@@ -17988,6 +18196,9 @@ msgstr "Voiding this receipt will:"
 
 msgid "Voiding this shipment will:"
 msgstr "Voiding this shipment will:"
+
+msgid "vs prior period"
+msgstr "vs prior period"
 
 msgid "Waited"
 msgstr "Waited"
@@ -18483,6 +18694,9 @@ msgstr "Why this line is being declined; surfaced on the printable quote and rec
 msgid "Why this restore failed"
 msgstr "Why this restore failed"
 
+msgid "Widget options"
+msgstr "Widget options"
+
 msgid "Will remain as a comment line"
 msgstr "Will remain as a comment line"
 
@@ -18575,6 +18789,9 @@ msgstr "Workflow name"
 msgid "Workflow run"
 msgstr "Workflow run"
 
+msgid "Workflow runs that failed in the period"
+msgstr "Workflow runs that failed in the period"
+
 msgid "Workflows"
 msgstr "Workflows"
 
@@ -18608,6 +18825,9 @@ msgstr "Writing an asset's value down over its life — a monthly batch you crea
 
 msgid "Year"
 msgstr "Year"
+
+msgid "Year to date"
+msgstr "Year to date"
 
 msgid "Yearly"
 msgstr "Yearly"

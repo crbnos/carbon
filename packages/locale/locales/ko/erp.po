@@ -93,6 +93,10 @@ msgstr "{0}개의 초안 분개"
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
 
+#. placeholder {0}: payload.detail
+msgid "{0} lines past due"
+msgstr "{0}개의 기한 초과 라인"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
@@ -1095,8 +1099,20 @@ msgstr "활성화 수수료 · 저희가 자문"
 msgid "Active"
 msgstr "활성"
 
+msgid "Active jobs"
+msgstr "진행 중인 작업 지시"
+
 msgid "Active Jobs"
 msgstr "진행 중인 작업 지시"
+
+msgid "Active jobs due in the next seven days"
+msgstr "다음 7일 내에 마감일이 있는 진행 중인 작업 지시"
+
+msgid "Active jobs grouped by status"
+msgstr "상태별로 분류된 진행 중인 작업 지시"
+
+msgid "Active jobs past their due date"
+msgstr "마감일을 초과한 진행 중인 작업 지시"
 
 msgid "Active Statuses"
 msgstr "활성 상태"
@@ -1340,6 +1356,9 @@ msgstr "향후 사용을 위해 재고에 추가"
 
 msgid "Add tools"
 msgstr "도구 추가"
+
+msgid "Add widgets"
+msgstr "위젯 추가"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1705,8 +1724,14 @@ msgstr "매입채무 기간별 분석"
 msgid "AP Clerk"
 msgstr "매입채무 담당자"
 
+msgid "AP outstanding"
+msgstr "미결제 매입채무"
+
 msgid "AP Outstanding"
 msgstr "매입채무 미결제액"
+
+msgid "AP overdue"
+msgstr "기한 초과 매입채무"
 
 msgid "AP Overdue"
 msgstr "매입채무 기한 초과"
@@ -1844,8 +1869,14 @@ msgstr "매출채권 기간별 분석"
 msgid "AR Clerk"
 msgstr "매출채권 담당자"
 
+msgid "AR outstanding"
+msgstr "미회수 매출채권"
+
 msgid "AR Outstanding"
 msgstr "매출채권 미결제액"
+
+msgid "AR overdue"
+msgstr "기한 초과 매출채권"
 
 msgid "AR Overdue"
 msgstr "매출채권 기한 초과"
@@ -3263,6 +3294,9 @@ msgstr "다른 파일을 선택하세요"
 msgid "Choose what appears on the printed job traveler."
 msgstr "인쇄된 작업 이동표에 나타날 내용을 선택하십시오."
 
+msgid "Choose which widgets appear on your home page."
+msgstr "홈페이지에 나타날 위젯을 선택하세요."
+
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
 
@@ -4533,6 +4567,12 @@ msgstr "고객"
 msgid "Customer Accounts"
 msgstr "고객 계정"
 
+msgid "Customer balances not yet paid"
+msgstr "미결제 고객 잔액"
+
+msgid "Customer balances past their due date"
+msgstr "마감일을 초과한 고객 잔액"
+
 msgid "Customer contact"
 msgstr "고객 담당자"
 
@@ -4658,6 +4698,9 @@ msgstr "사용자정의, 교육 및 연동"
 
 msgid "Customize"
 msgstr "사용자 지정"
+
+msgid "Customize analytics"
+msgstr "분석 맞춤 설정"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDF 문서의 레이아웃을 사용자 지정하세요 — 섹션 순서를 변경하고, 필요 없는 항목을 숨기고, 원하는 블록을 추가할 수 있습니다."
@@ -7103,6 +7146,9 @@ msgstr "PDF를 업로드하지 못했습니다"
 msgid "Failed to upload thumbnail"
 msgstr "썸네일을 업로드하지 못했습니다"
 
+msgid "Failed workflow runs"
+msgstr "실패한 워크플로 실행"
+
 msgid "Failure"
 msgstr "실패"
 
@@ -7252,6 +7298,9 @@ msgstr "이름"
 msgid "First Operation"
 msgstr "첫 번째 공정작업"
 
+msgid "First-pass yield"
+msgstr "초회 양산 수율"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "정규 MACRS 스케줄이 시작되기 전에 적용되는 1차연도 추가 공제입니다."
 
@@ -7308,6 +7357,9 @@ msgstr "지그 ID"
 
 msgid "Flags"
 msgstr "플래그"
+
+msgid "Follow page range"
+msgstr "페이지 범위 따르기"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
@@ -7751,6 +7803,9 @@ msgstr "원본 숨기기"
 msgid "Hide system quantities until the review step"
 msgstr "검토 단계 전까지 시스템 수량 숨기기"
 
+msgid "Hide widget"
+msgstr "위젯 숨기기"
+
 msgid "Hide, pin and reorder columns"
 msgstr "열 숨기기, 고정, 순서 변경"
 
@@ -7810,6 +7865,9 @@ msgstr "이 스테이션의 시간"
 
 msgid "Hours not yet assigned"
 msgstr "아직 배정되지 않은 시간"
+
+msgid "Hours of production time per work center in the period"
+msgstr "기간별 작업장당 생산 시간"
 
 msgid "Hours per Week"
 msgstr "주당 시간"
@@ -8223,6 +8281,9 @@ msgstr "검사 문서"
 msgid "Inspection Level"
 msgstr "검사 수준"
 
+msgid "Inspection pass rate"
+msgstr "검사 합격률"
+
 msgid "Inspection Plan"
 msgstr "검사 계획"
 
@@ -8237,6 +8298,9 @@ msgstr "검사 상태"
 
 msgid "Inspections"
 msgstr "검사"
+
+msgid "Inspections passed as a share of those dispositioned"
+msgstr "처리된 검사 중 통과한 검사의 비율"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "검사, 부적합, CAPA"
@@ -8369,6 +8433,9 @@ msgstr "재고 측정 단위"
 
 msgid "Inventory Valuation"
 msgstr "재고 평가"
+
+msgid "Inventory value"
+msgstr "재고 가치"
 
 msgid "Invite"
 msgstr "초대"
@@ -8535,6 +8602,12 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "Issues by type"
+msgstr "유형별 이슈"
+
+msgid "Issues opened"
+msgstr "개시된 이슈"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 내용은 없습니다."
 
@@ -8673,6 +8746,15 @@ msgstr "작업 지시"
 msgid "Jobs Assigned to Me"
 msgstr "내게 할당된 작업 지시"
 
+msgid "Jobs by status"
+msgstr "상태별 작업 지시"
+
+msgid "Jobs due this week"
+msgstr "이번 주 마감일이 있는 작업 지시"
+
+msgid "Jobs planned, ready, in progress or paused"
+msgstr "계획됨, 준비됨, 진행 중 또는 일시 중지된 작업 지시"
+
 msgid "Jobs Required"
 msgstr "필요한 작업 지시"
 
@@ -8804,8 +8886,20 @@ msgstr "노무 단위"
 msgid "Language"
 msgstr "언어"
 
+msgid "Last 12 months"
+msgstr "지난 12개월"
+
+msgid "Last 30 days"
+msgstr "지난 30일"
+
 msgid "Last 6 Months"
 msgstr "지난 6개월"
+
+msgid "Last 7 days"
+msgstr "지난 7일"
+
+msgid "Last 90 days"
+msgstr "지난 90일"
 
 msgid "Last attempt"
 msgstr "마지막 시도"
@@ -8857,6 +8951,9 @@ msgstr "마지막 사용"
 
 msgid "Late in the evening, {name}."
 msgstr "{name}님, 저녁이 늦어가는군요."
+
+msgid "Late jobs"
+msgstr "기한 초과 작업 지시"
 
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
@@ -8998,6 +9095,9 @@ msgstr "내부 품번이 필요한 라인"
 
 msgid "Lines need prices or lead times"
 msgstr "가격 또는 리드타임이 필요한 라인"
+
+msgid "Lines shipped on or before their promised date"
+msgstr "약속일에 또는 그 이전에 배송된 라인"
 
 msgid "Lineside"
 msgstr "라인사이드"
@@ -9773,6 +9873,9 @@ msgstr "귀사가 받아야 할 금액"
 msgid "Money you owe"
 msgstr "귀사가 지급해야 할 금액"
 
+msgid "Month to date"
+msgstr "월 누적"
+
 msgid "Monthly"
 msgstr "월간"
 
@@ -9799,6 +9902,9 @@ msgstr "초과 근무 증가"
 
 msgid "Morning, {name}."
 msgstr "{name}님, 아침이군요."
+
+msgid "Most frequent issue types in the period"
+msgstr "기간 내 가장 빈번한 이슈 유형"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하게 이름을 붙이세요."
@@ -9858,6 +9964,9 @@ msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으�
 
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
+
+msgid "My active operations"
+msgstr "내 진행 중인 공정"
 
 msgid "My Documents"
 msgstr "내 문서"
@@ -10044,6 +10153,9 @@ msgstr "신규 송장"
 
 msgid "New Issue"
 msgstr "새 이슈"
+
+msgid "New issues over the period"
+msgstr "기간 내 새로운 이슈"
 
 msgid "New Item Group"
 msgstr "새 품목 그룹"
@@ -10912,6 +11024,9 @@ msgstr "확인"
 msgid "Oldest first"
 msgstr "오래된순"
 
+msgid "Oldest overdue orders first"
+msgstr "가장 오래된 기한 초과 주문부터"
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
 
@@ -10962,6 +11077,9 @@ msgstr "보유 재고 실사"
 
 msgid "On-hand floor to maintain for service use at this location"
 msgstr "이 위치에서 서비스용으로 유지해야 할 최소 보유 재고 수량입니다."
+
+msgid "On-hand inventory at cost"
+msgstr "원가 기준 현재 재고"
 
 msgid "On-hand inventory remains"
 msgstr "보유 재고가 남아 있습니다"
@@ -11055,6 +11173,9 @@ msgstr "미결 매출채권"
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
 
+msgid "Open backlog"
+msgstr "미결 백로그"
+
 msgid "Open date"
 msgstr "개설 날짜"
 
@@ -11076,6 +11197,9 @@ msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 �
 msgid "Open in MES"
 msgstr "MES에서 열기"
 
+msgid "Open issues"
+msgstr "미결 이슈"
+
 msgid "Open Issues"
 msgstr "미결 이슈"
 
@@ -11094,6 +11218,9 @@ msgstr "메뉴 열기"
 msgid "Open navigation"
 msgstr "탐색 열기"
 
+msgid "Open orders with a line past its promised date"
+msgstr "약속일이 지난 라인이 있는 미결 발주서"
+
 msgid "Open payables by supplier and age"
 msgstr "공급업체 및 기간별 미결 매입채무"
 
@@ -11105,6 +11232,9 @@ msgstr "미결 발주서"
 
 msgid "Open Purchase Orders"
 msgstr "미결 발주서"
+
+msgid "Open quotes"
+msgstr "미결 견적서"
 
 msgid "Open Quotes"
 msgstr "미결 견적"
@@ -11208,6 +11338,9 @@ msgstr "공정작업/단계"
 
 msgid "Operations Type"
 msgstr "공정작업 유형"
+
+msgid "Operations you currently have running"
+msgstr "현재 실행 중인 공정"
 
 msgid "Operator"
 msgstr "작업자"
@@ -11318,6 +11451,9 @@ msgstr "주문"
 msgid "Orders submitted"
 msgstr "제출된 주문"
 
+msgid "Orders, quotes and RFQs where you are the assignee"
+msgstr "담당자인 주문, 견적서 및 견적 요청"
+
 msgid "Origin"
 msgstr "출처"
 
@@ -11371,6 +11507,9 @@ msgstr "전체 결과"
 
 msgid "Overdue"
 msgstr "기한 초과"
+
+msgid "Overdue purchase orders"
+msgstr "기한 초과 발주서"
 
 msgid "Overhead Absorption"
 msgstr "간접비 배부"
@@ -12179,6 +12318,9 @@ msgstr "생산 수량"
 msgid "Production Quantity"
 msgstr "생산 수량"
 
+msgid "Production quantity without rework or scrap"
+msgstr "재작업 및 스크랩이 없는 생산 수량"
+
 msgid "Production variance"
 msgstr "생산 차이"
 
@@ -12382,6 +12524,9 @@ msgstr "발주서가 성공적으로 제거되었습니다"
 msgid "Purchase Order Type"
 msgstr "발주서 유형"
 
+msgid "Purchase order value over the period"
+msgstr "기간 동안의 발주서 금액"
+
 msgid "Purchase orders"
 msgstr "구매주문"
 
@@ -12390,6 +12535,9 @@ msgstr "발주서"
 
 msgid "Purchase Orders and Planning"
 msgstr "발주서 및 계획"
+
+msgid "Purchase orders not yet received and invoiced"
+msgstr "아직 수령 및 송장이 발행되지 않은 발주서"
 
 msgid "Purchase orders required"
 msgstr "발주서가 필요합니다"
@@ -12408,6 +12556,9 @@ msgstr "구매가격차이(기본값)"
 
 msgid "Purchase Qty"
 msgstr "구매 수량"
+
+msgid "Purchase spend"
+msgstr "구매 지출"
 
 msgid "Purchase Tax Payable"
 msgstr "매입 세금 미지급"
@@ -12429,6 +12580,9 @@ msgstr "구매됨"
 
 msgid "Purchases"
 msgstr "구매"
+
+msgid "Purchases by supplier"
+msgstr "공급업체별 구매"
 
 msgid "purchasing"
 msgstr "구매"
@@ -12603,6 +12757,9 @@ msgstr "이 재정의에 대한 수량 기반 가격 책정 단계입니다. 적
 msgid "Quantity: {0}"
 msgstr "수량: {0}"
 
+msgid "Quarter to date"
+msgstr "분기 누계"
+
 msgid "Quarterly"
 msgstr "분기별"
 
@@ -12665,6 +12822,9 @@ msgstr "견적일"
 
 msgid "Quotes"
 msgstr "견적"
+
+msgid "Quotes in draft or sent to the customer"
+msgstr "초안이거나 고객에게 전송된 견적서"
 
 msgid "Quoting and sales orders"
 msgstr "견적서 작성 및 수주"
@@ -12948,6 +13108,9 @@ msgstr "기존 자산 등록"
 
 msgid "Registered"
 msgstr "등록됨"
+
+msgid "Registered and in-progress issues"
+msgstr "등록되고 진행 중인 이슈"
 
 msgid "Registration failed"
 msgstr "등록 실패"
@@ -13414,6 +13577,9 @@ msgstr "매출"
 msgid "Revenue and expenses over a period"
 msgstr "기간별 매출 및 비용"
 
+msgid "Revenue trend"
+msgstr "매출 추이"
+
 msgid "Reverse all inventory adjustments"
 msgstr "모든 재고 조정 취소"
 
@@ -13720,6 +13886,9 @@ msgstr "영업 할인"
 msgid "Sales Discounts (default)"
 msgstr "영업 할인 (기본값)"
 
+msgid "Sales documents assigned to me"
+msgstr "내게 할당된 영업 문서"
+
 msgid "Sales Funnel"
 msgstr "영업 퍼널"
 
@@ -13765,14 +13934,23 @@ msgstr "수주 사업장"
 msgid "Sales Order Number"
 msgstr "수주 번호"
 
+msgid "Sales order value over the period"
+msgstr "기간 동안의 수주 금액"
+
 msgid "Sales orders"
 msgstr "판매주문"
 
 msgid "Sales Orders"
 msgstr "수주"
 
+msgid "Sales orders not yet shipped and invoiced"
+msgstr "아직 출하 및 송장이 발행되지 않은 수주"
+
 msgid "Sales Person"
 msgstr "영업 담당자"
+
+msgid "Sales revenue"
+msgstr "영업 매출"
 
 msgid "Sales Revenue"
 msgstr "매출"
@@ -13954,6 +14132,9 @@ msgstr "스크랩"
 msgid "Scrap / Cost of Quality"
 msgstr "스크랩 / 품질 원가"
 
+msgid "Scrap as a share of production plus scrap quantities"
+msgstr "생산 플러스 스크랩 수량 중 스크랩의 비중"
+
 msgid "Scrap Percent"
 msgstr "스크랩 비율"
 
@@ -13971,6 +14152,9 @@ msgstr "스크랩 수량"
 
 msgid "Scrap Quantity Per Job"
 msgstr "작업당 스크랩 수량"
+
+msgid "Scrap rate"
+msgstr "스크랩 비율"
 
 msgid "scrap reason"
 msgstr "스크랩 사유"
@@ -14945,6 +15129,9 @@ msgstr "특정 품목"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "공급업체, 품목 또는 범주별 지출 — 가장 큰 비용 동인"
 
+msgid "Spend trend"
+msgstr "지출 추이"
+
 msgid "Split"
 msgstr "분할"
 
@@ -15336,6 +15523,12 @@ msgstr "공급업체 계정"
 
 msgid "Supplier added and selected"
 msgstr "공급업체가 추가되고 선택되었습니다"
+
+msgid "Supplier balances not yet paid"
+msgstr "아직 지불되지 않은 공급업체 잔액"
+
+msgid "Supplier balances past their due date"
+msgstr "마감일이 지난 공급업체 잔액"
 
 msgid "Supplier contact"
 msgstr "공급업체 담당자"
@@ -16977,6 +17170,9 @@ msgstr "공구"
 msgid "Tools"
 msgstr "공구"
 
+msgid "Top suppliers by purchase order value in the period"
+msgstr "기간 동안 발주서 금액으로 상위 공급업체"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "최상위 분류 (자산 / 부채 / 자본 / 매출 / 비용); 루트 그룹에만 설정되며 자식이 상속합니다."
 
@@ -17006,6 +17202,12 @@ msgstr "총 시간"
 
 msgid "Total Minutes"
 msgstr "총 분"
+
+msgid "Total of purchase orders placed in the period"
+msgstr "기간 동안 발행된 발주서의 총계"
+
+msgid "Total of sales orders placed in the period"
+msgstr "기간 동안 발행된 수주의 총계"
 
 msgid "Total Price"
 msgstr "총 가격"
@@ -17410,7 +17612,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "제목 없음"
 
 msgid "Untitled Diagram"
 msgstr "제목 없는 다이어그램"
@@ -17658,6 +17860,9 @@ msgstr "포함된 도메인의 사용자는 SAML SSO로만 로그인할 수 있�
 msgid "Users to Update"
 msgstr "업데이트할 사용자"
 
+msgid "Utilization"
+msgstr "가동률"
+
 msgid "Valid From"
 msgstr "유효 시작일"
 
@@ -17687,6 +17892,9 @@ msgstr "값 스냅샷"
 
 msgid "Value source by surface"
 msgstr "표면별 값 소스"
+
+msgid "Value still to ship on open sales orders"
+msgstr "미결 수주에서 아직 출하할 금액"
 
 msgid "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
 msgstr "부가가치세 등록 번호; 역계산 또는 영율 공급에 대한 EU 송장에 필수입니다."
@@ -17988,6 +18196,9 @@ msgstr "이 입고를 무효화하면 다음과 같은 결과가 발생합니다
 
 msgid "Voiding this shipment will:"
 msgstr "이 출하를 무효화하면 다음과 같은 결과가 발생합니다:"
+
+msgid "vs prior period"
+msgstr "전 기간 대비"
 
 msgid "Waited"
 msgstr "대기함"
@@ -18483,6 +18694,9 @@ msgstr "이 라인이 거절되는 이유로, 인쇄용 견적서에 표시되�
 msgid "Why this restore failed"
 msgstr "이 복원이 실패한 이유"
 
+msgid "Widget options"
+msgstr "위젯 옵션"
+
 msgid "Will remain as a comment line"
 msgstr "댓글 라인으로 유지됩니다"
 
@@ -18575,6 +18789,9 @@ msgstr "워크플로우 이름"
 msgid "Workflow run"
 msgstr "워크플로우 실행"
 
+msgid "Workflow runs that failed in the period"
+msgstr "기간 동안 실패한 워크플로 실행"
+
 msgid "Workflows"
 msgstr "워크플로우"
 
@@ -18608,6 +18825,9 @@ msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 �
 
 msgid "Year"
 msgstr "연도"
+
+msgid "Year to date"
+msgstr "연간 누계"
 
 msgid "Yearly"
 msgstr "연간"

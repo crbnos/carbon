@@ -93,6 +93,10 @@ msgstr "{0} taslak muhasebe fişi"
 msgid "{0} jobs created"
 msgstr "{0} iş emri oluşturuldu"
 
+#. placeholder {0}: payload.detail
+msgid "{0} lines past due"
+msgstr "{0} satır gecikmiş"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
@@ -1095,8 +1099,20 @@ msgstr "Aktivasyon ücreti · biz tavsiye ederiz"
 msgid "Active"
 msgstr "Aktif"
 
+msgid "Active jobs"
+msgstr "Aktif iş emirleri"
+
 msgid "Active Jobs"
 msgstr "Aktif İş emirleri"
+
+msgid "Active jobs due in the next seven days"
+msgstr "Sonraki yedi gün içinde teslim edilecek aktif iş emirleri"
+
+msgid "Active jobs grouped by status"
+msgstr "Duruma göre gruplandırılmış aktif iş emirleri"
+
+msgid "Active jobs past their due date"
+msgstr "Son tarihi geçmiş aktif iş emirleri"
 
 msgid "Active Statuses"
 msgstr "Aktif Durumlar"
@@ -1340,6 +1356,9 @@ msgstr "Gelecekteki kullanım için stoğa ekle"
 
 msgid "Add tools"
 msgstr "Araç ekle"
+
+msgid "Add widgets"
+msgstr "Widget ekle"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1705,8 +1724,14 @@ msgstr "Borç Hesapları Yaşlandırması"
 msgid "AP Clerk"
 msgstr "Borç Hesapları Memuru"
 
+msgid "AP outstanding"
+msgstr "Ödenmemiş borç hesapları"
+
 msgid "AP Outstanding"
 msgstr "Ödenmemiş Borç Hesapları"
+
+msgid "AP overdue"
+msgstr "Gecikmiş borç hesapları"
 
 msgid "AP Overdue"
 msgstr "Gecikmiş Borç Hesapları"
@@ -1844,8 +1869,14 @@ msgstr "Alacak Hesapları Yaşlandırması"
 msgid "AR Clerk"
 msgstr "Alacak Hesapları Memuru"
 
+msgid "AR outstanding"
+msgstr "Ödenmemiş alacak hesapları"
+
 msgid "AR Outstanding"
 msgstr "Ödenmemiş Alacak Hesapları"
+
+msgid "AR overdue"
+msgstr "Gecikmiş alacak hesapları"
 
 msgid "AR Overdue"
 msgstr "Gecikmiş Alacak Hesapları"
@@ -3263,6 +3294,9 @@ msgstr "Başka bir dosya seç"
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
 
+msgid "Choose which widgets appear on your home page."
+msgstr "Ana sayfanızda görünecek araçları seçin."
+
 msgid "Choose your style"
 msgstr "Stilini seçin"
 
@@ -4533,6 +4567,12 @@ msgstr "Müşteri"
 msgid "Customer Accounts"
 msgstr "Müşteri Hesapları"
 
+msgid "Customer balances not yet paid"
+msgstr "Ödenmemiş müşteri bakiyeleri"
+
+msgid "Customer balances past their due date"
+msgstr "Son tarihi geçmiş müşteri bakiyeleri"
+
 msgid "Customer contact"
 msgstr "Müşteri ilgili kişisi"
 
@@ -4658,6 +4698,9 @@ msgstr "Özelleştirmeler, eğitim ve entegrasyonlar"
 
 msgid "Customize"
 msgstr "Özelleştir"
+
+msgid "Customize analytics"
+msgstr "Analitikleri özelleştir"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDF belgelerinizin düzenini özelleştirin — bölümleri yeniden sıralayın, ihtiyacınız olmayanları gizleyin ve kendi bloklarınızı ekleyin."
@@ -7103,6 +7146,9 @@ msgstr "PDF yüklenemedi"
 msgid "Failed to upload thumbnail"
 msgstr "Küçük resim yüklenemedi"
 
+msgid "Failed workflow runs"
+msgstr "Başarısız iş akışı çalıştırmaları"
+
 msgid "Failure"
 msgstr "Başarısızlık"
 
@@ -7252,6 +7298,9 @@ msgstr "Adı Soyad"
 msgid "First Operation"
 msgstr "İlk İşlem"
 
+msgid "First-pass yield"
+msgstr "İlk geçiş oranı"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Sabit Kıymet"
 
@@ -7308,6 +7357,9 @@ msgstr "Bağlama aparatı ID"
 
 msgid "Flags"
 msgstr "Bayraklar"
+
+msgid "Follow page range"
+msgstr "Sayfa aralığını takip et"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
@@ -7751,6 +7803,9 @@ msgstr "Ham verileri gizle"
 msgid "Hide system quantities until the review step"
 msgstr "Sistem miktarlarını inceleme adımına kadar gizle"
 
+msgid "Hide widget"
+msgstr "Widget gizle"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Sütunları gizle, sabitle ve yeniden sırala"
 
@@ -7810,6 +7865,9 @@ msgstr "Bu istasyonda saatler"
 
 msgid "Hours not yet assigned"
 msgstr "Henüz atanmayan saatler"
+
+msgid "Hours of production time per work center in the period"
+msgstr "Dönem içinde iş merkezi başına üretim saatleri"
 
 msgid "Hours per Week"
 msgstr "Haftalık Saat"
@@ -8223,6 +8281,9 @@ msgstr "Muayene belgesi"
 msgid "Inspection Level"
 msgstr "Muayene Seviyesi"
 
+msgid "Inspection pass rate"
+msgstr "Muayene başarı oranı"
+
 msgid "Inspection Plan"
 msgstr "Kontrol planı"
 
@@ -8237,6 +8298,9 @@ msgstr "Muayene Durumu"
 
 msgid "Inspections"
 msgstr "Muayeneler"
+
+msgid "Inspections passed as a share of those dispositioned"
+msgstr "Sonuçlandırılan muayenelerin uygun olanlarının oranı"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Muayeneler, uygunsuzluk ve CAPA"
@@ -8369,6 +8433,9 @@ msgstr "Envanter Ölçü Birimi"
 
 msgid "Inventory Valuation"
 msgstr "Envanter Değerlemesi"
+
+msgid "Inventory value"
+msgstr "Envanter değeri"
 
 msgid "Invite"
 msgstr "Davet et"
@@ -8535,6 +8602,12 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "Issues by type"
+msgstr "Sorunlar türe göre"
+
+msgid "Issues opened"
+msgstr "Açılan sorunlar"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
@@ -8673,6 +8746,15 @@ msgstr "İş emirleri"
 msgid "Jobs Assigned to Me"
 msgstr "Bana Atanan İş emirleri"
 
+msgid "Jobs by status"
+msgstr "Duruma göre iş emirleri"
+
+msgid "Jobs due this week"
+msgstr "Bu hafta teslim edilecek iş emirleri"
+
+msgid "Jobs planned, ready, in progress or paused"
+msgstr "Planlandı, hazır, devam ediyor veya duraklatılmış iş emirleri"
+
 msgid "Jobs Required"
 msgstr "Gereken İş emirleri"
 
@@ -8804,8 +8886,20 @@ msgstr "İşçilik Birimi"
 msgid "Language"
 msgstr "Dil"
 
+msgid "Last 12 months"
+msgstr "Son 12 ay"
+
+msgid "Last 30 days"
+msgstr "Son 30 gün"
+
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
+
+msgid "Last 7 days"
+msgstr "Son 7 gün"
+
+msgid "Last 90 days"
+msgstr "Son 90 gün"
 
 msgid "Last attempt"
 msgstr "Son deneme"
@@ -8857,6 +8951,9 @@ msgstr "Son Kullanılan"
 
 msgid "Late in the evening, {name}."
 msgstr "Akşamın geç saatlerinde, {name}."
+
+msgid "Late jobs"
+msgstr "Gecikmiş iş emirleri"
 
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
@@ -8998,6 +9095,9 @@ msgstr "Satırlar dahili parça numaralarına ihtiyaç duyuyor"
 
 msgid "Lines need prices or lead times"
 msgstr "Satırlar fiyat veya tedarik süresi gerektirir"
+
+msgid "Lines shipped on or before their promised date"
+msgstr "Taahhüt tarihinde veya öncesinde gönderilen satırlar"
 
 msgid "Lineside"
 msgstr "Üretim Hattı Yanı"
@@ -9773,6 +9873,9 @@ msgstr "Size borçlu"
 msgid "Money you owe"
 msgstr "Borçlu olduğunuz para"
 
+msgid "Month to date"
+msgstr "Ay başından bugüne"
+
 msgid "Monthly"
 msgstr "Aylık"
 
@@ -9799,6 +9902,9 @@ msgstr "Daha fazla fazla mesai"
 
 msgid "Morning, {name}."
 msgstr "Sabah, {name}."
+
+msgid "Most frequent issue types in the period"
+msgstr "Dönem içinde en sık karşılaşılan sorun türleri"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Çoğu şey burada yakalanır ve çözülür. Açıkça adlandırın."
@@ -9858,6 +9964,9 @@ msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel o
 
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
+
+msgid "My active operations"
+msgstr "Benim aktif operasyonlarım"
 
 msgid "My Documents"
 msgstr "Belgelerim"
@@ -10044,6 +10153,9 @@ msgstr "Yeni Fatura"
 
 msgid "New Issue"
 msgstr "Yeni Sorun"
+
+msgid "New issues over the period"
+msgstr "Dönem içinde açılan yeni sorunlar"
 
 msgid "New Item Group"
 msgstr "Yeni Ürün Grubu"
@@ -10912,6 +11024,9 @@ msgstr "Tamam"
 msgid "Oldest first"
 msgstr "En eski önce"
 
+msgid "Oldest overdue orders first"
+msgstr "En eski gecikmiş siparişler önce"
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Geçiş gününde, aşağıdaki kontrol listesini sırayla çalışın. Kabul testleri kapsam içi gerekliliklerinizden gelir. Destek ayrıntıları altta yer alır."
 
@@ -10962,6 +11077,9 @@ msgstr "Eldeki stok sayıları"
 
 msgid "On-hand floor to maintain for service use at this location"
 msgstr "Bu konumdaki servis kullanımı için korunacak minimum stok seviyesi"
+
+msgid "On-hand inventory at cost"
+msgstr "Eldeki envanterin maliyet değeri"
 
 msgid "On-hand inventory remains"
 msgstr "Eldeki envanter kaldı"
@@ -11055,6 +11173,9 @@ msgstr "Açık Alacak hesapları"
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
 
+msgid "Open backlog"
+msgstr "Açık iş birikintisi"
+
 msgid "Open date"
 msgstr "Açılış tarihi"
 
@@ -11076,6 +11197,9 @@ msgstr "Değişiklik bildirimleri {ids} içinde aç. Yeni sürümler veya revizy
 msgid "Open in MES"
 msgstr "MES'te Aç"
 
+msgid "Open issues"
+msgstr "Açık Sorunlar"
+
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
@@ -11094,6 +11218,9 @@ msgstr "Menüyü aç"
 msgid "Open navigation"
 msgstr "Gezinmeyi aç"
 
+msgid "Open orders with a line past its promised date"
+msgstr "Taahhüt Tarihini Geçen Bir Satırı Olan Açık Siparişler"
+
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
 
@@ -11105,6 +11232,9 @@ msgstr "Açık satın alma siparişleri"
 
 msgid "Open Purchase Orders"
 msgstr "Açık Satın Alma Siparişleri"
+
+msgid "Open quotes"
+msgstr "Açık Teklifler"
 
 msgid "Open Quotes"
 msgstr "Açık Teklifler"
@@ -11208,6 +11338,9 @@ msgstr "Operasyonlar / Adımlar"
 
 msgid "Operations Type"
 msgstr "Operasyon Türü"
+
+msgid "Operations you currently have running"
+msgstr "Şu Anda Çalışan Operasyonlar"
 
 msgid "Operator"
 msgstr "Operatör"
@@ -11318,6 +11451,9 @@ msgstr "Siparişler"
 msgid "Orders submitted"
 msgstr "Siparişler gönderildi"
 
+msgid "Orders, quotes and RFQs where you are the assignee"
+msgstr "Atanan Olduğunuz Siparişler, Teklifler ve Teklif Talepleri"
+
 msgid "Origin"
 msgstr "Kaynak"
 
@@ -11371,6 +11507,9 @@ msgstr "Genel sonuç"
 
 msgid "Overdue"
 msgstr "Gecikmiş"
+
+msgid "Overdue purchase orders"
+msgstr "Gecikmiş Satın Alma Siparişleri"
 
 msgid "Overhead Absorption"
 msgstr "Genel üretim gideri dağıtımı"
@@ -12179,6 +12318,9 @@ msgstr "Üretim miktarı"
 msgid "Production Quantity"
 msgstr "Üretim Miktarı"
 
+msgid "Production quantity without rework or scrap"
+msgstr "Yeniden İşleme veya Fire Olmayan Üretim Miktarı"
+
 msgid "Production variance"
 msgstr "Üretim sapması"
 
@@ -12382,6 +12524,9 @@ msgstr "Satın alma siparişi başarıyla kaldırıldı"
 msgid "Purchase Order Type"
 msgstr "Satın Alma Siparişi Türü"
 
+msgid "Purchase order value over the period"
+msgstr "Dönem İçerisindeki Satın Alma Siparişi Değeri"
+
 msgid "Purchase orders"
 msgstr "Satın Alma Siparişleri"
 
@@ -12390,6 +12535,9 @@ msgstr "Satın Alma Siparişleri"
 
 msgid "Purchase Orders and Planning"
 msgstr "Satın Alma Siparişleri ve Planlama"
+
+msgid "Purchase orders not yet received and invoiced"
+msgstr "Henüz Alınmamış ve Faturalanmamış Satın Alma Siparişleri"
 
 msgid "Purchase orders required"
 msgstr "Satın alma siparişleri gerekli"
@@ -12408,6 +12556,9 @@ msgstr "Satın alma fiyat sapması (varsayılan)"
 
 msgid "Purchase Qty"
 msgstr "Satın Alma Miktarı"
+
+msgid "Purchase spend"
+msgstr "Satın Alma Harcaması"
 
 msgid "Purchase Tax Payable"
 msgstr "Satın Alma Vergisi Ödenecek (varsayılan)"
@@ -12429,6 +12580,9 @@ msgstr "Satın Alındı"
 
 msgid "Purchases"
 msgstr "Satın almalar"
+
+msgid "Purchases by supplier"
+msgstr "Tedarikçiye Göre Satın Almalar"
 
 msgid "purchasing"
 msgstr "Satın Alma ve Satılan Malların Maliyeti"
@@ -12603,6 +12757,9 @@ msgstr "Bu geçersiz kılma için miktar tabanlı fiyatlandırma seviyeleri; uyg
 msgid "Quantity: {0}"
 msgstr "Miktar: {0}"
 
+msgid "Quarter to date"
+msgstr "Çeyrek Başından Beri"
+
 msgid "Quarterly"
 msgstr "Üç Aylık"
 
@@ -12665,6 +12822,9 @@ msgstr "Teklif Tarihi"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Quotes in draft or sent to the customer"
+msgstr "Taslak Olan veya Müşteriye Gönderilen Teklifler"
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"
@@ -12948,6 +13108,9 @@ msgstr "Kayıtlı"
 
 msgid "Registered"
 msgstr "Kaydedildi"
+
+msgid "Registered and in-progress issues"
+msgstr "Kaydedilen ve Devam Eden Sorunlar"
 
 msgid "Registration failed"
 msgstr "Kayıt Başarısız Oldu"
@@ -13414,6 +13577,9 @@ msgstr "Hasılat"
 msgid "Revenue and expenses over a period"
 msgstr "Bir dönem içinde hasılat ve giderler"
 
+msgid "Revenue trend"
+msgstr "Hasılat Trendi"
+
 msgid "Reverse all inventory adjustments"
 msgstr "Tüm stok düzeltmelerini ters kayıt yap"
 
@@ -13720,6 +13886,9 @@ msgstr "Satış İskontoları"
 msgid "Sales Discounts (default)"
 msgstr "Satış İskontoları (varsayılan)"
 
+msgid "Sales documents assigned to me"
+msgstr "Bana Atanan Satış Belgeleri"
+
 msgid "Sales Funnel"
 msgstr "Satış Hunisi"
 
@@ -13765,14 +13934,23 @@ msgstr "Satış Siparişi Konumu"
 msgid "Sales Order Number"
 msgstr "Satış Siparişi Numarası"
 
+msgid "Sales order value over the period"
+msgstr "Dönem İçerisindeki Satış Siparişi Değeri"
+
 msgid "Sales orders"
 msgstr "Satış Siparişleri"
 
 msgid "Sales Orders"
 msgstr "Satış Siparişleri"
 
+msgid "Sales orders not yet shipped and invoiced"
+msgstr "Henüz Sevk Edilmemiş ve Faturalanmamış Satış Siparişleri"
+
 msgid "Sales Person"
 msgstr "Satış Temsilcisi"
+
+msgid "Sales revenue"
+msgstr "Satış Hasılatı"
 
 msgid "Sales Revenue"
 msgstr "Satış Hasılat"
@@ -13954,6 +14132,9 @@ msgstr "Fire"
 msgid "Scrap / Cost of Quality"
 msgstr "Fire / Kalite Maliyeti"
 
+msgid "Scrap as a share of production plus scrap quantities"
+msgstr "Fire'ın Üretim Artı Fire Miktarlarındaki Payı"
+
 msgid "Scrap Percent"
 msgstr "Fire Oranı"
 
@@ -13971,6 +14152,9 @@ msgstr "Fire Miktarı"
 
 msgid "Scrap Quantity Per Job"
 msgstr "İş Emri Başına Fire Miktarı"
+
+msgid "Scrap rate"
+msgstr "Fire Oranı"
 
 msgid "scrap reason"
 msgstr "Fire nedeni"
@@ -14945,6 +15129,9 @@ msgstr "Belirli Ürünler"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Tedarikçi, ürün veya kategoriye göre harcama — en büyük maliyet sürücüleriniz"
 
+msgid "Spend trend"
+msgstr "Harcama Trendi"
+
 msgid "Split"
 msgstr "Bölünmüş"
 
@@ -15336,6 +15523,12 @@ msgstr "Tedarikçi Hesapları"
 
 msgid "Supplier added and selected"
 msgstr "Tedarikçi eklendi ve seçildi"
+
+msgid "Supplier balances not yet paid"
+msgstr "Henüz Ödenmemiş Tedarikçi Bakiyeleri"
+
+msgid "Supplier balances past their due date"
+msgstr "Son Tarihini Geçen Tedarikçi Bakiyeleri"
 
 msgid "Supplier contact"
 msgstr "tedarikçi ilgili kişisi"
@@ -16977,6 +17170,9 @@ msgstr "Araçlar"
 msgid "Tools"
 msgstr "Araçlar"
 
+msgid "Top suppliers by purchase order value in the period"
+msgstr "Dönemdeki Satın Alma Siparişi Değerine Göre En İyi Tedarikçiler"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Üst düzey sınıflandırma (varlık / yükümlülük / özkaynak / hasılat / gider); yalnızca kök gruplar üzerinde ayarlayın, alt gruplar tarafından devralınır."
 
@@ -17006,6 +17202,12 @@ msgstr "Toplam Saat"
 
 msgid "Total Minutes"
 msgstr "Toplam Dakika"
+
+msgid "Total of purchase orders placed in the period"
+msgstr "Dönemde Yerleştirilen Satın Alma Siparişlerinin Toplamı"
+
+msgid "Total of sales orders placed in the period"
+msgstr "Dönemde Yerleştirilen Satış Siparişlerinin Toplamı"
 
 msgid "Total Price"
 msgstr "Toplam Fiyat"
@@ -17410,7 +17612,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Başlıksız"
 
 msgid "Untitled Diagram"
 msgstr "Başlıksız Diyagram"
@@ -17658,6 +17860,9 @@ msgstr "Kapsanan etki alanlarındaki kullanıcılar yalnızca SAML SSO ile oturu
 msgid "Users to Update"
 msgstr "Güncellenecek Kullanıcılar"
 
+msgid "Utilization"
+msgstr "Kullanım Oranı"
+
 msgid "Valid From"
 msgstr "Geçerli Tarih"
 
@@ -17687,6 +17892,9 @@ msgstr "Değer Özeti"
 
 msgid "Value source by surface"
 msgstr "Yüzeye göre değer kaynağı"
+
+msgid "Value still to ship on open sales orders"
+msgstr "Açık Satış Siparişlerinde Sevk Edilecek Kalan Değer"
 
 msgid "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
 msgstr "Katma değer vergisi kayıt numarası; AB faturalarında ters ücretlendirme veya sıfır oranlı tedarikler için gereklidir."
@@ -17988,6 +18196,9 @@ msgstr "Bu fişin iptali şunları yapacaktır:"
 
 msgid "Voiding this shipment will:"
 msgstr "Bu sevkiyatı geçersiz kılmak şunları yapacaktır:"
+
+msgid "vs prior period"
+msgstr "Vs. Önceki Dönem"
 
 msgid "Waited"
 msgstr "Beklemede"
@@ -18483,6 +18694,9 @@ msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir 
 msgid "Why this restore failed"
 msgstr "Bu geri yükleme neden başarısız oldu"
 
+msgid "Widget options"
+msgstr "Widget Seçenekleri"
+
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
 
@@ -18575,6 +18789,9 @@ msgstr "İş akışı adı"
 msgid "Workflow run"
 msgstr "İş akışı çalışması"
 
+msgid "Workflow runs that failed in the period"
+msgstr "Dönemdeki Başarısız İş Akışı Çalıştırmaları"
+
 msgid "Workflows"
 msgstr "İş akışları"
 
@@ -18608,6 +18825,9 @@ msgstr "Bir varlığın değerini yaşamı boyunca azaltma — her ay oluşturdu
 
 msgid "Year"
 msgstr "Yıl"
+
+msgid "Year to date"
+msgstr "Yılı Başından Beri"
 
 msgid "Yearly"
 msgstr "Yıllık"

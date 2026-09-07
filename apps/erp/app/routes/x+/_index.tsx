@@ -62,6 +62,16 @@ import {
 } from "~/hooks";
 import { useHubDismissed } from "~/hooks/useHubDismissed";
 import type { RecentDocument } from "~/hooks/useRecentlyViewed";
+import type { DashboardRange } from "~/modules/dashboard/dashboard.models";
+import {
+  DEFAULT_DASHBOARD_RANGE,
+  isDashboardRange
+} from "~/modules/dashboard/dashboard.models";
+import {
+  getDashboardLayout,
+  getDashboardPreference
+} from "~/modules/dashboard/dashboard.service";
+import { DashboardSection } from "~/modules/dashboard/ui";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
@@ -75,7 +85,7 @@ const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 // finished) it surfaces as a primary-nav item (`useImplementationNavItem`) and a
 // summary card below — it never replaces the home page for anyone.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   // Compute the greeting on the server so SSR and hydration render the SAME
   // line — no client-side randomness, so no flash on refresh. `pick` is the
@@ -93,7 +103,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const cookies = cookie.parse(request.headers.get("Cookie") ?? "");
   const agentDismissed = cookies[AGENT_WIDGET_COOKIE] === "1";
 
-  return { greeting, agentDismissed };
+  // Analytics widgets: the user's saved show/hide rows, drag order and
+  // page-wide range. The URL range wins over the saved one so a shared link is
+  // reproducible; widget data itself is fetched per widget on the client.
+  const [layout, preference] = await Promise.all([
+    getDashboardLayout(client, userId, companyId),
+    getDashboardPreference(client, userId, companyId)
+  ]);
+  const urlRange = new URL(request.url).searchParams.get("range");
+  const savedRange = preference.data?.range;
+  const range: DashboardRange = isDashboardRange(urlRange)
+    ? urlRange
+    : isDashboardRange(savedRange)
+      ? savedRange
+      : DEFAULT_DASHBOARD_RANGE;
+
+  return {
+    greeting,
+    agentDismissed,
+    dashboard: {
+      rows: layout.data ?? [],
+      order: preference.data?.widgetOrder ?? [],
+      range,
+      today: datetime.today(tz).toString()
+    }
+  };
 }
 
 const NO_SIGNALS: Signals = {
@@ -139,7 +173,8 @@ function useImplementationSummary() {
 }
 
 export default function AppIndexRoute() {
-  const { greeting, agentDismissed } = useLoaderData<typeof loader>();
+  const { greeting, agentDismissed, dashboard } =
+    useLoaderData<typeof loader>();
   const modules = useModules();
   const implementation = useImplementationSummary();
   const layout = useRouteData<{ implementationHub: unknown | null }>(
@@ -245,6 +280,12 @@ export default function AppIndexRoute() {
               </div>
             </div>
           </div>
+          <DashboardSection
+            rows={dashboard.rows}
+            order={dashboard.order}
+            range={dashboard.range}
+            today={dashboard.today}
+          />
         </div>
       </div>
     </div>

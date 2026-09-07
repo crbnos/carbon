@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-03T20:26:47.954Z",
-  "totalTools": 1495,
+  "generated": "2026-09-07T14:19:14.316Z",
+  "totalTools": 1496,
   "modules": 15,
   "tools": [
     {
@@ -27801,6 +27801,48 @@
         "required": [
           "operationId",
           "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_getWorkCenterUtilization",
+      "module": "production",
+      "classification": "READ",
+      "description": "get work center utilization",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "previousStart": {
+            "type": "string"
+          },
+          "previousEnd": {
+            "type": "string"
+          },
+          "currentDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "previousStart",
+          "previousEnd",
+          "currentDate"
         ]
       }
     },

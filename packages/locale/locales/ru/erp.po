@@ -93,6 +93,10 @@ msgstr "{0} черновых операций"
 msgid "{0} jobs created"
 msgstr "{0} производственных заказов создано"
 
+#. placeholder {0}: payload.detail
+msgid "{0} lines past due"
+msgstr "{0} строк просрочено"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
@@ -1095,8 +1099,20 @@ msgstr "Плата за активацию · мы консультируем"
 msgid "Active"
 msgstr "Активно"
 
+msgid "Active jobs"
+msgstr "Активные производственные заказы"
+
 msgid "Active Jobs"
 msgstr "Активные производственные заказы"
+
+msgid "Active jobs due in the next seven days"
+msgstr "Активные производственные заказы со сроком в следующие семь дней"
+
+msgid "Active jobs grouped by status"
+msgstr "Активные производственные заказы, сгруппированные по статусу"
+
+msgid "Active jobs past their due date"
+msgstr "Активные производственные заказы, превысившие срок выполнения"
 
 msgid "Active Statuses"
 msgstr "Активные статусы"
@@ -1340,6 +1356,9 @@ msgstr "Добавить в запас для будущего использо�
 
 msgid "Add tools"
 msgstr "Добавить инструменты"
+
+msgid "Add widgets"
+msgstr "Добавить виджеты"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1705,8 +1724,14 @@ msgstr "Анализ возраста кредиторской задолжен�
 msgid "AP Clerk"
 msgstr "Специалист по учету кредиторской задолженности"
 
+msgid "AP outstanding"
+msgstr "Кредиторская задолженность, ожидающая погашения"
+
 msgid "AP Outstanding"
 msgstr "Неоплаченная кредиторская задолженность"
+
+msgid "AP overdue"
+msgstr "Просроченная кредиторская задолженность"
 
 msgid "AP Overdue"
 msgstr "Просроченные кредиторские задолженности"
@@ -1844,8 +1869,14 @@ msgstr "Анализ возраста дебиторской задолженн�
 msgid "AR Clerk"
 msgstr "Менеджер дебиторской задолженности"
 
+msgid "AR outstanding"
+msgstr "Дебиторская задолженность, ожидающая погашения"
+
 msgid "AR Outstanding"
 msgstr "Дебиторская задолженность"
+
+msgid "AR overdue"
+msgstr "Просроченная дебиторская задолженность"
 
 msgid "AR Overdue"
 msgstr "Просроченная дебиторская задолженность"
@@ -3263,6 +3294,9 @@ msgstr "Выбрать другой файл"
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
 
+msgid "Choose which widgets appear on your home page."
+msgstr "Выберите, какие виджеты отображаются на вашей домашней странице."
+
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
 
@@ -4533,6 +4567,12 @@ msgstr "Покупатель"
 msgid "Customer Accounts"
 msgstr "Счета покупателя"
 
+msgid "Customer balances not yet paid"
+msgstr "Остатки покупателей, не оплаченные"
+
+msgid "Customer balances past their due date"
+msgstr "Остатки покупателей со сроком выполнения, превышенным"
+
 msgid "Customer contact"
 msgstr "Контактное лицо покупателя"
 
@@ -4658,6 +4698,9 @@ msgstr "Настройки, обучение и интеграции"
 
 msgid "Customize"
 msgstr "Настроить"
+
+msgid "Customize analytics"
+msgstr "Настроить аналитику"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "Настройте макет ваших PDF-документов — переупорядочивайте разделы, скрывайте ненужное и добавляйте собственные блоки."
@@ -7103,6 +7146,9 @@ msgstr "Ошибка загрузки PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Не удалось загрузить миниатюру"
 
+msgid "Failed workflow runs"
+msgstr "Ошибки рабочих процессов"
+
 msgid "Failure"
 msgstr "Сбой"
 
@@ -7252,6 +7298,9 @@ msgstr "Имя"
 msgid "First Operation"
 msgstr "Первая операция"
 
+msgid "First-pass yield"
+msgstr "Выход с первого прохода"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Основной Актив"
 
@@ -7308,6 +7357,9 @@ msgstr "ID приспособления"
 
 msgid "Flags"
 msgstr "Флаги"
+
+msgid "Follow page range"
+msgstr "Следить за диапазоном страниц"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
@@ -7751,6 +7803,9 @@ msgstr "Скрыть исходное"
 msgid "Hide system quantities until the review step"
 msgstr "Скрывать системные количества до шага рассмотрения"
 
+msgid "Hide widget"
+msgstr "Скрыть виджет"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Скрывать, закреплять и переупорядочивать столбцы"
 
@@ -7810,6 +7865,9 @@ msgstr "Часы на этом рабочем месте"
 
 msgid "Hours not yet assigned"
 msgstr "Часы, ещё не назначенные"
+
+msgid "Hours of production time per work center in the period"
+msgstr "Часы производства на рабочий центр за период"
 
 msgid "Hours per Week"
 msgstr "Часов в неделю"
@@ -8223,6 +8281,9 @@ msgstr "Документ контроля"
 msgid "Inspection Level"
 msgstr "Уровень контроля"
 
+msgid "Inspection pass rate"
+msgstr "Процент успешного контроля"
+
 msgid "Inspection Plan"
 msgstr "План контроля"
 
@@ -8237,6 +8298,9 @@ msgstr "Статус контроля"
 
 msgid "Inspections"
 msgstr "Контроли"
+
+msgid "Inspections passed as a share of those dispositioned"
+msgstr "Успешный контроль как доля от всех проверок"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Контроли, несоответствия и CAPA"
@@ -8369,6 +8433,9 @@ msgstr "Единица измерения запасов"
 
 msgid "Inventory Valuation"
 msgstr "Оценка товарно-материального запаса"
+
+msgid "Inventory value"
+msgstr "Стоимость запасов"
 
 msgid "Invite"
 msgstr "Пригласить"
@@ -8535,6 +8602,12 @@ msgstr "Дата выпуска"
 msgid "Issues"
 msgstr "Проблемы"
 
+msgid "Issues by type"
+msgstr "Списания в производство по типам"
+
+msgid "Issues opened"
+msgstr "Открытые списания в производство"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
 
@@ -8673,6 +8746,15 @@ msgstr "Производственные заказы"
 msgid "Jobs Assigned to Me"
 msgstr "Производственные заказы, назначенные мне"
 
+msgid "Jobs by status"
+msgstr "Производственные заказы по статусу"
+
+msgid "Jobs due this week"
+msgstr "Производственные заказы, подлежащие выполнению на этой неделе"
+
+msgid "Jobs planned, ready, in progress or paused"
+msgstr "Запланированные, готовые, в работе или приостановленные производственные заказы"
+
 msgid "Jobs Required"
 msgstr "Необходимые производственные заказы"
 
@@ -8804,8 +8886,20 @@ msgstr "Единица труда"
 msgid "Language"
 msgstr "Язык"
 
+msgid "Last 12 months"
+msgstr "Последние 12 месяцев"
+
+msgid "Last 30 days"
+msgstr "Последние 30 дней"
+
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
+
+msgid "Last 7 days"
+msgstr "Последние 7 дней"
+
+msgid "Last 90 days"
+msgstr "Последние 90 дней"
 
 msgid "Last attempt"
 msgstr "Последняя попытка"
@@ -8857,6 +8951,9 @@ msgstr "Последний раз использован"
 
 msgid "Late in the evening, {name}."
 msgstr "Поздно вечером, {name}."
+
+msgid "Late jobs"
+msgstr "Просроченные производственные заказы"
 
 msgid "Latest operation end"
 msgstr "Конец последней операции"
@@ -8998,6 +9095,9 @@ msgstr "Строки требуют внутренние номера детал
 
 msgid "Lines need prices or lead times"
 msgstr "Строки требуют цены или сроки поставки"
+
+msgid "Lines shipped on or before their promised date"
+msgstr "Строки, отправленные к подтвержденной дате или ранее"
 
 msgid "Lineside"
 msgstr "Прилинейный запас"
@@ -9773,6 +9873,9 @@ msgstr "Деньги, которые вам должны"
 msgid "Money you owe"
 msgstr "Деньги, которые вы должны"
 
+msgid "Month to date"
+msgstr "С начала месяца"
+
 msgid "Monthly"
 msgstr "Ежемесячно"
 
@@ -9799,6 +9902,9 @@ msgstr "Больше переработки"
 
 msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
+
+msgid "Most frequent issue types in the period"
+msgstr "Наиболее частые типы списаний в производство за период"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Большинство проблем выявляются и решаются здесь. Называйте их четко."
@@ -9858,6 +9964,9 @@ msgstr "MRP запускается автоматически каждые 3 ч�
 
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
+
+msgid "My active operations"
+msgstr "Мои активные операции"
 
 msgid "My Documents"
 msgstr "Мои документы"
@@ -10044,6 +10153,9 @@ msgstr "Новая счет-фактура"
 
 msgid "New Issue"
 msgstr "Новая проблема"
+
+msgid "New issues over the period"
+msgstr "Новые списания в производство за период"
 
 msgid "New Item Group"
 msgstr "Новая группа товаров"
@@ -10912,6 +11024,9 @@ msgstr "ОК"
 msgid "Oldest first"
 msgstr "Сначала самые старые"
 
+msgid "Oldest overdue orders first"
+msgstr "Самые старые просроченные заказы в первую очередь"
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "В день переключения выполняйте контрольный список ниже по порядку. Тесты приемки основаны на ваших требованиях в области действия. Детали поддержки находятся внизу."
 
@@ -10962,6 +11077,9 @@ msgstr "Наличные остатки"
 
 msgid "On-hand floor to maintain for service use at this location"
 msgstr "Минимальный остаток для обслуживания в этом месте"
+
+msgid "On-hand inventory at cost"
+msgstr "Запасы в наличии по себестоимости"
 
 msgid "On-hand inventory remains"
 msgstr "Остаток на складе"
@@ -11055,6 +11173,9 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
+msgid "Open backlog"
+msgstr "Открытые невыполненные заказы"
+
 msgid "Open date"
 msgstr "Дата открытия"
 
@@ -11076,6 +11197,9 @@ msgstr "Открыть в Извещениях об изменении {ids}. З
 msgid "Open in MES"
 msgstr "Открыть в MES"
 
+msgid "Open issues"
+msgstr "Открытые проблемы"
+
 msgid "Open Issues"
 msgstr "Открытые проблемы"
 
@@ -11094,6 +11218,9 @@ msgstr "Открыть меню"
 msgid "Open navigation"
 msgstr "Открыть навигацию"
 
+msgid "Open orders with a line past its promised date"
+msgstr "Открытые заказы со строкой, превышающей подтвержденную дату"
+
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
 
@@ -11105,6 +11232,9 @@ msgstr "Открытые заказы поставщикам"
 
 msgid "Open Purchase Orders"
 msgstr "Открытые Заказы поставщикам"
+
+msgid "Open quotes"
+msgstr "Открытые коммерческие предложения"
 
 msgid "Open Quotes"
 msgstr "Открытые предложения"
@@ -11208,6 +11338,9 @@ msgstr "Операции / шаги"
 
 msgid "Operations Type"
 msgstr "Тип операций"
+
+msgid "Operations you currently have running"
+msgstr "Операции, которые в настоящее время выполняются"
 
 msgid "Operator"
 msgstr "Оператор"
@@ -11318,6 +11451,9 @@ msgstr "Заказы"
 msgid "Orders submitted"
 msgstr "Заказы отправлены"
 
+msgid "Orders, quotes and RFQs where you are the assignee"
+msgstr "Заказы, коммерческие предложения и запросы цен, где вы являетесь исполнителем"
+
 msgid "Origin"
 msgstr "Источник"
 
@@ -11371,6 +11507,9 @@ msgstr "Общий результат"
 
 msgid "Overdue"
 msgstr "Просрочено"
+
+msgid "Overdue purchase orders"
+msgstr "Просроченные заказы поставщику"
 
 msgid "Overhead Absorption"
 msgstr "Распределение накладных расходов"
@@ -12179,6 +12318,9 @@ msgstr "Производственное количество"
 msgid "Production Quantity"
 msgstr "Производственное количество"
 
+msgid "Production quantity without rework or scrap"
+msgstr "Производственное количество без доработки или брака"
+
 msgid "Production variance"
 msgstr "Отклонение производства"
 
@@ -12382,6 +12524,9 @@ msgstr "Заказ поставщику успешно удален"
 msgid "Purchase Order Type"
 msgstr "Тип Заказа поставщику"
 
+msgid "Purchase order value over the period"
+msgstr "Стоимость заказов поставщику за период"
+
 msgid "Purchase orders"
 msgstr "Заказы на покупку"
 
@@ -12390,6 +12535,9 @@ msgstr "Заказы поставщику"
 
 msgid "Purchase Orders and Planning"
 msgstr "Заказы поставщику и Планирование"
+
+msgid "Purchase orders not yet received and invoiced"
+msgstr "Заказы поставщику, еще не полученные и счета не выставлены"
 
 msgid "Purchase orders required"
 msgstr "Требуются заказы поставщику"
@@ -12408,6 +12556,9 @@ msgstr "Отклонение цены закупки (по умолчанию)"
 
 msgid "Purchase Qty"
 msgstr "Кол-во покупки"
+
+msgid "Purchase spend"
+msgstr "Расходы на закупки"
 
 msgid "Purchase Tax Payable"
 msgstr "Налог на покупку подлежащий уплате (по умолчанию)"
@@ -12429,6 +12580,9 @@ msgstr "Закупленный"
 
 msgid "Purchases"
 msgstr "Покупки"
+
+msgid "Purchases by supplier"
+msgstr "Закупки по поставщикам"
 
 msgid "purchasing"
 msgstr "Закупки и стоимость проданных товаров"
@@ -12603,6 +12757,9 @@ msgstr "Уровни ценообразования на основе колич
 msgid "Quantity: {0}"
 msgstr "Количество: {0}"
 
+msgid "Quarter to date"
+msgstr "С начала квартала"
+
 msgid "Quarterly"
 msgstr "Ежеквартально"
 
@@ -12665,6 +12822,9 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
+
+msgid "Quotes in draft or sent to the customer"
+msgstr "Коммерческие предложения в черновике или отправленные покупателю"
 
 msgid "Quoting and sales orders"
 msgstr "Коммерческие предложения и заказы покупателей"
@@ -12948,6 +13108,9 @@ msgstr "Зарегистрирован"
 
 msgid "Registered"
 msgstr "Зарегистрировано"
+
+msgid "Registered and in-progress issues"
+msgstr "Зарегистрированные и выполняемые проблемы"
 
 msgid "Registration failed"
 msgstr "Регистрация не удалась"
@@ -13414,6 +13577,9 @@ msgstr "Выручка"
 msgid "Revenue and expenses over a period"
 msgstr "Выручка и расходы за период"
 
+msgid "Revenue trend"
+msgstr "Тренд выручки"
+
 msgid "Reverse all inventory adjustments"
 msgstr "Отменить все корректировки запасов"
 
@@ -13720,6 +13886,9 @@ msgstr "Скидки на продажи"
 msgid "Sales Discounts (default)"
 msgstr "Скидки на продажи (по умолчанию)"
 
+msgid "Sales documents assigned to me"
+msgstr "Документы продаж, закрепленные за мной"
+
 msgid "Sales Funnel"
 msgstr "Воронка продаж"
 
@@ -13765,14 +13934,23 @@ msgstr "Площадка заказа покупателя"
 msgid "Sales Order Number"
 msgstr "Номер заказа покупателя"
 
+msgid "Sales order value over the period"
+msgstr "Стоимость заказов покупателей за период"
+
 msgid "Sales orders"
 msgstr "Заказы на продажу"
 
 msgid "Sales Orders"
 msgstr "Заказы покупателей"
 
+msgid "Sales orders not yet shipped and invoiced"
+msgstr "Заказы покупателей, еще не отгруженные и счета не выставлены"
+
 msgid "Sales Person"
 msgstr "Менеджер по продажам"
+
+msgid "Sales revenue"
+msgstr "Выручка от продаж"
 
 msgid "Sales Revenue"
 msgstr "Выручка от продаж"
@@ -13954,6 +14132,9 @@ msgstr "Брак"
 msgid "Scrap / Cost of Quality"
 msgstr "Брак / Стоимость качества"
 
+msgid "Scrap as a share of production plus scrap quantities"
+msgstr "Брак как доля производства и количества брака"
+
 msgid "Scrap Percent"
 msgstr "Процент брака"
 
@@ -13971,6 +14152,9 @@ msgstr "Количество брака"
 
 msgid "Scrap Quantity Per Job"
 msgstr "Количество брака на задание"
+
+msgid "Scrap rate"
+msgstr "Уровень брака"
 
 msgid "scrap reason"
 msgstr "Причина брака"
@@ -14945,6 +15129,9 @@ msgstr "Конкретные товары"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Расходы по поставщикам, номенклатуре или категориям — ваши основные факторы затрат"
 
+msgid "Spend trend"
+msgstr "Тренд расходов"
+
 msgid "Split"
 msgstr "Разделить"
 
@@ -15336,6 +15523,12 @@ msgstr "Учетные записи поставщиков"
 
 msgid "Supplier added and selected"
 msgstr "Поставщик добавлен и выбран"
+
+msgid "Supplier balances not yet paid"
+msgstr "Остатки поставщиков, еще не оплаченные"
+
+msgid "Supplier balances past their due date"
+msgstr "Остатки поставщиков, превышающие срок выполнения"
 
 msgid "Supplier contact"
 msgstr "Контактное лицо поставщика"
@@ -16977,6 +17170,9 @@ msgstr "Инструменты"
 msgid "Tools"
 msgstr "Инструменты"
 
+msgid "Top suppliers by purchase order value in the period"
+msgstr "Основные поставщики по стоимости заказов поставщику за период"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Верхнеуровневая классификация (активы/обязательства/собственный капитал/выручка/расходы); устанавливается только в корневых группах, наследуется подчиненными"
 
@@ -17006,6 +17202,12 @@ msgstr "Всего часов"
 
 msgid "Total Minutes"
 msgstr "Всего минут"
+
+msgid "Total of purchase orders placed in the period"
+msgstr "Итого заказов поставщику, размещенных в периоде"
+
+msgid "Total of sales orders placed in the period"
+msgstr "Итого заказов покупателей, размещенных в периоде"
 
 msgid "Total Price"
 msgstr "Общая цена"
@@ -17410,7 +17612,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Без названия"
 
 msgid "Untitled Diagram"
 msgstr "Безымянная диаграмма"
@@ -17658,6 +17860,9 @@ msgstr "Пользователи на охватываемых доменах м
 msgid "Users to Update"
 msgstr "Пользователи для обновления"
 
+msgid "Utilization"
+msgstr "Загрузка"
+
 msgid "Valid From"
 msgstr "Действительно с"
 
@@ -17687,6 +17892,9 @@ msgstr "Снимок стоимости"
 
 msgid "Value source by surface"
 msgstr "Источник значения по поверхности"
+
+msgid "Value still to ship on open sales orders"
+msgstr "Стоимость, еще к отгрузке по открытым заказам покупателей"
 
 msgid "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
 msgstr "Номер регистрации для целей налога на добавленную стоимость; требуется в счетах-фактурах ЕС для обратного взимания налога или нулевых ставок."
@@ -17988,6 +18196,9 @@ msgstr "Аннулирование этого чека приведет к:"
 
 msgid "Voiding this shipment will:"
 msgstr "Аннулирование этой отгрузки приведет к:"
+
+msgid "vs prior period"
+msgstr "по сравнению с предыдущим периодом"
 
 msgid "Waited"
 msgstr "Ожидание"
@@ -18483,6 +18694,9 @@ msgstr "Почему эта строка отклоняется; отображ�
 msgid "Why this restore failed"
 msgstr "Почему это восстановление не удалось"
 
+msgid "Widget options"
+msgstr "Параметры виджета"
+
 msgid "Will remain as a comment line"
 msgstr "Останется в виде строки комментария"
 
@@ -18575,6 +18789,9 @@ msgstr "Имя рабочего процесса"
 msgid "Workflow run"
 msgstr "Запуск рабочего процесса"
 
+msgid "Workflow runs that failed in the period"
+msgstr "Запуски рабочих процессов, которые не удались за период"
+
 msgid "Workflows"
 msgstr "Рабочие процессы"
 
@@ -18608,6 +18825,9 @@ msgstr "Уменьшение стоимости актива в течение �
 
 msgid "Year"
 msgstr "Год"
+
+msgid "Year to date"
+msgstr "С начала года"
 
 msgid "Yearly"
 msgstr "Ежегодно"

@@ -93,6 +93,10 @@ msgstr "{0} asientos de diario en borrador"
 msgid "{0} jobs created"
 msgstr "{0} órdenes de trabajo creadas"
 
+#. placeholder {0}: payload.detail
+msgid "{0} lines past due"
+msgstr "{0} líneas atrasadas"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} líneas para mapear"
@@ -1095,8 +1099,20 @@ msgstr "Tarifa de activación · asesoramos"
 msgid "Active"
 msgstr "Activo"
 
+msgid "Active jobs"
+msgstr "Trabajos activos"
+
 msgid "Active Jobs"
 msgstr "Órdenes de trabajo activas"
+
+msgid "Active jobs due in the next seven days"
+msgstr "Trabajos activos que vencen en los próximos siete días"
+
+msgid "Active jobs grouped by status"
+msgstr "Trabajos activos agrupados por estado"
+
+msgid "Active jobs past their due date"
+msgstr "Trabajos activos atrasados"
 
 msgid "Active Statuses"
 msgstr "Estados Activos"
@@ -1340,6 +1356,9 @@ msgstr "Agregar al inventario para uso futuro"
 
 msgid "Add tools"
 msgstr "Agregar herramientas"
+
+msgid "Add widgets"
+msgstr "Agregar widgets"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1705,8 +1724,14 @@ msgstr "Antigüedad de Cuentas por pagar"
 msgid "AP Clerk"
 msgstr "Empleado de Cuentas por Pagar"
 
+msgid "AP outstanding"
+msgstr "Cuentas por pagar pendientes"
+
 msgid "AP Outstanding"
 msgstr "Cuentas por pagar pendientes"
+
+msgid "AP overdue"
+msgstr "Cuentas por pagar atrasadas"
 
 msgid "AP Overdue"
 msgstr "Cuentas por pagar vencidas"
@@ -1844,8 +1869,14 @@ msgstr "Antigüedad de Cuentas por cobrar"
 msgid "AR Clerk"
 msgstr "Empleado de Cuentas por Cobrar"
 
+msgid "AR outstanding"
+msgstr "Cuentas por cobrar pendientes"
+
 msgid "AR Outstanding"
 msgstr "Cuentas por Cobrar Pendientes"
+
+msgid "AR overdue"
+msgstr "Cuentas por cobrar atrasadas"
 
 msgid "AR Overdue"
 msgstr "Cuentas por cobrar Atrasadas"
@@ -3263,6 +3294,9 @@ msgstr "Elegir otro archivo"
 msgid "Choose what appears on the printed job traveler."
 msgstr "Elija qué aparece en la hoja viajera de la orden de trabajo impresa."
 
+msgid "Choose which widgets appear on your home page."
+msgstr "Elige qué widgets aparecen en tu página de inicio."
+
 msgid "Choose your style"
 msgstr "Elige tu estilo"
 
@@ -4533,6 +4567,12 @@ msgstr "Cliente"
 msgid "Customer Accounts"
 msgstr "Cuentas de Cliente"
 
+msgid "Customer balances not yet paid"
+msgstr "Saldos de clientes no pagados aún"
+
+msgid "Customer balances past their due date"
+msgstr "Saldos de clientes atrasados"
+
 msgid "Customer contact"
 msgstr "Contacto del cliente"
 
@@ -4658,6 +4698,9 @@ msgstr "Personalizaciones, capacitación e integraciones"
 
 msgid "Customize"
 msgstr "Personalizar"
+
+msgid "Customize analytics"
+msgstr "Personalizar analítica"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "Personaliza el diseño de tus documentos PDF — reordena secciones, oculta lo que no necesites y añade tus propios bloques."
@@ -7103,6 +7146,9 @@ msgstr "No se pudo subir PDF"
 msgid "Failed to upload thumbnail"
 msgstr "No se pudo subir miniatura"
 
+msgid "Failed workflow runs"
+msgstr "Ejecuciones de flujo de trabajo fallidas"
+
 msgid "Failure"
 msgstr "Fallo"
 
@@ -7252,6 +7298,9 @@ msgstr "Nombre"
 msgid "First Operation"
 msgstr "Primera Operación"
 
+msgid "First-pass yield"
+msgstr "Rendimiento de primera pasada"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Activo Fijo"
 
@@ -7308,6 +7357,9 @@ msgstr "ID de dispositivo de sujeción"
 
 msgid "Flags"
 msgstr "Banderas"
+
+msgid "Follow page range"
+msgstr "Seguir rango de página"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "para cualquier cosa. Ellos traerán a la persona indicada."
@@ -7751,6 +7803,9 @@ msgstr "Ocultar sin procesar"
 msgid "Hide system quantities until the review step"
 msgstr "Ocultar cantidades del sistema hasta el paso de revisión"
 
+msgid "Hide widget"
+msgstr "Ocultar widget"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Ocultar, anclar y reordenar columnas"
 
@@ -7810,6 +7865,9 @@ msgstr "Horas en esta estación"
 
 msgid "Hours not yet assigned"
 msgstr "Horas aún no asignadas"
+
+msgid "Hours of production time per work center in the period"
+msgstr "Horas de tiempo de producción por centro de trabajo en el período"
 
 msgid "Hours per Week"
 msgstr "Horas por Semana"
@@ -8223,6 +8281,9 @@ msgstr "Documento de inspección"
 msgid "Inspection Level"
 msgstr "Nivel de Inspección"
 
+msgid "Inspection pass rate"
+msgstr "Tasa de conformidad de inspección"
+
 msgid "Inspection Plan"
 msgstr "Plan de inspección"
 
@@ -8237,6 +8298,9 @@ msgstr "Estado de Inspección"
 
 msgid "Inspections"
 msgstr "Inspecciones"
+
+msgid "Inspections passed as a share of those dispositioned"
+msgstr "Inspecciones superadas como proporción de las disposiciones"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Inspecciones, No conformidad y CAPA"
@@ -8369,6 +8433,9 @@ msgstr "Unidad de Medida de Inventario"
 
 msgid "Inventory Valuation"
 msgstr "Valoración de Inventario"
+
+msgid "Inventory value"
+msgstr "Valor del inventario"
 
 msgid "Invite"
 msgstr "Invitar"
@@ -8535,6 +8602,12 @@ msgstr "Fecha de Emisión"
 msgid "Issues"
 msgstr "Problemas"
 
+msgid "Issues by type"
+msgstr "Incidencias por tipo"
+
+msgid "Issues opened"
+msgstr "Incidencias abiertas"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Se detendrá hasta que publique una Versión nuevamente. Nada se elimina."
 
@@ -8673,6 +8746,15 @@ msgstr "Órdenes de trabajo"
 msgid "Jobs Assigned to Me"
 msgstr "Órdenes de trabajo asignadas a mí"
 
+msgid "Jobs by status"
+msgstr "Órdenes de trabajo por estado"
+
+msgid "Jobs due this week"
+msgstr "Órdenes de trabajo que vencen esta semana"
+
+msgid "Jobs planned, ready, in progress or paused"
+msgstr "Órdenes de trabajo planificadas, listas, en curso o en pausa"
+
 msgid "Jobs Required"
 msgstr "Órdenes de trabajo requeridas"
 
@@ -8804,8 +8886,20 @@ msgstr "Unidad de mano de obra"
 msgid "Language"
 msgstr "Idioma"
 
+msgid "Last 12 months"
+msgstr "Últimos 12 meses"
+
+msgid "Last 30 days"
+msgstr "Últimos 30 días"
+
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
+
+msgid "Last 7 days"
+msgstr "Últimos 7 días"
+
+msgid "Last 90 days"
+msgstr "Últimos 90 días"
 
 msgid "Last attempt"
 msgstr "Último intento"
@@ -8857,6 +8951,9 @@ msgstr "Último uso"
 
 msgid "Late in the evening, {name}."
 msgstr "Noche avanzada, {name}."
+
+msgid "Late jobs"
+msgstr "Órdenes de trabajo atrasadas"
 
 msgid "Latest operation end"
 msgstr "Fin de la última operación"
@@ -8998,6 +9095,9 @@ msgstr "Las líneas necesitan números de parte internos"
 
 msgid "Lines need prices or lead times"
 msgstr "Las líneas necesitan precios o plazos de entrega"
+
+msgid "Lines shipped on or before their promised date"
+msgstr "Líneas enviadas en o antes de su fecha prometida"
 
 msgid "Lineside"
 msgstr "Pie de línea"
@@ -9773,6 +9873,9 @@ msgstr "Dinero que te deben"
 msgid "Money you owe"
 msgstr "Dinero que debes"
 
+msgid "Month to date"
+msgstr "Del mes a la fecha"
+
 msgid "Monthly"
 msgstr "Mensual"
 
@@ -9799,6 +9902,9 @@ msgstr "Más horas extra"
 
 msgid "Morning, {name}."
 msgstr "Mañana, {name}."
+
+msgid "Most frequent issue types in the period"
+msgstr "Tipos de incidencias más frecuentes en el período"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "La mayoría de las cosas se detectan y resuelven aquí. Nómbralo claramente."
@@ -9858,6 +9964,9 @@ msgstr "MRP se ejecuta automáticamente cada 3 horas, pero puedes ejecutarlo man
 
 msgid "Must be in the same location"
 msgstr "Debe estar en la misma ubicación"
+
+msgid "My active operations"
+msgstr "Mis operaciones activas"
 
 msgid "My Documents"
 msgstr "Mis Documentos"
@@ -10044,6 +10153,9 @@ msgstr "Factura Nueva"
 
 msgid "New Issue"
 msgstr "Nuevo Problema"
+
+msgid "New issues over the period"
+msgstr "Nuevas incidencias durante el período"
 
 msgid "New Item Group"
 msgstr "Nuevo Grupo de Artículos"
@@ -10912,6 +11024,9 @@ msgstr "Aceptar"
 msgid "Oldest first"
 msgstr "Más antiguo primero"
 
+msgid "Oldest overdue orders first"
+msgstr "Órdenes atrasadas más antiguas primero"
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "En el día de la migración, trabaja la lista de verificación a continuación en orden. Las pruebas de aceptación provienen de tus requisitos dentro del alcance. Los detalles de soporte están en la parte inferior."
 
@@ -10962,6 +11077,9 @@ msgstr "Conteos disponibles"
 
 msgid "On-hand floor to maintain for service use at this location"
 msgstr "Piso de existencias a mantener para uso de servicio en esta ubicación"
+
+msgid "On-hand inventory at cost"
+msgstr "Inventario disponible al costo"
 
 msgid "On-hand inventory remains"
 msgstr "El inventario disponible permanece"
@@ -11055,6 +11173,9 @@ msgstr "Cuentas por cobrar abiertas"
 msgid "Open Audit Log"
 msgstr "Abrir Registro de Auditoría"
 
+msgid "Open backlog"
+msgstr "Cartera abierta"
+
 msgid "Open date"
 msgstr "Fecha de apertura"
 
@@ -11076,6 +11197,9 @@ msgstr "Abierto en avisos de cambio {ids}. Libérelos para crear nuevas versione
 msgid "Open in MES"
 msgstr "Abrir en MES"
 
+msgid "Open issues"
+msgstr "Problemas abiertos"
+
 msgid "Open Issues"
 msgstr "Problemas Abiertos"
 
@@ -11094,6 +11218,9 @@ msgstr "Abrir menú"
 msgid "Open navigation"
 msgstr "Abrir navegación"
 
+msgid "Open orders with a line past its promised date"
+msgstr "Órdenes abiertas con una línea pasada su fecha prometida"
+
 msgid "Open payables by supplier and age"
 msgstr "Cuentas por pagar abiertas por proveedor y antigüedad"
 
@@ -11105,6 +11232,9 @@ msgstr "Órdenes de compra abiertas"
 
 msgid "Open Purchase Orders"
 msgstr "Órdenes de Compra Abiertas"
+
+msgid "Open quotes"
+msgstr "Cotizaciones abiertas"
 
 msgid "Open Quotes"
 msgstr "Presupuestos Abiertos"
@@ -11208,6 +11338,9 @@ msgstr "Operaciones / pasos"
 
 msgid "Operations Type"
 msgstr "Tipo de Operaciones"
+
+msgid "Operations you currently have running"
+msgstr "Operaciones que actualmente tienes en ejecución"
 
 msgid "Operator"
 msgstr "Operador"
@@ -11318,6 +11451,9 @@ msgstr "Pedidos"
 msgid "Orders submitted"
 msgstr "Pedidos enviados"
 
+msgid "Orders, quotes and RFQs where you are the assignee"
+msgstr "Órdenes, cotizaciones y RFQs asignados a ti"
+
 msgid "Origin"
 msgstr "Origen"
 
@@ -11371,6 +11507,9 @@ msgstr "Resultado general"
 
 msgid "Overdue"
 msgstr "Atrasado"
+
+msgid "Overdue purchase orders"
+msgstr "Órdenes de compra atrasadas"
 
 msgid "Overhead Absorption"
 msgstr "Absorción de costos indirectos"
@@ -12179,6 +12318,9 @@ msgstr "Cantidad de producción"
 msgid "Production Quantity"
 msgstr "Cantidad de Producción"
 
+msgid "Production quantity without rework or scrap"
+msgstr "Cantidad de producción sin retrabajo o desperdicio"
+
 msgid "Production variance"
 msgstr "Desviación de producción"
 
@@ -12382,6 +12524,9 @@ msgstr "Orden de compra eliminada exitosamente"
 msgid "Purchase Order Type"
 msgstr "Tipo de Orden de Compra"
 
+msgid "Purchase order value over the period"
+msgstr "Valor de orden de compra en el período"
+
 msgid "Purchase orders"
 msgstr "Órdenes de Compra"
 
@@ -12390,6 +12535,9 @@ msgstr "Órdenes de Compra"
 
 msgid "Purchase Orders and Planning"
 msgstr "Órdenes de Compra y Planificación"
+
+msgid "Purchase orders not yet received and invoiced"
+msgstr "Órdenes de compra no recibidas ni facturadas aún"
 
 msgid "Purchase orders required"
 msgstr "Órdenes de compra requeridas"
@@ -12408,6 +12556,9 @@ msgstr "Desviación de precio de compra (default)"
 
 msgid "Purchase Qty"
 msgstr "Cantidad de Compra"
+
+msgid "Purchase spend"
+msgstr "Gasto en compras"
 
 msgid "Purchase Tax Payable"
 msgstr "Impuesto de Compra por Pagar (predeterminado)"
@@ -12429,6 +12580,9 @@ msgstr "Comprado"
 
 msgid "Purchases"
 msgstr "Compras"
+
+msgid "Purchases by supplier"
+msgstr "Compras por proveedor"
 
 msgid "purchasing"
 msgstr "Compras y Costo de Bienes Vendidos"
@@ -12603,6 +12757,9 @@ msgstr "Escalas de precios basadas en cantidad para esta sobrescritura; el preci
 msgid "Quantity: {0}"
 msgstr "Cantidad: {0}"
 
+msgid "Quarter to date"
+msgstr "Lo que va del trimestre"
+
 msgid "Quarterly"
 msgstr "Trimestral"
 
@@ -12665,6 +12822,9 @@ msgstr "Fecha de Cotización"
 
 msgid "Quotes"
 msgstr "Cotizaciones"
+
+msgid "Quotes in draft or sent to the customer"
+msgstr "Cotizaciones en borrador o enviadas al cliente"
 
 msgid "Quoting and sales orders"
 msgstr "Presupuestos y pedidos de venta"
@@ -12948,6 +13108,9 @@ msgstr "Registrado"
 
 msgid "Registered"
 msgstr "Registrado"
+
+msgid "Registered and in-progress issues"
+msgstr "Incidencias registradas y en progreso"
 
 msgid "Registration failed"
 msgstr "Error en el registro"
@@ -13414,6 +13577,9 @@ msgstr "Ingresos por ventas"
 msgid "Revenue and expenses over a period"
 msgstr "Ingresos por ventas y gastos durante un período"
 
+msgid "Revenue trend"
+msgstr "Tendencia de ingresos por ventas"
+
 msgid "Reverse all inventory adjustments"
 msgstr "Revertir todos los ajustes de inventario"
 
@@ -13720,6 +13886,9 @@ msgstr "Descuentos de ventas"
 msgid "Sales Discounts (default)"
 msgstr "Descuentos de ventas (predeterminado)"
 
+msgid "Sales documents assigned to me"
+msgstr "Documentos de ventas asignados a mí"
+
 msgid "Sales Funnel"
 msgstr "Embudo de Ventas"
 
@@ -13765,14 +13934,23 @@ msgstr "Ubicación de pedido de venta"
 msgid "Sales Order Number"
 msgstr "Número de pedido de venta"
 
+msgid "Sales order value over the period"
+msgstr "Valor de pedido de venta en el período"
+
 msgid "Sales orders"
 msgstr "Órdenes de Venta"
 
 msgid "Sales Orders"
 msgstr "Pedidos de venta"
 
+msgid "Sales orders not yet shipped and invoiced"
+msgstr "Pedidos de venta no enviados ni facturados aún"
+
 msgid "Sales Person"
 msgstr "Persona de Ventas"
+
+msgid "Sales revenue"
+msgstr "Ingresos por ventas"
 
 msgid "Sales Revenue"
 msgstr "Ingresos por ventas"
@@ -13954,6 +14132,9 @@ msgstr "Desperdicio"
 msgid "Scrap / Cost of Quality"
 msgstr "Desperdicio / Costo de Calidad"
 
+msgid "Scrap as a share of production plus scrap quantities"
+msgstr "Desperdicio como fracción de cantidades de producción más desperdicio"
+
 msgid "Scrap Percent"
 msgstr "Porcentaje de desperdicio"
 
@@ -13971,6 +14152,9 @@ msgstr "Cantidad de desperdicio"
 
 msgid "Scrap Quantity Per Job"
 msgstr "Cantidad de Desperdicio Por Trabajo"
+
+msgid "Scrap rate"
+msgstr "Tasa de desperdicio"
 
 msgid "scrap reason"
 msgstr "motivo de desperdicio"
@@ -14945,6 +15129,9 @@ msgstr "Artículos Específicos"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Gasto por proveedor, artículo o categoría — sus mayores generadores de costos"
 
+msgid "Spend trend"
+msgstr "Tendencia de gasto"
+
 msgid "Split"
 msgstr "Dividir"
 
@@ -15336,6 +15523,12 @@ msgstr "Cuentas de Proveedores"
 
 msgid "Supplier added and selected"
 msgstr "Proveedor agregado y seleccionado"
+
+msgid "Supplier balances not yet paid"
+msgstr "Saldos de proveedores no pagados aún"
+
+msgid "Supplier balances past their due date"
+msgstr "Saldos de proveedores pasados su fecha de vencimiento"
 
 msgid "Supplier contact"
 msgstr "Contacto del proveedor"
@@ -16977,6 +17170,9 @@ msgstr "Herramientas"
 msgid "Tools"
 msgstr "Herramientas"
 
+msgid "Top suppliers by purchase order value in the period"
+msgstr "Principales proveedores por valor de orden de compra en el período"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Clasificación de nivel superior (activo / pasivo / patrimonio / ingresos por ventas / gasto); se establece solo en grupos raíz, heredado por secundarios."
 
@@ -17006,6 +17202,12 @@ msgstr "Horas totales"
 
 msgid "Total Minutes"
 msgstr "Minutos totales"
+
+msgid "Total of purchase orders placed in the period"
+msgstr "Total de órdenes de compra colocadas en el período"
+
+msgid "Total of sales orders placed in the period"
+msgstr "Total de pedidos de venta colocados en el período"
 
 msgid "Total Price"
 msgstr "Precio Total"
@@ -17410,7 +17612,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo de documento de origen no compatible: {sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Sin título"
 
 msgid "Untitled Diagram"
 msgstr "Diagrama sin título"
@@ -17658,6 +17860,9 @@ msgstr "Los usuarios en dominios cubiertos solo pueden iniciar sesión con SAML 
 msgid "Users to Update"
 msgstr "Usuarios a Actualizar"
 
+msgid "Utilization"
+msgstr "Utilización"
+
 msgid "Valid From"
 msgstr "Válido desde"
 
@@ -17687,6 +17892,9 @@ msgstr "Resumen de Valor"
 
 msgid "Value source by surface"
 msgstr "Fuente de valor por superficie"
+
+msgid "Value still to ship on open sales orders"
+msgstr "Valor por enviar en pedidos de venta abiertos"
 
 msgid "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
 msgstr "Número de registro del impuesto al valor agregado; requerido en facturas de la UE para suministros de cargo inverso o sin impuestos."
@@ -17988,6 +18196,9 @@ msgstr "Anular este recibo hará lo siguiente:"
 
 msgid "Voiding this shipment will:"
 msgstr "Anular este envío hará lo siguiente:"
+
+msgid "vs prior period"
+msgstr "vs período anterior"
 
 msgid "Waited"
 msgstr "Esperado"
@@ -18483,6 +18694,9 @@ msgstr "Por qué se rechaza esta línea; mostrado en el presupuesto imprimible y
 msgid "Why this restore failed"
 msgstr "Por qué falló esta restauración"
 
+msgid "Widget options"
+msgstr "Opciones de widget"
+
 msgid "Will remain as a comment line"
 msgstr "Permanecerá como una línea de comentario"
 
@@ -18575,6 +18789,9 @@ msgstr "Nombre del flujo de trabajo"
 msgid "Workflow run"
 msgstr "Ejecución del flujo de trabajo"
 
+msgid "Workflow runs that failed in the period"
+msgstr "Ejecuciones de flujo de trabajo que fallaron en el período"
+
 msgid "Workflows"
 msgstr "Flujos de trabajo"
 
@@ -18608,6 +18825,9 @@ msgstr "Reducir el valor de un activo a lo largo de su vida útil — un lote me
 
 msgid "Year"
 msgstr "Año"
+
+msgid "Year to date"
+msgstr "Lo que va del año"
 
 msgid "Yearly"
 msgstr "Anual"

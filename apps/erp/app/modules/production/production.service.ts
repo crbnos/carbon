@@ -9285,3 +9285,137 @@ export async function completeOperation(
 
   return issue;
 }
+
+type UtilizationEvent = {
+  startTime: string;
+  endTime: string;
+  workCenterId: string;
+};
+
+/**
+ * Non-overlapping production-event time per active work center (ms) for the
+ * window and for the same-length window before it. Moved verbatim from the
+ * `utilization` case of api+/production.kpi.$key.ts so the homepage dashboard
+ * and the production dashboard compute the same number. `currentDate` closes
+ * still-running events.
+ */
+export async function getWorkCenterUtilization(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    start: string;
+    end: string;
+    previousStart: string;
+    previousEnd: string;
+    currentDate: string;
+  }
+): Promise<{
+  data: { key: string; value: number }[];
+  previousPeriodData: { key: string; value: number }[];
+}> {
+  const { start, end, previousStart, previousEnd, currentDate } = args;
+  const [workCenters, productionEvents, previousUtilizationEvents] =
+    await Promise.all([
+      client
+        .from("workCenter")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .eq("active", true),
+      client
+        .from("productionEvent")
+        .select("startTime, endTime, workCenterId")
+        .eq("companyId", companyId)
+        .gte("startTime", start)
+        .or(`endTime.lte.${end},endTime.is.null`)
+        .order("startTime", { ascending: false })
+        .order("endTime", { ascending: false }),
+      client
+        .from("productionEvent")
+        .select("startTime, endTime, workCenterId")
+        .eq("companyId", companyId)
+        .gte("startTime", previousStart)
+        .or(`endTime.lte.${previousEnd},endTime.is.null`)
+        .order("startTime", { ascending: false })
+        .order("endTime", { ascending: false })
+    ]);
+
+  const [groupedEvents, previousGroupedEvents] = [
+    productionEvents.data ?? [],
+    previousUtilizationEvents.data ?? []
+  ].map((events) =>
+    events.reduce<Record<string, UtilizationEvent[]>>((acc, event) => {
+      if (!event.workCenterId) return acc;
+
+      if (!acc[event.workCenterId]) {
+        acc[event.workCenterId] = [];
+      }
+
+      acc[event.workCenterId].push({
+        ...event,
+        workCenterId: event.workCenterId!,
+        endTime: event.endTime === null ? currentDate : event.endTime
+      });
+      return acc;
+    }, {})
+  );
+
+  const [data, previousPeriodData] = [groupedEvents, previousGroupedEvents].map(
+    (events) =>
+      Object.entries(events)
+        .map(([workCenterId, events]) => {
+          const workCenter = workCenters.data?.find(
+            (wc) => wc.id === workCenterId
+          );
+          if (!workCenter) return { key: workCenterId, value: 0 };
+
+          // Sort events by start time, then end time if start times are equal
+          const sortedEvents = [...events].sort((a, b) => {
+            const aStart = new Date(a.startTime).getTime();
+            const bStart = new Date(b.startTime).getTime();
+            if (aStart !== bStart) return aStart - bStart;
+            return (
+              new Date(a.endTime).getTime() - new Date(b.endTime).getTime()
+            );
+          });
+
+          let totalTime = 0;
+          let lastEndTime: number | null = null;
+
+          // Calculate non-overlapping time
+          for (const event of sortedEvents) {
+            const startTime = new Date(event.startTime).getTime();
+            const endTime = new Date(event.endTime).getTime();
+
+            if (lastEndTime === null) {
+              totalTime += endTime - startTime;
+            } else {
+              // If this event starts after the last end time, add the full duration
+              if (startTime > lastEndTime) {
+                totalTime += endTime - startTime;
+              }
+              // If this event overlaps but ends later, add the non-overlapping portion
+              else if (endTime > lastEndTime) {
+                totalTime += endTime - lastEndTime;
+              }
+              // If this event is completely contained within the last event, skip it
+            }
+
+            // Update lastEndTime if this event ends later
+            if (lastEndTime === null || endTime > lastEndTime) {
+              lastEndTime = endTime;
+            }
+          }
+
+          return {
+            key: workCenter.name,
+            value: totalTime
+          };
+        })
+        .sort((a, b) => b.value - a.value)
+  );
+
+  return {
+    data,
+    previousPeriodData
+  };
+}

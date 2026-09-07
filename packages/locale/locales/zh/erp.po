@@ -93,6 +93,10 @@ msgstr "{0}个草稿凭证"
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
 
+#. placeholder {0}: payload.detail
+msgid "{0} lines past due"
+msgstr "{0} 条已逾期"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
@@ -1095,8 +1099,20 @@ msgstr "激活费 · 我们建议"
 msgid "Active"
 msgstr "启用"
 
+msgid "Active jobs"
+msgstr "活跃的工单"
+
 msgid "Active Jobs"
 msgstr "启用的工单"
+
+msgid "Active jobs due in the next seven days"
+msgstr "活跃的工单即将在未来七天内到期"
+
+msgid "Active jobs grouped by status"
+msgstr "按状态分组的活跃工单"
+
+msgid "Active jobs past their due date"
+msgstr "已过期的活跃工单"
 
 msgid "Active Statuses"
 msgstr "启用的状态"
@@ -1340,6 +1356,9 @@ msgstr "添加到库存以供将来使用"
 
 msgid "Add tools"
 msgstr "添加工具"
+
+msgid "Add widgets"
+msgstr "添加小部件"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1705,8 +1724,14 @@ msgstr "应付账款账龄"
 msgid "AP Clerk"
 msgstr "应付账款文员"
 
+msgid "AP outstanding"
+msgstr "应付账款未付"
+
 msgid "AP Outstanding"
 msgstr "应付账款未结"
+
+msgid "AP overdue"
+msgstr "应付账款已逾期"
 
 msgid "AP Overdue"
 msgstr "应付账款已逾期"
@@ -1844,8 +1869,14 @@ msgstr "应收账款账龄"
 msgid "AR Clerk"
 msgstr "应收账款文员"
 
+msgid "AR outstanding"
+msgstr "应收账款未收"
+
 msgid "AR Outstanding"
 msgstr "应收账款未结"
+
+msgid "AR overdue"
+msgstr "应收账款已逾期"
 
 msgid "AR Overdue"
 msgstr "应收账款已逾期"
@@ -3263,6 +3294,9 @@ msgstr "选择另一个文件"
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
 
+msgid "Choose which widgets appear on your home page."
+msgstr "选择在您的主页上显示哪些小部件。"
+
 msgid "Choose your style"
 msgstr "选择您的风格"
 
@@ -4533,6 +4567,12 @@ msgstr "客户"
 msgid "Customer Accounts"
 msgstr "客户账户"
 
+msgid "Customer balances not yet paid"
+msgstr "客户未支付的余额"
+
+msgid "Customer balances past their due date"
+msgstr "客户已逾期的余额"
+
 msgid "Customer contact"
 msgstr "客户联系人"
 
@@ -4658,6 +4698,9 @@ msgstr "定制、培训和集成"
 
 msgid "Customize"
 msgstr "自定义"
+
+msgid "Customize analytics"
+msgstr "自定义分析"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "自定义您的 PDF 文档布局 — 重新排列部分、隐藏不需要的内容，并添加您自己的块。"
@@ -7103,6 +7146,9 @@ msgstr "上传 PDF 失败"
 msgid "Failed to upload thumbnail"
 msgstr "上传缩略图失败"
 
+msgid "Failed workflow runs"
+msgstr "失败的工作流运行"
+
 msgid "Failure"
 msgstr "故障"
 
@@ -7252,6 +7298,9 @@ msgstr "名字"
 msgid "First Operation"
 msgstr "首次操作"
 
+msgid "First-pass yield"
+msgstr "首检合格率"
+
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "在常规MACRS折旧计划开始之前的第一年额外扣除。"
 
@@ -7308,6 +7357,9 @@ msgstr "工装夹具ID"
 
 msgid "Flags"
 msgstr "标志"
+
+msgid "Follow page range"
+msgstr "跟踪页面范围"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
@@ -7751,6 +7803,9 @@ msgstr "隐藏原始内容"
 msgid "Hide system quantities until the review step"
 msgstr "在评审步骤前隐藏系统数量"
 
+msgid "Hide widget"
+msgstr "隐藏小部件"
+
 msgid "Hide, pin and reorder columns"
 msgstr "隐藏、固定和重新排序列"
 
@@ -7810,6 +7865,9 @@ msgstr "此工位的小时数"
 
 msgid "Hours not yet assigned"
 msgstr "未分配的小时数"
+
+msgid "Hours of production time per work center in the period"
+msgstr "期间内每个工作中心的生产时间（小时）"
 
 msgid "Hours per Week"
 msgstr "每周小时数"
@@ -8223,6 +8281,9 @@ msgstr "检验文件"
 msgid "Inspection Level"
 msgstr "检验水平"
 
+msgid "Inspection pass rate"
+msgstr "检验合格率"
+
 msgid "Inspection Plan"
 msgstr "检验计划"
 
@@ -8237,6 +8298,9 @@ msgstr "检验状态"
 
 msgid "Inspections"
 msgstr "检验"
+
+msgid "Inspections passed as a share of those dispositioned"
+msgstr "已处置检验中的合格比例"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "检验、不合格和CAPA"
@@ -8369,6 +8433,9 @@ msgstr "库存计量单位"
 
 msgid "Inventory Valuation"
 msgstr "库存估价"
+
+msgid "Inventory value"
+msgstr "库存价值"
 
 msgid "Invite"
 msgstr "邀请"
@@ -8535,6 +8602,12 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "Issues by type"
+msgstr "按类型分类的问题"
+
+msgid "Issues opened"
+msgstr "已打开的问题"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
 
@@ -8673,6 +8746,15 @@ msgstr "工单"
 msgid "Jobs Assigned to Me"
 msgstr "分配给我的工单"
 
+msgid "Jobs by status"
+msgstr "按状态分类的工单"
+
+msgid "Jobs due this week"
+msgstr "本周到期的工单"
+
+msgid "Jobs planned, ready, in progress or paused"
+msgstr "计划中、就绪、进行中或暂停的工单"
+
 msgid "Jobs Required"
 msgstr "所需工单"
 
@@ -8804,8 +8886,20 @@ msgstr "人工单位"
 msgid "Language"
 msgstr "语言"
 
+msgid "Last 12 months"
+msgstr "过去12个月"
+
+msgid "Last 30 days"
+msgstr "过去30天"
+
 msgid "Last 6 Months"
 msgstr "最近6个月"
+
+msgid "Last 7 days"
+msgstr "过去7天"
+
+msgid "Last 90 days"
+msgstr "过去90天"
 
 msgid "Last attempt"
 msgstr "上次尝试"
@@ -8857,6 +8951,9 @@ msgstr "最后使用"
 
 msgid "Late in the evening, {name}."
 msgstr "傍晚晚些时候，{name}。"
+
+msgid "Late jobs"
+msgstr "延迟的工单"
 
 msgid "Latest operation end"
 msgstr "最新操作结束"
@@ -8998,6 +9095,9 @@ msgstr "行需要内部零件号"
 
 msgid "Lines need prices or lead times"
 msgstr "行需要价格或提前期"
+
+msgid "Lines shipped on or before their promised date"
+msgstr "在承诺日期或之前发货的行"
 
 msgid "Lineside"
 msgstr "线边"
@@ -9773,6 +9873,9 @@ msgstr "你欠的钱"
 msgid "Money you owe"
 msgstr "你欠的钱"
 
+msgid "Month to date"
+msgstr "月初至今"
+
 msgid "Monthly"
 msgstr "每月"
 
@@ -9799,6 +9902,9 @@ msgstr "更多加班"
 
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
+
+msgid "Most frequent issue types in the period"
+msgstr "期间内最常见的问题类型"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
@@ -9858,6 +9964,9 @@ msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行�
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
+
+msgid "My active operations"
+msgstr "我的进行中的工序"
 
 msgid "My Documents"
 msgstr "我的文档"
@@ -10044,6 +10153,9 @@ msgstr "新发票"
 
 msgid "New Issue"
 msgstr "新问题"
+
+msgid "New issues over the period"
+msgstr "期间内新建的问题"
 
 msgid "New Item Group"
 msgstr "新建项目组"
@@ -10912,6 +11024,9 @@ msgstr "确定"
 msgid "Oldest first"
 msgstr "最早优先"
 
+msgid "Oldest overdue orders first"
+msgstr "最早逾期的订单优先"
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "在转换日，按顺序完成下列检查清单。验收测试来自您范围内的要求。支持详情见下方。"
 
@@ -10962,6 +11077,9 @@ msgstr "现有库存数量"
 
 msgid "On-hand floor to maintain for service use at this location"
 msgstr "在此位置维护用于服务的最低库存"
+
+msgid "On-hand inventory at cost"
+msgstr "库存成本"
 
 msgid "On-hand inventory remains"
 msgstr "剩余可用库存"
@@ -11055,6 +11173,9 @@ msgstr "未结应收账款"
 msgid "Open Audit Log"
 msgstr "打开审计日志"
 
+msgid "Open backlog"
+msgstr "未结积压"
+
 msgid "Open date"
 msgstr "打开日期"
 
@@ -11076,6 +11197,9 @@ msgstr "打开于变更通知 {ids}。下达它们来创建新版本或修订版
 msgid "Open in MES"
 msgstr "在 MES 中打开"
 
+msgid "Open issues"
+msgstr "未结问题"
+
 msgid "Open Issues"
 msgstr "未结领料"
 
@@ -11094,6 +11218,9 @@ msgstr "打开菜单"
 msgid "Open navigation"
 msgstr "打开导航"
 
+msgid "Open orders with a line past its promised date"
+msgstr "包含已逾期行的未结订单"
+
 msgid "Open payables by supplier and age"
 msgstr "按供应商和期限打开应付款项"
 
@@ -11105,6 +11232,9 @@ msgstr "未结采购订单"
 
 msgid "Open Purchase Orders"
 msgstr "未结采购订单"
+
+msgid "Open quotes"
+msgstr "未结报价单"
 
 msgid "Open Quotes"
 msgstr "未结报价"
@@ -11208,6 +11338,9 @@ msgstr "工序/步骤"
 
 msgid "Operations Type"
 msgstr "工序类型"
+
+msgid "Operations you currently have running"
+msgstr "你当前运行中的工序"
 
 msgid "Operator"
 msgstr "操作员"
@@ -11318,6 +11451,9 @@ msgstr "订单"
 msgid "Orders submitted"
 msgstr "订单已提交"
 
+msgid "Orders, quotes and RFQs where you are the assignee"
+msgstr "你是经办人的订单、报价单和询价单"
+
 msgid "Origin"
 msgstr "来源"
 
@@ -11371,6 +11507,9 @@ msgstr "总体结果"
 
 msgid "Overdue"
 msgstr "已逾期"
+
+msgid "Overdue purchase orders"
+msgstr "已逾期采购订单"
 
 msgid "Overhead Absorption"
 msgstr "制造费用分配"
@@ -12179,6 +12318,9 @@ msgstr "生产数量"
 msgid "Production Quantity"
 msgstr "生产数量"
 
+msgid "Production quantity without rework or scrap"
+msgstr "无返工或报废的生产数量"
+
 msgid "Production variance"
 msgstr "生产差异"
 
@@ -12382,6 +12524,9 @@ msgstr "采购订单已成功删除"
 msgid "Purchase Order Type"
 msgstr "采购订单类型"
 
+msgid "Purchase order value over the period"
+msgstr "期间采购订单价值"
+
 msgid "Purchase orders"
 msgstr "采购订单"
 
@@ -12390,6 +12535,9 @@ msgstr "采购订单"
 
 msgid "Purchase Orders and Planning"
 msgstr "采购订单和计划"
+
+msgid "Purchase orders not yet received and invoiced"
+msgstr "尚未收货和开票的采购订单"
 
 msgid "Purchase orders required"
 msgstr "采购订单必需"
@@ -12408,6 +12556,9 @@ msgstr "采购价格差异（默认）"
 
 msgid "Purchase Qty"
 msgstr "采购数量"
+
+msgid "Purchase spend"
+msgstr "采购支出"
 
 msgid "Purchase Tax Payable"
 msgstr "应付采购税（默认）"
@@ -12429,6 +12580,9 @@ msgstr "已购买"
 
 msgid "Purchases"
 msgstr "采购"
+
+msgid "Purchases by supplier"
+msgstr "按供应商分类的采购"
 
 msgid "purchasing"
 msgstr "采购和已售商品成本"
@@ -12603,6 +12757,9 @@ msgstr "此覆盖的基于数量的定价层；应用的单价是满足订单行
 msgid "Quantity: {0}"
 msgstr "数量：{0}"
 
+msgid "Quarter to date"
+msgstr "季度至今"
+
 msgid "Quarterly"
 msgstr "每季度"
 
@@ -12665,6 +12822,9 @@ msgstr "报价日期"
 
 msgid "Quotes"
 msgstr "报价"
+
+msgid "Quotes in draft or sent to the customer"
+msgstr "草稿中或已发送给客户的报价单"
 
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"
@@ -12948,6 +13108,9 @@ msgstr "已注册"
 
 msgid "Registered"
 msgstr "已登记"
+
+msgid "Registered and in-progress issues"
+msgstr "已登记和进行中的问题"
 
 msgid "Registration failed"
 msgstr "注册失败"
@@ -13414,6 +13577,9 @@ msgstr "收入"
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
 
+msgid "Revenue trend"
+msgstr "收入趋势"
+
 msgid "Reverse all inventory adjustments"
 msgstr "反转所有库存调整"
 
@@ -13720,6 +13886,9 @@ msgstr "销售折扣"
 msgid "Sales Discounts (default)"
 msgstr "销售折扣 (默认)"
 
+msgid "Sales documents assigned to me"
+msgstr "分配给我的销售文档"
+
 msgid "Sales Funnel"
 msgstr "销售漏斗"
 
@@ -13765,14 +13934,23 @@ msgstr "销售订单位置"
 msgid "Sales Order Number"
 msgstr "销售订单号"
 
+msgid "Sales order value over the period"
+msgstr "期间销售订单价值"
+
 msgid "Sales orders"
 msgstr "销售订单"
 
 msgid "Sales Orders"
 msgstr "销售订单"
 
+msgid "Sales orders not yet shipped and invoiced"
+msgstr "尚未发货和开票的销售订单"
+
 msgid "Sales Person"
 msgstr "销售人员"
+
+msgid "Sales revenue"
+msgstr "销售收入"
 
 msgid "Sales Revenue"
 msgstr "销售收入"
@@ -13954,6 +14132,9 @@ msgstr "报废"
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
 
+msgid "Scrap as a share of production plus scrap quantities"
+msgstr "报废占生产加报废数量的比例"
+
 msgid "Scrap Percent"
 msgstr "报废率"
 
@@ -13971,6 +14152,9 @@ msgstr "报废数量"
 
 msgid "Scrap Quantity Per Job"
 msgstr "每个工作的报废数量"
+
+msgid "Scrap rate"
+msgstr "报废率"
 
 msgid "scrap reason"
 msgstr "报废原因"
@@ -14945,6 +15129,9 @@ msgstr "特定物料"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "按供应商、项目或类别的支出 — 您最大的成本驱动因素"
 
+msgid "Spend trend"
+msgstr "支出趋势"
+
 msgid "Split"
 msgstr "拆分"
 
@@ -15336,6 +15523,12 @@ msgstr "供应商账户"
 
 msgid "Supplier added and selected"
 msgstr "供应商已添加并选中"
+
+msgid "Supplier balances not yet paid"
+msgstr "尚未支付的供应商余额"
+
+msgid "Supplier balances past their due date"
+msgstr "超过到期日的供应商余额"
 
 msgid "Supplier contact"
 msgstr "供应商联系人"
@@ -16977,6 +17170,9 @@ msgstr "工具"
 msgid "Tools"
 msgstr "工具"
 
+msgid "Top suppliers by purchase order value in the period"
+msgstr "期间采购订单价值最高的供应商"
+
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "顶级分类（资产/负债/所有者权益/收入/费用）；仅在根组上设置，由子项继承。"
 
@@ -17006,6 +17202,12 @@ msgstr "总计小时"
 
 msgid "Total Minutes"
 msgstr "总计分钟"
+
+msgid "Total of purchase orders placed in the period"
+msgstr "期间下达的采购订单总计"
+
+msgid "Total of sales orders placed in the period"
+msgstr "期间下达的销售订单总计"
 
 msgid "Total Price"
 msgstr "总价格"
@@ -17410,7 +17612,7 @@ msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
 
 msgid "Untitled"
-msgstr ""
+msgstr "未命名"
 
 msgid "Untitled Diagram"
 msgstr "未命名图表"
@@ -17658,6 +17860,9 @@ msgstr "覆盖域上的用户只能使用 SAML SSO 登录；magic link、Google 
 msgid "Users to Update"
 msgstr "要更新的用户"
 
+msgid "Utilization"
+msgstr "利用率"
+
 msgid "Valid From"
 msgstr "有效期开始"
 
@@ -17687,6 +17892,9 @@ msgstr "价值快照"
 
 msgid "Value source by surface"
 msgstr "按表面的值来源"
+
+msgid "Value still to ship on open sales orders"
+msgstr "未结销售订单中待发货的价值"
 
 msgid "Value-added-tax registration number; required on EU invoices for reverse-charge or zero-rated supplies."
 msgstr "增值税注册号;欧盟发票中反向收费或零税率供应所需。"
@@ -17988,6 +18196,9 @@ msgstr "作废此收据将："
 
 msgid "Voiding this shipment will:"
 msgstr "作废此发货将："
+
+msgid "vs prior period"
+msgstr "相对前期"
 
 msgid "Waited"
 msgstr "已等待"
@@ -18483,6 +18694,9 @@ msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告�
 msgid "Why this restore failed"
 msgstr "还原失败原因"
 
+msgid "Widget options"
+msgstr "小部件选项"
+
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
 
@@ -18575,6 +18789,9 @@ msgstr "工作流名称"
 msgid "Workflow run"
 msgstr "工作流运行"
 
+msgid "Workflow runs that failed in the period"
+msgstr "期间失败的工作流运行"
+
 msgid "Workflows"
 msgstr "工作流"
 
@@ -18608,6 +18825,9 @@ msgstr "在资产的生命周期内减少其价值——你创建的每月批次
 
 msgid "Year"
 msgstr "年份"
+
+msgid "Year to date"
+msgstr "年初迄今"
 
 msgid "Yearly"
 msgstr "年度"
