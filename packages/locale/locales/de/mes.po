@@ -130,9 +130,6 @@ msgstr "Fehlerhafte Einheiten zuordnen"
 msgid "Allocate units"
 msgstr "Einheiten zuordnen"
 
-msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
-msgstr "Ein mit 0 abgeschlossener Arbeitsgang wird ohne Ausbringung als Fertig markiert — schließe ihn stattdessen aus, wenn er nicht Teil dieses Laufs war."
-
 msgid "Are you sure you want to delete this step?"
 msgstr "Möchten Sie diesen Schritt wirklich löschen?"
 
@@ -468,9 +465,6 @@ msgstr "Soll"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Jede Einheit hat ein Urteil: {passes} bestanden und {fails} fehlgeschlagen. Das Los wird geschlossen, wobei jede Einheit zu ihrem eigenen Ergebnis weitergeleitet wird."
 
-msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr "Ausgeschlossene Arbeitsgänge kehren ungelaufen in den Plan zurück — weder Zeit noch Menge wird erfasst."
-
 msgid "Expand features table"
 msgstr "Funktionstabelle erweitern"
 
@@ -595,9 +589,6 @@ msgstr "in {0}"
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
-msgid "Include in run"
-msgstr "In den Lauf aufnehmen"
-
 msgid "Inspect Item"
 msgstr "Artikel prüfen"
 
@@ -669,6 +660,9 @@ msgstr "Zuletzt abgeschlossen"
 
 msgid "Learn more"
 msgstr "Erfahren Sie mehr"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr ""
 
 msgid "Leave this page"
 msgstr "Diese Seite verlassen"
@@ -923,9 +917,6 @@ msgstr "Keine Arbeitsplätze vorhanden"
 msgid "None"
 msgstr "Keine"
 
-msgid "Not in this run"
-msgstr "Nicht in diesem Lauf"
-
 msgid "Notes"
 msgstr "Notizen"
 
@@ -965,9 +956,6 @@ msgstr "Öffnen Sie einen NCR für MRB-Verwendungsentscheid"
 
 msgid "Open Jobs"
 msgstr "Offene Fertigungsaufträge"
-
-msgid "Operation"
-msgstr "Arbeitsgang"
 
 msgid "Operations"
 msgstr "Arbeitsgänge"
@@ -1059,8 +1047,8 @@ msgstr "Vorbeugend"
 msgid "Print"
 msgstr "Drucken"
 
-msgid "Print load list"
-msgstr "Ladeliste drucken"
+msgid "Print batch list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Druckereinstellungen"
@@ -1383,9 +1371,6 @@ msgstr "Schritte"
 
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
-
-msgid "Stop the timer before completing the batch."
-msgstr "Stoppen Sie den Timer, bevor Sie die Charge abschließen."
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"

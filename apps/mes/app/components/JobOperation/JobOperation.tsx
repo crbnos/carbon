@@ -263,10 +263,6 @@ export const JobOperation = ({
   const isBatched = !!batch;
   const isCompleting = batch?.status === "Completing";
   const batchCompleteModal = useDisclosure();
-  // Any batch timer still running blocks completion — the edge fn refuses it and
-  // the modal disables its submit. `events` is the batch's events in batch mode;
-  // stopping a timer revalidates the loader, so this refreshes.
-  const hasOpenBatchEvent = isBatched && events.some((e) => !e.endTime);
 
   const serialIndex =
     trackedEntities.findIndex((entity) => entity.id === trackedEntityId) ?? 0;
@@ -618,7 +614,7 @@ export const JobOperation = ({
           </HStack>
         </header>
 
-        <div className="flex flex-nowrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-background gap-2 md:gap-4 w-full min-w-0 overflow-hidden">
+        <div className="flex flex-nowrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-2 md:gap-4 w-full min-w-0 overflow-hidden">
           <HStack className="min-w-22 shrink-0 justify-between">
             <Heading size="h4">{operation.jobReadableId}</Heading>
 
@@ -713,12 +709,12 @@ export const JobOperation = ({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <a
-                    href={path.to.file.batchLoadList(batch.id as string)}
+                    href={path.to.file.batchList(batch.id as string)}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <DropdownMenuIcon icon={<LuPrinter />} />
-                    <Trans>Print load list</Trans>
+                    <Trans>Print batch list</Trans>
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -2870,7 +2866,6 @@ export const JobOperation = ({
         <BatchCompleteModal
           batch={batch}
           isCompleting={isCompleting}
-          hasOpenEvent={hasOpenBatchEvent}
           onClose={batchCompleteModal.onClose}
         />
       )}

@@ -42,7 +42,8 @@ import type {
   getProductionPlanning,
   getProductionProjections,
   getProductionQuantities,
-  getScrapReasons
+  getScrapReasons,
+  JobOperationBatchListMember
 } from "./production.service";
 
 export type ActiveProductionEvent = NonNullable<
@@ -206,6 +207,8 @@ export type JobOperationBatch = NonNullable<
   totalQuantity?: number;
   // Header work center, falling back to the members' shared one.
   workCenterName?: string | null;
+  // Member rows for the expandable sub-list (getJobOperationBatchMembers).
+  members?: JobOperationBatchListMember[];
 };
 
 export type JobOperationBatchDetail = NonNullable<

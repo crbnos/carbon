@@ -127,6 +127,10 @@ msgstr "{0} संचालन · {totalQuantity} भाग"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} इस प्रक्रिया पर संचालन सूचीबद्ध नहीं हैं: {1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} पंक्तियाँ"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} स्क्रैप किया गया"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "अपने DNS होस्ट में यह TXT रिकॉर्
 msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "{0} में जोड़ें"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "भविष्य के उपयोग के लिए स्टॉक में जोड़ें"
@@ -3409,9 +3416,6 @@ msgstr "साफ़ करें"
 msgid "Clear due date"
 msgstr "नियत तिथि साफ करें"
 
-msgid "Clear filter"
-msgstr "फ़िल्टर साफ करें"
-
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
 
@@ -4359,6 +4363,9 @@ msgstr "ऑडिट ट्रेल प्रविष्टियां बन
 
 msgid "Create batch"
 msgstr "बैच बनाएँ"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
@@ -10602,6 +10609,9 @@ msgstr "कोई उपलब्ध फ़िल्टर नहीं"
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
 
@@ -11349,6 +11359,9 @@ msgstr "खुले प्राप्य खाते"
 
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "खोलने की तारीख"
@@ -12392,14 +12405,14 @@ msgstr "प्रिंट करें"
 msgid "Print {0} Labels"
 msgstr "{0} लेबल प्रिंट करें"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "प्रिंट जॉब"
 
 msgid "Print Label"
 msgstr "लेबल प्रिंट करें"
-
-msgid "Print load list"
-msgstr "लोड सूची प्रिंट करें"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "अपने कार्यक्षेत्र में खोजे
 
 msgid "Search actions…"
 msgstr "कार्यों को खोजें…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "Jira समस्या शीर्षक द्वारा खोजें..."
@@ -16896,6 +16912,9 @@ msgstr "इस RFQ के लिए तुलना करने के लि�
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "इस जॉब से जुड़े बाहरी ऑपरेशन हैं जिनके पास कोई आपूर्तिकर्ता नहीं है। कृपया इसे जारी करने से पहले प्रत्येक बाहरी ऑपरेशन के लिए एक आपूर्तिकर्ता असाइन करें।"
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "इन क्रेडिट्स को लागू करने के लिए कुछ भी बकाया नहीं है।"
 
@@ -17654,6 +17673,9 @@ msgstr "अनुत्तरित"
 
 msgid "Unballoon"
 msgstr "गुब्बारा हटाएं"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "गिनती न किए गए लाइनें पोस्ट पर अपरिवर्तित रहती हैं — उन्हें शून्य नहीं किया जाता है।"

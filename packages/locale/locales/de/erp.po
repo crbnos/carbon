@@ -127,6 +127,10 @@ msgstr "{0} Operationen · {totalQuantity} Teile"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} Vorgänge in diesem Prozess sind nicht aufgelistet: {1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} Zeilen"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} verschrottet"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu, klicken Sie dann
 msgid "Add Timecard"
 msgstr "Zeitkarte hinzufügen"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "Zu {0} hinzufügen"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "Zum Bestand hinzufügen zur zukünftigen Verwendung"
@@ -3409,9 +3416,6 @@ msgstr "Löschen"
 msgid "Clear due date"
 msgstr "Fälligkeitsdatum löschen"
 
-msgid "Clear filter"
-msgstr "Filter löschen"
-
 msgid "Clear Filters"
 msgstr "Filter löschen"
 
@@ -4359,6 +4363,9 @@ msgstr "Audit-Trail-Einträge erstellen"
 
 msgid "Create batch"
 msgstr "Los erstellen"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "Änderungsmitteilung erstellen"
@@ -10602,6 +10609,9 @@ msgstr "Keine verfügbaren Filter"
 msgid "No available tracked entities found"
 msgstr "Keine verfügbaren verfolgten Entitäten gefunden"
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Keine BOM-Eingabe hat eine Shelf-Life-Richtlinie"
 
@@ -11349,6 +11359,9 @@ msgstr "Offene Debitoren"
 
 msgid "Open Audit Log"
 msgstr "Änderungsprotokoll öffnen"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "Öffnungsdatum"
@@ -12392,14 +12405,14 @@ msgstr "Drucken"
 msgid "Print {0} Labels"
 msgstr "Drucke {0} Etiketten"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Fertigungsaufträge drucken"
 
 msgid "Print Label"
 msgstr "Etikett drucken"
-
-msgid "Print load list"
-msgstr "Ladeliste drucken"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "Durchsuchen Sie Ihren Arbeitsbereich..."
 
 msgid "Search actions…"
 msgstr "Aktionen durchsuchen…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "Nach Jira-Problemtitel suchen..."
@@ -16896,6 +16912,9 @@ msgstr "Es gibt keine aktiven Lieferantenofferten zum Vergleichen für diese Anf
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Es gibt diesem Fertigungsauftrag zugeordnete Außenarbeitsgänge, die keine Lieferanten haben. Bitte weisen Sie vor der Freigabe jedem Außenarbeitsgang einen Lieferanten zu."
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Es gibt nichts Ausstehende, auf das diese Gutschriften angewendet werden können."
 
@@ -17654,6 +17673,9 @@ msgstr "Nicht zugewiesen"
 
 msgid "Unballoon"
 msgstr "Ballon entfernen"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Nicht gezählte Zeilen bleiben beim Buchen unverändert — sie werden nicht auf Null gesetzt."

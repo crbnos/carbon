@@ -1,28 +1,29 @@
-import { Hidden, NumberControlled, Submit, ValidatedForm } from "@carbon/form";
+import { Hidden, Submit, ValidatedForm } from "@carbon/form";
 import {
   cn,
-  IconButton,
   Modal,
   ModalBody,
   ModalContent,
   ModalDescription,
   ModalFooter,
   ModalHeader,
-  ModalTitle,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr
+  ModalTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuUndo2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import type { JobOperationBatch } from "~/services/operations.service";
 import { path } from "~/utils/path";
+
+// Spreadsheet-style numeric cell — a bare input (no react-aria stepper arrows),
+// full-cell, right-aligned monospace numerals, focus ring inset so it never
+// breaks the grid lines. Mirrors the MES inspection matrix.
+const cellInputClass =
+  "block h-full min-h-12 w-full bg-transparent px-3 text-right font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40";
+
+const digitsOnly = (value: string) => value.replace(/[^0-9]/g, "");
+const toNumber = (value: string) => Number(value) || 0;
 
 // The batch completion form, opened from the batched operation view. Posts to
 // batch.$batchId.complete (the same action the retired batch page used), which
@@ -32,12 +33,10 @@ import { path } from "~/utils/path";
 export function BatchCompleteModal({
   batch,
   isCompleting,
-  hasOpenEvent,
   onClose
 }: {
   batch: JobOperationBatch;
   isCompleting: boolean;
-  hasOpenEvent: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -56,31 +55,28 @@ export function BatchCompleteModal({
     }))
   } satisfies z.infer<typeof completeJobOperationBatchValidator>;
 
-  // Controlled per-member quantities: react-aria NumberField does not pick up
-  // RVF's nested-array defaults, so drive the values with local state instead.
-  // `excluded` = "not in this run": the operation detaches back to the schedule
-  // un-run instead of being marked Done.
+  // Controlled per-member quantities as strings (empty while typing): react-aria
+  // would add stepper chrome, so the grid uses bare inputs and drives them here.
+  // A member left at 0 quantity AND 0 scrap is "not in this run" — it detaches
+  // back to the schedule un-run instead of being marked Done (no explicit toggle;
+  // just leave the row at 0).
   const [rows, setRows] = useState(
     initialValues.members.map((m) => ({
-      quantity: m.quantity,
-      scrapQuantity: m.scrapQuantity,
-      excluded: false
+      quantity: String(m.quantity),
+      scrapQuantity: String(m.scrapQuantity)
     }))
   );
-  const setRow = (i: number, key: "quantity" | "scrapQuantity", v: number) =>
+  const setRow = (i: number, key: "quantity" | "scrapQuantity", v: string) =>
     setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, [key]: v } : r))
-    );
-  const toggleExcluded = (i: number) =>
-    setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, excluded: !r.excluded } : r))
+      prev.map((r, idx) => (idx === i ? { ...r, [key]: digitsOnly(v) } : r))
     );
 
-  const allExcluded = rows.every((r) => r.excluded);
-  const anyExcluded = rows.some((r) => r.excluded);
-  // An included row completing at 0 still flips the operation Done with no
-  // output — legal, but worth a loud heads-up.
-  const anyZeroIncluded = rows.some((r) => !r.excluded && r.quantity === 0);
+  const isExcludedRow = (i: number) =>
+    toNumber(rows[i]?.quantity ?? "0") === 0 &&
+    toNumber(rows[i]?.scrapQuantity ?? "0") === 0;
+  const allExcluded = rows.every(
+    (r) => toNumber(r.quantity) === 0 && toNumber(r.scrapQuantity) === 0
+  );
 
   return (
     <Modal
@@ -89,7 +85,7 @@ export function BatchCompleteModal({
         if (!open) onClose();
       }}
     >
-      <ModalContent size="large">
+      <ModalContent size="large" withCloseButton={false}>
         <ModalHeader>
           <ModalTitle>
             <Trans>Complete Batch</Trans>
@@ -108,109 +104,96 @@ export function BatchCompleteModal({
         >
           <ModalBody>
             <Hidden name="batchId" value={batch.id as string} />
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>
-                    <Trans>Job</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Operation</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Quantity</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Scrap</Trans>
-                  </Th>
-                  <Th className="w-10" />
-                </Tr>
-              </Thead>
-              <Tbody>
-                {members.map((m, i) => {
-                  const isExcluded = rows[i]?.excluded ?? false;
-                  return (
-                    <Tr key={m.id} className={cn(isExcluded && "opacity-50")}>
-                      <Td className="font-medium">
-                        {(m.job as { jobId?: string | null } | null)?.jobId}
-                      </Td>
-                      <Td className="text-muted-foreground">{m.description}</Td>
-                      <Td className="text-right">
-                        <Hidden
-                          name={`members[${i}].jobOperationId`}
-                          value={m.id}
-                        />
-                        <Hidden
-                          name={`members[${i}].excluded`}
-                          value={isExcluded ? "true" : ""}
-                        />
-                        <NumberControlled
-                          name={`members[${i}].quantity`}
-                          label=""
-                          size="lg"
-                          value={isExcluded ? 0 : (rows[i]?.quantity ?? 0)}
-                          onChange={(v) => setRow(i, "quantity", v)}
-                          minValue={0}
-                          className="max-w-[120px] ml-auto"
-                          isDisabled={isExcluded}
-                        />
-                      </Td>
-                      <Td className="text-right">
-                        <NumberControlled
-                          name={`members[${i}].scrapQuantity`}
-                          label=""
-                          size="lg"
-                          value={isExcluded ? 0 : (rows[i]?.scrapQuantity ?? 0)}
-                          onChange={(v) => setRow(i, "scrapQuantity", v)}
-                          minValue={0}
-                          className="max-w-[120px] ml-auto"
-                          isDisabled={isExcluded}
-                        />
-                      </Td>
-                      <Td className="text-right">
-                        <IconButton
-                          aria-label={
-                            isExcluded ? t`Include in run` : t`Not in this run`
-                          }
-                          title={
-                            isExcluded ? t`Include in run` : t`Not in this run`
-                          }
-                          icon={isExcluded ? <LuUndo2 /> : <LuX />}
-                          variant="ghost"
-                          size="lg"
-                          className="text-muted-foreground"
-                          onClick={() => toggleExcluded(i)}
-                        />
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
-            {hasOpenEvent && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                <Trans>Stop the timer before completing the batch.</Trans>
-              </p>
-            )}
-            {anyExcluded && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                <Trans>
-                  Excluded operations return to the schedule un-run — no time or
-                  quantity is recorded for them.
-                </Trans>
-              </p>
-            )}
-            {anyZeroIncluded && (
-              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                <Trans>
-                  An operation completed with 0 is marked Done with no output —
-                  exclude it instead if it was not part of this run.
-                </Trans>
-              </p>
-            )}
+            <div className="overflow-hidden rounded-lg border border-border bg-card">
+              <table className="w-full border-separate border-spacing-0 text-sm">
+                <thead>
+                  <tr>
+                    <th className="border-b border-r border-border px-3 py-2 text-left font-medium text-muted-foreground">
+                      <Trans>Job</Trans>
+                    </th>
+                    <th className="w-[140px] border-b border-r border-border px-3 py-2 text-right font-medium text-muted-foreground">
+                      <Trans>Quantity</Trans>
+                    </th>
+                    <th className="w-[140px] border-b border-border px-3 py-2 text-right font-medium text-muted-foreground">
+                      <Trans>Scrap</Trans>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((m, i) => {
+                    const isExcluded = isExcludedRow(i);
+                    const isLast = i === members.length - 1;
+                    return (
+                      <tr key={m.id} className={cn(isExcluded && "opacity-50")}>
+                        <td
+                          className={cn(
+                            "border-r border-border px-3 py-2 align-middle font-medium tabular-nums",
+                            !isLast && "border-b"
+                          )}
+                        >
+                          {(m.job as { jobId?: string | null } | null)?.jobId}
+                          <Hidden
+                            name={`members[${i}].jobOperationId`}
+                            value={m.id}
+                          />
+                          <Hidden
+                            name={`members[${i}].excluded`}
+                            value={isExcluded ? "true" : ""}
+                          />
+                        </td>
+                        <td
+                          className={cn(
+                            "border-r border-border p-0 align-middle",
+                            !isLast && "border-b"
+                          )}
+                        >
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            name={`members[${i}].quantity`}
+                            aria-label={t`Quantity`}
+                            value={rows[i]?.quantity ?? ""}
+                            onFocus={(e) => e.currentTarget.select()}
+                            onChange={(e) =>
+                              setRow(i, "quantity", e.target.value)
+                            }
+                            className={cellInputClass}
+                          />
+                        </td>
+                        <td
+                          className={cn(
+                            "border-border p-0 align-middle",
+                            !isLast && "border-b"
+                          )}
+                        >
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            name={`members[${i}].scrapQuantity`}
+                            aria-label={t`Scrap`}
+                            value={rows[i]?.scrapQuantity ?? ""}
+                            onFocus={(e) => e.currentTarget.select()}
+                            onChange={(e) =>
+                              setRow(i, "scrapQuantity", e.target.value)
+                            }
+                            className={cellInputClass}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-pretty text-xs text-muted-foreground">
+              <Trans>
+                Leave an operation at 0 to skip it — it returns to the schedule
+                un-run with no time or quantity recorded.
+              </Trans>
+            </p>
           </ModalBody>
           <ModalFooter>
-            <Submit size="lg" isDisabled={hasOpenEvent || allExcluded}>
+            <Submit size="lg" isDisabled={allExcluded}>
               {isCompleting ? t`Retry Completion` : t`Complete Batch`}
             </Submit>
           </ModalFooter>

@@ -5,7 +5,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import {
   getJobOperationBatches,
-  getJobOperationBatchMemberStats
+  getJobOperationBatchMemberStats,
+  getJobOperationBatchMembers
 } from "~/modules/production";
 import BatchesTable from "~/modules/production/ui/Batches/BatchesTable";
 import type { Handle } from "~/utils/handle";
@@ -37,11 +38,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters
   });
 
-  const stats = await getJobOperationBatchMemberStats(
-    client,
-    companyId,
-    (batches.data ?? []).map((b) => b.id)
-  );
+  const batchIds = (batches.data ?? []).map((b) => b.id);
+  const [stats, members] = await Promise.all([
+    getJobOperationBatchMemberStats(client, companyId, batchIds),
+    getJobOperationBatchMembers(client, companyId, batchIds)
+  ]);
 
   return {
     count: batches.count ?? 0,
@@ -53,7 +54,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // board's own fallback) — a board-created batch has no header WC until
       // its card is dragged.
       workCenterName:
-        b.workCenter?.name ?? stats.data[b.id]?.workCenterName ?? null
+        b.workCenter?.name ?? stats.data[b.id]?.workCenterName ?? null,
+      // Member rows for the expandable sub-list.
+      members: members.data[b.id] ?? []
     }))
   };
 }

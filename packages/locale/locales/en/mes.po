@@ -130,9 +130,6 @@ msgstr "Allocate failed units"
 msgid "Allocate units"
 msgstr "Allocate units"
 
-msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
-msgstr "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
-
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
 
@@ -468,9 +465,6 @@ msgstr "Estimated"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 
-msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-
 msgid "Expand features table"
 msgstr "Expand features table"
 
@@ -595,9 +589,6 @@ msgstr "in {0}"
 msgid "In Progress"
 msgstr "In Progress"
 
-msgid "Include in run"
-msgstr "Include in run"
-
 msgid "Inspect Item"
 msgstr "Inspect Item"
 
@@ -669,6 +660,9 @@ msgstr "Last completed"
 
 msgid "Learn more"
 msgstr "Learn more"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
 
 msgid "Leave this page"
 msgstr "Leave this page"
@@ -923,9 +917,6 @@ msgstr "No work centers exist"
 msgid "None"
 msgstr "None"
 
-msgid "Not in this run"
-msgstr "Not in this run"
-
 msgid "Notes"
 msgstr "Notes"
 
@@ -965,9 +956,6 @@ msgstr "Open an NCR for MRB disposition"
 
 msgid "Open Jobs"
 msgstr "Open Jobs"
-
-msgid "Operation"
-msgstr "Operation"
 
 msgid "Operations"
 msgstr "Operations"
@@ -1059,8 +1047,8 @@ msgstr "Preventive"
 msgid "Print"
 msgstr "Print"
 
-msgid "Print load list"
-msgstr "Print load list"
+msgid "Print batch list"
+msgstr "Print batch list"
 
 msgid "Printer Settings"
 msgstr "Printer Settings"
@@ -1383,9 +1371,6 @@ msgstr "Steps"
 
 msgid "Steps are missing"
 msgstr "Steps are missing"
-
-msgid "Stop the timer before completing the batch."
-msgstr "Stop the timer before completing the batch."
 
 msgid "Storage Unit"
 msgstr "Storage Unit"

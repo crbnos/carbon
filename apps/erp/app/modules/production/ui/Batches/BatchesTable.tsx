@@ -25,8 +25,8 @@ import {
   LuUndo2,
   LuUsers
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
-import { DateTime, Hyperlink, New, Table } from "~/components";
+import { Link, useFetcher, useNavigate } from "react-router";
+import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -318,6 +318,68 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     return [...defaultColumns, ...customColumns];
   }, [customColumns, t]);
 
+  // Only batches with members get a chevron.
+  const canExpandRow = useCallback(
+    (row: JobOperationBatch) => (row.members?.length ?? 0) > 0,
+    []
+  );
+
+  // Expanding a batch reveals its member operations — job, item, quantity —
+  // the same facts the detail drawer's member table shows (process, work
+  // center and per-op status repeat for every member, so they add no info).
+  const renderExpandedRow = useCallback(
+    (row: JobOperationBatch) => {
+      const members = row.members ?? [];
+      if (members.length === 0) return null;
+      return (
+        <div className="pl-[52px] pr-4">
+          {members.map((member) => (
+            <div key={member.id} className="flex gap-3 py-3 text-sm">
+              <div
+                aria-hidden
+                className="w-5 shrink-0 border-l border-border -my-3"
+              />
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                {member.jobId ? (
+                  <Link
+                    to={path.to.jobDetails(member.jobId)}
+                    className="font-medium hover:underline"
+                  >
+                    {member.jobReadableId}
+                  </Link>
+                ) : (
+                  <span className="font-medium">{member.jobReadableId}</span>
+                )}
+                <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                  <ItemThumbnail
+                    thumbnailPath={member.thumbnailPath}
+                    type="Part"
+                    size="sm"
+                  />
+                  <span className="truncate">
+                    {member.itemReadableId ?? "—"}
+                    {member.itemName ? ` · ${member.itemName}` : ""}
+                  </span>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="tabular-nums">
+                  {member.quantityComplete}/{member.operationQuantity}
+                </span>
+                {member.quantityScrapped > 0 && (
+                  <span className="ml-2 text-xs tabular-nums text-red-500">
+                    {t`${member.quantityScrapped} scrapped`}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    },
+    [t]
+  );
+
   return (
     <Table<JobOperationBatch>
       data={data}
@@ -330,6 +392,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
       }
       renderActions={renderActions}
       renderContextMenu={renderContextMenu}
+      renderExpandedRow={renderExpandedRow}
+      canExpandRow={canExpandRow}
       withSelectableRows={canUpdate}
       getRowId={(row) => row.id}
       title={t`Batches`}

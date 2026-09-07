@@ -127,6 +127,10 @@ msgstr "{0}개 작업 · {totalQuantity}개 부품"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "이 프로세스에 나열되지 않은 {0}개 작업: {1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} 행"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 폐기됨"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "DNS 호스트에서 이 TXT 레코드를 추가한 다음 확인을 클�
 msgid "Add Timecard"
 msgstr "근무기록 추가"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "{0}에 추가"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "향후 사용을 위해 재고에 추가"
@@ -3409,9 +3416,6 @@ msgstr "지우기"
 msgid "Clear due date"
 msgstr "마감일 지우기"
 
-msgid "Clear filter"
-msgstr "필터 지우기"
-
 msgid "Clear Filters"
 msgstr "필터 지우기"
 
@@ -4359,6 +4363,9 @@ msgstr "감사 추적 항목 생성"
 
 msgid "Create batch"
 msgstr "배치 생성"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "변경 통지 생성"
@@ -10602,6 +10609,9 @@ msgstr "사용 가능한 필터가 없습니다."
 msgid "No available tracked entities found"
 msgstr "추적 가능한 항목을 찾을 수 없습니다."
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
 
@@ -11349,6 +11359,9 @@ msgstr "미결 매출채권"
 
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "개설 날짜"
@@ -12392,14 +12405,14 @@ msgstr "인쇄"
 msgid "Print {0} Labels"
 msgstr "{0} 라벨 인쇄"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "인쇄 작업 지시"
 
 msgid "Print Label"
 msgstr "라벨 인쇄"
-
-msgid "Print load list"
-msgstr "적재 목록 인쇄"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "워크스페이스 전체에서 검색..."
 
 msgid "Search actions…"
 msgstr "작업 검색…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "Jira 이슈 제목으로 검색..."
@@ -16896,6 +16912,9 @@ msgstr "이 RFQ와 비교할 활성 공급업체 견적이 없습니다."
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "이 작업 지시와 관련된 외주 공정이 있지만 공급업체가 없습니다. 릴리스하기 전에 각 외주 공정에 공급업체를 할당하십시오."
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "이 크레딧을 적용할 미결제 항목이 없습니다."
 
@@ -17654,6 +17673,9 @@ msgstr "미배정"
 
 msgid "Unballoon"
 msgstr "벌룬 해제"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "미실사 라인은 전기 시 변경되지 않고 그대로 유지되며 0으로 처리되지 않습니다."

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-05T16:45:42.595Z",
-  "totalTools": 1505,
+  "generated": "2026-09-07T22:58:40.450Z",
+  "totalTools": 1507,
   "modules": 15,
   "tools": [
     {
@@ -25851,6 +25851,24 @@
       }
     },
     {
+      "name": "production_getUnbatchedBatchableOperationCount",
+      "module": "production",
+      "classification": "READ",
+      "description": "get unbatched batchable operation count",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "production_getJobOperationBatches",
       "module": "production",
       "classification": "READ",
@@ -25894,6 +25912,35 @@
       "module": "production",
       "classification": "READ",
       "description": "get job operation batch member stats",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "batchIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "batchIds"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchMembers",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch members",
       "paramCount": 1,
       "serviceParams": [
         "client",

@@ -130,9 +130,6 @@ msgstr "Başarısız birimleri tahsis et"
 msgid "Allocate units"
 msgstr "Birimleri tahsis et"
 
-msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
-msgstr "0 ile tamamlanan bir operasyon üretim olmadan Tamamlandı olarak işaretlenir — bu çalıştırmanın parçası değilse hariç tutun."
-
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
 
@@ -468,9 +465,6 @@ msgstr "Tahmini"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Her birim için bir karar verildi: {passes} geçti ve {fails} başarısız oldu. Lot, her birim kendi sonucuna yönlendirilmek üzere kapanır."
 
-msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr "Hariç tutulan operasyonlar çalıştırılmadan çizelgeye döner — süre veya miktar kaydedilmez."
-
 msgid "Expand features table"
 msgstr "Özellikler tablosunu genişlet"
 
@@ -595,9 +589,6 @@ msgstr "{0} içinde"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
-msgid "Include in run"
-msgstr "Çalıştırmaya dahil et"
-
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
 
@@ -669,6 +660,9 @@ msgstr "Son olarak tamamlanan"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr ""
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -923,9 +917,6 @@ msgstr "Çalışma merkezi bulunmamaktadır"
 msgid "None"
 msgstr "Hiçbiri"
 
-msgid "Not in this run"
-msgstr "Bu çalıştırmada değil"
-
 msgid "Notes"
 msgstr "Notlar"
 
@@ -965,9 +956,6 @@ msgstr "MRB kararı için NCR aç"
 
 msgid "Open Jobs"
 msgstr "Açık İş emirleri"
-
-msgid "Operation"
-msgstr "Operasyon"
 
 msgid "Operations"
 msgstr "Operasyonlar"
@@ -1059,8 +1047,8 @@ msgstr "Önleyici"
 msgid "Print"
 msgstr "Yazdır"
 
-msgid "Print load list"
-msgstr "Yükleme listesini yazdır"
+msgid "Print batch list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
@@ -1383,9 +1371,6 @@ msgstr "Adımlar"
 
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
-
-msgid "Stop the timer before completing the batch."
-msgstr "Partiyi tamamlamadan önce zamanlayıcıyı durdurun."
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"

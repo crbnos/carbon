@@ -130,9 +130,6 @@ msgstr "Alocar unidades com falha"
 msgid "Allocate units"
 msgstr "Alocar unidades"
 
-msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
-msgstr "Uma operação concluída com 0 é marcada como Concluída sem produção — exclua-a se não fez parte desta execução."
-
 msgid "Are you sure you want to delete this step?"
 msgstr "Tem certeza de que deseja excluir esta etapa?"
 
@@ -468,9 +465,6 @@ msgstr "Estimado"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Cada unidade tem um veredicto: {passes} aprovada(s) e {fails} reprovada(s). O lote fecha com cada unidade encaminhada para seu próprio resultado."
 
-msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr "As operações excluídas voltam à programação sem serem executadas — nenhum tempo ou quantidade é registrado."
-
 msgid "Expand features table"
 msgstr "Expandir tabela de recursos"
 
@@ -595,9 +589,6 @@ msgstr "em {0}"
 msgid "In Progress"
 msgstr "Em Andamento"
 
-msgid "Include in run"
-msgstr "Incluir na execução"
-
 msgid "Inspect Item"
 msgstr "Inspecionar Item"
 
@@ -669,6 +660,9 @@ msgstr "Última conclusão"
 
 msgid "Learn more"
 msgstr "Saiba mais"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr ""
 
 msgid "Leave this page"
 msgstr "Sair desta página"
@@ -923,9 +917,6 @@ msgstr "Nenhum centro de trabalho encontrado"
 msgid "None"
 msgstr "Nenhum"
 
-msgid "Not in this run"
-msgstr "Não nesta execução"
-
 msgid "Notes"
 msgstr "Observações"
 
@@ -965,9 +956,6 @@ msgstr "Abrir um NCR para disposição MRB"
 
 msgid "Open Jobs"
 msgstr "Ordens de produção abertas"
-
-msgid "Operation"
-msgstr "Operação"
 
 msgid "Operations"
 msgstr "Operações"
@@ -1059,8 +1047,8 @@ msgstr "Preventiva"
 msgid "Print"
 msgstr "Imprimir"
 
-msgid "Print load list"
-msgstr "Imprimir lista de carga"
+msgid "Print batch list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Configurações de Impressora"
@@ -1383,9 +1371,6 @@ msgstr "Etapas"
 
 msgid "Steps are missing"
 msgstr "Etapas ausentes"
-
-msgid "Stop the timer before completing the batch."
-msgstr "Pare o cronômetro antes de concluir o lote."
 
 msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"

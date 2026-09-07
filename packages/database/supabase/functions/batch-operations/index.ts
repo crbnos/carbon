@@ -485,21 +485,20 @@ async function completeBatch(
     // deno-lint-ignore no-explicit-any
     const opById = new Map(runOperations.map((o: any) => [o.id, o]));
 
-    // Refuse to complete while a batch timer is still running — otherwise the
-    // still-open aggregate event is silently dropped.
-    const openEvent = await trx
-      .selectFrom("productionEvent")
-      .select("id")
+    // Auto-stop any still-running batch timer, mirroring the single-operation
+    // flow: writing jobOperation.status = 'Done' fires sync_finish_job_operation,
+    // which closes that op's open productionEvents with endTime = NOW(). A batch
+    // completes the same way — stop the shared timer here rather than refusing —
+    // so the just-closed aggregate is sliced per member below and its cost posts
+    // once in phase 2. (This is inside the phase-1 txn; the batch-tagged End path
+    // deliberately skips post-production-event, so there is no double GL post.)
+    await trx
+      .updateTable("productionEvent")
+      .set({ endTime: new Date().toISOString() })
       .where("jobOperationBatchId", "=", batchId)
       .where("companyId", "=", companyId)
       .where("endTime", "is", null)
-      .limit(1)
-      .executeTakeFirst();
-    if (openEvent) {
-      throw new Error(
-        "Cannot complete a batch while a timer is still running — stop the timer first"
-      );
-    }
+      .execute();
 
     const recorded = await trx
       .selectFrom("productionEvent")

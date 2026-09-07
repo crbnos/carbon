@@ -120,14 +120,22 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
 - **Batch chip** — a `DropdownMenu` in the info bar (`BAT… · N jobs`, yellow
   `Completing` badge) lists members as `Link`s to hop between them.
 - **Completion** — the "Log Completed" button becomes "Complete Batch" and opens
-  `BatchCompleteModal` (per-member quantity/scrap rows, pre-filled
-  `operationQuantity − quantityComplete`, controlled state because react-aria
-  ignores RVF nested-array defaults; submit blocked while any batch timer is
-  open). Each row has a **"Not in this run"** toggle: an excluded member submits
-  `excluded="true"` (string flag, the `exclusive` idiom) and the edge fn detaches
-  it back to the schedule un-run inside the Phase-1 txn — no time slice, no
-  quantities, not Done. All-excluded is blocked; an included row at quantity 0
-  gets an amber warning (it still flips Done with no output). Scrap / Rework /
+  `BatchCompleteModal`, a **spreadsheet-style grid** (bare `<input inputMode="numeric">`
+  cells in a bordered `border-separate` table — no react-aria stepper arrows, no
+  close-X via `withCloseButton={false}`, Job / Quantity / Scrap columns only —
+  the per-member Operation is redundant in a batch). Rows are pre-filled
+  `operationQuantity − quantityComplete`, controlled as strings in local state.
+  Completing a batch **auto-stops** any still-running shared timer: the Phase-1
+  txn closes open `jobOperationBatchId`-tagged `productionEvent`s with
+  `endTime = NOW()` before slicing (mirroring `sync_finish_job_operation` on a
+  single op's `Done`), so submit is NOT gated on the timer and there is no "stop
+  the timer" note. **"Not in this run" is now implicit: leave a member at 0
+  quantity AND 0 scrap** — the modal derives `excluded` from that, submits
+  `excluded="true"` (string flag, the `exclusive` idiom), and the edge fn
+  detaches it back to the schedule un-run inside the Phase-1 txn — no time slice,
+  no quantities, not Done. There is no explicit exclude toggle/X and no amber
+  "completed with 0" warning: 0 simply means not-in-this-run. All-excluded (every
+  row 0/0) disables submit. Scrap / Rework /
   Finish are hidden in the actions sheet (per-op writes would double-count a
   member); Maintenance + Quality Issue stay. The batch chip menu also offers
   "Print load list" (`path.to.file.batchLoadList` → the ERP

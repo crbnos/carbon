@@ -127,6 +127,10 @@ msgstr "{0}件の作業 · {totalQuantity}部品"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "このプロセスの{0}の操作はリストされていません: {1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} 行"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0}廃棄"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリッ�
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "{0}に追加"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
@@ -3409,9 +3416,6 @@ msgstr "クリア"
 msgid "Clear due date"
 msgstr "期日をクリア"
 
-msgid "Clear filter"
-msgstr "フィルターをクリア"
-
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
 
@@ -4359,6 +4363,9 @@ msgstr "監査証跡エントリを作成"
 
 msgid "Create batch"
 msgstr "バッチを作成"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
@@ -10602,6 +10609,9 @@ msgstr "利用可能な絞り込みはありません"
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
 
@@ -11349,6 +11359,9 @@ msgstr "未払い売掛金"
 
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "開始日"
@@ -12392,14 +12405,14 @@ msgstr "印刷"
 msgid "Print {0} Labels"
 msgstr "{0}個のラベルを印刷"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
 
 msgid "Print Label"
 msgstr "ラベルを印刷"
-
-msgid "Print load list"
-msgstr "ロードリストを印刷"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "ワークスペース全体を検索..."
 
 msgid "Search actions…"
 msgstr "アクションを検索…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "Jiraの課題タイトルで検索..."
@@ -16896,6 +16912,9 @@ msgstr "このRFQに対して比較する有効な仕入先見積がありませ
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "この製造指図に関連する外注工程があり、それらに仕入先が割り当てられていません。リリースする前に、各外注工程に仕入先を割り当ててください。"
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
 
@@ -17654,6 +17673,9 @@ msgstr "未割り当て"
 
 msgid "Unballoon"
 msgstr "バルーンを削除"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"

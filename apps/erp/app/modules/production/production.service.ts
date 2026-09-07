@@ -5819,6 +5819,29 @@ export async function notifyScheduleInputsChanged(
 // batches on the schedule board, mutates them via the batch-operations edge fn,
 // and lists past/active batches at /x/production/batches.
 
+// Count of operations that COULD be batched but aren't yet — unbatched ops on a
+// batchable process, still open (Todo/Ready/Waiting), on a live (non-terminal)
+// job. Mirrors the unbatched-candidate branch of get_batchable_operations (the
+// batch builder's candidate query) so the dashboard number matches what the
+// builder surfaces. Head count only — no rows. !inner turns the nested filters
+// on process/job into real join predicates that constrain the count.
+export async function getUnbatchedBatchableOperationCount(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, process!inner(batchable), job!inner(status)", {
+      count: "exact",
+      head: true
+    })
+    .eq("companyId", companyId)
+    .is("jobOperationBatchId", null)
+    .eq("process.batchable", true)
+    .in("status", ["Todo", "Ready", "Waiting"])
+    .not("job.status", "in", "(Completed,Closed,Cancelled)");
+}
+
 export async function getJobOperationBatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5913,6 +5936,60 @@ export async function getJobOperationBatchMemberStats(
     );
   }
   return { data: stats, error: null };
+}
+
+// One flattened member row per batch member, for the batches list's expandable
+// sub-rows (mirrors the ECO change-notices table). Fields match what the sub-row
+// and the detail drawer's member table show: job link, item, and quantity.
+export type JobOperationBatchListMember = {
+  id: string;
+  jobId: string | null;
+  jobReadableId: string | null;
+  itemReadableId: string | null;
+  itemName: string | null;
+  thumbnailPath: string | null;
+  operationQuantity: number;
+  quantityComplete: number;
+  quantityScrapped: number;
+};
+
+// Members for every batch on the page in ONE query, grouped by batch id in TS
+// (same no-N+1 pattern as getJobOperationBatchMemberStats — collect ids, one
+// .in(), tally). getJobOperationBatchWithMembers is single-batch and would be
+// N+1 across the list, so the list uses this leaner grouped read instead.
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  batchIds: string[]
+): Promise<{
+  data: Record<string, JobOperationBatchListMember[]>;
+  error: unknown;
+}> {
+  if (batchIds.length === 0) return { data: {}, error: null };
+  const result = await client
+    .from("jobOperation")
+    .select(
+      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+  if (result.error) return { data: {}, error: result.error };
+  const members: Record<string, JobOperationBatchListMember[]> = {};
+  for (const op of result.data ?? []) {
+    if (!op.jobOperationBatchId) continue;
+    (members[op.jobOperationBatchId] ??= []).push({
+      id: op.id,
+      jobId: op.job?.id ?? null,
+      jobReadableId: op.job?.jobId ?? null,
+      itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+      itemName: op.jobMakeMethod?.item?.name ?? null,
+      thumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      operationQuantity: op.operationQuantity ?? 0,
+      quantityComplete: op.quantityComplete ?? 0,
+      quantityScrapped: op.quantityScrapped ?? 0
+    });
+  }
+  return { data: members, error: null };
 }
 
 export async function getJobOperationBatchWithMembers(

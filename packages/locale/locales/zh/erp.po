@@ -127,6 +127,10 @@ msgstr "{0} 工序 · {totalQuantity} 零件"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} 个此工序的操作未列出：{1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} 行"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} 报废"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS �
 msgid "Add Timecard"
 msgstr "添加工时卡"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "添加到 {0}"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "添加到库存以供将来使用"
@@ -3409,9 +3416,6 @@ msgstr "清除"
 msgid "Clear due date"
 msgstr "清除到期日"
 
-msgid "Clear filter"
-msgstr "清除筛选条件"
-
 msgid "Clear Filters"
 msgstr "清除筛选"
 
@@ -4359,6 +4363,9 @@ msgstr "创建审计跟踪条目"
 
 msgid "Create batch"
 msgstr "创建生产批次"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "创建变更通知"
@@ -10602,6 +10609,9 @@ msgstr "没有可用的筛选器"
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
 
@@ -11349,6 +11359,9 @@ msgstr "未结应收账款"
 
 msgid "Open Audit Log"
 msgstr "打开审计日志"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "打开日期"
@@ -12392,14 +12405,14 @@ msgstr "打印"
 msgid "Print {0} Labels"
 msgstr "打印 {0} 个标签"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "打印工单"
 
 msgid "Print Label"
 msgstr "打印标签"
-
-msgid "Print load list"
-msgstr "打印装载清单"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "在您的工作区中搜索..."
 
 msgid "Search actions…"
 msgstr "搜索操作…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "按 Jira 问题标题搜索..."
@@ -16896,6 +16912,9 @@ msgstr "此询价单没有可比较的启用供应商报价。"
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "有与此工单相关的外包工序但没有分配供应商。请在发放之前为每个外包工序分配一个供应商。"
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "没有可应用这些贷方的未结款项。"
 
@@ -17654,6 +17673,9 @@ msgstr "未分配"
 
 msgid "Unballoon"
 msgstr "取消气球标注"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"

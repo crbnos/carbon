@@ -127,6 +127,10 @@ msgstr "{0} операций · {totalQuantity} деталей"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} операций в этом процессе не перечислены: {1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} строк"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} брак"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "Добавьте эту TXT запись на хосте DNS, затем
 msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "Добавить в {0}"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
@@ -3409,9 +3416,6 @@ msgstr "Очистить"
 msgid "Clear due date"
 msgstr "Очистить срок выполнения"
 
-msgid "Clear filter"
-msgstr "Очистить фильтр"
-
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
 
@@ -4359,6 +4363,9 @@ msgstr "Создать записи в журнале аудита"
 
 msgid "Create batch"
 msgstr "Создать серию"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "Создать извещение об изменении"
@@ -10602,6 +10609,9 @@ msgstr "Нет доступных фильтров"
 msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
@@ -11349,6 +11359,9 @@ msgstr "Открытая дебиторская задолженность"
 
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "Дата открытия"
@@ -12392,14 +12405,14 @@ msgstr "Печать"
 msgid "Print {0} Labels"
 msgstr "Печать {0} этикеток"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Печать производственных заказов"
 
 msgid "Print Label"
 msgstr "Печать этикетки"
-
-msgid "Print load list"
-msgstr "Печать листа загрузки"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "Поиск по вашему рабочему пространству..
 
 msgid "Search actions…"
 msgstr "Поиск действий…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "Поиск по названию задачи Jira..."
@@ -16896,6 +16912,9 @@ msgstr "Нет активных предложений поставщиков д
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
 
@@ -17654,6 +17673,9 @@ msgstr "Не назначено"
 
 msgid "Unballoon"
 msgstr "Удалить выноску"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."

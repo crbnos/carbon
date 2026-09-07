@@ -127,6 +127,10 @@ msgstr "{0} operasyon · {totalQuantity} parça"
 msgid "{0} operations on this process are not listed: {1}"
 msgstr "{0} bu süreçteki operasyonlar listelenmemiştir: {1}"
 
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr ""
+
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
 msgid "{0} ops · {1} pcs"
@@ -155,6 +159,10 @@ msgstr "{0} satır"
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0} hurdaya alındı"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -1420,9 +1428,8 @@ msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya t�
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
-#. placeholder {0}: target.readableId
-msgid "Add to {0}"
-msgstr "{0} grubuna ekle"
+msgid "Add to batch"
+msgstr ""
 
 msgid "Add to stock for future use"
 msgstr "Gelecekteki kullanım için stoğa ekle"
@@ -3409,9 +3416,6 @@ msgstr "Temizle"
 msgid "Clear due date"
 msgstr "Son tarihi temizle"
 
-msgid "Clear filter"
-msgstr "Filtreyi temizle"
-
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
 
@@ -4359,6 +4363,9 @@ msgstr "Denetim izi girdileri oluştur"
 
 msgid "Create batch"
 msgstr "Parti Oluştur"
+
+msgid "Create Batch"
+msgstr ""
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
@@ -10602,6 +10609,9 @@ msgstr "Kullanılabilir filtre yok"
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
+msgid "No batches"
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
@@ -11349,6 +11359,9 @@ msgstr "Açık Alacak hesapları"
 
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
+
+msgid "Open batch"
+msgstr ""
 
 msgid "Open date"
 msgstr "Açılış tarihi"
@@ -12392,14 +12405,14 @@ msgstr "Yazdır"
 msgid "Print {0} Labels"
 msgstr "{0} Etiket Yazdır"
 
+msgid "Print batch list"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Yazdırma İşleri"
 
 msgid "Print Label"
 msgstr "Etiket Yazdır"
-
-msgid "Print load list"
-msgstr "Yükleme listesini yazdır"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -14343,6 +14356,9 @@ msgstr "Çalışma alanınızda arama yapın..."
 
 msgid "Search actions…"
 msgstr "Eylemleri ara…"
+
+msgid "Search batches…"
+msgstr ""
 
 msgid "Search by Jira issue title..."
 msgstr "Jira sorunu başlığı ile ara..."
@@ -16896,6 +16912,9 @@ msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamakt
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr ""
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Bu kredileri uygulanacak hiçbir ödenmemiş tutar yok."
 
@@ -17654,6 +17673,9 @@ msgstr "Atanmamış"
 
 msgid "Unballoon"
 msgstr "Balonu Kaldır"
+
+msgid "Unbatched Operations"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."
