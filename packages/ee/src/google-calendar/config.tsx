@@ -3,10 +3,11 @@ import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { startIntegrationConnect } from "../integrations/connect";
 import { pieceLogo } from "../integrations/piece-logo";
+import type { ActivepiecesPiece } from "../integrations/pieces";
 
 /** The card's id IS the Activepieces piece name, which is what lets the connect
  * route, the uninstall hook and the workflow catalog all address it as one thing. */
-const PIECE = "google-calendar";
+const PIECE: ActivepiecesPiece = "google-calendar";
 
 /**
  * Google Calendar, as an ordinary integration card.

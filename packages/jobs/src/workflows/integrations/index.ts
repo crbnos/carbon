@@ -1,7 +1,11 @@
 /** Server-only. Piece packages bundle Node vendor SDKs — never import this
  * subpath from browser code. */
 export type { AllowlistEntry } from "./allowlist";
-export { assertPinnedVersions, PIECE_ALLOWLIST } from "./allowlist";
+export {
+  allowlistEntry,
+  assertPinnedVersions,
+  PIECE_ALLOWLIST
+} from "./allowlist";
 export { buildPieceActionDeclarations } from "./catalog";
 export { buildPieceContext } from "./context";
 export type { PieceOAuthApp } from "./oauth";

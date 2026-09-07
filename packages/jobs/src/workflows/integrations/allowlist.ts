@@ -1,3 +1,5 @@
+import type { ActivepiecesPiece } from "@carbon/ee/integrations/pieces";
+
 /** What Carbon exposes from a third-party integration piece.
  *
  * Curated on purpose: a usable OAuth integration needs an app we register and get
@@ -57,7 +59,8 @@ export interface AllowlistEntry {
   actions: readonly string[];
   /**
    * The NAMES of the env vars holding Carbon's OAuth app for this vendor — never
-   * the values. This module is imported by build-time catalog scripts, which must
+   * the values. This module is
+   * imported by build-time catalog scripts, which must
    * never carry a secret, and by the browser-safe settings config indirectly.
    */
   oauth: {
@@ -150,7 +153,11 @@ export interface AllowlistEntry {
  *     a one-line box. `LongText` maps to `template: true` automatically; a
  *     `ShortText` that is really prose needs `template: true` in `props` here.
  */
-export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
+// Keyed by the shared piece-name union rather than string, and NOT Partial:
+// a name added to `ActivepiecesPiece` without an entry here refuses to compile,
+// as does an entry whose key the union does not know. Runtime piece names come
+// from stored node data and go through `allowlistEntry` below instead.
+export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
   "google-calendar": {
     package: "@activepieces/piece-google-calendar",
     version: "0.10.3",
@@ -313,6 +320,14 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
     }
   }
 };
+
+/** The allowlist entry for a piece name that arrives as a STRING — a stored
+ * workflow node, a route param. The single place the typed record is widened;
+ * an unknown name is `undefined` here rather than a compile error, because the
+ * data it comes from cannot be compile-time checked. */
+export function allowlistEntry(piece: string): AllowlistEntry | undefined {
+  return (PIECE_ALLOWLIST as Record<string, AllowlistEntry>)[piece];
+}
 
 /**
  * Refuses a row whose `version` disagrees with the installed dependency, or whose

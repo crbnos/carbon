@@ -12,7 +12,7 @@ import {
 } from "@carbon/ee/integrations/connections";
 import type { ActionOutcome, RuntimeValue } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PIECE_ALLOWLIST } from "../integrations/allowlist";
+import { allowlistEntry } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";
 import { buildRefreshConfig, requiredScopesFor } from "../integrations/oauth";
 import { projectOutputs } from "../integrations/project";
@@ -54,7 +54,7 @@ export async function runIntegrationAction(args: {
   inputs: Record<string, RuntimeValue>;
 }): Promise<ActionOutcome> {
   const { client, companyId, pieceName, actionName, inputs } = args;
-  const label = PIECE_ALLOWLIST[pieceName]?.label ?? pieceName;
+  const label = allowlistEntry(pieceName)?.label ?? pieceName;
 
   const connectionId = connectionIdFrom(inputs);
   if (connectionId === undefined) return { ok: false, error: NO_CONNECTION };
@@ -127,7 +127,7 @@ export async function runIntegrationAction(args: {
       ok: true,
       outputs: {
         ...projectOutputs(action.outputSchema, result, {
-          sortItemsBy: PIECE_ALLOWLIST[pieceName]?.sortItemsBy?.[actionName]
+          sortItemsBy: allowlistEntry(pieceName)?.sortItemsBy?.[actionName]
         }),
         result: {
           kind: "primitive",

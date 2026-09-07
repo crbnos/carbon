@@ -8,9 +8,9 @@ import {
 import type { AllowlistEntry } from "@carbon/jobs/integrations";
 import {
   accountLabelFromBody,
+  allowlistEntry,
   connectionMetadataFrom,
   getPieceOAuth2Auth,
-  PIECE_ALLOWLIST,
   resolveOAuthApp
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
@@ -92,7 +92,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return connectionFailed(request, "invalid-state");
   }
 
-  const entry = PIECE_ALLOWLIST[state.pieceName];
+  const entry = allowlistEntry(state.pieceName);
   if (entry === undefined) {
     return connectionFailed(request, "invalid-state");
   }

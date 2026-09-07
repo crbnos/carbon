@@ -52,7 +52,7 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
-import { PIECE_ALLOWLIST, requiredScopesFor } from "@carbon/jobs/integrations";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
 import {
@@ -932,7 +932,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // An allowlisted workflow piece has no settings — what it has is the accounts a
   // workflow step can act as, so its card gets that list as a tab.
-  const piece = PIECE_ALLOWLIST[integrationId];
+  const piece = allowlistEntry(integrationId);
   const connections = piece
     ? {
         pieceName: integrationId,

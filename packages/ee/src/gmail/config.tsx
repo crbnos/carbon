@@ -3,9 +3,10 @@ import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { startIntegrationConnect } from "../integrations/connect";
 import { pieceLogo } from "../integrations/piece-logo";
+import type { ActivepiecesPiece } from "../integrations/pieces";
 
 /** The card's id IS the Activepieces piece name — see google-calendar/config.tsx. */
-const PIECE = "gmail";
+const PIECE: ActivepiecesPiece = "gmail";
 
 /**
  * Gmail, as an ordinary integration card, on the same Google OAuth app as Google

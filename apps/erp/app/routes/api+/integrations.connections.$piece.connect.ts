@@ -1,8 +1,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  allowlistEntry,
   buildConsentUrl,
   getPieceOAuth2Auth,
-  PIECE_ALLOWLIST,
   resolveOAuthApp
 } from "@carbon/jobs/integrations";
 import type { LoaderFunctionArgs } from "react-router";
@@ -24,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   const pieceName = params.piece;
-  const entry = pieceName ? PIECE_ALLOWLIST[pieceName] : undefined;
+  const entry = pieceName ? allowlistEntry(pieceName) : undefined;
   if (!pieceName || entry === undefined) {
     return { error: "That integration is not available." };
   }

@@ -1,6 +1,6 @@
 import type { OAuth2RefreshConfig } from "@carbon/ee/integrations/connections";
 import { getEnv } from "@carbon/env";
-import { type AllowlistEntry, PIECE_ALLOWLIST } from "./allowlist";
+import { type AllowlistEntry, allowlistEntry } from "./allowlist";
 import { getPieceOAuth2Auth } from "./registry";
 import type { OAuth2AuthDeclaration } from "./types";
 
@@ -25,7 +25,7 @@ export interface PieceOAuthApp {
  * customer to a consent screen that cannot come back.
  */
 export function resolveOAuthApp(pieceName: string): PieceOAuthApp {
-  const entry: AllowlistEntry | undefined = PIECE_ALLOWLIST[pieceName];
+  const entry = allowlistEntry(pieceName);
   if (entry === undefined) {
     throw new Error(`No OAuth app is configured for ${pieceName}.`);
   }
@@ -84,7 +84,7 @@ export function buildConsentUrl(args: {
 export async function requiredScopesFor(
   pieceName: string
 ): Promise<readonly string[]> {
-  const entry = PIECE_ALLOWLIST[pieceName];
+  const entry = allowlistEntry(pieceName);
   if (entry === undefined) return [];
   return entry.oauth.scope ?? (await getPieceOAuth2Auth(pieceName)).scope;
 }

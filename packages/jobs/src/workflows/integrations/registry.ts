@@ -1,4 +1,4 @@
-import { PIECE_ALLOWLIST } from "./allowlist";
+import { allowlistEntry } from "./allowlist";
 import type { OAuth2AuthDeclaration, Piece, PieceAction } from "./types";
 
 /** The ONLY module allowed to import a piece package. Pieces bundle Node-only vendor
@@ -41,7 +41,7 @@ export async function loadPiece(name: string): Promise<Piece> {
   const cached = loaded.get(name);
   if (cached !== undefined) return cached;
 
-  const entry = PIECE_ALLOWLIST[name];
+  const entry = allowlistEntry(name);
   if (entry === undefined) throw new UnknownPieceError(name);
 
   const module: Record<string, unknown> = await import(entry.package);
@@ -58,7 +58,7 @@ export async function loadPiece(name: string): Promise<Piece> {
 export async function getPieceActions(
   name: string
 ): Promise<Record<string, PieceAction>> {
-  const entry = PIECE_ALLOWLIST[name];
+  const entry = allowlistEntry(name);
   if (entry === undefined) throw new UnknownPieceError(name);
 
   const piece = await loadPiece(name);
@@ -76,7 +76,7 @@ export async function getPieceAction(
   name: string,
   action: string
 ): Promise<PieceAction> {
-  const entry = PIECE_ALLOWLIST[name];
+  const entry = allowlistEntry(name);
   if (entry === undefined) throw new UnknownPieceError(name);
   // The allowlist decides what we expose, not the piece.
   if (!entry.actions.includes(action)) {

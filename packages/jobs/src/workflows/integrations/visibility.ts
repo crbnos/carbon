@@ -1,4 +1,4 @@
-import { type AllowlistPropOverride, PIECE_ALLOWLIST } from "./allowlist";
+import { type AllowlistPropOverride, allowlistEntry } from "./allowlist";
 import type { PieceProperty } from "./types";
 
 /**
@@ -116,7 +116,7 @@ export function pinnedValues(
   action: string,
   props: Record<string, PieceProperty> = {}
 ): Record<string, unknown> {
-  const overrides = PIECE_ALLOWLIST[piece]?.props?.[action] ?? {};
+  const overrides = allowlistEntry(piece)?.props?.[action] ?? {};
   const pinned: Record<string, unknown> = {};
 
   for (const [name, property] of Object.entries(props)) {
@@ -154,7 +154,7 @@ export function omittedProps(
   action: string,
   props: Record<string, PieceProperty> = {}
 ): Set<string> {
-  const overrides = PIECE_ALLOWLIST[piece]?.props?.[action] ?? {};
+  const overrides = allowlistEntry(piece)?.props?.[action] ?? {};
   const omitted = new Set<string>();
   for (const [name, property] of Object.entries(props)) {
     const visibility = visibilityOf(property, overrides[name]);

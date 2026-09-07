@@ -12,7 +12,7 @@ import {
   needsReconnect,
   readConnections
 } from "@carbon/ee/integrations/connections";
-import { PIECE_ALLOWLIST, requiredScopesFor } from "@carbon/jobs/integrations";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -419,7 +419,7 @@ export async function getIntegrationHealth(
   // `missing_scope`). One read serves both questions. Decided here rather than in
   // an ee hook because only this side can see the allowlist's required list, and
   // an ee hook would read the same rows a second time.
-  if (PIECE_ALLOWLIST[integration.id!] !== undefined) {
+  if (allowlistEntry(integration.id!) !== undefined) {
     const cached = await redis.get(key);
     if (cached === "1") return { ...integration, health: "healthy" };
     if (cached === "0") return { ...integration, health: "unhealthy" };
