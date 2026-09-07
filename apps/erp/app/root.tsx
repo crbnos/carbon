@@ -95,6 +95,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     XERO_CLIENT_ID
   } = getBrowserEnv();
 
+  const requestId = request.headers.get("x-request-id") ?? "unknown";
+
   const preferences = getPreferenceHeaders(request);
   const appLanguage = resolveLanguage(preferences.locale);
   const linguiCatalog = await loadLinguiCatalogForRequest(request, appLanguage);
@@ -128,6 +130,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       linguiCatalog,
       mode: getMode(request),
       preferences: getPreferenceHeaders(request),
+      requestId,
       result: context.get(flashResultContext),
       theme: getTheme(request)
     },
@@ -169,13 +172,15 @@ export function Document({
   lang = "en",
   mode = "light",
   theme = "zinc",
-  env
+  env,
+  requestId
 }: {
   children: React.ReactNode;
   lang?: string;
   mode?: "light" | "dark";
   theme?: string;
   env?: Record<string, unknown>;
+  requestId?: string;
 }) {
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
@@ -233,6 +238,13 @@ export function Document({
             }}
           />
         ) : null}
+        {requestId ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__requestId = ${JSON.stringify(requestId)};`
+            }}
+          />
+        ) : null}
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
@@ -248,6 +260,7 @@ export default function App() {
   const theme = loaderData?.theme ?? "zinc";
   const prefs = loaderData?.preferences;
   const linguiCatalog = loaderData?.linguiCatalog;
+  const requestId = loaderData?.requestId;
   const appLanguage = resolveLanguage(prefs.locale);
   const mode = useMode();
 
@@ -281,7 +294,13 @@ export default function App() {
         <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
           <I18nProvider locale={prefs.locale}>
             <TooltipProvider delayDuration={200}>
-              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
+              <Document
+                mode={mode}
+                theme={theme}
+                lang={appLanguage}
+                env={env}
+                requestId={requestId}
+              >
                 <Outlet />
               </Document>
             </TooltipProvider>
@@ -301,8 +320,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   // "supabaseUrl is required", aborting hydration (leaving this screen static).
   // Use getBrowserEnv() rather than root loader data — the latter is undefined
   // in a no-match (404) boundary.
+  const loaderData = useLoaderData<typeof loader>();
+  const requestId = loaderData?.requestId;
   return (
-    <Document mode="dark" env={getBrowserEnv()}>
+    <Document mode="dark" env={getBrowserEnv()} requestId={requestId}>
       <RootErrorBoundary error={error} />
     </Document>
   );

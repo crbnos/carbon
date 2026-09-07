@@ -83,6 +83,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     VERCEL_URL
   } = getBrowserEnv();
 
+  const requestId = request.headers.get("x-request-id") ?? "unknown";
   const preferences = getPreferenceHeaders(request);
   const appLanguage = resolveLanguage(preferences.locale);
   const linguiCatalog = await loadLinguiCatalogForRequest(request, appLanguage);
@@ -110,6 +111,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       theme: getTheme(request),
       preferences,
       linguiCatalog,
+      requestId,
       result: context.get(flashResultContext)
     },
     {
@@ -151,7 +153,8 @@ function Document({
   lang = "en",
   mode = "light",
   theme = "zinc",
-  env
+  env,
+  requestId
 }: {
   children: React.ReactNode;
   title?: string;
@@ -159,6 +162,7 @@ function Document({
   mode?: "light" | "dark";
   theme?: string;
   env?: Record<string, unknown>;
+  requestId?: string;
 }) {
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
@@ -217,6 +221,13 @@ function Document({
             }}
           />
         ) : null}
+        {requestId ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__requestId = ${JSON.stringify(requestId)};`
+            }}
+          />
+        ) : null}
         <Toaster position="bottom-left" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
@@ -232,6 +243,7 @@ export default function App() {
   const theme = loaderData?.theme ?? "zinc";
   const prefs = loaderData?.preferences;
   const linguiCatalog = loaderData?.linguiCatalog;
+  const requestId = loaderData?.requestId;
   const appLanguage = resolveLanguage(prefs.locale);
 
   /* Dark/Light Mode */
@@ -254,7 +266,13 @@ export default function App() {
         <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
           <I18nProvider locale={prefs.locale}>
             <TooltipProvider delayDuration={200}>
-              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
+              <Document
+                mode={mode}
+                theme={theme}
+                lang={appLanguage}
+                env={env}
+                requestId={requestId}
+              >
                 <Outlet />
               </Document>
             </TooltipProvider>
@@ -273,8 +291,15 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   // undefined in a no-match boundary) so the client can hydrate — otherwise the
   // Supabase client throws "supabaseUrl is required" at module load and the
   // boundary never becomes interactive.
+  const loaderData = useLoaderData<typeof loader>();
+  const requestId = loaderData?.requestId;
   return (
-    <Document mode="dark" title="Error" env={getBrowserEnv()}>
+    <Document
+      mode="dark"
+      title="Error"
+      env={getBrowserEnv()}
+      requestId={requestId}
+    >
       <RootErrorBoundary error={error} />
     </Document>
   );

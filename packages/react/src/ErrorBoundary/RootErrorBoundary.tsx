@@ -35,11 +35,19 @@ export function RootErrorBoundary({ error }: { error: unknown }) {
     console.error(`[ErrorBoundary] ${summary}`, error);
   }, [error]);
 
-  const config = resolveConfig(error, () => navigate(0));
+  const requestId =
+    typeof window !== "undefined"
+      ? (window as Window & { __requestId?: string }).__requestId
+      : undefined;
+  const config = resolveConfig(error, () => navigate(0), requestId);
   return <ErrorScreen {...config} />;
 }
 
-function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
+function resolveConfig(
+  error: unknown,
+  retry: () => void,
+  requestId?: string
+): ErrorScreenProps {
   // 1. Route error responses (thrown Response / data() results)
   if (isRouteErrorResponse(error)) {
     if (error.status === 404) {
@@ -59,7 +67,8 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
           "> location: /dev/void",
           "> recommendation: return to known coordinates"
         ],
-        actions: [{ label: "return home", to: "/" }]
+        actions: [{ label: "return home", to: "/" }],
+        requestId
       };
     }
 
@@ -74,6 +83,7 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
       eyebrow: "— request refused",
       title: "The server turned this request away.",
       message:
+        detail ||
         "This route responded with an error status. You may not have access, or the request was malformed in transit.",
       highlightIndex: 3,
       logLines: [
@@ -81,14 +91,15 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
         "> transmitting request payload",
         "> awaiting acknowledgement",
         `> status_code: ${error.status} / ${error.statusText || "ERROR"}`,
-        `> detail: ${detail || "no additional detail"}`,
+        detail ? `> detail: ${detail}` : "> detail: no additional detail",
         "> channel closed by remote host",
         "> recommendation: verify access or retry"
       ],
       actions: [
         { label: "retry", onClick: retry },
         { label: "return home", to: "/", variant: "ghost" }
-      ]
+      ],
+      requestId
     };
   }
 
@@ -103,8 +114,7 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
     code: "500",
     eyebrow: "— unhandled exception",
     title: "Something broke on our end.",
-    message:
-      "The application hit an unexpected fault while rendering this route. You can retry the operation or head back to safe ground.",
+    message,
     highlightIndex: 3,
     logLines: [
       "> executing render pipeline ...",
@@ -118,6 +128,7 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
     actions: [
       { label: "retry", onClick: retry },
       { label: "return home", to: "/", variant: "ghost" }
-    ]
+    ],
+    requestId
   };
 }

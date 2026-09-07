@@ -1,4 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+
+export * from "./connect.server";
+
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import type { Database } from "@carbon/database";
 import {

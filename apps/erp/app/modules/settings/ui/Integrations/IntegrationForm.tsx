@@ -57,15 +57,26 @@ function IntegrationActionButton({
     setStatus("running");
 
     try {
-      const response = await fetch(action.endpoint, { method: "POST" });
+      const response = await fetch(action.endpoint, {
+        method: "POST",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
       const data = await response.json();
 
-      if (data.success) {
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
+        return;
+      }
+
+      if (data?.success) {
         toast.success(`${action.label} started`);
         setStatus("completed");
       } else {
         setStatus("idle");
-        toast.error(data.error || `Failed to start ${action.label}`);
+        toast.error(data?.error || `Failed to start ${action.label}`);
       }
     } catch {
       setStatus("idle");

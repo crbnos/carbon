@@ -1,6 +1,5 @@
 declare global {
   interface Window {
-    clientCache?: QueryClient;
     __requestId?: string;
   }
 }
