@@ -1,8 +1,76 @@
 {
-  "generated": "2026-08-25T18:57:30.955Z",
-  "totalTools": 1447,
+  "generated": "2026-09-07T13:49:11.336Z",
+  "totalTools": 1450,
   "modules": 15,
   "tools": [
+    {
+      "name": "account_getActiveSessions",
+      "module": "account",
+      "classification": "READ",
+      "description": "get active sessions",
+      "paramCount": 0,
+      "serviceParams": [
+        "db",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "account_revokeSession",
+      "module": "account",
+      "classification": "WRITE",
+      "description": "revoke session",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "userId",
+        "sessionId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      }
+    },
+    {
+      "name": "account_getLoginHistory",
+      "module": "account",
+      "classification": "READ",
+      "description": "get login history",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "userId",
+        "limit = 20"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "limit = 20": {}
+        },
+        "required": [
+          "limit = 20"
+        ]
+      }
+    },
     {
       "name": "account_getNotificationPreferences",
       "module": "account",

@@ -1161,3 +1161,13 @@ canvas hosting Radix popovers/selects.
 **Rule:** Adding a browser-safe var is THREE edits, not one: the `getEnv` export, `getBrowserEnv()` + the `Window.env` interface, AND the consuming app's root-loader `env` object (destructure + literal) for every app that needs it client-side. The loader's hand-curated `env` is the real source of `window.env` on the happy path — a key present in `getBrowserEnv()` but absent there is `undefined` in the browser. When an env-driven feature is dark despite the server value being set, diff `getBrowserEnv()`'s keys against the loader's `env` object before touching anything else.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
+
+## supabase CLI dies on any unparseable line in packages/database/.env before it can migrate
+
+**Context:** `pnpm db:migrate` (crbn migrate → `supabase migration up --db-url ...`) failed with `{"code":"LegacyDbConfigLoadError","message":"failed to parse environment file: .env"}` while implementing the userLogin migration, before any SQL ran.
+
+**Problem:** The supabase CLI loads `.env` from its working directory (`packages/database/`, a real file — NOT a symlink to the root `.env`) to substitute `env(...)` references in `config.toml`, and its Go dotenv parser hard-fails the whole file on a single malformed line (here: a trailing bare `STRIPE_BYPASS_COMPANY_IDS` with no `=` and no newline). The error names `.env` but not the line, and fixing the ROOT `.env` does nothing because `packages/database/.env` is a separate copy.
+
+**Rule:** When `db:migrate` fails with `LegacyDbConfigLoadError`, look for a malformed line (bare key without `=`, unterminated quote) in `packages/database/.env` specifically — every line must be `KEY=value`. To bisect quickly, temporarily move that `.env` aside and re-run with an explicit `--db-url`; parse errors disappear while connection errors remain, cleanly separating the two failure modes.
+
+**Applies to:** `pnpm db:migrate`, `supabase migration up`, `packages/database/.env`, any worktree whose env files were hand-edited.

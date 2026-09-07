@@ -50,6 +50,36 @@ backed by `passkey.server.ts`). Availability gated by `isAuthProviderEnabled(...
 Routes live under `_public+/` (`login`, `callback`, `logout`, `magic-link`, `verify`,
 `invite.$code`, `refresh-session`). MES mirrors a subset under its own `_public+/`.
 
+## Sign-in history (`login-history.server.ts`)
+
+Every completed first factor writes a `userLogin` row (method, app, IP,
+`x-vercel-ip-*` geo, user agent; migration `20260825235427`) via
+`recordLogin` from `@carbon/auth/login-history.server` — called in ERP/MES
+`callback.tsx` and `passkey.authenticate.verify.ts` (before the TOTP gate),
+ERP `login.tsx` dev bypass, and ERP `verify.tsx` signup. It NEVER throws
+(fail-open: a login must not fail because history did), prunes the user's rows
+older than 90 days on each insert, and emits `logAuthEvent("login_success")`.
+`unlock`, `refresh-session`, and `/mfa` are re-auth/second-factor, not logins —
+no rows. The table is user-owned (no `companyId`, owner-only SELECT policy, no
+write policies — service-role writes only). It feeds the "Your devices" card
+on Account → Security (`getLoginHistory` in the ERP account module).
+`deriveLoginMethod` classifies the callback's method from the access token's
+`amr` claim, best-effort, falling back to `unknown`. Spec:
+`.ai/specs/2026-08-26-user-devices-login-history.md`.
+
+**Session revocation** (spec `.ai/specs/2026-08-26-session-revocation.md`)
+piggybacks GoTrue: each `userLogin` row stores the token's `session_id` claim
+(`getSessionId`), and the security page's "Your devices" card lists LIVE
+`auth.sessions` (history rows are the join source for device/location, not a
+displayed list). "Sign out" on another device deletes that session row
+(refresh tokens cascade via FK; the device is bounced by the existing
+`verify: true` shell gate within ~60 s — the raw JWT stays valid against
+PostgREST until its 1 h expiry, an accepted residual). The ONLY code touching
+the `auth` schema directly is `getActiveSessions`/`revokeSession` in the ERP
+account module; "sign out other devices" and logout use the official
+`admin.signOut(jwt, "others" | "local")`. `destroyAuthSession` best-effort
+revokes the GoTrue session before clearing cookies (never blocks logout).
+
 ## Sessions (`session.server.ts`)
 
 - `createCookieSessionStorage`, cookie name **`carbon`**, `httpOnly`, `sameSite: "lax"`

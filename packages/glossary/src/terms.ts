@@ -1963,6 +1963,11 @@ export const terms = {
     definition: msg`A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's.`,
     href: "/docs/reference/api-keys"
   },
+  session: {
+    term: msg`Session`,
+    definition: msg`One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires.`,
+    href: "/docs/reference/devices"
+  },
   notification: {
     term: msg`Notification`,
     definition: msg`An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user.`,

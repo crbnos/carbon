@@ -14,6 +14,7 @@ import {
   SESSION_MAX_AGE,
   SESSION_SECRET
 } from "../config/env";
+import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { AuthSession, Result } from "../types";
 import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
@@ -215,6 +216,22 @@ export async function clearAuthCookies(request: Request) {
 }
 
 export async function destroyAuthSession(request: Request) {
+  // Best-effort server-side revocation of the GoTrue session: deletes the
+  // auth.sessions row (its refresh tokens cascade), so signed-out sessions
+  // don't linger as "Active" on the sign-in activity card and a logged-out
+  // refresh token is dead. Never blocks logout — an already-invalid token or
+  // an unreachable GoTrue is a harmless no-op.
+  try {
+    const authSession = await getAuthSession(request);
+    if (authSession?.accessToken) {
+      await getCarbonServiceRole().auth.admin.signOut(
+        authSession.accessToken,
+        "local"
+      );
+    }
+  } catch {
+    // ignore — logout must never fail because revocation did
+  }
   const headers = await clearAuthCookies(request);
   return redirect(path.to.login, {
     headers

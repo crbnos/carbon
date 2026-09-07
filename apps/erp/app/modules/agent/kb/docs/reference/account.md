@@ -39,6 +39,8 @@ by magic link or OAuth, not by a stored password you type each time.
 
 The same screen is where you add an authenticator app for two-factor codes — see
 `docs/reference/two-factor` for setup, company-wide enforcement, and recovery.
+It also carries the **"Your devices"** card, which lists every live session on your account across ERP and
+MES and lets you sign any of them out; see `docs/reference/devices`.
 
 The codebase carries a password-change form, but it isn't wired into any account route today — the Account
 sidebar exposes Profile, Security, and Notifications. Password management isn't a live self-service control here.

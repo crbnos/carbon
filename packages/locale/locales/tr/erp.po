@@ -153,6 +153,9 @@ msgstr "{apOverduePct}% borç"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% alacakların"
 
+msgid "{browser} on {os}"
+msgstr "{browser} {os} üzerinde"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan son halefine yönlendirmeyi düşünün."
 
@@ -169,7 +172,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} işlem"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount} daha: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -491,7 +494,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Yeni bir boyut, mevcut boyutun bir kopyası kullanılarak oluşturulacaktır"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "Yeni bir Stripe müşterisi oluşturulacak"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Bir faturayı bir sebep hesabına karşı ödeyen nakitsiz bir belge: alacak, borçlu olunan tutarı azaltır, borç artırır."
@@ -2593,7 +2596,7 @@ msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "Yayınlanan sürümüne salt okunur olarak göz atın. Adımları düzenlemek için yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -2800,7 +2803,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQ gönderilemiyor"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripe aracılığıyla gönderilemiyor"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Yüklenemiyor — tedarikçi etkileşimi henüz oluşturulmadı"
@@ -3008,7 +3011,7 @@ msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
@@ -3909,7 +3912,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Satış siparişini yerine getirmek için yeni bir üretim işi oluşturun"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "Bunun yerine yeni bir Stripe müşterisi oluşturun"
 
 msgid "Create a new version"
 msgstr "Yeni bir sürüm oluşturun"
@@ -6180,6 +6183,9 @@ msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlan
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "Şu anda kullandığınız oturum dışındaki her oturum sonlandırılacaktır. Diğer cihazlar, bir sonraki sayfa yüklemesinin bir dakika içinde oturum açma sayfasına döndürülecektir."
+
 msgid "Everything else"
 msgstr "Her şey başka"
 
@@ -6226,7 +6232,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "Mevcut Stripe müşterisi"
 
 msgid "Expand"
 msgstr "Genişlet"
@@ -8103,7 +8109,7 @@ msgid "Issues"
 msgstr "Sorunlar"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "Tekrar bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
@@ -8362,6 +8368,9 @@ msgstr "Dil"
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
 
+msgid "Last active"
+msgstr "Son etkinlik"
+
 msgid "Last attempt"
 msgstr "Son deneme"
 
@@ -8465,7 +8474,7 @@ msgid "Less manual work, fewer errors"
 msgstr "Daha az manuel çalışma, daha az hata"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "Hadi İnşa Edelim"
 
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
@@ -8546,7 +8555,7 @@ msgid "Link Linear Issue"
 msgstr "Linear sorununu bağla"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "Bu Carbon müşterisini bunlardan birine bağlayın veya ayrı bir Stripe müşterisi oluşturun."
 
 msgid "Link to sales order line"
 msgstr "Satış siparişi satırına bağla"
@@ -8611,6 +8620,9 @@ msgstr "Yükleniyor..."
 
 msgid "Local"
 msgstr "Yerel"
+
+msgid "Local network"
+msgstr "Yerel ağ"
 
 msgid "location"
 msgstr "konum"
@@ -10057,6 +10069,9 @@ msgstr "Burada satır yok."
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
+msgid "No signed-in devices found."
+msgstr "Oturum açılı cihaz bulunamadı."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Envanter veya iş durumu için tek bir güvenilir sayı yok"
 
@@ -10360,6 +10375,9 @@ msgstr "Carbon'un bireysel olarak takip ettiği bir seri birim veya bir batch, s
 
 msgid "One set of numbers"
 msgstr "Tek bir sayı seti"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "Hesabınızdaki bir oturum açılı tarayıcı veya cihaz, oturum açma tamamlandığında oluşturulur ve yedi güne kadar etkinlik sürer; oturum kapatıldığında, o cihazı Hesap → Güvenlik'ten çıkardığınızda veya süresi dolduğunda biter."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Bir işin yönlendirilmesinde bir adım, bir süreci ve bir iş merkezini adlandırır ve kendi kurulum, işçilik ve makine sürelerini ve oranlarını taşır."
@@ -11593,7 +11611,7 @@ msgid "Published by Carbon"
 msgstr "Carbon tarafından yayınlandı"
 
 msgid "Published Version"
-msgstr ""
+msgstr "Yayınlanan Sürüm"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Yayımlanmış sürümler düzenlenemez. Salt okunur şekilde inceleyin veya değişiklik yapmak için yeni bir sürüm oluşturun."
@@ -12613,7 +12631,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "Ters kesinti"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"
@@ -13532,6 +13550,9 @@ msgstr "hizmetler"
 msgid "Services"
 msgstr "Hizmetler"
 
+msgid "Session"
+msgstr "Oturum"
+
 msgid "Session locked"
 msgstr "Oturum Kilitli"
 
@@ -13850,7 +13871,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbon'a giriş yapın"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
@@ -13873,8 +13894,17 @@ msgstr "Çıkış yap"
 msgid "Sign Out"
 msgstr "Oturumu Kapat"
 
+msgid "Sign out all other devices"
+msgstr "Diğer tüm cihazlardan çıkış yapın"
+
+msgid "Sign out device"
+msgstr "Cihazdan çıkış yapın"
+
 msgid "Sign out instead"
 msgstr "Bunun yerine Oturumu Kapat"
+
+msgid "Sign out other devices"
+msgstr "Diğer cihazlardan çıkış yapın"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
@@ -14266,19 +14296,19 @@ msgid "Straight line"
 msgstr "Doğrusal"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe'ın zaten bu e-postayla bir müşterisi var"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe Son Ödeme Tarihi"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe, faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki kişiye de kaydedilecektir."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe'ın henüz bu Carbon müşterisi için bir müşterisi yok. Yayınlama, bağlı hesabınızda bir müşteri oluşturacaktır."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"
@@ -14693,7 +14723,7 @@ msgid "Tax Depreciation Method"
 msgstr "Vergi Amortisman Yöntemi"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "Vergi muafiyeti"
 
 msgid "Tax Exempt"
 msgstr "Vergi Muaf"
@@ -15553,13 +15583,19 @@ msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "Bu kişinin e-posta adresi yok"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
 
+msgid "This device"
+msgstr "Bu cihaz"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "Bu, o cihazın oturumunu sonlandırır — artık oturum açılı kalamaması ve bir sonraki sayfa yüklemesinin bir dakika içinde oturum açma sayfasına döndürülmesi."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Bu dosya artık kullanılamıyor veya onu indirme izniniz yok."
@@ -15581,10 +15617,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0} kuruluşuna katılmak için gönderilen bu davet süresi dolmuştur. E-postanıza yeni bir davet gönderilmesini isteyebilirsiniz."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "Bu faturanın kullanılabilir son ödeme tarihi yok — Stripe için bir tane seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "Bu fatura, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosu'nda düzenleyin."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gereklidir."
@@ -15721,10 +15757,10 @@ msgid "This version cannot be opened"
 msgstr "Bu sürüm açılamıyor"
 
 msgid "This version is published"
-msgstr ""
+msgstr "Bu sürüm yayınlandı"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "Bu sürüm yayınlandı. Düzenlemek için yeni bir sürüm oluşturun."
 
 msgid "This version's definition could not be read."
 msgstr "Bu sürümün tanımı okunamadı."
@@ -16260,11 +16296,17 @@ msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — y
 msgid "Unknown"
 msgstr "Bilinmeyen"
 
+msgid "Unknown device"
+msgstr "Bilinmeyen cihaz"
+
 msgid "unknown error"
 msgstr "bilinmeyen hata"
 
 msgid "unknown location"
 msgstr "bilinmeyen konum"
+
+msgid "Unknown location"
+msgstr "Bilinmeyen konum"
 
 msgid "Unlimited Functional Support"
 msgstr "Sınırsız Fonksiyonel Destek"
@@ -16312,10 +16354,10 @@ msgid "Unposted Documents"
 msgstr "Deftere Geçmemiş Belgeler"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "Yayından Kaldır"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "{name} yayından kaldırılsın mı?"
 
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
@@ -16676,7 +16718,7 @@ msgstr "Sürüm"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "Sürüm {0} yayınlandı ve değiştirilecek."
 
 msgid "Version:"
 msgstr "Sürüm:"
@@ -17265,6 +17307,9 @@ msgstr "Bugün nerede olduğunuz"
 msgid "Where you want to grow"
 msgstr "Büyümek istediğin yer"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize."
+msgstr "Oturum açtığınız yer. Tanımadığınız herhangi bir cihazdan çıkış yapın."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Tutarın, satır fiyatının yüzdesi olarak mı yoksa sabit bir para birimi tutarı olarak mı yorumlanacağı."
 
@@ -17561,7 +17606,7 @@ msgid "You're live on Carbon"
 msgstr "Carbon'da canlısınız"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "Çalışma alanınızdan bir adım uzaktasınız."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Carbon'ı kendiniz kendi hızınızda ayarlıyorsunuz"
@@ -17589,6 +17634,9 @@ msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
+
+msgid "Your devices"
+msgstr "Cihazlarınız"
 
 msgid "Your Email"
 msgstr "E-posta Adresiniz"

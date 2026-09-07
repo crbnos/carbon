@@ -1,6 +1,78 @@
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { sanitize } from "~/utils/supabase";
+
+// ── GoTrue session access ─────────────────────────────────────────────────
+// GoTrue's auth schema is not in the generated types and its admin REST API
+// has no endpoint for these two operations, so they use the sql template
+// against auth.sessions directly. This is the ONE place that reaches into
+// that schema — if a Supabase upgrade moves auth.sessions, fix it here.
+// (Revoking the CURRENT session and "sign out others" use the official
+// admin.signOut API instead; see x+/account+/security.tsx.)
+
+export type ActiveSession = {
+  id: string;
+  createdAt: string;
+  refreshedAt: string | null;
+  userAgent: string | null;
+  ip: string | null;
+};
+
+export async function getActiveSessions(
+  db: Kysely<KyselyDatabase>,
+  userId: string
+): Promise<ActiveSession[]> {
+  // to_jsonb #>> '{}' emits ISO-8601 with offset (what <DateTime> parses);
+  // refreshed_at is a bare timestamp GoTrue writes in UTC, so anchor it there.
+  const { rows } = await sql<ActiveSession>`
+    SELECT id::text AS id,
+           to_jsonb(created_at) #>> '{}' AS "createdAt",
+           to_jsonb(refreshed_at AT TIME ZONE 'UTC') #>> '{}' AS "refreshedAt",
+           user_agent AS "userAgent",
+           host(ip) AS ip
+    FROM auth.sessions
+    WHERE user_id::text = ${userId}
+  `.execute(db);
+  return rows;
+}
+
+/**
+ * Deletes one of the user's OWN GoTrue sessions; its refresh tokens cascade
+ * away (FK ON DELETE CASCADE), and the device is bounced to login at its next
+ * shell navigation. The user_id constraint makes a forged session id a no-op.
+ * Returns the affected count so callers can tell "signed out" from "was
+ * already signed out". Text comparison on purpose: a malformed id must
+ * compare false, not throw a uuid cast error.
+ */
+export async function revokeSession(
+  db: Kysely<KyselyDatabase>,
+  userId: string,
+  sessionId: string
+): Promise<number> {
+  const result = await sql`
+    DELETE FROM auth.sessions
+    WHERE id::text = ${sessionId} AND user_id::text = ${userId}
+  `.execute(db);
+  return Number(result.numAffectedRows ?? 0);
+}
+
+export async function getLoginHistory(
+  client: SupabaseClient<Database>,
+  userId: string,
+  limit = 20
+) {
+  // RLS restricts reads to the owner; the userId filter is belt-and-braces.
+  return client
+    .from("userLogin")
+    .select(
+      "id, sessionId, method, app, ipAddress, city, country, userAgent, createdAt"
+    )
+    .eq("userId", userId)
+    .order("createdAt", { ascending: false })
+    .limit(limit);
+}
 
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,

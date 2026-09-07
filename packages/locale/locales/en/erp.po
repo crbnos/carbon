@@ -153,6 +153,9 @@ msgstr "{apOverduePct}% of payables"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% of receivables"
 
+msgid "{browser} on {os}"
+msgstr "{browser} on {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
@@ -6180,6 +6183,9 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+
 msgid "Everything else"
 msgstr "Everything else"
 
@@ -8362,6 +8368,9 @@ msgstr "Language"
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
 
+msgid "Last active"
+msgstr "Last active"
+
 msgid "Last attempt"
 msgstr "Last attempt"
 
@@ -8611,6 +8620,9 @@ msgstr "Loading…"
 
 msgid "Local"
 msgstr "Local"
+
+msgid "Local network"
+msgstr "Local network"
 
 msgid "location"
 msgstr "location"
@@ -10057,6 +10069,9 @@ msgstr "No rows here."
 msgid "No rules assigned"
 msgstr "No rules assigned"
 
+msgid "No signed-in devices found."
+msgstr "No signed-in devices found."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
 
@@ -10360,6 +10375,9 @@ msgstr "One serial unit or one batch that Carbon follows individually, carrying 
 
 msgid "One set of numbers"
 msgstr "One set of numbers"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
@@ -13532,6 +13550,9 @@ msgstr "services"
 msgid "Services"
 msgstr "Services"
 
+msgid "Session"
+msgstr "Session"
+
 msgid "Session locked"
 msgstr "Session locked"
 
@@ -13873,8 +13894,17 @@ msgstr "Sign out"
 msgid "Sign Out"
 msgstr "Sign Out"
 
+msgid "Sign out all other devices"
+msgstr "Sign out all other devices"
+
+msgid "Sign out device"
+msgstr "Sign out device"
+
 msgid "Sign out instead"
 msgstr "Sign out instead"
+
+msgid "Sign out other devices"
+msgstr "Sign out other devices"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Sign-off review before moving to the next step"
@@ -15558,8 +15588,14 @@ msgstr "This contact has no email address"
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."
 
+msgid "This device"
+msgstr "This device"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "This file is no longer available, or you don't have permission to download it."
@@ -16260,11 +16296,17 @@ msgstr "Units reported as unrecoverable at an operation, with a reason — the a
 msgid "Unknown"
 msgstr "Unknown"
 
+msgid "Unknown device"
+msgstr "Unknown device"
+
 msgid "unknown error"
 msgstr "unknown error"
 
 msgid "unknown location"
 msgstr "unknown location"
+
+msgid "Unknown location"
+msgstr "Unknown location"
 
 msgid "Unlimited Functional Support"
 msgstr "Unlimited Functional Support"
@@ -17265,6 +17307,9 @@ msgstr "Where you are today"
 msgid "Where you want to grow"
 msgstr "Where you want to grow"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize."
+msgstr "Where you're signed in. Sign out of any device you don't recognize."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 
@@ -17593,6 +17638,9 @@ msgstr "Your customer-facing price lists"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Your data is accessible and reasonably clean"
+
+msgid "Your devices"
+msgstr "Your devices"
 
 msgid "Your Email"
 msgstr "Your Email"

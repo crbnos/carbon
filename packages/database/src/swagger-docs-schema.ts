@@ -28791,6 +28791,186 @@ export default {
         tags: ["workflowTriggerEvent"]
       }
     },
+    "/userLogin": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.userLogin.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.method"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.app"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.ipAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.city"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.country"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.userAgent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.sessionId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/userLogin"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["userLogin"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.userLogin"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["userLogin"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.userLogin.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.method"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.app"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.ipAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.city"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.country"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.userAgent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.sessionId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["userLogin"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.userLogin.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.method"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.app"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.ipAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.city"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.country"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.userAgent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.sessionId"
+          },
+          {
+            $ref: "#/parameters/body.userLogin"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["userLogin"]
+      }
+    },
     "/externalIntegrationMapping": {
       get: {
         parameters: [
@@ -112483,6 +112663,57 @@ export default {
       },
       type: "object"
     },
+    userLogin: {
+      required: ["id", "userId", "method", "app", "createdAt"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        method: {
+          format: "text",
+          type: "string"
+        },
+        app: {
+          format: "text",
+          type: "string"
+        },
+        ipAddress: {
+          format: "text",
+          type: "string"
+        },
+        city: {
+          format: "text",
+          type: "string"
+        },
+        country: {
+          format: "text",
+          type: "string"
+        },
+        userAgent: {
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        sessionId: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     externalIntegrationMapping: {
       required: [
         "id",
@@ -155720,6 +155951,75 @@ export default {
     },
     "rowFilter.workflowTriggerEvent.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.userLogin": {
+      name: "userLogin",
+      description: "userLogin",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/userLogin"
+      }
+    },
+    "rowFilter.userLogin.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.method": {
+      name: "method",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.app": {
+      name: "app",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.ipAddress": {
+      name: "ipAddress",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.city": {
+      name: "city",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.country": {
+      name: "country",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.userAgent": {
+      name: "userAgent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.sessionId": {
+      name: "sessionId",
       required: false,
       in: "query",
       type: "string"

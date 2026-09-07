@@ -153,6 +153,9 @@ msgstr "{apOverduePct}%の買掛金"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
 
+msgid "{browser} on {os}"
+msgstr "{browser}の{os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。このパーツを最終的な後継品に直接指定することを検討してください。"
 
@@ -169,7 +172,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount}件その他: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -491,7 +494,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "新しいサイズが現在のサイズのコピーを使用して作成されます"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "新しいStripeカスタマーが作成されます"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "請求書を理由勘定に対して決済する非現金ドキュメント。クレジットは債務額を低下させ、デビットは債務額を増加させます。"
@@ -2593,7 +2596,7 @@ msgid "Browse library"
 msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "公開されたバージョンを読み取り専用で閲覧できます。ステップを並び替えてレイアウトを整理することはできます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2800,7 +2803,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripeを経由して送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — サプライヤーインタラクションがまだ作成されていません"
@@ -3008,7 +3011,7 @@ msgid "Check your email"
 msgstr "メールを確認してください"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "このカスタマーのStripeを確認中…"
 
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
@@ -3909,7 +3912,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "販売注文を履行するための新しい生産ジョブを作成します"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "代わりに新しいStripeカスタマーを作成"
 
 msgid "Create a new version"
 msgstr "新しいバージョンを作成"
@@ -6180,6 +6183,9 @@ msgstr "期間を閉じる前に、すべての必須タスクが完了または
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "現在使用中のセッション以外のすべてのセッションがサインアウトされます。他のデバイスは次のページロード時に1分以内にログインページに戻されます。"
+
 msgid "Everything else"
 msgstr "その他すべて"
 
@@ -6226,7 +6232,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "既存のStripeカスタマー"
 
 msgid "Expand"
 msgstr "展開"
@@ -8103,7 +8109,7 @@ msgid "Issues"
 msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "バージョンを再度公開するまで実行が停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8362,6 +8368,9 @@ msgstr "言語"
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
 
+msgid "Last active"
+msgstr "最後のアクティビティ"
+
 msgid "Last attempt"
 msgstr "最後の試行"
 
@@ -8465,7 +8474,7 @@ msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "ビルドしましょう"
 
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
@@ -8546,7 +8555,7 @@ msgid "Link Linear Issue"
 msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "このCarbonカスタマーをそのいずれかにリンクするか、別のStripeカスタマーを作成します。"
 
 msgid "Link to sales order line"
 msgstr "販売注文行へのリンク"
@@ -8611,6 +8620,9 @@ msgstr "読み込み中…"
 
 msgid "Local"
 msgstr "ローカル"
+
+msgid "Local network"
+msgstr "ローカルネットワーク"
 
 msgid "location"
 msgstr "場所"
@@ -10057,6 +10069,9 @@ msgstr "ここに行はありません。"
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
+msgid "No signed-in devices found."
+msgstr "サインインしたデバイスが見つかりません。"
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
 
@@ -10360,6 +10375,9 @@ msgstr "Carbonが個別に追跡する1つのシリアルユニットまたは1�
 
 msgid "One set of numbers"
 msgstr "1つの数字セット"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "アカウント上のサインイン済みブラウザまたはデバイス。サインインが完了すると作成され、最大7日間のアクティビティが続きます。ログアウト時、アカウント→セキュリティからそのデバイスをサインアウトしたとき、または有効期限が切れたときに終了します。"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "ジョブのルーティングの1つのステップであり、プロセスとワークセンターに名前を付け、独自のセットアップ、労働、機械の時間とレートを持ちます。"
@@ -11593,7 +11611,7 @@ msgid "Published by Carbon"
 msgstr "Carbonによって公開"
 
 msgid "Published Version"
-msgstr ""
+msgstr "公開されたバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12613,7 +12631,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "このインボイスからのアイテム台帳エントリをすべて取り消す"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "リバースチャージ"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "逆請求売上税"
@@ -13532,6 +13550,9 @@ msgstr "サービス"
 msgid "Services"
 msgstr "サービス"
 
+msgid "Session"
+msgstr "セッション"
+
 msgid "Session locked"
 msgstr "セッションがロック中"
 
@@ -13850,7 +13871,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbonにサインイン"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
@@ -13873,8 +13894,17 @@ msgstr "ログアウト"
 msgid "Sign Out"
 msgstr "サインアウト"
 
+msgid "Sign out all other devices"
+msgstr "他のすべてのデバイスからサインアウト"
+
+msgid "Sign out device"
+msgstr "デバイスをサインアウト"
+
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
+
+msgid "Sign out other devices"
+msgstr "他のデバイスからサインアウト"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
@@ -14266,19 +14296,19 @@ msgid "Straight line"
 msgstr "定額法"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripeには既にこのメールアドレスを持つカスタマーがあります"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe支払期限"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripeはカスタマーに請求書をメールで送信するため、住所が必要です。これはCarbonの連絡先にも保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "StripeにはまだこのCarbonカスタマーのカスタマーがありません。投稿するとあなたの接続されたアカウント上に作成されます。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanbanテーブルに表示するカンバン出力のスタイル"
@@ -14693,7 +14723,7 @@ msgid "Tax Depreciation Method"
 msgstr "税務償却方法"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "非課税"
 
 msgid "Tax Exempt"
 msgstr "税務上免除"
@@ -15553,13 +15583,19 @@ msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "この連絡先にはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
 
+msgid "This device"
+msgstr "このデバイス"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "これはそのデバイスのセッションを終了します。サインインしたままにはできず、次のページロード時に1分以内にログインページに戻されます。"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "このファイルは利用できなくなっているか、ダウンロード権限がありません。"
@@ -15581,10 +15617,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "この請求書には使用可能な支払期限がありません。Stripeの支払期限を選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "この請求書は、既にこのCarbonカスタマーにリンクされているStripeカスタマーに請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15721,10 +15757,10 @@ msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
 msgid "This version is published"
-msgstr ""
+msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "このバージョンは公開されています。編集するために新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16260,10 +16296,16 @@ msgstr "操作で回復不可能として報告される単位(理由付き) —
 msgid "Unknown"
 msgstr "不明"
 
+msgid "Unknown device"
+msgstr "不明なデバイス"
+
 msgid "unknown error"
 msgstr "不明なエラー"
 
 msgid "unknown location"
+msgstr "不明な場所"
+
+msgid "Unknown location"
 msgstr "不明な場所"
 
 msgid "Unlimited Functional Support"
@@ -16312,10 +16354,10 @@ msgid "Unposted Documents"
 msgstr "未転記書類"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "公開を取り消す"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "{name}の公開を取り消しますか?"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -16676,7 +16718,7 @@ msgstr "バージョン"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "バージョン {0} は現在公開されており、置き換えられます。"
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -17265,6 +17307,9 @@ msgstr "今日のあなたの状況"
 msgid "Where you want to grow"
 msgstr "成長したい場所"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize."
+msgstr "サインインしている場所。認識しないデバイスからサインアウトしてください。"
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "金額を明細価格に対する割合として解釈するか、固定の通貨額として解釈するか。"
 
@@ -17561,7 +17606,7 @@ msgid "You're live on Carbon"
 msgstr "Carbonで本番稼働中です"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "ワークスペースまであと1ステップです。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"
@@ -17589,6 +17634,9 @@ msgstr "顧客向けの価格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "あなたのデータはアクセス可能で、適切にクリーンです"
+
+msgid "Your devices"
+msgstr "あなたのデバイス"
 
 msgid "Your Email"
 msgstr "あなたのメールアドレス"

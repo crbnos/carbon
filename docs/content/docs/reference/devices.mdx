@@ -1,0 +1,121 @@
+---
+title: Your devices
+description: Every live session on your account across ERP and MES, what Carbon records about each sign-in, and how to sign out a device you don't recognize.
+---
+
+Sooner or later every shared system raises the same question — where am I signed in right now? The
+**"Your devices"** card on **Account → Security** answers it. The card's own description says what it's
+for: *"Where you're signed in. Sign out of any device you don't recognize."* Each row is one live
+<Term>session</Term> on your account, across both the ERP and the shop-floor MES, and any of them except
+the one you're using can be ended from here (`apps/erp/app/routes/x+/account+/security.tsx`).
+
+It sits alongside your passkeys and [two-factor authentication](/docs/reference/two-factor) because it
+completes the same story: those control how someone gets in, this shows who currently *is* in.
+
+## Reading the list
+
+Your own session is always first, marked with a green **"This device"** badge. Every other row gets a
+sign-out button instead. What a row shows:
+
+<FieldTable>
+  <Field name="Device">The browser and operating system, read from the sign-in's user agent — "Chrome on macOS", "Safari on iOS". Phones and tablets get a phone icon. A session Carbon can't classify shows "Unknown device".</Field>
+  <Field name="Location and IP">The approximate city and country of the sign-in, with the IP address beside it. Sign-ins from a private or loopback address read "Local network"; when no location is available the row says "Unknown location".</Field>
+  <Field name="Last active">When that device last renewed its sign-in. Renewal happens automatically while the app is in use, so this trails real activity by up to an hour — it tells you the device is alive, not what it last clicked.</Field>
+  <Field name="App">An ERP or MES badge. MES has no account screen of its own, so shop-floor sessions are listed and managed here.</Field>
+</FieldTable>
+
+<Callout type="info" title="Location is an estimate, not a street address">
+The city comes from IP geolocation at the network edge, which resolves to the area of the network's
+population center — good enough to notice a sign-in from the wrong country, not good enough to identify a
+building. Self-hosted installs have no geolocation at the edge, so their rows read "Unknown location";
+the IP is still shown.
+</Callout>
+
+<Callout type="success" title="Two browsers on one computer look identical">
+Two browser profiles on the same machine share a user agent and an IP, so their rows read the same.
+Tell them apart by **"Last active"** and by which one carries the **"This device"** badge — the badge always
+belongs to the browser you're viewing the page from, so it moves if you check from the other profile.
+</Callout>
+
+## Signing a device out
+
+Press the sign-out icon on any row that isn't yours. Carbon asks you to confirm, naming the device and
+location, and states the contract exactly: the session *"can no longer stay signed in and is returned to
+the login page within a minute of its next page load."* Ending a session revokes its credentials at the
+server, so there is nothing the other device can do to keep itself alive — it must sign in again from
+scratch.
+
+<Callout type="warn" title="Within a minute, not the same instant">
+Signing a device out doesn't blank its screen mid-click. The revoked session fails its next security
+check, which runs on page navigation and is cached for sixty seconds — so the device is back at the login
+page within a minute of its next page load. Its ability to renew credentials dies immediately.
+</Callout>
+
+Two related controls round it out:
+
+- **"Sign out other devices"**, at the top of the card, ends every session except the one you're using —
+  the right move when you've signed in somewhere you shouldn't have, or just want a clean slate. The
+  button is disabled when this device holds the only session.
+- **Your own row has no sign-out button.** Ending the session you're sitting in is what **Log out** is
+  for, from the avatar menu. Logging out ends the session at the server too, so a device you signed out
+  of properly disappears from this list rather than lingering as a ghost.
+
+Sessions don't need manual housekeeping to stay safe: a device that sits idle for seven days loses its
+sign-in on its own. Its row can outlive that access for a while, though — if a stale entry bothers you,
+**"Sign out other devices"** sweeps everything but the session you're on.
+
+<Callout type="note" title="A sign-in stuck at the two-factor prompt still holds a session">
+When two-factor is on, a sign-in that passes its first step but never enters the code has still opened a
+session, and it appears here until it expires. If you see one you don't recognize, sign it out — that is
+precisely the situation the card exists for.
+</Callout>
+
+## The record behind the card
+
+The card is powered by a sign-in history Carbon keeps for your account. Every completed sign-in is
+recorded at the moment it succeeds — magic link, Google, Microsoft, passkey, or the email verification
+code at signup — along with the app, the IP, the approximate location, and the device's user agent
+(`packages/auth/src/services/login-history.server.ts`). With two-factor on, the record is written when
+the first step succeeds, which is why the stuck-at-the-prompt session above is visible at all.
+
+Three properties of that record matter:
+
+- **Only you can read it.** The history is scoped to your user; no other user, in any company, can query
+  your sign-ins.
+- **No one can rewrite it — including you.** Rows are written by the system at sign-in and can't be
+  inserted, edited, or deleted from a signed-in session, so the record can't be forged or scrubbed by
+  someone who got into the account.
+- **It keeps ninety days.** Older entries are pruned automatically, which also bounds how long the IP
+  addresses (personal data) are retained.
+
+Your devices is the visibility half of account security; the prevention half is adding a passkey and an
+authenticator app on the same screen. For what else lives there, see [your account](/docs/reference/account),
+and for the company-wide enforcement an admin controls, see
+[two-factor authentication](/docs/reference/two-factor).
+
+<AgentContext>
+## Troubleshooting
+
+### A row says "Unknown device" with no location
+That session's sign-in predates the device details Carbon now records, or its user agent wasn't
+classifiable. The session itself is real. If you don't recognize it, sign it out — "Sign out other
+devices" clears every session but the current one in a single step.
+
+### The rows read "Local network" or "Unknown location"
+"Local network" means the sign-in came from a private or loopback address — normal for local development
+and on-premise networks. "Unknown location" means no geolocation was available at the network edge, which
+is the expected state for self-hosted installs; location data is populated on Carbon Cloud.
+
+### The device I signed out is still on screen
+Revocation takes effect on the device's next page load, within a minute — the sixty-second window is the
+security-check cache. Its credentials are already dead; it cannot renew, and any navigation lands on the
+login page.
+
+### "Sign out other devices" is disabled
+The button is enabled only when at least one session other than the current one is live. Disabled means
+this device holds the only session.
+
+### Two identical rows
+Two browsers or browser profiles on one machine share a user agent and IP. Distinguish them by "Last
+active" and by the "This device" badge, which always marks the browser currently viewing the page.
+</AgentContext>

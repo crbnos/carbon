@@ -8,6 +8,10 @@ import {
 import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
+import {
+  deriveLoginMethod,
+  recordLogin
+} from "@carbon/auth/login-history.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
@@ -99,6 +103,17 @@ export async function action({ request }: ActionFunctionArgs) {
     // accumulated per-account lockout state (NIST 3.1.8 reset-on-success). Runs
     // before the TOTP gate so an MFA-enrolled user's counter clears too.
     await new AccountLockout({ redis }).reset(authSession.email);
+
+    // Record the sign-in (fire-and-forget: recordLogin never throws) before
+    // the TOTP gate — first-factor success is the login fact being recorded.
+    await recordLogin({
+      request,
+      userId: authSession.userId,
+      email: authSession.email,
+      accessToken: authSession.accessToken,
+      method: deriveLoginMethod(authSession.accessToken),
+      app: "erp"
+    });
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.

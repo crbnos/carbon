@@ -2,6 +2,7 @@ import { assertIsPost, error, isAuthProviderEnabled } from "@carbon/auth";
 import { signInWithPasskey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
+import { recordLogin } from "@carbon/auth/login-history.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
 import {
@@ -118,6 +119,17 @@ export async function action({ request }: ActionFunctionArgs) {
     // Genuine passkey login verified — clear any per-account lockout state
     // (NIST 3.1.8 reset-on-success), before the TOTP gate below.
     await new AccountLockout({ redis }).reset(authUser.user.email);
+
+    // Record the sign-in (fire-and-forget: recordLogin never throws) before
+    // the TOTP gate — first-factor success is the login fact being recorded.
+    await recordLogin({
+      request,
+      userId: credRow.userId,
+      email: authUser.user.email,
+      accessToken: authSession.accessToken,
+      method: "passkey",
+      app: "mes"
+    });
 
     const safeRedirect =
       redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")

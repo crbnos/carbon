@@ -6,13 +6,15 @@ import {
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getSessionId } from "@carbon/auth/login-history.server";
 import type { TotpFactor } from "@carbon/auth/mfa.server";
 import { getTotpFactors } from "@carbon/auth/mfa.server";
-import { flash } from "@carbon/auth/session.server";
+import { flash, getAuthSession } from "@carbon/auth/session.server";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
+  Badge,
   Button,
   Card,
   CardContent,
@@ -31,6 +33,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { isPrivateIp, normalizeIp, parseUserAgent } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -38,7 +41,10 @@ import { useState } from "react";
 import {
   LuCircleAlert,
   LuFingerprint,
+  LuLogOut,
+  LuMonitor,
   LuShieldCheck,
+  LuSmartphone,
   LuTrash2
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -49,6 +55,12 @@ import {
   OtpInput,
   useTotpEnrollment
 } from "~/components/TotpEnrollment";
+import {
+  getActiveSessions,
+  getLoginHistory,
+  revokeSession
+} from "~/modules/account";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -66,20 +78,61 @@ type Passkey = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { client, userId } = await requirePermissions(request, {});
   const serviceRole = getCarbonServiceRole();
-  const [passkeysResult, totpFactors] = await Promise.all([
-    (serviceRole as any)
-      .from("passkeyCredential")
-      .select("id, credentialName, createdAt, lastUsedAt, backedUp")
-      .eq("userId", userId)
-      .order("createdAt", { ascending: false }),
-    getTotpFactors(userId)
-  ]);
+  const authSession = await getAuthSession(request);
+  const currentSessionId = authSession
+    ? getSessionId(authSession.accessToken)
+    : null;
+  const [passkeysResult, totpFactors, loginsResult, activeSessions] =
+    await Promise.all([
+      (serviceRole as any)
+        .from("passkeyCredential")
+        .select("id, credentialName, createdAt, lastUsedAt, backedUp")
+        .eq("userId", userId)
+        .order("createdAt", { ascending: false }),
+      getTotpFactors(userId),
+      // History rows are the JOIN SOURCE for device/location detail, not a
+      // displayed list — fetch enough to cover every live session's login.
+      getLoginHistory(client, userId, 100),
+      getActiveSessions(getDatabaseClient(), userId)
+    ]);
+
+  const loginBySession = new Map(
+    (loginsResult.data ?? [])
+      .filter((login) => login.sessionId)
+      .map((login) => [login.sessionId as string, login])
+  );
+
+  // One entry per LIVE session ("where you're signed in"). Sessions without a
+  // login row (minted before sessionId capture) fall back to what GoTrue
+  // recorded on the session itself.
+  const devices = activeSessions
+    .map((session) => {
+      const login = loginBySession.get(session.id);
+      return {
+        sessionId: session.id,
+        isCurrent: session.id === currentSessionId,
+        userAgent: login?.userAgent ?? session.userAgent,
+        ipAddress: login?.ipAddress ?? session.ip,
+        city: login?.city ?? null,
+        country: login?.country ?? null,
+        app: login?.app ?? null,
+        lastActiveAt: session.refreshedAt ?? session.createdAt
+      };
+    })
+    .sort((a, b) =>
+      a.isCurrent !== b.isCurrent
+        ? a.isCurrent
+          ? -1
+          : 1
+        : Date.parse(b.lastActiveAt) - Date.parse(a.lastActiveAt)
+    );
 
   return {
     passkeys: (passkeysResult.data ?? []) as Passkey[],
-    totpFactors: totpFactors.filter((f) => f.status === "verified")
+    totpFactors: totpFactors.filter((f) => f.status === "verified"),
+    devices
   };
 }
 
@@ -140,12 +193,62 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(success("Passkey renamed"));
   }
 
+  if (formData.get("intent") === "revokeSession") {
+    const sessionId = formData.get("sessionId") as string;
+    if (!sessionId) {
+      return data(error(null, "Missing sessionId"), { status: 400 });
+    }
+
+    // Refuse the caller's own session even if posted directly — ending the
+    // session you are on is logout, not revocation.
+    const authSession = await getAuthSession(request);
+    const currentSessionId = authSession
+      ? getSessionId(authSession.accessToken)
+      : null;
+    if (sessionId === currentSessionId) {
+      return data(error(null, "Use log out to end your current session"), {
+        status: 400
+      });
+    }
+
+    const revoked = await revokeSession(getDatabaseClient(), userId, sessionId);
+    return data(
+      success(
+        revoked > 0 ? "Device signed out" : "That session had already ended"
+      )
+    );
+  }
+
+  if (formData.get("intent") === "revokeOtherSessions") {
+    const authSession = await getAuthSession(request);
+    if (!authSession?.accessToken) {
+      return data(error(null, "No active session"), { status: 400 });
+    }
+
+    const serviceRole = getCarbonServiceRole();
+    const { error: signOutError } = await serviceRole.auth.admin.signOut(
+      authSession.accessToken,
+      "others"
+    );
+    if (signOutError) {
+      return data(
+        error(signOutError, "Failed to sign out other devices"),
+        await flash(
+          request,
+          error(signOutError, "Failed to sign out other devices")
+        )
+      );
+    }
+
+    return data(success("Signed out all other devices"));
+  }
+
   return null;
 }
 
 export default function AccountSecurity() {
   const { t } = useLingui();
-  const { passkeys, totpFactors } = useLoaderData<typeof loader>();
+  const { passkeys, totpFactors, devices } = useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
   const renameFetcher = useFetcher();
   const { revalidate } = useRevalidator();
@@ -276,6 +379,39 @@ export default function AccountSecurity() {
     deleteFetcher.submit(formData, { method: "post" });
     setConfirmDeleteId(null);
     closePasskeyDrawer();
+  };
+
+  const revokeFetcher = useFetcher();
+  const [confirmRevoke, setConfirmRevoke] = useState<
+    (typeof devices)[number] | null
+  >(null);
+  const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
+  const hasOtherDevices = devices.some((device) => !device.isCurrent);
+
+  const describeDevice = (device: (typeof devices)[number]) => {
+    const { browser, os } = parseUserAgent(device.userAgent);
+    const title =
+      browser && os
+        ? t`${browser} on ${os}`
+        : (browser ?? os ?? t`Unknown device`);
+    const location = [device.city, device.country].filter(Boolean).join(", ");
+    return location ? `${title} · ${location}` : title;
+  };
+
+  const onConfirmRevoke = () => {
+    if (!confirmRevoke?.sessionId) return;
+    const formData = new FormData();
+    formData.append("intent", "revokeSession");
+    formData.append("sessionId", confirmRevoke.sessionId);
+    revokeFetcher.submit(formData, { method: "post" });
+    setConfirmRevoke(null);
+  };
+
+  const onConfirmRevokeAll = () => {
+    const formData = new FormData();
+    formData.append("intent", "revokeOtherSessions");
+    revokeFetcher.submit(formData, { method: "post" });
+    setConfirmRevokeAll(false);
   };
 
   return (
@@ -435,6 +571,112 @@ export default function AccountSecurity() {
                   />
                 </HStack>
               ))}
+            </VStack>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <HStack className="justify-between">
+            <div>
+              <CardTitle>
+                <Trans>Your devices</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Where you're signed in. Sign out of any device you don't
+                  recognize.
+                </Trans>
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmRevokeAll(true)}
+              isDisabled={!hasOtherDevices}
+              leftIcon={<LuLogOut className="size-4" />}
+            >
+              <Trans>Sign out other devices</Trans>
+            </Button>
+          </HStack>
+        </CardHeader>
+        <CardContent>
+          {devices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No signed-in devices found.</Trans>
+            </p>
+          ) : (
+            <VStack spacing={2}>
+              {devices.map((device) => {
+                const { browser, os } = parseUserAgent(device.userAgent);
+                const title =
+                  browser && os
+                    ? t`${browser} on ${os}`
+                    : (browser ?? os ?? t`Unknown device`);
+                // Normalize at display too, so sessions recorded before
+                // normalization ("::ffff:127.0.0.1") still render cleanly.
+                const ipAddress = normalizeIp(device.ipAddress);
+                const location =
+                  [device.city, device.country].filter(Boolean).join(", ") ||
+                  (isPrivateIp(ipAddress)
+                    ? t`Local network`
+                    : t`Unknown location`);
+                const DeviceIcon =
+                  os === "iOS" || os === "Android" ? LuSmartphone : LuMonitor;
+                return (
+                  <HStack
+                    key={device.sessionId}
+                    spacing={4}
+                    className="w-full justify-between p-3 rounded-lg border border-border"
+                  >
+                    <HStack spacing={3} className="min-w-0">
+                      <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">
+                        <DeviceIcon className="size-4 text-muted-foreground" />
+                      </span>
+                      <VStack spacing={0} className="min-w-0">
+                        <p className="text-sm font-medium truncate">{title}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {location}
+                          {ipAddress && (
+                            <>
+                              {" · "}
+                              {ipAddress}
+                            </>
+                          )}
+                          {" · "}
+                          <Trans>Last active</Trans>{" "}
+                          <DateTime
+                            value={device.lastActiveAt}
+                            variant="relative"
+                          />
+                        </p>
+                      </VStack>
+                    </HStack>
+                    <HStack spacing={3} className="shrink-0">
+                      {device.app && (
+                        <Badge variant="secondary" className="uppercase">
+                          {device.app}
+                        </Badge>
+                      )}
+                      {device.isCurrent ? (
+                        <Badge variant="green">
+                          <Trans>This device</Trans>
+                        </Badge>
+                      ) : (
+                        <IconButton
+                          onClick={() => setConfirmRevoke(device)}
+                          aria-label={t`Sign out device`}
+                          type="button"
+                          variant="ghost"
+                          icon={<LuLogOut />}
+                          className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                        />
+                      )}
+                    </HStack>
+                  </HStack>
+                );
+              })}
             </VStack>
           )}
         </CardContent>
@@ -648,6 +890,95 @@ export default function AccountSecurity() {
               }
             >
               <Trans>Save</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        open={!!confirmRevoke}
+        onOpenChange={(open) => {
+          if (!open) setConfirmRevoke(null);
+        }}
+      >
+        <ModalContent size="small">
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Sign out device</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={2} className="w-full">
+              {confirmRevoke && (
+                <p className="text-sm font-medium">
+                  {describeDevice(confirmRevoke)}
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  This ends that device's session — it can no longer stay signed
+                  in and is returned to the login page within a minute of its
+                  next page load.
+                </Trans>
+              </p>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmRevoke(null)}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirmRevoke}
+              isLoading={revokeFetcher.state !== "idle"}
+              isDisabled={revokeFetcher.state !== "idle"}
+            >
+              <Trans>Sign out</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        open={confirmRevokeAll}
+        onOpenChange={(open) => {
+          if (!open) setConfirmRevokeAll(false);
+        }}
+      >
+        <ModalContent size="small">
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Sign out all other devices</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Trans>
+              Every session except the one you are using now will be signed out.
+              Other devices are returned to the login page within a minute of
+              their next page load.
+            </Trans>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmRevokeAll(false)}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirmRevokeAll}
+              isLoading={revokeFetcher.state !== "idle"}
+              isDisabled={revokeFetcher.state !== "idle"}
+            >
+              <Trans>Sign out other devices</Trans>
             </Button>
           </ModalFooter>
         </ModalContent>

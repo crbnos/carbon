@@ -39,6 +39,7 @@ pnpm --filter @carbon/auth test
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
 | `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge` |
 | `./company.server` | Company switching, `updateCompanySession` |
+| `./login-history.server` | `recordLogin` (writes `userLogin` sign-in history at every login mint point; never throws), `deriveLoginMethod`, `getSessionId` (GoTrue `session_id` claim — links rows to revocable sessions) |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
 | `./middleware/flash.server` | Flash message middleware |

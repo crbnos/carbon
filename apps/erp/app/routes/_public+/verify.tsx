@@ -4,6 +4,7 @@ import {
   createEmailAuthAccount,
   signInWithEmail
 } from "@carbon/auth/auth.server";
+import { recordLogin } from "@carbon/auth/login-history.server";
 import {
   flash,
   getAuthSession,
@@ -118,6 +119,16 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, "Failed to sign in user"))
     );
   }
+
+  // Record the first sign-in (fire-and-forget: recordLogin never throws).
+  await recordLogin({
+    request,
+    userId: authSession.userId,
+    email,
+    accessToken: authSession.accessToken,
+    method: "verification_code",
+    app: "erp"
+  });
 
   const sessionCookie = await setAuthSession(request, {
     authSession
