@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
+
+const logger = getFunctionLogger("download");
 
 const downloadValidator = z.object({
   bucket: z.string(),
@@ -20,13 +23,7 @@ serve(async (req: Request) => {
     const validatedPayload = downloadValidator.parse(payload);
     const { bucket, path, companyId, userId } = validatedPayload;
 
-    console.log({
-      function: "download",
-      bucket,
-      path,
-      companyId,
-      userId,
-    });
+    logger.info({ bucket, path, companyId, userId });
 
     // verify that the request is authorized by an API key or service role
     const serviceRole = await requirePermissions(req, companyId, userId, { view: "documents" });

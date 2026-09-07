@@ -216,7 +216,7 @@ const baseJobValidator = z.object({
   customerId: zfd.text(z.string().optional()),
   dueDate: zfd.text(z.string().optional()),
   deadlineType: z.enum(deadlineTypes, {
-    errorMap: () => ({ message: "Deadline type is required" })
+    error: "Deadline type is required"
   }),
   locationId: z.string().min(1, { message: "Location is required" }),
   quantity: zfd.numeric(
@@ -249,7 +249,7 @@ export const bulkJobValidator = z
       .string()
       .min(1, { message: "Unit of measure is required" }),
     deadlineType: z.enum(deadlineTypes, {
-      errorMap: () => ({ message: "Deadline type is required" })
+      error: "Deadline type is required"
     }),
     dueDateOfFirstJob: zfd.text(z.string().optional()),
     dueDateOfLastJob: zfd.text(z.string().optional()),
@@ -350,14 +350,10 @@ export const baseJobOperationValidator = z.object({
     .min(1, { message: "Quote Make Method is required" }),
   order: zfd.numeric(z.number().min(0)),
   operationOrder: z.enum(methodOperationOrders, {
-    errorMap: (issue, ctx) => ({
-      message: "Operation order is required"
-    })
+    error: "Operation order is required"
   }),
   operationType: z.enum(operationTypes, {
-    errorMap: (issue, ctx) => ({
-      message: "Operation type is required"
-    })
+    error: "Operation type is required"
   }),
   processId: z.string().min(1, { message: "Process is required" }),
   procedureId: zfd.text(z.string().optional()),
@@ -368,19 +364,19 @@ export const baseJobOperationValidator = z.object({
   ),
   setupUnit: z
     .enum(standardFactorType, {
-      errorMap: () => ({ message: "Setup unit is required" })
+      error: "Setup unit is required"
     })
     .optional(),
   setupTime: zfd.numeric(z.number().min(0).optional()),
   laborUnit: z
     .enum(standardFactorType, {
-      errorMap: () => ({ message: "Labor unit is required" })
+      error: "Labor unit is required"
     })
     .optional(),
   laborTime: zfd.numeric(z.number().min(0).optional()),
   machineUnit: z
     .enum(standardFactorType, {
-      errorMap: () => ({ message: "Machine unit is required" })
+      error: "Machine unit is required"
     })
     .optional(),
   machineTime: zfd.numeric(z.number().min(0).optional()),
@@ -752,14 +748,10 @@ const baseMaterialValidator = z.object({
   description: z.string().min(1, { message: "Description is required" }),
   jobMakeMethodId: z.string().min(1, { message: "Make method is required" }),
   itemType: z.enum(methodItemType, {
-    errorMap: (issue, ctx) => ({
-      message: "Item type is required"
-    })
+    error: "Item type is required"
   }),
   methodType: z.enum(methodType, {
-    errorMap: (issue, ctx) => ({
-      message: "Method type is required"
-    })
+    error: "Method type is required"
   }),
   itemId: z.string().min(1, { message: "Item is required" }),
   kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
@@ -897,7 +889,7 @@ export const procedureStepValidator = z
     name: z.string().trim().min(1, { message: "Name is required" }),
     description: zfd.text(z.string().optional()),
     type: z.enum(procedureStepType, {
-      errorMap: () => ({ message: "Type is required" })
+      error: "Type is required"
     }),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
@@ -963,7 +955,7 @@ export const productionEventValidator = z
     id: zfd.text(z.string().optional()),
     jobOperationId: z.string().min(1, { message: "Operation is required" }),
     type: z.enum(["Labor", "Machine", "Setup"], {
-      errorMap: () => ({ message: "Event type is required" })
+      error: "Event type is required"
     }),
     employeeId: zfd.text(z.string().optional()),
     workCenterId: zfd.text(z.string().optional()),
@@ -1005,7 +997,7 @@ export const productionQuantityValidator = z
     id: zfd.text(z.string().optional()),
     jobOperationId: z.string().min(1, { message: "Operation is required" }),
     type: z.enum(["Rework", "Scrap", "Production"], {
-      errorMap: () => ({ message: "Quantity type is required" })
+      error: "Quantity type is required"
     }),
     scrapReasonId: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional()),
@@ -1794,7 +1786,7 @@ export const balloonCreateItemWithOverlayValidator = z
     unit: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
-    data: z.record(z.unknown()).optional()
+    data: z.record(z.string(), z.unknown()).optional()
   })
   .strict();
 
@@ -1814,7 +1806,7 @@ export const balloonUpdateItemsValidator = z.array(
     regionHeight: normalizedSizeValidator.optional(),
     xCoordinate: normalizedCoordinateValidator.optional(),
     yCoordinate: normalizedCoordinateValidator.optional(),
-    data: z.record(z.unknown()).optional()
+    data: z.record(z.string(), z.unknown()).optional()
   })
 );
 

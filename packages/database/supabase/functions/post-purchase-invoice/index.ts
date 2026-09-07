@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
@@ -26,6 +27,7 @@ import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("post-purchase-invoice");
 
 const payloadValidator = z.object({
   type: z.enum(["post", "void"]).default("post"),
@@ -45,13 +47,7 @@ serve(async (req: Request) => {
     const { type, invoiceId, userId, companyId, skipReceiptPost } =
       payloadValidator.parse(payload);
 
-    console.log({
-      function: "post-purchase-invoice",
-      type,
-      invoiceId,
-      userId,
-      skipReceiptPost,
-    });
+    logger.info({ type, invoiceId, userId, skipReceiptPost });
     const client = await requirePermissions(req, companyId, userId, { update: "invoicing" });
     const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
@@ -548,7 +544,7 @@ serve(async (req: Request) => {
     if (purchaseInvoiceDelivery.error)
       throw new Error("Failed to fetch purchase invoice delivery");
     if (dimensions.error) {
-      console.error("Failed to fetch dimensions", dimensions.error);
+      logger.error("Failed to fetch dimensions", { error: dimensions.error });
     }
 
     const dimensionMap = new Map<string, string>();
@@ -886,7 +882,7 @@ serve(async (req: Request) => {
             );
             const itemTrackingType = item?.itemTrackingType ?? "Inventory";
 
-            console.log({
+            logger.debug({
               invoiceLineItemId: invoiceLine.itemId,
               foundItem: item,
               itemTrackingType,
@@ -2274,7 +2270,9 @@ serve(async (req: Request) => {
       receiptIds: createdReceiptIds,
     });
   } catch (err) {
-    console.error(err);
+    logger.error("post-purchase-invoice failed", {
+      error: String((err as Error)?.stack ?? err),
+    });
     if (payload.type !== "void" && "invoiceId" in payload) {
       const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "invoicing" });
       await client

@@ -305,11 +305,11 @@ export const processValidator = z
     id: zfd.text(z.string().optional()),
     name: z.string().trim().min(1, { message: "Process name is required" }),
     processType: z.enum(operationTypes, {
-      errorMap: () => ({ message: "Process type is required" })
+      error: "Process type is required"
     }),
     defaultStandardFactor: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Standard factor is required" })
+        error: "Standard factor is required"
       })
       .optional(),
     workCenters: z
@@ -389,10 +389,10 @@ export const learnQuizSubmissionValidator = z.object({
 
 export const learnExamStartValidator = z.object({
   trackSlug: z.enum(learnTrackSlugs, {
-    errorMap: () => ({ message: "Track is required" })
+    error: "Track is required"
   }),
   honorAccepted: z.literal("on", {
-    errorMap: () => ({ message: "You must accept the honor statement" })
+    error: "You must accept the honor statement"
   })
 });
 
@@ -421,7 +421,7 @@ export const learnRenewalStartValidator = z.object({
 export const learnAssignmentValidator = z.object({
   id: zfd.text(z.string().optional()),
   trackSlug: z.enum(learnTrackSlugs, {
-    errorMap: () => ({ message: "Track is required" })
+    error: "Track is required"
   }),
   groupIds: z
     .array(z.string())
@@ -462,7 +462,7 @@ export const trainingQuestionValidator = z
     trainingId: z.string().min(1, { message: "Training is required" }),
     question: z.string().min(1, { message: "Question is required" }),
     type: z.enum(trainingQuestionType, {
-      errorMap: () => ({ message: "Type is required" })
+      error: "Type is required"
     }),
     sortOrder: zfd.numeric(z.number().min(0).optional()),
     required: zfd.checkbox().optional(),
@@ -590,7 +590,7 @@ export const workCenterValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }),
   description: z.string(),
   defaultStandardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" })
+    error: "Standard factor is required"
   }),
   departmentId: zfd.text(z.string().optional()),
   laborRate: zfd.numeric(z.number().min(0)),
