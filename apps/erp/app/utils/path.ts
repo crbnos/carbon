@@ -205,11 +205,23 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
         ),
+      onShapeDetach: `${api}/integrations/onshape/detach`,
       onShapeDocuments: `${api}/integrations/onshape/documents`,
       onShapeElements: (documentId: string, versionId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
+      onShapePanelFields: `${api}/integrations/onshape/panel/fields`,
+      onShapePanelMe: `${api}/integrations/onshape/panel/me`,
+      onShapePanelPlanAssembly: `${api}/integrations/onshape/panel/plan-assembly`,
+      onShapePanelPlanPart: `${api}/integrations/onshape/panel/plan-part`,
+      onShapePanelPlanRelease: `${api}/integrations/onshape/panel/plan-release`,
+      onShapePanelPushAssembly: `${api}/integrations/onshape/panel/push-assembly`,
+      onShapePanelPushPart: `${api}/integrations/onshape/panel/push-part`,
+      onShapePanelPushRelease: `${api}/integrations/onshape/panel/push-release`,
+      onShapePanelReleases: `${api}/integrations/onshape/panel/releases`,
+      onShapePanelSession: `${api}/integrations/onshape/panel/session`,
+      onShapePanelStatus: `${api}/integrations/onshape/panel/status`,
       onShapeSync: `${api}/integrations/onshape/sync`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
@@ -1666,6 +1678,8 @@ export const path = {
       theme: `${onboarding}/theme`,
       user: `${onboarding}/user`
     },
+    onshapePanel: "/onshape/panel",
+    onshapePanelAuth: "/onshape/auth",
     operator: (id: string) => generatePath(`${x}/users/operators/${id}`),
     operatorResetPin: (id: string) =>
       generatePath(`${x}/users/operators/reset-pin/${id}`),

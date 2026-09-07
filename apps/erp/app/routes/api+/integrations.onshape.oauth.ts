@@ -9,9 +9,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Onshape } from "@carbon/ee";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
+import { oauthPopupResponse } from "~/modules/settings/oauth-popup.server";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -34,18 +34,31 @@ function integrationsUrl(request: Request) {
 }
 
 /**
- * Onshape reaches this loader by redirecting the user's browser, so a failure has
- * to render as something they can act on. Returning `data({ error })` produced a
- * bare `{"error":"…"}` JSON document — dead end, no navigation, no next step. Send
- * them back to the integrations page, which turns the code into a toast. Only a
- * code crosses the URL; `integrationErrors` owns the copy.
+ * Onshape reaches this loader by redirecting the user's browser — inside the
+ * popup that `Onshape.onClientInstall` opened — so a failure has to render as
+ * something the user can act on. Returning `data({ error })` produced a bare
+ * `{"error":"…"}` JSON document; redirecting the popup to the integrations page
+ * put the whole settings UI inside a 600×800 window. `oauthPopupResponse` posts
+ * the outcome to the page that opened the popup and closes it; that page turns
+ * the code into a toast. With no opener (popups blocked) it falls back to the
+ * integrations page, which shows the same toast. Only a code crosses the
+ * boundary; `integrationErrors` owns the copy.
  */
 function connectionFailed(
   request: Request,
   reason: IntegrationErrorCode<"onshape">
 ) {
-  return redirect(
+  return oauthPopupResponse(
+    { integration: Onshape.id, ok: false, error: reason },
     `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`
+  );
+}
+
+/** Success: tell the opener to revalidate, close the popup. */
+function connectionSucceeded(request: Request) {
+  return oauthPopupResponse(
+    { integration: Onshape.id, ok: true },
+    integrationsUrl(request)
   );
 }
 
@@ -134,10 +147,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     const serviceRole = getCarbonServiceRole();
+
+    // `upsertCompanyIntegration` writes the whole metadata column, so a
+    // reconnect built from fresh credentials alone would drop everything else
+    // the integration keeps there — the Onshape property map, the asset-sync
+    // toggle, `onshapeCompanyId`. Read the row first and put the new keys on
+    // top of it: reconnecting is a credential refresh, not a reset.
+    const existing = await serviceRole
+      .from("companyIntegration")
+      .select("metadata")
+      .eq("id", Onshape.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (existing.error) {
+      logger.error("Failed to read the Onshape integration before saving", {
+        error: existing.error
+      });
+      return connectionFailed(request, "save-failed");
+    }
+    const existingMetadata = existing.data?.metadata;
+
     const createdIntegration = await upsertCompanyIntegration(serviceRole, {
       id: Onshape.id,
       active: true,
       metadata: {
+        ...(typeof existingMetadata === "object" &&
+        existingMetadata !== null &&
+        !Array.isArray(existingMetadata)
+          ? existingMetadata
+          : {}),
         credentials: {
           type: "oauth2",
           accessToken: tokenData.access_token,
@@ -162,7 +200,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // the integration settings save + ensureOnshapeReleaseWebhook), not on
       // connect — asset sync is off by default, so there's nothing to subscribe
       // to yet at this point.
-      return redirect(integrationsUrl(request));
+      return connectionSucceeded(request);
     } else {
       logger.error("Failed to save Onshape integration", {
         createdIntegration
