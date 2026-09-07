@@ -18,7 +18,7 @@ Come here when you already know the noun you need and want the precise detail be
 
 ## Build on Carbon
 
-  - Carbon API The service layer — read and write your data the safe way, over MCP.
+  - Carbon API The service layer — read and write your data the safe way, over HTTP or MCP.
   - Data API Direct table access — the escape hatch, when the Carbon API doesn't cover it.
   - API keys Scoped secrets that let an external system call Carbon on your behalf.
   - Webhooks Get an HTTP callback the moment a subscribed record changes.

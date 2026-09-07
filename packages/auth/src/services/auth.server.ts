@@ -228,10 +228,8 @@ export async function requirePermissions(
 
   if (apiKey) {
     const company = await getCompanyIdFromAPIKey(apiKey);
-    // An unknown key used to fall out of this branch entirely and land in
-    // requireAuthSession, which redirects to /login — a 302 to an HTML page as
-    // the answer to an authenticated API call. A caller presenting a key is on
-    // the machine path; it gets a 401, never a login redirect.
+    // A caller presenting a key is on the machine path: 401, never the /login
+    // redirect requireAuthSession would answer with below.
     if (!company.data) {
       throw new Response("Invalid API key", { status: 401 });
     }

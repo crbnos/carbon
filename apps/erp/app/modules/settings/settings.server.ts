@@ -26,22 +26,30 @@ const logger = getLogger("erp", "settings");
  * callers that delete the row should bust AGAIN after the delete commits, using
  * the returned keyHash (unreadable from the DB once the row is gone).
  *
- * The lookup is service-role and scoped by companyId. apiKey's RLS SELECT
- * requires `settings_view`, but the routes that revoke or rescope a key gate on
- * `users_update` — with the caller's own client the row was invisible, so this
- * returned null and the bust silently did nothing, leaving a reduced scope live
- * for the full TTL.
+ * Service-role on purpose: apiKey's RLS SELECT requires `settings_view`, but the
+ * routes that revoke or rescope a key gate on `users_update`, so the caller's own
+ * client cannot see the row and the bust would silently do nothing.
  */
 export async function invalidateApiKeyCache(
   id: string,
   companyId: string
 ): Promise<string | null> {
-  const { data } = await getCarbonServiceRole()
+  const { data, error } = await getCarbonServiceRole()
     .from("apiKey")
     .select("keyHash")
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
+  // A failed lookup is indistinguishable from a missing row at the return type,
+  // and neither may block the revoke — log it so a stale scope surviving its TTL
+  // is diagnosable rather than silent.
+  if (error) {
+    logger.error("Failed to read api key for cache bust", {
+      error,
+      id,
+      companyId
+    });
+  }
   if (!data?.keyHash) return null;
   await bustApiKeyCache(data.keyHash);
   return data.keyHash;

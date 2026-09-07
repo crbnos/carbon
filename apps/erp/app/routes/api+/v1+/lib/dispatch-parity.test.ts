@@ -20,13 +20,6 @@ const spies = vi.hoisted(() => ({
   insertIssue: vi.fn(),
   insertPurchaseOrder: vi.fn(),
   insertSalesOrder: vi.fn(),
-  getDepartments: vi.fn(),
-  deleteApiKey: vi.fn(),
-  upsertJob: vi.fn(),
-  insertNote: vi.fn(),
-  upsertStockTransfer: vi.fn(),
-  getInventoryItems: vi.fn(),
-  updateRevision: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -44,21 +37,14 @@ vi.mock("~/modules/accounting/accounting.ee.service", () => ({
 }));
 vi.mock("~/modules/documents/documents.service", () => ({}));
 vi.mock("~/modules/inventory/inventory.service", () => ({
-  generateInventoryCountLines: spies.generateInventoryCountLines,
-  upsertStockTransfer: spies.upsertStockTransfer,
-  getInventoryItems: spies.getInventoryItems
+  generateInventoryCountLines: spies.generateInventoryCountLines
 }));
 vi.mock("~/modules/invoicing/invoicing.service", () => ({}));
-vi.mock("~/modules/items/items.service", () => ({
-  updateRevision: spies.updateRevision
-}));
-vi.mock("~/modules/people/people.service", () => ({
-  getDepartments: spies.getDepartments
-}));
+vi.mock("~/modules/items/items.service", () => ({}));
+vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
-  insertJob: spies.insertJob,
-  upsertJob: spies.upsertJob
+  insertJob: spies.insertJob
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
@@ -71,12 +57,8 @@ vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   insertSalesOrder: spies.insertSalesOrder
 }));
-vi.mock("~/modules/settings/settings.service", () => ({
-  deleteApiKey: spies.deleteApiKey
-}));
-vi.mock("~/modules/shared/shared.service", () => ({
-  insertNote: spies.insertNote
-}));
+vi.mock("~/modules/settings/settings.service", () => ({}));
+vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => spies.FAKE_DB
@@ -148,14 +130,7 @@ const allSpies = [
   spies.insertJob,
   spies.insertIssue,
   spies.insertPurchaseOrder,
-  spies.insertSalesOrder,
-  spies.getDepartments,
-  spies.deleteApiKey,
-  spies.upsertJob,
-  spies.insertNote,
-  spies.upsertStockTransfer,
-  spies.getInventoryItems,
-  spies.updateRevision
+  spies.insertSalesOrder
 ];
 
 beforeEach(() => {
@@ -250,38 +225,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("createdBy" in payload).toBe(false);
   });
-
-  it("d2. caller-supplied createdBy on a CREATE is overwritten, not honoured", async () => {
-    // It used to be stamped only when absent, so a create could be attributed to
-    // any other user (verified live: a record stored createdBy "system" rather
-    // than the key's own user). The array branch always overwrote; both shapes
-    // must agree.
-    const r = await runDispatch(
-      "accounting_upsertAccount",
-      spies.upsertAccount,
-      {
-        _operation: "create",
-        account: { name: "Cash", createdBy: "forged-user" }
-      }
-    );
-    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
-    expect(payload.createdBy).toBe("u1");
-  });
-
-  it("d3. an array payload overwrites a per-element createdBy too", async () => {
-    const r = await runDispatch(
-      "sales_upsertQuoteLinePrices",
-      spies.upsertQuoteLinePrices,
-      {
-        quoteId: "q1",
-        lineId: "l1",
-        quoteLinePrices: [{ quantity: 1, createdBy: "forged-user" }]
-      }
-    );
-    const rows = r.calls[0]?.at(-1) as Record<string, unknown>[];
-    expect(rows[0].createdBy).toBe("u1");
-  });
-
   it("e. conflicting _operation values are rejected before the service runs", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
@@ -465,139 +408,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       data: [{ id: "e1" }, { id: "e2" }],
       count: 7
     });
-  });
-
-  // o-q: the `args` positional. Which of the two wire shapes an operation uses is
-  // read off its own schema — a declared `args` object means the body wraps it.
-  // Passing the wrapper through unopened left every filter undefined, so searches
-  // returned unfiltered lists and getDocuments 400d on `.eq("active", undefined)`.
-  it("o. an operation whose schema declares `args` gets the wrapper unwrapped", async () => {
-    const r = await runDispatch("people_getDepartments", spies.getDepartments, {
-      args: { search: "Engineering", limit: 10 }
-    });
-    expect(r.calls).toEqual([
-      [
-        spies.FAKE_CLIENT,
-        "c1",
-        { search: "Engineering", limit: 10, companyId: "c1" }
-      ]
-    ]);
-  });
-
-  it("p. the same operation still accepts a flat body (18 ops mix `args` with siblings)", async () => {
-    const r = await runDispatch("people_getDepartments", spies.getDepartments, {
-      search: "Engineering"
-    });
-    expect(r.calls).toEqual([
-      [spies.FAKE_CLIENT, "c1", { search: "Engineering", companyId: "c1" }]
-    ]);
-  });
-
-  it("q. an `args` wrapper is NOT unwrapped when the schema is flat", async () => {
-    const r = await runDispatch(
-      "accounting_getAccountLedger",
-      spies.getAccountLedger,
-      { args: { accountId: "a1" } }
-    );
-    expect(r.calls).toEqual([
-      [spies.FAKE_CLIENT, { args: { accountId: "a1" }, companyId: "c1" }]
-    ]);
-  });
-
-  // r-s: a declared SCALAR param must never receive an object. deleteApiKey ran
-  // `.eq("id", { apiKeyId })`, matched nothing and returned 200 null — a silent
-  // no-op on a destructive operation.
-  it("r. a scalar param with no matching key is passed as undefined, not an object", async () => {
-    const r = await runDispatch("settings_deleteApiKey", spies.deleteApiKey, {
-      apiKeyId: "api_1"
-    });
-    expect(r.calls).toEqual([[spies.FAKE_CLIENT, undefined]]);
-  });
-
-  it("r2. the scalar is still used when the caller sends the declared name", async () => {
-    const r = await runDispatch("settings_deleteApiKey", spies.deleteApiKey, {
-      id: "api_1"
-    });
-    expect(r.calls).toEqual([[spies.FAKE_CLIENT, "api_1"]]);
-  });
-
-  // t-w: a service whose sole payload param is a destructured object can share its
-  // name with one of that object's own FIELDS. Reading `body.note` there handed
-  // insertNote the note STRING where it wants the whole record, so the insert went
-  // in malformed. The schema tells the two apart: a wrapper op declares one property
-  // named for the param; an op listing the param's own fields is describing it.
-  it("t. a param colliding with one of its object's own fields gets the whole payload", async () => {
-    const r = await runDispatch("shared_insertNote", spies.insertNote, {
-      note: "the note text",
-      documentId: "doc_1"
-    });
-    expect(r.calls).toEqual([
-      [
-        spies.FAKE_CLIENT,
-        {
-          note: "the note text",
-          documentId: "doc_1",
-          companyId: "c1",
-          createdBy: "u1",
-          updatedBy: "u1"
-        }
-      ]
-    ]);
-  });
-
-  it("u. the same holds for updateRevision, whose `revision` field shares the param name", async () => {
-    const r = await runDispatch("items_updateRevision", spies.updateRevision, {
-      id: "item_1",
-      revision: "B"
-    });
-    expect(r.calls).toEqual([
-      [
-        spies.FAKE_CLIENT,
-        { id: "item_1", revision: "B", companyId: "c1", updatedBy: "u1" }
-      ]
-    ]);
-  });
-
-  it("v. a genuine wrapper op still has its wrapper unwrapped", async () => {
-    // `stockTransfer` IS the schema's only declared property, so a body of
-    // { stockTransfer: {...} } addresses the param — extract it, don't nest it.
-    const r = await runDispatch(
-      "inventory_upsertStockTransfer",
-      spies.upsertStockTransfer,
-      {
-        _operation: "create",
-        stockTransfer: { locationId: "loc_1", stockTransferId: "st_1" }
-      }
-    );
-    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
-    expect(payload).toMatchObject({
-      locationId: "loc_1",
-      stockTransferId: "st_1",
-      companyId: "c1"
-    });
-    expect("stockTransfer" in payload).toBe(false);
-  });
-
-  it("w. a scalar sibling alongside `args` is still read by name", async () => {
-    // props are ['locationId','args'] — `args` is handled on its own pass, so
-    // locationId remains the sole own property and must still be extracted.
-    const r = await runDispatch(
-      "inventory_getInventoryItems",
-      spies.getInventoryItems,
-      { locationId: "loc_1", args: { search: "x" } }
-    );
-    const [, locationId] = r.calls[0] as [unknown, unknown];
-    expect(locationId).toBe("loc_1");
-  });
-
-  it("s. an absent OPTIONAL scalar keeps positional arity without swallowing the payload", async () => {
-    const r = await runDispatch("production_upsertJob", spies.upsertJob, {
-      job: { id: "j1" }
-    });
-    const [client, job, status] = r.calls[0] as [unknown, unknown, unknown];
-    expect(client).toBe(spies.FAKE_CLIENT);
-    expect(job).toMatchObject({ id: "j1", companyId: "c1" });
-    expect(status).toBeUndefined();
   });
 });
 

@@ -51,8 +51,7 @@ export interface CarbonJsonSchema {
  *
  * This is the OUTPUT wrapper. `shapeHttpBody` rewrites a DispatchResult into the
  * HTTP body, so a response legitimately does not match the operation's declared
- * response schema; validating here would reject correct responses. For request
- * input use `jsonSchemaInput`.
+ * response schema. For request input use `jsonSchemaInput`.
  */
 export function jsonSchema(schema: Record<string, unknown>): CarbonJsonSchema {
   return {
@@ -68,18 +67,13 @@ export function jsonSchema(schema: Record<string, unknown>): CarbonJsonSchema {
 /**
  * Wrap a precomputed JSON Schema as a VALIDATING Standard Schema, for `.input()`.
  *
- * The manifest's JSON Schema is converted back to a zod schema with
- * `z.fromJSONSchema` — zod is already a workspace dependency, so this needs no
- * JSON-Schema validator library. The conversion is lazy and memoized: the router
- * builds ~1500 procedures at module load, and only the ones actually called pay
- * for it.
+ * Conversion is lazy and memoized — the router builds ~1500 procedures at module
+ * load, and only the ones actually called pay for it.
  *
- * Deliberately permissive in two ways, because the dispatcher relies on both:
- *   - Unknown keys are preserved, not stripped (no generated schema sets
- *     `additionalProperties: false`), so the dispatcher's positional fallbacks
- *     still see the payload they were given.
- *   - A schema zod cannot represent falls back to pass-through rather than
- *     failing every request to that operation.
+ * Deliberately permissive in two ways the dispatcher relies on: unknown keys are
+ * preserved rather than stripped, so its positional fallbacks still see the whole
+ * payload; and a schema zod cannot represent falls back to pass-through rather
+ * than failing every request to that operation.
  */
 export function jsonSchemaInput(
   schema: Record<string, unknown>
@@ -98,13 +92,11 @@ export function jsonSchemaInput(
         const result = compiled.safeParse(value);
         if (result.success) return { value: result.data };
 
-        // The dispatcher accepts a lone wrapper's contents sent flat, and the
-        // workflow engine's create actions rely on it: job.create sends
-        // { itemId, quantity } to an operation whose schema declares
-        // { input: {...} }. Validation has to accept every shape dispatch does,
-        // or it rejects calls that work today. Deliberately narrow — only when
-        // the wrapper is the schema's ONLY required property, so an operation
-        // with other required fields still gets checked.
+        // The dispatcher accepts a lone wrapper's contents sent flat — the
+        // workflow engine's create actions send `{ itemId, quantity }` to an
+        // operation declaring `{ input: {...} }` — so validation must accept
+        // every shape dispatch does. Narrow on purpose: only when the wrapper is
+        // the schema's ONLY required property.
         if (unwrapped === undefined) unwrapped = compileSoleWrapper(schema);
         if (unwrapped && unwrapped.safeParse(value).success) return { value };
 

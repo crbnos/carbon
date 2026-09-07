@@ -66,7 +66,7 @@ const config = {
         destination: "/api/operations/:tool",
         permanent: true,
       },
-      { source: "/mcp/tools", destination: "/api/operations", permanent: true },
+      { source: "/mcp/tools", destination: "/api", permanent: true },
       {
         source: "/mcp/authentication",
         destination: "/api/authentication",

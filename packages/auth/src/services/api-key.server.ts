@@ -12,6 +12,8 @@ const API_KEY_CACHE_PREFIX = "apikey:auth:";
 // additionally bust the entry on edit/revoke). Negative results are cached too —
 // a bad key hammering the endpoint must not hammer Postgres.
 const API_KEY_CACHE_TTL_SECONDS = 30;
+/** PostgREST's code for a `.single()` that matched no rows. */
+const NO_ROWS_FOUND = "PGRST116";
 
 /** Hash an API key using SHA-256 for secure storage/lookup */
 export function hashApiKey(rawKey: string): string {
@@ -55,7 +57,7 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
     log.error("Failed to read api key cache", { error: e });
   }
 
-  const { data } = await getCarbonServiceRole()
+  const { data, error } = await getCarbonServiceRole()
     .from("apiKey")
     .select(
       "id, companyId, ...company(companyGroupId), createdBy, scopes, rateLimit, rateLimitWindow, expiresAt"
@@ -64,6 +66,14 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
     .single();
 
   const record = (data as unknown as ApiKeyRecord | null) ?? null;
+
+  // Only cache a verdict the database actually gave. `.single()` reports "no rows"
+  // as PGRST116; any other error also yields a null row, and caching THAT would
+  // reject a valid key for the full TTL over a momentary outage.
+  if (error && error.code !== NO_ROWS_FOUND) {
+    log.error("Failed to read api key record", { error });
+    return null;
+  }
 
   // Best-effort: a failed write (Redis down, fail-soft via @carbon/kv
   // withResilience) must never abort the request — we have the row from the DB.

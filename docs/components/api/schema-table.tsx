@@ -226,9 +226,12 @@ function SchemaRow({
           }`}
         >
           <div className="min-h-0 overflow-hidden">
+            {/* A `0fr` row still renders its content, so nested rows stay tabbable
+                while collapsed unless they are inert. */}
             <div
               id={panelId}
               role="region"
+              inert={!open}
               className="border-t border-ed-hairline bg-ed-inset"
             >
               {(values || limits.length > 0) && (

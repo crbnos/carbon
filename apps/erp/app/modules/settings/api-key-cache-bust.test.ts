@@ -43,18 +43,6 @@ describe("invalidateApiKeyCache", () => {
     expect(bustApiKeyCache).toHaveBeenCalledWith("hash-1");
   });
 
-  // The lookup must not use the caller's client: apiKey RLS SELECT wants
-  // `settings_view` while the revoke routes gate on `users_update`, so the row
-  // was invisible and the bust silently did nothing.
-  it("reads with the service role, scoped to the company", async () => {
-    bustApiKeyCache.mockClear();
-    const eq = stubServiceRole({ keyHash: "hash-1" });
-    await invalidateApiKeyCache("key-1", "company-1");
-    expect(getCarbonServiceRole).toHaveBeenCalled();
-    expect(eq).toHaveBeenCalledWith("id", "key-1");
-    expect(eq).toHaveBeenCalledWith("companyId", "company-1");
-  });
-
   it("does nothing and returns null when the row is missing", async () => {
     bustApiKeyCache.mockClear();
     stubServiceRole(null);

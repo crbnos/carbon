@@ -98,7 +98,7 @@ describe("getApiKeyRecord", () => {
   it("unknown key: returns null, caches the negative, and serves it without the DB", async () => {
     db.single.mockResolvedValue({
       data: null,
-      error: { message: "not found" }
+      error: { code: "PGRST116", message: "no rows" }
     });
     expect(await getApiKeyRecord(KEY)).toBeNull();
     expect(db.single).toHaveBeenCalledTimes(1);
@@ -107,6 +107,15 @@ describe("getApiKeyRecord", () => {
     mockRedis.get.mockResolvedValue("null");
     expect(await getApiKeyRecord(KEY)).toBeNull();
     expect(db.single).toHaveBeenCalledTimes(1);
+  });
+
+  it("lookup failure: does not cache the null, so a blip cannot 401 a valid key", async () => {
+    db.single.mockResolvedValue({
+      data: null,
+      error: { code: "57P01", message: "terminating connection" }
+    });
+    expect(await getApiKeyRecord(KEY)).toBeNull();
+    expect(mockRedis.set).not.toHaveBeenCalled();
   });
 
   it("Redis down (reads and writes resolve null): falls through to the DB without throwing", async () => {

@@ -27,6 +27,7 @@ import {
 } from "./response-schema";
 import {
   buildValidatorRegistry,
+  CONTEXT_PARAMS,
   type ValidatorRegistry,
 } from "./validator-registry";
 
@@ -50,22 +51,6 @@ export const MODULE_LIST = [
   "shared",
   "users",
 ];
-
-const CONTEXT_PARAMS = new Set([
-  "client",
-  "db",
-  "companyId",
-  "userId",
-  "createdBy",
-  "updatedBy",
-  "companyGroupId",
-  // A second Supabase client for consolidation reads. Not caller-supplied — the
-  // service defaults it to `client`, and the dispatcher fills it from context.
-  // Left out of this set it became a REQUIRED field the caller cannot express,
-  // so every call to the two consolidated-balance ops failed with
-  // `client.from is not a function`.
-  "eliminationClient",
-]);
 
 const DESCRIPTION_OVERRIDES: Record<string, string> = {
   purchasing_insertPurchaseOrder:
@@ -228,7 +213,9 @@ function isArrowClose(str: string, i: number): boolean {
   return str[i] === ">" && str[i - 1] === "=";
 }
 
-function findTopLevelColon(str: string): number {
+/** Index of the first `char` at nesting depth 0, or -1. A defaulted parameter
+ *  splits on `=`, so that scan skips `=>` and `==`/`!=`/`<=`/`>=`. */
+function findTopLevel(str: string, char: ":" | "="): number {
   let depth = 0;
   for (let i = 0; i < str.length; i++) {
     const j = skipComment(str, i);
@@ -239,43 +226,18 @@ function findTopLevelColon(str: string): number {
     const ch = str[i];
     if ("({[<".includes(ch)) depth++;
     else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
-    if (ch === ":" && depth === 0) return i;
-  }
-  return -1;
-}
-
-// A bare defaulted parameter (`hardDelete = true`, no type annotation) has no
-// top-level colon, so findTopLevelColon can't split it — the whole "name = value"
-// string was pushed as the param NAME, publishing a schema property literally
-// called "hardDelete = true" and marking it required. A defaulted param is
-// optional by definition; a caller who omits it gets the function's own
-// default, so a schema requiring the literal `= value` text can never be
-// satisfied. Excludes `=>` (arrow) and comparison operators (`==`, `!=`, `<=`,
-// `>=`) so a default value that is itself a lambda or comparison isn't split.
-function findTopLevelEquals(str: string): number {
-  let depth = 0;
-  for (let i = 0; i < str.length; i++) {
-    const j = skipComment(str, i);
-    if (j !== i) {
-      i = j - 1;
-      continue;
-    }
-    const ch = str[i];
-    if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
-    if (ch === "=" && depth === 0) {
+    if (ch !== char || depth !== 0) continue;
+    if (char === "=") {
       const prev = str[i - 1];
-      const next = str[i + 1];
-      if (next === ">" || next === "=" || "!<>=".includes(prev)) continue;
-      return i;
+      if (str[i + 1] === ">" || str[i + 1] === "=" || "!<>=".includes(prev)) {
+        continue;
+      }
     }
+    return i;
   }
   return -1;
 }
 
-// Best-effort type from a default-value literal, so the schema property carries
-// something more useful than "unknown". Falls back to "unknown" for anything
-// that isn't a simple boolean/number/string literal (an identifier, a call, …).
 function inferTypeFromDefaultLiteral(literal: string): string {
   const t = literal.trim();
   if (t === "true" || t === "false") return "boolean";
@@ -284,15 +246,10 @@ function inferTypeFromDefaultLiteral(literal: string): string {
   return "unknown";
 }
 
-// A destructuring pattern is not a name. Storing the raw source text — braces and
-// newlines included — put it verbatim into the manifest's `serviceParams`, so merely
-// reformatting a signature changed the committed digest and failed `check:manifest`
-// for no real reason. Substitute a stable synthetic name.
-//
-// Safe because nothing reads a param name for meaning: `computeInjectAuth` and the
-// permission lookup key off the FUNCTION name and classification. The two consumers
-// that DO match on it are `CONTEXT_PARAMS` and the dispatcher's `args` branch, so the
-// synthetic name only has to avoid those — `destructured` does.
+// A destructuring pattern is not a name; storing the raw source text put braces and
+// newlines into the manifest, so reformatting a signature churned the committed
+// digest. The synthetic name only has to avoid `CONTEXT_PARAMS` and the dispatcher's
+// `args` branch — nothing else reads a param name for meaning.
 function destructuredParamName(raw: string, existing: ParsedParam[]): string {
   if (!raw.startsWith("{")) return raw;
   const base = "destructured";
@@ -340,9 +297,9 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
         .join("\n")
         .trim();
       if (!stripped) continue;
-      const colonIdx = findTopLevelColon(stripped);
+      const colonIdx = findTopLevel(stripped, ":");
       if (colonIdx === -1) {
-        const eqIdx = findTopLevelEquals(stripped);
+        const eqIdx = findTopLevel(stripped, "=");
         if (eqIdx === -1) {
           params.push({
             name: destructuredParamName(stripped, params),
@@ -901,11 +858,9 @@ function buildToolSchema(
     const trimmedType = param.typeStr.trim();
     const isInlineObject = trimmedType.startsWith("{");
     // The regex is unanchored, so it also matches a `z.infer<…>` NESTED inside a
-    // wrapper — and returning the validator's schema verbatim then drops the
-    // wrapper. `insertSalesOrderLines(client, lines: (Omit<z.infer<…>> & {…})[])`
-    // published a single line's fields flat, so a caller following the schema sent
-    // one object where the service does `.map()`. Anything array-suffixed or
-    // parenthesized falls through to typeToJsonSchema, which handles `[]`.
+    // wrapper (`lines: (Omit<z.infer<…>> & {…})[]`) — returning the validator's
+    // schema verbatim there publishes one line's fields flat and drops the array.
+    // Array-suffixed or parenthesized types fall through to typeToJsonSchema.
     const isWrappedType = trimmedType.endsWith("[]") || trimmedType.startsWith("(");
     const validatorMatch =
       isInlineObject || isWrappedType

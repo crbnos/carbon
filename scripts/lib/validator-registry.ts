@@ -18,10 +18,16 @@ import {
  * Auth/tenancy fields the caller never supplies — they are injected server-side
  * from the authenticated context (`injectAuth`). They exist on the validators
  * because forms submit them, but publishing them in the manifest would invite a
- * caller to set `companyId`, so they are stripped here exactly as the long-standing
- * textual parser strips them.
+ * caller to set `companyId`.
+ *
+ * Shared with the textual parser in `service-metadata.ts`: a validator resolved
+ * natively and the same one resolved textually must strip the same set, so this is
+ * the single copy.
+ *
+ * `eliminationClient` is a second Supabase client for consolidation reads. Left out
+ * of this set it becomes a required field no caller can express.
  */
-const CONTEXT_PARAMS = new Set([
+export const CONTEXT_PARAMS = new Set([
   "client",
   "db",
   "companyId",
@@ -29,6 +35,7 @@ const CONTEXT_PARAMS = new Set([
   "createdBy",
   "updatedBy",
   "companyGroupId",
+  "eliminationClient",
 ]);
 
 /** A module whose validators are reused across modules when a local lookup misses. */

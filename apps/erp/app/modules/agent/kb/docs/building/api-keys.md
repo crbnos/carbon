@@ -62,7 +62,7 @@ One key unlocks two surfaces. Reach for the Carbon API first; drop to the Data A
 
 ### The Carbon API
 
-The [Carbon API](/api) is Carbon's service layer — the safe way to read and write, running the same validation, recalculation, and permission checks the app itself uses. Today you reach it over MCP: the creation dialog hands you a ready-to-paste command that registers the key with an AI assistant, passing it as an `Authorization: Bearer` token that Carbon resolves the same way as the `carbon-key` header. The assistant then operates strictly within the key's scopes. See [Connect over MCP](/api/mcp).
+The [Carbon API](/api) is Carbon's service layer — the safe way to read and write, running the same validation, recalculation, and permission checks the app itself uses. Reach it over plain HTTP at `POST /api/v1/{module}/{operation}` — the key goes in an `Authorization: Bearer` header, and the full operation catalogue is described by [`/api/v1/openapi.json`](/api). The same surface is also exposed over MCP: the creation dialog hands you a ready-to-paste command that registers the key with an AI assistant, which then operates strictly within the key's scopes. See [Connect over MCP](/api/mcp).
 
 ### The Data API
 
