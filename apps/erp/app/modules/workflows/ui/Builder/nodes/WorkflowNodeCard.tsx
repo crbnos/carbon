@@ -1,3 +1,5 @@
+import type { IntegrationID } from "@carbon/ee";
+import { getIntegrationConfigById } from "@carbon/ee";
 import {
   cn,
   IconButton,
@@ -50,6 +52,13 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const eventLabel = useWorkflowEventLabel();
   const node = asWorkflowNode(id, type as WorkflowNodeType, data);
   const meta = NODE_KIND_META[node.type];
+  // Once an app is chosen, the node wears that app's own logo instead of the
+  // generic plug. An integration's card id IS the piece name (by design — see
+  // workflow-integrations.md), so the settings grid's logo is reused verbatim.
+  const PieceLogo =
+    node.type === "integration" && node.data.piece
+      ? getIntegrationConfigById(node.data.piece as IntegrationID)?.logo
+      : undefined;
 
   const store = useBuilderStoreApi();
   const builderNode = useBuilderStore(selectNode(id));
@@ -216,7 +225,17 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         title={titleSlot}
         description={meta.description}
         summary={summary}
-        icon={<meta.Icon className="size-3.5" />}
+        icon={
+          PieceLogo ? (
+            // Brand marks are drawn for white, not for the primary-colored chip
+            // behind Carbon's own glyphs; the tile exactly overlays the chip.
+            <span className="flex size-6 items-center justify-center rounded-md bg-white">
+              <PieceLogo className="size-4" />
+            </span>
+          ) : (
+            <meta.Icon className="size-3.5" />
+          )
+        }
         ports={ports}
         hasTarget={meta.hasTarget}
         issues={cardIssues.map((issue) => issue.message)}

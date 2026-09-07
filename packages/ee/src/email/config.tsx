@@ -1,13 +1,21 @@
+import type { ComponentProps } from "react";
 import { HiEnvelope } from "react-icons/hi2";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+
+// Carbon's own integration has no vendor mark, so the envelope wears a plain
+// mail-blue to sit beside the branded, colored logos instead of reading as an
+// unfinished monochrome placeholder.
+function Logo(props: ComponentProps<"svg">) {
+  return <HiEnvelope {...props} style={{ color: "#3B82F6" }} />;
+}
 
 export const Email = defineIntegration({
   name: "Email",
   id: "email",
   active: true,
   category: "Email",
-  logo: HiEnvelope,
+  logo: Logo,
   description:
     "Send transactional emails — quotes, purchase orders, invoices, and more — from your own domain. Pick Resend for a managed email API, or Custom SMTP to use your own mail server.",
   shortDescription:

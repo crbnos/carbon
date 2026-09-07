@@ -1,16 +1,16 @@
 import { JIRA_CLIENT_ID } from "@carbon/auth";
 import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
-import type { SVGProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { pieceLogo } from "../integrations/piece-logo";
 
 export const Jira = defineIntegration({
   name: "Jira",
   id: "jira",
   active: !!JIRA_CLIENT_ID,
   category: "Project Management",
-  logo: Logo,
+  logo: pieceLogo("jira"),
   description:
     "Jira is a project management and issue tracking tool by Atlassian. With this integration, you can link quality issues and change notices from Carbon to Jira for tracking and collaboration.",
   shortDescription:
@@ -59,22 +59,5 @@ function SetupInstructions({ companyId }: { companyId: string }) {
         Select the following events: Issue updated, Issue deleted.
       </p>
     </>
-  );
-}
-
-export function Logo(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      {...props}
-      width="40"
-      height="40"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-    >
-      <title>atlassian_jira</title>
-      <rect width="24" height="24" fill="none" />
-      <path d="M11.53,2a4.37,4.37,0,0,0,4.35,4.35h1.78v1.7A4.35,4.35,0,0,0,22,12.4V2.84A.85.85,0,0,0,21.16,2H11.53M6.77,6.8a4.36,4.36,0,0,0,4.34,4.34h1.8v1.72a4.36,4.36,0,0,0,4.34,4.34V7.63a.84.84,0,0,0-.83-.83H6.77M2,11.6a4.34,4.34,0,0,0,4.35,4.34H8.13v1.72A4.36,4.36,0,0,0,12.47,22V12.43a.85.85,0,0,0-.84-.84H2Z" />
-    </svg>
   );
 }
