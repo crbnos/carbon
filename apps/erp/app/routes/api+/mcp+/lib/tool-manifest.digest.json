@@ -262,7 +262,7 @@
     {"name":"inventory_getWarehouseTransferLines","classification":"READ","paramCount":1,"schema":"d51f098ead24","response":"8a92aaed64aa","injectAuth":"companyId","permission":"inventory:view"},
     {"name":"inventory_getWarehouseTransfers","classification":"READ","paramCount":3,"schema":"04eded31eebb","response":"66ec9f5f0ca8","injectAuth":"companyId","permission":"inventory:view"},
     {"name":"inventory_insertInventoryCount","classification":"WRITE","paramCount":6,"schema":"f9ea90011f9a","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"inventory:create"},
-    {"name":"inventory_insertManualInventoryAdjustment","classification":"WRITE","paramCount":13,"schema":"b519b44e50c4","response":"3797626bd17e","injectAuth":"companyId+createdBy","permission":"inventory:create"},
+    {"name":"inventory_insertManualInventoryAdjustment","classification":"WRITE","paramCount":13,"schema":"1d55e3807e60","response":"3797626bd17e","injectAuth":"companyId+createdBy","permission":"inventory:create"},
     {"name":"inventory_insertStockTransfer","classification":"DESTRUCTIVE","paramCount":4,"schema":"3eef751fc699","response":"910187eb9b58","injectAuth":"companyId+createdBy+updatedBy","permission":"inventory:create"},
     {"name":"inventory_insertWarehouseTransfer","classification":"WRITE","paramCount":9,"schema":"c046002e6304","response":"8e9431d157a2","injectAuth":"companyId+createdBy+updatedBy","permission":"inventory:create"},
     {"name":"inventory_pickPickingListLine","classification":"WRITE","paramCount":3,"schema":"0371c6fecc9c","response":"3797626bd17e","injectAuth":"companyId","permission":"inventory:update"},
