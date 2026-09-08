@@ -25,6 +25,10 @@ msgstr "{0} Actif(s)"
 msgid "{0} ago"
 msgstr "il y a {0}"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} emplois"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS co
 
 msgid "+{overflow} more"
 msgstr "+{overflow} autres"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "Un traitement précédent ne s'est pas terminé. Recommencer reprend les étapes restantes — les quantités ne sont pas comptabilisées en double."
 
 msgid "About"
 msgstr "À propos"
@@ -169,6 +176,9 @@ msgstr "Numéro de lot {0}"
 msgid "Batch number is required"
 msgstr "Le numéro de lot est requis"
 
+msgid "Batched jobs"
+msgstr "Emplois groupés"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "En retard de {daysBehindTarget} jour(s)"
 
@@ -265,11 +275,17 @@ msgstr "Terminé"
 msgid "Complete All"
 msgstr "Tout compléter"
 
+msgid "Complete Batch"
+msgstr "Terminer le lot"
+
 msgid "Complete passed"
 msgstr "Terminer les réussis"
 
 msgid "Completed"
 msgstr "Terminé"
+
+msgid "Completing"
+msgstr "Finalisation"
 
 msgid "Connecting"
 msgstr "Connexion..."
@@ -644,6 +660,9 @@ msgstr "Dernier complété"
 
 msgid "Learn more"
 msgstr "En savoir plus"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Laissez une Opération à 0 pour l'ignorer — elle revient au Planning non exécutée sans aucun temps ni Quantité enregistrée."
 
 msgid "Leave this page"
 msgstr "Quitter cette page"
@@ -1028,6 +1047,9 @@ msgstr "Préventif"
 msgid "Print"
 msgstr "Imprimer"
 
+msgid "Print batch list"
+msgstr "Imprimer la liste Lots de production"
+
 msgid "Printer Settings"
 msgstr "Paramètres de l'imprimante"
 
@@ -1111,6 +1133,9 @@ msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
 
 msgid "Result"
 msgstr "Résultat"
+
+msgid "Retry Completion"
+msgstr "Recommencer le traitement"
 
 msgid "Rework"
 msgstr "Retouche"
@@ -1397,6 +1422,9 @@ msgstr "Cette unité sera définitivement mise au rebut et un nouveau numéro de
 
 msgid "Thumbnail"
 msgstr "Miniature"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Le temps et le coût sont répartis entre les tâches proportionnellement à la quantité."
 
 msgid "Time Entries"
 msgstr "Saisies de temps"

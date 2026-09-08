@@ -1,5 +1,8 @@
 import type { Database } from "@carbon/database";
-import { checkApiKeyRateLimit } from "@carbon/database/ratelimit";
+import {
+  ApiKeyNotFoundError,
+  checkApiKeyRateLimit
+} from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
@@ -24,6 +27,7 @@ import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
+import { type ApiKeyRecord, getApiKeyRecord } from "./api-key.server";
 import { logAuthEvent } from "./auth-events.server";
 import { isCarbonOwnedCompany } from "./company.server";
 import {
@@ -98,37 +102,29 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
   return data.user;
 }
 
-/** Hash an API key using SHA-256 for secure storage/lookup */
-export function hashApiKey(rawKey: string): string {
-  return createHash("sha256").update(rawKey).digest("hex");
-}
-
 /** Hash an OAuth token or secret using SHA-256 for secure storage/lookup */
 export function hashOAuthSecret(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
 
-type ApiKeyRecord = {
-  id: string;
-  companyId: string;
-  companyGroupId: string;
-  createdBy: string;
-  scopes: Record<string, string[]>;
-  rateLimit: number;
-  rateLimitWindow: "1m" | "1h" | "1d";
-  expiresAt: string | null;
-};
+// The API-key record cache lives in its own module; re-exported here so
+// `@carbon/auth/auth.server` stays the only subpath consumers import.
+export {
+  type ApiKeyRecord,
+  apiKeyCacheKey,
+  bustApiKeyCache,
+  getApiKeyRecord,
+  hashApiKey
+} from "./api-key.server";
 
-function getCompanyIdFromAPIKey(apiKey: string) {
-  const serviceRole = getCarbonServiceRole();
-  const keyHash = hashApiKey(apiKey);
-  return serviceRole
-    .from("apiKey")
-    .select(
-      "id, companyId, ...company(companyGroupId), createdBy, scopes, rateLimit, rateLimitWindow, expiresAt"
-    )
-    .eq("keyHash", keyHash)
-    .single();
+// Exported so the Carbon API v1 surface can read a key's scopes for its per-operation
+// scope gate (the gate lives in oRPC middleware, not in requirePermissions). The
+// carbon-key branch of requirePermissions already covers client/rate-limit/plan/expiry.
+// Kept as `{ data, error }` for its existing callers; the row now comes through the
+// ~30s Redis cache (with per-request memoization) in api-key.server.ts.
+export async function getCompanyIdFromAPIKey(apiKey: string) {
+  const data = await getApiKeyRecord(apiKey);
+  return { data, error: data ? null : new Error("API key not found") };
 }
 
 export function makeAuthSession(
@@ -232,6 +228,11 @@ export async function requirePermissions(
 
   if (apiKey) {
     const company = await getCompanyIdFromAPIKey(apiKey);
+    // A caller presenting a key is on the machine path: 401, never the /login
+    // redirect requireAuthSession would answer with below.
+    if (!company.data) {
+      throw new Response("Invalid API key", { status: 401 });
+    }
     if (company.data) {
       const apiKeyData = company.data as unknown as ApiKeyRecord;
       const companyId = apiKeyData.companyId;
@@ -245,12 +246,22 @@ export async function requirePermissions(
 
       // Check rate limit via Postgres function
       const serviceRole = getCarbonServiceRole();
-      const rl = await checkApiKeyRateLimit(
-        serviceRole,
-        apiKeyData.id,
-        apiKeyData.rateLimit,
-        apiKeyData.rateLimitWindow
-      );
+      let rl: Awaited<ReturnType<typeof checkApiKeyRateLimit>>;
+      try {
+        rl = await checkApiKeyRateLimit(
+          serviceRole,
+          apiKeyData.id,
+          apiKeyData.rateLimit,
+          apiKeyData.rateLimitWindow
+        );
+      } catch (err) {
+        // The key was deleted while its auth record was still cached — that is a
+        // revoked credential, not a server error.
+        if (err instanceof ApiKeyNotFoundError) {
+          throw new Response("Invalid API key", { status: 401 });
+        }
+        throw err;
+      }
       if (!rl.success) {
         throw new Response("Rate limit exceeded", {
           status: 429,

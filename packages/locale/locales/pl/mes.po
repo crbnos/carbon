@@ -25,6 +25,10 @@ msgstr "{0} Aktywnych"
 msgid "{0} ago"
 msgstr "{0} temu"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} zadań"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} zarejestrowanych niepowodzeń będzie NIEUKOŃCZONYCH — rozwi�
 
 msgid "+{overflow} more"
 msgstr "+{overflow} więcej"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "Poprzednie zakończenie nie zostało ukończone. Ponowienie wznawia pozostałe kroki — ilości nie są liczone podwójnie."
 
 msgid "About"
 msgstr "O programie"
@@ -169,6 +176,9 @@ msgstr "Numer partii {0}"
 msgid "Batch number is required"
 msgstr "Numer partii jest wymagany"
 
+msgid "Batched jobs"
+msgstr "Zadania zgrupowane"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
 
@@ -265,11 +275,17 @@ msgstr "Ukończ"
 msgid "Complete All"
 msgstr "Uzupełnij wszystko"
 
+msgid "Complete Batch"
+msgstr "Zakończ partię"
+
 msgid "Complete passed"
 msgstr "Zakończ zaliczone"
 
 msgid "Completed"
 msgstr "Ukończone"
+
+msgid "Completing"
+msgstr "Finalizowanie"
 
 msgid "Connecting"
 msgstr "Łączenie"
@@ -644,6 +660,9 @@ msgstr "Ostatnio ukończono"
 
 msgid "Learn more"
 msgstr "Dowiedz się więcej"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Pozostaw operację na 0, aby ją pominąć — powraca do harmonogramu bez wykonania, bez zarejestrowanego czasu i ilości."
 
 msgid "Leave this page"
 msgstr "Opuść tę stronę"
@@ -1028,6 +1047,9 @@ msgstr "Zapobiegawcze"
 msgid "Print"
 msgstr "Drukuj"
 
+msgid "Print batch list"
+msgstr "Drukuj listę partii produkcyjnych"
+
 msgid "Printer Settings"
 msgstr "Ustawienia drukarki"
 
@@ -1111,6 +1133,9 @@ msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
 
 msgid "Result"
 msgstr "Wynik"
+
+msgid "Retry Completion"
+msgstr "Ponów zakończenie"
 
 msgid "Rework"
 msgstr "Poprawka"
@@ -1397,6 +1422,9 @@ msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy 
 
 msgid "Thumbnail"
 msgstr "Miniatura"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Czas i koszt podzielone między zadania proporcjonalnie do ilości."
 
 msgid "Time Entries"
 msgstr "Wpisy czasu pracy"

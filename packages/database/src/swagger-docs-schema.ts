@@ -16779,6 +16779,213 @@ export default {
         tags: ["openPurchaseOrderLines"]
       }
     },
+    "/jobOperationBatch": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationBatch"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationBatch"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.jobOperationBatch"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      }
+    },
     "/itemInspectionDocumentAssignment": {
       get: {
         parameters: [
@@ -24394,6 +24601,15 @@ export default {
             $ref: "#/parameters/rowFilter.process.requiresAbility"
           },
           {
+            $ref: "#/parameters/rowFilter.process.batchable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchRules"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24495,6 +24711,15 @@ export default {
             $ref: "#/parameters/rowFilter.process.requiresAbility"
           },
           {
+            $ref: "#/parameters/rowFilter.process.batchable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchRules"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -24548,6 +24773,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/body.process"
@@ -25073,6 +25307,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.alwaysOn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.minimumBatchQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.locationName"
@@ -42061,6 +42301,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -42267,6 +42510,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -42425,6 +42671,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.jobOperation"
@@ -66877,6 +67126,15 @@ export default {
             $ref: "#/parameters/rowFilter.processes.requiresAbility"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.batchable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.batchType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.batchRules"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters"
           },
           {
@@ -76432,6 +76690,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.alwaysOn"
           },
           {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.minimumBatchQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.locationName"
           },
           {
@@ -81667,6 +81931,9 @@ export default {
             $ref: "#/parameters/rowFilter.productionEvent.postedToGL"
           },
           {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -81771,6 +82038,9 @@ export default {
             $ref: "#/parameters/rowFilter.productionEvent.postedToGL"
           },
           {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -81827,6 +82097,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionEvent.postedToGL"
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.productionEvent"
@@ -82633,6 +82906,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -82749,6 +83028,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -82817,6 +83102,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
             $ref: "#/parameters/body.workCenter"
@@ -87742,6 +88033,9 @@ export default {
             $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
           },
           {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -87852,6 +88146,9 @@ export default {
             $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
           },
           {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -87914,6 +88211,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.capacityReservation"
@@ -96007,6 +96307,74 @@ export default {
           }
         },
         tags: ["(rpc) get_ar_tie_out"]
+      }
+    },
+    "/rpc/get_batchable_operations": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "process_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_batchable_operations"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                process_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["location_id", "process_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_batchable_operations"]
       }
     },
     "/rpc/get_company_groups_for_root_permission": {
@@ -108406,6 +108774,83 @@ export default {
       },
       type: "object"
     },
+    jobOperationBatch: {
+      required: [
+        "id",
+        "readableId",
+        "companyId",
+        "processId",
+        "locationId",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        readableId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        processId: {
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Planned",
+          enum: ["Planned", "Active", "Completing", "Completed"],
+          format: 'public."jobOperationBatchStatus"',
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     itemInspectionDocumentAssignment: {
       required: [
         "itemId",
@@ -112178,7 +112623,9 @@ export default {
         "processType",
         "completeAllOnScan",
         "active",
-        "requiresAbility"
+        "requiresAbility",
+        "batchable",
+        "batchType"
       ],
       properties: {
         id: {
@@ -112265,6 +112712,22 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        batchable: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        batchType: {
+          default: "Sequential",
+          enum: ["Sequential", "Simultaneous"],
+          format: 'public."batchType"',
+          type: "string"
+        },
+        batchRules: {
+          description:
+            "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+          format: "jsonb"
         }
       },
       type: "object"
@@ -112550,6 +113013,14 @@ export default {
         alwaysOn: {
           format: "boolean",
           type: "boolean"
+        },
+        batchCapacity: {
+          format: "numeric",
+          type: "number"
+        },
+        minimumBatchQuantity: {
+          format: "numeric",
+          type: "number"
         },
         locationName: {
           format: "text",
@@ -120707,6 +121178,10 @@ export default {
           description:
             "Forward finite simulation: when this operation is projected to finish. Volatile (rewritten every regen).",
           format: "timestamp with time zone",
+          type: "string"
+        },
+        jobOperationBatchId: {
+          format: "text",
           type: "string"
         }
       },
@@ -132162,6 +132637,18 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        batchable: {
+          format: "boolean",
+          type: "boolean"
+        },
+        batchType: {
+          enum: ["Sequential", "Simultaneous"],
+          format: 'public."batchType"',
+          type: "string"
+        },
+        batchRules: {
+          format: "jsonb"
+        },
         workCenters: {
           format: "text[]",
           items: {
@@ -136633,6 +137120,14 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        batchCapacity: {
+          format: "numeric",
+          type: "number"
+        },
+        minimumBatchQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         locationName: {
           format: "text",
           type: "string"
@@ -139648,6 +140143,10 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        jobOperationBatchId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -140089,6 +140588,18 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        batchCapacity: {
+          description:
+            "Advisory maximum pieces per batch run; NULL means no capacity model.",
+          format: "numeric",
+          type: "number"
+        },
+        minimumBatchQuantity: {
+          description:
+            "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -142345,6 +142856,10 @@ export default {
             "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
           format: "boolean",
           type: "boolean"
+        },
+        jobOperationBatchId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -151658,6 +152173,93 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.jobOperationBatch": {
+      name: "jobOperationBatch",
+      description: "jobOperationBatch",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationBatch"
+      }
+    },
+    "rowFilter.jobOperationBatch.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.processId": {
+      name: "processId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itemInspectionDocumentAssignment": {
       name: "itemInspectionDocumentAssignment",
       description: "itemInspectionDocumentAssignment",
@@ -156008,6 +156610,26 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.process.batchable": {
+      name: "batchable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.process.batchType": {
+      name: "batchType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.process.batchRules": {
+      name: "batchRules",
+      description:
+        "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierShipping": {
       name: "supplierShipping",
       description: "supplierShipping",
@@ -156325,6 +156947,18 @@ export default {
     },
     "rowFilter.workCenters.alwaysOn": {
       name: "alwaysOn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.batchCapacity": {
+      name: "batchCapacity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.minimumBatchQuantity": {
+      name: "minimumBatchQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -165231,6 +165865,12 @@ export default {
       name: "projectedCompletionAt",
       description:
         "Forward finite simulation: when this operation is projected to finish. Volatile (rewritten every regen).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperation.jobOperationBatchId": {
+      name: "jobOperationBatchId",
       required: false,
       in: "query",
       type: "string"
@@ -178082,6 +178722,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.processes.batchable": {
+      name: "batchable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.batchType": {
+      name: "batchType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.batchRules": {
+      name: "batchRules",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.processes.workCenters": {
       name: "workCenters",
       required: false,
@@ -183083,6 +183741,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.workCentersWithBlockingStatus.batchCapacity": {
+      name: "batchCapacity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCentersWithBlockingStatus.minimumBatchQuantity": {
+      name: "minimumBatchQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.workCentersWithBlockingStatus.locationName": {
       name: "locationName",
       required: false,
@@ -186533,6 +187203,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.productionEvent.jobOperationBatchId": {
+      name: "jobOperationBatchId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.periodCloseTaskDefinition": {
       name: "periodCloseTaskDefinition",
       description: "periodCloseTaskDefinition",
@@ -186985,6 +187661,22 @@ export default {
     },
     "rowFilter.workCenter.alwaysOn": {
       name: "alwaysOn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenter.batchCapacity": {
+      name: "batchCapacity",
+      description:
+        "Advisory maximum pieces per batch run; NULL means no capacity model.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenter.minimumBatchQuantity": {
+      name: "minimumBatchQuantity",
+      description:
+        "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
       required: false,
       in: "query",
       type: "string"
@@ -189399,6 +190091,12 @@ export default {
       name: "isPlaceholder",
       description:
         "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.jobOperationBatchId": {
+      name: "jobOperationBatchId",
       required: false,
       in: "query",
       type: "string"

@@ -85,6 +85,10 @@ export const path = {
         generatePath(`${api}/production/assembly-instructions/${itemId}`),
       assetClasses: `${api}/accounting/asset-classes`,
       assign: `${api}/assign`,
+      batchableOperations: (locationId: string, processId: string) =>
+        generatePath(
+          `${api}/production/batchable-operations?location=${locationId}&process=${processId}`
+        ),
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
 
@@ -765,6 +769,8 @@ export const path = {
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
+    deleteOperationBatch: (id: string) =>
+      generatePath(`${x}/production/batches/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePartSupplier: (itemId: string, id: string) =>
@@ -904,6 +910,7 @@ export const path = {
     depreciationRuns: `${x}/accounting/depreciation-runs`,
     dimension: (id: string) => generatePath(`${x}/accounting/dimensions/${id}`),
     dimensions: `${x}/accounting/dimensions`,
+    dissolveOperationBatches: `${x}/production/batches/dissolve`,
     document: (id: string) => generatePath(`${x}/documents/search/${id}`),
     documentFavorite: `${x}/documents/favorite`,
     documentRestore: (id: string) =>
@@ -939,6 +946,7 @@ export const path = {
     executivePnl: `${x}/reports/executive-pnl`,
     external: {
       mes: MES_URL,
+      mesBatch: (id: string) => `${MES_URL}/x/batch/${id}`,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
       mesJobOperationComplete: (id: string) => `${MES_URL}/x/end/${id}`,
       mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>
@@ -959,6 +967,7 @@ export const path = {
       generatePath(`${x}/resources/failure-modes/${id}`),
     failureModes: `${x}/resources/failure-modes`,
     file: {
+      batchList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       jobTravelerByJobId: (jobId: string) =>
@@ -1403,7 +1412,7 @@ export const path = {
     materials: `${x}/items/materials`,
     materialType: (id: string) => generatePath(`${x}/items/types/${id}`),
     materialTypes: `${x}/items/types`,
-    mcpDocs: withDocsHost("https://docs.carbon.ms/mcp"),
+    mcpDocs: withDocsHost("https://docs.carbon.ms/api/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
     // list lives in the invoicing nav beside Payments; details mirror payments.
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
@@ -1561,6 +1570,7 @@ export const path = {
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newNoQuoteReason: `${x}/sales/no-quote-reasons/new`,
     newNote: `${x}/shared/notes/new`,
+    newOperationBatch: `${x}/production/batches/new`,
     newOperator: `${x}/users/operators/new`,
     newPart: `${x}/part/new`,
     newPartner: `${x}/resources/partners/new`,
@@ -1669,6 +1679,9 @@ export const path = {
       theme: `${onboarding}/theme`,
       user: `${onboarding}/user`
     },
+    operationBatch: (id: string) =>
+      generatePath(`${x}/production/batches/${id}`),
+    operationBatches: `${x}/production/batches`,
     operator: (id: string) => generatePath(`${x}/users/operators/${id}`),
     operatorResetPin: (id: string) =>
       generatePath(`${x}/users/operators/reset-pin/${id}`),
@@ -1744,6 +1757,7 @@ export const path = {
     pricingRule: (id: string) => generatePath(`${x}/sales/pricing-rules/${id}`),
     printingSettings: `${x}/settings/printing`,
     printingSettingsJobs: `${x}/settings/printing/jobs`,
+    priorityBatchingUpdate: `${x}/priority/batching/update`,
     priorityDates: `${x}/priority/dates`,
     priorityDatesUpdate: `${x}/priority/dates/update`,
     priorityOperation: `${x}/priority/operations`,
@@ -1920,6 +1934,7 @@ export const path = {
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
     refreshSession: "/refresh-session",
+    releaseOperationBatches: `${x}/production/batches/release`,
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),
     reports: `${x}/accounting/reports`,

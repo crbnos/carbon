@@ -6,7 +6,7 @@ import { z } from "zod";
 import { withErrorHandling, READ_ONLY_ANNOTATIONS, WRITE_ANNOTATIONS } from "./types";
 import toolMetadata from "./tool-metadata.json";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
-import { executeFunction } from "./direct-executor";
+import { callOperation } from "../../v1+/lib/call.server";
 
 const logger = getLogger("erp", "mcp");
 
@@ -147,56 +147,31 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
         };
       }
       
-      // Use direct executor instead of MCP protocol
-      const result = await executeFunction(name, ctx, args);
-      
+      // Runs through the canonical oRPC dispatch (gate middleware included); the
+      // Supabase envelope arrives already unwrapped to `data`/`count`.
+      const result = await callOperation(name, ctx, args);
+
       logger.info("Execution result", {
         success: result.success,
-        hasData: !!result.data,
-        error: result.error
+        hasData: result.success && result.data !== undefined,
+        error: result.success ? undefined : result.error
       });
-      
+
       if (result.success) {
-        // Format successful response
-        let output = "";
-        
-        // Check if the result.data is a Supabase response format
-        if (result.data && typeof result.data === 'object' && 'data' in result.data) {
-          // Supabase format: { data: [...], error: null, count: ... }
-          const supabaseData = result.data.data;
-          logger.info("Detected Supabase response format", {
-            dataLength: Array.isArray(supabaseData) ? supabaseData.length : "not array"
-          });
-
-          if (result.data.error) {
-            logger.error("Supabase error", { error: result.data.error });
-            return {
-              content: [{ type: "text" as const, text: `Database error: ${JSON.stringify(result.data.error)}` }],
-              isError: true
-            };
-          }
-          
-          output = JSON.stringify(supabaseData, null, 2);
-        } else if (result.data) {
-          output = JSON.stringify(result.data, null, 2);
-          logger.info("Using result.data for output");
-        } else {
-          output = "Operation completed successfully";
-          logger.info("No data in result, using default message");
-        }
-
-        logger.info("Returning output", { output: output.substring(0, 200) });
-
-        return {
-          content: [{ type: "text" as const, text: output }]
-        };
-      } else {
-        logger.error("Tool execution failed", { error: result.error });
-        return {
-          content: [{ type: "text" as const, text: `Error: ${result.error}` }],
-          isError: true
-        };
+        const output =
+          result.data === undefined
+            ? "Operation completed successfully"
+            : JSON.stringify(result.data, null, 2);
+        return { content: [{ type: "text" as const, text: output }] };
       }
+      logger.error("Tool execution failed", { error: result.error });
+      return {
+        content: [{
+          type: "text" as const,
+          text: result.errorKind === "database" ? result.error : `Error: ${result.error}`
+        }],
+        isError: true
+      };
     }, "Call tool failed")
   );
 

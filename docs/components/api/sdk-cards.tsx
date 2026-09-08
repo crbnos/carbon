@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
-import { siFlutter, siPython, siSwift, siTypescript } from "simple-icons";
+
+/* Card grid for SDK/language choices — brand-icon tile, name, one-line
+ * description, arrow CTA. Data-driven: the page supplies the cards (the Client
+ * SDKs page feeds it the generator languages), this file owns only the visual. */
 
 /** A simple-icons brand glyph (filled path on a 24×24 viewBox). */
-function Brand({ path }: { path: string }) {
+export function Brand({ path }: { path: string }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d={path} />
@@ -38,46 +41,20 @@ function Arrow() {
   );
 }
 
-// Supabase's official client libraries — https://supabase.com/docs/guides/api/rest/client-libs
-const CARDS = [
-  {
-    glyph: <Brand path={siTypescript.path} />,
-    tone: "bg-[#E8F0FB] text-[#3178C6]",
-    name: "JavaScript & TypeScript",
-    desc: "The recommended client — supabase-js. Read and write Carbon with carbon.from('…').",
-    href: "#quickstart",
-    cta: "Quickstart",
-  },
-  {
-    glyph: <Brand path={siFlutter.path} />,
-    tone: "bg-[#E5EFF9] text-[#02569B]",
-    name: "Dart & Flutter",
-    desc: "The official supabase-flutter SDK for Dart and Flutter apps.",
-    href: "https://supabase.com/docs/reference/dart/introduction",
-    cta: "Supabase Dart",
-  },
-  {
-    glyph: <Brand path={siSwift.path} />,
-    tone: "bg-ed-red-bg text-[#E0431F]",
-    name: "Swift",
-    desc: "The official supabase-swift SDK for iOS, macOS, and server-side Swift.",
-    href: "https://supabase.com/docs/reference/swift/introduction",
-    cta: "Supabase Swift",
-  },
-  {
-    glyph: <Brand path={siPython.path} />,
-    tone: "bg-[#EAF1F8] text-[#3776AB]",
-    name: "Python",
-    desc: "The official supabase-py client, or call the REST API directly with requests.",
-    href: "https://supabase.com/docs/reference/python/introduction",
-    cta: "Supabase Python",
-  },
-];
+export interface SdkCard {
+  glyph: ReactNode;
+  /** Tile background/foreground classes, e.g. `bg-[#E8F0FB] text-[#3178C6]`. */
+  tone: string;
+  name: string;
+  desc: string;
+  href: string;
+  cta: string;
+}
 
-export function SdkCards() {
+export function SdkCardGrid({ cards }: { cards: SdkCard[] }) {
   return (
     <div className="mt-[18px] grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-      {CARDS.map((c) => (
+      {cards.map((c) => (
         <a
           key={c.name}
           href={c.href}

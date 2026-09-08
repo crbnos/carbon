@@ -98,7 +98,14 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
           return;
         }
 
-        if (!meta || !meta.fields || meta.fields.length <= 1) {
+        // `<= 1` rejected a legitimate single-column file. It was written as a
+        // "this isn't really a CSV" heuristic — PapaParse hands back one field
+        // holding the whole line for a non-delimited file — and was unreachable
+        // while every import type had two or more mappable fields. Scrap
+        // reasons and storage types have exactly one (`name`), so a correct CSV
+        // for them is one column wide. The mapping step is what tells the user
+        // whether the parse was sane; a bad file simply maps to nothing there.
+        if (!meta || !meta.fields || meta.fields.length < 1) {
           setError(t`Failed to retrieve CSV column data.`);
           setFileColumns(null);
           setFirstRows(null);

@@ -25,6 +25,10 @@ msgstr "{0} アクティブ"
 msgid "{0} ago"
 msgstr "{0}前"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} ジョブ"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails}件のサンプル不良が記録されており、完了され�
 
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "前回の完了は終了しませんでした。再試行により残りのステップが再開されます。数量は二重計算されません。"
 
 msgid "About"
 msgstr "バージョン情報"
@@ -169,6 +176,9 @@ msgstr "バッチ番号 {0}"
 msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
+msgid "Batched jobs"
+msgstr "バッチ処理されたジョブ"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
 
@@ -265,11 +275,17 @@ msgstr "完了"
 msgid "Complete All"
 msgstr "すべて完了"
 
+msgid "Complete Batch"
+msgstr "バッチを完了"
+
 msgid "Complete passed"
 msgstr "合格を完了する"
 
 msgid "Completed"
 msgstr "完了済み"
+
+msgid "Completing"
+msgstr "完了処理中"
 
 msgid "Connecting"
 msgstr "接続中"
@@ -644,6 +660,9 @@ msgstr "最後に完了"
 
 msgid "Learn more"
 msgstr "詳細情報"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "工程を 0 のままにするとスキップされます — スケジュール に戻り、実行されず、時間も数量も記録されません。"
 
 msgid "Leave this page"
 msgstr "このページを離れる"
@@ -1028,6 +1047,9 @@ msgstr "予防保全"
 msgid "Print"
 msgstr "印刷"
 
+msgid "Print batch list"
+msgstr "バッチリストを印刷"
+
 msgid "Printer Settings"
 msgstr "プリンター設定"
 
@@ -1111,6 +1133,9 @@ msgstr "サブアセンブリを再オープンし、代替品を作成"
 
 msgid "Result"
 msgstr "結果"
+
+msgid "Retry Completion"
+msgstr "完了を再試行"
 
 msgid "Rework"
 msgstr "手直し"
@@ -1397,6 +1422,9 @@ msgstr "このユニットは永久にスクラップされ、代替シリアル
 
 msgid "Thumbnail"
 msgstr "サムネイル"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "時間とコストは数量に比例してジョブ全体に按分されます。"
 
 msgid "Time Entries"
 msgstr "タイムエントリー"

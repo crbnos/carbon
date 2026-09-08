@@ -7,13 +7,12 @@ import { SiteLogo } from "./site-logo";
 const NAV = [
   { key: "reference", label: "Reference", href: "/docs" },
   { key: "guides", label: "Guides", href: "/guides/order" },
-  { key: "api", label: "API", href: "/api-reference" },
-  { key: "mcp", label: "MCP", href: "/mcp" },
+  { key: "api", label: "API", href: "/api" },
 ] as const;
 
 type Active = (typeof NAV)[number]["key"];
 
-/** The single site-wide header: Carbon · Guide · Reference · API · Open Carbon.
+/** The single site-wide header: Carbon · Reference · Guides · API · Open Carbon.
  *  `mobileNav` is the current surface's section tree, surfaced in the hamburger
  *  drawer below `lg` where the desktop sidebar is hidden. */
 export function MainHeader({ active, mobileNav }: { active?: Active; mobileNav?: ReactNode }) {

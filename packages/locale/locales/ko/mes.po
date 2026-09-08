@@ -25,6 +25,10 @@ msgstr "{0} 활성"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0}개 작업"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "이전 완료가 완료되지 않았습니다. 다시 시도하면 남은 단계가 재개되며 — 수량이 중복으로 계산되지 않습니다."
 
 msgid "About"
 msgstr "정보"
@@ -169,6 +176,9 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+msgid "Batched jobs"
+msgstr "일괄 작업"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
@@ -265,11 +275,17 @@ msgstr "완료"
 msgid "Complete All"
 msgstr "모두 완료"
 
+msgid "Complete Batch"
+msgstr "배치 완료"
+
 msgid "Complete passed"
 msgstr "완료 처리 통과"
 
 msgid "Completed"
 msgstr "완료됨"
+
+msgid "Completing"
+msgstr "완료 처리 중"
 
 msgid "Connecting"
 msgstr "연결 중"
@@ -644,6 +660,9 @@ msgstr "마지막 완료"
 
 msgid "Learn more"
 msgstr "자세히 알아보기"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "공정의 수량을 0으로 남겨두면 스킵됩니다 — 일정으로 미실행 상태로 돌아가며 기록된 시간이나 수량이 없습니다."
 
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
@@ -1028,6 +1047,9 @@ msgstr "예방"
 msgid "Print"
 msgstr "인쇄"
 
+msgid "Print batch list"
+msgstr "배치 목록 인쇄"
+
 msgid "Printer Settings"
 msgstr "프린터 설정"
 
@@ -1111,6 +1133,9 @@ msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
 msgid "Result"
 msgstr "결과"
+
+msgid "Retry Completion"
+msgstr "완료 다시 시도"
 
 msgid "Rework"
 msgstr "재작업"
@@ -1397,6 +1422,9 @@ msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 �
 
 msgid "Thumbnail"
 msgstr "썸네일"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "시간과 비용은 수량에 비례하여 작업에 걸쳐 분할됩니다."
 
 msgid "Time Entries"
 msgstr "시간 기록"

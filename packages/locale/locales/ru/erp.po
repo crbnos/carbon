@@ -68,9 +68,21 @@ msgstr "{0} счётов"
 msgid "{0} ago"
 msgstr "{0} назад"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0} уже в партии"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0} уже начата"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} ячеек с разницами"
+
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} клиентов"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -106,6 +118,24 @@ msgstr "{0} из {1} счетов проведения отображено"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} из {maxSlots} слотов провайдера используется"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} операций · {totalQuantity} деталей"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "{0} операций в этом процессе не перечислены: {1}"
+
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr "{0} операции"
+
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} опер. · {1} шт"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -125,6 +155,18 @@ msgstr "{0} зарегистрирован"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} строк"
+
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} брак"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr "{0} выбрано"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} предложенных серий"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -207,6 +249,9 @@ msgstr "{count, plural, one {# счет с остатком} other {# счето
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{days}d"
+msgstr "{days}д"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -230,6 +275,9 @@ msgstr "{inserted} вставлено, {updated} обновлено, {0} тре�
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"
 
+msgid "{load} in queue"
+msgstr "{load} в очереди"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -246,6 +294,15 @@ msgid "{name} deleted"
 msgstr "{name} удален"
 
 msgid "{name} returns!"
+msgstr "{name} вернулся!"
+
+msgid "{names} differs"
+msgstr "{names} отличаются"
+
+msgid "{names} doesn't match the batch"
+msgstr "{names} не совпадает с серией"
+
+msgid "{names} must match — separate load"
 msgstr "{name} возвращается!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
@@ -275,6 +332,18 @@ msgstr "{total} этапов до запуска"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
+msgstr "{totalQuantity} / {batchCapacity} шт · умещается в один цикл"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
+msgstr "{totalQuantity} / {batchCapacity} шт · превышает мощность — {loads} циклов по {batchCapacity}"
+
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr "{unbatchedBatchableOperations} ожидают группировки"
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr "{unbatchedBatchableOperations} группируемые операции не входят в серию — они выполняются отдельно до группировки"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
@@ -315,11 +384,18 @@ msgstr "+{0}ч"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Добавить поставщика деталей</0> для этой номенклатуры, чтобы установить основного поставщика."
 
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
+
 msgid "0 operations"
 msgstr "0 операций"
 
 msgid "0-4 weeks"
 msgstr "0-4 недели"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr "1 группируемая операция не входит в серию — она выполняется отдельно до группировки"
 
 msgid "1 can't be scheduled"
 msgstr "1 не может быть спланировано"
@@ -347,6 +423,9 @@ msgstr "1 деталь пропущена — нечего делать"
 
 msgid "1 problem — not published"
 msgstr "1 проблема — не опубликовано"
+
+msgid "1 suggested batch"
+msgstr "1 предложенная серия"
 
 msgid "1 unposted document"
 msgstr "1 неопубликованный документ"
@@ -398,6 +477,9 @@ msgstr "9-12 недель"
 
 msgid "90D"
 msgstr "90 дней"
+
+msgid "A \"must match\" rule on this process blocks these from sharing a batch"
+msgstr "Правило «должны совпадать» на этом процессе препятствует размещению в одной серии"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
@@ -1131,6 +1213,10 @@ msgstr "Фактическое время"
 msgid "Add"
 msgstr "Добавить"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "Добавить {0} операции"
+
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
@@ -1245,6 +1331,13 @@ msgstr "Добавить примечание"
 msgid "Add Operation"
 msgstr "Добавить операцию"
 
+msgid "Add operations"
+msgstr "Добавить операции"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "Добавить операции в {0}"
+
 msgid "Add options above first"
 msgstr "Сначала добавьте параметры выше"
 
@@ -1337,6 +1430,9 @@ msgstr "Добавьте эту TXT запись на хосте DNS, затем
 
 msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
+
+msgid "Add to batch"
+msgstr "Добавить в серию"
 
 msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
@@ -1643,6 +1739,9 @@ msgstr "Единица измерения элемента изменяется"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо изготовления на собственном рабочем центре, предусмотренная заказом поставщику на субподряд."
+
+msgid "An operation on this job runs in this batch"
+msgstr "Операция этого задания входит в эту партию"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Позиция операции в очереди ее рабочего центра — порядок, в котором цех берет работу. Двигатель нумерует ее по порядку размещения (самое раннее предполагаемое начало в первую очередь); переупорядочение карт на доске Рабочих центров переопределяет его без изменения дат."
@@ -2497,6 +2596,9 @@ msgstr "Автоматический запуск в работу должен �
 msgid "Auto Start Job"
 msgstr "Автоматический запуск задания"
 
+msgid "Auto-assigned on release"
+msgstr "Автоматически назначено при запуске в работу"
+
 msgid "Auto-create"
 msgstr "Автоматическое создание"
 
@@ -2636,6 +2738,9 @@ msgstr "Базовая валюта"
 msgid "Base Currency"
 msgstr "Базовая валюта"
 
+msgid "Base material — e.g. steel vs aluminum"
+msgstr "Основной материал — например, сталь или алюминий"
+
 msgid "Base Price"
 msgstr "Базовая цена"
 
@@ -2650,6 +2755,9 @@ msgstr "Партия"
 
 msgid "Batch / Serial"
 msgstr "Партия / Серийный номер"
+
+msgid "Batch Capacity"
+msgstr "Вместимость серии"
 
 msgid "Batch items require a sales order"
 msgstr "Позиции, производимые сериями, требуют заказ покупателя"
@@ -2671,6 +2779,21 @@ msgstr "Отслеживание партии"
 
 msgid "Batch Tracking"
 msgstr "Отслеживание партий"
+
+msgid "Batch type"
+msgstr "Тип серии"
+
+msgid "Batchable"
+msgstr "Допускает группировку"
+
+msgid "Batchable process"
+msgstr "Пакетируемый процесс"
+
+msgid "Batches"
+msgstr "Партии"
+
+msgid "Batching"
+msgstr "Объединение в серии"
 
 msgid "Beginning"
 msgstr "Начало"
@@ -3236,6 +3359,9 @@ msgstr "План счетов"
 msgid "Chat"
 msgstr "Чат"
 
+msgid "Check operations on the left to build the batch."
+msgstr "Отметьте операции слева, чтобы создать пакет."
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Проверьте реестр номенклатуры на наличие номенклатур с отрицательным количеством на складе на конец периода — обычно это недостающее поступление или неправильно проведённая операция, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
 
@@ -3253,6 +3379,9 @@ msgstr "Контрольные точки"
 
 msgid "Choose a batch number"
 msgstr "Выберите номер партии"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "Выберите пакетируемый процесс, чтобы увидеть операции, которые могут выполняться вместе."
 
 msgid "Choose a company"
 msgstr "Выберите организацию"
@@ -3479,14 +3608,17 @@ msgstr "Сравнить предложения"
 msgid "Compare Supplier Quotes"
 msgstr "Сравнить предложения поставщиков"
 
+msgid "Compatibility rules"
+msgstr "Правила совместимости"
+
 msgid "Complete"
 msgstr "Завершить"
 
 msgid "Complete All"
 msgstr "Завершить все"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "Завершить все количества при сканировании штрих-кода"
+msgid "Complete all quantities on kanban complete scan"
+msgstr "Завершить все количества при сканировании завершения канбана"
 
 msgid "Complete Job"
 msgstr "Завершить работу"
@@ -3509,11 +3641,17 @@ msgstr "Дата завершения"
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
+msgid "Completing"
+msgstr "Завершение"
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Завершение этого обучения предоставляет или обновляет выбранную способность."
 
 msgid "Completion Barcode"
 msgstr "Штрихкод завершения"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr "Завершение в процессе — повторите попытку в цехе"
 
 msgid "Completion Time"
 msgstr "Время завершения"
@@ -3865,6 +4003,9 @@ msgstr "Скопировать всю номенклатуру и ценообр
 msgid "Copy API Key"
 msgstr "Скопировать API-ключ"
 
+msgid "Copy batch number"
+msgstr "Копировать номер серии"
+
 msgid "Copy company unique identifier"
 msgstr "Скопировать уникальный идентификатор организации"
 
@@ -4097,12 +4238,22 @@ msgstr "Не удалось проанализировать регион: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "Не удалось создать PDF. Попробуйте еще раз."
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "Не удалось растворить {0}: {1} — производство уже записано"
+
 msgid "Could not prepare region image for analysis"
 msgstr "Не удалось подготовить изображение региона для анализа"
 
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "Не удалось сохранить"
@@ -4167,6 +4318,9 @@ msgstr "Создать {0}"
 msgid "Create {0} values"
 msgstr "Создать {0} значений"
 
+msgid "Create & Release"
+msgstr "Создать и запустить в работу"
+
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
@@ -4217,6 +4371,12 @@ msgstr "Создавать и утверждать заказы поставщи
 
 msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
+
+msgid "Create batch"
+msgstr "Создать серию"
+
+msgid "Create Batch"
+msgstr "Создать Серию"
 
 msgid "Create Change Notice"
 msgstr "Создать извещение об изменении"
@@ -5429,6 +5589,9 @@ msgstr "Разработчик"
 msgid "Diagram saved"
 msgstr "Диаграмма сохранена"
 
+msgid "Differs from the selection — allowed, but confirm they nest together"
+msgstr "Отличается от выбора — допустимо, но убедитесь в их совместимости"
+
 msgid "Digital Quote"
 msgstr "Цифровая котировка"
 
@@ -5482,6 +5645,12 @@ msgstr "Отключено"
 
 msgid "Discard"
 msgstr "Отклонить"
+
+msgid "Discard import"
+msgstr "Отклонить импорт"
+
+msgid "Discard this import?"
+msgstr "Отклонить этот импорт?"
 
 msgid "Discarded"
 msgstr "Отклонено"
@@ -5561,6 +5730,27 @@ msgstr "Решение"
 
 msgid "Dispositions"
 msgstr "Решения"
+
+msgid "Dissolve"
+msgstr "Распустить"
+
+#. placeholder {0}: dissolvable.length
+msgid "Dissolve {0} batches"
+msgstr "Растворить {0} партий"
+
+msgid "Dissolve batch"
+msgstr "Разбить партию"
+
+msgid "Dissolve Batch"
+msgstr "Распустить партию"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "Растворено {0} партий"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "Распускание {0} возвращает его {memberCount} операций в расписание невыполненными и удаляет партию. Партию с записанным производством необходимо вместо этого завершить."
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Вы хотите заменить текущие права доступа пользователя правами доступа по умолчанию для этого типа сотрудника?"
@@ -5704,6 +5894,10 @@ msgstr "Срок"
 msgid "Due (by due date)"
 msgstr "Срок (по дате срока)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "срок {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
@@ -5729,11 +5923,26 @@ msgstr "Срок выполнения самого раннего произво
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "Срок выполнения последнего производственного заказа в групповом производстве; используется вместе со сроком выполнения первого производственного заказа для равномерного распределения заказов."
 
+msgid "Due dates span {dueSpreadDays} days"
+msgstr "Разброс сроков — {dueSpreadDays} дней"
+
 msgid "Due Days"
 msgstr "Дни платежа"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Дни оплаты после {selectedCalculationMethod}"
+
+msgid "due in {days} days"
+msgstr "срок {days} дн."
+
+msgid "due in 1 day"
+msgstr "срок в 1 день"
+
+msgid "due now"
+msgstr "срочно"
+
+msgid "Due within"
+msgstr "Срок в пределах"
 
 msgid "Duplicate"
 msgstr "Дублировать"
@@ -7213,8 +7422,14 @@ msgstr "Заполните организацию реалистичной ис�
 msgid "Filled with a default"
 msgstr "Заполнено значением по умолчанию"
 
+msgid "fills a run"
+msgstr "заполняет цикл"
+
 msgid "Filter"
 msgstr "Фильтровать"
+
+msgid "Filter by…"
+msgstr "Фильтровать по…"
 
 msgid "Finalize"
 msgstr "Завершить"
@@ -7342,6 +7557,12 @@ msgstr "Метод прогноза: <0>{0}</0>. Эта строка не был
 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли завершить окончание работы?"
+
+msgid "form"
+msgstr "форма"
+
+msgid "Form"
+msgstr "Форма"
 
 msgid "Format"
 msgstr "Формат"
@@ -7724,6 +7945,9 @@ msgstr "Группа"
 msgid "Group by"
 msgstr "Группировать по"
 
+msgid "Group by material"
+msgstr "Группировать по материалу"
+
 msgid "Group Members"
 msgstr "Члены группы"
 
@@ -7844,6 +8068,9 @@ msgstr "Часов/1000 Деталей"
 msgid "Hours/Piece"
 msgstr "Часов/Деталь"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr "Как процесс, допускающий батчинг, работает с сгруппированной работой: режим « Последовательный» запускает детали одну за другой на одном станке (пила или лазерный стол), а режим «Одновременный» запускает их вместе в одной загрузке (печь, духовка или гальваническая ванна)."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
 
@@ -7912,6 +8139,9 @@ msgstr "Как часто это средство измерения должн�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
+
+msgid "How strictly each material property must match for operations to share a batch on this process."
+msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Как производственный заказ рангируется, когда планировщик распределяет мощность — ASAP занимает первое место, затем Жесткий срок, Мягкий срок и Нет срока в последнюю очередь. Только сигнал ранжирования; ни один тип срока не блокирует и не ограничивает размещение."
@@ -8032,6 +8262,9 @@ msgstr "Если что-то идет не по плану"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Если вы хотите изменить номера деталей, нажмите Отмена и вручную назначьте детали для каждого элемента строки перед преобразованием."
+
+msgid "Ignore"
+msgstr "Игнорировать"
 
 msgid "II (normal default)"
 msgstr "II (обычно по умолчанию)"
@@ -8676,6 +8909,9 @@ msgstr "Операция заказа"
 msgid "Job Operation"
 msgstr "Операция заказа"
 
+msgid "Job operation batch"
+msgstr "Серия операции заказа"
+
 msgid "Job Operations"
 msgstr "Операции заказа"
 
@@ -8742,6 +8978,9 @@ msgstr "Сохранить"
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
+
+msgid "Keep editing"
+msgstr "Продолжить редактирование"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Сохранить существующее ценообразование, добавить только новую номенклатуру"
@@ -8827,6 +9066,9 @@ msgstr "Язык"
 
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
+
+msgid "Last Activity"
+msgstr "Последняя активность"
 
 msgid "Last attempt"
 msgstr "Последняя попытка"
@@ -9060,6 +9302,9 @@ msgstr "Параметры списка"
 
 msgid "List Parameters"
 msgstr "Параметры списка"
+
+msgid "List view"
+msgstr "Вид списка"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -9518,8 +9763,14 @@ msgstr "Обработки поверхности"
 msgid "Material Form"
 msgstr "Форма материала"
 
+msgid "Material form — e.g. sheet, bar, tube"
+msgstr "Форма материала — например, лист, пруток, труба"
+
 msgid "Material Grade"
 msgstr "Марка материала"
+
+msgid "Material grade or alloy designation"
+msgstr "Марка материала или обозначение сплава"
 
 msgid "Material Grades"
 msgstr "Марки материалов"
@@ -9532,6 +9783,12 @@ msgstr "Идентификаторы материалов"
 
 msgid "Material is pre-selected"
 msgstr "Материал предварительно выбран"
+
+msgid "material item"
+msgstr "номенклатура материала"
+
+msgid "Material item"
+msgstr "Номенклатура материала"
 
 msgid "Material Planning"
 msgstr "Планирование материалов"
@@ -9629,6 +9886,9 @@ msgstr "Средний"
 msgid "Meeting cadence"
 msgstr "Периодичность встреч"
 
+msgid "Member"
+msgstr "Участник"
+
 msgid "Members"
 msgstr "Участники"
 
@@ -9692,6 +9952,12 @@ msgstr "Полночь, {name}."
 msgid "Migrate data"
 msgstr "Перенос данных"
 
+msgid "min {minimumBatchQuantity} — met"
+msgstr "мин {minimumBatchQuantity} — достигнуто"
+
+msgid "min {minimumBatchQuantity} — short"
+msgstr "мин {minimumBatchQuantity} — недостаточно"
+
 msgid "Min Qty"
 msgstr "Мин. кол-во"
 
@@ -9700,6 +9966,9 @@ msgstr "Минимум"
 
 msgid "Minimum Amount"
 msgstr "Минимальная сумма"
+
+msgid "Minimum Batch Quantity"
+msgstr "Минимальное количество в серии"
 
 msgid "Minimum Cost"
 msgstr "Минимальная себестоимость"
@@ -9742,6 +10011,11 @@ msgstr "Отсутствуют поставщики"
 
 msgid "Missing:"
 msgstr "Отсутствует:"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "Смешивание материалов: {0}{1}. Подтвердите, что они совместимы при этом запуске."
 
 msgid "Mobile Phone"
 msgstr "Мобильный телефон"
@@ -9830,6 +10104,9 @@ msgstr "Переместить"
 msgid "Move {accountName}"
 msgstr "Переместить {accountName}"
 
+msgid "Move batch"
+msgstr "Переместить партию"
+
 msgid "Move entities"
 msgstr "Переместить сущности"
 
@@ -9876,6 +10153,9 @@ msgstr "MRP (планирование)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr "Несколько заданий могут выполняться на этом процессе одновременно — например, лазерный стол, печь или гальваническая ванна"
 
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
@@ -9978,6 +10258,9 @@ msgstr "Новый атрибут"
 
 msgid "New Attribute Category"
 msgstr "Новая категория атрибутов"
+
+msgid "New Batch"
+msgstr "Новый пакет"
 
 msgid "New Change Notice"
 msgstr "Новое извещение об изменении"
@@ -10364,6 +10647,9 @@ msgstr "Нет доступных фильтров"
 msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
+msgid "No batches"
+msgstr "Нет серий"
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
@@ -10429,6 +10715,9 @@ msgstr "Нет срока выполнения"
 
 msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
+
+msgid "No eligible operations"
+msgstr "Нет подходящих операций"
 
 msgid "No employees assigned this week"
 msgstr "На эту неделю не назначены сотрудники"
@@ -10532,6 +10821,12 @@ msgstr "Совпадений не найдено. Введите текст дл
 msgid "No matching bins"
 msgstr "Нет подходящих ячеек"
 
+msgid "No matching operations"
+msgstr "Нет совпадающих операций"
+
+msgid "No materials"
+msgstr "Нет материалов"
+
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
@@ -10558,6 +10853,9 @@ msgstr "Операции не найдены."
 
 msgid "No operations require picking at this location"
 msgstr "Ни одна операция не требует отбора на этой площадке"
+
+msgid "No operations selected"
+msgstr "Операции не выбраны"
 
 msgid "No operators."
 msgstr "Нет операторов."
@@ -10598,6 +10896,9 @@ msgstr "Нет кредиторской задолженности"
 msgid "No payments yet."
 msgstr "Платежей пока нет."
 
+msgid "No planned or recorded time."
+msgstr "Нет запланированного или записанного времени."
+
 msgid "No planning data"
 msgstr "Нет данных планирования"
 
@@ -10621,6 +10922,9 @@ msgstr "Процесс не выбран"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Для этой операции еще не записано ни одного производственного события"
+
+msgid "No production recorded yet."
+msgstr "Производство еще не записано."
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
@@ -10718,6 +11022,9 @@ msgstr "Ни один несопоставленный счет не совпа�
 msgid "No unmapped values match a provider option name"
 msgstr "Никакие неотображенные значения не совпадают с названием параметра провайдера"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
+
 msgid "No value needed"
 msgstr "Значение не требуется"
 
@@ -10738,6 +11045,9 @@ msgstr "На складе нет записей о наличии этого т�
 
 msgid "No work center utilization data within range"
 msgstr "Нет данных об использовании рабочего центра в указанном диапазоне"
+
+msgid "No work centers at this location"
+msgstr "На этой площадке нет рабочих центров"
 
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
@@ -10857,11 +11167,17 @@ msgstr "В этом месте нет ничего, соответствующе
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
+msgid "Nothing here matches your search and filters."
+msgstr "Ничего здесь не соответствует вашему поиску и фильтрам."
+
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
+
+msgid "Nothing selected yet"
+msgstr "Ничего не выбрано"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -11016,6 +11332,15 @@ msgstr "Одна серийная единица или одна серия, к�
 msgid "One set of numbers"
 msgstr "Один набор цифр"
 
+msgid "One shared setup instead of one per operation"
+msgstr "Одна общая наладка вместо наладки на каждую операцию"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr "Одна общая наладка плюс наибольший труд и машинное время — все детали выполняются вместе"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
 
@@ -11075,6 +11400,9 @@ msgstr "Открытая дебиторская задолженность"
 
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
+
+msgid "Open batch"
+msgstr "Открытая серия"
 
 msgid "Open date"
 msgstr "Дата открытия"
@@ -11190,6 +11518,9 @@ msgstr "Часы работы"
 
 msgid "Operating Income"
 msgstr "Операционный доход"
+
+msgid "operation"
+msgstr "операция"
 
 msgid "Operation"
 msgstr "Операция"
@@ -11553,6 +11884,12 @@ msgstr "Детали"
 msgid "Parts & items"
 msgstr "Детали и товары"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr "Детали работают одна за другой — например, на пиле или лазерном столе."
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr "Детали работают вместе в одной загрузке — например, в печи, духовке или гальванической ванне."
+
 msgid "Parts, materials, and how you classify them."
 msgstr "Детали, материалы и способы их классификации."
 
@@ -11730,6 +12067,9 @@ msgstr "Физические принтеры, доступные для наз�
 msgid "Pick"
 msgstr "Выбрать"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "Выберите пакетируемый процесс, отфильтруйте подходящие операции по их материалам и выберите те, которые должны выполняться вместе."
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Выберите измерение Carbon и целевого провайдера, на которого оно проводится. Автоматическое создание добавляет отсутствующие параметры провайдера по имени во время отправки."
 
@@ -11744,6 +12084,9 @@ msgstr "Выберите дату или оставьте пустым, чтоб
 
 msgid "Pick a list variable…"
 msgstr "Выберите переменную списка…"
+
+msgid "Pick a process to start"
+msgstr "Выберите процесс для запуска"
 
 msgid "Pick a property"
 msgstr "Выберите свойство"
@@ -11802,6 +12145,9 @@ msgstr "Листы отбора"
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Отбор предлагает отслеживаемые товары в первую очередь с наиболее ранним сроком истечения, поэтому запас с ближайшим сроком истечения уходит первым по умолчанию."
 
+msgid "Pieces per run. Leave empty for no limit."
+msgstr "Шт на цикл. Оставьте пусто без ограничений."
+
 msgid "Pieces/Hour"
 msgstr "Штук/час"
 
@@ -11857,6 +12203,9 @@ msgstr "Запланированное начало"
 
 msgid "Planned Start Time"
 msgstr "Запланированное время начала"
+
+msgid "Planned time"
+msgstr "Плановое время"
 
 msgid "Planning"
 msgstr "Планирование"
@@ -12100,6 +12449,9 @@ msgstr "Печать"
 msgid "Print {0} Labels"
 msgstr "Печать {0} этикеток"
 
+msgid "Print batch list"
+msgstr "Печать списка серий"
+
 msgid "Print Jobs"
 msgstr "Печать производственных заказов"
 
@@ -12184,6 +12536,9 @@ msgstr "Событие производства"
 
 msgid "Production Event"
 msgstr "Производственное событие"
+
+msgid "Production events"
+msgstr "События производства"
 
 msgid "Production Events"
 msgstr "События производства"
@@ -12953,7 +13308,7 @@ msgid "Refresh exchange rate"
 msgstr "Обновить валютный курс"
 
 msgid "Regenerate"
-msgstr "Обновить"
+msgstr "Пересчитать"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Пересчитать график для этой площадки сейчас. Пересчет также выполняется автоматически примерно через 30 секунд после последнего изменения в планировании (изменения группируются, поэтому несколько быстрых изменений запускают один пересчет)."
@@ -13009,6 +13364,13 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
+msgid "Release Batch"
+msgstr "Запустить серию в работу"
+
 msgid "Release change notice"
 msgstr "Запустить в работу извещение об изменении"
 
@@ -13023,6 +13385,10 @@ msgstr "Запустить производственный заказ в раб
 
 msgid "Released"
 msgstr "Выпущено"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Дата выпуска"
@@ -13049,6 +13415,10 @@ msgstr "Убрать"
 msgid "Remove {0}"
 msgstr "Убрать {0}"
 
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr "Убрать {0} из этой серии? Его операция вернется в график для самостоятельного запуска."
+
 msgid "Remove {label}"
 msgstr "Убрать {label}"
 
@@ -13072,6 +13442,9 @@ msgstr "Убрать фильтр"
 
 msgid "Remove Filters"
 msgstr "Убрать фильтры"
+
+msgid "Remove from batch"
+msgstr "Удалить из партии"
 
 msgid "Remove from board"
 msgstr "Удалить с доски"
@@ -13247,6 +13620,9 @@ msgstr "Требовать утверждение для заказов пост
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требовать утверждение для документов качества в вашем рабочем процессе"
+
+msgid "Require Match"
+msgstr "Требовать совпадение"
 
 msgid "Require SAML SSO"
 msgstr "Требовать SAML SSO"
@@ -13473,6 +13849,9 @@ msgstr "откат…"
 
 msgid "Review"
 msgstr "Рассмотрение"
+
+msgid "Review & create"
+msgstr "Просмотр и создание"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Рассмотреть изменения каждой номенклатуры, затем подтвердить — выпуск нельзя отменить."
@@ -13849,6 +14228,10 @@ msgstr "Суббота"
 msgid "Save"
 msgstr "Сохранить"
 
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "сохранение {0}"
+
 msgid "Save & Close"
 msgstr "Сохранить и закрыть"
 
@@ -14035,6 +14418,9 @@ msgstr "Поиск по вашему рабочему пространству..
 msgid "Search actions…"
 msgstr "Поиск действий…"
 
+msgid "Search batches…"
+msgstr "Поиск серий…"
+
 msgid "Search by Jira issue title..."
 msgstr "Поиск по названию задачи Jira..."
 
@@ -14064,6 +14450,9 @@ msgstr "Поиск номенклатуры или ячеек"
 
 msgid "Search Job"
 msgstr "Поиск задания"
+
+msgid "Search jobs or items"
+msgstr "Поиск работ или деталей"
 
 msgid "Search list variables…"
 msgstr "Поиск переменных списка…"
@@ -14249,6 +14638,9 @@ msgstr "Выберите поле"
 msgid "Select Gauge"
 msgstr "Выбрать средство измерения"
 
+msgid "Select group"
+msgstr "Выберите группу"
+
 msgid "Select groups or individuals"
 msgstr "Выберите группы или отдельных лиц"
 
@@ -14269,6 +14661,12 @@ msgstr "Выберите товары"
 
 msgid "Select method..."
 msgstr "Выберите метод..."
+
+msgid "Select operation"
+msgstr "Выбрать операцию"
+
+msgid "Select operations"
+msgstr "Выберите операции"
 
 msgid "Select Printer"
 msgstr "Выберите принтер"
@@ -14381,6 +14779,9 @@ msgstr "Отправляется каждому получателю, у кот�
 
 msgid "Sequences"
 msgstr "Нумерация"
+
+msgid "Sequential"
+msgstr "Последовательный"
 
 msgid "Serial"
 msgstr "Серийный"
@@ -14511,6 +14912,11 @@ msgstr "Настройки"
 
 msgid "Setup"
 msgstr "Настройка"
+
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr "Наладка {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "Настройка и управление"
@@ -14750,6 +15156,10 @@ msgstr "Показывать завершающие нули"
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Показано {0} из {totalCount} — уточните поиск"
 
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "Показано {0} из {totalFiltered} — уточните поиск"
+
 msgid "Showing in {parentCurrency}"
 msgstr "Отображение в {parentCurrency}"
 
@@ -14810,6 +15220,9 @@ msgstr "При входе также требуется одноразовый �
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
+msgid "Simultaneous"
+msgstr "Одновременный"
+
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
 
@@ -14863,6 +15276,9 @@ msgstr "Разбить расходы по местоположению, цен�
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Разделить выручку по покупателям, типам покупателей или любому измерению"
+
+msgid "Smallest run worth batching. Leave empty for none."
+msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Дымовое тестирование основных ежедневных процессов от начала до конца"
@@ -14997,7 +15413,7 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr "Укомплектование необязательно"
+msgstr "Укомплектование опционально"
 
 msgid "Staffing required"
 msgstr "Требуется персонал"
@@ -15140,6 +15556,9 @@ msgstr "На производстве всё ещё темно."
 
 msgid "Stock movement corrected"
 msgstr "Движение запаса исправлено"
+
+msgid "Stock size — e.g. sheet thickness or bar diameter"
+msgstr "Размер запаса — например, толщина листа или диаметр прутка"
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
@@ -15325,6 +15744,9 @@ msgstr "Предложить сопоставления"
 msgid "Suggest mappings with AI"
 msgstr "Предложить сопоставления с помощью ИИ"
 
+msgid "Suggest Match"
+msgstr "Предложить совпадение"
+
 msgid "Suggest with AI"
 msgstr "Предложить с помощью ИИ"
 
@@ -15505,6 +15927,9 @@ msgstr "Поддержка"
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
 msgstr "Поддерживает {0} файлы"
+
+msgid "Surface finish — e.g. anodized vs powder-coat"
+msgstr "Отделка поверхности — например, анодированная или порошковая окраска"
 
 msgid "Surfaces"
 msgstr "Поверхности"
@@ -15795,6 +16220,9 @@ msgstr "Задача резервного копирования сообщил�
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Дата завершения операции, вычисленная в обратном порядке, чтобы производственный заказ был выполнен вовремя, записываемая в срок выполнения операции. Стабильная цель для измерения прогресса — никогда не является ограничением при размещении."
 
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Журнал всех проведенных операций, сгруппированных по счетам — ведется только когда в организации включена бухгалтерия."
 
@@ -15966,11 +16394,17 @@ msgstr "Техническая схема, к которой привязан д
 msgid "The evening hours, {name}."
 msgstr "Вечерние часы, {name}."
 
+msgid "The exact material part, not just its properties"
+msgstr "Точная номенклатура материала, а не только его свойства"
+
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Ожидаемый процент выпуска этой номенклатуры, потерянного во время производства; планирование умножает потребность на 1 / (1 − брак) для компенсации."
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Счет расходов, на который относится эта строка косвенных расходов; требуется, так как косвенные строки не имеют записи в книге товаров, из которой можно вывести счет."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "Загруженный файл и созданные сопоставления будут потеряны."
 
 msgid "the first 3 to 4 weeks"
 msgstr "первые 3–4 недели"
@@ -16542,6 +16976,9 @@ msgstr "Нет активных предложений поставщиков д
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr "На этих операциях нет наладки, труда или машинного времени, поэтому нет ничего, на основе чего можно определить размер запуска. Полоса — это номинальный маркер и не определяет производительность — добавьте стандарты времени к операциям для планирования."
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
 
@@ -16676,7 +17113,7 @@ msgid "This job's own required quantity for the material."
 msgstr "Собственное требуемое количество материала для этого задания."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr "Эта площадка планирует только укомплектованные рабочие центры, но это полностью автоматизированная станция (24×7) — она исключена и продолжает работать автоматически."
+msgstr "Эта площадка планирует только укомплектованные рабочие центры, но эта станция работает без персонала (24×7) — она исключена и продолжает работать без присмотра."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "На этой площадке планируется только работа, где оператор назначен на таблицу назначений. Если здесь никто не назначен, работа не планируется и отображается как невозможная для планирования."
@@ -16695,6 +17132,9 @@ msgstr "Этот месяц"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Эта операция не может быть запланирована пока — полоса отмечает, где она будет выполняться после разрешения конфликта. Она не занимает мощность."
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr "Эта операция находится в серии, но ее материал не совпадает с другими — убрать ее или подтвердить, что она работает вместе"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Эта страница вашего центра внедрения разрабатывается. Начните с командного центра, пока мы его завершаем."
@@ -16754,7 +17194,7 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ покупателя имеет строки, требующие создания производственных заказов"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "Эта станция выполняет работу, защищённую навыками — она работает только когда на смене находится квалифицированный оператор; операторы, назначенные на доску комплектования, дополнительно определяют доступный труд."
+msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "Эта станция выполняет работу без требований навыков; операторы, назначенные на таблицу назначений, формируют доступный труд."
@@ -16908,6 +17348,9 @@ msgstr "Табели учета отключены"
 msgid "Timecards are enabled"
 msgstr "Табели учета рабочего времени включены"
 
+msgid "Timer running"
+msgstr "Таймер запущен"
+
 msgid "Timezone"
 msgstr "Часовой пояс"
 
@@ -17042,6 +17485,9 @@ msgstr "Всего минут"
 
 msgid "Total Price"
 msgstr "Общая цена"
+
+msgid "Total quantity"
+msgstr "Итого количество"
 
 msgid "Total Quantity"
 msgstr "Общее количество"
@@ -17292,6 +17738,9 @@ msgstr "Не назначено"
 msgid "Unballoon"
 msgstr "Удалить выноску"
 
+msgid "Unbatched Operations"
+msgstr "Несгруппированные операции"
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."
 
@@ -17421,6 +17870,12 @@ msgstr "Отменить публикацию {name}?"
 msgid "Unreceived POs"
 msgstr "Неполученные ПО"
 
+msgid "Unrelease"
+msgstr "Отозвать"
+
+msgid "Unrelease Batch"
+msgstr "Отозвать серию"
+
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
 
@@ -17456,6 +17911,10 @@ msgstr "Неиспользованный отобранный материал �
 
 msgid "UoM"
 msgstr "УИ"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "сэкономлено до {0}"
 
 msgid "Update"
 msgstr "Обновить"
@@ -17839,6 +18298,9 @@ msgstr "Просмотреть вложение"
 msgid "View Attributes"
 msgstr "Просмотр атрибутов"
 
+msgid "View Batch"
+msgstr "Просмотр партии"
+
 msgid "View Certificate"
 msgstr "Просмотр сертификата"
 
@@ -17892,6 +18354,9 @@ msgstr "Просмотреть отсутствующие значения"
 
 msgid "View notes"
 msgstr "Просмотр Примечаний"
+
+msgid "View on schedule board"
+msgstr "Открыть на доске расписания"
 
 msgid "View Open"
 msgstr "Просмотреть открытые"
@@ -18562,6 +19027,9 @@ msgstr "Рабочий Центр"
 
 msgid "Work Center"
 msgstr "Рабочий центр"
+
+msgid "Work center (optional)"
+msgstr "Рабочий центр (опционально)"
 
 msgid "Work Center Reservation"
 msgstr "Резервирование рабочего центра"

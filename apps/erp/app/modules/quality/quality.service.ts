@@ -2244,7 +2244,7 @@ export async function getInspections(
 ) {
   // No receipt embed: the generic sourceDocumentId carries no FK, so the
   // source document is denormalized onto the row (sourceDocumentReadableId).
-  let query = (client as any)
+  let query = client
     .from("inspection")
     .select(
       "*, item(readableId, name), supplier(name), inspectionSample(status)",
@@ -2298,7 +2298,7 @@ export async function getReceiptInspections(
   receiptId: string,
   companyId: string
 ) {
-  return (client as any)
+  return client
     .from("inspection")
     .select("id, inspectionId, itemId, itemReadableId, status")
     .eq("sourceDocument", "Receipt")

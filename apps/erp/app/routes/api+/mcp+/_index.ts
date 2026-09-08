@@ -1,15 +1,17 @@
-import { hashOAuthSecret, requirePermissions } from "@carbon/auth/auth.server";
+import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { getAppUrl } from "@carbon/env";
+import { Ratelimit, redis } from "@carbon/kv";
 import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { authenticateApiKey } from "../v1+/lib/authenticate.server";
 import { createMcpServer } from "./lib/server";
+import type { McpContext } from "./lib/types";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,13 +31,6 @@ function addCorsHeaders(response: Response): Response {
   });
 }
 
-type McpContext = {
-  client: SupabaseClient;
-  companyId: string;
-  companyGroupId: string;
-  userId: string;
-};
-
 async function authenticateOAuthToken(
   accessToken: string
 ): Promise<{ userId: string; companyId: string } | null> {
@@ -53,6 +48,36 @@ async function authenticateOAuthToken(
     userId: tokenResult.data.userId,
     companyId: tokenResult.data.companyId
   };
+}
+
+/**
+ * OAuth (connector) callers get the same allowance an API key gets by default —
+ * 60 requests/minute — but through the app's Redis limiter rather than the
+ * Postgres one: `apiKeyRateLimit` has an FK to `apiKey`, so it cannot count a
+ * synthetic per-user id, and this route only exists in the Node app where Redis
+ * is the house tool (the login limiter is the precedent). Keyed by USER, not by
+ * token, so minting extra tokens does not multiply the allowance. Without this,
+ * the OAuth branch was the one authenticated path with no rate limit at all —
+ * it never touches requirePermissions, where the API-key limit lives.
+ */
+const OAUTH_RATE_LIMIT = 60;
+const oauthRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(OAUTH_RATE_LIMIT, "1 m")
+});
+
+function make429Response(reset: number, remaining: number): Response {
+  const retryAfterSeconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+  return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+    status: 429,
+    headers: {
+      "X-RateLimit-Limit": OAUTH_RATE_LIMIT.toString(),
+      "X-RateLimit-Remaining": remaining.toString(),
+      "X-RateLimit-Reset": reset.toString(),
+      "Retry-After": retryAfterSeconds.toString(),
+      ...corsHeaders
+    }
+  });
 }
 
 function make401Response(request: Request): Response {
@@ -80,6 +105,11 @@ async function resolveAuth(request: Request): Promise<{
     if (!token.startsWith("crbn_")) {
       const oauthAuth = await authenticateOAuthToken(token);
       if (oauthAuth) {
+        const rl = await oauthRatelimit.limit(`mcp-oauth:${oauthAuth.userId}`);
+        if (!rl.success) {
+          throw make429Response(rl.reset, rl.remaining);
+        }
+
         const client = await getUserScopedClient(oauthAuth.userId);
         const companyResult = await client
           .from("company")
@@ -93,7 +123,9 @@ async function resolveAuth(request: Request): Promise<{
             companyId: oauthAuth.companyId,
             companyGroupId:
               companyResult.data?.companyGroupId ?? oauthAuth.companyId,
-            userId: oauthAuth.userId
+            userId: oauthAuth.userId,
+            authKind: "oauth" as const,
+            scopes: {}
           },
           request
         };
@@ -113,11 +145,12 @@ async function resolveAuth(request: Request): Promise<{
     throw make401Response(request);
   }
 
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {});
-
+  // `request` here carries the carbon-key header for both entry forms
+  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport,
+  // so the requirePermissions-then-read-scopes dance exists once.
+  const rawKey = request.headers.get("carbon-key") ?? "";
   return {
-    ctx: { client, companyId, companyGroupId, userId },
+    ctx: await authenticateApiKey(request.url, rawKey),
     request
   };
 }

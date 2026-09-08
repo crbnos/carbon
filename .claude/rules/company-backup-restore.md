@@ -97,6 +97,20 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
 - Versioning: `BACKUP_VERSION` (currently **1** — single supported format, no
   legacy branch) in the manifest; `assertBackupImportable` rejects a file whose
   version no longer matches or that's missing a now-required column.
+- Reseed re-inclusion: `filterUnpopulated` drops tables the target already
+  populated (onboarding's own inserts), but a dropped table whose ids the kept
+  rows still REFERENCE is re-added by `referencedDroppedTables`
+  (`company-backup.transforms.ts`, transitive over `id`-FKs) — without it the
+  backup's `location` table was dropped because onboarding had inserted one
+  "Headquarters" row, and every imported `workCenter`/`job` locationId was
+  nulled (nullable) or left dangling at the SOURCE company's row (NOT NULL,
+  committed under replica mode) — the "schedule says no work centers exist"
+  bug. A re-added table is populated in the target by definition and unique
+  constraints stay enforced under replica mode, so backup rows that collide on
+  a real unique key (both sides have a "Headquarters") are NOT inserted:
+  `mapCollidingRows` + `matchableUniqueGroups` (+ `getUniqueColumnGroups` over
+  `pg_index`) map the source id onto the existing target row's id instead, so
+  every FK into the skipped row lands on the target's own row.
 - Id minting: `newIdForTable(table)` → `randomUUID()` for uuid id columns else
   `nanoid()`. `buildIdMaps` (`company-backup.transforms.ts`) decides WHICH rows get
   one, and both the restore and the reseed/import call it so they can't drift.

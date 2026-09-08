@@ -4,6 +4,7 @@ import {
   LuChartBarBig,
   LuChartLine,
   LuCirclePlay,
+  LuLayers,
   LuListChecks,
   LuListTodo,
   LuSquareChartGantt,
@@ -29,6 +30,12 @@ export default function useProductionSubmodules() {
           to: path.to.jobs,
           icon: <LuCirclePlay />,
           table: "job"
+        },
+        {
+          name: t`Batches`,
+          to: path.to.operationBatches,
+          icon: <LuLayers />,
+          table: "jobOperationBatch"
         }
       ]
     },

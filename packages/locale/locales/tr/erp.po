@@ -68,9 +68,21 @@ msgstr "{0} hesaplar"
 msgid "{0} ago"
 msgstr "{0} önce"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0} zaten bir toplu işte"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0} zaten başlatıldı"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} deltaları olan hücreler"
+
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} müşteri"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -106,6 +118,24 @@ msgstr "{0}/{1} muhasebeleştirme hesabı eşleştirildi"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} operasyon · {totalQuantity} parça"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "{0} bu süreçteki operasyonlar listelenmemiştir: {1}"
+
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr "{0} operasyon"
+
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} işlem · {1} adet"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -125,6 +155,18 @@ msgstr "{0} kaydedildi"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} satır"
+
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} hurdaya alındı"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr "{0} seçildi"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} önerilen parti"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -207,6 +249,9 @@ msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesap
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{days}d"
+msgstr "{days}g"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
@@ -230,6 +275,9 @@ msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} a
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
 
+msgid "{load} in queue"
+msgstr "{load} kuyruğunda"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -246,6 +294,15 @@ msgid "{name} deleted"
 msgstr "{name} silindi"
 
 msgid "{name} returns!"
+msgstr "{name} geri dönüyor!"
+
+msgid "{names} differs"
+msgstr "{names} farklıdır"
+
+msgid "{names} doesn't match the batch"
+msgstr "{names} partiyle eşleşmiyor"
+
+msgid "{names} must match — separate load"
 msgstr "{name} geri döndü!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
@@ -275,6 +332,18 @@ msgstr "{total} aşama canlı yayına alınacak"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
+msgstr "{totalQuantity} / {batchCapacity} parça · bir çalışmaya sığar"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
+msgstr "{totalQuantity} / {batchCapacity} parça · kapasite aşıldı — {loads} yükleme {batchCapacity}"
+
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr "{unbatchedBatchableOperations} partiye alınmayı bekliyor"
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr "{unbatchedBatchableOperations} partiye alınabilir operasyon partide değil — partiye alınıncaya kadar tek tek çalışırlar"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
@@ -315,11 +384,18 @@ msgstr "+{0}s"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
 
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
+
 msgid "0 operations"
 msgstr "0 operasyon"
 
 msgid "0-4 weeks"
 msgstr "0-4 hafta"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr "1 partiye alınabilir operasyon partide değil — partiye alınıncaya kadar tek tek çalışır"
 
 msgid "1 can't be scheduled"
 msgstr "1 planlanmıyor"
@@ -347,6 +423,9 @@ msgstr "1 parça atlandı — yapılacak bir şey yok"
 
 msgid "1 problem — not published"
 msgstr "1 sorun — yayınlanmadı"
+
+msgid "1 suggested batch"
+msgstr "1 önerilen parti"
 
 msgid "1 unposted document"
 msgstr "1 deftere geçmemiş belge"
@@ -398,6 +477,9 @@ msgstr "9-12 hafta"
 
 msgid "90D"
 msgstr "90G"
+
+msgid "A \"must match\" rule on this process blocks these from sharing a batch"
+msgstr "Bu operasyon üzerinde \"eşleşmeli\" kuralı bunların bir partide paylaşılmasını engeller"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Bir Carbon tarafından yönetilen veri taşıması — kendi verilerinizi yüklersiniz"
@@ -1131,6 +1213,10 @@ msgstr "Gerçek zaman"
 msgid "Add"
 msgstr "Ekle"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "{0} operasyonu ekle"
+
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
@@ -1245,6 +1331,13 @@ msgstr "Not Ekle"
 msgid "Add Operation"
 msgstr "İşlem Ekle"
 
+msgid "Add operations"
+msgstr "Operasyon ekle"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "{0} için operasyon ekle"
+
 msgid "Add options above first"
 msgstr "Önce yukarıda seçenekler ekleyin"
 
@@ -1337,6 +1430,9 @@ msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya t�
 
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
+
+msgid "Add to batch"
+msgstr "Partiye Ekle"
 
 msgid "Add to stock for future use"
 msgstr "Gelecekteki kullanım için stoğa ekle"
@@ -1643,6 +1739,9 @@ msgstr "Bir öğenin ölçü birimi değişir"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Bir iç merkez yerine harici bir taşeron tarafından yapılan, taşeron satın alma siparişi kapsamında olan bir operasyon."
+
+msgid "An operation on this job runs in this batch"
+msgstr "Bu işin bir operasyonu bu partide çalışıyor"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Bir operasyon'un iş merkezi'nin kuyruğundaki konumu — atölyenin işleri aldığı sıra. Motor, yerleştirme sırasından numaralandırır (en erken öngörülen başlangıç ilk); İş merkezleri panosundaki kartları yeniden sıralamak, tarihleri değiştirmeden bunu geçersiz kılar."
@@ -2497,6 +2596,9 @@ msgstr "Bir işi otomatik olarak başlatmak için Otomatik Serbest Bırakma etki
 msgid "Auto Start Job"
 msgstr "Otomatik İş Başlatma"
 
+msgid "Auto-assigned on release"
+msgstr "Serbest bırakma sırasında otomatik atanır"
+
 msgid "Auto-create"
 msgstr "Otomatik oluştur"
 
@@ -2636,6 +2738,9 @@ msgstr "Ana para birimi"
 msgid "Base Currency"
 msgstr "Temel Para Birimi"
 
+msgid "Base material — e.g. steel vs aluminum"
+msgstr "Baz malzeme — örn. çelik vs alüminyum"
+
 msgid "Base Price"
 msgstr "Temel Fiyat"
 
@@ -2650,6 +2755,9 @@ msgstr "Parti"
 
 msgid "Batch / Serial"
 msgstr "Parti / Seri"
+
+msgid "Batch Capacity"
+msgstr "Parti Kapasitesi"
 
 msgid "Batch items require a sales order"
 msgstr "Parti toplu ürünler için satış siparişi gereklidir"
@@ -2671,6 +2779,21 @@ msgstr "Batch takibi"
 
 msgid "Batch Tracking"
 msgstr "Lot Takibi"
+
+msgid "Batch type"
+msgstr "Parti türü"
+
+msgid "Batchable"
+msgstr "Toplu İşlemeye Uygun"
+
+msgid "Batchable process"
+msgstr "Toplu işlenebilir işlem"
+
+msgid "Batches"
+msgstr "Partiler"
+
+msgid "Batching"
+msgstr "Partileme"
 
 msgid "Beginning"
 msgstr "Başlangıç"
@@ -3236,6 +3359,9 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
+msgid "Check operations on the left to build the batch."
+msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok kartı için stok kartı defterini kontrol edin — genellikle eksik bir mal kabul veya envanter değerini ve satılan malın maliyetini bozan sıra dışı bir muhasebeleştirme. İncelendikten sonra bitti olarak işaretleyin veya bir gerekçeyle atlayın."
 
@@ -3253,6 +3379,9 @@ msgstr "Kontrol Noktaları"
 
 msgid "Choose a batch number"
 msgstr "Bir parti numarası seçin"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebilir bir işlem seçin."
 
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
@@ -3479,14 +3608,17 @@ msgstr "Teklifleri Karşılaştır"
 msgid "Compare Supplier Quotes"
 msgstr "Tedarikçi Tekliflerini Karşılaştır"
 
+msgid "Compatibility rules"
+msgstr "Uyumluluk Kuralları"
+
 msgid "Complete"
 msgstr "Tamamla"
 
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "Barkod taramasında tüm miktarları tamamla"
+msgid "Complete all quantities on kanban complete scan"
+msgstr "Kanban tamamlama taramasında tüm miktarları tamamla"
 
 msgid "Complete Job"
 msgstr "İşi Tamamla"
@@ -3509,11 +3641,17 @@ msgstr "Tamamlanma Tarihi"
 msgid "Completed Qty"
 msgstr "Tamamlanan Miktar"
 
+msgid "Completing"
+msgstr "Tamamlanıyor"
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Bu eğitimi tamamlamak seçilen yeteneği verir veya yeniler."
 
 msgid "Completion Barcode"
 msgstr "Tamamlama Barkodu"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr "Tamamlama devam ediyor — Shop Floor'da yeniden deneyin"
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
@@ -3851,7 +3989,7 @@ msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr "Hazırlık istemi panosuna kopyalandı"
+msgstr "Hazırlık istemi panonuza kopyalandı"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AI kodlama aracınız için hazırlık talimatı kopyalar"
@@ -3864,6 +4002,9 @@ msgstr "Tüm öğeleri ve fiyatlandırmayı başka bir müşteriye veya türe ko
 
 msgid "Copy API Key"
 msgstr "API Anahtarını Kopyala"
+
+msgid "Copy batch number"
+msgstr "Parti Numarasını Kopyala"
 
 msgid "Copy company unique identifier"
 msgstr "Şirket benzersiz tanımlayıcısını kopyala"
@@ -4097,12 +4238,22 @@ msgstr "Bölge analiz edilemedi: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "{0} çözülemedi: {1} — üretim zaten kaydedildi"
+
 msgid "Could not prepare region image for analysis"
 msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "Kaydedilemedi"
@@ -4167,6 +4318,9 @@ msgstr "{0} Oluştur"
 msgid "Create {0} values"
 msgstr "{0} değerleri oluştur"
 
+msgid "Create & Release"
+msgstr "Oluştur ve Serbest Bırak"
+
 msgid "Create & Snapshot"
 msgstr "Oluştur & Anlık Görüntü"
 
@@ -4217,6 +4371,12 @@ msgstr "Satın alma siparişleri oluşturun ve onaylayın"
 
 msgid "Create audit trail entries"
 msgstr "Denetim izi girdileri oluştur"
+
+msgid "Create batch"
+msgstr "Parti Oluştur"
+
+msgid "Create Batch"
+msgstr "Parti Oluştur"
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
@@ -5429,6 +5589,9 @@ msgstr "Geliştirici"
 msgid "Diagram saved"
 msgstr "Şema kaydedildi"
 
+msgid "Differs from the selection — allowed, but confirm they nest together"
+msgstr "Seçimden farklı — izin verilir, ancak birlikte iç içe geçtiğini doğrulayın"
+
 msgid "Digital Quote"
 msgstr "Dijital Teklif"
 
@@ -5482,6 +5645,12 @@ msgstr "Devre Dışı"
 
 msgid "Discard"
 msgstr "Atıkla"
+
+msgid "Discard import"
+msgstr "İçe aktarmadan vazgeç"
+
+msgid "Discard this import?"
+msgstr "Bu içe aktarmadan vazgeçilsin mi?"
 
 msgid "Discarded"
 msgstr "İptal edildi"
@@ -5561,6 +5730,27 @@ msgstr "Karar"
 
 msgid "Dispositions"
 msgstr "Kararlar"
+
+msgid "Dissolve"
+msgstr "Çöz"
+
+#. placeholder {0}: dissolvable.length
+msgid "Dissolve {0} batches"
+msgstr "{0} parti çöz"
+
+msgid "Dissolve batch"
+msgstr "Toplu İşi Kaldır"
+
+msgid "Dissolve Batch"
+msgstr "Toplu İşi Çöz"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "{0} parti çözüldü"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "{0} çözüldüğünde, {memberCount} operasyonu zamanlamaya yürütülmemiş olarak geri verir ve toplu işi siler. Kaydedilmiş üretimi olan bir toplu iş yerine tamamlanmalıdır."
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Kullanıcının mevcut izinlerini bu çalışan türü için varsayılan izinlerle üzerine yazmak ister misiniz?"
@@ -5704,6 +5894,10 @@ msgstr "Vade"
 msgid "Due (by due date)"
 msgstr "Vadesi (vade tarihine göre)"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "teslim {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Vadesi {0}"
@@ -5729,11 +5923,26 @@ msgstr "Toplu iş emri partisindeki en erken iş emrinin son tarihi; sonraki iş
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "Toplu iş emri partisindeki son iş emrinin son tarihi; iş emirlerini eşit şekilde dağıtmak için İlk İş Emrinin Son Tarihi ile birleştirilir."
 
+msgid "Due dates span {dueSpreadDays} days"
+msgstr "Termin tarihleri {dueSpreadDays} güne yayılıyor"
+
 msgid "Due Days"
 msgstr "Vade Günleri"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Sonraki Gün Sayısı {selectedCalculationMethod} sonrası"
+
+msgid "due in {days} days"
+msgstr "{days} gün içinde teslim"
+
+msgid "due in 1 day"
+msgstr "1 gün içinde teslim"
+
+msgid "due now"
+msgstr "hemen teslim"
+
+msgid "Due within"
+msgstr "Süresi içinde"
 
 msgid "Duplicate"
 msgstr "Çoğalt"
@@ -7213,8 +7422,14 @@ msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her 
 msgid "Filled with a default"
 msgstr "Varsayılan değerle dolduruldu"
 
+msgid "fills a run"
+msgstr "bir seriyi doldurur"
+
 msgid "Filter"
 msgstr "Filtre"
+
+msgid "Filter by…"
+msgstr "Filtrele…"
 
 msgid "Finalize"
 msgstr "Onayla"
@@ -7342,6 +7557,12 @@ msgstr "Tahmin yöntemi: <0>{0}</0>. Bu satır etkin iş emirlerinden türetilme
 
 msgid "Forgot to Clock Out?"
 msgstr "İş bitişini mi unuttunuz?"
+
+msgid "form"
+msgstr "biçim"
+
+msgid "Form"
+msgstr "Form"
 
 msgid "Format"
 msgstr "Biçim"
@@ -7724,6 +7945,9 @@ msgstr "Grup"
 msgid "Group by"
 msgstr "Grupla"
 
+msgid "Group by material"
+msgstr "Malzemeye göre grupla"
+
 msgid "Group Members"
 msgstr "Üye Grupları"
 
@@ -7844,6 +8068,9 @@ msgstr "Saat/1000 Parça"
 msgid "Hours/Piece"
 msgstr "Saat/Adet"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr "Gruplanabilir bir işlemin çalışması: Ardışık, parçaları bir makine üzerinde birbir ardına çalıştırır (testere veya lazer masası gibi), Eşzamanlı ise bunları tek bir yükte birlikte çalıştırır (fırın, fırın veya elektroliz banyosu gibi)."
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Bir stok kartının genel olarak nasıl tamamlandığı (Satın alma, Üretim veya Satın alma ve üretim), stok kartı başına ayarlanır, satır başına tedarik şeklinden farklı."
 
@@ -7912,6 +8139,9 @@ msgstr "Bu ölçüm aletinin ne sıklıkla kalibre edilmesi gerektiği; Son Kali
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Bu bakım ne sıklıkla tekrarlanır — Günlük, Haftalık, Aylık, Periyodik Sayımında; Günlük seçim haftanın günü seçicisini gösterir, diğerleri daha basit aralık matematiğini kullanır."
+
+msgid "How strictly each material property must match for operations to share a batch on this process."
+msgstr "Bu operasyon üzerinde bir partide paylaşmak için her malzeme özelliğinin ne kadar katı eşleşmesi gerekir."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "İş emri'nin, zamanlayıcı kapasite dağıttığında nasıl sıralandığı — ASAP ilk öncelik alır, sonra Sert Son Tarih, Esnek Son Tarih ve Son Tarih Yok son sırada. Yalnızca bir sıralama sinyali; hiçbir son tarih türü yerleştirmeyi engellemiyor veya kısıtlamıyor."
@@ -8032,6 +8262,9 @@ msgstr "Bir şey yolunda değilse"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Parça numaralarını değiştirmek isterseniz, lütfen iptal'e tıklayın ve dönüştürmeden önce her bir satır öğesi için parçaları manuel olarak atayın."
+
+msgid "Ignore"
+msgstr "Yoksay"
 
 msgid "II (normal default)"
 msgstr "II (normal varsayılan)"
@@ -8676,6 +8909,9 @@ msgstr "İş emri operasyonu"
 msgid "Job Operation"
 msgstr "İş emri operasyonu"
 
+msgid "Job operation batch"
+msgstr "İş emri operasyonu partisi"
+
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
 
@@ -8742,6 +8978,9 @@ msgstr "Tut"
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
+
+msgid "Keep editing"
+msgstr "Düzenlemeye devam et"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
@@ -8827,6 +9066,9 @@ msgstr "Dil"
 
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
+
+msgid "Last Activity"
+msgstr "Son etkinlik"
 
 msgid "Last attempt"
 msgstr "Son deneme"
@@ -9060,6 +9302,9 @@ msgstr "Liste Seçenekleri"
 
 msgid "List Parameters"
 msgstr "Liste Parametreleri"
+
+msgid "List view"
+msgstr "Liste görünümü"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -9518,8 +9763,14 @@ msgstr "Yüzey işlemleri"
 msgid "Material Form"
 msgstr "Malzeme Formu"
 
+msgid "Material form — e.g. sheet, bar, tube"
+msgstr "Malzeme biçimi — örn. levha, çubuk, tüp"
+
 msgid "Material Grade"
 msgstr "Malzeme kalitesi"
+
+msgid "Material grade or alloy designation"
+msgstr "Malzeme kalitesi veya alaşım tanımı"
 
 msgid "Material Grades"
 msgstr "Malzeme kaliteleri"
@@ -9532,6 +9783,12 @@ msgstr "Malzeme Kimlikleri"
 
 msgid "Material is pre-selected"
 msgstr "Malzeme önceden seçilmiş"
+
+msgid "material item"
+msgstr "malzeme stok kartı"
+
+msgid "Material item"
+msgstr "Malzeme Stok Kartı"
 
 msgid "Material Planning"
 msgstr "Malzeme Planlama"
@@ -9629,6 +9886,9 @@ msgstr "Orta"
 msgid "Meeting cadence"
 msgstr "Toplantı sıklığı"
 
+msgid "Member"
+msgstr "Üye"
+
 msgid "Members"
 msgstr "Üyeler"
 
@@ -9692,6 +9952,12 @@ msgstr "Saatte gece yarısı, {name}."
 msgid "Migrate data"
 msgstr "Verileri Taşı"
 
+msgid "min {minimumBatchQuantity} — met"
+msgstr "en az {minimumBatchQuantity} — karşılandı"
+
+msgid "min {minimumBatchQuantity} — short"
+msgstr "en az {minimumBatchQuantity} — eksik"
+
 msgid "Min Qty"
 msgstr "Min Miktar"
 
@@ -9700,6 +9966,9 @@ msgstr "Minimum"
 
 msgid "Minimum Amount"
 msgstr "Minimum Tutar"
+
+msgid "Minimum Batch Quantity"
+msgstr "Minimum Parti Miktarı"
 
 msgid "Minimum Cost"
 msgstr "Minimum Maliyet"
@@ -9742,6 +10011,11 @@ msgstr "Tedarikçi Eksikleri"
 
 msgid "Missing:"
 msgstr "Eksik:"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "Malzemeleri karıştırma: {0}{1}. Bu çalıştırmada birbirine uygun olduklarını doğrulayın."
 
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
@@ -9830,6 +10104,9 @@ msgstr "Taşış"
 msgid "Move {accountName}"
 msgstr "{accountName} Taşı"
 
+msgid "Move batch"
+msgstr "Partiyi taşı"
+
 msgid "Move entities"
 msgstr "Varlıkları taşı"
 
@@ -9876,6 +10153,9 @@ msgstr "MRP (planlama)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr "Bu işlem üzerinde birden fazla iş aynı anda çalışabilir — örn. lazer masası, fırın veya kaplama banyosu"
 
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
@@ -9978,6 +10258,9 @@ msgstr "Yeni Öznitelik"
 
 msgid "New Attribute Category"
 msgstr "Yeni Öznitelik Kategorisi"
+
+msgid "New Batch"
+msgstr "Yeni Toplu İş"
 
 msgid "New Change Notice"
 msgstr "Yeni Değişiklik Bildirisi"
@@ -10364,6 +10647,9 @@ msgstr "Kullanılabilir filtre yok"
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
+msgid "No batches"
+msgstr "Parti yok"
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
@@ -10429,6 +10715,9 @@ msgstr "Son tarih yok"
 
 msgid "No editable properties for this item."
 msgstr "Bu öğe için düzenlenebilir özellik yok."
+
+msgid "No eligible operations"
+msgstr "Uygun operasyon yok"
 
 msgid "No employees assigned this week"
 msgstr "Bu hafta hiçbir çalışan atanmamış"
@@ -10532,6 +10821,12 @@ msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 msgid "No matching bins"
 msgstr "Eşleşen göz yok"
 
+msgid "No matching operations"
+msgstr "Eşleşen operasyon yok"
+
+msgid "No materials"
+msgstr "Malzeme yok"
+
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
@@ -10558,6 +10853,9 @@ msgstr "Operasyon bulunamadı."
 
 msgid "No operations require picking at this location"
 msgstr "Bu lokasyonda toplama gerektiren operasyon yok"
+
+msgid "No operations selected"
+msgstr "Seçilen operasyon yok"
 
 msgid "No operators."
 msgstr "Hiç operatör yok."
@@ -10598,6 +10896,9 @@ msgstr "Borç yok"
 msgid "No payments yet."
 msgstr "Henüz ödeme yok."
 
+msgid "No planned or recorded time."
+msgstr "Planlanan veya kaydedilen zaman yok."
+
 msgid "No planning data"
 msgstr "Planlama verisi yok"
 
@@ -10621,6 +10922,9 @@ msgstr "Hiçbir işlem seçilmedi"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Bu operasyon için henüz kaydedilmiş üretim olayı yok"
+
+msgid "No production recorded yet."
+msgstr "Henüz kayıtlı üretim yok."
 
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
@@ -10718,6 +11022,9 @@ msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşm�
 msgid "No unmapped values match a provider option name"
 msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşleşmiyor"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
+
 msgid "No value needed"
 msgstr "Değer gerekmiyor"
 
@@ -10738,6 +11045,9 @@ msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden d
 
 msgid "No work center utilization data within range"
 msgstr "Belirlenen aralıkta iş merkezi kullanım verisi yok"
+
+msgid "No work centers at this location"
+msgstr "Bu lokasyonda İş merkezi yok"
 
 msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
@@ -10857,11 +11167,17 @@ msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
+msgid "Nothing here matches your search and filters."
+msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
+
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
+
+msgid "Nothing selected yet"
+msgstr "Henüz hiçbir şey seçilmedi"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -11016,6 +11332,15 @@ msgstr "Carbon tarafından bireysel takip edilen bir seri adet veya bir parti, s
 msgid "One set of numbers"
 msgstr "Tek bir sayı seti"
 
+msgid "One shared setup instead of one per operation"
+msgstr "Operasyon başına değil, tek ortak hazırlık"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr "Bir paylaşılan hazırlık artı en uzun işçilik ve makine süresi — üyeler birlikte çalışır"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "Bir ortak kurulum artı toplam işçilik ve makine süresi"
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "İş emri rotasında bir adım, bir proses ve iş merkezini adlandıran, kendi hazırlık, işçilik, makine süresi ve oranlarını taşıyan."
 
@@ -11075,6 +11400,9 @@ msgstr "Açık Alacak hesapları"
 
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
+
+msgid "Open batch"
+msgstr "Açık Parti"
 
 msgid "Open date"
 msgstr "Açılış tarihi"
@@ -11190,6 +11518,9 @@ msgstr "İşletme saatleri"
 
 msgid "Operating Income"
 msgstr "İşletme Geliri"
+
+msgid "operation"
+msgstr "operasyon"
 
 msgid "Operation"
 msgstr "Operasyon"
@@ -11553,6 +11884,12 @@ msgstr "Parçalar"
 msgid "Parts & items"
 msgstr "Parçalar ve ürünler"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr "Parçalar birbir ardına çalışır — örneğin testere veya lazer masası."
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr "Parçalar tek bir yükte birlikte çalışır — örneğin fırın, fırın veya elektroliz banyosu."
+
 msgid "Parts, materials, and how you classify them."
 msgstr "Parçalar, malzemeler ve bunları nasıl sınıflandırdığınız."
 
@@ -11730,6 +12067,9 @@ msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 msgid "Pick"
 msgstr "Topla"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "Toplu işlenebilir bir işlem seçin, uygun operasyonları malzemelerine göre filtreleyin ve birlikte çalıştırmak istediğiniz olanları seçin."
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik oluştur, gönderim sırasında eksik sağlayıcı seçeneklerini ada göre ekler."
 
@@ -11744,6 +12084,9 @@ msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
 
 msgid "Pick a list variable…"
 msgstr "Bir liste değişkeni seçin…"
+
+msgid "Pick a process to start"
+msgstr "Başlatmak için bir işlem seçin"
 
 msgid "Pick a property"
 msgstr "Bir özellik seçin"
@@ -11802,6 +12145,9 @@ msgstr "Toplama Listeleri"
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Toplama izlenen varlıkları en yakın son kullanma tarihine göre sunar, bu nedenle en yakında sona erecek stok varsayılan olarak ilk olarak çıkar."
 
+msgid "Pieces per run. Leave empty for no limit."
+msgstr "Çalışma başına parça. Sınır olmadığında boş bırakın."
+
 msgid "Pieces/Hour"
 msgstr "Adet/Saat"
 
@@ -11857,6 +12203,9 @@ msgstr "Planlanan Başlangıç"
 
 msgid "Planned Start Time"
 msgstr "Planlan Başlangıç Saati"
+
+msgid "Planned time"
+msgstr "Planlanan Zaman"
 
 msgid "Planning"
 msgstr "Planlama"
@@ -12100,6 +12449,9 @@ msgstr "Yazdır"
 msgid "Print {0} Labels"
 msgstr "{0} Etiket Yazdır"
 
+msgid "Print batch list"
+msgstr "Parti Listesini Yazdır"
+
 msgid "Print Jobs"
 msgstr "Yazdırma İşleri"
 
@@ -12184,6 +12536,9 @@ msgstr "Üretim olayı"
 
 msgid "Production Event"
 msgstr "Üretim Olayı"
+
+msgid "Production events"
+msgstr "Üretim etkinlikleri"
 
 msgid "Production Events"
 msgstr "Üretim Olayları"
@@ -12953,7 +13308,7 @@ msgid "Refresh exchange rate"
 msgstr "Döviz kurunu yenile"
 
 msgid "Regenerate"
-msgstr "Yeniden Oluştur"
+msgstr "Yeniden oluştur"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Bu lokasyon için çizelgeyi şimdi yeniden oluşturun. Son çizelgeleme değişikliğinden yaklaşık 30 saniye sonra da otomatik olarak çalışır (düzenlemeler toplu halde yapılır, bu nedenle birkaç hızlı değişiklik tek bir yeniden oluşturmayı tetikler)."
@@ -13009,6 +13364,13 @@ msgstr "Göreceli zaman çizelgesi · tarihler onaylanacak"
 msgid "Release"
 msgstr "Serbest Bırakma"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
+msgid "Release Batch"
+msgstr "Partiyi Serbest Bırak"
+
 msgid "Release change notice"
 msgstr "Değişiklik bildirimi serbest bırak"
 
@@ -13023,6 +13385,10 @@ msgstr "İş emrini serbest bırak"
 
 msgid "Released"
 msgstr "Yayınlandı"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Yayın tarihi"
@@ -13049,6 +13415,10 @@ msgstr "Kaldır"
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
 
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr "{0} bu partiyi kaldırmak istiyor musunuz? Operasyonu çizelgeye geri döner ve kendi başına çalışacak."
+
 msgid "Remove {label}"
 msgstr "{label}'i Kaldır"
 
@@ -13072,6 +13442,9 @@ msgstr "Filtreyi kaldır"
 
 msgid "Remove Filters"
 msgstr "Filtreleri Kaldır"
+
+msgid "Remove from batch"
+msgstr "Toplu İşten Kaldır"
 
 msgid "Remove from board"
 msgstr "Panodan kaldır"
@@ -13247,6 +13620,9 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
+
+msgid "Require Match"
+msgstr "Eşleştirme Gerekli"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSO Gerekli"
@@ -13473,6 +13849,9 @@ msgstr "geri alınıyor…"
 
 msgid "Review"
 msgstr "İncele"
+
+msgid "Review & create"
+msgstr "İncele ve oluştur"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her stok kartın değişikliklerini incele, sonra onayla — serbest bırakma geri alınamaz."
@@ -13849,6 +14228,10 @@ msgstr "Cumartesi"
 msgid "Save"
 msgstr "Kaydet"
 
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "{0} kaydet"
+
 msgid "Save & Close"
 msgstr "Kaydet ve Kapat"
 
@@ -13940,7 +14323,7 @@ msgid "Schedule Name"
 msgstr "Planlama Adı"
 
 msgid "Schedule outdated at"
-msgstr "Çizelge Eski Kaldı:"
+msgstr "Çizelge süresi dolmuş saat"
 
 msgid "Schedule outdated reason"
 msgstr "Çizelge süresi dolma sebebi"
@@ -14035,6 +14418,9 @@ msgstr "Çalışma alanınızda arama yapın..."
 msgid "Search actions…"
 msgstr "Eylemleri ara…"
 
+msgid "Search batches…"
+msgstr "Partileri ara…"
+
 msgid "Search by Jira issue title..."
 msgstr "Jira sorunu başlığı ile ara..."
 
@@ -14064,6 +14450,9 @@ msgstr "Stok kartlarını veya gözleri ara"
 
 msgid "Search Job"
 msgstr "İş Ara"
+
+msgid "Search jobs or items"
+msgstr "İşleri veya öğeleri ara"
 
 msgid "Search list variables…"
 msgstr "Liste değişkenlerini ara…"
@@ -14249,6 +14638,9 @@ msgstr "Alan seçin"
 msgid "Select Gauge"
 msgstr "Ölçüm Aleti Seç"
 
+msgid "Select group"
+msgstr "Grup seç"
+
 msgid "Select groups or individuals"
 msgstr "Grupları veya bireyleri seçin"
 
@@ -14269,6 +14661,12 @@ msgstr "Öğeler seçin"
 
 msgid "Select method..."
 msgstr "Yöntem seçin..."
+
+msgid "Select operation"
+msgstr "Operasyonu seç"
+
+msgid "Select operations"
+msgstr "Operasyon seç"
 
 msgid "Select Printer"
 msgstr "Yazıcı Seçin"
@@ -14381,6 +14779,9 @@ msgstr "E-posta bildirimleri açık olan her alıcıya gönderilir."
 
 msgid "Sequences"
 msgstr "Numaralandırmalar"
+
+msgid "Sequential"
+msgstr "Ardışık"
 
 msgid "Serial"
 msgstr "Seri"
@@ -14511,6 +14912,11 @@ msgstr "Ayarlar"
 
 msgid "Setup"
 msgstr "Kurulum"
+
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr "Hazırlık {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "Kurulum ve Kontroller"
@@ -14750,6 +15156,10 @@ msgstr "Sondaki Sıfırları Göster"
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0} / {totalCount} gösteriliyor — aramanızı daraltın"
 
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "{0} / {totalFiltered} gösteriliyor — aramanızı daraltın"
+
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency} cinsinden gösteriliyor"
 
@@ -14810,6 +15220,9 @@ msgstr "Oturum açma ayrıca doğrulayıcı uygulamanızdan bir kerelik kod gere
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Oturum açma artık kod gerektirmez. Onaylamak için kimlik doğrulayıcı uygulamanızdan mevcut 6 haneli kodu girin."
 
+msgid "Simultaneous"
+msgstr "Eşzamanlı"
+
 msgid "Single Sign-On"
 msgstr "Tekli Oturum Açma"
 
@@ -14863,6 +15276,9 @@ msgstr "Konum, maliyet merkezi veya herhangi bir boyuta göre giderleri böl"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Hasılatı müşteriye, müşteri türüne veya herhangi bir boyuta göre böl"
+
+msgid "Smallest run worth batching. Leave empty for none."
+msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın."
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Temel günlük akışları uçtan uca test et"
@@ -15141,6 +15557,9 @@ msgstr "Fabrikada hala karanlık."
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
 
+msgid "Stock size — e.g. sheet thickness or bar diameter"
+msgstr "Stok boyutu — örn. levha kalınlığı veya çubuk çapı"
+
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
 
@@ -15325,6 +15744,9 @@ msgstr "Eşlemeleri Öner"
 msgid "Suggest mappings with AI"
 msgstr "Yapay Zeka ile Eşlemeleri Öner"
 
+msgid "Suggest Match"
+msgstr "Eşleştirme Öner"
+
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
 
@@ -15505,6 +15927,9 @@ msgstr "Destek"
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
 msgstr "Desteklenen {0} dosyası"
+
+msgid "Surface finish — e.g. anodized vs powder-coat"
+msgstr "Yüzey işlemi — örn. anodize vs toz boya"
 
 msgid "Surfaces"
 msgstr "Yüzeyler"
@@ -15795,6 +16220,9 @@ msgstr "Yedekleme işi bu hatayı bildirdi."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Bir operasyon'un iş emri'sini zamanında tutmak için bitirmesi gereken geriye doğru hesaplanan tarih, operasyon'un son tarih'e yazılır. İlerlemeyi ölçmek için kararlı bir hedef — yerleştirilme üzerinde hiçbir zaman bir kısıtlama değildir."
 
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çekilir"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm muhasebeleştirilmiş muhasebe fiş satırlarının hesaba göre toplandığı defter — yalnızca şirketin muhasebesi etkin olduğunda yazılır."
 
@@ -15966,11 +16394,17 @@ msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya 
 msgid "The evening hours, {name}."
 msgstr "Akşam saatleri, {name}."
 
+msgid "The exact material part, not just its properties"
+msgstr "Tam malzeme, sadece özellikleri değil"
+
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Bu stok kartının üretim sırasında kaybettiği beklenen yüzde; planlama, talep tarafı 1 / (1 − Fire) ile çarpılarak telafi edilir."
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı satırlar hesabı türetmek için bir envanter defter girişine sahip olmadığından gereklidir."
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
 
 msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"
@@ -16179,7 +16613,7 @@ msgstr "Prosedürün yeni sürüm numarası"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr "Bu lokasyonda bir sonraki planlanan çalışma {0} başlıyor."
+msgstr "Bu lokasyondaki bir sonraki planlanan çalışma {0} başlayacak."
 
 msgid "The night shift suits you, {name}."
 msgstr "Gece vardiyası sana yakışıyor, {name}."
@@ -16542,6 +16976,9 @@ msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamakt
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr "Bu operasyonlarda kurulum, işçilik veya makine süresi yok, bu nedenle çalıştırmayı boyutlandırmak için hiçbir şey yok. Çubuk nominal bir işarettir ve kapasite tutmaz — operasyonlara zaman standartları ekleyin."
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Bu kredileri uygulanacak hiçbir ödenmemiş tutar yok."
 
@@ -16676,7 +17113,7 @@ msgid "This job's own required quantity for the material."
 msgstr "Bu işin malzeme için kendi gerekli miktarı."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr "Bu lokasyon yalnızca personeli olan iş merkezlerini çizelgeler, ancak burası ışıksız bir (24×7) istasyondur — muaftır ve gözetimsiz olarak çalışmaya devam eder."
+msgstr "Bu lokasyon yalnızca personel atanmış iş merkezlerini çizelgelendirir, ancak bu otomatik (24×7) istasyondur — muaf tutulur ve gözetimsiz çalışmaya devam eder."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "Bu lokasyon yalnızca personel görevlendirme tahtası'nda atanmış bir operatör'ün bulunduğu işleri zamanlandırır. Burada kimse atanmış olmadığında, iş zamanlandırılmaz ve zamanlanmaz olarak görünür."
@@ -16695,6 +17132,9 @@ msgstr "Bu Ay"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Bu operasyon henüz zamanlanmaz — bar, çakışma çözüldüğünde nerede çalışacağını işaretler. Kapasiteyi tutmaz."
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr "Bu operasyon partide ancak malzemesi diğerleriyle eşleşmiyor — kaldırın veya birlikte çalışacağını onaylayın"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Uygulama Hub'ınızın bu sayfası oluşturuluyor. Bunu tamamlarken komuta merkezinden başlayın."
@@ -16754,7 +17194,7 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişinde iş emri oluşturulması gereken satırlar var"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "Bu istasyon yetkinlik kontrollü çalışmalar gerçekleştirir — nitelikli bir operatör vardiyada iken çalışır; vardiya tahtasında atanan operatörler kullanılabilir işçiliği daha da şekillendiriyor."
+msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "Bu istasyon yetkinlik gereksinimi olmayan iş çalıştırır; personel görevlendirme tahtası'nda atanmış operatörler kullanılabilir işçilik'i şekillendirir."
@@ -16908,6 +17348,9 @@ msgstr "Puantaj devre dışı"
 msgid "Timecards are enabled"
 msgstr "Puantaj etkin"
 
+msgid "Timer running"
+msgstr "Zamanlayıcı çalışıyor"
+
 msgid "Timezone"
 msgstr "Saat Dilim"
 
@@ -17042,6 +17485,9 @@ msgstr "Toplam Dakika"
 
 msgid "Total Price"
 msgstr "Toplam Fiyat"
+
+msgid "Total quantity"
+msgstr "Toplam Miktar"
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"
@@ -17292,6 +17738,9 @@ msgstr "Atanmamış"
 msgid "Unballoon"
 msgstr "Balonu Kaldır"
 
+msgid "Unbatched Operations"
+msgstr "Partisiz Operasyonlar"
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."
 
@@ -17421,6 +17870,12 @@ msgstr "{name} yayınlaması kaldırılsın mı?"
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
 
+msgid "Unrelease"
+msgstr "Serbest Bırakmayı Geri Al"
+
+msgid "Unrelease Batch"
+msgstr "Partiyi Serbest Bırakmayı Geri Al"
+
 msgid "Unsaved changes"
 msgstr "Kaydedilmemiş değişiklikler"
 
@@ -17456,6 +17911,10 @@ msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme.
 
 msgid "UoM"
 msgstr "Birim"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "en fazla {0} tasarruf"
 
 msgid "Update"
 msgstr "Güncelle"
@@ -17839,6 +18298,9 @@ msgstr "Ek Dosya Görüntüle"
 msgid "View Attributes"
 msgstr "Öznitelikleri Görüntüle"
 
+msgid "View Batch"
+msgstr "Toplu İşi Görüntüle"
+
 msgid "View Certificate"
 msgstr "Sertifikayı Görüntüle"
 
@@ -17892,6 +18354,9 @@ msgstr "Eksik değerleri görüntüle"
 
 msgid "View notes"
 msgstr "Notları görüntüle"
+
+msgid "View on schedule board"
+msgstr "Çizelge panosunda görüntüle"
 
 msgid "View Open"
 msgstr "Açık Gör"
@@ -18562,6 +19027,9 @@ msgstr "Çalışma Merkezi"
 
 msgid "Work Center"
 msgstr "İş Merkezi"
+
+msgid "Work center (optional)"
+msgstr "İş merkezi (isteğe bağlı)"
 
 msgid "Work Center Reservation"
 msgstr "İş Merkezi Rezervasyonu"

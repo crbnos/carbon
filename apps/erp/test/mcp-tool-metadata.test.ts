@@ -83,4 +83,81 @@ describe("mcp tool-metadata generator", () => {
       }
     }
   });
+
+  // A `z.infer<typeof V>` NESTED inside an inline object param resolves to the
+  // validator's real fields. An untyped {} here invited MCP clients to guess
+  // field names — a guessed `contact.phone` reached the insert and failed with
+  // PGRST204 ("Could not find the 'phone' column of 'contact'").
+  it("resolves nested validator references inside inline object params", () => {
+    for (const name of [
+      "sales_insertCustomerContact",
+      "sales_updateCustomerContact",
+      "purchasing_insertSupplierContact",
+      "purchasing_updateSupplierContact"
+    ]) {
+      const contact = props(get(name)).contact;
+      expect(contact?.type, name).toBe("object");
+      const keys = Object.keys(contact?.properties ?? {});
+      expect(keys, name).toContain("firstName");
+      expect(keys, name).toContain("workPhone");
+      // The table has mobilePhone/homePhone/workPhone — never a bare `phone`.
+      expect(keys, name).not.toContain("phone");
+    }
+    // PickPartial<..., "email"> demotes email from required.
+    const insertContact = props(get("sales_insertCustomerContact")).contact;
+    expect(insertContact?.required ?? []).not.toContain("email");
+  });
+
+  // A parenthesized discriminated-upsert union branch resolves instead of
+  // publishing an opaque {} member (and the leading-pipe union style must not
+  // contribute an empty first member).
+  it("resolves parenthesized upsert union branches to real fields", () => {
+    const dimension = props(get("accounting_upsertDimension")).dimension;
+    const branches = dimension?.anyOf ?? [dimension];
+    expect(branches.length).toBeGreaterThan(0);
+    for (const branch of branches) {
+      expect(Object.keys(branch?.properties ?? {}).length).toBeGreaterThan(0);
+    }
+  });
+
+  // Database["public"]["Enums"][...] fields publish real enum values from the
+  // generated types, so a client picks from the actual statuses.
+  it("resolves generated DB enum references to value enums", () => {
+    const status = props(get("inventory_updatePickingListStatus")).status;
+    expect(status?.enum).toContain("In Progress");
+    const mode = props(get("items_updateChangeNoticeAffectedItemCutover"))
+      .supersessionMode;
+    expect(mode?.enum).toContain("Consume First");
+  });
+
+  // Database["public"]["Tables"][t]["Insert"] params publish the table's own
+  // columns (auth-injected fields stripped) — no more guessing what a tag is.
+  it("resolves generated DB table types to real columns", () => {
+    const tag = props(get("shared_insertTag")).tag;
+    expect(tag?.type).toBe("object");
+    expect(tag?.required).toEqual(["name", "table"]);
+    expect(tag?.properties?.companyId).toBeUndefined();
+    expect(tag?.properties?.createdBy).toBeUndefined();
+  });
+
+  // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
+  it("resolves Array<T> generic params to typed arrays", () => {
+    const forecasts = props(get("production_upsertDemandForecasts")).forecasts;
+    expect(forecasts?.type).toBe("array");
+    expect(Object.keys(forecasts?.items?.properties ?? {})).toContain("itemId");
+  });
+
+  // A bare type alias declared in the module's own sources (service file,
+  // types.ts, models, or shared) resolves; Partial<{...}> drops required.
+  it("resolves module-local type aliases and Partial wrappers", () => {
+    const rule = props(get("shared_upsertApprovalRule")).rule;
+    const ruleBranches = rule?.anyOf ?? [rule];
+    expect(
+      Object.keys(ruleBranches[0]?.properties ?? {}).length
+    ).toBeGreaterThan(0);
+
+    const ability = props(get("resources_updateAbility")).ability;
+    expect(Object.keys(ability?.properties ?? {})).toContain("name");
+    expect(ability?.required).toBeUndefined();
+  });
 });
