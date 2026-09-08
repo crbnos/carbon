@@ -226,6 +226,7 @@ export namespace Rillet {
 
   /** AR_ONLY invoice item — product_id is REQUIRED on every line. */
   export const InvoiceItemSchema = z.object({
+    revenue: z.object({ account_code: z.string() }).optional(),
     id: z.string().optional(),
     product_id: z.string(),
     description: z.string(),

@@ -1,5 +1,5 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { toDocumentAmount } from "@carbon/utils";
+import { moneyFormatOptions, toDocumentAmount } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
@@ -126,7 +126,7 @@ export async function writeDroppingUnregisteredReferences<
   }
 }
 
-/** Format a number as Rillet money — a 2-dp decimal STRING plus currency. */
+/** Rillet requires an ungrouped decimal string at the document currency scale. */
 export function toRilletMoney(
   amount: number,
   currency: string,
@@ -134,7 +134,10 @@ export function toRilletMoney(
 ): Rillet.MonetaryAmount {
   if (decimalPlaces > 5) throw new Error("Unsupported document decimal scale");
   return {
-    amount: toDocumentAmount(amount, 1, decimalPlaces).toFixed(decimalPlaces),
+    amount: new Intl.NumberFormat("en-US", {
+      ...moneyFormatOptions(decimalPlaces),
+      useGrouping: false
+    }).format(toDocumentAmount(amount, 1, decimalPlaces)),
     currency
   };
 }

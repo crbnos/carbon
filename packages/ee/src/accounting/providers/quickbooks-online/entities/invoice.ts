@@ -1,6 +1,15 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
+import { parseDate } from "@internationalized/date";
 import { createMappingService } from "../../../core/external-mapping";
-import { roundCurrency } from "../../../core/posting";
+import {
+  JournalEntrySyncError,
+  toPostingDateString
+} from "../../../core/posting";
+import {
+  buildSalesDocumentComponents,
+  type SalesDocumentComponents
+} from "../../../core/sales-document-components";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -9,7 +18,14 @@ import {
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
 import {
+  loadQboInvoiceTaxCatalog,
+  type QboInvoiceTaxCatalog,
+  resolveQboInvoiceTax
+} from "./invoice-tax";
+import type { QboItemSyncer } from "./item";
+import {
   buildQboDocNumberFields,
+  loadQboAccountRefsById,
   type QboDocNumberSource,
   type QboWriteOmit,
   updateWithSyncTokenRetry
@@ -61,6 +77,10 @@ type InvoiceRow = {
   totalDiscount: number;
   totalAmount: number;
   balance: number;
+  headerShippingCost: number | null;
+  baseCurrencyCode: string;
+  baseCurrencyDecimalPlaces: number | null;
+  currencyDecimalPlaces: number | null;
   updatedAt: string | null;
 };
 
@@ -72,6 +92,10 @@ type InvoiceLineRow = {
   description: string | null;
   quantity: number;
   unitPrice: number;
+  convertedUnitPrice: number | null;
+  shippingCost: number | null;
+  addOnCost: number | null;
+  nonTaxableAddOnCost: number | null;
   taxPercent: number;
   itemReadableIdWithRevision: string | null;
 };
@@ -96,21 +120,50 @@ export function deriveCarbonInvoiceStatus(
  * (resolved by ensureDependencySynced before mapping); lines without an
  * item ship without an ItemRef.
  */
-export function buildQboInvoiceLines(
-  lines: Accounting.SalesInvoiceLine[],
-  itemRemoteIds: ReadonlyMap<string, string>
-): Array<Omit<Qbo.InvoiceLine, "Id">> {
-  return lines.map((line) => {
-    const remoteItemId = line.itemId ? itemRemoteIds.get(line.itemId) : null;
-
+export function buildQboInvoiceLines(args: {
+  document: SalesDocumentComponents;
+  itemRemoteIds: ReadonlyMap<string, string>;
+  shippingItemRemoteId: string | null;
+  lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
+}): Array<Omit<Qbo.InvoiceLine, "Id">> {
+  return args.document.components.map((component) => {
+    const shipping =
+      component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    const itemId = shipping
+      ? args.shippingItemRemoteId
+      : component.itemId
+        ? args.itemRemoteIds.get(component.itemId)
+        : null;
+    if ((shipping || component.itemId) && !itemId)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message: `Invoice component ${component.id} has no QuickBooks item mapping`,
+        metadata: {
+          invoiceId: args.document.invoiceId,
+          componentId: component.id
+        }
+      });
+    const taxCode = args.lineTaxCodeRefs.get(component.id);
+    if (!taxCode)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: `Invoice component ${component.id} has no resolved QuickBooks tax code`,
+        metadata: {
+          invoiceId: args.document.invoiceId,
+          componentId: component.id
+        }
+      });
     return {
-      Description: line.description ?? undefined,
-      Amount: roundCurrency(line.quantity * line.unitPrice),
+      Description: component.description,
+      Amount: component.netAmount,
       DetailType: "SalesItemLineDetail",
       SalesItemLineDetail: {
-        ItemRef: remoteItemId ? { value: remoteItemId } : undefined,
-        Qty: line.quantity,
-        UnitPrice: line.unitPrice
+        ItemRef: itemId ? { value: itemId } : undefined,
+        Qty: component.quantity,
+        UnitPrice: component.unitAmount,
+        TaxCodeRef: taxCode
       }
     };
   });
@@ -121,6 +174,80 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
   Qbo.Invoice,
   QboWriteOmit
 > {
+  private taxCatalogPromise?: Promise<QboInvoiceTaxCatalog>;
+  private shippingAccountPromise?: Promise<string>;
+  private shippingItemSyncerPromise?: Promise<QboItemSyncer>;
+
+  private getShippingAccountId(): Promise<string> {
+    if (!this.shippingAccountPromise)
+      this.shippingAccountPromise = (async () => {
+        const defaults = await this.database
+          .selectFrom("accountDefault")
+          .select("salesShippingRevenueAccount")
+          .where("companyId", "=", this.companyId)
+          .executeTakeFirst();
+        const id = defaults?.salesShippingRevenueAccount;
+        const account = id
+          ? await this.database
+              .selectFrom("account as a")
+              .innerJoin("company as c", "c.companyGroupId", "a.companyGroupId")
+              .select(["a.id", "a.class", "a.active", "a.isGroup"])
+              .where("c.id", "=", this.companyId)
+              .where("a.id", "=", id)
+              .executeTakeFirst()
+          : undefined;
+        const refs = await loadQboAccountRefsById(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        if (
+          !account ||
+          account.class !== "Revenue" ||
+          !account.active ||
+          account.isGroup ||
+          !id ||
+          !refs.has(id)
+        )
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_ACCOUNTS",
+            warning: true,
+            message:
+              "Cannot sync invoice: Shipping Revenue requires an active Revenue leaf with a QuickBooks account mapping",
+            metadata: {
+              accountId: id,
+              missingDefaults: ["salesShippingRevenueAccount"]
+            }
+          });
+        return id;
+      })();
+    return this.shippingAccountPromise;
+  }
+
+  private getShippingItemSyncer(): Promise<QboItemSyncer> {
+    if (!this.shippingItemSyncerPromise)
+      this.shippingItemSyncerPromise = (async () => {
+        const [{ SyncFactory }, { QboItemSyncer }] = await Promise.all([
+          import("../../../core/sync"),
+          import("./item")
+        ]);
+        const syncer = SyncFactory.getSyncer({
+          ...this.context,
+          entityType: "item",
+          config: this.provider.getSyncConfig("item") ?? {
+            enabled: true,
+            direction: "push-to-accounting",
+            owner: "carbon"
+          }
+        });
+        if (!(syncer instanceof QboItemSyncer))
+          throw new Error(
+            "QuickBooks shipping requires the existing item syncer"
+          );
+        return syncer;
+      })();
+    return this.shippingItemSyncerPromise;
+  }
+
   // Bookkeeping for linkEntities: concurrency metadata per remote id and
   // the DocNumber carrier per local id (recorded during mapToRemote)
   private remoteMetaById = new Map<
@@ -176,7 +303,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     // Also update updatedAt on salesInvoice (Xero-syncer parity)
     await tx
       .updateTable("salesInvoice")
-      .set({ updatedAt: new Date().toISOString() })
+      .set({ updatedAt: datetime.timestamp() })
       .where("id", "=", localId)
       .execute();
   }
@@ -212,7 +339,35 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const invoiceRows = await this.database
       .selectFrom("salesInvoice")
       // `balance` is derived and lives only on the `salesInvoices` view
-      .leftJoin("salesInvoices", "salesInvoices.id", "salesInvoice.id")
+      .leftJoin("salesInvoices", (join) =>
+        join
+          .onRef("salesInvoices.id", "=", "salesInvoice.id")
+          .onRef("salesInvoices.companyId", "=", "salesInvoice.companyId")
+      )
+      .innerJoin("company", "company.id", "salesInvoice.companyId")
+      .leftJoin("salesInvoiceShipment", (join) =>
+        join
+          .onRef("salesInvoiceShipment.id", "=", "salesInvoice.id")
+          .onRef(
+            "salesInvoiceShipment.companyId",
+            "=",
+            "salesInvoice.companyId"
+          )
+      )
+      .leftJoin("currency as documentCurrency", (join) =>
+        join
+          .onRef("documentCurrency.code", "=", "salesInvoice.currencyCode")
+          .onRef(
+            "documentCurrency.companyGroupId",
+            "=",
+            "company.companyGroupId"
+          )
+      )
+      .leftJoin("currency as baseCurrency", (join) =>
+        join
+          .onRef("baseCurrency.code", "=", "company.baseCurrencyCode")
+          .onRef("baseCurrency.companyGroupId", "=", "company.companyGroupId")
+      )
       .select([
         "salesInvoice.id",
         "salesInvoice.invoiceId",
@@ -225,11 +380,15 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         "salesInvoice.dateDue",
         "salesInvoice.datePaid",
         "salesInvoice.customerReference",
-        "salesInvoice.subtotal",
-        "salesInvoice.totalTax",
+        "salesInvoices.subtotal",
+        "salesInvoices.totalTax",
         "salesInvoice.totalDiscount",
-        "salesInvoice.totalAmount",
+        "salesInvoices.totalAmount",
         "salesInvoices.balance",
+        "salesInvoiceShipment.shippingCost as headerShippingCost",
+        "company.baseCurrencyCode",
+        "baseCurrency.decimalPlaces as baseCurrencyDecimalPlaces",
+        "documentCurrency.decimalPlaces as currencyDecimalPlaces",
         "salesInvoice.updatedAt"
       ])
       .where("salesInvoice.id", "in", ids)
@@ -240,7 +399,11 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
 
     const lineRows = await this.database
       .selectFrom("salesInvoiceLine")
-      .leftJoin("item", "item.id", "salesInvoiceLine.itemId")
+      .leftJoin("item", (join) =>
+        join
+          .onRef("item.id", "=", "salesInvoiceLine.itemId")
+          .onRef("item.companyId", "=", "salesInvoiceLine.companyId")
+      )
       .select([
         "salesInvoiceLine.id",
         "salesInvoiceLine.invoiceId",
@@ -249,9 +412,14 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         "salesInvoiceLine.description",
         "salesInvoiceLine.quantity",
         "salesInvoiceLine.unitPrice",
+        "salesInvoiceLine.convertedUnitPrice",
+        "salesInvoiceLine.shippingCost",
+        "salesInvoiceLine.addOnCost",
+        "salesInvoiceLine.nonTaxableAddOnCost",
         "salesInvoiceLine.taxPercent",
         "item.readableIdWithRevision as itemReadableIdWithRevision"
       ])
+      .where("salesInvoiceLine.companyId", "=", this.companyId)
       .where(
         "salesInvoiceLine.invoiceId",
         "in",
@@ -268,6 +436,26 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
 
     const result = new Map<string, Accounting.SalesInvoice>();
     for (const row of invoiceRows as InvoiceRow[]) {
+      if (
+        !row.baseCurrencyCode ||
+        !row.currencyCode ||
+        row.baseCurrencyDecimalPlaces == null ||
+        row.currencyDecimalPlaces == null
+      ) {
+        throw new Error(
+          `Invoice ${row.id} is missing authoritative currency precision metadata`
+        );
+      }
+      if (
+        row.subtotal == null ||
+        row.totalTax == null ||
+        row.totalAmount == null ||
+        row.balance == null
+      ) {
+        throw new Error(
+          `Invoice ${row.id} is missing authoritative source view totals`
+        );
+      }
       const lines = linesByInvoiceId.get(row.id) ?? [];
 
       result.set(row.id, {
@@ -278,16 +466,20 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         customerExternalId: null, // Resolved during mapToRemote
         status: row.status,
         currencyCode: row.currencyCode,
-        exchangeRate: Number(row.exchangeRate) || 1,
+        baseCurrencyCode: row.baseCurrencyCode,
+        baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
+        currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
+        headerShippingCost: Number(row.headerShippingCost ?? 0),
+        exchangeRate: Number(row.exchangeRate),
         dateIssued: row.dateIssued,
         dateDue: row.dateDue,
         datePaid: row.datePaid,
         customerReference: row.customerReference,
-        subtotal: Number(row.subtotal) || 0,
-        totalTax: Number(row.totalTax) || 0,
+        subtotal: Number(row.subtotal),
+        totalTax: Number(row.totalTax),
         totalDiscount: Number(row.totalDiscount) || 0,
-        totalAmount: Number(row.totalAmount) || 0,
-        balance: Number(row.balance) || 0,
+        totalAmount: Number(row.totalAmount),
+        balance: Number(row.balance),
         lines: lines.map((line) => {
           const quantity = Number(line.quantity) || 0;
           const unitPrice = Number(line.unitPrice) || 0;
@@ -299,11 +491,18 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
             description: line.description,
             quantity,
             unitPrice,
+            convertedUnitPrice:
+              line.convertedUnitPrice == null
+                ? null
+                : Number(line.convertedUnitPrice),
+            shippingCost: Number(line.shippingCost ?? 0),
+            addOnCost: Number(line.addOnCost ?? 0),
+            nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
             taxPercent: Number(line.taxPercent) || 0,
             lineAmount: quantity * unitPrice
           };
         }),
-        updatedAt: row.updatedAt ?? new Date().toISOString(),
+        updatedAt: row.updatedAt ?? datetime.timestamp(),
         raw: row
       });
     }
@@ -339,34 +538,69 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
   protected async mapToRemote(
     local: Accounting.SalesInvoice
   ): Promise<Omit<Qbo.Invoice, QboWriteOmit>> {
-    // JIT dependencies: customer, then every line item, before the document
+    const document = buildSalesDocumentComponents(local);
+    const remoteExchangeRate = 1 / local.exchangeRate;
+    if (!Number.isFinite(remoteExchangeRate))
+      throw new Error("QuickBooks exchange rate must be finite");
+    let catalog: QboInvoiceTaxCatalog;
+    try {
+      this.taxCatalogPromise ??= loadQboInvoiceTaxCatalog(this.qboProvider);
+      catalog = await this.taxCatalogPromise;
+    } catch (error) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: `Cannot read QuickBooks tax configuration: ${error instanceof Error ? error.message : String(error)}`,
+        metadata: {
+          invoiceId: local.id,
+          requestedRates: [
+            ...new Set(document.components.map((line) => line.taxPercent))
+          ],
+          candidateTaxCodeIds: [],
+          reason: "Tax catalog unavailable"
+        }
+      });
+    }
+    const tax = resolveQboInvoiceTax({ document, catalog });
+    const hasShipping = document.components.some(
+      (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
+    );
+    const shippingAccountId = hasShipping
+      ? await this.getShippingAccountId()
+      : null;
+    // Tax, account and currency preflight finishes before any dependency writes.
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
     );
-
     const itemRemoteIds = new Map<string, string>();
-    for (const line of local.lines) {
-      if (line.itemId && !itemRemoteIds.has(line.itemId)) {
-        itemRemoteIds.set(
-          line.itemId,
-          await this.ensureDependencySynced("item", line.itemId)
-        );
-      }
-    }
-
-    // Due date: use dateDue if provided, otherwise default to Net 30
-    // (Xero-syncer parity)
-    let dueDate = local.dateDue;
-    if (!dueDate && local.dateIssued) {
-      const issued = new Date(local.dateIssued);
-      issued.setDate(issued.getDate() + 30);
-      dueDate = issued.toISOString().split("T")[0];
-    } else if (!dueDate) {
-      const now = new Date();
-      now.setDate(now.getDate() + 30);
-      dueDate = now.toISOString().split("T")[0];
-    }
+    const itemIds = [
+      ...new Set(
+        document.components
+          .filter(
+            (line) =>
+              line.kind !== "LineShipping" &&
+              line.kind !== "HeaderShipping" &&
+              line.itemId
+          )
+          .map((line) => line.itemId!)
+      )
+    ];
+    for (const itemId of itemIds)
+      itemRemoteIds.set(
+        itemId,
+        await this.ensureDependencySynced("item", itemId)
+      );
+    const shippingItemRemoteId = shippingAccountId
+      ? await (await this.getShippingItemSyncer()).ensureShippingItem({
+          shippingAccountId
+        })
+      : null;
+    const dueDate =
+      local.dateDue ??
+      parseDate(toPostingDateString(local.dateIssued ?? datetime.timestamp()))
+        .add({ days: 30 })
+        .toString();
 
     const docNumber = buildQboDocNumberFields(local.invoiceId);
     this.docNumberSourceByLocalId.set(local.id, docNumber.source);
@@ -377,7 +611,18 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       TxnDate: local.dateIssued ?? undefined,
       DueDate: dueDate,
       CustomerRef: { value: customerRemoteId },
-      Line: buildQboInvoiceLines(local.lines, itemRemoteIds)
+      CurrencyRef: { value: document.currencyCode },
+      ExchangeRate: remoteExchangeRate,
+      ...(catalog.country.toUpperCase() === "US"
+        ? {}
+        : { GlobalTaxCalculation: "TaxExcluded" as const }),
+      TxnTaxDetail: tax.txnTaxDetail,
+      Line: buildQboInvoiceLines({
+        document,
+        itemRemoteIds,
+        shippingItemRemoteId,
+        lineTaxCodeRefs: tax.lineTaxCodeRefs
+      })
     };
   }
 
@@ -398,6 +643,9 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         description: line.Description ?? null,
         quantity: line.SalesItemLineDetail?.Qty ?? 0,
         unitPrice: line.SalesItemLineDetail?.UnitPrice ?? 0,
+        shippingCost: 0,
+        addOnCost: 0,
+        nonTaxableAddOnCost: 0,
         taxPercent: 0,
         lineAmount: line.Amount
       }));
@@ -436,7 +684,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         dateIssued: data.dateIssued,
         dateDue: data.dateDue,
         totalAmount: data.totalAmount,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", existingLocalId)
       .execute();

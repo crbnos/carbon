@@ -1,7 +1,12 @@
+import { datetime } from "@carbon/database/datetime";
 import {
   JournalEntrySyncError,
   toPostingDateString
 } from "../../../core/posting";
+import {
+  buildSalesDocumentComponents,
+  type SalesDocumentComponents
+} from "../../../core/sales-document-components";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
 import type {
   Rillet,
@@ -12,10 +17,12 @@ import {
   buildRilletIdempotencyKey,
   isRilletUnknownExternalReferenceTypeError
 } from "../provider";
+import type { RilletItemSyncer } from "./item";
 import {
   carbonCompanyExternalReference,
   carbonExternalReference,
   customerCustomExternalReference,
+  loadRilletAccountCodesById,
   RILLET_CARBON_COMPANY_REFERENCE_TYPE,
   RILLET_CARBON_REFERENCE_TYPE,
   RilletTransactionSyncer,
@@ -71,6 +78,10 @@ type InvoiceRow = {
   totalDiscount: number;
   totalAmount: number;
   balance: number;
+  headerShippingCost: number | null;
+  baseCurrencyCode: string;
+  baseCurrencyDecimalPlaces: number | null;
+  currencyDecimalPlaces: number | null;
   updatedAt: string | null;
 };
 
@@ -85,6 +96,9 @@ type InvoiceLineRow = {
   unitPrice: number;
   /** Document-currency mirror (unitPrice * exchangeRate). */
   convertedUnitPrice: number | null;
+  shippingCost: number | null;
+  addOnCost: number | null;
+  nonTaxableAddOnCost: number | null;
   taxPercent: number;
   itemReadableIdWithRevision: string | null;
 };
@@ -99,8 +113,32 @@ type InvoiceLineRow = {
  * line's item was not resolved to a product (a dependency-sync bug, not
  * user-fixable).
  */
+function preflightRilletComponents(document: SalesDocumentComponents): void {
+  const unsupported = document.components.filter(
+    (line) =>
+      (line.kind !== "LineShipping" &&
+        line.kind !== "HeaderShipping" &&
+        !line.itemId) ||
+      line.quantity < 0.00001
+  );
+  if (unsupported.length > 0)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync invoice: Rillet AR_ONLY lines require a product and positive quantity; some components have no item or unsupported quantities",
+      metadata: {
+        invoiceId: document.invoiceId,
+        componentIds: unsupported.map((line) => line.id)
+      }
+    });
+}
+
 export function mapSalesInvoiceToRilletInvoice(args: {
   invoice: Accounting.SalesInvoice;
+  document: SalesDocumentComponents;
+  shippingProductRemoteId: string | null;
+  shippingAccountCode: string | null;
   customerRemoteId: string;
   itemRemoteIds: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
@@ -110,54 +148,42 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   documentUrl: string;
 }): RilletInvoiceCreate {
   const { invoice } = args;
-  const currency = invoice.currencyCode;
-
-  const lineIdsWithoutItem = invoice.lines
-    .filter((line) => !line.itemId)
-    .map((line) => line.id);
-  if (lineIdsWithoutItem.length > 0) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync invoice ${invoice.invoiceId}: ${lineIdsWithoutItem.length} line(s) have no item — Rillet AR_ONLY invoice lines require a product. Assign an item to the line(s), then retry.`,
-      warning: true,
-      metadata: { invoiceId: invoice.id, lineIdsWithoutItem }
-    });
-  }
-
-  const items: Rillet.InvoiceItem[] = invoice.lines.map((line) => {
-    const productId = args.itemRemoteIds.get(line.itemId!);
-    if (!productId) {
-      throw new Error(
-        `Cannot sync invoice ${invoice.invoiceId}: item ${line.itemId} has not been synced to Rillet`
-      );
-    }
-
+  const document = args.document;
+  const currency = document.currencyCode;
+  preflightRilletComponents(document);
+  const items: Rillet.InvoiceItem[] = document.components.map((component) => {
+    const shipping =
+      component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    const productId = shipping
+      ? args.shippingProductRemoteId
+      : args.itemRemoteIds.get(component.itemId!);
+    if (!productId || (shipping && !args.shippingAccountCode))
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message: `Invoice component ${component.id} has no resolved Rillet product/account mapping`,
+        metadata: { invoiceId: document.invoiceId, componentId: component.id }
+      });
     return {
       product_id: productId,
-      description: line.description ?? line.itemCode ?? "Invoice line",
-      quantity: line.quantity,
-      // `currency` is the DOCUMENT currency, so the amount must be too.
-      // salesInvoiceLine.unitPrice is stored in the company BASE currency;
-      // convertedUnitPrice is the document-currency mirror.
+      description: component.description,
+      quantity: component.quantity,
       total_amount: toRilletMoney(
-        line.quantity * (line.convertedUnitPrice ?? line.unitPrice),
-        currency
+        component.netAmount,
+        currency,
+        document.decimalPlaces
       ),
-      // CUSTOMER_CUSTOM satisfies rev-rec validation and carries the line id
-      // for audit. NO `carbon` ref here: Rillet counts header + item
-      // references together for RESTRICTED types, and organizations that
-      // register `carbon` as restricted reject a document carrying it on
-      // both the header and a line ("multiple references of a restricted
-      // type" — verified on the sandbox 2026-08-12). The header's carbon
-      // ref is the document's single origin link.
+      ...(shipping
+        ? { revenue: { account_code: args.shippingAccountCode! } }
+        : {}),
       external_references: [
-        customerCustomExternalReference(line.id, args.documentUrl)
+        customerCustomExternalReference(component.id, args.documentUrl)
       ]
     };
   });
 
   const invoiceDate = toPostingDateString(
-    invoice.dateIssued ?? new Date().toISOString()
+    invoice.dateIssued ?? datetime.timestamp()
   );
 
   return {
@@ -169,8 +195,14 @@ export function mapSalesInvoiceToRilletInvoice(args: {
     ...(invoice.dateDue
       ? { due_date: toPostingDateString(invoice.dateDue) }
       : {}),
-    ...(invoice.totalTax > 0
-      ? { tax_amount: toRilletMoney(invoice.totalTax, currency) }
+    ...(document.totalTax !== 0
+      ? {
+          tax_amount: toRilletMoney(
+            document.totalTax,
+            currency,
+            document.decimalPlaces
+          )
+        }
       : {}),
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
     items,
@@ -191,6 +223,78 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
 > {
   protected get pushOnlyEntityLabel(): string {
     return "Sales invoices";
+  }
+
+  private shippingAccountPromise?: Promise<{ id: string; code: string }>;
+  private shippingItemSyncerPromise?: Promise<RilletItemSyncer>;
+
+  private getShippingAccount(): Promise<{ id: string; code: string }> {
+    if (!this.shippingAccountPromise)
+      this.shippingAccountPromise = (async () => {
+        const defaults = await this.database
+          .selectFrom("accountDefault")
+          .select("salesShippingRevenueAccount")
+          .where("companyId", "=", this.companyId)
+          .executeTakeFirst();
+        const id = defaults?.salesShippingRevenueAccount;
+        const account = id
+          ? await this.database
+              .selectFrom("account as a")
+              .innerJoin("company as c", "c.companyGroupId", "a.companyGroupId")
+              .select(["a.id", "a.class", "a.active", "a.isGroup"])
+              .where("c.id", "=", this.companyId)
+              .where("a.id", "=", id)
+              .executeTakeFirst()
+          : undefined;
+        const codes = await loadRilletAccountCodesById(this.database, {
+          companyId: this.companyId,
+          integration: this.provider.id
+        });
+        const code = id ? codes.get(id) : undefined;
+        if (
+          !account ||
+          account.class !== "Revenue" ||
+          !account.active ||
+          account.isGroup ||
+          !id ||
+          !code
+        )
+          throw new JournalEntrySyncError({
+            errorCode: "UNMAPPED_ACCOUNTS",
+            warning: true,
+            message:
+              "Cannot sync invoice: Shipping Revenue requires an active Revenue leaf with a Rillet account mapping",
+            metadata: {
+              accountId: id,
+              missingDefaults: ["salesShippingRevenueAccount"]
+            }
+          });
+        return { id, code };
+      })();
+    return this.shippingAccountPromise;
+  }
+
+  private getShippingItemSyncer(): Promise<RilletItemSyncer> {
+    if (!this.shippingItemSyncerPromise)
+      this.shippingItemSyncerPromise = (async () => {
+        const [{ SyncFactory }, { RilletItemSyncer }] = await Promise.all([
+          import("../../../core/sync"),
+          import("./item")
+        ]);
+        const syncer = SyncFactory.getSyncer({
+          ...this.context,
+          entityType: "item",
+          config: this.provider.getSyncConfig("item") ?? {
+            enabled: true,
+            direction: "push-to-accounting",
+            owner: "carbon"
+          }
+        });
+        if (!(syncer instanceof RilletItemSyncer))
+          throw new Error("Rillet shipping requires the existing item syncer");
+        return syncer;
+      })();
+    return this.shippingItemSyncerPromise;
   }
 
   // =================================================================
@@ -216,7 +320,35 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     const invoiceRows = await this.database
       .selectFrom("salesInvoice")
       // `balance` is derived and lives only on the `salesInvoices` view
-      .leftJoin("salesInvoices", "salesInvoices.id", "salesInvoice.id")
+      .leftJoin("salesInvoices", (join) =>
+        join
+          .onRef("salesInvoices.id", "=", "salesInvoice.id")
+          .onRef("salesInvoices.companyId", "=", "salesInvoice.companyId")
+      )
+      .innerJoin("company", "company.id", "salesInvoice.companyId")
+      .leftJoin("salesInvoiceShipment", (join) =>
+        join
+          .onRef("salesInvoiceShipment.id", "=", "salesInvoice.id")
+          .onRef(
+            "salesInvoiceShipment.companyId",
+            "=",
+            "salesInvoice.companyId"
+          )
+      )
+      .leftJoin("currency as documentCurrency", (join) =>
+        join
+          .onRef("documentCurrency.code", "=", "salesInvoice.currencyCode")
+          .onRef(
+            "documentCurrency.companyGroupId",
+            "=",
+            "company.companyGroupId"
+          )
+      )
+      .leftJoin("currency as baseCurrency", (join) =>
+        join
+          .onRef("baseCurrency.code", "=", "company.baseCurrencyCode")
+          .onRef("baseCurrency.companyGroupId", "=", "company.companyGroupId")
+      )
       .select([
         "salesInvoice.id",
         "salesInvoice.invoiceId",
@@ -229,11 +361,15 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         "salesInvoice.dateDue",
         "salesInvoice.datePaid",
         "salesInvoice.customerReference",
-        "salesInvoice.subtotal",
-        "salesInvoice.totalTax",
+        "salesInvoices.subtotal",
+        "salesInvoices.totalTax",
         "salesInvoice.totalDiscount",
-        "salesInvoice.totalAmount",
+        "salesInvoices.totalAmount",
         "salesInvoices.balance",
+        "salesInvoiceShipment.shippingCost as headerShippingCost",
+        "company.baseCurrencyCode",
+        "baseCurrency.decimalPlaces as baseCurrencyDecimalPlaces",
+        "documentCurrency.decimalPlaces as currencyDecimalPlaces",
         "salesInvoice.updatedAt"
       ])
       .where("salesInvoice.id", "in", ids)
@@ -244,7 +380,11 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
 
     const lineRows = await this.database
       .selectFrom("salesInvoiceLine")
-      .leftJoin("item", "item.id", "salesInvoiceLine.itemId")
+      .leftJoin("item", (join) =>
+        join
+          .onRef("item.id", "=", "salesInvoiceLine.itemId")
+          .onRef("item.companyId", "=", "salesInvoiceLine.companyId")
+      )
       .select([
         "salesInvoiceLine.id",
         "salesInvoiceLine.invoiceId",
@@ -254,9 +394,13 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         "salesInvoiceLine.quantity",
         "salesInvoiceLine.unitPrice",
         "salesInvoiceLine.convertedUnitPrice",
+        "salesInvoiceLine.shippingCost",
+        "salesInvoiceLine.addOnCost",
+        "salesInvoiceLine.nonTaxableAddOnCost",
         "salesInvoiceLine.taxPercent",
         "item.readableIdWithRevision as itemReadableIdWithRevision"
       ])
+      .where("salesInvoiceLine.companyId", "=", this.companyId)
       .where(
         "salesInvoiceLine.invoiceId",
         "in",
@@ -273,6 +417,26 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
 
     const result = new Map<string, Accounting.SalesInvoice>();
     for (const row of invoiceRows as InvoiceRow[]) {
+      if (
+        !row.baseCurrencyCode ||
+        !row.currencyCode ||
+        row.baseCurrencyDecimalPlaces == null ||
+        row.currencyDecimalPlaces == null
+      ) {
+        throw new Error(
+          `Invoice ${row.id} is missing authoritative currency precision metadata`
+        );
+      }
+      if (
+        row.subtotal == null ||
+        row.totalTax == null ||
+        row.totalAmount == null ||
+        row.balance == null
+      ) {
+        throw new Error(
+          `Invoice ${row.id} is missing authoritative source view totals`
+        );
+      }
       const lines = linesByInvoiceId.get(row.id) ?? [];
 
       result.set(row.id, {
@@ -283,16 +447,20 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         customerExternalId: null, // Resolved during mapToRemote
         status: row.status,
         currencyCode: row.currencyCode,
-        exchangeRate: Number(row.exchangeRate) || 1,
+        baseCurrencyCode: row.baseCurrencyCode,
+        baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
+        currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
+        headerShippingCost: Number(row.headerShippingCost ?? 0),
+        exchangeRate: Number(row.exchangeRate),
         dateIssued: row.dateIssued,
         dateDue: row.dateDue,
         datePaid: row.datePaid,
         customerReference: row.customerReference,
-        subtotal: Number(row.subtotal) || 0,
-        totalTax: Number(row.totalTax) || 0,
+        subtotal: Number(row.subtotal),
+        totalTax: Number(row.totalTax),
         totalDiscount: Number(row.totalDiscount) || 0,
-        totalAmount: Number(row.totalAmount) || 0,
-        balance: Number(row.balance) || 0,
+        totalAmount: Number(row.totalAmount),
+        balance: Number(row.balance),
         lines: lines.map((line) => {
           const quantity = Number(line.quantity) || 0;
           const unitPrice = Number(line.unitPrice) || 0;
@@ -309,12 +477,15 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
             description: line.description,
             quantity,
             unitPrice,
+            shippingCost: Number(line.shippingCost ?? 0),
+            addOnCost: Number(line.addOnCost ?? 0),
+            nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
             convertedUnitPrice,
             taxPercent: Number(line.taxPercent) || 0,
             lineAmount: quantity * unitPrice
           };
         }),
-        updatedAt: row.updatedAt ?? new Date().toISOString(),
+        updatedAt: row.updatedAt ?? datetime.timestamp(),
         raw: row
       });
     }
@@ -368,21 +539,43 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
   protected async mapToRemote(
     local: Accounting.SalesInvoice
   ): Promise<RilletInvoiceCreate> {
-    // JIT dependencies: customer, then every line item, before the document
+    const document = buildSalesDocumentComponents(local);
+    preflightRilletComponents(document);
+    const hasShipping = document.components.some(
+      (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
+    );
+    const shippingAccount = hasShipping
+      ? await this.getShippingAccount()
+      : null;
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
     );
-
     const itemRemoteIds = new Map<string, string>();
-    for (const line of local.lines) {
-      if (line.itemId && !itemRemoteIds.has(line.itemId)) {
-        itemRemoteIds.set(
-          line.itemId,
-          await this.ensureDependencySynced("item", line.itemId)
-        );
-      }
-    }
+    const itemIds = [
+      ...new Set(
+        document.components
+          .filter(
+            (line) =>
+              line.kind !== "LineShipping" &&
+              line.kind !== "HeaderShipping" &&
+              line.itemId
+          )
+          .map((line) => line.itemId!)
+      )
+    ];
+    for (const itemId of itemIds)
+      itemRemoteIds.set(
+        itemId,
+        await this.ensureDependencySynced("item", itemId)
+      );
+    const shippingProductRemoteId = shippingAccount
+      ? await (await this.getShippingItemSyncer()).ensureShippingProduct({
+          shippingAccountId: shippingAccount.id,
+          baseCurrencyCode: local.baseCurrencyCode,
+          baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
+        })
+      : null;
 
     // Dynamic import: keeps @carbon/env (module-load env validation) out of
     // the module graph for consumers and tests that never push an invoice
@@ -391,6 +584,9 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
 
     return mapSalesInvoiceToRilletInvoice({
       invoice: local,
+      document,
+      shippingProductRemoteId,
+      shippingAccountCode: shippingAccount?.code ?? null,
       customerRemoteId,
       itemRemoteIds,
       subsidiaryId: this.rilletProvider.subsidiaryId,

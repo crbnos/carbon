@@ -1,5 +1,8 @@
+import { datetime } from "@carbon/database/datetime";
+import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import type { Rillet, RilletProductWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
@@ -129,11 +132,145 @@ type ItemRow = {
   unitSalePrice: number | null;
 };
 
+function mergeProductWrite(
+  current: Rillet.Product,
+  desired: RilletProductWrite
+): RilletProductWrite {
+  const {
+    id: _id,
+    updated_at: _updatedAt,
+    ...merged
+  } = { ...current, ...desired };
+  const replacedTypes = new Set(
+    desired.external_references?.map((ref) => ref.type) ?? []
+  );
+  return {
+    ...merged,
+    price: { ...current.price, ...desired.price },
+    external_references: [
+      ...(current.external_references ?? []).filter(
+        (ref) => !replacedTypes.has(ref.type)
+      ),
+      ...(desired.external_references ?? [])
+    ]
+  };
+}
+
 export class RilletItemSyncer extends RilletEntitySyncer<
   Accounting.Item,
   Rillet.Product,
   RilletWriteOmit
 > {
+  private shippingProducts = new Map<string, Promise<string>>();
+
+  public async ensureShippingProduct(args: {
+    shippingAccountId: string;
+    baseCurrencyCode: string;
+    baseCurrencyDecimals: number;
+  }): Promise<string> {
+    const helperId = `${args.shippingAccountId}:${args.baseCurrencyCode}`;
+    let pending = this.shippingProducts.get(helperId);
+    if (!pending) {
+      pending = this.resolveShippingProduct(args, helperId).catch((error) => {
+        this.shippingProducts.delete(helperId);
+        throw error;
+      });
+      this.shippingProducts.set(helperId, pending);
+    }
+    return pending;
+  }
+
+  private async resolveShippingProduct(
+    args: {
+      shippingAccountId: string;
+      baseCurrencyCode: string;
+      baseCurrencyDecimals: number;
+    },
+    helperId: string
+  ): Promise<string> {
+    if (!args.baseCurrencyCode.trim())
+      throw new Error("Missing shipping-product base currency");
+    const price = toRilletMoney(
+      0,
+      args.baseCurrencyCode,
+      args.baseCurrencyDecimals
+    );
+    const codes = await this.getAccountCodesById();
+    const item: Accounting.Item = {
+      id: helperId,
+      code: `Carbon Shipping ${args.shippingAccountId} ${args.baseCurrencyCode}`,
+      name: "Customer shipping charges",
+      description: "Customer shipping charges",
+      companyId: this.companyId,
+      type: "Service",
+      unitOfMeasureCode: "EA",
+      unitCost: 0,
+      unitSalePrice: 0,
+      isPurchased: false,
+      isSold: true,
+      isTrackedAsInventory: false,
+      updatedAt: datetime.timestamp()
+    };
+    const payload = mapItemToRilletProduct({
+      item,
+      accountCodesById: codes,
+      revenueAccountId: args.shippingAccountId,
+      currency: args.baseCurrencyCode
+    });
+    payload.price.amount = price;
+    const mappedId = await this.mappingService.getExternalId(
+      "shippingItem",
+      helperId,
+      this.provider.id
+    );
+    if (mappedId) {
+      const current = await this.rilletProvider.getProduct(mappedId);
+      if (!current || current.name !== payload.name)
+        throw new JournalEntrySyncError({
+          errorCode: "UNMAPPED_ACCOUNTS",
+          warning: true,
+          message:
+            "Cannot reuse Shipping Revenue product: its mapped product is missing or has an incompatible name",
+          metadata: { accountId: args.shippingAccountId, helperId }
+        });
+      if (
+        current.account_code === payload.account_code &&
+        current.status !== "INACTIVE" &&
+        current.price.amount.currency === args.baseCurrencyCode &&
+        current.price.type === "ONE_TIME" &&
+        Number(current.price.amount.amount) === 0 &&
+        !current.include_in_arr_mrr &&
+        current.revenue_pattern === "EVEN_PERIOD"
+      )
+        return current.id;
+      const updated = await writeDroppingUnregisteredReferences(
+        mergeProductWrite(current, payload),
+        (data) => this.rilletProvider.updateProduct(mappedId, data)
+      );
+      return updated.id;
+    }
+    const created = await writeDroppingUnregisteredReferences(payload, (data) =>
+      this.rilletProvider.createProduct(
+        data,
+        buildRilletIdempotencyKey({
+          companyId: this.companyId,
+          operation: "product",
+          localId: helperId
+        })
+      )
+    );
+    await withTriggersDisabled(this.database, async (tx) =>
+      createMappingService(tx, this.companyId).link(
+        "shippingItem",
+        helperId,
+        this.provider.id,
+        created.id,
+        { metadata: { accountId: args.shippingAccountId, kind: "shipping" } }
+      )
+    );
+    return created.id;
+  }
+
   // Cached per instance — a drain reuses one syncer across its claimed
   // operations, so mappings, the sales-account default and the base
   // currency are each fetched at most once
@@ -307,8 +444,13 @@ export class RilletItemSyncer extends RilletEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (existingRemoteId) {
+      const current = await this.rilletProvider.getProduct(existingRemoteId);
+      if (!current)
+        throw new Error(
+          `Mapped Rillet product ${existingRemoteId} was not found`
+        );
       const updated = await writeDroppingUnregisteredReferences(
-        data,
+        mergeProductWrite(current, data),
         (payload) =>
           this.rilletProvider.updateProduct(existingRemoteId, payload)
       );
