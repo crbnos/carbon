@@ -1791,12 +1791,20 @@ serve(async (req: Request) => {
               .from("salesReturnOrder")
               .select("*")
               .eq("id", salesReturnOrderId)
+              .eq("companyId", companyId)
               .single();
             if (salesReturnOrder.error)
               throw new Error("Failed to fetch sales return order");
-            if (salesReturnOrder.data.status === "Cancelled")
+            // Same allowlist as the create edge function: goods can only ship
+            // back once something was received. A Draft RMA has never had its
+            // caps validated; Cancelled/Completed are terminal.
+            if (
+              !["Partially Received", "Received"].includes(
+                salesReturnOrder.data.status
+              )
+            )
               throw new Error(
-                "Cannot ship against a cancelled return order"
+                `Cannot ship against a return order in ${salesReturnOrder.data.status} status`
               );
 
             const accountingSettings = await client
@@ -1835,9 +1843,10 @@ serve(async (req: Request) => {
                 items.data.find((i) => i.id === shipmentLine.itemId)
                   ?.itemTrackingType ?? "Inventory";
 
-              itemShipmentQuantities[shipmentLine.itemId] =
-                (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
-                shippedQuantity;
+              // Non-Inventory lines have no stock and no carried cost —
+              // posting them would book COGS/costLedger with zero inventory
+              // movement (the Sales Order branch excludes them the same way).
+              if (itemTrackingType === "Non-Inventory") continue;
 
               const lineEntities = (shipmentLineTracking.data ?? []).filter(
                 (tracking) =>
@@ -1847,6 +1856,9 @@ serve(async (req: Request) => {
               );
 
               if (itemTrackingType === "Inventory") {
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  shippedQuantity;
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
@@ -1854,7 +1866,7 @@ serve(async (req: Request) => {
                   locationId: shipmentLine.locationId,
                   storageUnitId: shipmentLine.storageUnitId,
                   entryType: "Negative Adjmt.",
-                  documentType: "Sales Shipment",
+                  documentType: "Sales Return Shipment",
                   documentId: shipment.data?.id ?? undefined,
                   externalDocumentId:
                     shipment.data?.externalDocumentId ?? undefined,
@@ -1863,7 +1875,22 @@ serve(async (req: Request) => {
                 });
               } else {
                 // Whole-entity shipping (v1: return shipments do not split
-                // partial batches — the picker picks whole entities)
+                // partial batches — the picker picks whole entities). The
+                // ledger writes one row per entity, so the entities must
+                // account for the full shipped quantity — otherwise cost and
+                // stock relief would diverge from what the line claims.
+                const entitySum = lineEntities.reduce(
+                  (sum, entity) => sum + Number(entity.quantity ?? 0),
+                  0
+                );
+                if (Math.abs(entitySum - shippedQuantity) > 0.00001) {
+                  throw new Error(
+                    `Shipment line ${shipmentLine.id}: tracked entities account for ${entitySum} of ${shippedQuantity} shipped — assign tracking before posting`
+                  );
+                }
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  entitySum;
                 for (const entity of lineEntities) {
                   itemLedgerInserts.push({
                     postingDate: today,
@@ -1872,7 +1899,7 @@ serve(async (req: Request) => {
                     locationId: shipmentLine.locationId,
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
-                    documentType: "Sales Shipment",
+                    documentType: "Sales Return Shipment",
                     documentId: shipment.data?.id ?? undefined,
                     trackedEntityId: entity.id,
                     externalDocumentId:
@@ -1893,6 +1920,24 @@ serve(async (req: Request) => {
               : null;
 
             await db.transaction().execute(async (trx) => {
+              // Double-post guard: serialize on the shipment row — a second
+              // concurrent post waits here, then sees Posted and aborts, so
+              // ledger rows and journals can never double.
+              const lockedShipment = await trx
+                .selectFrom("shipment")
+                .select(["status"])
+                .where("id", "=", shipmentId)
+                .forUpdate()
+                .executeTakeFirstOrThrow();
+              if (
+                lockedShipment.status === "Posted" ||
+                lockedShipment.status === "Voided"
+              ) {
+                throw new Error(
+                  `Shipment is already ${lockedShipment.status}`
+                );
+              }
+
               const journalLineInserts: Omit<
                 Database["public"]["Tables"]["journalLine"]["Insert"],
                 "journalId"
@@ -1913,7 +1958,7 @@ serve(async (req: Request) => {
                     itemLedgerType: "Sale",
                     costLedgerType: "Direct Cost",
                     adjustment: false,
-                    documentType: "Sales Shipment",
+                    documentType: "Sales Return Shipment",
                     documentId: shipment.data?.id ?? undefined,
                     externalDocumentId:
                       shipment.data?.externalDocumentId ?? undefined,
@@ -1943,7 +1988,7 @@ serve(async (req: Request) => {
                     description: "Cost of Goods Sold",
                     amount: round(debit("expense", cogsResult.totalCost)),
                     quantity: round(quantity),
-                    documentType: "Sales Shipment",
+                    documentType: "Return Order",
                     documentId: shipment.data?.id ?? undefined,
                     documentLineReference: journalReference.to.shipment(
                       shipment.data?.id ?? ""
@@ -1956,7 +2001,7 @@ serve(async (req: Request) => {
                     description: inventoryAccount.description,
                     amount: round(credit("asset", cogsResult.totalCost)),
                     quantity: round(quantity),
-                    documentType: "Sales Shipment",
+                    documentType: "Return Order",
                     documentId: shipment.data?.id ?? undefined,
                     documentLineReference: journalReference.to.shipment(
                       shipment.data?.id ?? ""
@@ -1985,7 +2030,12 @@ serve(async (req: Request) => {
                     description: `Return Shipment ${shipment.data.shipmentId}`,
                     postingDate: today,
                     companyId,
-                    sourceType: "Sales Shipment",
+                    // Distinct source type: these are NOT sales shipments —
+                    // "Sales Shipment" here double-counted return-to-customer
+                    // movements in shipment/COGS reporting and pushed the
+                    // journal through the always-on external-sync policy
+                    // instead of the opt-in return types.
+                    sourceType: "Sales Return Shipment",
                     status: "Posted",
                     postedAt: new Date().toISOString(),
                     postedBy: userId,
@@ -2082,11 +2132,13 @@ serve(async (req: Request) => {
                   .from("purchaseReturnOrder")
                   .select("*")
                   .eq("id", purchaseReturnOrderId)
+                  .eq("companyId", companyId)
                   .single(),
                 client
                   .from("purchaseReturnOrderLine")
                   .select("*")
-                  .eq("purchaseReturnOrderId", purchaseReturnOrderId),
+                  .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+                  .eq("companyId", companyId),
               ]);
             if (purchaseReturnOrder.error)
               throw new Error("Failed to fetch purchase return order");
@@ -2150,10 +2202,6 @@ serve(async (req: Request) => {
                 items.data.find((i) => i.id === shipmentLine.itemId)
                   ?.itemTrackingType ?? "Inventory";
 
-              itemShipmentQuantities[shipmentLine.itemId] =
-                (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
-                shippedQuantity;
-
               const existingUpdate = returnLineUpdates[returnLine.id];
               returnLineUpdates[returnLine.id] = {
                 quantityShipped:
@@ -2161,6 +2209,12 @@ serve(async (req: Request) => {
                     Number(returnLine.quantityShipped ?? 0)) + shippedQuantity,
                 updatedBy: userId,
               };
+
+              // Non-Inventory lines still advance the return line (so the
+              // order can settle) but post no ledger, cost, or GL — there is
+              // no stock or carried cost to relieve, and booking GRNI against
+              // nothing diverges the books from stock.
+              if (itemTrackingType === "Non-Inventory") continue;
 
               const lineEntities = (shipmentLineTracking.data ?? []).filter(
                 (tracking) =>
@@ -2170,6 +2224,9 @@ serve(async (req: Request) => {
               );
 
               if (itemTrackingType === "Inventory") {
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  shippedQuantity;
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
@@ -2185,6 +2242,21 @@ serve(async (req: Request) => {
                   companyId,
                 });
               } else {
+                // One ledger row per entity: the entities must account for
+                // the full shipped quantity or cost/stock relief diverges
+                // from what the line claims.
+                const entitySum = lineEntities.reduce(
+                  (sum, entity) => sum + Number(entity.quantity ?? 0),
+                  0
+                );
+                if (Math.abs(entitySum - shippedQuantity) > 0.00001) {
+                  throw new Error(
+                    `Shipment line ${shipmentLine.id}: tracked entities account for ${entitySum} of ${shippedQuantity} shipped — assign tracking before posting`
+                  );
+                }
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  entitySum;
                 for (const entity of lineEntities) {
                   itemLedgerInserts.push({
                     postingDate: today,
@@ -2214,6 +2286,43 @@ serve(async (req: Request) => {
               : null;
 
             await db.transaction().execute(async (trx) => {
+              // Double-post guard: serialize on the shipment row — a second
+              // concurrent post waits here, then sees Posted and aborts, so
+              // ledger rows, journals, and quantityShipped can never double.
+              const lockedShipment = await trx
+                .selectFrom("shipment")
+                .select(["status"])
+                .where("id", "=", shipmentId)
+                .forUpdate()
+                .executeTakeFirstOrThrow();
+              if (
+                lockedShipment.status === "Posted" ||
+                lockedShipment.status === "Voided"
+              ) {
+                throw new Error(
+                  `Shipment is already ${lockedShipment.status}`
+                );
+              }
+
+              // cancelPurchaseReturnOrder locks this same order row — re-check
+              // the status under the lock so a cancel committed after our
+              // pre-transaction read cannot be posted over.
+              const lockedOrder = await trx
+                .selectFrom("purchaseReturnOrder")
+                .select(["status"])
+                .where("id", "=", purchaseReturnOrderId)
+                .forUpdate()
+                .executeTakeFirstOrThrow();
+              if (
+                !["Confirmed", "Partially Shipped"].includes(
+                  lockedOrder.status
+                )
+              ) {
+                throw new Error(
+                  `Cannot ship against a return order in ${lockedOrder.status} status`
+                );
+              }
+
               const journalLineInserts: Omit<
                 Database["public"]["Tables"]["journalLine"]["Insert"],
                 "journalId"
@@ -2357,11 +2466,14 @@ serve(async (req: Request) => {
                   l.closedComplete ||
                   Number(l.quantityShipped) >= Number(l.quantity)
               );
-              const returnStatus = allShipped
-                ? ("Shipped" as const)
-                : anyShipped
-                  ? ("Partially Shipped" as const)
-                  : ("Confirmed" as const);
+              // anyShipped takes precedence (matches the void branch and
+              // shortClosePurchaseReturnOrderLine): all lines short-closed
+              // with nothing shipped is "Confirmed", not "Shipped".
+              const returnStatus = anyShipped
+                ? allShipped
+                  ? ("Shipped" as const)
+                  : ("Partially Shipped" as const)
+                : ("Confirmed" as const);
               await trx
                 .updateTable("purchaseReturnOrder")
                 .set({ status: returnStatus, updatedBy: userId })
@@ -3479,19 +3591,36 @@ serve(async (req: Request) => {
             const accountingEnabled =
               accountingSettings.data?.accountingEnabled ?? false;
 
-            const originalJournalLines = await client
-              .from("journalLine")
-              .select("*")
-              .eq("documentId", shipmentId)
-              .eq("documentType", "Sales Shipment")
-              .eq("companyId", companyId);
-
-            const originalItemLedger = await client
-              .from("itemLedger")
-              .select("*")
-              .eq("documentId", shipmentId)
-              .eq("documentType", "Sales Shipment")
-              .eq("companyId", companyId);
+            const [originalJournalLines, originalItemLedger, originalCostRows] =
+              await Promise.all([
+                client
+                  .from("journalLine")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Return Order")
+                  .eq("companyId", companyId),
+                client
+                  .from("itemLedger")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Sales Return Shipment")
+                  .eq("companyId", companyId),
+                client
+                  .from("costLedger")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Sales Return Shipment")
+                  .eq("companyId", companyId),
+              ]);
+            // A failed read here must abort: treating data:null as "nothing
+            // to reverse" would mark the shipment Voided while its journal
+            // and ledger rows stand.
+            if (originalJournalLines.error)
+              throw new Error("Failed to fetch journal lines to reverse");
+            if (originalItemLedger.error)
+              throw new Error("Failed to fetch item ledger rows to reverse");
+            if (originalCostRows.error)
+              throw new Error("Failed to fetch cost ledger rows to reverse");
 
             const accountingPeriodId =
               accountingEnabled && (originalJournalLines.data ?? []).length > 0
@@ -3508,7 +3637,7 @@ serve(async (req: Request) => {
                 locationId: entry.locationId,
                 storageUnitId: entry.storageUnitId,
                 entryType: "Positive Adjmt." as const,
-                documentType: "Sales Shipment" as const,
+                documentType: "Sales Return Shipment" as const,
                 documentId: entry.documentId,
                 externalDocumentId: entry.externalDocumentId,
                 trackedEntityId: entry.trackedEntityId,
@@ -3519,6 +3648,33 @@ serve(async (req: Request) => {
                 await trx
                   .insertInto("itemLedger")
                   .values(reversingItemLedger)
+                  .execute();
+              }
+
+              // Restore inventory VALUE, not just quantity: posting consumed
+              // FIFO layers via calculateCOGS; without an offsetting layer
+              // the voided stock re-enters at zero value and inventory is
+              // permanently understated.
+              for (const row of (originalCostRows.data ?? []).filter(
+                (r) => Number(r.quantity) < 0
+              )) {
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: row.itemLedgerType,
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Sales Return Shipment",
+                    documentId: row.documentId,
+                    externalDocumentId: row.externalDocumentId ?? undefined,
+                    itemId: row.itemId,
+                    quantity: round(-Number(row.quantity)),
+                    cost: round(-Number(row.cost)),
+                    nominalCost: round(-Number(row.nominalCost)),
+                    remainingQuantity: round(-Number(row.quantity)),
+                    companyId,
+                    postingDate: today,
+                  })
                   .execute();
               }
 
@@ -3540,7 +3696,7 @@ serve(async (req: Request) => {
                     description: `VOID Return Shipment ${shipment.data?.shipmentId}`,
                     postingDate: today,
                     companyId,
-                    sourceType: "Sales Shipment",
+                    sourceType: "Sales Return Shipment",
                     status: "Posted",
                     postedAt: new Date().toISOString(),
                     postedBy: userId,
@@ -3642,26 +3798,47 @@ serve(async (req: Request) => {
             const accountingEnabled =
               accountingSettings.data?.accountingEnabled ?? false;
 
-            const [originalJournalLines, originalItemLedger, returnLinesVoid] =
-              await Promise.all([
-                client
-                  .from("journalLine")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Return Order")
-                  .eq("companyId", companyId),
-                client
-                  .from("itemLedger")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Purchase Return Shipment")
-                  .eq("companyId", companyId),
-                client
-                  .from("purchaseReturnOrderLine")
-                  .select("*")
-                  .eq("purchaseReturnOrderId", purchaseReturnOrderId)
-                  .eq("companyId", companyId),
-              ]);
+            const [
+              originalJournalLines,
+              originalItemLedger,
+              returnLinesVoid,
+              originalCostRows,
+            ] = await Promise.all([
+              client
+                .from("journalLine")
+                .select("*")
+                .eq("documentId", shipmentId)
+                .eq("documentType", "Return Order")
+                .eq("companyId", companyId),
+              client
+                .from("itemLedger")
+                .select("*")
+                .eq("documentId", shipmentId)
+                .eq("documentType", "Purchase Return Shipment")
+                .eq("companyId", companyId),
+              client
+                .from("purchaseReturnOrderLine")
+                .select("*")
+                .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+                .eq("companyId", companyId),
+              client
+                .from("costLedger")
+                .select("*")
+                .eq("documentId", shipmentId)
+                .eq("documentType", "Purchase Return Shipment")
+                .eq("companyId", companyId),
+            ]);
+            // A failed read here must abort: treating data:null as "nothing
+            // to reverse" would mark the shipment Voided while its journal
+            // and ledger rows stand.
+            if (originalJournalLines.error)
+              throw new Error("Failed to fetch journal lines to reverse");
+            if (originalItemLedger.error)
+              throw new Error("Failed to fetch item ledger rows to reverse");
+            if (returnLinesVoid.error)
+              throw new Error("Failed to fetch return order lines");
+            if (originalCostRows.error)
+              throw new Error("Failed to fetch cost ledger rows to reverse");
 
             const shippedByLine = new Map<string, number>();
             for (const shipmentLine of shipmentLines.data ?? []) {
@@ -3699,6 +3876,33 @@ serve(async (req: Request) => {
                 await trx
                   .insertInto("itemLedger")
                   .values(reversingItemLedger)
+                  .execute();
+              }
+
+              // Restore inventory VALUE, not just quantity: posting consumed
+              // FIFO layers via calculateCOGS; without an offsetting layer
+              // the voided stock re-enters at zero value and inventory is
+              // permanently understated.
+              for (const row of (originalCostRows.data ?? []).filter(
+                (r) => Number(r.quantity) < 0
+              )) {
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: row.itemLedgerType,
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Purchase Return Shipment",
+                    documentId: row.documentId,
+                    externalDocumentId: row.externalDocumentId ?? undefined,
+                    itemId: row.itemId,
+                    quantity: round(-Number(row.quantity)),
+                    cost: round(-Number(row.cost)),
+                    nominalCost: round(-Number(row.nominalCost)),
+                    remainingQuantity: round(-Number(row.quantity)),
+                    companyId,
+                    postingDate: today,
+                  })
                   .execute();
               }
 

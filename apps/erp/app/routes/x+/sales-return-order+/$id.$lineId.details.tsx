@@ -148,7 +148,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // belongs to it, and never re-parent it to the form's copy of the id.
   const existingLine = await client
     .from("salesReturnOrderLine")
-    .select("salesReturnOrderId, quantity")
+    .select(
+      "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId"
+    )
     .eq("id", lineId)
     .eq("companyId", companyId)
     .single();
@@ -163,19 +165,58 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   d.salesReturnOrderId = orderId;
 
-  // Quantities are validated against source-line caps at Confirm; once the
-  // order is confirmed a quantity edit would bypass that validation.
-  if (
-    salesReturnOrder.data?.status !== "Draft" &&
-    Number(d.quantity) !== Number(existingLine.data.quantity)
-  ) {
-    throw redirect(
-      path.to.salesReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(null, "Quantities are locked after confirmation")
-      )
+  // Quantities, item, pricing, and source-document links are validated
+  // against source-line caps at Confirm; once the order is confirmed, editing
+  // any of them would bypass that validation (re-pointing a link frees the
+  // original source line's cap) or change the credit basis after the fact.
+  // A field only counts as changed when it was provided AND differs —
+  // upsertSalesReturnOrderLine sanitize()s the update, so omitted optionals
+  // never overwrite.
+  if (salesReturnOrder.data?.status !== "Draft") {
+    const lockedFields: [string, unknown, unknown][] = [
+      ["Quantity", Number(d.quantity), Number(existingLine.data.quantity)],
+      ["Item", d.itemId, existingLine.data.itemId],
+      ["Unit price", Number(d.unitPrice), Number(existingLine.data.unitPrice)],
+      [
+        "Restocking fee",
+        d.restockFeePercent === undefined
+          ? undefined
+          : Number(d.restockFeePercent),
+        Number(existingLine.data.restockFeePercent)
+      ],
+      [
+        "Unit of measure",
+        d.unitOfMeasureCode,
+        existingLine.data.unitOfMeasureCode ?? undefined
+      ],
+      [
+        "Sales order line link",
+        d.salesOrderLineId,
+        existingLine.data.salesOrderLineId ?? undefined
+      ],
+      [
+        "Shipment line link",
+        d.shipmentLineId,
+        existingLine.data.shipmentLineId ?? undefined
+      ],
+      [
+        "Invoice line link",
+        d.salesInvoiceLineId,
+        existingLine.data.salesInvoiceLineId ?? undefined
+      ]
+    ];
+    const changed = lockedFields.find(
+      ([, next, current]) => next !== undefined && next !== current
     );
+    if (changed) {
+      throw redirect(
+        path.to.salesReturnOrderLine(orderId, lineId),
+        await flash(
+          request,
+          error(null, `${changed[0]} is locked after confirmation`)
+        )
+      );
+    }
   }
 
   const updateLine = await upsertSalesReturnOrderLine(client, {

@@ -729,6 +729,7 @@ export const journalEntrySourceTypes = [
   "Sales Shipment",
   "Sales Return",
   "Sales Return Receipt",
+  "Sales Return Shipment",
   "Transfer Receipt",
   "Inventory Adjustment",
   "Production Order",

@@ -3540,6 +3540,25 @@ export async function confirmPurchaseReturnOrder(
 
       // Everything already authorized against this source line by OTHER
       // non-cancelled return orders (re-read under the source-row lock).
+      // A PO-line check must ALSO count returns linked via a receipt line OF
+      // that PO line: receipt-linked and PO-linked returns draw on the same
+      // received base, and per-column counting let the two link types jointly
+      // over-authorize the same goods. (A line carrying both links matches
+      // the OR once — rows are counted, not columns.) The receipt-line check
+      // deliberately does NOT count PO-linked returns the other way: they
+      // cannot be attributed to one receipt line of a multi-receipt PO line,
+      // and blocking on them would refuse legitimate returns.
+      let siblingReceiptLineIds: string[] = [];
+      if (check.linkColumn === "purchaseOrderLineId") {
+        const receiptLinesOfPoLine = await trx
+          .selectFrom("receiptLine")
+          .select(["id"])
+          .where("lineId", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .execute();
+        siblingReceiptLineIds = receiptLinesOfPoLine.map((r) => r.id);
+      }
+
       const others = await trx
         .selectFrom("purchaseReturnOrderLine")
         .innerJoin(
@@ -3555,7 +3574,26 @@ export async function confirmPurchaseReturnOrder(
             )
             .as("authorized")
         ])
-        .where(`purchaseReturnOrderLine.${check.linkColumn}`, "=", check.linkId)
+        .where((eb) =>
+          siblingReceiptLineIds.length > 0
+            ? eb.or([
+                eb(
+                  `purchaseReturnOrderLine.${check.linkColumn}`,
+                  "=",
+                  check.linkId
+                ),
+                eb(
+                  "purchaseReturnOrderLine.receiptLineId",
+                  "in",
+                  siblingReceiptLineIds
+                )
+              ])
+            : eb(
+                `purchaseReturnOrderLine.${check.linkColumn}`,
+                "=",
+                check.linkId
+              )
+        )
         .where("purchaseReturnOrderLine.companyId", "=", companyId)
         .where("purchaseReturnOrder.status", "!=", "Cancelled")
         .where("purchaseReturnOrder.id", "!=", id)
@@ -3585,71 +3623,69 @@ export async function confirmPurchaseReturnOrder(
   });
 }
 
+/**
+ * Cancel a supplier return. THROWS. A Kysely transaction that locks the order
+ * row first — post-shipment re-checks the order status under the same lock, so
+ * a shipment posting racing this cancel serializes: whichever commits first
+ * wins, and the loser sees the new state instead of producing a Cancelled
+ * order with shipped stock (whose caps and Issue coverage then vanish).
+ */
 export async function cancelPurchaseReturnOrder(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   { id, companyId, userId }: { id: string; companyId: string; userId: string }
 ) {
-  const [order, shipments, lines] = await Promise.all([
-    client
-      .from("purchaseReturnOrder")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .single(),
-    client
-      .from("shipment")
-      .select("id, status", { count: "exact", head: false })
-      .eq("sourceDocumentId", id)
-      .eq("sourceDocument", "Purchase Return Order")
-      .eq("companyId", companyId)
-      .neq("status", "Voided"),
-    client
-      .from("purchaseReturnOrderLine")
-      .select("quantityShipped")
-      .eq("purchaseReturnOrderId", id)
-      .eq("companyId", companyId)
-  ]);
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseReturnOrder")
+      .select(["status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Return order not found");
+    if (["Completed", "Cancelled"].includes(order.status)) {
+      throw new Error(`Cannot cancel a return order in ${order.status} status`);
+    }
 
-  if (order.error) return { data: null, error: order.error };
-  if (shipments.error) return { data: null, error: shipments.error };
-  if (lines.error) return { data: null, error: lines.error };
-  if (["Completed", "Cancelled"].includes(order.data.status)) {
-    return {
-      data: null,
-      error: {
-        message: `Cannot cancel a return order in ${order.data.status} status`
-      } as PostgrestError
-    };
-  }
-  if ((shipments.data ?? []).length > 0) {
-    return {
-      data: null,
-      error: {
-        message:
-          "Cannot cancel: a shipment exists for this return order. Delete or void it first."
-      } as PostgrestError
-    };
-  }
-  if ((lines.data ?? []).some((l) => Number(l.quantityShipped) > 0)) {
-    return {
-      data: null,
-      error: {
-        message: "Cannot cancel: quantity has already been shipped"
-      } as PostgrestError
-    };
-  }
+    const [shipments, lines] = await Promise.all([
+      trx
+        .selectFrom("shipment")
+        .select(["id"])
+        .where("sourceDocumentId", "=", id)
+        .where("sourceDocument", "=", "Purchase Return Order")
+        .where("companyId", "=", companyId)
+        .where("status", "!=", "Voided")
+        .execute(),
+      trx
+        .selectFrom("purchaseReturnOrderLine")
+        .select(["quantityShipped"])
+        .where("purchaseReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
 
-  return client
-    .from("purchaseReturnOrder")
-    .update({
-      status: "Cancelled",
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+    if (shipments.length > 0) {
+      throw new Error(
+        "Cannot cancel: a shipment exists for this return order. Delete or void it first."
+      );
+    }
+    if (lines.some((l) => Number(l.quantityShipped) > 0)) {
+      throw new Error("Cannot cancel: quantity has already been shipped");
+    }
+
+    await trx
+      .updateTable("purchaseReturnOrder")
+      .set({
+        status: "Cancelled",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
 }
 
 /**
@@ -3658,65 +3694,59 @@ export async function cancelPurchaseReturnOrder(
  * disposition stage, so there is no disposition guard.
  */
 export async function completePurchaseReturnOrder(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   { id, companyId, userId }: { id: string; companyId: string; userId: string }
 ) {
-  const [order, lines] = await Promise.all([
-    client
-      .from("purchaseReturnOrder")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .single(),
-    client
-      .from("purchaseReturnOrderLine")
-      .select("lineNumber, quantity, quantityShipped, closedComplete")
-      .eq("purchaseReturnOrderId", id)
-      .eq("companyId", companyId)
-  ]);
-
-  if (order.error) return { data: null, error: order.error };
-  if (lines.error) return { data: null, error: lines.error };
-  if (
-    !["Confirmed", "Partially Shipped", "Shipped"].includes(order.data.status)
-  ) {
-    return {
-      data: null,
-      error: {
-        message: `Cannot complete a return order in ${order.data.status} status`
-      } as PostgrestError
-    };
-  }
-
-  const blockers: string[] = [];
-  for (const line of lines.data ?? []) {
-    const quantity = Number(line.quantity);
-    const shipped = Number(line.quantityShipped);
-    if (!line.closedComplete && shipped < quantity - EPSILON) {
-      blockers.push(
-        `Line ${line.lineNumber} is short of authorized quantity (${shipped} of ${quantity}) — ship the remainder or short-close the line`
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseReturnOrder")
+      .select(["status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Return order not found");
+    if (!["Confirmed", "Partially Shipped", "Shipped"].includes(order.status)) {
+      throw new Error(
+        `Cannot complete a return order in ${order.status} status`
       );
     }
-  }
 
-  if (blockers.length > 0) {
-    return {
-      data: null,
-      error: { message: blockers.join("; ") } as PostgrestError
-    };
-  }
+    const lines = await trx
+      .selectFrom("purchaseReturnOrderLine")
+      .select(["lineNumber", "quantity", "quantityShipped", "closedComplete"])
+      .where("purchaseReturnOrderId", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
 
-  return client
-    .from("purchaseReturnOrder")
-    .update({
-      status: "Completed",
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+    const blockers: string[] = [];
+    for (const line of lines) {
+      const quantity = Number(line.quantity);
+      const shipped = Number(line.quantityShipped);
+      if (!line.closedComplete && shipped < quantity - EPSILON) {
+        blockers.push(
+          `Line ${line.lineNumber} is short of authorized quantity (${shipped} of ${quantity}) — ship the remainder or short-close the line`
+        );
+      }
+    }
+
+    if (blockers.length > 0) {
+      throw new Error(blockers.join("; "));
+    }
+
+    await trx
+      .updateTable("purchaseReturnOrder")
+      .set({
+        status: "Completed",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
 }
 
 /**

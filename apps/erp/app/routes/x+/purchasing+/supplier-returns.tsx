@@ -45,7 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   if (purchaseReturnOrders.error) {
-    redirect(
+    throw redirect(
       path.to.authenticatedRoot,
       await flash(
         request,

@@ -1228,11 +1228,13 @@ serve(async (req: Request) => {
               .from("salesReturnOrder")
               .select("*")
               .eq("id", salesReturnOrderId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("salesReturnOrderLine")
               .select("*")
-              .eq("salesReturnOrderId", salesReturnOrderId),
+              .eq("salesReturnOrderId", salesReturnOrderId)
+              .eq("companyId", companyId),
             client
               .from("receipt")
               .select("*")
@@ -1896,11 +1898,13 @@ serve(async (req: Request) => {
               .from("salesReturnOrder")
               .select("*")
               .eq("id", salesReturnOrderId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("salesReturnOrderLine")
               .select("*")
-              .eq("salesReturnOrderId", salesReturnOrderId),
+              .eq("salesReturnOrderId", salesReturnOrderId)
+              .eq("companyId", companyId),
             client
               .from("shipment")
               .select("*")
@@ -2106,11 +2110,13 @@ serve(async (req: Request) => {
               .from("purchaseReturnOrder")
               .select("*")
               .eq("id", purchaseReturnOrderId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("purchaseReturnOrderLine")
               .select("*")
-              .eq("purchaseReturnOrderId", purchaseReturnOrderId),
+              .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+              .eq("companyId", companyId),
             client
               .from("shipment")
               .select("*")

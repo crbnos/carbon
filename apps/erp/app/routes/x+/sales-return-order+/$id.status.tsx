@@ -7,11 +7,12 @@ import {
   cancelSalesReturnOrder,
   completeSalesReturnOrder
 } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -30,15 +31,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result =
-    status === "Cancelled"
-      ? await cancelSalesReturnOrder(client, { id, companyId, userId })
-      : await completeSalesReturnOrder(client, { id, companyId, userId });
-
-  if (result.error) {
+  try {
+    // Kysely transactions (row-locked against concurrent receipt posting) —
+    // they THROW on a guard violation.
+    if (status === "Cancelled") {
+      await cancelSalesReturnOrder(getDatabaseClient(), {
+        id,
+        companyId,
+        userId
+      });
+    } else {
+      await completeSalesReturnOrder(getDatabaseClient(), {
+        id,
+        companyId,
+        userId
+      });
+    }
+  } catch (err) {
     throw redirect(
       requestReferrer(request) ?? path.to.salesReturnOrderDetails(id),
-      await flash(request, error(result.error, result.error.message))
+      await flash(
+        request,
+        error(
+          err,
+          err instanceof Error ? err.message : "Failed to update status"
+        )
+      )
     );
   }
 

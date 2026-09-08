@@ -1302,7 +1302,7 @@
     {"name":"sales_getSalesRFQLines","classification":"READ","paramCount":1,"schema":"1f7e47a99145","response":"17f5b7f57e4c","injectAuth":"companyId","permission":"sales:view"},
     {"name":"sales_getSalesRFQs","classification":"READ","paramCount":3,"schema":"04eded31eebb","response":"cb436531316b","injectAuth":"companyId","permission":"sales:view"},
     {"name":"sales_getSalesTerms","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"9819ae68df9b","injectAuth":"companyId","permission":"sales:view"},
-    {"name":"sales_getShippedTrackedEntitiesForCustomer","classification":"READ","paramCount":2,"schema":"03d6f7a5e605","response":"4e436e8a6f98","injectAuth":"companyId","permission":"sales:view"},
+    {"name":"sales_getShippedTrackedEntitiesForCustomer","classification":"READ","paramCount":2,"schema":"03d6f7a5e605","response":"1eabdd9a5634","injectAuth":"companyId","permission":"sales:view"},
     {"name":"sales_insertCustomerContact","classification":"WRITE","paramCount":4,"schema":"f92fe41e337f","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create"},
     {"name":"sales_insertCustomerLocation","classification":"WRITE","paramCount":4,"schema":"c30fcaea26e0","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create"},
     {"name":"sales_insertQuote","classification":"WRITE","paramCount":16,"schema":"f6a23f4c685e","response":"9e29b49e1dc8","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create"},

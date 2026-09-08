@@ -4,7 +4,7 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -134,11 +134,39 @@ export async function deleteIssueAssociation(
         .from("nonConformanceSalesReturnOrderLine")
         .delete()
         .eq("id", associationId);
-    case "purchaseReturnOrderLines":
+    case "purchaseReturnOrderLines": {
+      // This association row carries the per-quantity coverage that reduces
+      // closeIssue's write-off. Deleting it after the linked return line has
+      // shipped would make closeIssue write the same goods off AGAIN (the
+      // return shipment already relieved inventory) — double relief for
+      // untracked stock. Cancel or void the return instead.
+      const association = await client
+        .from("nonConformancePurchaseReturnOrderLine")
+        .select("id, purchaseReturnOrderLine(quantityShipped)")
+        .eq("id", associationId)
+        .maybeSingle();
+      if (association.error) return association;
+      const shipped = Number(
+        (
+          association.data?.purchaseReturnOrderLine as {
+            quantityShipped: number | null;
+          } | null
+        )?.quantityShipped ?? 0
+      );
+      if (shipped > 0) {
+        return {
+          data: null,
+          error: {
+            message:
+              "Cannot remove this supplier-return link: quantity has already shipped against it, and the Issue's write-off depends on that coverage. Void the return shipment first."
+          } as PostgrestError
+        };
+      }
       return await client
         .from("nonConformancePurchaseReturnOrderLine")
         .delete()
         .eq("id", associationId);
+    }
     case "trackedEntities":
       return await client
         .from("nonConformanceTrackedEntity")

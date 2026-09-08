@@ -291,11 +291,16 @@ serve(async (req: Request) => {
       // currency — do NOT scale them by the memo's exchange rate.
       let reasonAmountBase: number | undefined;
       if (memo.data.purchaseReturnOrderId) {
+        // Posted shipments only: a voided shipment's journal was reversed but
+        // its costLedger rows survive, so counting it here would credit GRNI
+        // for cost the ledger no longer carries (GRNI goes permanently
+        // negative after ship → void → credit).
         const shipments = await client
           .from("shipment")
           .select("id")
           .eq("sourceDocument", "Purchase Return Order")
           .eq("sourceDocumentId", memo.data.purchaseReturnOrderId)
+          .eq("status", "Posted")
           .eq("companyId", companyId);
         const shipmentIds = (shipments.data ?? []).map((row) => row.id);
 

@@ -351,6 +351,15 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // New in the returns module (return-to-customer shipments; these used to
+  // post as "Sales Shipment", which pushed them through the always-on policy
+  // and double-counted them in shipment reporting). Same opt-in stance as the
+  // other two return types.
+  "Sales Return Shipment": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Inventory Adjustment": {
     representation: "journal",
     defaultEnabled: true,

@@ -370,6 +370,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const purchaseReturnOrderId = returnOrder.data.id;
   const purchaseReturnOrderReadableId = returnOrder.data.purchaseReturnOrderId;
 
+  // Compensating rollback for the chained supabase writes below (they cannot
+  // share one transaction because insertPurchaseReturnOrder allocates a
+  // sequence via RPC). Deleting the order cascades to its lines, picks, and
+  // any coverage rows. The delete's OWN result is checked: an orphan draft
+  // that survives a failed rollback must be reported loudly, because its
+  // coverage rows would make every later bridge invocation under-draft.
+  const rollback = async (message: string, cause: unknown) => {
+    const deleted = await deletePurchaseReturnOrder(
+      serviceRole,
+      purchaseReturnOrderId
+    );
+    const suffix = deleted.error
+      ? ` The draft return ${purchaseReturnOrderReadableId} could not be removed — delete it manually before retrying.`
+      : "";
+    return redirect(
+      path.to.issue(id),
+      await flash(request, error(cause, `${message}${suffix}`))
+    );
+  };
+
+  // Create all lines + picks FIRST; the per-quantity coverage rows are
+  // written LAST, in one batch, only after every line landed. Order matters:
+  // a mid-loop failure whose compensating delete also fails leaves a plain
+  // orphan draft, never coverage rows for a half-built return — the
+  // idempotent re-invoke reads coverage to decide what is already drafted,
+  // so premature coverage would under-draft forever.
+  const createdLines: { lineId: string; quantity: number }[] = [];
   for (const { row, quantity, entityIds } of uncoveredRows) {
     const receiptLine = receiptLineByItem.get(row.itemId);
     const poLine = receiptLine?.lineId
@@ -390,11 +417,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       createdBy: userId
     });
     if (line.error || !line.data) {
-      await deletePurchaseReturnOrder(serviceRole, purchaseReturnOrderId);
-      throw redirect(
-        path.to.issue(id),
-        await flash(request, error(line.error, "Failed to create return line"))
-      );
+      throw await rollback("Failed to create return line", line.error);
     }
 
     if (entityIds.length > 0) {
@@ -406,42 +429,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
         userId
       );
       if (picks.error) {
-        await deletePurchaseReturnOrder(serviceRole, purchaseReturnOrderId);
-        throw redirect(
-          path.to.issue(id),
-          await flash(
-            request,
-            error(picks.error, "Failed to assign tracked entities")
-          )
-        );
+        throw await rollback("Failed to assign tracked entities", picks.error);
       }
     }
 
-    // Per-quantity ownership: this association row covers `quantity` of the
-    // issue's write-off pool (closeIssue subtracts shipped coverage). Written
-    // via service role by design — the bridge runs under purchasing_create,
-    // and this quality-side link is a system record of that action.
-    const association = await serviceRole
-      .from("nonConformancePurchaseReturnOrderLine")
-      .insert({
+    createdLines.push({ lineId: line.data.id, quantity });
+  }
+
+  // Per-quantity ownership: each association row covers `quantity` of the
+  // issue's write-off pool (closeIssue subtracts shipped coverage). Written
+  // via service role by design — the bridge runs under purchasing_create,
+  // and this quality-side link is a system record of that action.
+  const associations = await serviceRole
+    .from("nonConformancePurchaseReturnOrderLine")
+    .insert(
+      createdLines.map(({ lineId, quantity }) => ({
         nonConformanceId: id,
-        purchaseReturnOrderLineId: line.data.id,
+        purchaseReturnOrderLineId: lineId,
         purchaseReturnOrderId,
         purchaseReturnOrderReadableId,
         quantity,
         companyId,
         createdBy: userId
-      });
-    if (association.error) {
-      await deletePurchaseReturnOrder(serviceRole, purchaseReturnOrderId);
-      throw redirect(
-        path.to.issue(id),
-        await flash(
-          request,
-          error(association.error, "Failed to link the supplier return")
-        )
-      );
-    }
+      }))
+    );
+  if (associations.error) {
+    throw await rollback(
+      "Failed to link the supplier return",
+      associations.error
+    );
   }
 
   throw redirect(

@@ -189,6 +189,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const ncrId = createResult.data.id;
 
+  // Once the NCR row exists, every failure below must remove it again — an
+  // orphaned Issue with no RMA link and a line still Pending is worse than a
+  // clean retry (the tasks step already rolled back this way; the earlier
+  // steps did not).
+  const failWithRollback = async (
+    err: unknown,
+    message: string
+  ): Promise<Response> => {
+    await deleteIssue(serviceRole, ncrId);
+    return failWith(err, message);
+  };
+
   // insertIssue seeded a nonConformanceItem row with default qty and Pending
   // disposition. Overwrite with the line's received quantity and the requested
   // disposition so MRB starts from the escalation's context.
@@ -203,7 +215,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("nonConformanceId", ncrId)
     .eq("itemId", line.data.itemId);
   if (itemUpdate.error) {
-    throw await failWith(itemUpdate.error, "Failed to set the Issue's item");
+    throw await failWithRollback(
+      itemUpdate.error,
+      "Failed to set the Issue's item"
+    );
   }
 
   const itemRow = await serviceRole
@@ -227,7 +242,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       createdBy: userId
     });
   if (lineLink.error) {
-    throw await failWith(lineLink.error, "Failed to link the Issue to the RMA");
+    throw await failWithRollback(
+      lineLink.error,
+      "Failed to link the Issue to the RMA"
+    );
   }
 
   // Link the line's returned entities to the NCR, and seed the per-row entity
@@ -244,7 +262,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }))
       );
     if (entityLinks.error) {
-      throw await failWith(
+      throw await failWithRollback(
         entityLinks.error,
         "Failed to link the returned entities to the Issue"
       );
@@ -265,7 +283,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         createdBy: userId
       }));
       if (rows.length > 0) {
-        await serviceRole.from("nonConformanceItemTrackedEntity").insert(rows);
+        const itemEntityLinks = await serviceRole
+          .from("nonConformanceItemTrackedEntity")
+          .insert(rows);
+        if (itemEntityLinks.error) {
+          throw await failWithRollback(
+            itemEntityLinks.error,
+            "Failed to link the returned entities to the Issue's item"
+          );
+        }
       }
     }
   }

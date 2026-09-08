@@ -321,6 +321,30 @@ serve(async (req: Request) => {
             : null;
 
         await db.transaction().execute(async (trx) => {
+          // Refuse to void when this receipt's cost layers were already
+          // (partially) consumed — the returned stock moved on (dispositioned,
+          // sold, scrapped), so reversing the full receipt would drive stock
+          // negative and double-count COGS. The remainder is a manual
+          // inventory adjustment, not a void.
+          const receiptLayers = await trx
+            .selectFrom("costLedger")
+            .select(["quantity", "remainingQuantity"])
+            .where("documentId", "=", receiptId)
+            .where("documentType", "=", "Sales Return Receipt")
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+          const consumed = receiptLayers.some(
+            (layer) =>
+              Number(layer.quantity) > 0 &&
+              Number(layer.remainingQuantity) < Number(layer.quantity)
+          );
+          if (consumed) {
+            throw new Error(
+              "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
+            );
+          }
+
           if (reversingItemLedger.length > 0) {
             await trx
               .insertInto("itemLedger")
@@ -2260,6 +2284,8 @@ serve(async (req: Request) => {
           throw new Error("Failed to fetch sales return order");
         if (salesReturnOrderLines.error)
           throw new Error("Failed to fetch sales return order lines");
+        if (itemCostDetails.error)
+          throw new Error("Failed to fetch item costs for cost resolution");
         // Allowlist, matching the create-side gate: a Draft RMA has never had
         // its caps validated, so it must be confirmed before receiving.
         if (
@@ -2299,6 +2325,13 @@ serve(async (req: Request) => {
             .from("shipmentLine")
             .select("id, shipmentId")
             .in("id", linkedShipmentLineIds);
+          // A failed read must abort, not fall back: an empty map here would
+          // silently book every linked line at CURRENT cost instead of the
+          // original outbound cost, defeating exact-cost reversing unnoticed.
+          if (shipmentLines.error)
+            throw new Error(
+              "Failed to resolve shipments for original-cost lookup"
+            );
           for (const line of shipmentLines.data ?? []) {
             if (line.shipmentId)
               shipmentIdByShipmentLine.set(line.id, line.shipmentId);
@@ -2317,6 +2350,10 @@ serve(async (req: Request) => {
             .eq("documentType", "Sales Shipment")
             .eq("companyId", companyId)
             .lt("quantity", 0);
+          if (consumptionRows.error)
+            throw new Error(
+              "Failed to fetch shipment cost layers for original-cost lookup"
+            );
           for (const row of consumptionRows.data ?? []) {
             const key = `${row.documentId}::${row.itemId}`;
             const list = consumptionRowsByShipmentItem.get(key) ?? [];
@@ -2391,8 +2428,10 @@ serve(async (req: Request) => {
               consumptionRowsByShipmentItem.get(
                 `${shipmentId}::${receiptLine.itemId}`
               ) ?? [];
-            // Falls back to current cost when the layers can't be resolved
-            // (flagged-variance fallback per the spec's risk table).
+            // Falls back to current cost only when the resolved shipment
+            // genuinely has no usable consumption rows for the item (empty,
+            // zero-quantity, or NaN — resolveReturnUnitCost returns null).
+            // Read failures throw above rather than reaching this fallback.
             unitCost =
               resolveReturnUnitCost(rows) ??
               currentCostByItem.get(receiptLine.itemId) ??
@@ -2573,6 +2612,42 @@ serve(async (req: Request) => {
             : null;
 
         await db.transaction().execute(async (trx) => {
+          // Double-post guard: serialize on the receipt row — a second
+          // concurrent post waits here, then sees Posted and aborts, so
+          // ledger rows, journals, and quantityReceived can never double.
+          const lockedReceipt = await trx
+            .selectFrom("receipt")
+            .select(["status"])
+            .where("id", "=", receiptId)
+            .forUpdate()
+            .executeTakeFirstOrThrow();
+          if (
+            lockedReceipt.status === "Posted" ||
+            lockedReceipt.status === "Voided"
+          ) {
+            throw new Error(`Receipt is already ${lockedReceipt.status}`);
+          }
+
+          // cancelSalesReturnOrder locks this same order row — re-check the
+          // status under the lock so a cancel committed after our
+          // pre-transaction read cannot be posted over (which would leave a
+          // Cancelled order with received stock and a freed cap).
+          const lockedOrder = await trx
+            .selectFrom("salesReturnOrder")
+            .select(["status"])
+            .where("id", "=", salesReturnOrderId)
+            .forUpdate()
+            .executeTakeFirstOrThrow();
+          if (
+            !["Confirmed", "Partially Received", "Received"].includes(
+              lockedOrder.status
+            )
+          ) {
+            throw new Error(
+              `Cannot post a receipt against a return order in ${lockedOrder.status} status`
+            );
+          }
+
           if (costLedgerInserts.length > 0) {
             await trx
               .insertInto("costLedger")
@@ -2605,11 +2680,14 @@ serve(async (req: Request) => {
               l.closedComplete ||
               Number(l.quantityReceived) >= Number(l.quantity)
           );
-          const returnStatus = allReceived
-            ? ("Received" as const)
-            : anyReceived
-              ? ("Partially Received" as const)
-              : ("Confirmed" as const);
+          // anyReceived takes precedence (matches the void branch and
+          // shortCloseSalesReturnOrderLine): all lines short-closed with
+          // nothing received is "Confirmed", not "Received".
+          const returnStatus = anyReceived
+            ? allReceived
+              ? ("Received" as const)
+              : ("Partially Received" as const)
+            : ("Confirmed" as const);
           await trx
             .updateTable("salesReturnOrder")
             .set({ status: returnStatus, updatedBy: userId })

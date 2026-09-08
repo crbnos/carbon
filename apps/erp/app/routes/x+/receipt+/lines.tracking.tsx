@@ -290,6 +290,46 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
     }
 
+    // Refuse to steal a serial another OPEN return receipt has already
+    // claimed: overwriting its Receipt attributes would strip a validated
+    // assignment off that receipt, which then posts with a missing serial.
+    // (A Consumed entity legitimately still carries its ORIGINAL inbound
+    // purchase-receipt attributes — only a claim by another Draft
+    // sales-return receipt blocks.)
+    const existingReceiptLine = attributes["Receipt Line"];
+    if (
+      typeof existingReceiptLine === "string" &&
+      existingReceiptLine !== receiptLineId
+    ) {
+      const otherLine = await client
+        .from("receiptLine")
+        .select("receiptId")
+        .eq("id", existingReceiptLine)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      const otherReceipt = otherLine.data?.receiptId
+        ? await client
+            .from("receipt")
+            .select("id, receiptId, sourceDocument, status")
+            .eq("id", otherLine.data.receiptId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : { data: null };
+      if (
+        otherReceipt.data &&
+        otherReceipt.data.id !== receiptId &&
+        otherReceipt.data.sourceDocument === "Sales Return Order" &&
+        otherReceipt.data.status === "Draft"
+      ) {
+        return data(
+          {
+            error: `Entity is already assigned on receipt ${otherReceipt.data.receiptId}. Remove it there first.`
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Clear the slot on any other entity currently occupying it
     const stale = await client
       .from("trackedEntity")
