@@ -1,6 +1,6 @@
 paths:
   - "packages/database/supabase/functions/shared/precision.ts"
-  - "packages/utils/src/math.ts"
+  - "packages/utils/src/precision.ts"
   - "packages/utils/src/format.ts"
   - "packages/checks/src/conformance/no-derived-percent-column.ts"
   - "packages/checks/src/conformance/no-raw-rounding.ts"
@@ -16,24 +16,43 @@ paths:
 The numeric standard for every price, rate, quantity, and amount in Carbon.
 Source of truth: `packages/database/supabase/functions/shared/precision.ts`
 (Deno-side because the edge runtime only mounts `supabase/functions/`;
-`packages/utils/src/math.ts` re-exports it for Node/browser — that relative
+`packages/utils/src/precision.ts` re-exports it for Node/browser — that relative
 import is BY DESIGN, not an import to "fix").
+
+## Accounting currency boundaries
+
+Document `exchangeRate` is foreign units per company base unit. Use
+`shared/accounting-currency.ts` (`@carbon/utils` re-export):
+`toBaseAmount(document, rate)` divides and rounds to internal precision;
+`toDocumentAmount(base, rate, currency.decimalPlaces)` multiplies and rounds to
+settlement precision. Identity currency still rounds at its configured decimals.
+
+Sales line amounts and generated unprefixed purchase amounts are already base.
+Purchase `supplier*` amounts, payment cash/fees, and memo amounts are document
+currency. Never convert a generated base value a second time.
+
+`invoiceSettlement.appliedAmount`, discounts, write-offs, and stored FX are base;
+`sourceAmount` is exact source-document principal. `sourcePaymentId` identifies
+prior credit; `paymentId` owns the applying payment. Funding tracks document units
+and remaining booked base independently, releasing the exact carrying remainder
+on the final application. A positive document remainder remains payable when its
+base amount rounds to zero. Do not reconstruct source units from rounded base or
+use a fixed base-currency dust threshold for completion. Currency precision comes
+from the company's group-scoped currency configuration.
 
 ## Two storage scales
 
 | Class | Scale | Examples |
 |---|---|---|
 | Internal values | `SCALE = 5` | per-unit prices, rates (0–1 fractions), quantities, GL journal lines, exchange rates |
-| Settlement values | `currency.decimalPlaces` (DB column — authoritative over Intl/CLDR) | invoice balance/amountDue, applied payment amounts, document totals, tax amounts |
+| Settlement values | `currency.decimalPlaces` (DB column — authoritative over Intl/CLDR) | source-document principal, cash/memo totals, document totals and document tax |
 
-Settlement values are rounded to the currency's decimals at the boundary that
-produces them — the applied amounts a user enters, and every amount serialized
-to an external system. The columns themselves are bare NUMERIC and an invoice
-`balance` is read from a view rather than written by `post-payment`, so storage
-does not enforce this; the rounding does. Only internal GL journal lines carry
-scale 5. Invoice paid-status dust forgiveness (`INVOICE_DUST_THRESHOLD = 0.01`,
-`invoicing.models.ts`) and post-payment's `0.0001` unapplied-dust band are
-deliberate business behavior layered on top.
+Document principal is rounded at its currency boundary. Base settlement relief
+and GL amounts use internal precision. Invoice-view `balance` converts the exact
+remaining document amount back to base without rounding away a payable remainder;
+report carrying values separately retain the original booked amount. Storage
+columns are bare NUMERIC, so callers enforce these boundaries. Payment completion
+uses document units, with no fixed base-currency dust forgiveness.
 
 ## Three-boundary rule
 
@@ -57,9 +76,9 @@ full float precision; Postgres computes derived values (generated columns);
 - `assertBalanced(debits, credits, tolerance = EPSILON, label = "Journal")` —
   ledger invariant. Pass a `label` so the refusal names the journal and its
   currency (`"Payment journal (base currency)"`).
-  `tolerance` is a BUSINESS refusal threshold: payment/memo posting passes
-  `0.01`, manual journals and period close use `0.001`. Do not unify them and
-  do not tighten to EPSILON — FX journals carry genuine sub-cent residuals.
+  Payment journals reconcile recorded FX/carrying residuals and use `EPSILON`;
+  memo posting retains `0.01`, and manual journals/period close retain `0.001`.
+  Do not change another posting path's threshold without its own numerical proof.
 
 **No scale literals**: a numeric literal as the `scale` argument outside
 `precision.ts` is a violation — internal values use the default, settlement

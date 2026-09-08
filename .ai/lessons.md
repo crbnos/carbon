@@ -1356,3 +1356,13 @@ full-screen ERP route.
 **Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
 
 **Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
+
+## Resolve adoption assumptions before designing accounting migration machinery
+
+**Context:** The accounting posting-corrections spec raised legacy open-balance migration concerns; the user clarified that accounting can be assumed unused.
+
+**Problem:** Designing calculation versions, correction journals, and cutover tooling before resolving adoption added unnecessary scope to a correctness fix.
+
+**Rule:** Use the user's explicit adoption premise to size compatibility work. For this spec, correct the monetary contract directly; do not add legacy-accounting machinery. An unused accounting module does not imply permission to delete operational records or reset a database.
+
+**Applies to:** `.ai/specs/2026-09-07-accounting-posting-corrections.md` and its implementation; other modules require their own adoption evidence.

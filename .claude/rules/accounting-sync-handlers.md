@@ -121,7 +121,12 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
   to Carbon's GL** — no double-count because `documents`-mode `Payment` journals are
   DOC_BACKED-excluded from outbound push (the payment journal never re-posts to the
   provider). `getSettledInvoiceStatus` is retained for tests only (status is
-  view-derived).
+  view-derived). Provider-omitted rates remain `null` until authoritative company
+  and currency reads confirm identity; foreign payments require a valid snapshot.
+  Inbound payment amounts/source principal stay in document currency, while
+  target principal is base. Outbound prior-credit-funded payments are rejected
+  before provider writes because the existing provider cash endpoints cannot
+  represent those allocations.
 - Provider syncers: `providers/{rillet,quickbooks-online,xero}/entities/payment.ts`.
   Composite entity-id convention: AR = `<documentRemoteId>:<paymentRemoteId>` (no
   prefix, back-compat), AP = `bill:<billRemoteId>:<paymentRemoteId>`.
@@ -176,8 +181,9 @@ removed v2 engine spec; the behavior is documented in this section — see git f
 
 ## Document representation model (bills, invoices, items)
 
-Every AR/AP **document** Carbon pushes reproduces its Carbon posting journal, so
-the provider's GL for that document equals Carbon's. Spec:
+AR/AP **documents** preserve Carbon's component amounts and account effects.
+Base-currency GL parity also requires the provider to accept Carbon's FX snapshot;
+Rillet AR_ONLY retains the provider-owned translation limitation described below. Spec:
 `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`.
 
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
@@ -185,16 +191,18 @@ the provider's GL for that document equals Carbon's. Spec:
   `loadBillCostingLines(db, { companyId, billId, payablesAccountId })` reads the
   posted journal (`journal.sourceType='Purchase Invoice'`, `status='Posted'`),
   drops the AP control line, and returns base-currency debit-signed
-  `CostingLine[]` (+ `currencyCode`/`exchangeRate`). Item labels are joined via
+  `CostingLine[]` (+ `currencyCode`/`exchangeRate`, document total, base currency and precision). Item labels are joined via
   `journalLine.documentLineReference` (`purchase-invoice:<purchaseOrderLineId>`
   → `purchaseOrderLine.itemId` → `item`); direct no-PO / variance lines have
-  `sourceItem: undefined`. `toTransactionCurrencyLines(lines, exchangeRate)`
-  converts to the invoice's transaction currency (÷ rate, residue into the
-  largest-|amount| line; rate 1 = pass-through). The item is a **description
+  `sourceItem: undefined`. `toTransactionCurrencyLines(lines, {exchangeRate, documentTotal, decimalPlaces})`
+  multiplies base values by the foreign-per-base rate, rounds at document
+  currency precision, and reconciles only a permitted rounding residual to the
+  largest absolute line. Identity conversion also rounds; signed PPV is retained. The item is a **description
   label only** (`costingLineItemLabel`). Bill lines are **tax-neutral** (the
   purchase posting folds tax into cost): Rillet no `tax_rate`, QBO no
   `TxnTaxDetail`, Xero `TaxType: "NONE"`. FX bills pin the provider rate
-  (Rillet `exchange_rate`, QBO `CurrencyRef`+`ExchangeRate`, Xero `CurrencyRate`).
+  (Rillet named `exchange_rate` object, QBO `CurrencyRef` + reciprocal
+  `ExchangeRate = 1/r`, Xero `CurrencyRate = r`).
   Every bill syncer has a posted-status `shouldSync` (Draft excluded — no
   journal to replay). Unmapped/account-less/no-journal lines throw the
   structured `UNMAPPED_ACCOUNTS` Warning.
@@ -205,11 +213,19 @@ the provider's GL for that document equals Carbon's. Spec:
     QBO/Xero substitute it). Account codes resolve through the shared
     `loadAccountCodesById` (Xero) / `loadQboAccountRefsById` (QBO) /
     `loadRilletAccountCodesById` (Rillet).
-- **AR invoices = item-referenced to the item's REVENUE account**
-  (`accountDefault.salesAccount` → the account-mapping code/ref — the same
-  resolution for Rillet product `account_code`, QBO `IncomeAccountRef`, Xero
-  invoice `AccountCode`), NOT the journal line and NOT the blunt
-  `defaultSalesAccountCode`. COGS stays on the pushed `Sales Shipment` journal.
+- **AR invoices preserve separate sales, shipping and native tax components.**
+  `core/sales-document-components.ts` shares the internal posting breakdown,
+  converts base amounts once, and reconciles document rounding. All three
+  `fetchLocalBatch` implementations read authoritative invoice-view totals,
+  add-ons, line/header shipping, and scoped currency precision. Merchandise and
+  add-ons retain the item's sales mapping; shipping resolves
+  `accountDefault.salesShippingRevenueAccount`. Xero uses explicit shipping account
+  lines. QBO and Rillet provision reusable service/product helpers with a
+  separate `shippingItem` mapping identity. Tax appears once through native
+  provider fields. QBO resolves existing sales tax codes/rates before dependency
+  writes; missing or ambiguous configuration raises `UNMAPPED_TAX_CODES`.
+  Rillet AR_ONLY has no documented request rate field, so its base translation
+  remains provider-owned. COGS stays on the pushed `Sales Shipment` journal.
 - **Provider items are non-tracked** so the provider never posts inventory
   (bills) or COGS (invoices): Xero pushes `IsTrackedAsInventory: false` on
   create and OMITS the flag on update (Xero rejects untracking an item with
