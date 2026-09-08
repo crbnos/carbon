@@ -8994,7 +8994,7 @@ msgstr "라벨"
 msgid "Label to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정작업을 완료하는 라벨"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "이 칸반의 {0}을(를) 생성하는 라벨"
 
@@ -12827,7 +12827,7 @@ msgstr "회계로 푸시"
 msgid "Putting your data back"
 msgstr "데이터 복원 중"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "이 칸반에 대한 {0}을(를) 생성하는 QR 코드"
 

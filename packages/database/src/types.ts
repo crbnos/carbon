@@ -25861,13 +25861,14 @@ export type Database = {
           conversionFactor: number
           createdAt: string
           createdBy: string
+          fromStorageUnitId: string | null
           id: string
           itemId: string
           jobId: string | null
           locationId: string
           purchaseUnitOfMeasureCode: string | null
           quantity: number
-          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystem: Database["public"]["Enums"]["kanbanReplenishmentSystem"]
           storageUnitId: string | null
           supplierId: string | null
           updatedAt: string | null
@@ -25881,13 +25882,14 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy: string
+          fromStorageUnitId?: string | null
           id?: string
           itemId: string
           jobId?: string | null
           locationId: string
           purchaseUnitOfMeasureCode?: string | null
           quantity: number
-          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystem?: Database["public"]["Enums"]["kanbanReplenishmentSystem"]
           storageUnitId?: string | null
           supplierId?: string | null
           updatedAt?: string | null
@@ -25901,13 +25903,14 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy?: string
+          fromStorageUnitId?: string | null
           id?: string
           itemId?: string
           jobId?: string | null
           locationId?: string
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number
-          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystem?: Database["public"]["Enums"]["kanbanReplenishmentSystem"]
           storageUnitId?: string | null
           supplierId?: string | null
           updatedAt?: string | null
@@ -25976,6 +25979,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "kanban_fromStorageUnitId_fkey"
+            columns: ["fromStorageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "kanban_itemId_fkey"
@@ -67261,6 +67271,8 @@ export type Database = {
           conversionFactor: number | null
           createdAt: string | null
           createdBy: string | null
+          fromStorageUnitId: string | null
+          fromStorageUnitName: string | null
           id: string | null
           itemId: string | null
           jobId: string | null
@@ -67272,7 +67284,7 @@ export type Database = {
           quantity: number | null
           readableIdWithRevision: string | null
           replenishmentSystem:
-            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | Database["public"]["Enums"]["kanbanReplenishmentSystem"]
             | null
           storageUnitId: string | null
           storageUnitName: string | null
@@ -67345,6 +67357,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "kanban_fromStorageUnitId_fkey"
+            columns: ["fromStorageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "kanban_itemId_fkey"
@@ -68662,14 +68681,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -70327,14 +70346,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73754,13 +73773,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -73769,6 +73781,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74315,14 +74334,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -80765,6 +80784,7 @@ export type Database = {
         | "Inbound Inspection"
         | "Scrap"
       kanbanOutput: "label" | "qrcode" | "url"
+      kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
       maintenanceDispatchPriority: "Low" | "Medium" | "High" | "Critical"
@@ -82174,6 +82194,7 @@ export const Constants = {
         "Scrap",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
+      kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],
       macrsPropertyClass: ["3", "5", "7", "10", "15", "20", "27.5", "39"],
       maintenanceDispatchPriority: ["Low", "Medium", "High", "Critical"],

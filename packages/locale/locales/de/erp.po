@@ -8994,7 +8994,7 @@ msgstr "Bezeichnung"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etikett zum Abschließen des aktuellen Vorgangs für dieses Kanban"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etikett zum Erstellen eines {0} für diesen Kanban"
 
@@ -12827,7 +12827,7 @@ msgstr "Zur Buchhaltung senden"
 msgid "Putting your data back"
 msgstr "Ihre Daten werden wiederhergestellt"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-Code zum Erstellen eines {0} für diesen Kanban"
 

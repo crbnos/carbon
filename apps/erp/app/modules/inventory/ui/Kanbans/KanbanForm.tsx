@@ -31,8 +31,8 @@ import {
 import { useUser } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared/types";
 import {
-  kanbanValidator,
-  replenishmentSystemTypes
+  kanbanReplenishmentSystemTypes,
+  kanbanValidator
 } from "../../inventory.models";
 
 type KanbanFormValues = z.infer<typeof kanbanValidator>;
@@ -52,6 +52,9 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
 
   const [storageUnitId, setStorageUnitId] = useState<string | null>(
     initialValues.storageUnitId || null
+  );
+  const [fromStorageUnitId, setFromStorageUnitId] = useState<string | null>(
+    initialValues.fromStorageUnitId || null
   );
   const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
   const [itemId, setItemId] = useState<string>(initialValues.itemId || "");
@@ -169,7 +172,10 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
   const onLocationChange = (value: { value: string } | null) => {
     setLocationId(value?.value || "");
     setStorageUnitId(null);
+    setFromStorageUnitId(null);
   };
+
+  const isTransfer = selectedReplenishmentSystem === "Transfer";
 
   return (
     <Drawer open onOpenChange={onClose}>
@@ -227,12 +233,10 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                       setSelectedReplenishmentSystem(value.value);
                     }
                   }}
-                  options={replenishmentSystemTypes
-                    .filter((type) => type !== "Buy and Make")
-                    .map((type) => ({
-                      value: type,
-                      label: <Enumerable value={type} />
-                    }))}
+                  options={kanbanReplenishmentSystemTypes.map((type) => ({
+                    value: type,
+                    label: <Enumerable value={type} />
+                  }))}
                 />
 
                 {selectedReplenishmentSystem === "Buy" && (
@@ -282,9 +286,21 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   isReadOnly={isEditing}
                 />
 
+                {isTransfer && (
+                  <StorageUnit
+                    name="fromStorageUnitId"
+                    label={t`From Storage Unit`}
+                    locationId={locationId}
+                    value={fromStorageUnitId ?? undefined}
+                    onChange={(value) => {
+                      if (value) setFromStorageUnitId(value?.id ?? null);
+                    }}
+                  />
+                )}
+
                 <StorageUnit
                   name="storageUnitId"
-                  label={t`Storage Unit`}
+                  label={isTransfer ? t`To Storage Unit` : t`Storage Unit`}
                   locationId={locationId}
                   value={storageUnitId ?? undefined}
                   onChange={(value) => {

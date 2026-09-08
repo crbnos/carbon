@@ -12,6 +12,7 @@ interface KanbanLabel {
   supplierName?: string | null;
   storageUnitId?: string | null;
   storageUnitName?: string | null;
+  fromStorageUnitName?: string | null;
   quantity: number;
   unitOfMeasureCode?: string | null;
   thumbnail?: string | null;
@@ -186,7 +187,13 @@ const KanbanLabelPDF = ({
                             "border-t border-gray-300 pt-2 mt-2 flex flex-col items-center text-center text-[14pt]"
                           )}
                         >
-                          {label.storageUnitName ? (
+                          {label.fromStorageUnitName ? (
+                            // Transfer kanban: show the source → destination bins.
+                            <Text>
+                              {label.fromStorageUnitName} →{" "}
+                              {label.storageUnitName || label.locationName}
+                            </Text>
+                          ) : label.storageUnitName ? (
                             <Text>{label.storageUnitName}</Text>
                           ) : (
                             <Text>{label.locationName}</Text>
