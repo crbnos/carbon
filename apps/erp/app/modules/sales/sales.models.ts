@@ -1065,7 +1065,7 @@ export const salesReturnOrderLineValidator = z.object({
 export const salesReturnOrderDispositionValidator = z.object({
   lineId: z.string().min(1),
   disposition: z.enum(salesReturnDispositionType, {
-    errorMap: () => ({ message: "Disposition is required" })
+    error: "Disposition is required"
   })
 });
 

@@ -1,12 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import { isPurchaseReturnOrderLocked } from "~/modules/purchasing";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -46,17 +46,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
         if (supplier.data?.currencyCode) {
           const currencyCode = supplier.data.currencyCode;
-          const currency = await getCurrencyByCode(
+          const exchangeRate = await getExchangeRate(
             client,
-            companyGroupId,
+            companyId,
             currencyCode
           );
+          if (exchangeRate.error) {
+            return { error: exchangeRate.error, data: null };
+          }
           return await client
             .from("purchaseReturnOrder")
             .update({
               supplierId: value ?? undefined,
               currencyCode: currencyCode ?? undefined,
-              exchangeRate: currency.data?.exchangeRate ?? 1,
+              exchangeRate: exchangeRate.data,
               updatedBy: userId,
               updatedAt: datetime.timestamp()
             })
@@ -75,21 +78,21 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     case "currencyCode":
       if (value) {
-        const currency = await getCurrencyByCode(
+        const exchangeRate = await getExchangeRate(
           client,
-          companyGroupId,
+          companyId,
           value as string
         );
-        if (!currency.data) {
+        if (exchangeRate.error) {
           // Falling through here would write the code with a stale
-          // exchangeRate — refuse instead.
-          return { error: { message: "Invalid currency code" }, data: null };
+          // exchangeRate — refuse instead (missing rate = error, never 1).
+          return { error: exchangeRate.error, data: null };
         }
         return await client
           .from("purchaseReturnOrder")
           .update({
             currencyCode: value as string,
-            exchangeRate: currency.data.exchangeRate ?? 1,
+            exchangeRate: exchangeRate.data,
             updatedBy: userId,
             updatedAt: datetime.timestamp()
           })

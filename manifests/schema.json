@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260908142501",
+  "schemaVersion": "20260907164512",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-08T11:42:33.228Z",
+  "exportedAt": "2026-09-08T11:37:38.819Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -672,20 +672,12 @@
     {
       "name": "documentFavorite",
       "rows": 0,
-      "columns": [
-        "documentId",
-        "userId"
-      ]
+      "columns": ["documentId", "userId"]
     },
     {
       "name": "documentLabel",
       "rows": 0,
-      "columns": [
-        "userId",
-        "documentId",
-        "companyId",
-        "label"
-      ]
+      "columns": ["userId", "documentId", "companyId", "label"]
     },
     {
       "name": "documentSection",
@@ -750,13 +742,7 @@
     {
       "name": "employee",
       "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "pin",
-        "active",
-        "employeeTypeId"
-      ]
+      "columns": ["id", "companyId", "pin", "active", "employeeTypeId"]
     },
     {
       "name": "employeeTypePermission",
@@ -825,12 +811,7 @@
     {
       "name": "fiscalYearSettings",
       "rows": 0,
-      "columns": [
-        "startMonth",
-        "companyId",
-        "taxStartMonth",
-        "updatedBy"
-      ]
+      "columns": ["startMonth", "companyId", "taxStartMonth", "updatedBy"]
     },
     {
       "name": "fixedAssetClass",
@@ -1016,12 +997,7 @@
     {
       "name": "itemStockQuantities",
       "rows": 0,
-      "columns": [
-        "quantityOnHand",
-        "locationId",
-        "itemId",
-        "companyId"
-      ]
+      "columns": ["quantityOnHand", "locationId", "itemId", "companyId"]
     },
     {
       "name": "journal",
@@ -1292,13 +1268,7 @@
     {
       "name": "materialDimension",
       "rows": 0,
-      "columns": [
-        "id",
-        "materialFormId",
-        "companyId",
-        "isMetric",
-        "name"
-      ]
+      "columns": ["id", "materialFormId", "companyId", "isMetric", "name"]
     },
     {
       "name": "materialSubstance",
@@ -1319,22 +1289,12 @@
     {
       "name": "materialFinish",
       "rows": 0,
-      "columns": [
-        "name",
-        "id",
-        "materialSubstanceId",
-        "companyId"
-      ]
+      "columns": ["name", "id", "materialSubstanceId", "companyId"]
     },
     {
       "name": "materialGrade",
       "rows": 0,
-      "columns": [
-        "companyId",
-        "name",
-        "materialSubstanceId",
-        "id"
-      ]
+      "columns": ["companyId", "name", "materialSubstanceId", "id"]
     },
     {
       "name": "materialType",
@@ -1373,12 +1333,7 @@
     {
       "name": "membership",
       "rows": 0,
-      "columns": [
-        "groupId",
-        "id",
-        "memberUserId",
-        "memberGroupId"
-      ]
+      "columns": ["groupId", "id", "memberUserId", "memberGroupId"]
     },
     {
       "name": "modelUpload",
@@ -1982,10 +1937,7 @@
     {
       "name": "purchasingRfqFavorite",
       "rows": 0,
-      "columns": [
-        "rfqId",
-        "userId"
-      ]
+      "columns": ["rfqId", "userId"]
     },
     {
       "name": "qualityDocument",
@@ -2068,11 +2020,7 @@
     {
       "name": "searchIndexRegistry",
       "rows": 0,
-      "columns": [
-        "companyId",
-        "createdAt",
-        "lastRebuiltAt"
-      ]
+      "columns": ["companyId", "createdAt", "lastRebuiltAt"]
     },
     {
       "name": "sequence",
@@ -2156,12 +2104,7 @@
     {
       "name": "employeeShift",
       "rows": 0,
-      "columns": [
-        "shiftId",
-        "companyId",
-        "employeeId",
-        "id"
-      ]
+      "columns": ["shiftId", "companyId", "employeeId", "id"]
     },
     {
       "name": "peopleAbsence",
@@ -3371,11 +3314,7 @@
     {
       "name": "userToCompany",
       "rows": 0,
-      "columns": [
-        "userId",
-        "companyId",
-        "role"
-      ]
+      "columns": ["userId", "companyId", "role"]
     },
     {
       "name": "warehouse",
@@ -3873,12 +3812,7 @@
     {
       "name": "customerAccount",
       "rows": 0,
-      "columns": [
-        "active",
-        "companyId",
-        "customerId",
-        "id"
-      ]
+      "columns": ["active", "companyId", "customerId", "id"]
     },
     {
       "name": "customerItemPriceOverride",
@@ -4084,10 +4018,7 @@
     {
       "name": "salesOrderFavorite",
       "rows": 0,
-      "columns": [
-        "userId",
-        "salesOrderId"
-      ]
+      "columns": ["userId", "salesOrderId"]
     },
     {
       "name": "salesOrderLine",
@@ -4283,10 +4214,7 @@
     {
       "name": "salesRfqFavorite",
       "rows": 0,
-      "columns": [
-        "rfqId",
-        "userId"
-      ]
+      "columns": ["rfqId", "userId"]
     },
     {
       "name": "salesRfqLine",
@@ -4430,18 +4358,12 @@
     {
       "name": "jobFavorite",
       "rows": 0,
-      "columns": [
-        "jobId",
-        "userId"
-      ]
+      "columns": ["jobId", "userId"]
     },
     {
       "name": "quoteFavorite",
       "rows": 0,
-      "columns": [
-        "userId",
-        "quoteId"
-      ]
+      "columns": ["userId", "quoteId"]
     },
     {
       "name": "quoteLine",
@@ -4844,11 +4766,7 @@
     {
       "name": "jobMaterialStep",
       "rows": 0,
-      "columns": [
-        "jobOperationStepId",
-        "jobMaterialId",
-        "quantity"
-      ]
+      "columns": ["jobOperationStepId", "jobMaterialId", "quantity"]
     },
     {
       "name": "jobOperation",
@@ -5139,10 +5057,7 @@
     {
       "name": "jobOperationToolStep",
       "rows": 0,
-      "columns": [
-        "jobOperationStepId",
-        "jobOperationToolId"
-      ]
+      "columns": ["jobOperationStepId", "jobOperationToolId"]
     },
     {
       "name": "kanban",
@@ -5198,11 +5113,7 @@
     {
       "name": "methodMaterialStep",
       "rows": 0,
-      "columns": [
-        "quantity",
-        "methodOperationStepId",
-        "methodMaterialId"
-      ]
+      "columns": ["quantity", "methodOperationStepId", "methodMaterialId"]
     },
     {
       "name": "methodOperation",
@@ -5315,10 +5226,7 @@
     {
       "name": "methodOperationToolStep",
       "rows": 0,
-      "columns": [
-        "methodOperationToolId",
-        "methodOperationStepId"
-      ]
+      "columns": ["methodOperationToolId", "methodOperationStepId"]
     },
     {
       "name": "nonConformanceActionProcess",
@@ -5472,13 +5380,7 @@
     {
       "name": "purchaseInvoiceStatusHistory",
       "rows": 0,
-      "columns": [
-        "createdAt",
-        "companyId",
-        "invoiceId",
-        "id",
-        "status"
-      ]
+      "columns": ["createdAt", "companyId", "invoiceId", "id", "status"]
     },
     {
       "name": "purchaseOrderDelivery",
@@ -5509,10 +5411,7 @@
     {
       "name": "purchaseOrderFavorite",
       "rows": 0,
-      "columns": [
-        "userId",
-        "purchaseOrderId"
-      ]
+      "columns": ["userId", "purchaseOrderId"]
     },
     {
       "name": "purchaseOrderLine",
@@ -5634,20 +5533,12 @@
     {
       "name": "purchasingRfqToPurchaseOrder",
       "rows": 0,
-      "columns": [
-        "companyId",
-        "purchaseOrderId",
-        "purchasingRfqId"
-      ]
+      "columns": ["companyId", "purchaseOrderId", "purchasingRfqId"]
     },
     {
       "name": "purchasingRfqToSupplierQuote",
       "rows": 0,
-      "columns": [
-        "companyId",
-        "supplierQuoteId",
-        "purchasingRfqId"
-      ]
+      "columns": ["companyId", "supplierQuoteId", "purchasingRfqId"]
     },
     {
       "name": "quoteMakeMethod",
@@ -5702,11 +5593,7 @@
     {
       "name": "quoteMaterialStep",
       "rows": 0,
-      "columns": [
-        "quoteMaterialId",
-        "quoteOperationStepId",
-        "quantity"
-      ]
+      "columns": ["quoteMaterialId", "quoteOperationStepId", "quantity"]
     },
     {
       "name": "quoteOperation",
@@ -5823,10 +5710,7 @@
     {
       "name": "quoteOperationToolStep",
       "rows": 0,
-      "columns": [
-        "quoteOperationStepId",
-        "quoteOperationToolId"
-      ]
+      "columns": ["quoteOperationStepId", "quoteOperationToolId"]
     },
     {
       "name": "receiptFixedAssetLine",
@@ -6129,21 +6013,12 @@
     {
       "name": "supplierAccount",
       "rows": 0,
-      "columns": [
-        "active",
-        "companyId",
-        "id",
-        "supplierId"
-      ]
+      "columns": ["active", "companyId", "id", "supplierId"]
     },
     {
       "name": "supplierInteraction",
       "rows": 0,
-      "columns": [
-        "supplierId",
-        "id",
-        "companyId"
-      ]
+      "columns": ["supplierId", "id", "companyId"]
     },
     {
       "name": "receipt",
@@ -6630,10 +6505,7 @@
     {
       "name": "supplierQuoteFavorite",
       "rows": 0,
-      "columns": [
-        "userId",
-        "supplierQuoteId"
-      ]
+      "columns": ["userId", "supplierQuoteId"]
     },
     {
       "name": "supplierQuoteLine",
