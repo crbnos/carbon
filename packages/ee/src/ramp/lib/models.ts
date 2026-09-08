@@ -397,7 +397,7 @@ export const RampSyncFlagsSchema = z
     pushPurchaseOrders: z.boolean().default(true),
     pushInvoices: z.boolean().default(true)
   })
-  .default({});
+  .prefault({});
 
 export type RampSyncFlags = z.infer<typeof RampSyncFlagsSchema>;
 
