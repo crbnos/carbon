@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Aplicado a"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "Los importes aplicados, los descuentos y las cancelaciones contables están expresados en la moneda base de la empresa ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Se aplica a"
@@ -3302,9 +3302,6 @@ msgstr "Limpiar consulta de búsqueda"
 msgid "Clear selection"
 msgstr "Limpiar selección"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Liquide esta factura con los créditos contabilizados de la parte así como efectivo. Los créditos se aplican directamente — no se requiere contabilización."
-
 msgid "Clear value"
 msgstr "Limpiar valor"
 
@@ -4427,6 +4424,9 @@ msgstr "Cuenta de haber cuando los costos indirectos se absorben en producto en 
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Cuentas de haber utilizadas cuando los costos de manufactura se absorben en producto en proceso"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Los importes del haber están expresados en la moneda base de la empresa ({currency}). Los créditos tienen efecto cuando se contabiliza este pago."
 
 msgid "Credit Memo"
 msgstr "Nota de Crédito"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "Tasa Inv"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "Aplicaciones no válidas"
 
 msgid "Invalid Invite"
 msgstr "Invitación Inválida"
@@ -11619,8 +11619,8 @@ msgstr "Condiciones de pago como Neto 30 o pagadero a la recepción"
 msgid "Payments"
 msgstr "Pagos"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Pagos y créditos aplicados a esta factura. Haz clic en una fila para abrir el documento de origen."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Pagos y créditos aplicados a esta factura. Los importes aplicados y los tipos de cambio están expresados en la moneda base de la empresa. Haga clic en una fila para abrir el documento de origen."
 
 msgid "PDF"
 msgstr "PDF"

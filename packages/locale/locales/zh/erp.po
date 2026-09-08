@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "应用于"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "已应用金额、折扣和核销金额均以公司基本货币（{baseCurrency}）表示。"
 
 msgid "Applies to"
 msgstr "适用于"
@@ -3302,9 +3302,6 @@ msgstr "清除搜索查询"
 msgid "Clear selection"
 msgstr "清除选择"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "用交易对方的已过账信用余额和现金清偿此发票。信用直接应用 — 无需过账。"
-
 msgid "Clear value"
 msgstr "清除值"
 
@@ -4427,6 +4424,9 @@ msgstr "当制造费用吸收入在制品时的贷方科目"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "当制造成本吸收入在制品时使用的贷方科目"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "贷方金额以公司基本货币（{currency}）表示。此付款过账后，贷方记录即生效。"
 
 msgid "Credit Memo"
 msgstr "贷项凭证"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "发票汇率"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "无效应用"
 
 msgid "Invalid Invite"
 msgstr "无效邀请"
@@ -11619,8 +11619,8 @@ msgstr "付款条件，如净30天或收货即付"
 msgid "Payments"
 msgstr "付款"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "应用于此发票的付款和贷方。单击一行以打开源单据。"
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "应用于此发票的付款和贷方记录。已应用金额和汇率均以公司基本货币表示。点击某一行以打开源单据。"
 
 msgid "PDF"
 msgstr "PDF"

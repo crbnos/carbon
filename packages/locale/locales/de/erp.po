@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Angewendet auf"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "Angewandte Beträge sowie Rabatt- und Ausbuchungsbeträge werden in der Basiswährung des Unternehmens ({baseCurrency}) angegeben."
 
 msgid "Applies to"
 msgstr "Gilt für"
@@ -3302,9 +3302,6 @@ msgstr "Suchanfrage löschen"
 msgid "Clear selection"
 msgstr "Auswahl löschen"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Begleichen Sie diese Rechnung mit den gebuchten Gutschriften des Geschäftspartners sowie Kasse. Gutschriften werden direkt angewendet – keine Buchung erforderlich."
-
 msgid "Clear value"
 msgstr "Wert löschen"
 
@@ -4427,6 +4424,9 @@ msgstr "Habenkonto bei der Absorption von Gemeinkosten in WIP"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Habenkonten bei der Absorption von Fertigungskosten in WIP"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Habenbeträge werden in der Basiswährung des Unternehmens ({currency}) angegeben. Habenbuchungen werden wirksam, sobald diese Zahlung gebucht wird."
 
 msgid "Credit Memo"
 msgstr "Gutschrift"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "Rechnungskurs"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "Ungültige Verrechnungen"
 
 msgid "Invalid Invite"
 msgstr "Ungültige Einladung"
@@ -11619,8 +11619,8 @@ msgstr "Zahlungsbedingungen wie Net 30 oder zahlbar bei Erhalt"
 msgid "Payments"
 msgstr "Zahlungen"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Zahlungen und Gutschriften, die auf diese Rechnung angerechnet wurden. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Auf diese Rechnung angewandte Zahlungen und Habenbuchungen. Angewandte Beträge und Wechselkurse werden in der Basiswährung des Unternehmens angegeben. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
 
 msgid "PDF"
 msgstr "PDF"

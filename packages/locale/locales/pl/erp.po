@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Zastosowano do"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "Zastosowane kwoty, rabaty i kwoty spisane są wyrażone w walucie bazowej firmy ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Dotyczy"
@@ -3302,9 +3302,6 @@ msgstr "Wyczyść zapytanie wyszukiwania"
 msgid "Clear selection"
 msgstr "Wyczyść zaznaczenie"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Wyczyść tę fakturę za pomocą zaksięgowanych kredytów strony oraz gotówki. Kredyty są stosowane bezpośrednio — nie jest wymagane żadne zaksięgowanie."
-
 msgid "Clear value"
 msgstr "Wyczyść wartość"
 
@@ -4427,6 +4424,9 @@ msgstr "Konto kredytowe dla absorpcji kosztów pośrednich do produkcji w toku"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Konta kredytowe używane do absorpcji kosztów produkcji do produkcji w toku"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Kwoty po stronie Ma są wyrażone w walucie bazowej firmy ({currency}). Zapisy po stronie Ma zaczynają obowiązywać po zaksięgowaniu tej płatności."
 
 msgid "Credit Memo"
 msgstr "Faktura korygująca"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "Kurs Fakt"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "Nieprawidłowe rozliczenia"
 
 msgid "Invalid Invite"
 msgstr "Nieprawidłowe zaproszenie"
@@ -11619,8 +11619,8 @@ msgstr "Warunki płatności takie jak Net 30 lub płatne przy odbiorze"
 msgid "Payments"
 msgstr "Płatności"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Płatności i kredyty zastosowane do tej faktury. Kliknij wiersz, aby otworzyć dokument źródłowy."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Płatności i zapisy po stronie Ma rozliczone z tą fakturą. Rozliczone kwoty i kursy walut są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
 
 msgid "PDF"
 msgstr "PDF"

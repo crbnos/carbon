@@ -24,7 +24,8 @@
 // memo — a separate payment posting). Both legs use the same base amount, so the
 // entry balances exactly.
 
-import { assertBalanced, round } from "../shared/precision.ts";
+import { assertBalanced } from "../shared/precision.ts";
+import { toBaseAmount } from "../shared/accounting-currency.ts";
 import { credit, debit } from "../lib/utils.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
@@ -70,8 +71,9 @@ export interface BuildMemoJournalInput {
   // customer (AR) vs supplier (AP). Drives control account TYPE (asset/liability).
   isAR: boolean;
   direction: "Credit" | "Debit";
-  // memo.amount × memo.exchangeRate (base currency).
-  amountBase: number;
+  // Memo principal in document currency and its foreign-per-base snapshot.
+  amount: number;
+  exchangeRate: number;
   // Resolved once by the driver (nanoid) so this stays pure.
   journalLineReference: string;
   // receivables (AR) / payables (AP) control account.
@@ -91,14 +93,15 @@ export interface BuildMemoJournalResult {
 const BALANCE_TOLERANCE = 0.01;
 
 export function buildMemoJournal(
-  input: BuildMemoJournalInput
+  input: BuildMemoJournalInput,
 ): BuildMemoJournalResult {
   const {
     memoId,
     companyId,
     isAR,
     direction,
-    amountBase,
+    amount,
+    exchangeRate,
     journalLineReference,
     controlAccountId,
     reasonAccountId,
@@ -107,14 +110,16 @@ export function buildMemoJournal(
 
   if (!controlAccountId) {
     throw new Error(
-      `Missing ${isAR ? "receivables" : "payables"} account default; cannot post memo to GL`
+      `Missing ${
+        isAR ? "receivables" : "payables"
+      } account default; cannot post memo to GL`,
     );
   }
 
-  const magnitude = round(Math.abs(amountBase));
-  if (magnitude < 0.0001) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error("Memo amount must be greater than 0 to post");
   }
+  const magnitude = toBaseAmount(amount, exchangeRate);
 
   const lines: MemoJournalLine[] = [];
   let signedDebitTotal = 0;
@@ -123,16 +128,15 @@ export function buildMemoJournal(
     side: "debit" | "credit",
     accountType: AccountType,
     accountId: string,
-    description: string
+    description: string,
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
     lines.push({
       accountId,
       description,
-      amount:
-        side === "debit"
-          ? debit(accountType, magnitude)
-          : credit(accountType, magnitude),
+      amount: side === "debit"
+        ? debit(accountType, magnitude)
+        : credit(accountType, magnitude),
       quantity: 1,
       documentType: "Memo",
       documentId: memoId,
@@ -151,7 +155,7 @@ export function buildMemoJournal(
     controlIsDebit ? "debit" : "credit",
     controlType,
     controlAccountId,
-    isAR ? "Accounts Receivable" : "Accounts Payable"
+    isAR ? "Accounts Receivable" : "Accounts Payable",
   );
 
   // 2) Reason leg — always the inverse side, so the entry balances.
@@ -159,7 +163,7 @@ export function buildMemoJournal(
     controlIsDebit ? "credit" : "debit",
     reasonType,
     reasonAccountId,
-    direction === "Credit" ? "Credit memo" : "Debit memo"
+    direction === "Credit" ? "Credit memo" : "Debit memo",
   );
 
   // BALANCE_TOLERANCE is a business threshold (multi-currency memos carry
@@ -168,7 +172,7 @@ export function buildMemoJournal(
     signedDebitTotal,
     0,
     BALANCE_TOLERANCE,
-    "Memo journal (base currency)"
+    "Memo journal (base currency)",
   );
 
   return { lines, signedDebitTotal };

@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Appliqué à"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "Les montants appliqués, les remises et les passages en perte sont exprimés dans la devise de base de la société ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "S'applique à"
@@ -3302,9 +3302,6 @@ msgstr "Effacer la requête de recherche"
 msgid "Clear selection"
 msgstr "Effacer la sélection"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Réglez cette facture avec les crédits comptabilisés de la partie ainsi que du numéraire. Les crédits s'appliquent directement — aucune comptabilisation nécessaire."
-
 msgid "Clear value"
 msgstr "Effacer la valeur"
 
@@ -4427,6 +4424,9 @@ msgstr "Compte crédit en cas d'absorption des frais généraux dans l'en-cours"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Comptes crédit utilisés lors de l'absorption des coûts de production dans l'en-cours"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Les montants au crédit sont exprimés dans la devise de base de la société ({currency}). Les crédits prennent effet lorsque ce paiement est comptabilisé."
 
 msgid "Credit Memo"
 msgstr "Avoir"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "Taux Fact"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "Applications invalides"
 
 msgid "Invalid Invite"
 msgstr "Invitation invalide"
@@ -11619,8 +11619,8 @@ msgstr "Conditions de paiement comme Net 30 ou à la réception"
 msgid "Payments"
 msgstr "Paiements"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Paiements et crédits appliqués à cette facture. Cliquez sur une ligne pour ouvrir le document d'origine."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Paiements et crédits appliqués à cette facture. Les montants appliqués et les effets de change sont exprimés dans la devise de base de la société. Cliquez sur une ligne pour ouvrir le document d'origine."
 
 msgid "PDF"
 msgstr "PDF"

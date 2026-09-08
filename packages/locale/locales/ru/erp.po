@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Применено к"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "Примененные суммы, скидки и списания указаны в базовой валюте организации ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Применяется к"
@@ -3302,9 +3302,6 @@ msgstr "Очистить поисковый запрос"
 msgid "Clear selection"
 msgstr "Очистить выделение"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Погасите этот счет-фактуру кредитами и денежными средствами стороны. Кредиты применяются напрямую — проведение не требуется."
-
 msgid "Clear value"
 msgstr "Очистить значение"
 
@@ -4427,6 +4424,9 @@ msgstr "Кредитовый счет при поглощении накладн
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Счета кредита, используемые когда производственные затраты поглощаются незавершенным производством"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Суммы по кредиту указаны в базовой валюте организации ({currency}). Кредитовые записи вступают в силу после проведения этого платежа."
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "Курс счета"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "Недействительные применения"
 
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
@@ -11619,8 +11619,8 @@ msgstr "Условия оплаты, такие как Net 30 или оплат�
 msgid "Payments"
 msgstr "Платежи"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Платежи и кредиты, применные к этому счету-фактуре. Нажмите на строку, чтобы открыть документ-основание."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Платежи и кредитовые записи, примененные к этому счету-фактуре. Примененные суммы и курсы валют указаны в базовой валюте организации. Нажмите строку, чтобы открыть документ-основание."
 
 msgid "PDF"
 msgstr "PDF"

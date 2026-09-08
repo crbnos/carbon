@@ -3302,9 +3302,6 @@ msgstr "Clear search query"
 msgid "Clear selection"
 msgstr "Clear selection"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-
 msgid "Clear value"
 msgstr "Clear value"
 
@@ -4427,6 +4424,9 @@ msgstr "Credit account when overhead is absorbed into WIP"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
@@ -11619,8 +11619,8 @@ msgstr "Payment terms like Net 30 or due on receipt"
 msgid "Payments"
 msgstr "Payments"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Payments and credits applied to this invoice. Click a row to open the source document."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 
 msgid "PDF"
 msgstr "PDF"

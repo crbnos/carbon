@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Uygulandı"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "Uygulanan tutarlar, iskontolar ve kayıttan düşülen tutarlar şirketin temel para birimi ({baseCurrency}) cinsindendir."
 
 msgid "Applies to"
 msgstr "Uygulama"
@@ -3302,9 +3302,6 @@ msgstr "Arama sorgusunu temizle"
 msgid "Clear selection"
 msgstr "Seçimi temizle"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Bu faturayı tarafın muhasebeleştirilmiş alacakları ve nakit ile kapatın. Alacaklar doğrudan uygulanır — muhasebeleştirme gerekmez."
-
 msgid "Clear value"
 msgstr "Değeri temizle"
 
@@ -4427,6 +4424,9 @@ msgstr "Genel üretim giderleri WIP'e soğurulduğunda alacak hesabı"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Üretim maliyetleri WIP'e soğurulduğunda kullanılan alacak hesapları"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Alacak tutarları şirketin temel para birimi ({currency}) cinsindendir. Bu ödeme muhasebeleştirildiğinde alacaklar geçerli olur."
 
 msgid "Credit Memo"
 msgstr "Alacak dekontu"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "Fatura Oranı"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "Geçersiz uygulamalar"
 
 msgid "Invalid Invite"
 msgstr "Geçersiz Davetiye"
@@ -11619,8 +11619,8 @@ msgstr "Net 30 gibi ödeme koşulları veya alındığında ödeme"
 msgid "Payments"
 msgstr "Ödemeler"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Bu faturaya uygulanan ödemeler ve krediler. Kaynak belgeyi açmak için bir satıra tıklayın."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve döviz kurları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
 
 msgid "PDF"
 msgstr "PDF"

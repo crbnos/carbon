@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "적용 대상"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr ""
+msgstr "적용된 금액, 할인 금액 및 대손 처리 금액은 회사 기본 통화({baseCurrency})로 표시됩니다."
 
 msgid "Applies to"
 msgstr "적용 대상"
@@ -3302,9 +3302,6 @@ msgstr "검색 쿼리 지우기"
 msgid "Clear selection"
 msgstr "선택 해제"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "이 송장을 거래처의 전기된 대변 및 현금으로 상계하십시오. 대변은 직접 적용됩니다 — 전기가 필요하지 않습니다."
-
 msgid "Clear value"
 msgstr "값 지우기"
 
@@ -4427,6 +4424,9 @@ msgstr "간접비가 재공품에 편입될 때의 대변 계정"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "제조 원가가 재공품에 편입될 때 사용되는 대변 계정"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "대변 금액은 회사 기본 통화({currency})로 표시됩니다. 이 지불이 전기되면 대변이 적용됩니다."
 
 msgid "Credit Memo"
 msgstr "대변전표"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "재고 비율"
 
 msgid "Invalid applications"
-msgstr ""
+msgstr "잘못된 적용"
 
 msgid "Invalid Invite"
 msgstr "유효하지 않은 초대"
@@ -11619,8 +11619,8 @@ msgstr "Net 30 또는 입고 시 만기와 같은 지불 조건"
 msgid "Payments"
 msgstr "지불"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "이 송장에 적용된 지불 및 대변. 행을 클릭하여 원본 문서를 엽니다."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "이 송장에 적용된 지불 및 대변입니다. 적용된 금액과 환율은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
 
 msgid "PDF"
 msgstr "PDF"
