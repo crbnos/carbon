@@ -4244,6 +4244,11 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
+
 msgid "Could not save"
 msgstr "Не удалось сохранить"
 
@@ -13332,6 +13337,10 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
@@ -13349,6 +13358,10 @@ msgstr "Запустить производственный заказ в раб
 
 msgid "Released"
 msgstr "Выпущено"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Дата выпуска"

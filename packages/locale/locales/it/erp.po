@@ -4244,6 +4244,11 @@ msgstr "Impossibile preparare l'immagine della regione per l'analisi"
 msgid "Could not read the document: {0}"
 msgstr "Non è stato possibile leggere il documento: {0}"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
+
 msgid "Could not save"
 msgstr "Impossibile salvare"
 
@@ -13332,6 +13337,10 @@ msgstr "Cronologia relativa · date da confermare"
 msgid "Release"
 msgstr "Rilascio"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Rilascia lotto"
 
@@ -13349,6 +13358,10 @@ msgstr "Rilascia Commessa"
 
 msgid "Released"
 msgstr "Rilasciato"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Data di rilascio"

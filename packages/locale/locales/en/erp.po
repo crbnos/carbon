@@ -4244,6 +4244,11 @@ msgstr "Could not prepare region image for analysis"
 msgid "Could not read the document: {0}"
 msgstr "Could not read the document: {0}"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr "Could not release {0}: {1}"
+
 msgid "Could not save"
 msgstr "Could not save"
 
@@ -13332,6 +13337,10 @@ msgstr "Relative timeline · dates to be confirmed"
 msgid "Release"
 msgstr "Release"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr "Release {0} batches"
+
 msgid "Release Batch"
 msgstr "Release Batch"
 
@@ -13349,6 +13358,10 @@ msgstr "Release Job"
 
 msgid "Released"
 msgstr "Released"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr "Released {0} batches"
 
 msgid "Released date"
 msgstr "Released date"

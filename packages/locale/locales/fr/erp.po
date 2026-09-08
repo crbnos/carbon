@@ -4244,6 +4244,11 @@ msgstr "Impossible de préparer l'image de la région pour l'analyse"
 msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
+
 msgid "Could not save"
 msgstr "N'a pas pu enregistrer"
 
@@ -13332,6 +13337,10 @@ msgstr "Chronologie relative · dates à confirmer"
 msgid "Release"
 msgstr "Lancer"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Lancer le lot de production"
 
@@ -13349,6 +13358,10 @@ msgstr "Lancer le travail"
 
 msgid "Released"
 msgstr "Libéré"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Date de libération"

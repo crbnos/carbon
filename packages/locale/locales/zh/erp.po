@@ -4244,6 +4244,11 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
+
 msgid "Could not save"
 msgstr "无法保存"
 
@@ -13332,6 +13337,10 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "下达生产批次"
 
@@ -13349,6 +13358,10 @@ msgstr "下达工单"
 
 msgid "Released"
 msgstr "已下达"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "下达日期"

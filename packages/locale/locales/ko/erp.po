@@ -4244,6 +4244,11 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
+
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
 
@@ -13332,6 +13337,10 @@ msgstr "상대적 일정 · 확인할 날짜"
 msgid "Release"
 msgstr "릴리스"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "배치 릴리스"
 
@@ -13349,6 +13358,10 @@ msgstr "작업 지시 릴리스"
 
 msgid "Released"
 msgstr "릴리즈됨"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "출시일"
