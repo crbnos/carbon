@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const importResult = await importCsv(serviceRole, {
     table,
     filePath: filePath as string,
-    columnMappings,
+    columnMappings: columnMappings as Record<string, string>,
     enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined,
     companyId,
     userId

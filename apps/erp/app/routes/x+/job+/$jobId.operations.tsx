@@ -70,7 +70,7 @@ export default function JobOperationsRoute() {
   return (
     <VStack
       spacing={0}
-      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height))]"
+      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))]"
     >
       <JobOperationsTable data={operations} count={count} />
     </VStack>

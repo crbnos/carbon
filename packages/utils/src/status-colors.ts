@@ -56,6 +56,16 @@ export const JOB_OPERATION_STATUS_COLOR_MAP = {
   Canceled: "red"
 } as const satisfies Record<string, StatusColor>;
 
+// Operation batch lifecycle. `Active` is DISPLAYED as "Released"; the colors
+// mirror the job map (Planned=yellow, Released/Ready=blue, in-flight=orange,
+// done=green) so a batch reads the same as the jobs it dispatches.
+export const BATCH_STATUS_COLOR_MAP = {
+  Planned: "yellow",
+  Active: "blue",
+  Completing: "orange",
+  Completed: "green"
+} as const satisfies Record<string, StatusColor>;
+
 export const QUOTE_STATUS_COLOR_MAP = {
   Draft: "gray",
   Sent: "blue",
@@ -242,6 +252,7 @@ export const GAUGE_ROLE_COLOR_MAP = {
 export const statusColorMaps = {
   job: JOB_STATUS_COLOR_MAP,
   jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
+  jobOperationBatch: BATCH_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,
   salesOrder: SALES_STATUS_COLOR_MAP,
   purchaseOrder: PURCHASE_ORDER_STATUS_COLOR_MAP,

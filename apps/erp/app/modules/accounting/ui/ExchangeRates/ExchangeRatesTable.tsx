@@ -1,17 +1,33 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
+import { formatDate, formatExchangeRate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuEuro, LuPencil, LuPercent } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuEuro,
+  LuGlobe,
+  LuPencil,
+  LuPercent
+} from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { Currency } from "../../types";
+import ExchangeRateSourceBadge from "./ExchangeRateSourceBadge";
+
+type CurrencyWithRate = Currency & {
+  rate: number | null;
+  rateSource: string | null;
+  rateUpdatedAt: string | null;
+};
 
 type ExchangeRatesTableProps = {
-  data: Currency[];
+  data: CurrencyWithRate[];
   count: number;
 };
 
@@ -20,10 +36,11 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const customColumns = useCustomColumns<Currency>("currency");
+  const { locale } = useLocale();
+  const customColumns = useCustomColumns<CurrencyWithRate>("currency");
 
-  const columns = useMemo<ColumnDef<Currency>[]>(() => {
-    const defaultColumns: ColumnDef<Currency>[] = [
+  const columns = useMemo<ColumnDef<CurrencyWithRate>[]>(() => {
+    const defaultColumns: ColumnDef<CurrencyWithRate>[] = [
       {
         accessorKey: "name",
         header: t`Name`,
@@ -45,19 +62,51 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
         }
       },
       {
-        accessorKey: "exchangeRate",
+        accessorKey: "rate",
         header: t`Exchange Rate`,
-        cell: (item) => item.getValue(),
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.rate != null
+            ? formatExchangeRate(row.original.rate, locale)
+            : null,
         meta: {
           icon: <LuPercent />
+        }
+      },
+      {
+        accessorKey: "rateSource",
+        header: t`Source`,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <ExchangeRateSourceBadge source={row.original.rateSource} />
+        ),
+        meta: {
+          icon: <LuGlobe />,
+          exportValue: (row: CurrencyWithRate) => row.rateSource
+        }
+      },
+      {
+        accessorKey: "rateUpdatedAt",
+        header: t`Updated`,
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.rateUpdatedAt
+            ? formatDate(row.original.rateUpdatedAt, undefined, locale)
+            : null,
+        meta: {
+          icon: <LuCalendar />,
+          exportValue: (row: CurrencyWithRate) =>
+            row.rateUpdatedAt
+              ? formatDate(row.rateUpdatedAt, undefined, locale)
+              : null
         }
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, t]);
+  }, [customColumns, locale, t]);
 
   const renderContextMenu = useCallback(
-    (row: Currency) => {
+    (row: CurrencyWithRate) => {
       return (
         <>
           <MenuItem
@@ -78,7 +127,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
   );
 
   return (
-    <Table<Currency>
+    <Table<CurrencyWithRate>
       data={data}
       columns={columns}
       count={count}

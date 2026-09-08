@@ -8,6 +8,7 @@ import {
   Button,
   HStack,
   Separator,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -49,9 +50,9 @@ function PropertiesSection({
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
-        <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+        <Subheading as="h3" variant="light">
           {title}
-        </h3>
+        </Subheading>
         {accessory}
       </HStack>
       {children}
@@ -150,9 +151,9 @@ const ChangeNoticeProperties = () => {
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
-          </h3>
+          </Subheading>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

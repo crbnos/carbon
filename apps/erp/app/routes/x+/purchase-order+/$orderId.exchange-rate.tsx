@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import {
   getPurchaseOrder,
   isPurchaseOrderLocked,
@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -44,21 +44,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const formData = await request.formData();
-  const currencyCode = formData.get("currencyCode") as string;
+  const currencyCode = purchaseOrder.data?.currencyCode;
   if (!currencyCode) throw new Error("Could not find currencyCode");
 
-  const currency = await getCurrencyByCode(
-    client,
-    companyGroupId,
-    currencyCode
-  );
-  if (currency.error || !currency.data.exchangeRate)
-    throw new Error("Could not find currency");
+  const exchangeRate = await getExchangeRate(client, companyId, currencyCode);
+  if (exchangeRate.error) {
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(
+        request,
+        error(exchangeRate.error, "Failed to get exchange rate")
+      )
+    );
+  }
 
   const update = await updatePurchaseOrderExchangeRate(client, {
     id: orderId,
-    exchangeRate: currency.data.exchangeRate
+    exchangeRate: exchangeRate.data
   });
 
   if (update.error) {

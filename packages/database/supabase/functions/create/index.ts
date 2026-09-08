@@ -3,7 +3,8 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -11,6 +12,7 @@ import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("create");
 
 // Resolves a fallback location when a caller omits locationId, so creating a
 // blank shipment degrades gracefully instead of failing payload validation.
@@ -205,11 +207,7 @@ serve(async (req: Request) => {
     case "nonConformanceTasks": {
       const { id } = payload;
 
-      console.log({
-        function: "create",
-        type,
-        id,
-      });
+      logger.info({ type, id });
 
       try {
 
@@ -378,7 +376,7 @@ serve(async (req: Request) => {
               });
             }
 
-            console.log({
+            logger.debug({
               description: nonConformance.data?.description,
               insertedContent,
             });
@@ -443,13 +441,7 @@ serve(async (req: Request) => {
     case "purchaseOrderFromJob": {
       const { jobId, purchaseOrdersBySupplierId } = payload;
 
-      console.log({
-        function: "create",
-        type,
-        jobId,
-        companyId,
-        userId,
-      });
+      logger.info({ type, jobId, companyId, userId });
       try {
 
         const [job, jobOperations] = await Promise.all([
@@ -549,30 +541,37 @@ serve(async (req: Request) => {
           if (supplierShipping.error)
             throw new Error(supplierShipping.error.message);
 
-          const currencyCodes = new Set(
-            suppliers.data
-              ?.map((d) => d.currencyCode)
-              .filter(Boolean) as string[]
-          );
-
+          // A supplier with no configured currency means "the company's own
+          // base currency" (rate 1 by definition) -- never a hardcoded USD,
+          // which is only correct for USD-base companies.
           const companyRecord = await client
             .from("company")
-            .select("companyGroupId")
+            .select("baseCurrencyCode")
             .eq("id", companyId)
             .single();
-          if (companyRecord.error) throw new Error(companyRecord.error.message);
+          if (companyRecord.error) {
+            throw new Error(companyRecord.error.message);
+          }
+          const baseCurrencyCode = companyRecord.data.baseCurrencyCode;
 
+          const currencyCodes = new Set(
+            suppliers.data?.map((d) => d.currencyCode ?? baseCurrencyCode)
+          );
+
+          // get_exchange_rate raises on a missing rate -- a resolver error
+          // must fail the operation rather than default the rate.
           const exchangeRates = await Promise.all(
             Array.from(currencyCodes).map(async (currencyCode) => {
-              const exchangeRate = await client
-                .from("currency")
-                .select("*")
-                .eq("code", currencyCode)
-                .eq("companyGroupId", companyRecord.data.companyGroupId)
-                .single();
+              const exchangeRate = await client.rpc("get_exchange_rate", {
+                p_company_id: companyId,
+                p_currency_code: currencyCode,
+              });
+              if (exchangeRate.error) {
+                throw new Error(exchangeRate.error.message);
+              }
               return {
                 currencyCode,
-                exchangeRate: exchangeRate.data?.exchangeRate ?? 1,
+                exchangeRate: Number(exchangeRate.data),
               };
             })
           );
@@ -589,6 +588,18 @@ serve(async (req: Request) => {
               const shipping = supplierShipping.data?.find(
                 (d) => d.supplierId === supplier
               );
+
+              const supplierCurrencyCode =
+                suppliers.data?.find((d) => d.id === supplier)?.currencyCode ??
+                baseCurrencyCode;
+              const exchangeRate = exchangeRates.find(
+                (d) => d.currencyCode === supplierCurrencyCode
+              )?.exchangeRate;
+              if (exchangeRate === undefined) {
+                throw new Error(
+                  `No exchange rate resolved for currency ${supplierCurrencyCode}`
+                );
+              }
 
               let purchaseOrderId =
                 purchaseOrdersBySupplierId[supplier] === "new"
@@ -629,16 +640,8 @@ serve(async (req: Request) => {
                     createdBy: userId,
                     purchaseOrderType: "Outside Processing",
                     supplierInteractionId: supplierInteractionId,
-                    currencyCode:
-                      suppliers.data?.find((d) => d.id === supplier)
-                        ?.currencyCode ?? "USD",
-                    exchangeRate:
-                      exchangeRates.find(
-                        (d) =>
-                          d.currencyCode ===
-                          suppliers.data?.find((d) => d.id === supplier)
-                            ?.currencyCode
-                      )?.exchangeRate ?? 1,
+                    currencyCode: supplierCurrencyCode,
+                    exchangeRate,
                     exchangeRateUpdatedAt: new Date().toISOString(),
                   })
                   .returning(["id"])
@@ -729,13 +732,7 @@ serve(async (req: Request) => {
                     jobOperationId: operation.id,
                     companyId,
                     createdBy: userId,
-                    exchangeRate:
-                      exchangeRates.find(
-                        (d) =>
-                          d.currencyCode ===
-                          suppliers.data?.find((d) => d.id === supplier)
-                            ?.currencyCode
-                      )?.exchangeRate ?? 1,
+                    exchangeRate,
                   });
                 }
               }
@@ -759,13 +756,7 @@ serve(async (req: Request) => {
     case "receiptDefault": {
       const { locationId } = payload;
       let createdDocumentId;
-      console.log({
-        function: "create",
-        type,
-        locationId,
-        companyId,
-        userId,
-      });
+      logger.info({ type, locationId, companyId, userId });
       try {
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "receipt", companyId);
@@ -796,8 +787,7 @@ serve(async (req: Request) => {
         locationId: userLocationId,
       } = payload;
 
-      console.log({
-        function: "create",
+      logger.info({
         type,
         companyId,
         purchaseOrderId,
@@ -1058,14 +1048,7 @@ serve(async (req: Request) => {
     case "receiptFromInboundTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      console.log({
-        function: "create",
-        type,
-        companyId,
-        warehouseTransferId,
-        existingReceiptId,
-        userId,
-      });
+      logger.info({ type, companyId, warehouseTransferId, existingReceiptId, userId });
 
       try {
 
@@ -1415,14 +1398,7 @@ serve(async (req: Request) => {
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      console.log({
-        function: "create",
-        type,
-        companyId,
-        warehouseTransferId,
-        existingReceiptId,
-        userId,
-      });
+      logger.info({ type, companyId, warehouseTransferId, existingReceiptId, userId });
 
       try {
 
@@ -1589,15 +1565,7 @@ serve(async (req: Request) => {
     case "receiptLineSplit": {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
-      console.log({
-        function: "create",
-        type,
-        locationId,
-        receiptId,
-        receiptLineId,
-        quantity,
-        userId,
-      });
+      logger.info({ type, locationId, receiptId, receiptLineId, quantity, userId });
 
       try {
 
@@ -1613,9 +1581,7 @@ serve(async (req: Request) => {
             .eq("attributes->> Receipt Line", receiptLineId),
         ]);
 
-        console.log({
-          trackedEntities,
-        });
+        logger.debug({ trackedEntities });
 
         if (!receiptLine.data) throw new Error("Receipt line not found");
 
@@ -1712,13 +1678,7 @@ serve(async (req: Request) => {
     case "shipmentDefault": {
       let createdDocumentId;
       const { locationId } = payload;
-      console.log({
-        function: "create",
-        type,
-        companyId,
-        locationId,
-        userId,
-      });
+      logger.info({ type, companyId, locationId, userId });
       try {
         const effectiveLocationId =
           locationId ?? (await getFallbackLocationId(client, companyId, userId));
@@ -1749,8 +1709,7 @@ serve(async (req: Request) => {
     case "shipmentFromWarehouseTransfer": {
       const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
 
-      console.log({
-        function: "create",
+      logger.info({
         type,
         companyId,
         warehouseTransferId,
@@ -2302,8 +2261,7 @@ serve(async (req: Request) => {
         locationId,
       } = payload;
 
-      console.log({
-        function: "create",
+      logger.info({
         type,
         companyId,
         locationId,
@@ -2496,8 +2454,7 @@ serve(async (req: Request) => {
         locationId,
       } = payload;
 
-      console.log({
-        function: "create",
+      logger.info({
         type,
         companyId,
         locationId,
@@ -2844,8 +2801,7 @@ serve(async (req: Request) => {
         locationId,
       } = payload;
 
-      console.log({
-        function: "create",
+      logger.info({
         type,
         companyId,
         locationId,
@@ -3101,15 +3057,7 @@ serve(async (req: Request) => {
     case "shipmentLineSplit": {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;
 
-      console.log({
-        function: "create",
-        type,
-        locationId,
-        shipmentId,
-        shipmentLineId,
-        quantity,
-        userId,
-      });
+      logger.info({ type, locationId, shipmentId, shipmentLineId, quantity, userId });
 
       try {
 

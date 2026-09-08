@@ -2,6 +2,7 @@ import {
   Badge,
   cn,
   Separator,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -86,9 +87,9 @@ export function JobOperationProgress({
         </div>
       </TooltipTrigger>
       <TooltipContent align="start" className="w-96 p-2">
-        <div className="text-[11px] font-medium text-muted-foreground px-2 py-1 uppercase tracking-wide">
+        <Subheading variant="heavy" className="block px-2 py-1">
           Operations
-        </div>
+        </Subheading>
         <Separator className="mb-1" />
         <div className="flex flex-col gap-0.5 max-h-80 overflow-y-auto">
           {sorted.map((op) => {

@@ -17,6 +17,7 @@ import {
   HStack,
   IconButton,
   Label,
+  Subheading,
   Tabs,
   TabsContent,
   TabsList,
@@ -153,11 +154,11 @@ const AssemblyInstructionProperties = ({
         {step ? (
           <VStack spacing={1} className="w-full min-w-0">
             <HStack className="w-full min-w-0 items-center justify-between gap-2">
-              <span className="shrink-0 text-xxs font-medium uppercase tracking-wide text-muted-foreground tabular-nums">
+              <Subheading variant="heavy" className="shrink-0 tabular-nums">
                 {stepIndex != null
                   ? `Step ${stepIndex + 1} of ${stepCount}`
                   : "Step"}
-              </span>
+              </Subheading>
               <StepStatusPill status={normalizeStatus(step.status)} />
             </HStack>
             <h3 className="w-full min-w-0 truncate text-sm font-medium text-foreground">
@@ -180,9 +181,7 @@ const AssemblyInstructionProperties = ({
             </HStack>
           </VStack>
         ) : (
-          <span className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
-            Step
-          </span>
+          <Subheading variant="heavy">Step</Subheading>
         )}
       </div>
       {step ? (
@@ -522,9 +521,9 @@ function StepForm({
           description="Operators must record this step to complete the operation"
         />
 
-        <h4 className="w-full pt-1 text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+        <Subheading as="h4" variant="heavy" className="block w-full pt-1">
           Playback &amp; components
-        </h4>
+        </Subheading>
         <VStack
           spacing={2}
           className="w-full rounded-lg border border-border bg-muted/40 p-3"

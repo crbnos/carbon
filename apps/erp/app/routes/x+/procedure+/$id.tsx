@@ -2,12 +2,13 @@ import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, Input, toast, useDebounce } from "@carbon/react";
+import { generateHTML, toast, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   Outlet,
@@ -24,6 +25,7 @@ import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader"
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
 import { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/procedure+/update";
+import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -72,9 +74,9 @@ export default function ProcedureRoute() {
 
   return (
     <PanelProvider key={`${id}-${procedure.version}`}>
-      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <ProcedureHeader />
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
               explorer={
@@ -83,7 +85,7 @@ export default function ProcedureRoute() {
                 />
               }
               content={
-                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <ProcedureEditor />
                   <Outlet />
                 </div>
@@ -105,7 +107,9 @@ function ProcedureEditor() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
+  const { t } = useLingui();
   const permissions = usePermissions();
+  const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
 
   const loaderData = useLoaderData<typeof loader>();
 
@@ -116,6 +120,18 @@ function ProcedureEditor() {
   const [content, setContent] = useState<JSONContent>(
     (loaderData?.procedure?.content ?? {}) as JSONContent
   );
+
+  const canEdit =
+    permissions.can("update", "production") &&
+    loaderData?.procedure?.status === "Draft";
+
+  // Mirror the live title only while editing; clear it when editing ends (e.g.
+  // a Draft→Active transition that doesn't remount the route) or on unmount, so
+  // the header title bar can never show a stale edited title.
+  useEffect(() => {
+    if (!canEdit) setLiveTitle(null);
+    return () => setLiveTitle(null);
+  }, [canEdit, setLiveTitle]);
 
   const { carbon } = useCarbon();
   const {
@@ -140,25 +156,29 @@ function ProcedureEditor() {
 
   const fetcher = useFetcher<typeof action>();
 
-  const updateProcedureName = async (name: string) => {
-    const formData = new FormData();
+  const updateProcedureName = useDebounce(
+    async (name: string) => {
+      const formData = new FormData();
 
-    const versions = await Promise.resolve(loaderData?.versions);
+      const versions = await Promise.resolve(loaderData?.versions);
 
-    formData.append("ids", id);
-    if (Array.isArray(versions?.data) && versions.data.length > 0) {
-      versions.data.forEach((version) => {
-        formData.append("ids", version.id);
+      formData.append("ids", id);
+      if (Array.isArray(versions?.data) && versions.data.length > 0) {
+        versions.data.forEach((version) => {
+          formData.append("ids", version.id);
+        });
+      }
+      formData.append("field", "name");
+      formData.append("value", name);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateProcedure
       });
-    }
-    formData.append("field", "name");
-    formData.append("value", name);
-
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.bulkUpdateProcedure
-    });
-  };
+    },
+    500,
+    true
+  );
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
@@ -179,26 +199,19 @@ function ProcedureEditor() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full p-6">
-      <Input
-        className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
-        value={procedureName}
-        borderless
-        onChange={
-          loaderData?.procedure?.status === "Draft"
-            ? (e) => setProcedureName(e.target.value)
-            : undefined
-        }
-        onBlur={
-          loaderData?.procedure?.status === "Draft"
-            ? (e) => updateProcedureName(e.target.value)
-            : undefined
-        }
-      />
-
-      {permissions.can("update", "production") &&
-      loaderData?.procedure?.status === "Draft" ? (
+    <div className="flex flex-col w-full h-full">
+      {canEdit ? (
         <Editor
+          toolbar
+          title={{
+            value: procedureName,
+            placeholder: t`Untitled`,
+            onChange: (name) => {
+              setProcedureName(name);
+              setLiveTitle(name);
+              updateProcedureName(name);
+            }
+          }}
           initialValue={content}
           onUpload={onUploadImage}
           onChange={(value) => {
@@ -207,12 +220,17 @@ function ProcedureEditor() {
           }}
         />
       ) : (
-        <div
-          className="prose dark:prose-invert"
-          dangerouslySetInnerHTML={{
-            __html: generateHTML(content)
-          }}
-        />
+        <div className="flex flex-col gap-6 w-full h-full p-8">
+          <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
+            {procedureName}
+          </h1>
+          <div
+            className="prose dark:prose-invert"
+            dangerouslySetInnerHTML={{
+              __html: generateHTML(content)
+            }}
+          />
+        </div>
       )}
     </div>
   );

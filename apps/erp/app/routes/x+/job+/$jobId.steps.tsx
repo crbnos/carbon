@@ -63,7 +63,7 @@ export default function JobOperationStepRecordsRoute() {
   return (
     <VStack
       spacing={0}
-      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height))]"
+      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))]"
     >
       {/* @ts-expect-error TS2322 */}
       <JobOperationStepRecordsTable data={stepRecords} count={count} />

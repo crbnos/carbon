@@ -1428,8 +1428,16 @@ export function resolveBuyUnitCost(
 }
 
 /**
- * Resolve the best supplier unit price for a quantity, applying exchange
- * rate conversion.
+ * Resolve the supplier unit price for a quantity.
+ *
+ * `supplierPart.unitPrice` and `supplierPartPrice.unitPrice` are stored in the
+ * company BASE currency -- neither table has a currency column, and all three
+ * writers put base there. The field this feeds (`supplierUnitPrice`) is in the
+ * SUPPLIER's currency. The document's `exchangeRate` is foreign-per-base, so
+ * base to supplier is MULTIPLY.
+ *
+ * @param fallbackUnitPrice base currency, used when no break matches
+ * @returns the price in the supplier's currency
  */
 export function resolveSupplierPrice(
   priceBreaks: PriceBreak[],
@@ -1437,12 +1445,8 @@ export function resolveSupplierPrice(
   fallbackUnitPrice: number,
   exchangeRate: number
 ): number {
-  if (!priceBreaks.length) return fallbackUnitPrice;
-  return (
-    lookupPriceFromBreaks(
-      priceBreaks,
-      quantity,
-      fallbackUnitPrice * exchangeRate
-    ) / exchangeRate
-  );
+  const basePrice = priceBreaks.length
+    ? lookupPriceFromBreaks(priceBreaks, quantity, fallbackUnitPrice)
+    : fallbackUnitPrice;
+  return basePrice * exchangeRate;
 }

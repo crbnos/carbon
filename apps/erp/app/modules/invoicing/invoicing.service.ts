@@ -13,7 +13,7 @@ import {
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.ee.service";
+import { getExchangeRate } from "../accounting/accounting.ee.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,
@@ -560,20 +560,19 @@ export async function insertPurchaseInvoice(
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
 
-  let exchangeRate = input.exchangeRate ?? 1;
+  let exchangeRate = input.exchangeRate;
   let exchangeRateUpdatedAt =
     input.exchangeRateUpdatedAt ?? new Date().toISOString();
 
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
@@ -726,15 +725,14 @@ export async function upsertPurchaseInvoice(
     supplierShipping.data;
 
   if (purchaseInvoice.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      purchaseInvoice.companyGroupId,
+      purchaseInvoice.companyId,
       purchaseInvoice.currencyCode
     );
-    if (currency.data) {
-      purchaseInvoice.exchangeRate = currency.data.exchangeRate ?? undefined;
-      purchaseInvoice.exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return rate;
+    purchaseInvoice.exchangeRate = rate.data;
+    purchaseInvoice.exchangeRateUpdatedAt = new Date().toISOString();
   } else {
     purchaseInvoice.exchangeRate = 1;
     purchaseInvoice.exchangeRateUpdatedAt = new Date().toISOString();
@@ -938,20 +936,19 @@ export async function insertSalesInvoice(
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     customerShipping.data;
 
-  let exchangeRate = input.exchangeRate ?? 1;
+  let exchangeRate = input.exchangeRate;
   let exchangeRateUpdatedAt =
     input.exchangeRateUpdatedAt ?? new Date().toISOString();
 
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const locationId = input.locationId ?? salesPerson?.data?.locationId ?? null;
@@ -1104,15 +1101,14 @@ export async function upsertSalesInvoice(
     customerShipping.data;
 
   if (salesInvoice.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      salesInvoice.companyGroupId,
+      salesInvoice.companyId,
       salesInvoice.currencyCode
     );
-    if (currency.data) {
-      salesInvoice.exchangeRate = currency.data.exchangeRate ?? undefined;
-      salesInvoice.exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return rate;
+    salesInvoice.exchangeRate = rate.data;
+    salesInvoice.exchangeRateUpdatedAt = new Date().toISOString();
   } else {
     salesInvoice.exchangeRate = 1;
     salesInvoice.exchangeRateUpdatedAt = new Date().toISOString();

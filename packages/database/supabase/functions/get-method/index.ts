@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 
 import type {
     PostgrestError,
@@ -27,6 +27,7 @@ import {
     traverseJobMethodAsync,
     traverseQuoteMethod,
 } from "../lib/methods.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
@@ -43,6 +44,7 @@ import { scrapAllowance } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("get-method");
 
 // Stored configurator rules are user-authored JS that may still return legacy "Inside"/"Outside" operationType values.
 const normalizeOperationType = (value: unknown) =>
@@ -140,6 +142,18 @@ function remapStepLinks(
   });
 }
 
+// A BOM line whose quantity is explicitly 0 contributes nothing, so it is
+// dropped whenever a method is instantiated or copied. `null`/`undefined` is
+// NOT treated as zero — those fall back to a quantity of 1 elsewhere in this
+// file, so only a real numeric 0 removes the line.
+function isZeroQuantity(quantity: unknown): boolean {
+  // Only a real numeric 0 removes the line. `getConfiguredValue` returns a
+  // dynamically-configured value behind a type assertion, so `""`/`false`/`[]`
+  // can reach here — `Number("")`/`Number(false)` are 0 and would wrongly drop
+  // the line. A strict typeof check keeps those falling back to a quantity of 1.
+  return typeof quantity === "number" && quantity === 0;
+}
+
 const partsValidator = z.object({
   billOfMaterial: z.boolean().default(true),
   billOfProcess: z.boolean().default(true),
@@ -147,7 +161,9 @@ const partsValidator = z.object({
   tools: z.boolean().default(true),
   steps: z.boolean().default(true),
   workInstructions: z.boolean().default(true),
-}).default({});
+  // prefault, not default: v4's .default() returns {} AS-IS on undefined input,
+  // which would skip every inner default and disable all six part flags.
+}).prefault({});
 
 const payloadValidator = z.object({
   type: z.enum([
@@ -171,7 +187,7 @@ const payloadValidator = z.object({
   targetId: z.string(),
   companyId: z.string(),
   userId: z.string(),
-  configuration: z.record(z.unknown()).optional(),
+  configuration: z.record(z.string(), z.unknown()).optional(),
   parts: partsValidator,
   // A specific source makeMethod version (itemToJob / itemToJobMakeMethod
   // only). Absent = the item's active method, as before.
@@ -195,8 +211,7 @@ serve(async (req: Request) => {
       versionId,
     } = payloadValidator.parse(payload);
 
-    console.log({
-      function: "get-method",
+    logger.info({
       type,
       sourceId,
       targetId,
@@ -291,12 +306,17 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
-          // Copy materials from source to target
-          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
-                sourceMaterials.data.map((material) => ({
+                materialsToCopy.map((material) => ({
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
@@ -848,7 +868,9 @@ serve(async (req: Request) => {
                 const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                console.error(err);
+                logger.error("configuration field resolver failed", {
+                  error: String((err as Error)?.stack ?? err),
+                });
                 return defaultValue;
               }
             }
@@ -1321,6 +1343,10 @@ serve(async (req: Request) => {
               ]);
 
               if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM. Made sub-assemblies drop out of `configuredChildren`
+              // below with the row, so their sub-tree is never exploded either.
+              if (isZeroQuantity(quantity)) return null;
 
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
@@ -2234,6 +2260,10 @@ serve(async (req: Request) => {
               [];
 
             for await (const child of node.children) {
+              // A zero-quantity BOM line is removed from the method. `madeChildren`
+              // below filters the same way, so a skipped made row stays index-aligned
+              // and its sub-tree is never exploded.
+              if (isZeroQuantity(child.data.quantity)) continue;
               const material = await mapMethodMaterialToJobMaterial(child);
               if (child.data.methodType === "Make to Order") {
                 madeMaterials.push(material);
@@ -2287,7 +2317,9 @@ serve(async (req: Request) => {
               }
 
               const madeChildren = node.children.filter(
-                (child) => child.data.methodType === "Make to Order"
+                (child) =>
+                  child.data.methodType === "Make to Order" &&
+                  !isZeroQuantity(child.data.quantity)
               );
 
               for (const [index, child] of madeChildren.entries()) {
@@ -2575,7 +2607,9 @@ serve(async (req: Request) => {
 
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                console.error(err);
+                logger.error("configuration field resolver failed", {
+                  error: String((err as Error)?.stack ?? err),
+                });
                 return defaultValue;
               }
             }
@@ -2591,7 +2625,7 @@ serve(async (req: Request) => {
             node: MethodTreeItem,
             parentQuoteMakeMethodId: string | null
           ) {
-            console.log("[traverseMethod]", {
+            logger.debug("[traverseMethod]", {
               isRoot: node.data.isRoot,
               itemId: node.data.itemId,
               methodType: node.data.methodType,
@@ -2704,7 +2738,7 @@ serve(async (req: Request) => {
                 processId,
                 op.workCenterId
               );
-              console.log({
+              logger.debug({
                 processId,
                 ...operationRates,
               });
@@ -2941,6 +2975,9 @@ serve(async (req: Request) => {
               ]);
 
               if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM (and its sub-tree, via configuredChildren below).
+              if (isZeroQuantity(quantity)) return null;
 
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
@@ -3045,7 +3082,7 @@ serve(async (req: Request) => {
               (child) => child.data.methodType === "Make to Order"
             );
 
-            console.log("[traverseMethod] materials", {
+            logger.debug("[traverseMethod] materials", {
               totalChildren: materialsWithConfiguredFields.length,
               madeMaterialsCount: madeMaterials.length,
               madeChildrenCount: madeChildren.length,
@@ -3073,7 +3110,7 @@ serve(async (req: Request) => {
                   .where("parentMaterialId", "=", materialId)
                   .execute();
 
-                console.log("[traverseMethod] processing made child", {
+                logger.debug("[traverseMethod] processing made child", {
                   index,
                   materialId,
                   newMakeMethodId,
@@ -3100,7 +3137,7 @@ serve(async (req: Request) => {
           }
 
           function logTree(node: MethodTreeItem, depth = 0) {
-            console.log("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
+            logger.debug("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
             for (const child of node.children) {
               logTree(child, depth + 1);
             }
@@ -3245,7 +3282,9 @@ serve(async (req: Request) => {
                 const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
-                console.error(err);
+                logger.error("configuration field resolver failed", {
+                  error: String((err as Error)?.stack ?? err),
+                });
                 return defaultValue;
               }
             }
@@ -3446,11 +3485,18 @@ serve(async (req: Request) => {
               customFields: {},
             });
 
+            // A zero-quantity BOM line is removed from the method. Filtering the
+            // children (not the mapped rows) keeps `madeChildren`/`madeMaterials`
+            // index-aligned and stops a made line's sub-tree from being exploded.
             const madeChildren = node.children.filter(
-              (child) => child.data.methodType === "Make to Order"
+              (child) =>
+                child.data.methodType === "Make to Order" &&
+                !isZeroQuantity(child.data.quantity)
             );
             const unmadeChildren = node.children.filter(
-              (child) => child.data.methodType !== "Make to Order"
+              (child) =>
+                child.data.methodType !== "Make to Order" &&
+                !isZeroQuantity(child.data.quantity)
             );
 
             const madeMaterials = madeChildren.map(
@@ -3616,6 +3662,8 @@ serve(async (req: Request) => {
             }
 
             node.children.forEach((child) => {
+              // A zero-quantity BOM line is dropped from the saved method.
+              if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -3936,6 +3984,8 @@ serve(async (req: Request) => {
             }
 
             node.children.forEach((child) => {
+              // A zero-quantity BOM line is dropped from the saved method.
+              if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -4441,6 +4491,16 @@ serve(async (req: Request) => {
               }
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the copied job.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const sourceMaterial = sourceMaterialById.get(child.id);
                 const newMaterialId = nanoid();
                 sourceMaterialIdToJobMaterialId[child.id] = newMaterialId;
@@ -4961,12 +5021,17 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
-          // Copy materials from source to target
-          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
-                sourceMaterials.data.map((material) => ({
+                materialsToCopy.map((material) => ({
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
@@ -5344,6 +5409,8 @@ serve(async (req: Request) => {
               }
 
               node.children.forEach((child) => {
+                // A zero-quantity BOM line is dropped from the saved method.
+                if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -5665,6 +5732,8 @@ serve(async (req: Request) => {
               }
 
               node.children.forEach((child) => {
+                // A zero-quantity BOM line is dropped from the saved method.
+                if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
@@ -5937,14 +6006,13 @@ serve(async (req: Request) => {
           quoteOperations.error
         ) {
           if (quoteMakeMethod.error) {
-            console.log("quoteMakeMethodError");
-            console.log(quoteMakeMethod.error);
+            logger.error("quoteMakeMethodError", { error: quoteMakeMethod.error });
           }
           if (quoteMaterials.error) {
-            console.log(quoteMaterials.error);
+            logger.error("quoteMaterialsError", { error: quoteMaterials.error });
           }
           if (quoteOperations.error) {
-            console.log(quoteOperations.error);
+            logger.error("quoteOperationsError", { error: quoteOperations.error });
           }
           throw new Error("Failed to fetch quote data");
         }
@@ -6067,6 +6135,16 @@ serve(async (req: Request) => {
               }
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the created job.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const newMaterialId = nanoid();
                 quoteMaterialIdToJobMaterialId[child.id] = newMaterialId;
 
@@ -6458,7 +6536,9 @@ serve(async (req: Request) => {
         ]);
 
         if (targetQuoteMakeMethod.error || !targetQuoteMakeMethod.data) {
-          console.error(targetQuoteMakeMethod.error);
+          logger.error("Failed to get target quote make method", {
+            error: targetQuoteMakeMethod.error,
+          });
           throw new Error("Failed to get target quote make method");
         }
 
@@ -6529,6 +6609,16 @@ serve(async (req: Request) => {
                 [];
 
               for await (const child of node.children) {
+                // A zero-quantity Buy/Pick line is dropped from the copied quote.
+                // A made sub-assembly is left intact even at quantity 0: its
+                // operations are copied by make method below and would reference
+                // a make method that never got created if the row were removed.
+                if (
+                  isZeroQuantity(child.data.quantity) &&
+                  child.data.methodType !== "Make to Order"
+                ) {
+                  continue;
+                }
                 const newMaterialId = nanoid();
                 quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
 
@@ -6959,7 +7049,14 @@ serve(async (req: Request) => {
                     quantity: l.quantity ?? 0,
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
-                    exchangeRate: l.exchangeRate ?? 0,
+                    // Never 0: a zero rate is not a valid snapshot (DB CHECK
+                    // "exchangeRate" > 0) and zeroes every converted* generated
+                    // column. A legacy null line rate falls back to the SOURCE
+                    // QUOTE's own stamped header rate; 1 only when the source
+                    // header predates stamping too (base-consistent with its
+                    // line snapshots' old default).
+                    exchangeRate:
+                      l.exchangeRate ?? sourceQuote.data?.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
                     // stays protected on the new quote/revision.
@@ -7011,7 +7108,9 @@ serve(async (req: Request) => {
             ]);
 
             if (targetQuoteMakeMethod.error) {
-              console.error(targetQuoteMakeMethod.error);
+              logger.error("Failed to get target quote make method", {
+                error: targetQuoteMakeMethod.error,
+              });
               throw new Error("Failed to get target quote make method");
             }
 
@@ -7048,6 +7147,16 @@ serve(async (req: Request) => {
                   [];
 
                 for await (const child of node.children) {
+                  // A zero-quantity Buy/Pick line is dropped from the new quote.
+                  // A made sub-assembly is left intact even at quantity 0: its
+                  // operations are copied by make method below and would reference
+                  // a make method that never got created if the row were removed.
+                  if (
+                    isZeroQuantity(child.data.quantity) &&
+                    child.data.methodType !== "Make to Order"
+                  ) {
+                    continue;
+                  }
                   const newMaterialId = nanoid();
                   quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
 
@@ -8058,7 +8167,9 @@ async function hydrateConfiguration(
 
     return transformed;
   } catch (err) {
-    console.error(err);
+    logger.error("configuration transform failed", {
+      error: String((err as Error)?.stack ?? err),
+    });
     return configuration;
   }
 }

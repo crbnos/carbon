@@ -62,7 +62,7 @@ export default function JobDagRoute() {
   return (
     <VStack
       spacing={0}
-      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height))]"
+      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))]"
     >
       <JobDag operations={operations} dependencies={dependencies} />
     </VStack>

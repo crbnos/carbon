@@ -154,3 +154,81 @@ describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
     });
   });
 });
+
+/**
+ * Foreign-currency AR. `salesInvoiceLine.unitPrice` is stored in the company
+ * BASE currency (`convertedUnitPrice` is the document mirror), so a payload
+ * declaring `CurrencyCode: "EUR"` must carry EUR amounts, not the base ones.
+ *
+ * Xero's `CurrencyRate` runs the SAME direction as Carbon's
+ * `currency.exchangeRate`: foreign per base. Xero's multicurrency guide is
+ * explicit — "The units of CurrencyRate are always [Foreign Currency] PER
+ * [Base Currency] ... A CurrencyRate of 1.10 for a EUR invoice against a
+ * GBP-base-currency organisation says that 1 GBP = 1.1 EUR." So the rate is
+ * passed through unchanged; inverting it triggers Xero's "inverse rate"
+ * warning and books base amounts wrong.
+ */
+const fxInvoice = (): Accounting.SalesInvoice =>
+  ({
+    ...invoice(),
+    currencyCode: "EUR",
+    // 0.80 EUR per 1 USD of base -- Xero's units exactly
+    exchangeRate: 0.8,
+    subtotal: 100,
+    totalAmount: 100,
+    balance: 100,
+    lines: [
+      {
+        id: "sil-1",
+        invoiceLineType: "Part",
+        itemId: "item-1",
+        itemCode: "WIDGET-1",
+        description: "Widget",
+        quantity: 2,
+        // base currency: 2 x 50 = 100 base, i.e. 80 EUR
+        unitPrice: 50,
+        convertedUnitPrice: 40,
+        taxPercent: 0,
+        lineAmount: 100
+      }
+    ]
+  }) as unknown as Accounting.SalesInvoice;
+
+describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
+  const db = () =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: [
+        {
+          id: "m-1",
+          accountId: "acct_sales",
+          externalId: "sales-remote",
+          metadata: { externalCode: "4000" },
+          lastSyncedAt: null,
+          accountNumber: "4000",
+          accountName: "Sales Revenue"
+        }
+      ]
+    });
+
+  it("pushes line amounts in the currency the payload declares", async () => {
+    const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
+    expect(payload.CurrencyCode).toBe("EUR");
+    // 40 EUR/ea, not the 50 base
+    expect(payload.LineItems[0]?.UnitAmount).toBe(40);
+    expect(payload.LineItems[0]?.LineAmount).toBe(80);
+  });
+
+  it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
+    const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
+    // Xero wants EUR per USD, which is what Carbon already stores. Sending the
+    // reciprocal (1.25) is the documented "inverse rate" mistake.
+    expect(payload.CurrencyRate).toBeCloseTo(0.8, 6);
+  });
+
+  it("omits CurrencyRate on a base-currency invoice rather than sending 1", async () => {
+    const payload = await makeInvoiceSyncer(db()).mapToRemote(invoice());
+    // Xero: "Setting a CurrencyRate of 1 is redundant and considered incorrect."
+    expect(payload.CurrencyRate).toBeUndefined();
+  });
+});

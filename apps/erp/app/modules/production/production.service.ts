@@ -1112,9 +1112,10 @@ export async function getCapacityReservationsForResources(
   let query = client
     .from("capacityReservation")
     .select(
-      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder,
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason)`
+       jobOperation(description, hasConflict, conflictReason),
+       jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
     .is("scenarioId", null)
@@ -1852,7 +1853,7 @@ export async function getJobOperationsByMethodId(
   return client
     .from("jobOperation")
     .select(
-      "*, jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
+      "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -3658,11 +3659,23 @@ export async function duplicateJobOperationStep(
 export async function upsertJobOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -5813,6 +5826,319 @@ export async function notifyScheduleInputsChanged(
   });
 }
 
+// --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
+// Execution lives in MES (the operation view's batch mode); ERP composes
+// batches on the schedule board, mutates them via the batch-operations edge fn,
+// and lists past/active batches at /x/production/batches.
+
+// Count of operations that COULD be batched but aren't yet — unbatched ops on a
+// batchable process, still open (Todo/Ready/Waiting), on a live (non-terminal)
+// job. Mirrors the unbatched-candidate branch of get_batchable_operations (the
+// batch builder's candidate query) so the dashboard number matches what the
+// builder surfaces. Head count only — no rows. !inner turns the nested filters
+// on process/job into real join predicates that constrain the count.
+export async function getUnbatchedBatchableOperationCount(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, process!inner(batchable), job!inner(status)", {
+      count: "exact",
+      head: true
+    })
+    .eq("companyId", companyId)
+    .is("jobOperationBatchId", null)
+    .eq("process.batchable", true)
+    .in("status", ["Todo", "Ready", "Waiting"])
+    .not("job.status", "in", "(Completed,Closed,Cancelled)");
+}
+
+export async function getJobOperationBatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("jobOperationBatch")
+    .select("*, process(name), workCenter(name)", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("readableId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+// The members' shared work-center name: null when they disagree (or none are
+// set), the single distinct name when they all agree. The list stats and the
+// detail drawer both fall back to this when the batch has no header work center
+// (a board-created batch has no header WC until its card is dragged), so they
+// must agree on what "shared" means — drop nullish first, then require exactly
+// one distinct name.
+function deriveSharedWorkCenterName(
+  names: (string | null | undefined)[]
+): string | null {
+  const distinct = new Set(names.filter((n): n is string => Boolean(n)));
+  return distinct.size === 1 ? ([...distinct][0] as string) : null;
+}
+
+// Member count + summed quantity per batch, for the batches list. One query for
+// the page's batch ids, tallied in TS (the storage-rules count pattern — no
+// PostgREST aggregate embeds in this repo). Also derives the members' shared
+// work-center name: a batch created from the board carries no header work
+// center until it is dragged, but when every member sits on one work center
+// that IS the batch's work center — the board itself falls back the same way.
+export async function getJobOperationBatchMemberStats(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  batchIds: string[]
+): Promise<{
+  data: Record<
+    string,
+    {
+      memberCount: number;
+      totalQuantity: number;
+      workCenterName: string | null;
+    }
+  >;
+  error: unknown;
+}> {
+  if (batchIds.length === 0) return { data: {}, error: null };
+  const result = await client
+    .from("jobOperation")
+    .select("jobOperationBatchId, operationQuantity, workCenter(name)")
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+  if (result.error) return { data: {}, error: result.error };
+  const stats: Record<
+    string,
+    {
+      memberCount: number;
+      totalQuantity: number;
+      workCenterName: string | null;
+    }
+  > = {};
+  // Collect each batch's member work-center names, then derive the shared one
+  // once (same rule the detail drawer uses via deriveSharedWorkCenterName).
+  const memberWorkCenterNames: Record<string, (string | null)[]> = {};
+  for (const op of result.data ?? []) {
+    if (!op.jobOperationBatchId) continue;
+    const entry = (stats[op.jobOperationBatchId] ??= {
+      memberCount: 0,
+      totalQuantity: 0,
+      workCenterName: null
+    });
+    entry.memberCount += 1;
+    entry.totalQuantity += op.operationQuantity ?? 0;
+    (memberWorkCenterNames[op.jobOperationBatchId] ??= []).push(
+      op.workCenter?.name ?? null
+    );
+  }
+  for (const [batchId, entry] of Object.entries(stats)) {
+    entry.workCenterName = deriveSharedWorkCenterName(
+      memberWorkCenterNames[batchId] ?? []
+    );
+  }
+  return { data: stats, error: null };
+}
+
+// One flattened member row per batch member, for the batches list's expandable
+// sub-rows (mirrors the ECO change-notices table). Fields match what the sub-row
+// and the detail drawer's member table show: job link, item, and quantity.
+export type JobOperationBatchListMember = {
+  id: string;
+  jobId: string | null;
+  jobReadableId: string | null;
+  itemReadableId: string | null;
+  itemName: string | null;
+  thumbnailPath: string | null;
+  operationQuantity: number;
+  quantityComplete: number;
+  quantityScrapped: number;
+};
+
+// Members for every batch on the page in ONE query, grouped by batch id in TS
+// (same no-N+1 pattern as getJobOperationBatchMemberStats — collect ids, one
+// .in(), tally). getJobOperationBatchWithMembers is single-batch and would be
+// N+1 across the list, so the list uses this leaner grouped read instead.
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  batchIds: string[]
+): Promise<{
+  data: Record<string, JobOperationBatchListMember[]>;
+  error: unknown;
+}> {
+  if (batchIds.length === 0) return { data: {}, error: null };
+  const result = await client
+    .from("jobOperation")
+    .select(
+      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+  if (result.error) return { data: {}, error: result.error };
+  const members: Record<string, JobOperationBatchListMember[]> = {};
+  for (const op of result.data ?? []) {
+    if (!op.jobOperationBatchId) continue;
+    (members[op.jobOperationBatchId] ??= []).push({
+      id: op.id,
+      jobId: op.job?.id ?? null,
+      jobReadableId: op.job?.jobId ?? null,
+      itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+      itemName: op.jobMakeMethod?.item?.name ?? null,
+      thumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      operationQuantity: op.operationQuantity ?? 0,
+      quantityComplete: op.quantityComplete ?? 0,
+      quantityScrapped: op.quantityScrapped ?? 0
+    });
+  }
+  return { data: members, error: null };
+}
+
+export async function getJobOperationBatchWithMembers(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*, process(name), workCenter(name), location(name)")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  const members = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  // Header work center when assigned; else the members' shared one (a
+  // board-created batch has no header WC until its card is dragged). Uses the
+  // same derivation as the list stats so the two never disagree.
+  const workCenterName =
+    batch.data.workCenter?.name ??
+    deriveSharedWorkCenterName(
+      (members.data ?? []).map((m) => m.workCenter?.name)
+    );
+  return {
+    data: { ...batch.data, workCenterName, members: members.data ?? [] },
+    error: members.error
+  };
+}
+
+// The batch's production events: the live aggregate run while Active, and the
+// per-member slices after completion (slices keep the jobOperationBatchId tag).
+export async function getJobOperationBatchEvents(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "id, type, startTime, endTime, duration, employeeId, jobOperationId"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .order("startTime", { ascending: true });
+}
+
+export async function getBatchableOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; processId: string }
+) {
+  const result = await client.rpc("get_batchable_operations", {
+    location_id: args.locationId,
+    process_id: args.processId
+  });
+  // The RPC is SECURITY INVOKER so RLS already scopes the read; filtering on
+  // the returned companyId column is defense in depth against a caller passing
+  // another tenant's location/process ids.
+  if (result.data) {
+    result.data = result.data.filter((row) => row.companyId === companyId);
+  }
+  return result;
+}
+
+export async function getBatchableProcesses(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select("id, name, batchable, batchType, batchRules")
+    .eq("companyId", companyId)
+    .eq("batchable", true)
+    .eq("active", true)
+    .order("name");
+}
+
+export async function createJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationIds: string[];
+    locationId: string;
+    workCenterId?: string | null;
+    notes?: string | null;
+    // Create & Release: insert the batch already 'Active' (on the floor);
+    // omitted/false creates it 'Planned'.
+    release?: boolean;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "create", ...args }
+  });
+}
+
+export async function updateJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: {
+    type: "add" | "remove" | "update" | "dissolve" | "release" | "unrelease";
+    batchId: string;
+    jobOperationIds?: string[];
+    workCenterId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { type, ...rest } = args;
+  return client.functions.invoke("batch-operations", {
+    body: { type, ...rest }
+  });
+}
+
+export async function releaseJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string; userId: string }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "release", ...args }
+  });
+}
+
+export async function unreleaseJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string; userId: string }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "unrelease", ...args }
+  });
+}
+
 // --- Assembly Instructions ---------------------------------------------
 
 export async function getAssemblyInstruction(
@@ -6814,11 +7140,23 @@ export async function getAssemblyInstructionStepSlides(
 export async function upsertAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -8545,16 +8883,7 @@ export async function getInspectionDocuments(
   companyId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (
-        columns: string,
-        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
-      ) => any;
-    };
-  };
-
-  let query = documentClient
+  let query = client
     .from("inspectionDocuments")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);

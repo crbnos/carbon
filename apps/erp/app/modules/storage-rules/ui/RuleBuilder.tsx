@@ -3,6 +3,7 @@ import {
   ChoiceSelect,
   type ChoiceSelectOption,
   Heading,
+  Subheading,
   VStack
 } from "@carbon/react";
 import {
@@ -138,15 +139,9 @@ export default function RuleBuilder({
       <div className="flex flex-col gap-2 w-full">
         <div className="hidden sm:flex w-full items-center gap-2" aria-hidden>
           <div className={`${CONDITION_GRID_CLASS} flex-1 min-w-0 px-3`}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t`Field`}
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t`Operator`}
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t`Value`}
-            </span>
+            <Subheading variant="heavy">{t`Field`}</Subheading>
+            <Subheading variant="heavy">{t`Operator`}</Subheading>
+            <Subheading variant="heavy">{t`Value`}</Subheading>
           </div>
           <div className="w-8 shrink-0" />
         </div>

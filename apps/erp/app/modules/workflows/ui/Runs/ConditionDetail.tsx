@@ -1,3 +1,4 @@
+import { Subheading } from "@carbon/react";
 import { OPERATOR_LABELS } from "@carbon/utils";
 import type {
   Clause,
@@ -42,9 +43,9 @@ function ClauseLine({
   return (
     <div className="space-y-1">
       {showCombinator && (
-        <div className="text-xs text-muted-foreground uppercase font-medium py-0.5">
+        <Subheading variant="heavy" className="block py-0.5">
           {combinator}
-        </div>
+        </Subheading>
       )}
       <div className="flex items-start gap-2 flex-wrap text-sm">
         {label && <span className="font-medium">{label}</span>}

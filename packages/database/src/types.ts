@@ -5163,6 +5163,7 @@ export type Database = {
           id: string
           isPlaceholder: boolean
           jobId: string
+          jobOperationBatchId: string | null
           operationId: string
           resourceId: string
           resourceKind: Database["public"]["Enums"]["capacityResourceKind"]
@@ -5182,6 +5183,7 @@ export type Database = {
           id?: string
           isPlaceholder?: boolean
           jobId: string
+          jobOperationBatchId?: string | null
           operationId: string
           resourceId: string
           resourceKind: Database["public"]["Enums"]["capacityResourceKind"]
@@ -5201,6 +5203,7 @@ export type Database = {
           id?: string
           isPlaceholder?: boolean
           jobId?: string
+          jobOperationBatchId?: string | null
           operationId?: string
           resourceId?: string
           resourceKind?: Database["public"]["Enums"]["capacityResourceKind"]
@@ -5295,6 +5298,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "openProductionOrders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "capacityReservation_jobOperationBatchId_fkey"
+            columns: ["jobOperationBatchId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationBatch"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "capacityReservation_operationId_fkey"
@@ -8922,7 +8932,6 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           decimalPlaces: number
-          exchangeRate: number
           historicalExchangeRate: number | null
           id: string
           tags: string[] | null
@@ -8937,7 +8946,6 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           decimalPlaces?: number
-          exchangeRate?: number
           historicalExchangeRate?: number | null
           id?: string
           tags?: string[] | null
@@ -8952,7 +8960,6 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           decimalPlaces?: number
-          exchangeRate?: number
           historicalExchangeRate?: number | null
           id?: string
           tags?: string[] | null
@@ -13854,35 +13861,67 @@ export type Database = {
           },
         ]
       }
-      exchangeRateHistory: {
+      exchangeRate: {
         Row: {
-          companyGroupId: string
+          createdAt: string
+          currencyCode: string
+          effectiveDate: string
+          id: string
+          rate: number
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string
+          currencyCode: string
+          effectiveDate: string
+          id?: string
+          rate: number
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string
+          currencyCode?: string
+          effectiveDate?: string
+          id?: string
+          rate?: number
+          updatedAt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchangeRate_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      exchangeRateOverride: {
+        Row: {
+          companyId: string
           createdAt: string
           createdBy: string
           currencyCode: string
-          effectiveDate: string
           id: string
           rate: number
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
-          companyGroupId: string
+          companyId: string
           createdAt?: string
           createdBy: string
           currencyCode: string
-          effectiveDate: string
           id?: string
           rate: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
-          companyGroupId?: string
+          companyId?: string
           createdAt?: string
           createdBy?: string
           currencyCode?: string
-          effectiveDate?: string
           id?: string
           rate?: number
           updatedAt?: string | null
@@ -13890,18 +13929,109 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exchangeRateHistory_companyGroupId_fkey"
-            columns: ["companyGroupId"]
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "companyGroup"
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "exchangeRateHistory_currencyCode_fkey"
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_currencyCode_fkey"
             columns: ["currencyCode"]
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchangeRateOverride_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -23382,6 +23512,7 @@ export type Database = {
           inspectionDocumentId: string | null
           jobId: string
           jobMakeMethodId: string | null
+          jobOperationBatchId: string | null
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -23433,6 +23564,7 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId: string
           jobMakeMethodId?: string | null
+          jobOperationBatchId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -23484,6 +23616,7 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId?: string
           jobMakeMethodId?: string | null
+          jobOperationBatchId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -23690,6 +23823,13 @@ export type Database = {
             referencedColumns: ["jobMakeMethodId"]
           },
           {
+            foreignKeyName: "jobOperation_jobOperationBatchId_fkey"
+            columns: ["jobOperationBatchId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationBatch"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "jobOperation_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
@@ -23786,6 +23926,195 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobOperationBatch: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          id: string
+          locationId: string
+          notes: string | null
+          processId: string
+          readableId: string
+          status: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+          workCenterId: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          id?: string
+          locationId: string
+          notes?: string | null
+          processId: string
+          readableId: string
+          status?: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          id?: string
+          locationId?: string
+          notes?: string | null
+          processId?: string
+          readableId?: string
+          status?: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_locationId_fkey"
+            columns: ["locationId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_processId_fkey"
+            columns: ["processId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_processId_fkey"
+            columns: ["processId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id", "companyId"]
           },
         ]
       }
@@ -38731,6 +39060,9 @@ export type Database = {
       process: {
         Row: {
           active: boolean
+          batchable: boolean
+          batchRules: Json | null
+          batchType: Database["public"]["Enums"]["batchType"]
           companyId: string
           completeAllOnScan: boolean
           createdAt: string
@@ -38747,6 +39079,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          batchable?: boolean
+          batchRules?: Json | null
+          batchType?: Database["public"]["Enums"]["batchType"]
           companyId: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -38763,6 +39098,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          batchable?: boolean
+          batchRules?: Json | null
+          batchType?: Database["public"]["Enums"]["batchType"]
           companyId?: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -38887,6 +39225,7 @@ export type Database = {
           employeeId: string | null
           endTime: string | null
           id: string
+          jobOperationBatchId: string | null
           jobOperationId: string
           notes: string | null
           postedToGL: boolean
@@ -38904,6 +39243,7 @@ export type Database = {
           employeeId?: string | null
           endTime?: string | null
           id?: string
+          jobOperationBatchId?: string | null
           jobOperationId: string
           notes?: string | null
           postedToGL?: boolean
@@ -38921,6 +39261,7 @@ export type Database = {
           employeeId?: string | null
           endTime?: string | null
           id?: string
+          jobOperationBatchId?: string | null
           jobOperationId?: string
           notes?: string | null
           postedToGL?: boolean
@@ -39028,6 +39369,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "productionEvent_jobOperationBatchId_fkey"
+            columns: ["jobOperationBatchId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationBatch"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "productionEvent_jobOperationId_fkey"
@@ -62016,6 +62364,7 @@ export type Database = {
         Row: {
           active: boolean
           alwaysOn: boolean
+          batchCapacity: number | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -62027,6 +62376,7 @@ export type Database = {
           laborRate: number
           locationId: string | null
           machineRate: number
+          minimumBatchQuantity: number | null
           name: string
           overheadRate: number
           requiredAbilityId: string | null
@@ -62037,6 +62387,7 @@ export type Database = {
         Insert: {
           active?: boolean
           alwaysOn?: boolean
+          batchCapacity?: number | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -62048,6 +62399,7 @@ export type Database = {
           laborRate?: number
           locationId?: string | null
           machineRate?: number
+          minimumBatchQuantity?: number | null
           name: string
           overheadRate?: number
           requiredAbilityId?: string | null
@@ -62058,6 +62410,7 @@ export type Database = {
         Update: {
           active?: boolean
           alwaysOn?: boolean
+          batchCapacity?: number | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -62069,6 +62422,7 @@ export type Database = {
           laborRate?: number
           locationId?: string | null
           machineRate?: number
+          minimumBatchQuantity?: number | null
           name?: string
           overheadRate?: number
           requiredAbilityId?: string | null
@@ -64976,7 +65330,7 @@ export type Database = {
           createdBy: string | null
           customFields: Json | null
           decimalPlaces: number | null
-          exchangeRate: number | null
+          historicalExchangeRate: number | null
           id: string | null
           name: string | null
           tags: string[] | null
@@ -71086,6 +71440,9 @@ export type Database = {
       processes: {
         Row: {
           active: boolean | null
+          batchable: boolean | null
+          batchRules: Json | null
+          batchType: Database["public"]["Enums"]["batchType"] | null
           companyId: string | null
           completeAllOnScan: boolean | null
           createdAt: string | null
@@ -75941,13 +76298,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -75956,6 +76306,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -76502,14 +76859,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -79748,6 +80105,7 @@ export type Database = {
         Row: {
           active: boolean | null
           alwaysOn: boolean | null
+          batchCapacity: number | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -79761,6 +80119,7 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           machineRate: number | null
+          minimumBatchQuantity: number | null
           name: string | null
           overheadRate: number | null
           processes: string[] | null
@@ -79895,6 +80254,7 @@ export type Database = {
         Row: {
           active: boolean | null
           alwaysOn: boolean | null
+          batchCapacity: number | null
           blockingDispatchId: string | null
           blockingDispatchReadableId: string | null
           companyId: string | null
@@ -79910,6 +80270,7 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           machineRate: number | null
+          minimumBatchQuantity: number | null
           name: string | null
           overheadRate: number | null
           requiredAbilityId: string | null
@@ -80374,6 +80735,7 @@ export type Database = {
         Args: { location_id: string; work_center_ids: string[] }
         Returns: {
           assignee: string
+          batchReadableId: string
           conflictReason: string
           customerName: string
           description: string
@@ -80386,6 +80748,7 @@ export type Database = {
           jobDueDate: string
           jobId: string
           jobMakeMethodId: string
+          jobOperationBatchId: string
           jobReadableId: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           laborTime: number
@@ -80399,6 +80762,7 @@ export type Database = {
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           parentMaterialId: string
           priority: number
+          processBatchable: boolean
           processId: string
           projectedCompletionAt: string
           quantityComplete: number
@@ -80618,6 +80982,28 @@ export type Database = {
           trackedEntityId: string
         }[]
       }
+      get_batchable_operations: {
+        Args: { location_id: string; process_id: string }
+        Returns: {
+          batchReadableId: string
+          batchStatus: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          batchWorkCenterId: string
+          companyId: string
+          description: string
+          id: string
+          itemDescription: string
+          itemReadableId: string
+          jobDueDate: string
+          jobId: string
+          jobOperationBatchId: string
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          materials: Json
+          operationQuantity: number
+          status: Database["public"]["Enums"]["jobOperationStatus"]
+          workCenterId: string
+        }[]
+      }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
       get_companies_with_any_role: { Args: never; Returns: string[] }
       get_companies_with_employee_permission: {
@@ -80806,6 +81192,25 @@ export type Database = {
           tableName: string
         }[]
       }
+      get_exchange_rate: {
+        Args: {
+          p_as_of?: string
+          p_company_id: string
+          p_currency_code: string
+        }
+        Returns: number
+      }
+      get_exchange_rates: {
+        Args: { p_company_id: string }
+        Returns: {
+          active: boolean
+          currencyCode: string
+          decimalPlaces: number
+          rate: number
+          rateUpdatedAt: string
+          source: string
+        }[]
+      }
       get_foreign_key_map: {
         Args: { p_table_names: string[] }
         Returns: {
@@ -80979,6 +81384,7 @@ export type Database = {
           order: number
           parentMaterialId: string
           quantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           storageUnitId: string
           unitCost: number
@@ -81736,6 +82142,7 @@ export type Database = {
           quoteLineId: string
           quoteMakeMethodId: string
           quoteMaterialMakeMethodId: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           storageUnitId: string
           unitCost: number
@@ -82094,6 +82501,7 @@ export type Database = {
           p_company_id: string
           p_period_end: string
           p_period_start?: string
+          p_target_currency: string
         }
         Returns: {
           averageRate: number
@@ -82826,6 +83234,7 @@ export type Database = {
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
+      batchType: "Sequential" | "Simultaneous"
       capacityResourceKind: "WorkCenter" | "OperatorPool" | "Employee"
       changeOrderChangeType:
         | "Version"
@@ -83053,6 +83462,7 @@ export type Database = {
         | "Inbound Inspection"
         | "Inventory Count"
         | "Scrap"
+        | "Sales Return Shipment"
       itemLedgerType:
         | "Purchase"
         | "Sale"
@@ -83083,6 +83493,7 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
+      jobOperationBatchStatus: "Planned" | "Active" | "Completing" | "Completed"
       jobOperationStatus:
         | "Canceled"
         | "Done"
@@ -83127,6 +83538,7 @@ export type Database = {
         | "Sales Return Receipt"
         | "Purchase Return Shipment"
         | "Opening Balance"
+        | "Sales Return Shipment"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -84220,6 +84632,7 @@ export const Constants = {
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],
+      batchType: ["Sequential", "Simultaneous"],
       capacityResourceKind: ["WorkCenter", "OperatorPool", "Employee"],
       changeOrderChangeType: [
         "Version",
@@ -84468,6 +84881,7 @@ export const Constants = {
         "Inbound Inspection",
         "Inventory Count",
         "Scrap",
+        "Sales Return Shipment",
       ],
       itemLedgerType: [
         "Purchase",
@@ -84503,6 +84917,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
+      jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",
         "Done",
@@ -84549,6 +84964,7 @@ export const Constants = {
         "Sales Return Receipt",
         "Purchase Return Shipment",
         "Opening Balance",
+        "Sales Return Shipment",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [

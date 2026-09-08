@@ -28,7 +28,7 @@ ensureLoggingConfigured();
 //
 // Controlled (ITAR) environments never initialize analytics — no data about a
 // U.S.-Persons-only environment leaves it, even if the key is set.
-if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
+if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
     api_host: POSTHOG_API_HOST
   });

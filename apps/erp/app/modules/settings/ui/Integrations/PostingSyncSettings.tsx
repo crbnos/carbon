@@ -11,7 +11,8 @@ import {
   Checkbox,
   DrawerBody,
   DrawerFooter,
-  HStack
+  HStack,
+  Subheading
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -221,9 +222,9 @@ export function PostingSyncSettings({
 
         <section className="flex w-full flex-col gap-2">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+            <Subheading variant="light">
               <Trans>Source types</Trans>
-            </span>
+            </Subheading>
             <p className="text-xs text-muted-foreground">
               <Trans>
                 Posted journals with these source types always sync. Daily
@@ -267,9 +268,9 @@ export function PostingSyncSettings({
 
         <section className="flex w-full flex-col gap-2 border-t border-border pt-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+            <Subheading variant="light">
               <Trans>AR / AP representation</Trans>
-            </span>
+            </Subheading>
             <p className="text-xs text-muted-foreground">
               <Trans>
                 Documents pushes invoices, bills and payments as native provider

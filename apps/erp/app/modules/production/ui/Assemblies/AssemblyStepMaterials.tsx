@@ -1,5 +1,5 @@
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
-import { Badge, HStack, IconButton, VStack } from "@carbon/react";
+import { Badge, HStack, IconButton, Subheading, VStack } from "@carbon/react";
 import { useEffect, useMemo, useState } from "react";
 import { LuCirclePlus, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -75,9 +75,9 @@ export default function AssemblyStepMaterials({
 
   return (
     <VStack spacing={2} className="w-full">
-      <h4 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+      <Subheading as="h4" variant="light">
         Materials
-      </h4>
+      </Subheading>
       {materials.length === 0 ? (
         <p className="text-xs text-muted-foreground">No materials to display</p>
       ) : (

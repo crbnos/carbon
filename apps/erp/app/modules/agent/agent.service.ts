@@ -238,7 +238,11 @@ export function streamChat(
     client,
     companyId: args.companyId,
     companyGroupId: args.companyGroupId,
-    userId: args.userId
+    userId: args.userId,
+    // Already authorized by the chat route's requirePermissions; the per-operation
+    // scope gate applies to API keys only.
+    authKind: "session" as const,
+    scopes: {}
   };
 
   const modelMessages = injectContext(

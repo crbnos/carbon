@@ -199,8 +199,9 @@ Settings → API Keys.
 
 ## Resources
 
-- MCP guide — https://docs.carbon.ms/mcp
-- Authentication — https://docs.carbon.ms/mcp/authentication
-- Tools reference — https://docs.carbon.ms/mcp/tools
+- Carbon API guide — https://docs.carbon.ms/api
+- Connect over MCP — https://docs.carbon.ms/api/mcp
+- Authentication — https://docs.carbon.ms/api/authentication
+- Operations reference — https://docs.carbon.ms/api/operations
 - API keys — https://docs.carbon.ms/docs/reference/api-keys
 - Server manifest — {{ORIGIN}}/.well-known/mcp.json

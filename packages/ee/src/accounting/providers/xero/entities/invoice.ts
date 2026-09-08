@@ -54,7 +54,10 @@ type InvoiceLineRow = {
   itemId: string | null;
   description: string | null;
   quantity: number;
+  /** BASE currency, as stored. */
   unitPrice: number;
+  /** Document-currency mirror (unitPrice * exchangeRate). */
+  convertedUnitPrice: number | null;
   taxPercent: number;
   // For item code lookup
   itemReadableIdWithRevision: string | null;
@@ -264,6 +267,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         "salesInvoiceLine.description",
         "salesInvoiceLine.quantity",
         "salesInvoiceLine.unitPrice",
+        "salesInvoiceLine.convertedUnitPrice",
         "salesInvoiceLine.taxPercent",
         "item.readableIdWithRevision as itemReadableIdWithRevision"
       ])
@@ -309,6 +313,11 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
           const quantity = Number(line.quantity) || 0;
           const unitPrice = Number(line.unitPrice) || 0;
           const taxPercent = Number(line.taxPercent) || 0;
+          const convertedUnitPrice =
+            line.convertedUnitPrice === null ||
+            line.convertedUnitPrice === undefined
+              ? null
+              : Number(line.convertedUnitPrice);
           return {
             id: line.id,
             invoiceLineType: line.invoiceLineType,
@@ -317,6 +326,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
             description: line.description,
             quantity,
             unitPrice,
+            convertedUnitPrice,
             taxPercent,
             lineAmount: quantity * unitPrice
           };
@@ -388,15 +398,18 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     // Build line items, resolving item dependencies
     const lineItems: Xero.InvoiceLineItem[] = [];
     for (const line of local.lines) {
-      const taxAmount =
-        (line.quantity * line.unitPrice * line.taxPercent) / 100;
+      // The payload declares CurrencyCode below, so every amount on it must be
+      // in THAT currency. salesInvoiceLine.unitPrice is stored in the company
+      // BASE currency; convertedUnitPrice is the document-currency mirror.
+      const unitAmount = line.convertedUnitPrice ?? line.unitPrice;
+      const taxAmount = (line.quantity * unitAmount * line.taxPercent) / 100;
 
       const lineItem: Xero.InvoiceLineItem = {
         Description: line.description ?? undefined,
         Quantity: line.quantity,
-        UnitAmount: line.unitPrice,
+        UnitAmount: unitAmount,
         TaxAmount: taxAmount,
-        LineAmount: line.quantity * line.unitPrice,
+        LineAmount: line.quantity * unitAmount,
         // The item's mapped revenue account (item-referenced AR).
         AccountCode: salesAccountCode,
         // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
@@ -448,6 +461,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       AmountDue: local.balance,
       AmountPaid: local.totalAmount - local.balance,
       CurrencyCode: local.currencyCode,
+      // Xero's CurrencyRate is [invoice currency] PER [base currency] -- the
+      // same direction Carbon stores exchangeRate in, so it passes through
+      // unchanged. Inverting it earns Xero's "inverse rate" warning and books
+      // the base amounts wrong. Omit it on base-currency invoices: Xero calls
+      // an explicit rate of 1 redundant and warns on a 1 that reaches an FX
+      // document.
       CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined
     };
   }

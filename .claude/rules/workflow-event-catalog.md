@@ -147,7 +147,8 @@ Three rules the raise sites follow:
 
 - **Raise in the service function, not the route, wherever a service function exists.** Every
   `apps/erp/app/modules/*/*.service.ts` export is also callable over `POST /api/mcp` through
-  `apps/erp/app/routes/api+/mcp+/lib/direct-executor.ts`, whose blocklist is one entry long. A
+  `apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts` (enforced by the Carbon API
+dispatch and the `gate()` middleware). A
   route-level raise silently misses every MCP caller. After changing a service signature, run
   `pnpm run generate:mcp` — the executor maps arguments by declared parameter name.
 - **Raise after the write commits, and only if it did.** For the four posting moments the write

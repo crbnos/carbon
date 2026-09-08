@@ -165,7 +165,7 @@ export default function JobMaterialsRoute() {
   return (
     <VStack
       spacing={0}
-      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height))]"
+      className="h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))]"
     >
       <JobMaterialsTable
         data={materials}

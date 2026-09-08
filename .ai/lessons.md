@@ -1132,6 +1132,26 @@ canvas hosting Radix popovers/selects.
 **Rule:** In edge functions, batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
 
 **Applies to:** `packages/database/supabase/functions/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
+
+## Kysely writes in an edge function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
+
+**Context:** The `batch-operations` edge function's `remove`/`update`/`dissolve` cases updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
+
+**Problem:** Edge functions run on the service-role Kysely handle, which bypasses RLS entirely — the app-layer permission check is the ONLY gate, and it does not scope the rows a subsequent write touches. A caller passing their own `companyId` (to pass the gate) plus another company's `batchId` (a `nanoid`, not enumerable, but leakable) could detach or re-point the victim's operations; the companyId-scoped batch delete right after matched 0 rows but the transaction still committed the unscoped write. A batch-id predicate is not a tenant boundary.
+
+**Rule:** In an edge function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
+
+**Applies to:** `packages/database/supabase/functions/**` (any service-role Kysely write), resumable multi-phase edge flows.
+
+## A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there
+
+**Context:** `batch-time-split.ts` exported `assertAllOperationsClaimed` (concurrent-claim race guard) and `assertBatchWorkCenterMutable` (completed-batch immutability guard), both unit-tested. Neither was ever imported by the `batch-operations` edge function — the `update` branch happily re-pointed a Completed batch's work center, and the claim had no `IS NULL` race guard.
+
+**Problem:** The presence of a well-named, tested guard function signals "this invariant is enforced." A reviewer (and the author) reads the export list and assumes coverage. Dead safety helpers give false confidence precisely where the risk is highest.
+
+**Rule:** Wire a safety `assert*` into its call site in the same change that introduces it, or don't write it yet. When reviewing, grep every exported `assert*`/guard for a real importer — an unused one is a finding, not dead weight to leave. Duplicated cross-runtime logic (Node + Deno copies) should re-export one source (`precision.ts` / `batch-time-split.ts` pattern) rather than rely on "keep in sync" comments.
+
+**Applies to:** `packages/utils/src/**`, `packages/database/supabase/functions/shared/**`, any exported guard/assert helper.
 ## Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`
 
 **Context:** Adding a shared `getQuoteDisplayId` / `getPurchaseOrderDisplayId` helper for showing the revision suffix on documents. The natural home looked like the `./pdf` barrel, which already re-exported it for the server-side PDF routes.
@@ -1288,6 +1308,26 @@ any new `memo` writer.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
 
+## `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows
+
+**Context:** The work-center batch-capacity migration added `batchCapacity`/`minimumBatchQuantity` to `workCenter` and re-declared the `workCenters` view (which selects `wc.*` before aliased join columns like `locationName`) with `CREATE OR REPLACE VIEW`.
+
+**Problem:** `CREATE OR REPLACE VIEW` can only APPEND columns at the end — the new `wc.*` columns expand in the middle, shifting `locationName` to a new position, and Postgres refuses with `cannot change name of view column "locationName" to "batchCapacity"`. The migration fails at apply time even though the SQL looks like a routine re-declare.
+
+**Rule:** When a view selects `t.*` and the underlying table gains columns that land BEFORE any explicitly-aliased column, re-declare with `DROP VIEW IF EXISTS` + `CREATE VIEW` (checking dependent views first) — not `CREATE OR REPLACE`. Only a pure append at the end of the select list is REPLACE-safe.
+
+**Applies to:** every `packages/database/supabase/migrations/*.sql` that re-declares a `SELECT t.*, …` view after an `ALTER TABLE … ADD COLUMN` (`workCenters`, `processes`, `jobs`, and siblings).
+
+## Single-column FKs on multi-tenant children accept cross-tenant ids
+
+**Context:** `jobOperationBatch` shipped with `locationId`/`processId`/`workCenterId` FKs referencing only the parent's `id`. The `batch-operations` edge fn wrote `payload.locationId`/`workCenterId` straight into the row after `requirePermissions` — which authorizes the CALLER for a company, not the record ids in the body.
+
+**Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role edge fn bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
+
+**Rule:** In an edge fn, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecord` in batch-operations; `schedule` does the same for `jobId`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
+
+**Applies to:** `packages/database/supabase/functions/**` taking record ids in the payload; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
+
 ## A "did my job finish?" baseline must include the rows a FAILED run left behind
 
 **Context:** The Backups page shows a spinner row while an export runs, and decides the
@@ -1333,3 +1373,93 @@ as the breakdown. Name the two so they cannot be confused (`violations` vs
 **Applies to:** `packages/jobs/src/backups/scope.ts`
 (`findExportScopeViolationsDetailed`, `computeScopeExclusions`, `totalExcludedRows`),
 `Manifest.excludedRowsByTable`, and any future "N things are wrong" surface.
+
+## Browser-testing MES flows that write data
+
+- **Context:** Verifying AssemblyView keyboard shortcuts with agent-browser while editing the same file (Vite HMR live).
+- **Problem:** Step records appeared at timestamps with no corresponding keypress; hours went into suspecting the new code. Cause: overlapping test sessions — a page left open across HMR edits (sometimes with a modal up) replays/refires interactions, and interleaved key presses land on freshly auto-advanced steps.
+- **Rule:** When a browser test writes rows, run it as a closed loop: wipe the rows, reload the page fresh, then check the DB after EVERY single action before pressing the next key. Never diagnose from an accumulated tail of prior test sessions.
+- **Applies to:** agent-browser verification of any MES/ERP flow with side effects, especially while HMR is live.
+
+## Full-screen height calcs must subtract the app-shell inset
+
+**Context:** The ERP app shell (`apps/erp/app/routes/x+/_layout.tsx`, PR #1551) moved
+content into an inset floating panel with `md:mt-2 md:mb-2` (8px top + 8px bottom
+gutters). ~81 full-screen pages/explorers sized themselves with
+`calc(100dvh - var(--topbar-height) [- var(--header-height)])`, which assumes the
+content spans the full viewport.
+
+**Problem:** Those containers are 16px taller than the panel at md+, so bottom-pinned
+content is pushed below the panel's clipped edge. The Procedures "Add Step" footer was
+sheared in half; the overflow was invisible on pages whose content merely scrolls.
+
+**Rule:** `vh`/`dvh` ignore the panel inset by nature, so any full-height calc inside the
+content panel must subtract `var(--content-inset)` (defined in `styles/tailwind.css`: 0
+below md, 1rem at md+), e.g. `h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]`.
+Prefer `h-full`/flex height inheritance from `<main>` for new pages so the inset never
+has to be tracked by hand. Do NOT add the inset to viewport-fixed/body-portaled elements
+(dialogs, drawers) or to `PrimaryNavigation`, which live outside the panel.
+
+**Applies to:** every `calc(100dvh-var(--topbar-height)...)` in `apps/erp/app`, the shared
+`components/Layout/Panels.tsx` + `Navigation/CollapsibleSidebar.tsx`, and any new
+full-screen ERP route.
+
+## The backups schema baseline on main can carry phantom tables from a dirty local DB
+
+**Context:** `pnpm db:check:backups` blocked the currency-refactor commit on `onshapeSyncRun`/`onshapeItemSyncState` — tables with NO migration anywhere in the repo.
+
+**Problem:** `packages/jobs/manifests/schema.json` regenerates from the committing developer's LIVE schema. If that database has tables applied from an unmerged branch, they enter the committed baseline, and every later committer's check flags them as "dropped without a rename mapping" — a false alarm that invites `--no-verify` reflexes or, worse, bogus `TABLE_RENAMES: null` entries declaring never-shipped tables dropped.
+
+**Rule:** When `db:check:backups` blocks on a missing table, first verify the table exists in ANY migration (`grep -r <table> packages/database/supabase/migrations/`). No migration ⇒ baseline pollution, not your break: regenerate `schema.json` from a clean fully-migrated database (the catalog code in `src/backups/schema.ts` + the manifest shape in `check-backups.ts`), commit it with `CARBON_SKIP_BACKUP_CHECK=1`, and say why in the commit message. Never add a rename entry for a table that never shipped.
+
+**Applies to:** `packages/jobs/manifests/schema.json`, `packages/jobs/src/scripts/check-backups.ts`, `.husky/pre-commit`.
+
+## Adding CHECK + VALIDATE requires auditing every WRITER of the column and pre-cleaning data in the same migration
+
+**Context:** The currency refactor added `CHECK ("exchangeRate" > 0)` + `VALIDATE` on 12 document tables. Review found `get-method` had been writing `exchangeRate: l.exchangeRate ?? 0` into `quoteLinePrice` for every legacy null-rate quote line, and the old `NUMERIC(10,4)` clamp had stored sub-0.00005 rates as literal `0.0000`.
+
+**Problem:** `VALIDATE CONSTRAINT` scans existing rows mid-deploy — one violating row anywhere fails the whole migration in production, and post-deploy the unfixed writer fails at runtime (a whole edge-function transaction). A constraint that is obviously true "going forward" says nothing about years of rows written by code paths you didn't grep.
+
+**Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
+
+**Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/database/supabase/functions/**` writers of the constrained column.
+
+## A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter
+
+**Context:** Batch release schedules a Released operation batch as one coalesced `capacityReservation` anchored (for the NOT NULL `jobId`/`operationId`) on an arbitrary member — whose job may legitimately still be `Draft` (membership handoff pulls members ahead of their jobs).
+
+**Problem:** `getLiveReservations` quietly filters `j."status" IN capacityHoldingJobStatuses` at the END of the query builder — separate from the `excludeJobIds` filter that had already been made batch-aware. The batch row vanished from every snapshot whenever its anchor job was unreleased: the machine looked free and every other job over-booked straight through the batch window.
+
+**Rule:** When a reservation (or any capacity-holding row) must survive independently of its anchor row's status, grep EVERY filter in the read path — not just the one you were pointed at — and give each an explicit escape (`OR "jobOperationBatchId" IS NOT NULL`). A snapshot read with two filters a hundred lines apart is two bugs, not one.
+
+**Applies to:** `packages/ee/src/planning/scheduling/master-data-provider.ts` `getLiveReservations`, any future scenario/what-if reservation reads, and generally any row whose lifecycle is owned by a different entity than its FK anchor.
+
+## A degenerate-input guard on a scheduling surface is a silent-vanish bug, not defensive coding
+
+**Context:** The batch pre-pass had `if (durationSeconds <= 0) continue;` — a released batch whose member operations all carry zero setup/labor/machine time (routinely true for freshly-authored routings) was skipped entirely: no reservation, no auto work-center selection, nothing on the reservation-driven Forecast. The user released BAT000005 and it simply didn't exist anywhere schedule-shaped, indistinguishable from the (separate) dead-Inngest failure being debugged at the same time.
+
+**Problem:** Zero/empty/unsized work still EXISTS. On surfaces whose only rendering source is a derived row (the Forecast draws `capacityReservation` rows and nothing else), a "skip nonsense input" guard doesn't degrade gracefully — it erases the entity, and the erasure reads as any of five other failures (event bus down, filter bug, RLS, wrong week, stale registration).
+
+**Rule:** In the scheduling engine, degenerate input never `continue`s past a persistence step — it emits the flagged placeholder shape (`isPlaceholder = true`, honest `workHours`, a `conflictReason` naming the DATA gap and its fix) so the entity stays visible and self-diagnosing. Match the unplaceable-op precedent; give the placeholder a nominal drawable window when true content is zero.
+
+**Applies to:** `packages/ee/src/planning/scheduling/batch-scheduler.ts`, `work-center-selector.ts` placeholder branches, and any future pre-pass/what-if that turns entities into reservations or timeline rows.
+
+## A shared executor acquires callers nobody planned for — grep every importer before deleting one
+
+**Context:** The oRPC migration plan said MCP `call_tool` and the in-app agent were the two consumers of the MCP `direct-executor.ts`, so once both moved to `callOperation` the file could be deleted. A pre-deletion grep found a THIRD caller: `apps/erp/app/routes/api+/inngest.ts` registered `executeFunction` as the workflow engine's `setWorkflowDispatch` seam — every customer workflow `*.create` action ran through it.
+
+**Problem:** A convenient shared function gets wired into new seams (dependency-injection slots, dispatchers, adapters) without its own file ever changing, so the mental list of "who uses this" goes stale. Deleting it on the strength of the plan's caller list would have broken customer workflow create actions in production while every named caller kept working.
+
+**Rule:** Before deleting or changing the contract of any shared executor/service entry point, grep the WHOLE repo for its name (not just imports of its file — injection sites pass it by value: `setX(fn)`, `register(fn)`, config objects), and treat each hit as a caller to migrate in the same change. A DI/seam registration is a caller even though the dependency arrow points away from the file.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/call.server.ts` (the shared entry point now), `packages/jobs/src/workflows/actions/dispatcher.ts`, any `set*`/`register*` seam.
+
+## In a bulk API sweep, a 4xx carrying a service's generic fallback string is a finding, not a pass
+
+**Context:** The 1,495-operation API sweep triaged all 274 WRITE-op 400s as "reached the DB, expected FK rejections" and flagged only 500s. `inventory_insertManualInventoryAdjustment` came back 400 with `"Failed to create manual inventory adjustment"` and was waved through — but that string is the service's FALLBACK for an edge-function error whose real message was suppressed. A customer later hit exactly this: the published schema advertised 12 `adjustmentType` values (the validator spread `itemLedgerTypes` into its enum) while the `post-inventory-adjustment` edge function accepts 5, so every LLM-guided "add stock" call failed undiagnosably.
+
+**Problem:** Bucketing sweep results by status code alone treats "the request was validly rejected" and "the error was swallowed somewhere in the chain" as the same outcome. The ops most likely to be broken-by-contract-drift are precisely the ones that fail with a generic message, because the generic message IS the symptom of a suppressed real error.
+
+**Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
+
+**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.

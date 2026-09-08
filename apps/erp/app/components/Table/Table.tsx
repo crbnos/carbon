@@ -131,6 +131,10 @@ interface TableProps<T extends object> {
   // Forwarded to TableHeader — hide the app-sidebar toggle when this Table is
   // rendered inside a drawer or modal.
   withSidebarTrigger?: boolean;
+  // Forwarded to TableHeader — embedded tables (wizards/drawers) can turn off
+  // the column picker and CSV download; both default on.
+  withColumnOrdering?: boolean;
+  withCsvExport?: boolean;
   withSimpleSorting?: boolean;
   sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
@@ -282,6 +286,8 @@ const Table = <T extends object>({
   withSearch = true,
   withSelectableRows = false,
   withSidebarTrigger = true,
+  withColumnOrdering = true,
+  withCsvExport = true,
   withSimpleSorting = true,
   sort,
   getRowId,
@@ -1088,6 +1094,8 @@ const Table = <T extends object>({
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
         withSidebarTrigger={withSidebarTrigger}
+        withColumnOrdering={withColumnOrdering}
+        withCsvExport={withCsvExport}
         sort={sort}
       />
 

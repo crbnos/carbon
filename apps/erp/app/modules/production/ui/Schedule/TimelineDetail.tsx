@@ -1,4 +1,4 @@
-import { Button, cn, Heading, IconButton } from "@carbon/react";
+import { Button, cn, Heading, IconButton, Subheading } from "@carbon/react";
 import {
   formatDateTimeInZone,
   formatDurationMilliseconds,
@@ -186,8 +186,21 @@ export function TimelineDetail({
     detail.durationMs > 0 &&
     detail.durationMs - detail.workMs > 60_000; // >1 min gap — avoid noise
 
+  // A placeholder with zero estimated work is unschedulable BECAUSE its
+  // operations carry no setup/labor/machine time. The bar's span is a nominal
+  // marker, so showing it as "Duration" reads as real work it doesn't have —
+  // surface the 0h estimate instead, the actual reason it can't be scheduled.
+  const zeroWorkPlaceholder =
+    isUnschedulablePlaceholder && detail.estimatedWorkHours === 0;
+
   const stats: { icon: ReactNode; label: string; value: string }[] = [];
-  if (detail.durationMs > 0 && !isUnscheduled) {
+  if (zeroWorkPlaceholder) {
+    stats.push({
+      icon: <LuTimer className="size-3.5 shrink-0" />,
+      label: t`Estimated time`,
+      value: "0h"
+    });
+  } else if (detail.durationMs > 0 && !isUnscheduled) {
     stats.push({
       icon: <LuClock className="size-3.5 shrink-0" />,
       label: hasWork ? t`Span` : t`Duration`,
@@ -216,9 +229,7 @@ export function TimelineDetail({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
-            {kindLabel[detail.kind]}
-          </span>
+          <Subheading variant="heavy">{kindLabel[detail.kind]}</Subheading>
           <Heading size="h3" className="truncate">
             {detail.title}
           </Heading>
@@ -259,15 +270,25 @@ export function TimelineDetail({
           </div>
         )}
 
-        {isUnschedulablePlaceholder && (
-          <p className="text-sm italic text-muted-foreground text-pretty">
-            <Trans>
-              This operation can't be scheduled yet — the bar marks where it
-              would run once the conflict is resolved. It isn't holding
-              capacity.
-            </Trans>
-          </p>
-        )}
+        {isUnschedulablePlaceholder &&
+          (zeroWorkPlaceholder ? (
+            <p className="text-sm italic text-muted-foreground text-pretty">
+              <Trans>
+                There's no setup, labor, or machine time on these operations, so
+                there's nothing to size a run from. The bar is a nominal marker
+                and isn't holding capacity — add time standards to the
+                operations to schedule it.
+              </Trans>
+            </p>
+          ) : (
+            <p className="text-sm italic text-muted-foreground text-pretty">
+              <Trans>
+                This operation can't be scheduled yet — the bar marks where it
+                would run once the conflict is resolved. It isn't holding
+                capacity.
+              </Trans>
+            </p>
+          ))}
 
         {/* Why the row starts when it does — hidden when a conflict is shown,
             the conflict message already names the same cause */}
@@ -291,10 +312,10 @@ export function TimelineDetail({
                 key={stat.label}
                 className="flex flex-1 flex-col gap-1 px-3 py-2.5"
               >
-                <span className="flex items-center gap-1 font-mono text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
+                <Subheading variant="heavy" className="flex items-center gap-1">
                   {stat.icon}
                   {stat.label}
-                </span>
+                </Subheading>
                 <span className="text-lg font-semibold tabular-nums leading-none text-foreground">
                   {stat.value}
                 </span>
@@ -359,8 +380,9 @@ export function TimelineDetail({
         )}
       </div>
 
-      {/* Footer action */}
-      {linkedJobId && (
+      {/* Footer action — a batch reservation opens the batch it coalesces, not
+          the anchor member's job */}
+      {detail.batchId ? (
         <div className="border-t border-border p-4">
           <Button
             asChild
@@ -368,11 +390,26 @@ export function TimelineDetail({
             className="w-full justify-between"
             rightIcon={<LuArrowRight />}
           >
-            <Link to={path.to.job(linkedJobId)}>
-              <Trans>Open job</Trans>
+            <Link to={path.to.operationBatch(detail.batchId)}>
+              <Trans>Open batch</Trans>
             </Link>
           </Button>
         </div>
+      ) : (
+        linkedJobId && (
+          <div className="border-t border-border p-4">
+            <Button
+              asChild
+              variant="primary"
+              className="w-full justify-between"
+              rightIcon={<LuArrowRight />}
+            >
+              <Link to={path.to.job(linkedJobId)}>
+                <Trans>Open job</Trans>
+              </Link>
+            </Button>
+          </div>
+        )
       )}
     </div>
   );

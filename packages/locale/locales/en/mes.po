@@ -25,6 +25,10 @@ msgstr "{0} Active"
 msgid "{0} ago"
 msgstr "{0} ago"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} jobs"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — re
 
 msgid "+{overflow} more"
 msgstr "+{overflow} more"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
 msgid "About"
 msgstr "About"
@@ -169,6 +176,9 @@ msgstr "Batch Number {0}"
 msgid "Batch number is required"
 msgstr "Batch number is required"
 
+msgid "Batched jobs"
+msgstr "Batched jobs"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
 
@@ -265,11 +275,17 @@ msgstr "Complete"
 msgid "Complete All"
 msgstr "Complete All"
 
+msgid "Complete Batch"
+msgstr "Complete Batch"
+
 msgid "Complete passed"
 msgstr "Complete passed"
 
 msgid "Completed"
 msgstr "Completed"
+
+msgid "Completing"
+msgstr "Completing"
 
 msgid "Connecting"
 msgstr "Connecting"
@@ -644,6 +660,9 @@ msgstr "Last completed"
 
 msgid "Learn more"
 msgstr "Learn more"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
 
 msgid "Leave this page"
 msgstr "Leave this page"
@@ -1028,6 +1047,9 @@ msgstr "Preventive"
 msgid "Print"
 msgstr "Print"
 
+msgid "Print batch list"
+msgstr "Print batch list"
+
 msgid "Printer Settings"
 msgstr "Printer Settings"
 
@@ -1111,6 +1133,9 @@ msgstr "Reopen the subassembly and create a replacement unit"
 
 msgid "Result"
 msgstr "Result"
+
+msgid "Retry Completion"
+msgstr "Retry Completion"
 
 msgid "Rework"
 msgstr "Rework"
@@ -1397,6 +1422,9 @@ msgstr "This unit will be permanently scrapped and a replacement serial number w
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Time and cost split across jobs proportionally to quantity."
 
 msgid "Time Entries"
 msgstr "Time Entries"
