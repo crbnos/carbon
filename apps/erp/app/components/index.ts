@@ -16,6 +16,7 @@ import Documents from "./Documents";
 import EmployeeAvatar from "./EmployeeAvatar";
 import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Empty from "./Empty";
+import { Enumerable } from "./Enumerable";
 import FileDropzone from "./FileDropzone";
 import Hyperlink from "./Hyperlink";
 import {
@@ -72,6 +73,7 @@ export {
   EmployeeAvatar,
   EmployeeAvatarGroup,
   Empty,
+  Enumerable,
   FileDropzone,
   Hyperlink,
   ItemLifecycleBadge,

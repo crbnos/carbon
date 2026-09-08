@@ -129,7 +129,10 @@ const JobHeader = () => {
   const completeModal = useDisclosure();
   const deleteJobModal = useDisclosure();
   const expediteModal = useDisclosure();
-  const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const routeData = useRouteData<{
+    job: Job;
+    unbatchedBatchableOperations?: number;
+  }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
   const expediteFetcher = useFetcher<{
@@ -139,6 +142,8 @@ const JobHeader = () => {
     } | null;
   }>();
   const status = routeData?.job?.status;
+  const unbatchedBatchableOperations =
+    routeData?.unbatchedBatchableOperations ?? 0;
 
   const getOptionFromPath = (jobId: string) => {
     if (location.pathname.includes(path.to.jobMaterials(jobId)))
@@ -295,6 +300,18 @@ const JobHeader = () => {
                 </Status>
               )}
             </>
+          )}
+          {unbatchedBatchableOperations > 0 && (
+            <Status
+              color="gray"
+              tooltip={
+                unbatchedBatchableOperations === 1
+                  ? t`1 batchable operation is not in a batch — it runs individually until batched`
+                  : t`${unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched`
+              }
+            >
+              {t`${unbatchedBatchableOperations} awaiting batching`}
+            </Status>
           )}
         </HStack>
         <HStack>

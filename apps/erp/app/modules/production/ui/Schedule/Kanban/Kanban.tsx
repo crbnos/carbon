@@ -1,4 +1,4 @@
-import { ClientOnly, cn } from "@carbon/react";
+import { ClientOnly, cn, toast } from "@carbon/react";
 import type {
   Active,
   Announcements,
@@ -22,6 +22,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
+import { BatchItemCard } from "./components/BatchItemCard";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
 import { KanbanProvider } from "./context/KanbanContext";
@@ -37,6 +38,7 @@ import {
   resolveInsertionMarker
 } from "./placement";
 import type { Column, DisplaySettings, Item, Progress } from "./types";
+import { isBatchItem } from "./types";
 import {
   coordinateGetter,
   hasDraggableData,
@@ -90,11 +92,15 @@ function PreviewItemCard({
           )}
         />
       )}
-      <ItemCard
-        item={item}
-        isOverlay={isOverlay}
-        progressByItemId={progressByItemId}
-      />
+      {isBatchItem(item) ? (
+        <BatchItemCard item={item} isOverlay={isOverlay} />
+      ) : (
+        <ItemCard
+          item={item}
+          isOverlay={isOverlay}
+          progressByItemId={progressByItemId}
+        />
+      )}
     </div>
   );
 }
@@ -183,6 +189,42 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
+
+  // Surface a failed batch work-center reassignment (drag). The optimistic move
+  // snaps back on revalidation, so without this the rejection would be silent —
+  // the create/add path toasts via its own fetcher; this covers the drag path
+  // (intent="update"), which submits through useSubmit and has no result reader.
+  // A fetcher's formData is cleared once it goes idle, so capture the intent
+  // while it is still submitting and read the result on idle.
+  const batchUpdateFetchers = useFetchers();
+  const pendingBatchIntent = useRef<Map<string, string>>(new Map());
+  const toastedBatchUpdates = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const f of batchUpdateFetchers) {
+      if (f.state !== "idle") {
+        const intent = f.formData?.get("intent");
+        if (
+          f.formAction === path.to.priorityBatchingUpdate &&
+          typeof intent === "string"
+        ) {
+          pendingBatchIntent.current.set(f.key, intent);
+        }
+        toastedBatchUpdates.current.delete(f.key);
+        continue;
+      }
+      if (pendingBatchIntent.current.get(f.key) !== "update") continue;
+      const result = f.data as
+        | { success?: boolean; message?: string }
+        | undefined;
+      if (result === undefined) continue;
+      if (result.success === false && !toastedBatchUpdates.current.has(f.key)) {
+        toastedBatchUpdates.current.add(f.key);
+        toast.error(result.message ?? "Failed to move batch");
+      }
+      pendingBatchIntent.current.delete(f.key);
+    }
+  }, [batchUpdateFetchers]);
+
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
     // Get stored column order from localStorage
@@ -394,25 +436,30 @@ const Kanban = ({
                       progressByItemId={progressByItemId}
                     />
                   )}
-                  {activeItem && (
-                    <ItemCard
-                      // @ts-expect-error TS2322 - TODO: fix type
-                      item={{
-                        ...activeItem,
-                        status: progressByItemId[activeItem.id]?.active
-                          ? "In Progress"
-                          : activeItem.status,
-                        employeeIds: progressByItemId[activeItem.id]?.employees
-                          ? Array.from(
-                              progressByItemId[activeItem.id].employees!
-                            )
-                          : undefined,
-                        progress: progressByItemId[activeItem.id]?.progress ?? 0
-                      }}
-                      isOverlay
-                      progressByItemId={progressByItemId}
-                    />
-                  )}
+                  {activeItem &&
+                    (isBatchItem(activeItem) ? (
+                      <BatchItemCard item={activeItem} isOverlay />
+                    ) : (
+                      <ItemCard
+                        item={{
+                          ...activeItem,
+                          // @ts-expect-error TS2322 - TODO: fix type
+                          status: progressByItemId[activeItem.id]?.active
+                            ? "In Progress"
+                            : activeItem.status,
+                          employeeIds: progressByItemId[activeItem.id]
+                            ?.employees
+                            ? Array.from(
+                                progressByItemId[activeItem.id].employees!
+                              )
+                            : undefined,
+                          progress:
+                            progressByItemId[activeItem.id]?.progress ?? 0
+                        }}
+                        isOverlay
+                        progressByItemId={progressByItemId}
+                      />
+                    ))}
                 </DragOverlay>,
                 document.body
               )
@@ -516,20 +563,43 @@ const Kanban = ({
       );
 
       if (placement && !isSamePlacement(origin.placement, placement)) {
-        submit(
-          {
-            id: origin.item.id,
-            columnId: placement.columnId,
-            priority: placement.priority
-          },
-          {
-            method: "post",
-            action: path.to.priorityOperationUpdate,
-            navigate: false,
-            flushSync: true,
-            fetcherKey: `item:${origin.item.id}`
+        if (isBatchItem(origin.item)) {
+          // Dropping a batch on another work center reassigns the whole
+          // batch (the edge fn writes the work center to every member).
+          // Within-column reordering is a no-op: member priorities own the
+          // batch card's position.
+          if (placement.columnId !== origin.placement.columnId) {
+            submit(
+              {
+                intent: "update",
+                batchId: origin.item.batchId,
+                workCenterId: placement.columnId
+              },
+              {
+                method: "post",
+                action: path.to.priorityBatchingUpdate,
+                navigate: false,
+                flushSync: true,
+                fetcherKey: `item:${origin.item.id}`
+              }
+            );
           }
-        );
+        } else {
+          submit(
+            {
+              id: origin.item.id,
+              columnId: placement.columnId,
+              priority: placement.priority
+            },
+            {
+              method: "post",
+              action: path.to.priorityOperationUpdate,
+              navigate: false,
+              flushSync: true,
+              fetcherKey: `item:${origin.item.id}`
+            }
+          );
+        }
       }
     }
 
@@ -568,7 +638,9 @@ function usePendingItems() {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
-  return useFetchers()
+  const fetchers = useFetchers();
+
+  const operationMoves = fetchers
     .filter((fetcher): fetcher is PendingItem => {
       return fetcher.formAction === path.to.priorityOperationUpdate;
     })
@@ -576,13 +648,30 @@ function usePendingItems() {
       let columnId = String(fetcher.formData.get("columnId"));
       let id = String(fetcher.formData.get("id"));
       let priority = Number(fetcher.formData.get("priority"));
-      let item: { id: string; priority: number; columnId: string } = {
+      let item: { id: string; priority?: number; columnId: string } = {
         id,
         priority,
         columnId
       };
       return item;
     });
+
+  // A batch work-center reassignment in flight: keep the batch card in its
+  // destination column until the loader revalidates.
+  const batchMoves = fetchers
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        fetcher.formAction === path.to.priorityBatchingUpdate &&
+        fetcher.formData?.get("intent") === "update" &&
+        fetcher.formData?.has("workCenterId")
+      );
+    })
+    .map((fetcher) => ({
+      id: `batch:${String(fetcher.formData.get("batchId"))}`,
+      columnId: String(fetcher.formData.get("workCenterId"))
+    }));
+
+  return [...operationMoves, ...batchMoves];
 }
 
 export default Kanban;

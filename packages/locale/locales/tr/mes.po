@@ -25,6 +25,10 @@ msgstr "{0} Aktif"
 msgid "{0} ago"
 msgstr "{0} önce"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} iş"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları i�
 
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 
 msgid "About"
 msgstr "Hakkında"
@@ -169,6 +176,9 @@ msgstr "Lot Numarası {0}"
 msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
 
+msgid "Batched jobs"
+msgstr "Toplu işler"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
 
@@ -265,11 +275,17 @@ msgstr "Tamamla"
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
+msgid "Complete Batch"
+msgstr "Partiyi Tamamla"
+
 msgid "Complete passed"
 msgstr "Tamamlanan geçti"
 
 msgid "Completed"
 msgstr "Tamamlandı"
+
+msgid "Completing"
+msgstr "Tamamlanıyor"
 
 msgid "Connecting"
 msgstr "Bağlanıyor"
@@ -644,6 +660,9 @@ msgstr "Son olarak tamamlanan"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Bir operasyonu atlamak için 0'da bırakın — çalıştırılmadan çizelgeye geri döner, zaman veya miktar kaydedilmez."
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -1028,6 +1047,9 @@ msgstr "Önleyici"
 msgid "Print"
 msgstr "Yazdır"
 
+msgid "Print batch list"
+msgstr "Yazdır parti listesini"
+
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
 
@@ -1111,6 +1133,9 @@ msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 
 msgid "Result"
 msgstr "Sonuç"
+
+msgid "Retry Completion"
+msgstr "Tamamlanmayı Yeniden Dene"
 
 msgid "Rework"
 msgstr "Yeniden işleme"
@@ -1397,6 +1422,9 @@ msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numara
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Zaman ve maliyet, miktara orantılı olarak işler arasında bölünür."
 
 msgid "Time Entries"
 msgstr "Zaman Girişleri"

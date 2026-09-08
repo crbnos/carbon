@@ -48,6 +48,37 @@ const config = {
         destination: "/docs/platform/self-hosting",
         permanent: true,
       },
+      // The Data API moved from its own root to a section inside /api, so the whole
+      // surface lives under one header entry, one sidebar and one host/API-key
+      // configurator. Paths below the root are unchanged, so :path* maps 1:1 —
+      // /api-reference/sales/customer -> /api/data/sales/customer.
+      {
+        source: "/api-reference/:path*",
+        destination: "/api/data/:path*",
+        permanent: true,
+      },
+      { source: "/api-reference", destination: "/api/data", permanent: true },
+      // MCP folded into the Carbon API surface: MCP is a transport, not a top-level
+      // surface. The old /mcp URLs redirect into /api. Operation slugs are unchanged
+      // (they are the oRPC operation ids), so /mcp/tools/:tool maps 1:1.
+      {
+        source: "/mcp/tools/:tool",
+        destination: "/api/operations/:tool",
+        permanent: true,
+      },
+      { source: "/mcp/tools", destination: "/api", permanent: true },
+      {
+        source: "/mcp/authentication",
+        destination: "/api/authentication",
+        permanent: true,
+      },
+      { source: "/mcp", destination: "/api/mcp", permanent: true },
+      // API keys moved from Reference into the Building section.
+      {
+        source: "/docs/reference/api-keys",
+        destination: "/docs/building/api-keys",
+        permanent: true,
+      },
     ];
   },
 };

@@ -38,6 +38,15 @@ export type ResourceTimelineReservation = {
    */
   operationId: string;
   operationDescription: string | null;
+  /**
+   * Set when this is a Released operation batch's ONE coalesced hold (its
+   * jobId/operationId are just the anchor member). The bar reads as the
+   * batch — "BAT… · N jobs" — never as the anchor member alone.
+   */
+  batchReadableId?: string | null;
+  batchMemberCount?: number | null;
+  /** Raw batch id — lets the detail panel open the batch itself. */
+  batchId?: string | null;
   hasConflict: boolean;
   conflictReason: string | null;
   /**
@@ -360,9 +369,13 @@ export function buildResourceTimeline(input: {
     const barEnd = clamp(rawEnd, windowStart, windowEnd);
     detailsById[r.id] = {
       kind: "reservation",
-      title: r.operationDescription
-        ? `${r.jobReadableId} · ${r.operationDescription}`
-        : r.jobReadableId,
+      title: r.batchReadableId
+        ? `${r.batchReadableId}${
+            r.batchMemberCount ? ` · ${r.batchMemberCount} jobs` : ""
+          }`
+        : r.operationDescription
+          ? `${r.jobReadableId} · ${r.operationDescription}`
+          : r.jobReadableId,
       start: new Date(rawStart).toISOString(),
       end: new Date(rawEnd).toISOString(),
       durationMs: Math.max(rawEnd - rawStart, 0),
@@ -375,7 +388,9 @@ export function buildResourceTimeline(input: {
       scheduleNote: r.scheduleNote ?? null,
       workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
       jobId: r.jobId,
-      jobReadableId: r.jobReadableId
+      jobReadableId: r.jobReadableId,
+      batchId: r.batchId ?? null,
+      estimatedWorkHours: r.workHours ?? null
     };
     return {
       id: r.id,
@@ -413,9 +428,15 @@ export function buildResourceTimeline(input: {
       .sort((a, b) => byStart(a.machine, b.machine))
       .map((op) => {
         const node = buildReservationBar(op.machine, lane.id, 2, {
-          message: op.machine.operationDescription
-            ? `${op.machine.jobReadableId} · ${op.machine.operationDescription}`
-            : op.machine.jobReadableId
+          message: op.machine.batchReadableId
+            ? `${op.machine.batchReadableId}${
+                op.machine.batchMemberCount
+                  ? ` · ${op.machine.batchMemberCount} jobs`
+                  : ""
+              }`
+            : op.machine.operationDescription
+              ? `${op.machine.jobReadableId} · ${op.machine.operationDescription}`
+              : op.machine.jobReadableId
         });
         const workerBars = [...op.workers].sort(byStart).map((w) =>
           buildReservationBar(w, op.machine.id, 3, {

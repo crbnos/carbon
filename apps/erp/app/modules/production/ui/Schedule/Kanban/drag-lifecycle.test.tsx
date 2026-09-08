@@ -106,8 +106,9 @@ vi.mock("react-router", () => ({
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
-      scheduleDatesUpdate: "/schedule/dates/update",
-      scheduleOperationUpdate: "/schedule/operations/update"
+      priorityBatchingUpdate: "/priority/batching/update",
+      priorityDatesUpdate: "/priority/dates/update",
+      priorityOperationUpdate: "/priority/operations/update"
     }
   }
 }));
@@ -117,6 +118,9 @@ vi.mock("./components/ColumnCard", () => ({
 }));
 vi.mock("./components/ItemCard", () => ({
   ItemCard: () => null
+}));
+vi.mock("./components/BatchItemCard", () => ({
+  BatchItemCard: () => null
 }));
 vi.mock("./components/JobCard", () => ({
   JobCard: () => null
@@ -163,6 +167,22 @@ const operationItems = [
     title: "Operation C"
   }
 ] as DragItem[];
+
+// A live batch collapses to one draggable card in its work-center column.
+// Dragging it to another column reassigns the whole batch's work center
+// (intent "update" → priorityBatchingUpdate), while a within-column drop is a
+// no-op (member priorities own the card's position).
+const batchItem = {
+  id: "batch:BAT1",
+  columnId: "wc-1",
+  columnType: "Process",
+  priority: 5,
+  title: "Batch BAT0001",
+  batchId: "BAT1",
+  batchReadableId: "BAT0001",
+  batchStatus: "Active",
+  members: []
+} as DragItem;
 
 const dateColumns: Column[] = [
   { id: "2026-08-08", title: "Aug 8", type: ["Job"] },
@@ -281,7 +301,7 @@ function pendingDateFetcher({
     formData.set("optimisticColumnId", optimisticColumnId);
   }
   return {
-    formAction: "/schedule/dates/update",
+    formAction: "/priority/dates/update",
     formData,
     key: `job:${id}`,
     state: "loading"
@@ -341,7 +361,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "2026-08-08",
         priority: 11
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
   });
 
@@ -378,7 +398,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "2026-08-08",
         priority: 21
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
     expect(submit).not.toHaveBeenCalledWith(
       expect.objectContaining({ columnId: "2026-08-16" }),
@@ -408,7 +428,7 @@ describe("Dates board drag lifecycle", () => {
         locationId: "location-1",
         columnId: "2026-08-15"
       }),
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
     expect(submit).not.toHaveBeenCalledWith(
       expect.objectContaining({ columnId: "2026-08-16" }),
@@ -419,7 +439,7 @@ describe("Dates board drag lifecycle", () => {
   it("ignores a Dates fetcher without form data and preserves the next drag origin", () => {
     fetchers.current = [
       {
-        formAction: "/schedule/dates/update",
+        formAction: "/priority/dates/update",
         formData: undefined,
         key: "job:job-a",
         state: "loading"
@@ -443,7 +463,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "2026-08-08",
         priority: 11
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
   });
 
@@ -533,7 +553,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "next-week",
         priority: 21
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
     expect(submit).not.toHaveBeenCalledWith(
       expect.objectContaining({ columnId: "2026-08-09" }),
@@ -634,7 +654,7 @@ describe("Operations board drag lifecycle", () => {
     expect(submit).toHaveBeenCalledTimes(1);
     expect(submit).toHaveBeenCalledWith(
       { id: "operation-a", columnId: "wc-2", priority: 19 },
-      expect.objectContaining({ action: "/schedule/operations/update" })
+      expect.objectContaining({ action: "/priority/operations/update" })
     );
   });
 
@@ -738,6 +758,34 @@ describe("Operations board drag lifecycle", () => {
     });
 
     expect(arrayMove).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("reassigns a batch's work center when dropped on another column", () => {
+    const board = captureOperationsBoard([...operationItems, batchItem]);
+
+    startItemDrag(board, batchItem);
+    board.onDragEnd({
+      active: itemActive(batchItem),
+      over: columnOver(operationColumns[1])
+    });
+
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit).toHaveBeenCalledWith(
+      { intent: "update", batchId: "BAT1", workCenterId: "wc-2" },
+      expect.objectContaining({ action: "/priority/batching/update" })
+    );
+  });
+
+  it("does not reassign a batch dropped within its own column", () => {
+    const board = captureOperationsBoard([...operationItems, batchItem]);
+
+    startItemDrag(board, batchItem);
+    board.onDragEnd({
+      active: itemActive(batchItem),
+      over: itemOver(operationItems[0])
+    });
+
     expect(submit).not.toHaveBeenCalled();
   });
 });

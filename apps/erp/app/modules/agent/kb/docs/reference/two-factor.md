@@ -72,7 +72,7 @@ It also means at least two people should hold user-management permission. If you
 
 Machine access is never challenged, and that's by design — there's nobody present to read a code off a phone.
 
-  - **API keys**: Keep working exactly as before. They carry their own scopes and rate limits; see `docs/reference/api-keys`.
+  - **API keys**: Keep working exactly as before. They carry their own scopes and rate limits; see `docs/building/api-keys`.
   - **Integrations**: Anything authenticating as the company rather than as a person is unaffected.
   - **Shop-floor PIN operators**: Never prompted. Operators pin in at a shared terminal rather than signing in, so there's no personal session to protect and no phone to scan with. The person who signed the terminal in is the one two-factor applies to.
 

@@ -14,7 +14,6 @@ import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import { LuFile, LuPaperclip } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
-import type { ZodSchema } from "zod";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import { DateTime } from "~/components/DateTime";
 import FileDropzone from "~/components/FileDropzone";
@@ -167,7 +166,7 @@ function TypedForm(
         <ValidatedForm
           method="post"
           action={path.to.userAttribute(userId)}
-          validator={attributeBooleanValidator as ZodSchema}
+          validator={attributeBooleanValidator}
           defaultValues={{
             userAttributeId,
             userAttributeValueId,

@@ -21,6 +21,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   generateHTML,
+  hasOpenDialog,
   IconButton,
   Modal,
   ModalBody,
@@ -30,6 +31,7 @@ import {
   ModalOverlay,
   ModalTitle,
   Separator,
+  ShortcutKey,
   SidebarTrigger,
   Spinner,
   Status,
@@ -39,7 +41,8 @@ import {
   useKeyboardWedge,
   useMode,
   useRealtimeChannel,
-  useRouteData
+  useRouteData,
+  useShortcutKeys
 } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import type {
@@ -73,7 +76,6 @@ import {
   LuListFilter,
   LuPause,
   LuPlay,
-  LuSkipForward,
   LuTimer,
   LuTrash,
   LuUndo2,
@@ -603,8 +605,10 @@ export function AssemblyView({
   });
 
   // Kanban barcode scan → complete the operation (matches the operation view).
+  // The returned buffer is non-empty while a scan burst is in flight — the
+  // keyboard-shortcut effect below yields Enter to the wedge during that window.
   const completeFetcher = useFetcher();
-  useKeyboardWedge({
+  const wedgeBuffer = useKeyboardWedge({
     test: (input) =>
       kanban?.completedBarcodeOverride
         ? input === kanban.completedBarcodeOverride
@@ -990,6 +994,12 @@ export function AssemblyView({
   );
   const hasPendingScans = pendingScanMaterials.length > 0;
 
+  // The current step's primary action (Mark done / open RecordModal), lifted via
+  // ref so the keyboard-shortcut effect can trigger it from the parent. Null when
+  // the step is done, gated, or submitting — the key is inert exactly when the
+  // button is.
+  const primaryStepActionRef = useRef<(() => void) | null>(null);
+
   // Open production events per work type (to pass to the complete flow so it
   // can close them on completion).
   const openByType = (type: string) =>
@@ -1173,6 +1183,88 @@ export function AssemblyView({
 
     if (!isLastStep) goToStep(currentStep + 1);
   }, [currentStep, currentStepDone, isLastStep, allStepsRecorded]);
+
+  // ── Keyboard shortcuts (Bluetooth clicker / pedal friendly) ────────────────
+  // Space/Enter fire the current step's primary action (Mark done, or open the
+  // RecordModal for input steps); ←/→ navigate steps (→ ≡ Skip). Bound via
+  // useShortcutKeys (react-hotkeys-hook), which already skips editable targets
+  // (inputs, textareas, contenteditable/ProseMirror) and modifier combos.
+  // preventDefault in the action stops a focused button's native click (Space
+  // clicks on keyup only if keydown wasn't prevented; Enter's click is the
+  // keydown's default action) — otherwise one press could both record and
+  // re-trigger the focused button.
+  const ARMED_SWALLOW_MS = 750;
+  const shortcutArmedAtRef = useRef<number | null>(null);
+
+  useShortcutKeys({
+    shortcut: ["enter", "space"],
+    action: (event) => {
+      event.preventDefault();
+      shortcutArmedAtRef.current = Date.now();
+      primaryStepActionRef.current?.();
+    },
+    guard: (event) =>
+      // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
+      // key semantics — the armed-clicker swallow below is the one exception.
+      !hasOpenDialog() &&
+      // A barcode wedge scan terminates with Enter — yield it to
+      // useKeyboardWedge while a scan burst is buffered.
+      !(event.key === "Enter" && wedgeBuffer !== "") &&
+      // No primary action (step done, gated, or submitting) → leave the
+      // action keys native, so a keyboard user who focused Skip can still
+      // activate it with Space/Enter.
+      primaryStepActionRef.current !== null
+  });
+
+  useShortcutKeys({
+    shortcut: ["arrowright", "arrowleft"],
+    action: (event) => {
+      // Always claimed (even at the ends) so an arrow press never falls
+      // through to page scroll.
+      event.preventDefault();
+      if (event.key === "ArrowRight" && !isLastStep) goToStep(currentStep + 1);
+      else if (event.key === "ArrowLeft" && currentStep > 0)
+        goToStep(currentStep - 1);
+    },
+    guard: () => !hasOpenDialog()
+  });
+
+  // The one piece the library can't do: for a short window after the shortcut
+  // opens a modal, the action keys stay swallowed — the RecordModal autofocuses
+  // (and selects) its input, so a clicker DOUBLE-press would otherwise natively
+  // submit the form's DEFAULT value (a 0 measurement). That interception must
+  // run in the CAPTURE phase, before the autofocused input (and the modal's own
+  // Enter hotkey) ever sees the key — react-hotkeys-hook only listens in the
+  // bubble phase. After the window a deliberate Enter submits normally (the
+  // selected default is a valid thing to accept), and any other key or a
+  // pointer tap ends the window early.
+  useEffect(() => {
+    function swallowArmedClicker(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const isAction = event.key === " " || event.key === "Enter";
+      const armedAt = shortcutArmedAtRef.current;
+      if (
+        hasOpenDialog() &&
+        isAction &&
+        armedAt !== null &&
+        Date.now() - armedAt < ARMED_SWALLOW_MS
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else {
+        shortcutArmedAtRef.current = null;
+      }
+    }
+    function handlePointerDown() {
+      shortcutArmedAtRef.current = null;
+    }
+    document.addEventListener("keydown", swallowArmedClicker, true);
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", swallowArmedClicker, true);
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, []);
 
   // Stop the labor clock automatically once every step is recorded for this unit.
   const allDoneRef = useRef(allStepsRecorded);
@@ -2256,6 +2348,7 @@ export function AssemblyView({
                     activeIndex={activeIndex}
                     done={isStepDone(step)}
                     disabled={hasPendingScans}
+                    actionRef={primaryStepActionRef}
                   />
                 </div>
               )}
@@ -2263,11 +2356,15 @@ export function AssemblyView({
                 variant="outline"
                 size="lg"
                 className="shrink-0"
-                rightIcon={<LuSkipForward />}
                 isDisabled={isLastStep}
                 onClick={() => goToStep(currentStep + 1)}
               >
                 Skip
+                <ShortcutKey
+                  shortcut="arrowright"
+                  variant="medium"
+                  className="hidden md:flex"
+                />
               </Button>
             </div>
           </div>
@@ -2911,7 +3008,8 @@ function StepCompleteAction({
   step,
   activeIndex,
   done,
-  disabled = false
+  disabled = false,
+  actionRef
 }: {
   step: Step;
   activeIndex: number;
@@ -2919,6 +3017,9 @@ function StepCompleteAction({
   // Soft gate: the step's tracked parts aren't fully issued for this unit, so
   // block completion (Mark done / Record) until they're scanned. Skip bypasses.
   disabled?: boolean;
+  // Written every render with the primary action so the parent's Space/Enter
+  // shortcut fires the same thing the button would.
+  actionRef?: { current: (() => void) | null };
 }) {
   const fetcher = useFetcher();
   const user = useUser();
@@ -2952,6 +3053,22 @@ function StepCompleteAction({
     fd.append("booleanValue", "true");
     fetcher.submit(fd, { method: "post", action: path.to.record });
   }
+
+  // No dep array: re-assign every render so the shortcut always sees the
+  // freshest closure; cleared on unmount so a stale action can't fire.
+  useEffect(() => {
+    if (!actionRef) return;
+    if (done || disabled || busy) {
+      actionRef.current = null;
+    } else if (type === "Task") {
+      actionRef.current = markTaskDone;
+    } else {
+      actionRef.current = recordModal.onOpen;
+    }
+    return () => {
+      actionRef.current = null;
+    };
+  });
 
   // ── Already done: show recorded value + Undo button ──
   if (done && record) {
@@ -3019,6 +3136,11 @@ function StepCompleteAction({
         onClick={markTaskDone}
       >
         Mark done
+        <ShortcutKey
+          shortcut="enter"
+          variant="medium"
+          className="hidden md:flex"
+        />
       </Button>
     );
   }
@@ -3034,6 +3156,11 @@ function StepCompleteAction({
         onClick={recordModal.onOpen}
       >
         Record
+        <ShortcutKey
+          shortcut="enter"
+          variant="medium"
+          className="hidden md:flex"
+        />
       </Button>
       {recordModal.isOpen && (
         <RecordModal

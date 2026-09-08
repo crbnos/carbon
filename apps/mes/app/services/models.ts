@@ -144,14 +144,10 @@ export const productionEventValidator = z.object({
     .string()
     .min(1, { message: "Job Operation ID is required" }),
   action: z.enum(productionEventAction, {
-    errorMap: (issue, ctx) => ({
-      message: "Action is required"
-    })
+    error: "Action is required"
   }),
   type: z.enum(productionEventType, {
-    errorMap: (issue, ctx) => ({
-      message: "Type is required"
-    })
+    error: "Type is required"
   }),
   workCenterId: zfd.text(z.string().optional()),
   trackedEntityId: zfd.text(z.string().optional()),
@@ -163,7 +159,11 @@ export const productionEventValidator = z.object({
   // Assembly clocking is single-phase: when set, starting this work type ends
   // any other open work type for the operator on this operation (so Setup and
   // Labor can never run at once). Omitted by the operation view.
-  exclusive: zfd.text(z.string().optional())
+  exclusive: zfd.text(z.string().optional()),
+  // Tags the event as part of an operation batch; sliced per-member at
+  // completion. Cost posting is deferred to batch completion, so `event.tsx`
+  // skips post-production-event when this is set.
+  jobOperationBatchId: zfd.text(z.string().optional())
 });
 
 export const finishValidator = z.object({
@@ -219,6 +219,32 @@ export const scrapTrackedEntityValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
+// Complete a job operation batch: per-member produced quantity (pre-filled with the
+// operation quantity) + optional per-member scrap. quantity is int —
+// productionQuantity.quantity is INTEGER. See
+// .ai/specs/2026-08-21-job-operation-batching.md.
+export const completeJobOperationBatchValidator = z.object({
+  batchId: z.string().min(1, { message: "Batch is required" }),
+  members: z
+    .array(
+      z.object({
+        jobOperationId: z.string().min(1),
+        // Optional: an excluded ("Not in this run") member's quantity input is
+        // disabled and therefore omitted from FormData. The route forces
+        // excluded members to 0 after validation and coerces an omitted
+        // included quantity to 0, so `undefined` never reaches the edge fn.
+        quantity: zfd.numeric(z.number().int().min(0).optional()),
+        scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
+        // "Not in this run": the operation was not physically part of the
+        // batch run — it detaches back to the schedule instead of being
+        // marked Done. String flag (same idiom as productionEventValidator's
+        // `exclusive`); the route maps "true" to a boolean for the edge fn.
+        excluded: zfd.text(z.string().optional())
+      })
+    )
+    .min(1)
+});
+
 export const triggerReworkValidator = z.object({
   jobId: z.string().min(1),
   triggeredAtJobOperationId: z.string().min(1),
@@ -238,13 +264,13 @@ export const triggerReworkValidator = z.object({
 export const maintenanceDispatchValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work Center is required" }),
   priority: z.enum(maintenanceDispatchPriority, {
-    errorMap: () => ({ message: "Priority is required" })
+    error: "Priority is required"
   }),
   severity: z.enum(maintenanceSeverity, {
-    errorMap: () => ({ message: "Severity is required" })
+    error: "Severity is required"
   }),
   oeeImpact: z.enum(oeeImpact, {
-    errorMap: () => ({ message: "OEE Impact is required" })
+    error: "OEE Impact is required"
   }),
   suspectedFailureModeId: zfd.text(z.string().optional()),
   actualFailureModeId: zfd.text(z.string().optional()),
@@ -267,7 +293,7 @@ export const qualityIssueValidator = z.object({
     .string()
     .min(1, { message: "Issue type is required" }),
   priority: z.enum(qualityIssuePriority, {
-    errorMap: () => ({ message: "Priority is required" })
+    error: "Priority is required"
   }),
   trackedEntityId: zfd.text(z.string().optional())
 });
@@ -304,7 +330,7 @@ export const inspectionSampleValidator = z.object({
   // "Pending" registers a sample without a verdict (identify-only scan when an
   // inspection document drives per-feature measurements).
   status: z.enum(["Pending", "Passed", "Failed"], {
-    errorMap: () => ({ message: "Status is required" })
+    error: "Status is required"
   }),
   notes: zfd.text(z.string().optional())
 });
@@ -319,7 +345,7 @@ export const inspectionSampleValidator = z.object({
 export const inspectionDispositionValidator = z
   .object({
     decision: z.enum(["Accept", "Reject", "Partial"], {
-      errorMap: () => ({ message: "Decision is required" })
+      error: "Decision is required"
     }),
     // The job operation, for postings + redirect back to the inspection view.
     operationId: z.string().min(1, { message: "Operation is required" }),

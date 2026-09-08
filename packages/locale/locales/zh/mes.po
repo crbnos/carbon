@@ -25,6 +25,10 @@ msgstr "{0} 启用"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} 个工作"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操�
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 
 msgid "About"
 msgstr "关于"
@@ -169,6 +176,9 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
+msgid "Batched jobs"
+msgstr "批量工作"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "落后于目标 {daysBehindTarget} 天"
 
@@ -265,11 +275,17 @@ msgstr "完成"
 msgid "Complete All"
 msgstr "全部完成"
 
+msgid "Complete Batch"
+msgstr "完成批次"
+
 msgid "Complete passed"
 msgstr "完成已通过"
 
 msgid "Completed"
 msgstr "已完成"
+
+msgid "Completing"
+msgstr "完成中"
 
 msgid "Connecting"
 msgstr "连接中"
@@ -644,6 +660,9 @@ msgstr "最后完成"
 
 msgid "Learn more"
 msgstr "了解更多"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "将工序设置为 0 以跳过该工序 — 该工序将在排程中保持未执行状态，不记录任何时间或数量。"
 
 msgid "Leave this page"
 msgstr "离开此页面"
@@ -1028,6 +1047,9 @@ msgstr "预防性"
 msgid "Print"
 msgstr "打印"
 
+msgid "Print batch list"
+msgstr "打印生产批次列表"
+
 msgid "Printer Settings"
 msgstr "打印机设置"
 
@@ -1111,6 +1133,9 @@ msgstr "重新打开子装配件并创建替代件"
 
 msgid "Result"
 msgstr "结果"
+
+msgid "Retry Completion"
+msgstr "重试完成"
 
 msgid "Rework"
 msgstr "返工"
@@ -1397,6 +1422,9 @@ msgstr "此单元将被永久报废，并将创建替换序列号。"
 
 msgid "Thumbnail"
 msgstr "缩略图"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "时间和成本按数量比例分配到各个工作中。"
 
 msgid "Time Entries"
 msgstr "工时记录"

@@ -9,6 +9,10 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json lingui.co
 COPY apps ./apps
 COPY packages ./packages
 COPY patches ./patches
+# scripts/ is needed by the postinstall (pnpm run generate:mcp → tsx
+# scripts/generate-mcp.ts) and by the //#generate:mcp turbo task that build:${APP}
+# depends on; without it `pnpm install` fails with ERR_MODULE_NOT_FOUND.
+COPY scripts ./scripts
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build

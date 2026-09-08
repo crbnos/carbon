@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -69,6 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updateServicePurchasing = await upsertItemPurchasing(client, {
     ...validation.data,
     itemId,
+    companyId,
     updatedBy: userId
   });
   if (updateServicePurchasing.error) {
@@ -122,6 +123,7 @@ export default function ServicePurchasingRoute() {
         allowedSuppliers={
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
+        supplierParts={supplierParts}
       />
       <SupplierParts supplierParts={supplierParts} />
       <ItemCostHistoryChart
