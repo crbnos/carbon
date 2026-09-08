@@ -393,6 +393,7 @@ export type Database = {
           roundingAccount: string
           salesAccount: string
           salesDiscountAccount: string
+          salesShippingRevenueAccount: string | null
           salesTaxPayableAccount: string
           scrapAccount: string | null
           serviceChargeAccount: string
@@ -448,6 +449,7 @@ export type Database = {
           roundingAccount: string
           salesAccount: string
           salesDiscountAccount: string
+          salesShippingRevenueAccount?: string | null
           salesTaxPayableAccount: string
           scrapAccount?: string | null
           serviceChargeAccount: string
@@ -503,6 +505,7 @@ export type Database = {
           roundingAccount?: string
           salesAccount?: string
           salesDiscountAccount?: string
+          salesShippingRevenueAccount?: string | null
           salesTaxPayableAccount?: string
           scrapAccount?: string | null
           serviceChargeAccount?: string
@@ -1140,6 +1143,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_salesDiscountAccount_fkey"
             columns: ["salesDiscountAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_salesShippingRevenueAccount_fkey"
+            columns: ["salesShippingRevenueAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_salesShippingRevenueAccount_fkey"
+            columns: ["salesShippingRevenueAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -19629,7 +19646,9 @@ export type Database = {
           id: string
           memoId: string | null
           paymentId: string | null
+          sourceAmount: number | null
           sourceExchangeRate: number
+          sourcePaymentId: string | null
           targetExchangeRate: number
           targetMemoId: string | null
           targetPurchaseInvoiceId: string | null
@@ -19649,7 +19668,9 @@ export type Database = {
           id?: string
           memoId?: string | null
           paymentId?: string | null
+          sourceAmount?: number | null
           sourceExchangeRate: number
+          sourcePaymentId?: string | null
           targetExchangeRate: number
           targetMemoId?: string | null
           targetPurchaseInvoiceId?: string | null
@@ -19669,7 +19690,9 @@ export type Database = {
           id?: string
           memoId?: string | null
           paymentId?: string | null
+          sourceAmount?: number | null
           sourceExchangeRate?: number
+          sourcePaymentId?: string | null
           targetExchangeRate?: number
           targetMemoId?: string | null
           targetPurchaseInvoiceId?: string | null
@@ -19761,6 +19784,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payment"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoiceSettlement_sourcePaymentId_companyId_fkey"
+            columns: ["sourcePaymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "invoiceSettlement_targetMemoId_fkey"
@@ -68428,14 +68458,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -70090,14 +70120,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73517,14 +73547,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -38188,6 +38188,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.salesShippingRevenueAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -38406,6 +38409,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.salesShippingRevenueAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -38576,6 +38582,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.salesShippingRevenueAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -74809,6 +74818,12 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourcePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -74922,6 +74937,12 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourcePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -74987,6 +75008,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.invoiceSettlement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourcePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
           },
           {
             $ref: "#/parameters/body.invoiceSettlement"
@@ -107765,6 +107792,8 @@ export default {
           type: "number"
         },
         amount: {
+          description:
+            "Memo amount in memo currency; divide by foreign-per-base exchangeRate for company base.",
           format: "numeric",
           type: "number"
         },
@@ -109270,6 +109299,8 @@ export default {
           type: "number"
         },
         totalAmount: {
+          description:
+            "Gross cash amount in payment currency; divide by foreign-per-base exchangeRate for company base.",
           format: "numeric",
           type: "number"
         },
@@ -118787,6 +118818,12 @@ export default {
         intercompanyPayablesAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesShippingRevenueAccount: {
+          description:
+            "Revenue account for shipping charged to customers; account belongs to the company group.\n\nNote:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -135870,16 +135907,22 @@ export default {
           type: "string"
         },
         appliedAmount: {
+          description:
+            "Target-document principal relieved in company base currency.",
           format: "numeric",
           type: "number"
         },
         discountAmount: {
           default: 0,
+          description:
+            "Target-document discount relief in company base currency.",
           format: "numeric",
           type: "number"
         },
         writeOffAmount: {
           default: 0,
+          description:
+            "Target-document write-off relief in company base currency.",
           format: "numeric",
           type: "number"
         },
@@ -135892,6 +135935,9 @@ export default {
           type: "number"
         },
         fxGainLossAmount: {
+          default: 0,
+          description:
+            "Server-calculated posting snapshot in company base currency: positive gain, negative loss.",
           format: "numeric",
           type: "number"
         },
@@ -135927,6 +135973,18 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        sourcePaymentId: {
+          description:
+            "Prior posted payment supplying on-account credit; paymentId remains the applying/void owner. NULL means current payment cash.",
+          format: "text",
+          type: "string"
+        },
+        sourceAmount: {
+          description:
+            "Principal consumed in the funding source document currency, stored independently of target-base appliedAmount.",
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -150862,6 +150920,8 @@ export default {
     },
     "rowFilter.memo.amount": {
       name: "amount",
+      description:
+        "Memo amount in memo currency; divide by foreign-per-base exchangeRate for company base.",
       required: false,
       in: "query",
       type: "string"
@@ -152566,6 +152626,8 @@ export default {
     },
     "rowFilter.payment.totalAmount": {
       name: "totalAmount",
+      description:
+        "Gross cash amount in payment currency; divide by foreign-per-base exchangeRate for company base.",
       required: false,
       in: "query",
       type: "string"
@@ -163176,6 +163238,14 @@ export default {
     },
     "rowFilter.accountDefault.intercompanyPayablesAccount": {
       name: "intercompanyPayablesAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.salesShippingRevenueAccount": {
+      name: "salesShippingRevenueAccount",
+      description:
+        "Revenue account for shipping charged to customers; account belongs to the company group.",
       required: false,
       in: "query",
       type: "string"
@@ -182203,18 +182273,22 @@ export default {
     },
     "rowFilter.invoiceSettlement.appliedAmount": {
       name: "appliedAmount",
+      description:
+        "Target-document principal relieved in company base currency.",
       required: false,
       in: "query",
       type: "string"
     },
     "rowFilter.invoiceSettlement.discountAmount": {
       name: "discountAmount",
+      description: "Target-document discount relief in company base currency.",
       required: false,
       in: "query",
       type: "string"
     },
     "rowFilter.invoiceSettlement.writeOffAmount": {
       name: "writeOffAmount",
+      description: "Target-document write-off relief in company base currency.",
       required: false,
       in: "query",
       type: "string"
@@ -182233,6 +182307,8 @@ export default {
     },
     "rowFilter.invoiceSettlement.fxGainLossAmount": {
       name: "fxGainLossAmount",
+      description:
+        "Server-calculated posting snapshot in company base currency: positive gain, negative loss.",
       required: false,
       in: "query",
       type: "string"
@@ -182269,6 +182345,22 @@ export default {
     },
     "rowFilter.invoiceSettlement.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.invoiceSettlement.sourcePaymentId": {
+      name: "sourcePaymentId",
+      description:
+        "Prior posted payment supplying on-account credit; paymentId remains the applying/void owner. NULL means current payment cash.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.invoiceSettlement.sourceAmount": {
+      name: "sourceAmount",
+      description:
+        "Principal consumed in the funding source document currency, stored independently of target-base appliedAmount.",
       required: false,
       in: "query",
       type: "string"
