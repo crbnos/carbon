@@ -91,9 +91,10 @@ type PaymentFormProps = {
 const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
-  const currencyDecimals = useCurrencyDecimals(
-    company?.baseCurrencyCode ?? "USD"
+  const [currencyCode, setCurrencyCode] = useState(
+    initialValues.currencyCode || company?.baseCurrencyCode || "USD"
   );
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const permissions = usePermissions();
   const post = useFetcher();
   const voidFetcher = useFetcher();
@@ -228,7 +229,13 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                   <Supplier name="supplierId" label={t`Supplier`} />
                 )}
                 <DatePicker name="paymentDate" label={t`Payment Date`} />
-                <Currency name="currencyCode" label={t`Currency`} />
+                <Currency
+                  name="currencyCode"
+                  label={t`Currency`}
+                  onChange={(option) => {
+                    if (option) setCurrencyCode(option.value);
+                  }}
+                />
                 <Number
                   name="exchangeRate"
                   label={t`Exchange Rate`}
@@ -239,7 +246,7 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                   name="totalAmount"
                   label={t`Total Amount`}
                   formatOptions={INPUT_FORMAT.money(
-                    company?.baseCurrencyCode ?? "USD",
+                    currencyCode,
                     currencyDecimals
                   )}
                 />
