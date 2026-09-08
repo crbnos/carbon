@@ -28,6 +28,9 @@ export interface PaymentJournalApplicationInput {
   writeOffAmount: number;
   targetExchangeRate: number;
   sourceExchangeRate: number;
+  /** Original booked control accounts, resolved by the locked posting driver. */
+  targetControlAccountId?: string;
+  sourceControlAccountId?: string;
 }
 
 export interface PaymentJournalAccounts {
@@ -170,7 +173,7 @@ export function buildPaymentJournal(
   let totalFxImpact = 0;
   let currentCashReleased = 0;
   let currentDocumentReleased = 0;
-  let priorCreditReleased = 0;
+  const priorCreditReleased = new Map<string, number>();
   for (const app of applications) {
     const target = isAR
       ? app.targetSalesInvoiceId
@@ -199,8 +202,14 @@ export function buildPaymentJournal(
         "Zero source principal cannot release carrying value or realize FX",
       );
     }
-    if (app.sourcePaymentId) priorCreditReleased += releasedBase;
-    else {
+    if (app.sourcePaymentId) {
+      const sourceAccount = app.sourceControlAccountId ??
+        accounts.controlAccountId;
+      priorCreditReleased.set(
+        sourceAccount,
+        round((priorCreditReleased.get(sourceAccount) ?? 0) + releasedBase),
+      );
+    } else {
       if (app.sourceExchangeRate !== exchangeRate) {
         throw new Error("Current cash rate does not match payment snapshot");
       }
@@ -211,7 +220,7 @@ export function buildPaymentJournal(
       cashIn ? "credit" : "debit",
       isAR ? "asset" : "liability",
       round(applied + discount + writeOff),
-      accounts.controlAccountId,
+      app.targetControlAccountId ?? accounts.controlAccountId,
       isAR ? "Accounts Receivable" : "Accounts Payable",
       target,
     );
@@ -249,13 +258,15 @@ export function buildPaymentJournal(
     accounts.controlAccountId,
     `${isAR ? "Accounts Receivable" : "Accounts Payable"} (on-account credit)`,
   );
-  push(
-    cashIn ? "debit" : "credit",
-    isAR ? "asset" : "liability",
-    round(priorCreditReleased),
-    accounts.controlAccountId,
-    `${isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
-  );
+  for (const [accountId, amount] of priorCreditReleased) {
+    push(
+      cashIn ? "debit" : "credit",
+      isAR ? "asset" : "liability",
+      amount,
+      accountId,
+      `${isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
+    );
+  }
   totalFxImpact = round(totalFxImpact);
   if (totalFxImpact > 0) {
     push(

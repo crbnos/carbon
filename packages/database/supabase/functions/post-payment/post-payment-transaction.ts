@@ -345,7 +345,7 @@ export function postPaymentTransaction(
               "line.companyId",
             ),
         )
-        .select(["line.documentId", "line.amount"]).where(
+        .select(["line.documentId", "line.amount", "line.accountId"]).where(
           "line.companyId",
           "=",
           companyId,
@@ -362,8 +362,17 @@ export function postPaymentTransaction(
         ).where("journal.status", "=", "Posted").execute()
       : [];
     const carryingById = new Map<string, number>();
+    const targetControlById = new Map<string, string>();
     for (const line of controls) {
       if (line.documentId) {
+        if (!line.accountId) {
+          throw new Error("Invoice is missing its original control account");
+        }
+        const originalAccount = targetControlById.get(line.documentId);
+        if (originalAccount && originalAccount !== line.accountId) {
+          throw new Error("Invoice has conflicting original control accounts");
+        }
+        targetControlById.set(line.documentId, line.accountId);
         carryingById.set(
           line.documentId,
           round(
@@ -526,6 +535,53 @@ export function postPaymentTransaction(
       )
       .where("id", "!=", paymentId).orderBy("id").forUpdate().execute();
     const sourceIds = sources.map((source) => source.id);
+    const sourceControls = sourceIds.length
+      ? await trx.selectFrom("journalLine as line")
+        .innerJoin(
+          "journal as journal",
+          (join) =>
+            join.onRef("journal.id", "=", "line.journalId").onRef(
+              "journal.companyId",
+              "=",
+              "line.companyId",
+            ),
+        )
+        .select(["line.documentId", "line.accountId"])
+        .where("line.companyId", "=", companyId).where(
+          "line.documentType",
+          "=",
+          "Payment",
+        )
+        .where("line.documentId", "in", sourceIds)
+        .where(
+          "line.description",
+          "=",
+          `${
+            isAR ? "Accounts Receivable" : "Accounts Payable"
+          } (on-account credit)`,
+        )
+        .where("journal.sourceType", "=", "Payment").where(
+          "journal.status",
+          "=",
+          "Posted",
+        ).execute()
+      : [];
+    const sourceControlById = new Map<string, string>();
+    for (const line of sourceControls) {
+      if (!line.documentId) continue;
+      if (!line.accountId) {
+        throw new Error(
+          "Funding source is missing its original control account",
+        );
+      }
+      const originalAccount = sourceControlById.get(line.documentId);
+      if (originalAccount && originalAccount !== line.accountId) {
+        throw new Error(
+          "Funding source has conflicting original control accounts",
+        );
+      }
+      sourceControlById.set(line.documentId, line.accountId);
+    }
     const consumed = sourceIds.length
       ? (await settlementQuery(trx, companyId).where((eb) =>
         eb.or([
@@ -682,6 +738,19 @@ export function postPaymentTransaction(
         [accounts.fxLossAccountId, "Expense"],
         [fee?.accountId, "Expense"],
       );
+      const journalApplications = normalized.map((application) => ({
+        ...application,
+        targetControlAccountId: targetControlById.get(application.targetId),
+        sourceControlAccountId: application.sourcePaymentId
+          ? sourceControlById.get(application.sourcePaymentId)
+          : undefined,
+      }));
+      for (const application of journalApplications) {
+        expectedAccountClasses.push(
+          [application.targetControlAccountId, isAR ? "Asset" : "Liability"],
+          [application.sourceControlAccountId, isAR ? "Asset" : "Liability"],
+        );
+      }
       journalLines = buildPaymentJournal({
         paymentId,
         companyId,
@@ -691,7 +760,7 @@ export function postPaymentTransaction(
         exchangeRate: Number(payment.exchangeRate),
         bankAccount: payment.bankAccount,
         journalLineReference: nanoid(),
-        applications: normalized,
+        applications: journalApplications,
         newOnAccountBase: allocation.sourceRemainders[0].remainingBase,
         fee,
         accounts,

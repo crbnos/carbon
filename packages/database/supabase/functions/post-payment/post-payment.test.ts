@@ -55,6 +55,23 @@ const total = (
     0,
   );
 
+Deno.test("applications clear recorded target and source controls after defaults change", () => {
+  const result = buildPaymentJournal(
+    payment({
+      totalAmount: 0,
+      applications: [app({
+        sourcePaymentId: "prior",
+        targetControlAccountId: "original-invoice-control",
+        sourceControlAccountId: "original-credit-control",
+      })],
+    }),
+  );
+  assertEquals(total(result, "original-invoice-control"), -100);
+  assertEquals(total(result, "original-credit-control"), 100);
+  assertEquals(total(result, "control"), 0);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
 Deno.test("receipt110 at1.1 releases base100 and posts no realized FX", () => {
   const result = buildPaymentJournal(payment());
   assertEquals(total(result, "bank"), 100);

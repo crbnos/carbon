@@ -170,13 +170,13 @@ Deno.test("accounting-disabled posting still rejects an invalid bank account", a
   }
 });
 
-Deno.test("a wrong control account class cannot create an unbalanced stored ledger", async () => {
+Deno.test("a wrong new-credit control account class cannot create an unbalanced stored ledger", async () => {
   const f = await paymentFixture();
   try {
     await f.db.updateTable("accountDefault").set({
       receivablesAccount: f.account("sales"),
     }).where("companyId", "=", f.companyId).execute();
-    const paymentId = await f.payment();
+    const paymentId = await f.payment({ amount: 165 });
     await assertRejects(
       () => postPaymentTransaction(f.db, { ...f.args, paymentId }),
       Error,
@@ -243,6 +243,54 @@ Deno.test("positive document remainder with zero base carrying remains eligible 
         invoiceId,
       ).executeTakeFirstOrThrow()).status,
       "Paid",
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
+Deno.test("changed defaults preserve original invoice and prior-credit control accounts", async () => {
+  const f = await paymentFixture();
+  try {
+    await f.db.insertInto("account").values(
+      ["credit-control", "new-control"].map((name) => ({
+        id: f.account(name),
+        name,
+        class: "Asset" as const,
+        incomeBalance: "Balance Sheet" as const,
+        companyGroupId: f.groupId,
+        createdBy: "system",
+      })),
+    ).execute();
+    await f.db.updateTable("accountDefault").set({
+      receivablesAccount: f.account("credit-control"),
+    }).where("companyId", "=", f.companyId).execute();
+    const sourceId = await f.payment({ noApplication: true });
+    await postPaymentTransaction(f.db, { ...f.args, paymentId: sourceId });
+    await f.db.updateTable("accountDefault").set({
+      receivablesAccount: f.account("new-control"),
+    }).where("companyId", "=", f.companyId).execute();
+    const paymentId = await f.payment({ amount: 0 });
+    const result = await postPaymentTransaction(f.db, { ...f.args, paymentId });
+    const lines = await f.db.selectFrom("journalLine").select([
+      "accountId",
+      "amount",
+      "description",
+    ]).where("journalId", "=", result.journalId!).execute();
+    assertEquals(
+      lines.find((line) => line.description === "Accounts Receivable")
+        ?.accountId,
+      f.account("control"),
+    );
+    assertEquals(
+      lines.find((line) =>
+        line.description === "Accounts Receivable (credit applied)"
+      )?.accountId,
+      f.account("credit-control"),
+    );
+    assertEquals(
+      lines.some((line) => line.accountId === f.account("new-control")),
+      false,
     );
   } finally {
     await f.cleanup();
