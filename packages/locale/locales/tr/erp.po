@@ -1745,6 +1745,9 @@ msgstr "Uygulama Tarihi"
 msgid "Applied To"
 msgstr "Uygulandı"
 
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr ""
+
 msgid "Applies to"
 msgstr "Uygulama"
 
@@ -8313,6 +8316,9 @@ msgstr "stok"
 msgid "Inv Rate"
 msgstr "Fatura Oranı"
 
+msgid "Invalid applications"
+msgstr ""
+
 msgid "Invalid Invite"
 msgstr "Geçersiz Davetiye"
 
@@ -14278,9 +14284,6 @@ msgstr "Yüzeyleri seç"
 
 msgid "Select the groups that should complete this training"
 msgstr "Bu eğitimi tamamlaması gereken grupları seçin"
-
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "Bu ödemenin kapattığı faturaları seç. İskonto ve Kayıttan Düşme fatura para birimindedir."
 
 msgid "Select value"
 msgstr "Değer seçin"

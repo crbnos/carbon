@@ -47,6 +47,7 @@ type PaymentRow = {
   bankAccount: string;
   currencyCode: string;
   exchangeRate: number;
+  totalAmount?: number;
   paymentDate: string;
   postingDate: string | null;
   reference: string | null;
@@ -56,6 +57,10 @@ type SettlementRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   appliedAmount: number;
+  sourceAmount: number;
+  sourcePaymentId: string | null;
+  targetExchangeRate?: number;
+  fxGainLossAmount?: number;
   discountAmount: number;
   writeOffAmount: number;
 };
@@ -157,6 +162,7 @@ const apPayment: PaymentRow = {
   bankAccount: "bank-1",
   currencyCode: "USD",
   exchangeRate: 1,
+  totalAmount: 140,
   paymentDate: "2026-08-07",
   postingDate: "2026-08-07",
   reference: "PAY-1"
@@ -166,6 +172,10 @@ const apSettlement: SettlementRow = {
   targetSalesInvoiceId: null,
   targetPurchaseInvoiceId: "pinv-1",
   appliedAmount: 100,
+  sourceAmount: 100,
+  sourcePaymentId: null,
+  targetExchangeRate: 1,
+  fxGainLossAmount: 0,
   discountAmount: 0,
   writeOffAmount: 0
 };
@@ -297,7 +307,8 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
           {
             ...apSettlement,
             targetPurchaseInvoiceId: "pinv-2",
-            appliedAmount: 40
+            appliedAmount: 40,
+            sourceAmount: 40
           },
           apSettlement
         ],
@@ -467,5 +478,23 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
     ).rejects.toMatchObject({
       failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
     });
+  });
+});
+
+describe("outbound cash funding validation", () => {
+  it("refuses credit-funded applications before provider writes", async () => {
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: apPayment,
+        settlements: [{ ...apSettlement, sourcePaymentId: "prior-credit" }],
+        linkSink: []
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+    const result = await syncer.pushToAccounting("pay_1");
+    expect(result.status).toBe("skipped");
+    expect(String(result.error)).toMatch(/credit/i);
+    expect(createBillPayment).not.toHaveBeenCalled();
   });
 });

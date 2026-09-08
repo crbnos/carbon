@@ -456,7 +456,7 @@ describe("RilletPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "pay-1",
       amount: 125,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-07-15",
       reference: "pay-1",
       status: "settled"
@@ -492,7 +492,7 @@ describe("RilletPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "bp-1",
       amount: 500,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-08-01",
       reference: "bp-1",
       status: "settled"
@@ -537,6 +537,9 @@ function makeFakeTx(store: {
       const entityId = store.docMappings[where("externalId") as string];
       return entityId ? { entityId } : undefined; // getEntityId
     }
+    if (b.table === "company")
+      return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+    if (b.table === "currency") return { decimalPlaces: 2 };
     if (b.table === "salesInvoice") return store.salesInvoice;
     if (b.table === "purchaseInvoice") return store.purchaseInvoice;
     if (b.table === "payment") {
@@ -591,6 +594,37 @@ function makeFakeTx(store: {
         return b;
       },
       async execute() {
+        if (op === "select") {
+          if (table === "externalIntegrationMapping")
+            return Object.entries(store.docMappings).map(
+              ([externalId, entityId]) => ({ externalId, entityId })
+            );
+          if (table === "salesInvoices")
+            return store.salesInvoice
+              ? [
+                  {
+                    ...store.salesInvoice,
+                    partyId: store.salesInvoice.customerId,
+                    exchangeRate: 1,
+                    totalAmount: 1000,
+                    balance: 1000
+                  }
+                ]
+              : [];
+          if (table === "purchaseInvoices")
+            return store.purchaseInvoice
+              ? [
+                  {
+                    ...store.purchaseInvoice,
+                    partyId: store.purchaseInvoice.supplierId,
+                    exchangeRate: 1,
+                    totalAmount: 1000,
+                    balance: 1000
+                  }
+                ]
+              : [];
+          return [];
+        }
         store.records.push({ op, table, values: b.valuesArg });
         return [];
       },

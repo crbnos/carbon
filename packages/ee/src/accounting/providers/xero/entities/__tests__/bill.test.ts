@@ -181,6 +181,15 @@ function makeBillDb(config: {
       orderBy: () => builder,
       async execute() {
         if (table === "journalLine") return config.journalLine;
+        if (table === "purchaseInvoiceLine")
+          return [
+            {
+              quantity: 1,
+              supplierUnitPrice: 80,
+              supplierShippingCost: 0,
+              supplierTaxAmount: 0
+            }
+          ];
         if (table === "journalLineDimension") return [];
         if (table === "purchaseOrderLine") return [];
         if (table === "externalIntegrationMapping as m")
@@ -188,7 +197,11 @@ function makeBillDb(config: {
         return [];
       },
       async executeTakeFirst() {
-        if (table === "purchaseInvoice") return config.purchaseInvoice;
+        if (table === "purchaseInvoice")
+          return { ...config.purchaseInvoice, postingDate: "2026-09-07" };
+        if (table === "company")
+          return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+        if (table === "currency") return { decimalPlaces: 2 };
         if (table === "accountDefault") return config.accountDefault;
         return undefined;
       }
@@ -220,12 +233,12 @@ function makeBillSyncer(db: never, remoteId: string | null) {
 describe("BillSyncer.mapToRemote (FX + guards)", () => {
   const fxDb = () =>
     makeBillDb({
-      purchaseInvoice: { currencyCode: "EUR", exchangeRate: 2 },
+      purchaseInvoice: { currencyCode: "EUR", exchangeRate: 0.8 },
       journalLine: [
         {
           id: "jl-1",
           accountId: "acct_grir",
-          amount: 300,
+          amount: 100,
           description: "GR/IR Clearing",
           documentLineReference: null,
           accountClass: "Asset"
@@ -233,7 +246,7 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
         {
           id: "jl-2",
           accountId: "acct_ap",
-          amount: 300,
+          amount: 100,
           description: "Accounts Payable",
           documentLineReference: null,
           accountClass: "Liability"
@@ -255,15 +268,15 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
 
   it("pins CurrencyRate and replays transaction-currency amounts (AP excluded)", async () => {
     const payload = await makeBillSyncer(fxDb(), null).mapToRemote(
-      bill({ currencyCode: "EUR", exchangeRate: 2 })
+      bill({ currencyCode: "EUR", exchangeRate: 0.8 })
     );
 
     expect(payload.CurrencyCode).toBe("EUR");
-    expect(payload.CurrencyRate).toBe(2);
+    expect(payload.CurrencyRate).toBe(0.8);
     expect(payload.LineItems).toEqual([
       {
         Description: "GR/IR Clearing",
-        LineAmount: 150,
+        LineAmount: 80,
         AccountCode: "2125",
         TaxType: "NONE"
       }

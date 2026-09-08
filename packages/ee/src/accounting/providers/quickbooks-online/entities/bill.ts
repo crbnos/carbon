@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
 import {
   type CostingLine,
@@ -7,7 +8,7 @@ import {
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
-import { JournalEntrySyncError, roundCurrency } from "../../../core/posting";
+import { JournalEntrySyncError } from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -180,7 +181,7 @@ export function buildQboBillLines(args: {
   return args.costingLines.map((line) => {
     const description = costingLineItemLabel(line) ?? line.description;
     return {
-      Amount: roundCurrency(line.amount),
+      Amount: line.amount,
       ...(description ? { Description: description } : {}),
       DetailType: "AccountBasedExpenseLineDetail",
       AccountBasedExpenseLineDetail: {
@@ -473,17 +474,21 @@ export class QboBillSyncer extends BaseEntitySyncer<
     const {
       lines: costingLines,
       currencyCode,
-      exchangeRate
+      exchangeRate,
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode
     } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
       billId: local.id,
       payablesAccountId
     });
 
-    const transactionLines = toTransactionCurrencyLines(
-      costingLines,
-      exchangeRate
-    );
+    const transactionLines = toTransactionCurrencyLines(costingLines, {
+      exchangeRate,
+      documentTotal,
+      decimalPlaces
+    });
 
     // Due date: use dateDue if provided, otherwise default to Net 30
     // (Xero-syncer parity)
@@ -509,11 +514,11 @@ export class QboBillSyncer extends BaseEntitySyncer<
       TxnDate: local.dateIssued ?? undefined,
       DueDate: dueDate,
       VendorRef: { value: vendorRemoteId },
-      // FX: pin the currency + provider rate (omit both at parity rate 1).
-      ...(exchangeRate !== 1
+      // QBO quotes company base per document currency, reciprocal to Carbon.
+      ...(currencyCode !== baseCurrencyCode
         ? {
             CurrencyRef: { value: currencyCode },
-            ExchangeRate: exchangeRate
+            ExchangeRate: 1 / exchangeRate
           }
         : {}),
       Line: buildQboBillLines({
@@ -541,37 +546,65 @@ export class QboBillSyncer extends BaseEntitySyncer<
   protected async mapToLocal(
     remote: Qbo.Bill
   ): Promise<Partial<Accounting.Bill>> {
-    const mappingService = createMappingService(this.database, this.companyId);
-
+    const company = await this.database
+      .selectFrom("company")
+      .select("baseCurrencyCode")
+      .where("id", "=", this.companyId)
+      .executeTakeFirst();
+    const currencyCode = remote.CurrencyRef?.value ?? company?.baseCurrencyCode;
+    if (!currencyCode || !company?.baseCurrencyCode)
+      throw new Error("QuickBooks bill currency metadata is required");
+    const remoteRate =
+      remote.ExchangeRate ??
+      (currencyCode === company.baseCurrencyCode ? 1 : null);
+    if (remoteRate === null || !Number.isFinite(remoteRate) || remoteRate <= 0)
+      throw new Error(
+        "QuickBooks bill exchange rate must be positive and finite"
+      );
+    if (currencyCode === company.baseCurrencyCode && remoteRate !== 1)
+      throw new Error("Base-currency bill requires identity exchange rate");
+    const exchangeRate = 1 / remoteRate;
+    const referenceIds = [
+      ...new Set(
+        (remote.Line ?? [])
+          .flatMap((line) => [
+            line.ItemBasedExpenseLineDetail?.ItemRef?.value,
+            line.AccountBasedExpenseLineDetail?.AccountRef.value
+          ])
+          .filter((id): id is string => !!id)
+      )
+    ];
+    const references = referenceIds.length
+      ? await this.database
+          .selectFrom("externalIntegrationMapping")
+          .select(["entityType", "externalId", "entityId"])
+          .where("companyId", "=", this.companyId)
+          .where("integration", "=", this.provider.id)
+          .where("entityType", "in", ["item", "account"])
+          .where("externalId", "in", referenceIds)
+          .execute()
+      : [];
+    const localReference = new Map(
+      references.map((row) => [
+        `${row.entityType}:${row.externalId}`,
+        row.entityId
+      ])
+    );
     const lines: Accounting.BillLine[] = [];
     for (const [index, line] of (remote.Line ?? []).entries()) {
       const isItemLine = line.DetailType === "ItemBasedExpenseLineDetail";
       const isAccountLine = line.DetailType === "AccountBasedExpenseLineDetail";
       if (!isItemLine && !isAccountLine) continue;
 
-      // Resolve the Carbon item from the QBO ItemRef via the mapping table
-      let itemId: string | null = null;
       const remoteItemId = line.ItemBasedExpenseLineDetail?.ItemRef?.value;
-      if (remoteItemId) {
-        itemId = await mappingService.getEntityId(
-          this.provider.id,
-          remoteItemId,
-          "item"
-        );
-      }
-
-      // Resolve the Carbon account from the QBO AccountRef via the account
-      // mapping (externalId → account.id)
-      let accountId: string | null = null;
+      const itemId = remoteItemId
+        ? (localReference.get(`item:${remoteItemId}`) ?? null)
+        : null;
       const remoteAccountId =
         line.AccountBasedExpenseLineDetail?.AccountRef.value;
-      if (remoteAccountId) {
-        accountId = await mappingService.getEntityId(
-          this.provider.id,
-          remoteAccountId,
-          "account"
-        );
-      }
+      const accountId = remoteAccountId
+        ? (localReference.get(`account:${remoteAccountId}`) ?? null)
+        : null;
 
       lines.push({
         id: line.Id ?? `temp-${index}`,
@@ -590,6 +623,8 @@ export class QboBillSyncer extends BaseEntitySyncer<
     }
 
     return {
+      currencyCode,
+      exchangeRate,
       invoiceId: remote.DocNumber ?? remote.Id,
       supplierExternalId: remote.VendorRef.value,
       status: deriveCarbonBillStatus({
@@ -600,8 +635,8 @@ export class QboBillSyncer extends BaseEntitySyncer<
       dateIssued: remote.TxnDate ?? null,
       dateDue: remote.DueDate ?? null,
       datePaid: remote.Balance === 0 ? new Date().toISOString() : null,
-      totalAmount: remote.TotalAmt ?? 0,
-      balance: remote.Balance ?? 0,
+      totalAmount: toBaseAmount(remote.TotalAmt ?? 0, exchangeRate),
+      balance: toBaseAmount(remote.Balance ?? 0, exchangeRate),
       lines,
       updatedAt:
         parseQboDate(remote.MetaData?.LastUpdatedTime)?.toISOString() ??
@@ -618,6 +653,11 @@ export class QboBillSyncer extends BaseEntitySyncer<
     data: Partial<Accounting.Bill>,
     remoteId: string
   ): Promise<string> {
+    if (!data.currencyCode || data.exchangeRate == null)
+      throw new Error(
+        "Bill currency and exchange rate are required before storing supplier amounts"
+      );
+    toBaseAmount(0, data.exchangeRate);
     const existingLocalId = await this.getLocalId(remoteId);
 
     // Resolve supplier from the QBO VendorRef via the vendor mapping
@@ -636,6 +676,8 @@ export class QboBillSyncer extends BaseEntitySyncer<
         .updateTable("purchaseInvoice")
         .set({
           supplierId,
+          currencyCode: data.currencyCode,
+          exchangeRate: data.exchangeRate,
           status: data.status,
           dateIssued: data.dateIssued,
           dateDue: data.dateDue,
@@ -696,8 +738,8 @@ export class QboBillSyncer extends BaseEntitySyncer<
         dateIssued: data.dateIssued ?? null,
         dateDue: data.dateDue ?? null,
         datePaid: data.datePaid ?? null,
-        currencyCode: data.currencyCode ?? "USD",
-        exchangeRate: data.exchangeRate ?? 1,
+        currencyCode: data.currencyCode,
+        exchangeRate: data.exchangeRate,
         subtotal: data.subtotal ?? 0,
         totalTax: data.totalTax ?? 0,
         totalDiscount: data.totalDiscount ?? 0,
@@ -749,6 +791,7 @@ export class QboBillSyncer extends BaseEntitySyncer<
     await tx
       .deleteFrom("purchaseInvoiceLine")
       .where("invoiceId", "=", invoiceId)
+      .where("companyId", "=", this.companyId)
       .execute();
 
     if (lines.length === 0) return;
@@ -757,32 +800,29 @@ export class QboBillSyncer extends BaseEntitySyncer<
       .selectFrom("purchaseInvoice")
       .select(["companyId", "createdBy", "exchangeRate"])
       .where("id", "=", invoiceId)
+      .where("companyId", "=", this.companyId)
       .executeTakeFirstOrThrow();
 
-    for (const line of lines) {
-      await tx
-        .insertInto("purchaseInvoiceLine")
-        .values({
+    await tx
+      .insertInto("purchaseInvoiceLine")
+      .values(
+        lines.map((line) => ({
           invoiceId,
           companyId: invoice.companyId,
           createdBy: invoice.createdBy,
           description: line.description,
           quantity: line.quantity,
-          unitPrice: line.unitPrice,
           supplierUnitPrice: line.unitPrice,
           itemId: line.itemId,
           accountId: line.accountId ?? null,
           taxPercent: line.taxPercent,
-          taxAmount: line.taxAmount,
           supplierTaxAmount: line.taxAmount ?? 0,
-          totalAmount: line.totalAmount,
-          supplierExtendedPrice: line.totalAmount,
           exchangeRate: invoice.exchangeRate,
           invoiceLineType: line.itemId ? "Part" : "G/L Account",
           supplierShippingCost: 0
-        })
-        .execute();
-    }
+        }))
+      )
+      .execute();
   }
 
   // =================================================================

@@ -1745,6 +1745,9 @@ msgstr "Data di applicazione"
 msgid "Applied To"
 msgstr "Applicato A"
 
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr ""
+
 msgid "Applies to"
 msgstr "Si applica a"
 
@@ -8313,6 +8316,9 @@ msgstr "inv"
 msgid "Inv Rate"
 msgstr "Tasso Fattura"
 
+msgid "Invalid applications"
+msgstr ""
+
 msgid "Invalid Invite"
 msgstr "Invito Non Valido"
 
@@ -14278,9 +14284,6 @@ msgstr "Seleziona superfici"
 
 msgid "Select the groups that should complete this training"
 msgstr "Seleziona i gruppi che dovrebbero completare questa formazione"
-
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "Seleziona le fatture che questo pagamento liquida. Lo sconto e lo stralcio sono nella valuta della fattura."
 
 msgid "Select value"
 msgstr "Seleziona valore"

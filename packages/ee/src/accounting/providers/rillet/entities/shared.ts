@@ -1,4 +1,6 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { toDocumentAmount } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
   buildDimensionFieldLookup,
@@ -15,8 +17,7 @@ import {
   JournalEntrySyncError,
   type JournalLineDimensionRef,
   type PostingSyncSettings,
-  resolvePostingSyncSettings,
-  roundCurrency
+  resolvePostingSyncSettings
 } from "../../../core/posting";
 import {
   type Accounting,
@@ -128,9 +129,39 @@ export async function writeDroppingUnregisteredReferences<
 /** Format a number as Rillet money — a 2-dp decimal STRING plus currency. */
 export function toRilletMoney(
   amount: number,
-  currency: string
+  currency: string,
+  decimalPlaces = 2
 ): Rillet.MonetaryAmount {
-  return { amount: roundCurrency(amount).toFixed(2), currency };
+  if (decimalPlaces > 5) throw new Error("Unsupported document decimal scale");
+  return {
+    amount: toDocumentAmount(amount, 1, decimalPlaces).toFixed(decimalPlaces),
+    currency
+  };
+}
+
+/** Directed-pair inference; provider-returned economic evidence is still required. */
+export function toRilletExchangeRate(args: {
+  baseCurrencyCode: string;
+  documentCurrencyCode: string;
+  foreignPerBaseRate: number;
+  date: string;
+}): Rillet.ExchangeRate | undefined {
+  const {
+    baseCurrencyCode: base,
+    documentCurrencyCode: target,
+    foreignPerBaseRate: rate,
+    date
+  } = args;
+  if (!base.trim() || !target.trim())
+    throw new Error("Rillet exchange-rate currencies are required");
+  toDocumentAmount(0, rate, 2);
+  parseDate(date);
+  if (base === target) {
+    if (rate !== 1)
+      throw new Error("Identical currencies require identity exchange rate");
+    return undefined;
+  }
+  return { base, target, rate: String(rate), date };
 }
 
 /**

@@ -283,6 +283,16 @@ export namespace Rillet {
 
   export type BillStatus = z.infer<typeof BillStatusSchema>;
 
+  export const ExchangeRateSchema = z.object({
+    base: z.string().min(1),
+    target: z.string().min(1),
+    rate: z
+      .string()
+      .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  });
+  export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
+
   export const BillSchema = z.object({
     id: z.string(),
     vendor_id: z.string(),
@@ -295,7 +305,7 @@ export namespace Rillet {
     subsidiary_id: z.string().optional(),
     impact_date: z.string().optional(),
     external_references: z.array(ExternalReferenceSchema).optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     status: BillStatusSchema.optional(),
     updated_at: z.string().optional()
   });

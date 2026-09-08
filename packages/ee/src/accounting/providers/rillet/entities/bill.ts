@@ -23,6 +23,7 @@ import {
   carbonExternalReference,
   loadRilletAccountCodesById,
   RilletTransactionSyncer,
+  toRilletExchangeRate,
   toRilletMoney,
   writeDroppingUnregisteredReferences
 } from "./shared";
@@ -125,11 +126,15 @@ function describeCostingLine(line: CostingLine): string | undefined {
  *
  * The costing lines carry base-currency debit-signed amounts;
  * `bill.exchangeRate` converts them to the invoice's transaction currency
- * (pass-through at rate 1). Throws structured Warnings when the journal is
+ * (rounded at the document currency boundary). Throws structured Warnings when the journal is
  * missing (invoice not posted / accounting off) or an account is unmapped.
  */
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
+  documentTotal: number;
+  decimalPlaces: number;
+  baseCurrencyCode: string;
+  postingDate: string;
   vendorRemoteId: string;
   accountCodesById: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
@@ -202,11 +207,12 @@ export function mapBillToRilletBill(args: {
   }
 
   // FX: convert base-currency amounts to the invoice's transaction currency
-  // (pass-through at rate 1) and pin exchange_rate on the payload below.
-  const transactionLines = toTransactionCurrencyLines(
-    costingLines,
-    bill.exchangeRate
-  );
+  // (rounded at the document currency boundary) and pin exchange_rate on the payload below.
+  const transactionLines = toTransactionCurrencyLines(costingLines, {
+    exchangeRate: bill.exchangeRate,
+    documentTotal: args.documentTotal,
+    decimalPlaces: args.decimalPlaces
+  });
 
   const items: Rillet.BillItem[] = transactionLines.map((line) => {
     const fieldRefs: Rillet.ItemFieldRef[] = [];
@@ -231,15 +237,13 @@ export function mapBillToRilletBill(args: {
 
     return {
       account_code: args.accountCodesById.get(line.accountId!)!,
-      amount: toRilletMoney(line.amount, currency),
+      amount: toRilletMoney(line.amount, currency, args.decimalPlaces),
       ...(description ? { description } : {}),
       ...(fieldRefs.length > 0 ? { fields: fieldRefs } : {})
     };
   });
 
-  const billDate = toPostingDateString(
-    bill.dateIssued ?? new Date().toISOString()
-  );
+  const billDate = toPostingDateString(bill.dateIssued ?? args.postingDate);
 
   return {
     vendor_id: args.vendorRemoteId,
@@ -249,8 +253,13 @@ export function mapBillToRilletBill(args: {
     due_date: toPostingDateString(bill.dateDue ?? billDate),
     items,
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
-    // Pin the provider exchange rate for FX bills (omit at parity rate 1).
-    ...(bill.exchangeRate !== 1 ? { exchange_rate: bill.exchangeRate } : {}),
+    // Pin the directed provider exchange rate for foreign-currency bills.
+    exchange_rate: toRilletExchangeRate({
+      baseCurrencyCode: args.baseCurrencyCode,
+      documentCurrencyCode: currency,
+      foreignPerBaseRate: bill.exchangeRate,
+      date: args.postingDate
+    }),
     external_references: [
       carbonExternalReference(bill.id),
       carbonCompanyExternalReference(args.companyId)
@@ -492,7 +501,15 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     }
 
     const payablesAccountId = await this.getPayablesAccountId();
-    const { lines: costingLines } = await loadBillCostingLines(this.database, {
+    const {
+      lines: costingLines,
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode,
+      postingDate,
+      currencyCode,
+      exchangeRate
+    } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
       billId: local.id,
       payablesAccountId
@@ -506,7 +523,11 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       await this.resolveLineDimensions(costingLines);
 
     return mapBillToRilletBill({
-      bill: local,
+      bill: { ...local, currencyCode, exchangeRate },
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode,
+      postingDate,
       vendorRemoteId,
       accountCodesById: await this.getAccountCodesById(),
       subsidiaryId: this.rilletProvider.subsidiaryId,

@@ -1745,6 +1745,9 @@ msgstr "適用日"
 msgid "Applied To"
 msgstr "適用先"
 
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr ""
+
 msgid "Applies to"
 msgstr "適用対象"
 
@@ -8313,6 +8316,9 @@ msgstr "在庫"
 msgid "Inv Rate"
 msgstr "請求書レート"
 
+msgid "Invalid applications"
+msgstr ""
+
 msgid "Invalid Invite"
 msgstr "無効な招待"
 
@@ -14278,9 +14284,6 @@ msgstr "サーフェスを選択"
 
 msgid "Select the groups that should complete this training"
 msgstr "この教育訓練を完了すべきグループを選択してください"
-
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "この支払いで決済する請求書を選択してください。値引と償却は請求書の通貨で表示されます。"
 
 msgid "Select value"
 msgstr "値を選択"

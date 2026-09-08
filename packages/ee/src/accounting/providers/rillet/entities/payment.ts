@@ -334,7 +334,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
         paymentRemoteId,
         amount: getRilletPaymentAmount(bill),
         currencyCode: getRilletPaymentCurrency(bill),
-        exchangeRate: 1,
+        exchangeRate: null,
         paidDate,
         // The Rillet bill-payment id is the human/provider reference.
         reference: paymentRemoteId,
@@ -350,7 +350,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       paymentRemoteId,
       amount: local.amount ?? 0,
       currencyCode: local.currencyCode ?? null,
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: local.date ?? new Date().toISOString().slice(0, 10),
       reference: paymentRemoteId,
       status:

@@ -1745,6 +1745,9 @@ msgstr "应用日期"
 msgid "Applied To"
 msgstr "应用于"
 
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr ""
+
 msgid "Applies to"
 msgstr "适用于"
 
@@ -8313,6 +8316,9 @@ msgstr "库存"
 msgid "Inv Rate"
 msgstr "发票汇率"
 
+msgid "Invalid applications"
+msgstr ""
+
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
@@ -14278,9 +14284,6 @@ msgstr "选择表面"
 
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
-
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "选择此付款结算的发票。折扣和核销以发票货币计。"
 
 msgid "Select value"
 msgstr "选择值"

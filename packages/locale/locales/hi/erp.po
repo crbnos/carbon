@@ -1745,6 +1745,9 @@ msgstr "लागू तारीख"
 msgid "Applied To"
 msgstr "लागू किया गया"
 
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr ""
+
 msgid "Applies to"
 msgstr "लागू होता है"
 
@@ -8313,6 +8316,9 @@ msgstr "इन्व"
 msgid "Inv Rate"
 msgstr "इनवॉइस दर"
 
+msgid "Invalid applications"
+msgstr ""
+
 msgid "Invalid Invite"
 msgstr "अमान्य निमंत्रण"
 
@@ -14278,9 +14284,6 @@ msgstr "सतहें चुनें"
 
 msgid "Select the groups that should complete this training"
 msgstr "उन समूहों का चयन करें जिन्हें इस प्रशिक्षण को पूरा करना चाहिए"
-
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "वह चालान चुनें जो यह भुगतान निपटाता है। छूट और बट्टे खाते चालान मुद्रा में हैं।"
 
 msgid "Select value"
 msgstr "मान चुनें"
