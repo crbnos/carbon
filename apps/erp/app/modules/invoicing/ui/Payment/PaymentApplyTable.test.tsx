@@ -6,6 +6,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const harness = vi.hoisted(() => ({
   submit: vi.fn(),
   buttons: [] as { children: ReactNode; onClick?: () => void }[],
+  amounts: [] as {
+    "aria-label"?: string;
+    onChange?: (value: number) => void;
+  }[],
+  checkboxes: [] as { onCheckedChange?: (checked: boolean) => void }[],
   state: undefined as unknown
 }));
 vi.mock("react", async (importOriginal) => {
@@ -52,19 +57,23 @@ vi.mock("@carbon/react", () => {
     CardHeader: Box,
     CardTitle: Box,
     HStack: Box,
-    Checkbox: () => null,
-    NumberField: ({
-      value,
-      formatOptions
-    }: {
+    Checkbox: (props: { onCheckedChange?: (checked: boolean) => void }) => {
+      harness.checkboxes.push(props);
+      return null;
+    },
+    NumberField: (props: {
       value: number;
       formatOptions: Intl.NumberFormatOptions;
-    }) =>
-      createElement(
+      "aria-label"?: string;
+      onChange?: (value: number) => void;
+    }) => {
+      harness.amounts.push(props);
+      return createElement(
         "output",
         null,
-        new Intl.NumberFormat("en-US", formatOptions).format(value)
-      ),
+        new Intl.NumberFormat("en-US", props.formatOptions).format(props.value)
+      );
+    },
     NumberInput: Box,
     NumberInputGroup: Box,
     cn: (...args: unknown[]) =>
@@ -140,6 +149,8 @@ const props = {
 };
 function render(overrides = {}) {
   harness.buttons = [];
+  harness.amounts = [];
+  harness.checkboxes = [];
   return renderToStaticMarkup(
     createElement(PaymentApplyTable, { ...props, ...overrides })
   );
@@ -153,12 +164,157 @@ function click(label: string) {
   expect(button).toBeDefined();
   button?.onClick?.();
 }
+function editAmount(label: string, value: number) {
+  const field = harness.amounts.find((input) => input["aria-label"] === label);
+  expect(field).toBeDefined();
+  field?.onChange?.(value);
+}
+function savedApplications() {
+  click("Save applications");
+  const formData = harness.submit.mock.calls.at(-1)?.[0] as FormData;
+  expect(formData).toBeInstanceOf(FormData);
+  return JSON.parse(String(formData.get("applications")));
+}
 beforeEach(() => {
   harness.state = undefined;
   harness.buttons = [];
+  harness.amounts = [];
+  harness.checkboxes = [];
   harness.submit.mockClear();
 });
 describe("payment composer document funding", () => {
+  const highRate = {
+    paymentTotal: 0,
+    paymentExchangeRate: 16000,
+    availableCredit: 160.01,
+    priorSources: [
+      {
+        paymentId: "prior",
+        postingDate: "2026-09-01",
+        exchangeRate: 16000,
+        remainingDocument: 160.01,
+        remainingBase: 0.01
+      }
+    ],
+    openInvoices: [
+      {
+        ...props.openInvoices[0],
+        exchangeRate: 16000,
+        totalAmount: 0.01,
+        balance: 0.01,
+        remainingDocument: 160.01
+      }
+    ]
+  };
+  const highRateApplication = {
+    targetSalesInvoiceId: "one",
+    targetPurchaseInvoiceId: null,
+    appliedAmount: 0.01,
+    sourceAmount: 160.01,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    targetExchangeRate: 16000,
+    sourceExchangeRate: 16000,
+    appliedDate: "2026-09-07"
+  };
+
+  it.each([
+    false,
+    true
+  ])("manual base .01 consumes160.00 and preserves a document cent (reopened:%s)", (reopened) => {
+    const overrides = {
+      ...highRate,
+      existingApplications: reopened ? [highRateApplication] : []
+    };
+    render(overrides);
+    editAmount("Applied amount for INV1", 0.01);
+    render(overrides);
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({ appliedAmount: 0.01, sourceAmount: 160 })
+    ]);
+  });
+
+  it.each([
+    "Discount",
+    "Write-off"
+  ])("%s zero edit does not promote a rounded partial amount to full document relief", (label) => {
+    const overrides = {
+      ...highRate,
+      existingApplications: [{ ...highRateApplication, sourceAmount: 160 }]
+    };
+    render(overrides);
+    editAmount(`${label} for INV1`, 0);
+    render(overrides);
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({
+        appliedAmount: 0.01,
+        sourceAmount: 160,
+        discountAmount: 0,
+        writeOffAmount: 0
+      })
+    ]);
+  });
+
+  it.each([
+    "checkbox",
+    "Auto apply"
+  ])("%s retains all160.01 source units for an exact full application", (selection) => {
+    render(highRate);
+    if (selection === "checkbox")
+      harness.checkboxes[0]?.onCheckedChange?.(true);
+    else click(selection);
+    render(highRate);
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({ appliedAmount: 0.01, sourceAmount: 160.01 })
+    ]);
+  });
+
+  it.each([
+    "checkbox",
+    "Auto apply"
+  ])("%s retains the final document cent even when its carrying base is zero", (selection) => {
+    const overrides = {
+      ...highRate,
+      availableCredit: 0.01,
+      priorSources: [
+        {
+          ...highRate.priorSources[0],
+          remainingDocument: 0.01,
+          remainingBase: 0
+        }
+      ],
+      openInvoices: [
+        { ...highRate.openInvoices[0], remainingDocument: 0.01, balance: 0 }
+      ]
+    };
+    render(overrides);
+    if (selection === "checkbox")
+      harness.checkboxes[0]?.onCheckedChange?.(true);
+    else click(selection);
+    render(overrides);
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({ appliedAmount: 0, sourceAmount: 0.01 })
+    ]);
+  });
+
+  it("discount and write-off edits still reduce cash on an exact full selection", () => {
+    render();
+    harness.checkboxes[0]?.onCheckedChange?.(true);
+    render();
+    editAmount("Discount for INV1", 10);
+    render();
+    editAmount("Write-off for INV1", 5);
+    render();
+    expect(savedApplications()).toEqual([
+      expect.objectContaining({
+        appliedAmount: 85,
+        sourceAmount: 93.5,
+        discountAmount: 10,
+        writeOffAmount: 5
+      })
+    ]);
+  });
+
   it("auto applies 170 EUR to invoices carrying 100 and 50 USD at distinct snapshots", () => {
     render();
     click("Auto apply");

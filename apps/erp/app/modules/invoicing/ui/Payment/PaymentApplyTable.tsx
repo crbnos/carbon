@@ -330,28 +330,22 @@ const PaymentApplyTable = ({
           if (r.id !== id) return r;
           const next = { ...r, [field]: round(Math.max(0, value)) };
           if (field === "appliedAmount")
-            next.sourceAmount =
-              round(
-                next.appliedAmount + next.discountAmount + next.writeOffAmount
-              ) === r.balance
-                ? toDocumentAmount(
-                    r.remainingDocument -
-                      toDocumentAmount(
-                        next.discountAmount + next.writeOffAmount,
-                        r.exchangeRate,
-                        currencyDecimals
-                      ),
-                    1,
-                    currencyDecimals
-                  )
-                : toDocumentAmount(
-                    next.appliedAmount,
-                    r.exchangeRate,
-                    currencyDecimals
-                  );
+            next.sourceAmount = toDocumentAmount(
+              next.appliedAmount,
+              r.exchangeRate,
+              currencyDecimals
+            );
           else if (
-            round(r.appliedAmount + r.discountAmount + r.writeOffAmount) ===
-            r.balance
+            toDocumentAmount(
+              r.sourceAmount +
+                toDocumentAmount(
+                  r.discountAmount + r.writeOffAmount,
+                  r.exchangeRate,
+                  currencyDecimals
+                ),
+              1,
+              currencyDecimals
+            ) === r.remainingDocument
           ) {
             next.appliedAmount = Math.max(
               0,
