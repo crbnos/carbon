@@ -13411,6 +13411,9 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "売上高"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr ""
+
 msgid "Revenue and expenses over a period"
 msgstr "期間中の売上高と費用"
 
@@ -14643,6 +14646,9 @@ msgstr "出荷方法"
 
 msgid "Shipping Notes"
 msgstr "配送メモ"
+
+msgid "Shipping Revenue"
+msgstr ""
 
 msgid "Shipping Supplier"
 msgstr "配送仕入先"

@@ -13411,6 +13411,9 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "Ricavi"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr ""
+
 msgid "Revenue and expenses over a period"
 msgstr "Ricavi e spese in un periodo"
 
@@ -14643,6 +14646,9 @@ msgstr "Metodi di Spedizione"
 
 msgid "Shipping Notes"
 msgstr "Note di spedizione"
+
+msgid "Shipping Revenue"
+msgstr ""
 
 msgid "Shipping Supplier"
 msgstr "Fornitore di spedizione"

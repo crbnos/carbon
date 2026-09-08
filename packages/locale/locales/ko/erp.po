@@ -13411,6 +13411,9 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "매출"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr ""
+
 msgid "Revenue and expenses over a period"
 msgstr "기간별 매출 및 비용"
 
@@ -14643,6 +14646,9 @@ msgstr "배송 방법"
 
 msgid "Shipping Notes"
 msgstr "배송 메모"
+
+msgid "Shipping Revenue"
+msgstr ""
 
 msgid "Shipping Supplier"
 msgstr "배송 공급업체"

@@ -13411,6 +13411,9 @@ msgstr "Wer. {revision}"
 msgid "Revenue"
 msgstr "Przychody ze sprzedaży"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr ""
+
 msgid "Revenue and expenses over a period"
 msgstr "Przychody ze sprzedaży i wydatki za okres"
 
@@ -14643,6 +14646,9 @@ msgstr "Sposoby wysyłki"
 
 msgid "Shipping Notes"
 msgstr "Notatki wysyłki"
+
+msgid "Shipping Revenue"
+msgstr ""
 
 msgid "Shipping Supplier"
 msgstr "Dostawca wysyłki"

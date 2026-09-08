@@ -13411,6 +13411,9 @@ msgstr "修订版 {revision}"
 msgid "Revenue"
 msgstr "收入"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr ""
+
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
 
@@ -14643,6 +14646,9 @@ msgstr "发货方式"
 
 msgid "Shipping Notes"
 msgstr "运输备注"
+
+msgid "Shipping Revenue"
+msgstr ""
 
 msgid "Shipping Supplier"
 msgstr "运输供应商"

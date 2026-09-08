@@ -13411,6 +13411,9 @@ msgstr "Ред. {revision}"
 msgid "Revenue"
 msgstr "Выручка"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr ""
+
 msgid "Revenue and expenses over a period"
 msgstr "Выручка и расходы за период"
 
@@ -14643,6 +14646,9 @@ msgstr "Способы доставки"
 
 msgid "Shipping Notes"
 msgstr "Примечания к доставке"
+
+msgid "Shipping Revenue"
+msgstr ""
 
 msgid "Shipping Supplier"
 msgstr "Поставщик доставки"
