@@ -4424,11 +4424,30 @@ export async function translateCompanyBalances(
         averageRate: number;
         historicalRate: number;
       }
+    | null
     | undefined;
 
-  const sameCurrency = rates?.sourceCurrency === targetCurrency;
+  if (!rates) {
+    return {
+      data: null,
+      cta: 0,
+      error: `Missing consolidation rates for company ${companyId}`
+    };
+  }
+  if (
+    typeof rates.sourceCurrency !== "string" ||
+    !rates.sourceCurrency.trim()
+  ) {
+    return {
+      data: null,
+      cta: 0,
+      error: `Missing source currency for company ${companyId}`
+    };
+  }
+
+  const sameCurrency = rates.sourceCurrency === targetCurrency;
   const rateFor = (consolidatedRate: string | null): number => {
-    if (sameCurrency || !rates) return 1;
+    if (sameCurrency) return 1;
     switch (consolidatedRate) {
       case "Average":
         return Number(rates.averageRate);
@@ -4440,9 +4459,12 @@ export async function translateCompanyBalances(
     }
   };
 
-  const rows: TranslatedBalance[] = [];
-  let totalTranslatedAssets = 0;
-  let totalTranslatedLiabilitiesAndEquity = 0;
+  const leaves: Array<{
+    account: (typeof balances)[number];
+    localBalance: number;
+    sign: number;
+  }> = [];
+  let sourceDebitMinusCredit = 0;
 
   for (const account of balances) {
     // Leaf accounts only, and never the synthetic Net Income line — its
@@ -4450,8 +4472,55 @@ export async function translateCompanyBalances(
     // too would double-count net income in the CTA.
     if (account.isGroup || account.id === NET_INCOME_ACCOUNT_ID) continue;
 
+    let sign: number;
+    switch (account.class) {
+      case "Asset":
+      case "Expense":
+        sign = 1;
+        break;
+      case "Liability":
+      case "Equity":
+      case "Revenue":
+        sign = -1;
+        break;
+      default:
+        return {
+          data: null,
+          cta: 0,
+          error: `Invalid account class for account ${account.id}`
+        };
+    }
+    const localBalance = Number(account.balanceAtDate);
+    if (!Number.isFinite(localBalance)) {
+      return {
+        data: null,
+        cta: 0,
+        error: `Invalid source balance for account ${account.id}`
+      };
+    }
+    sourceDebitMinusCredit += sign * localBalance;
+    leaves.push({ account, localBalance, sign });
+  }
+
+  if (!isBalanced(sourceDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
+    return {
+      data: null,
+      cta: 0,
+      error: `Source balances for company ${companyId} do not balance (off by ${round(sourceDebitMinusCredit)})`
+    };
+  }
+
+  const rows: TranslatedBalance[] = [];
+  let translatedDebitMinusCredit = 0;
+  for (const { account, localBalance, sign } of leaves) {
     const exchangeRate = rateFor(account.consolidatedRate);
-    const localBalance = Number(account.balanceAtDate ?? 0);
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+      return {
+        data: null,
+        cta: 0,
+        error: `Invalid ${account.consolidatedRate ?? "Current"} consolidation rate for account ${account.id}`
+      };
+    }
     const translatedBalance = round(localBalance * exchangeRate);
 
     rows.push({
@@ -4461,18 +4530,13 @@ export async function translateCompanyBalances(
       translatedBalance
     });
 
-    if (account.class === "Asset") {
-      totalTranslatedAssets += translatedBalance;
-    } else {
-      // Liability, Equity, Revenue, Expense (but income statement
-      // accounts net to retained earnings on balance sheet)
-      totalTranslatedLiabilitiesAndEquity += translatedBalance;
-    }
+    translatedDebitMinusCredit += sign * translatedBalance;
   }
 
-  // CTA = translated assets - translated (liabilities + equity)
-  // A balanced sheet means assets = liabilities + equity + CTA
-  const cta = totalTranslatedAssets - totalTranslatedLiabilitiesAndEquity;
+  // Natural balances become debit-minus-credit with Asset/Expense positive
+  // and Liability/Equity/Revenue negative. The translated residual is the
+  // additional Equity balance; report-tree presentation signs do not apply.
+  const cta = round(translatedDebitMinusCredit);
 
   return { data: rows, cta, error: null };
 }
