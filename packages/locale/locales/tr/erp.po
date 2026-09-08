@@ -129,7 +129,7 @@ msgstr "{0} bu süreçteki operasyonlar listelenmemiştir: {1}"
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} operasyon"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0} hurdaya alındı"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0} seçildi"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names} farklıdır"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names} partiyle eşleşmiyor"
 
 msgid "{names} must match — separate load"
 msgstr "{name} geri döndü!"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "Partiye Ekle"
 
 msgid "Add to stock for future use"
 msgstr "Gelecekteki kullanım için stoğa ekle"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "Otomatik İş Başlatma"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "Serbest bırakma sırasında otomatik atanır"
 
 msgid "Auto-create"
 msgstr "Otomatik oluştur"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "Kanban tamamlama taramasında tüm miktarları tamamla"
 
 msgid "Complete Job"
 msgstr "İşi Tamamla"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "API Anahtarını Kopyala"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "Parti Numarasını Kopyala"
 
 msgid "Copy company unique identifier"
 msgstr "Şirket benzersiz tanımlayıcısını kopyala"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "Parti Oluştur"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "Parti Oluştur"
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "Saat/Adet"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "Gruplanabilir bir işlemin çalışması: Ardışık, parçaları bir makine üzerinde birbir ardına çalıştırır (testere veya lazer masası gibi), Eşzamanlı ise bunları tek bir yükte birlikte çalıştırır (fırın, fırın veya elektroliz banyosu gibi)."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Bir stok kartının genel olarak nasıl tamamlandığı (Satın alma, Üretim veya Satın alma ve üretim), stok kartı başına ayarlanır, satır başına tedarik şeklinden farklı."
@@ -8876,6 +8876,9 @@ msgstr "İş emri operasyonu"
 
 msgid "Job Operation"
 msgstr "İş emri operasyonu"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
 msgid "No batches"
-msgstr ""
+msgstr "Parti yok"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
 
 msgid "Open batch"
-msgstr ""
+msgstr "Açık Parti"
 
 msgid "Open date"
 msgstr "Açılış tarihi"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "İşletme Geliri"
 
 msgid "operation"
-msgstr ""
+msgstr "operasyon"
 
 msgid "Operation"
 msgstr "Operasyon"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "Parçalar ve ürünler"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "Parçalar birbir ardına çalışır — örneğin testere veya lazer masası."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "Parçalar tek bir yükte birlikte çalışır — örneğin fırın, fırın veya elektroliz banyosu."
 
 msgid "Parts, materials, and how you classify them."
 msgstr "Parçalar, malzemeler ve bunları nasıl sınıflandırdığınız."
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "Planlan Başlangıç Saati"
 
 msgid "Planned time"
-msgstr ""
+msgstr "Planlanan Zaman"
 
 msgid "Planning"
 msgstr "Planlama"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "{0} Etiket Yazdır"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "Parti Listesini Yazdır"
 
 msgid "Print Jobs"
 msgstr "Yazdırma İşleri"
@@ -13365,7 +13368,7 @@ msgstr "Kaldır {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "{0} bu partiyi kaldırmak istiyor musunuz? Operasyonu çizelgeye geri döner ve kendi başına çalışacak."
 
 msgid "Remove {label}"
 msgstr "{label}'i Kaldır"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "Eylemleri ara…"
 
 msgid "Search batches…"
-msgstr ""
+msgstr "Partileri ara…"
 
 msgid "Search by Jira issue title..."
 msgstr "Jira sorunu başlığı ile ara..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "Numaralandırmalar"
 
 msgid "Sequential"
-msgstr ""
+msgstr "Ardışık"
 
 msgid "Serial"
 msgstr "Seri"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "Oturum açma artık kod gerektirmez. Onaylamak için kimlik doğrulayıcı uygulamanızdan mevcut 6 haneli kodu girin."
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "Eşzamanlı"
 
 msgid "Single Sign-On"
 msgstr "Tekli Oturum Açma"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "Bu işle ilgili tedarikçisi olmayan dış operasyonlar bulunmaktadır. İşlemden önce her dış operasyona bir tedarikçi atayınız."
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "Bu operasyonlarda kurulum, işçilik veya makine süresi yok, bu nedenle çalıştırmayı boyutlandırmak için hiçbir şey yok. Çubuk nominal bir işarettir ve kapasite tutmaz — operasyonlara zaman standartları ekleyin."
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Bu kredileri uygulanacak hiçbir ödenmemiş tutar yok."
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "Bu operasyon henüz zamanlanmaz — bar, çakışma çözüldüğünde nerede çalışacağını işaretler. Kapasiteyi tutmaz."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "Bu operasyon partide ancak malzemesi diğerleriyle eşleşmiyor — kaldırın veya birlikte çalışacağını onaylayın"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Uygulama Hub'ınızın bu sayfası oluşturuluyor. Bunu tamamlarken komuta merkezinden başlayın."
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "Toplam Fiyat"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "Toplam Miktar"
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "Balonu Kaldır"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "Partisiz Operasyonlar"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."

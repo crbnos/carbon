@@ -129,7 +129,7 @@ msgstr "{0} operazioni su questo processo non sono elencate: {1}"
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} operazioni"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0} scartato"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0} selezionati"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names} differisce"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names} non corrisponde al lotto di produzione"
 
 msgid "{names} must match — separate load"
 msgstr "{names} devono corrispondere — carico separato"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "Aggiungi Scheda Orario"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "Aggiungi al lotto di produzione"
 
 msgid "Add to stock for future use"
 msgstr "Aggiungi alle scorte per uso futuro"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "Avvia automaticamente il lavoro"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "Assegnato automaticamente al rilascio"
 
 msgid "Auto-create"
 msgstr "Crea automaticamente"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "Completa Tutto"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "Completa tutte le quantità alla scansione di completamento kanban"
 
 msgid "Complete Job"
 msgstr "Completa Lavoro"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "Copia Chiave API"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "Copia numero lotto di produzione"
 
 msgid "Copy company unique identifier"
 msgstr "Copia identificatore univoco azienda"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "Crea lotto"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "Crea lotto di produzione"
 
 msgid "Create Change Notice"
 msgstr "Crea avviso di modifica"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "Ore/Pezzo"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "Come un processo lottizzabile esegue il suo lavoro raggruppato: Sequenziale esegue le parti una dopo l'altra su una macchina (una sega o tavolo laser), mentre Simultanea le esegue insieme in un unico carico (una fornace, un forno, o una vasca di placcatura)."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Come viene rifornito complessivamente un articolo (Acquisto, Produzione, o Acquisto e produzione), impostato per articolo, diversamente dal tipo di fornitura per riga."
@@ -8876,6 +8876,9 @@ msgstr "Operazione dell'ordine"
 
 msgid "Job Operation"
 msgstr "Operazione dell'ordine"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "Operazioni dell'ordine"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "Nessuna entità tracciata disponibile trovata"
 
 msgid "No batches"
-msgstr ""
+msgstr "Nessun lotto di produzione"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Nessun articolo di ingresso BOM ha una politica di shelf-life"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "Apri Registro di Audit"
 
 msgid "Open batch"
-msgstr ""
+msgstr "Lotto di produzione aperto"
 
 msgid "Open date"
 msgstr "Data di apertura"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "Proventi operativi"
 
 msgid "operation"
-msgstr ""
+msgstr "operazione"
 
 msgid "Operation"
 msgstr "Operazione"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "Componenti e articoli"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "Le parti vengono eseguite una dopo l'altra — ad esempio una sega o tavolo laser."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "Le parti vengono eseguite insieme in un unico carico — ad esempio una fornace, un forno, o una vasca di placcatura."
 
 msgid "Parts, materials, and how you classify them."
 msgstr "Componenti, materiali e come li classifichi."
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "Ora di inizio pianificata"
 
 msgid "Planned time"
-msgstr ""
+msgstr "Tempo previsto"
 
 msgid "Planning"
 msgstr "Pianificazione"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "Stampa {0} Etichette"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "Stampa elenco lotto di produzione"
 
 msgid "Print Jobs"
 msgstr "Stampa ordini di produzione"
@@ -13365,7 +13368,7 @@ msgstr "Rimuovi {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "Rimuovere {0} da questo lotto di produzione? La sua operazione ritorna al programma per essere eseguita autonomamente."
 
 msgid "Remove {label}"
 msgstr "Rimuovi {label}"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "Cerca azioni..."
 
 msgid "Search batches…"
-msgstr ""
+msgstr "Cerca lotti di produzione…"
 
 msgid "Search by Jira issue title..."
 msgstr "Cerca per titolo problema Jira..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "Sequenze"
 
 msgid "Sequential"
-msgstr ""
+msgstr "Sequenziale"
 
 msgid "Serial"
 msgstr "Seriale"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "L'accesso non richiederà più un codice. Inserisci il codice a 6 cifre attuale dall'app autenticatore per confermare."
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "Simultanea"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "Ci sono operazioni esterne associate a questo lavoro che non hanno fornitori. Assegna un fornitore a ogni operazione esterna prima di rilasciarlo."
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "Non c'è attrezzaggio, manodopera, o tempo macchina su queste operazioni, quindi non c'è nulla su cui basare la dimensione della serie. La barra è un marcatore nominale e non rappresenta un vincolo di capacità — aggiungi standard di tempo alle operazioni per programmarla."
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Non c'è nulla in sospeso a cui applicare questi crediti."
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "Questa operazione non può ancora essere programmata — la barra segna dove verrebbe eseguita una volta risolto il conflitto. Non sta trattenendo la capacità."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "Questa operazione è nel lotto di produzione, ma il suo materiale non corrisponde agli altri — rimuovila, o conferma che viene eseguita insieme"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Questa pagina del tuo Implementation Hub è in fase di costruzione. Inizia dal centro di comando mentre la completiamo."
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "Prezzo Totale"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "Quantità totale"
 
 msgid "Total Quantity"
 msgstr "Quantità Totale"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "Rimuovi palloncino"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "Operazioni non raggruppate"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Le righe non conteggiate rimangono invariate al post — non vengono azzerate."

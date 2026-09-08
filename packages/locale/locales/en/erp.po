@@ -8877,6 +8877,9 @@ msgstr "Job operation"
 msgid "Job Operation"
 msgstr "Job Operation"
 
+msgid "Job operation batch"
+msgstr "Job operation batch"
+
 msgid "Job Operations"
 msgstr "Job Operations"
 

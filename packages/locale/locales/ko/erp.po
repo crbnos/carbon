@@ -129,7 +129,7 @@ msgstr "이 프로세스에 나열되지 않은 {0}개 작업: {1}"
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} 공정"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0} 폐기됨"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0}개 선택됨"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names} 다릅니다"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names}(이)가 배치와 일치하지 않습니다"
 
 msgid "{names} must match — separate load"
 msgstr "{name}님, 돌아오셨군요!"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "근무기록 추가"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "배치에 추가"
 
 msgid "Add to stock for future use"
 msgstr "향후 사용을 위해 재고에 추가"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "작업 자동 시작"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "릴리스 시 자동으로 할당됨"
 
 msgid "Auto-create"
 msgstr "자동 생성"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "모두 완료"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "칸반 완료 스캔에서 모든 수량을 완료 처리"
 
 msgid "Complete Job"
 msgstr "작업 완료"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "API 키 복사"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "배치 번호 복사"
 
 msgid "Copy company unique identifier"
 msgstr "회사 고유 식별자 복사"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "배치 생성"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "배치 생성"
 
 msgid "Create Change Notice"
 msgstr "변경 통지 생성"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "시간/개"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: 순차는 부품을 한 기계에서 차례대로 실행하고(톱 또는 레이저 테이블), 동시는 단일 로드에서 함께 실행합니다(용광로, 오븐 또는 도금 욕조)."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "품목을 전체적으로 재보충하는 방법(구매, 사내 생산 또는 구매 및 사내 생산)입니다. 라인별 공급 방식과 달리 품목별로 설정됩니다."
@@ -8876,6 +8876,9 @@ msgstr "작업 지시 공정"
 
 msgid "Job Operation"
 msgstr "작업 지시 공정"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "작업 지시 공정"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "추적 가능한 항목을 찾을 수 없습니다."
 
 msgid "No batches"
-msgstr ""
+msgstr "배치 없음"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "감사 로그 열기"
 
 msgid "Open batch"
-msgstr ""
+msgstr "미결 배치"
 
 msgid "Open date"
 msgstr "개설 날짜"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "영업 수익"
 
 msgid "operation"
-msgstr ""
+msgstr "공정"
 
 msgid "Operation"
 msgstr "공정작업"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "부품 & 품목"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "부품은 차례대로 실행됩니다 — 예: 톱 또는 레이저 테이블."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "부품은 한 로드에서 함께 실행됩니다 — 예: 용광로, 오븐 또는 도금 욕조."
 
 msgid "Parts, materials, and how you classify them."
 msgstr "부품, 자재 및 이를 분류하는 방법."
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "계획 시작 시간"
 
 msgid "Planned time"
-msgstr ""
+msgstr "계획된 시간"
 
 msgid "Planning"
 msgstr "계획"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "{0} 라벨 인쇄"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "배치 목록 인쇄"
 
 msgid "Print Jobs"
 msgstr "인쇄 작업 지시"
@@ -13365,7 +13368,7 @@ msgstr "{0} 제거"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일정으로 돌아가 자체적으로 실행됩니다."
 
 msgid "Remove {label}"
 msgstr "제거 {label}"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "작업 검색…"
 
 msgid "Search batches…"
-msgstr ""
+msgstr "배치 검색…"
 
 msgid "Search by Jira issue title..."
 msgstr "Jira 이슈 제목으로 검색..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "채번 규칙"
 
 msgid "Sequential"
-msgstr ""
+msgstr "순차"
 
 msgid "Serial"
 msgstr "일련번호"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "로그인할 때 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱의 현재 6자리 코드를 입력하세요."
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "동시"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "이 작업 지시와 관련된 외주 공정이 있지만 공급업체가 없습니다. 릴리스하기 전에 각 외주 공정에 공급업체를 할당하십시오."
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "이 공정에는 셋업, 노무 또는 기계 시간이 없어서 실행 크기를 정할 근거가 없습니다. 막대는 명목상의 표시일 뿐이며 용량을 보유하지 않습니다 — 공정에 시간 기준을 추가하여 일정을 짜세요."
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "이 크레딧을 적용할 미결제 항목이 없습니다."
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "이 공정은 아직 일정을 잡을 수 없습니다 — 표시줄은 충돌이 해결되면 실행되는 위치를 표시합니다. 용량을 보유하지 않습니다."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "이 공정은 배치에 있지만 그 자재가 다른 것들과 일치하지 않습니다 — 제거하거나 함께 실행되도록 확인하세요."
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "실행 허브의 이 페이지는 준비 중입니다. 완성될 때까지 명령 센터에서 시작하세요."
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "총 가격"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "총 수량"
 
 msgid "Total Quantity"
 msgstr "총 수량"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "벌룬 해제"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "배치되지 않은 공정"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "미실사 라인은 전기 시 변경되지 않고 그대로 유지되며 0으로 처리되지 않습니다."

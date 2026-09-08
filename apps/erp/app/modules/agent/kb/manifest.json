@@ -1380,6 +1380,7 @@
         "An operation shows a red conflict flag",
         "An operation shows an amber \"Projected\" date",
         "The Forecast says \"can't be scheduled\"",
+        "A batch can't be scheduled and the panel shows \"Estimated time 0h\"",
         "New dates didn't appear right after my edit",
         "Nothing rescheduled when I reordered cards on the Work Centers view",
         "A pinned operation's dates still moved",

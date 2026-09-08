@@ -662,7 +662,7 @@ msgid "Learn more"
 msgstr "了解更多"
 
 msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
-msgstr ""
+msgstr "将工序设置为 0 以跳过该工序 — 该工序将在排程中保持未执行状态，不记录任何时间或数量。"
 
 msgid "Leave this page"
 msgstr "离开此页面"
@@ -1048,7 +1048,7 @@ msgid "Print"
 msgstr "打印"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "打印生产批次列表"
 
 msgid "Printer Settings"
 msgstr "打印机设置"

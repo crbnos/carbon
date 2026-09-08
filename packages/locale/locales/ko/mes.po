@@ -662,7 +662,7 @@ msgid "Learn more"
 msgstr "자세히 알아보기"
 
 msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
-msgstr ""
+msgstr "공정의 수량을 0으로 남겨두면 스킵됩니다 — 일정으로 미실행 상태로 돌아가며 기록된 시간이나 수량이 없습니다."
 
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
@@ -1048,7 +1048,7 @@ msgid "Print"
 msgstr "인쇄"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "배치 목록 인쇄"
 
 msgid "Printer Settings"
 msgstr "프린터 설정"

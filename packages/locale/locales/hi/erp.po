@@ -129,7 +129,7 @@ msgstr "{0} इस प्रक्रिया पर संचालन सू�
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} ऑपरेशन"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0} स्क्रैप किया गया"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0} चुने गए"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names} अलग है"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names} बैच से मेल नहीं खाता है"
 
 msgid "{names} must match — separate load"
 msgstr "{name} लौट गए!"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "बैच में जोड़ें"
 
 msgid "Add to stock for future use"
 msgstr "भविष्य के उपयोग के लिए स्टॉक में जोड़ें"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "ऑटो स्टार्ट जॉब"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "जारी करने पर स्वचालित रूप से असाइन किया गया"
 
 msgid "Auto-create"
 msgstr "स्वचालित-निर्माण"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "कानबान पूर्ण स्कैन पर सभी मात्रा पूर्ण करें"
 
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "API कुंजी की नकल करें"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "बैच नंबर कॉपी करें"
 
 msgid "Copy company unique identifier"
 msgstr "कंपनी के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "बैच बनाएँ"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "बैच बनाएँ"
 
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "घंटे/टुकड़ा"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "एक बैचयोग्य प्रक्रिया अपने समूहीकृत कार्य को कैसे चलाती है: अनुक्रमिक एक मशीन (एक आरा या लेजर टेबल) पर पार्ट्स को एक के बाद एक चलाता है, जबकि समवर्ती उन्हें एक ही लोड (एक भट्टी, ओवन, या प्लेटिंग बाथ) में एक साथ चलाता है।"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "किसी आइटम को समग्र रूप से कैसे आपूर्ति किया जाता है (खरीद, निर्माण, या खरीद और निर्माण), प्रति आइटम सेट किया जाता है, प्रति-पंक्ति आपूर्ति प्रकार के विपरीत।"
@@ -8876,6 +8876,9 @@ msgstr "जॉब ऑपरेशन"
 
 msgid "Job Operation"
 msgstr "जॉब ऑपरेशन"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "जॉब ऑपरेशन"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
 msgid "No batches"
-msgstr ""
+msgstr "कोई बैच नहीं"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
 
 msgid "Open batch"
-msgstr ""
+msgstr "खुली बैच"
 
 msgid "Open date"
 msgstr "खोलने की तारीख"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "परिचालन आय"
 
 msgid "operation"
-msgstr ""
+msgstr "ऑपरेशन"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "पार्ट्स और आइटम्स"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "पार्ट्स एक के बाद एक चलते हैं — उदा. आरा या लेजर टेबल।"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "पार्ट्स एक ही लोड में एक साथ चलते हैं — उदा. भट्टी, ओवन, या प्लेटिंग बाथ।"
 
 msgid "Parts, materials, and how you classify them."
 msgstr "पार्ट्स, सामग्री, और आप उन्हें कैसे वर्गीकृत करते हैं।"
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "नियोजित प्रारंभ समय"
 
 msgid "Planned time"
-msgstr ""
+msgstr "योजनाबद्ध समय"
 
 msgid "Planning"
 msgstr "योजना"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "{0} लेबल प्रिंट करें"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "बैच सूची प्रिंट करें"
 
 msgid "Print Jobs"
 msgstr "प्रिंट जॉब"
@@ -13365,7 +13368,7 @@ msgstr "निकालें {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "इस बैच से {0} को निकालें? इसका ऑपरेशन अपने आप चलने के लिए शेड्यूल में वापस जाता है।"
 
 msgid "Remove {label}"
 msgstr "निकालें {label}"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "कार्यों को खोजें…"
 
 msgid "Search batches…"
-msgstr ""
+msgstr "बैच खोजें…"
 
 msgid "Search by Jira issue title..."
 msgstr "Jira समस्या शीर्षक द्वारा खोजें..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "अनुक्रम"
 
 msgid "Sequential"
-msgstr ""
+msgstr "अनुक्रमिक"
 
 msgid "Serial"
 msgstr "सीरीज़"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "समवर्ती"
 
 msgid "Single Sign-On"
 msgstr "सिंगल साइन-ऑन"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "इस जॉब से जुड़े बाहरी ऑपरेशन हैं जिनके पास कोई आपूर्तिकर्ता नहीं है। कृपया इसे जारी करने से पहले प्रत्येक बाहरी ऑपरेशन के लिए एक आपूर्तिकर्ता असाइन करें।"
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "इन ऑपरेशन पर कोई सेटअप, श्रम, या मशीन समय नहीं है, इसलिए रन का आकार निर्धारित करने के लिए कुछ नहीं है। यह बार एक नाममात्र मार्कर है और क्षमता नहीं रख रहा है — इसे शेड्यूल करने के लिए ऑपरेशन में समय मानक जोड़ें।"
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "इन क्रेडिट्स को लागू करने के लिए कुछ भी बकाया नहीं है।"
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "इस ऑपरेशन को अभी तक शेड्यूल नहीं किया जा सकता — बार उस स्थान को चिन्हित करता है जहां यह चलेगा एक बार विवाद समाधान हो जाएगा। यह क्षमता धारण नहीं कर रहा है।"
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "यह ऑपरेशन बैच में है लेकिन इसकी सामग्री दूसरों से मेल नहीं खाती — इसे निकालें, या पुष्टि करें कि यह एक साथ चलता है"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "आपके कार्यान्वयन हब के इस पृष्ठ को बनाया जा रहा है। कमांड सेंटर से शुरू करें जबकि हम इसे पूरा करते हैं।"
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "कुल मूल्य"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "कुल मात्रा"
 
 msgid "Total Quantity"
 msgstr "कुल मात्रा"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "गुब्बारा हटाएं"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "अनबैच ऑपरेशन"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "गिनती न किए गए लाइनें पोस्ट पर अपरिवर्तित रहती हैं — उन्हें शून्य नहीं किया जाता है।"

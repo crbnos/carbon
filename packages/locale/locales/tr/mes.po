@@ -662,7 +662,7 @@ msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
 
 msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
-msgstr ""
+msgstr "Bir operasyonu atlamak için 0'da bırakın — çalıştırılmadan çizelgeye geri döner, zaman veya miktar kaydedilmez."
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -1048,7 +1048,7 @@ msgid "Print"
 msgstr "Yazdır"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "Yazdır parti listesini"
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"

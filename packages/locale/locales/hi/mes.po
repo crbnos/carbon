@@ -662,7 +662,7 @@ msgid "Learn more"
 msgstr "अधिक जानें"
 
 msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
-msgstr ""
+msgstr "एक ऑपरेशन को 0 पर छोड़ दें इसे स्किप करने के लिए — यह शेड्यूल में अंजाम न दिए गए रूप में वापस आता है, कोई समय या मात्रा दर्ज नहीं होती।"
 
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
@@ -1048,7 +1048,7 @@ msgid "Print"
 msgstr "प्रिंट करें"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "बैच सूची प्रिंट करें"
 
 msgid "Printer Settings"
 msgstr "प्रिंटर सेटिंग्स"

@@ -129,7 +129,7 @@ msgstr "このプロセスの{0}の操作はリストされていません: {1}"
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} 工程"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0}廃棄"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0} 件選択"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names}が異なります"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names}はバッチと一致しません"
 
 msgid "{names} must match — separate load"
 msgstr "{names}は一致する必要があります — 別ロード"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "バッチに追加"
 
 msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "自動ジョブ開始"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "リリース時に自動割り当て"
 
 msgid "Auto-create"
 msgstr "自動作成"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "すべて完了"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "かんばんスキャン完了時にすべての数量を完了する"
 
 msgid "Complete Job"
 msgstr "ジョブを完了"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "APIキーをコピー"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "バッチ番号をコピー"
 
 msgid "Copy company unique identifier"
 msgstr "会社の一意の識別子をコピー"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "バッチを作成"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "バッチを作成"
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "時間/個"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "バッチ可能なプロセスがグループ化された作業をどのように実行するかについて: 逐次は1台のマシン上で部品を順番に実行し（ソーまたはレーザーテーブル）、同時実行はそれらを単一の負荷でまとめて実行します（炉、オーブン、またはめっき槽）。"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "品目全体がどのように補充されるか(購入、内製、または購入・内製)。品目ごとに設定され、行ごとの供給方式とは異なります"
@@ -8876,6 +8876,9 @@ msgstr "指図工程"
 
 msgid "Job Operation"
 msgstr "指図工程"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "指図工程"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
 msgid "No batches"
-msgstr ""
+msgstr "バッチなし"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "監査ログを開く"
 
 msgid "Open batch"
-msgstr ""
+msgstr "バッチを開く"
 
 msgid "Open date"
 msgstr "開始日"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "営業収益"
 
 msgid "operation"
-msgstr ""
+msgstr "工程"
 
 msgid "Operation"
 msgstr "操作"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "部品・品目"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "部品が1台のマシン上で順番に実行されます。例：ソーまたはレーザーテーブル。"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "部品が単一の負荷でまとめて実行されます。例：炉、オーブン、またはめっき槽。"
 
 msgid "Parts, materials, and how you classify them."
 msgstr "部品、材料、およびそれらの分類方法。"
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "計画開始時刻"
 
 msgid "Planned time"
-msgstr ""
+msgstr "予定時間"
 
 msgid "Planning"
 msgstr "計画"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "{0}個のラベルを印刷"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "バッチリストを印刷"
 
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
@@ -13365,7 +13368,7 @@ msgstr "{0}を除去"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "{0}をこのバッチから除去しますか？その工程はスケジュールに戻り、独自に実行されます。"
 
 msgid "Remove {label}"
 msgstr "{label}を除去"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "アクションを検索…"
 
 msgid "Search batches…"
-msgstr ""
+msgstr "バッチを検索…"
 
 msgid "Search by Jira issue title..."
 msgstr "Jiraの課題タイトルで検索..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "採番"
 
 msgid "Sequential"
-msgstr ""
+msgstr "逐次"
 
 msgid "Serial"
 msgstr "シリアル"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "同時"
 
 msgid "Single Sign-On"
 msgstr "シングルサインオン"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "この製造指図に関連する外注工程があり、それらに仕入先が割り当てられていません。リリースする前に、各外注工程に仕入先を割り当ててください。"
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "これらの工程に段取り、労務、機械時間がないため、実行サイズの根拠となるものがありません。バーは名目的なマーカーであり、容量を保持していません — スケジュール設定するには、工程に時間基準を追加してください。"
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "この工程はまだスケジュールできません — バーは競合が解決されたら実行される場所をマークします。容量を保持していません。"
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "この工程はバッチにありますが、その材料が他のものと一致しません — 除去するか、一緒に実行することを確認してください。"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "実施ハブのこのページは構築中です。完成するまでコマンドセンターから開始してください。"
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "合計価格"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "合計数量"
 
 msgid "Total Quantity"
 msgstr "合計数量"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "バルーンを削除"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "バッチ外工程"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"

@@ -662,7 +662,7 @@ msgid "Learn more"
 msgstr "詳細情報"
 
 msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
-msgstr ""
+msgstr "工程を 0 のままにするとスキップされます — スケジュール に戻り、実行されず、時間も数量も記録されません。"
 
 msgid "Leave this page"
 msgstr "このページを離れる"
@@ -1048,7 +1048,7 @@ msgid "Print"
 msgstr "印刷"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "バッチリストを印刷"
 
 msgid "Printer Settings"
 msgstr "プリンター設定"

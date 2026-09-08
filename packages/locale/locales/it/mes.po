@@ -662,7 +662,7 @@ msgid "Learn more"
 msgstr "Per saperne di più"
 
 msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
-msgstr ""
+msgstr "Lasciare un'operazione a 0 per saltarla — torna al programma non eseguita senza registrare tempo o quantità."
 
 msgid "Leave this page"
 msgstr "Lascia questa pagina"
@@ -1048,7 +1048,7 @@ msgid "Print"
 msgstr "Stampa"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "Stampa elenco lotti di produzione"
 
 msgid "Printer Settings"
 msgstr "Impostazioni Stampante"

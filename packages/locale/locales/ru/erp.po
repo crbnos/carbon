@@ -129,7 +129,7 @@ msgstr "{0} операций в этом процессе не перечисл�
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} операции"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0} брак"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0} выбрано"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names} отличаются"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names} не совпадает с серией"
 
 msgid "{names} must match — separate load"
 msgstr "{name} возвращается!"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "Добавить в серию"
 
 msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "Автоматический запуск задания"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "Автоматически назначено при запуске в работу"
 
 msgid "Auto-create"
 msgstr "Автоматическое создание"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "Завершить все"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "Завершить все количества при сканировании завершения канбана"
 
 msgid "Complete Job"
 msgstr "Завершить работу"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "Скопировать API-ключ"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "Копировать номер серии"
 
 msgid "Copy company unique identifier"
 msgstr "Скопировать уникальный идентификатор организации"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "Создать серию"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "Создать Серию"
 
 msgid "Create Change Notice"
 msgstr "Создать извещение об изменении"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "Часов/Деталь"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "Как процесс, допускающий батчинг, работает с сгруппированной работой: режим « Последовательный» запускает детали одну за другой на одном станке (пила или лазерный стол), а режим «Одновременный» запускает их вместе в одной загрузке (печь, духовка или гальваническая ванна)."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
@@ -8876,6 +8876,9 @@ msgstr "Операция заказа"
 
 msgid "Job Operation"
 msgstr "Операция заказа"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "Операции заказа"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
 msgid "No batches"
-msgstr ""
+msgstr "Нет серий"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
 msgid "Open batch"
-msgstr ""
+msgstr "Открытая серия"
 
 msgid "Open date"
 msgstr "Дата открытия"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "Операционный доход"
 
 msgid "operation"
-msgstr ""
+msgstr "операция"
 
 msgid "Operation"
 msgstr "Операция"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "Детали и товары"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "Детали работают одна за другой — например, на пиле или лазерном столе."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "Детали работают вместе в одной загрузке — например, в печи, духовке или гальванической ванне."
 
 msgid "Parts, materials, and how you classify them."
 msgstr "Детали, материалы и способы их классификации."
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "Запланированное время начала"
 
 msgid "Planned time"
-msgstr ""
+msgstr "Плановое время"
 
 msgid "Planning"
 msgstr "Планирование"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "Печать {0} этикеток"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "Печать списка серий"
 
 msgid "Print Jobs"
 msgstr "Печать производственных заказов"
@@ -13365,7 +13368,7 @@ msgstr "Убрать {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "Убрать {0} из этой серии? Его операция вернется в график для самостоятельного запуска."
 
 msgid "Remove {label}"
 msgstr "Убрать {label}"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "Поиск действий…"
 
 msgid "Search batches…"
-msgstr ""
+msgstr "Поиск серий…"
 
 msgid "Search by Jira issue title..."
 msgstr "Поиск по названию задачи Jira..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "Нумерация"
 
 msgid "Sequential"
-msgstr ""
+msgstr "Последовательный"
 
 msgid "Serial"
 msgstr "Серийный"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "Одновременный"
 
 msgid "Single Sign-On"
 msgstr "Single Sign-On"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "На этих операциях нет наладки, труда или машинного времени, поэтому нет ничего, на основе чего можно определить размер запуска. Полоса — это номинальный маркер и не определяет производительность — добавьте стандарты времени к операциям для планирования."
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "Эта операция не может быть запланирована пока — полоса отмечает, где она будет выполняться после разрешения конфликта. Она не занимает мощность."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "Эта операция находится в серии, но ее материал не совпадает с другими — убрать ее или подтвердить, что она работает вместе"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Эта страница вашего центра внедрения разрабатывается. Начните с командного центра, пока мы его завершаем."
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "Общая цена"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "Итого количество"
 
 msgid "Total Quantity"
 msgstr "Общее количество"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "Удалить выноску"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "Несгруппированные операции"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."

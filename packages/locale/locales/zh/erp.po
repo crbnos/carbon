@@ -129,7 +129,7 @@ msgstr "{0} 个此工序的操作未列出：{1}"
 
 #. placeholder {0}: target.memberCount
 msgid "{0} ops"
-msgstr ""
+msgstr "{0} 工序"
 
 #. placeholder {0}: s.members.length
 #. placeholder {1}: s.totalQuantity
@@ -162,7 +162,7 @@ msgstr "{0} 报废"
 
 #. placeholder {0}: selected.length
 msgid "{0} selected"
-msgstr ""
+msgstr "{0} 已选择"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -300,7 +300,7 @@ msgid "{names} differs"
 msgstr "{names} 存在差异"
 
 msgid "{names} doesn't match the batch"
-msgstr ""
+msgstr "{names} 与生产批次不匹配"
 
 msgid "{names} must match — separate load"
 msgstr "{names} 必须匹配 — 需要单独一批"
@@ -1429,7 +1429,7 @@ msgid "Add Timecard"
 msgstr "添加工时卡"
 
 msgid "Add to batch"
-msgstr ""
+msgstr "添加到生产批次"
 
 msgid "Add to stock for future use"
 msgstr "添加到库存以供将来使用"
@@ -2591,7 +2591,7 @@ msgid "Auto Start Job"
 msgstr "自动启动作业"
 
 msgid "Auto-assigned on release"
-msgstr ""
+msgstr "下达时自动分配"
 
 msgid "Auto-create"
 msgstr "自动创建"
@@ -3612,7 +3612,7 @@ msgid "Complete All"
 msgstr "全部完成"
 
 msgid "Complete all quantities on kanban complete scan"
-msgstr ""
+msgstr "完成看板扫码时完成所有数量"
 
 msgid "Complete Job"
 msgstr "完成工作"
@@ -3998,7 +3998,7 @@ msgid "Copy API Key"
 msgstr "复制API密钥"
 
 msgid "Copy batch number"
-msgstr ""
+msgstr "复制生产批次号"
 
 msgid "Copy company unique identifier"
 msgstr "复制公司唯一标识符"
@@ -4365,7 +4365,7 @@ msgid "Create batch"
 msgstr "创建生产批次"
 
 msgid "Create Batch"
-msgstr ""
+msgstr "创建生产批次"
 
 msgid "Create Change Notice"
 msgstr "创建变更通知"
@@ -8037,7 +8037,7 @@ msgid "Hours/Piece"
 msgstr "小时/件"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
-msgstr ""
+msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "物料整体的补货方式（采购、自制或采购与自制），按物料设定，与按行的供料方式不同"
@@ -8876,6 +8876,9 @@ msgstr "工单工序"
 
 msgid "Job Operation"
 msgstr "工单工序"
+
+msgid "Job operation batch"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "工单工序"
@@ -10610,7 +10613,7 @@ msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
 msgid "No batches"
-msgstr ""
+msgstr "无生产批次"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
@@ -11361,7 +11364,7 @@ msgid "Open Audit Log"
 msgstr "打开审计日志"
 
 msgid "Open batch"
-msgstr ""
+msgstr "未结生产批次"
 
 msgid "Open date"
 msgstr "打开日期"
@@ -11479,7 +11482,7 @@ msgid "Operating Income"
 msgstr "营运收益"
 
 msgid "operation"
-msgstr ""
+msgstr "工序"
 
 msgid "Operation"
 msgstr "操作"
@@ -11844,10 +11847,10 @@ msgid "Parts & items"
 msgstr "零件和物料"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
-msgstr ""
+msgstr "零件逐一运行 — 例如锯床或激光台。"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
-msgstr ""
+msgstr "零件在一个负荷中一起运行 — 例如炉、烤箱或电镀槽。"
 
 msgid "Parts, materials, and how you classify them."
 msgstr "零件、原材料及其分类方式"
@@ -12161,7 +12164,7 @@ msgid "Planned Start Time"
 msgstr "计划开始时间"
 
 msgid "Planned time"
-msgstr ""
+msgstr "已计划时间"
 
 msgid "Planning"
 msgstr "计划"
@@ -12406,7 +12409,7 @@ msgid "Print {0} Labels"
 msgstr "打印 {0} 个标签"
 
 msgid "Print batch list"
-msgstr ""
+msgstr "打印生产批次列表"
 
 msgid "Print Jobs"
 msgstr "打印工单"
@@ -13365,7 +13368,7 @@ msgstr "移除{0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
-msgstr ""
+msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行。"
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
@@ -14358,7 +14361,7 @@ msgid "Search actions…"
 msgstr "搜索操作…"
 
 msgid "Search batches…"
-msgstr ""
+msgstr "搜索生产批次…"
 
 msgid "Search by Jira issue title..."
 msgstr "按 Jira 问题标题搜索..."
@@ -14720,7 +14723,7 @@ msgid "Sequences"
 msgstr "编号规则"
 
 msgid "Sequential"
-msgstr ""
+msgstr "顺序"
 
 msgid "Serial"
 msgstr "序列号"
@@ -15160,7 +15163,7 @@ msgid "Signing in will no longer require a code. Enter the current 6-digit code 
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
 
 msgid "Simultaneous"
-msgstr ""
+msgstr "同时"
 
 msgid "Single Sign-On"
 msgstr "单点登录"
@@ -16913,7 +16916,7 @@ msgid "There are outside operations associated with this job that have no suppli
 msgstr "有与此工单相关的外包工序但没有分配供应商。请在发放之前为每个外包工序分配一个供应商。"
 
 msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
-msgstr ""
+msgstr "这些工序上没有换型、人工或机器工时，因此没有任何东西来确定运行大小。该栏是一个名义标记，并不保持容量 — 向工序添加时间标准来排程它。"
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "没有可应用这些贷方的未结款项。"
@@ -17070,7 +17073,7 @@ msgid "This operation can't be scheduled yet — the bar marks where it would ru
 msgstr "该工序暂时无法排程 — 条形图标记一旦冲突解决后它将运行的位置。它不占用产能。"
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
-msgstr ""
+msgstr "此工序在生产批次中，但其原材料与其他不匹配 — 移除它或确认它一起运行"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "这个实施中心页面正在开发中。在我们完成之前，请从指挥中心开始。"
@@ -17423,7 +17426,7 @@ msgid "Total Price"
 msgstr "总价格"
 
 msgid "Total quantity"
-msgstr ""
+msgstr "总计数量"
 
 msgid "Total Quantity"
 msgstr "总数量"
@@ -17675,7 +17678,7 @@ msgid "Unballoon"
 msgstr "取消气球标注"
 
 msgid "Unbatched Operations"
-msgstr ""
+msgstr "未分批工序"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
