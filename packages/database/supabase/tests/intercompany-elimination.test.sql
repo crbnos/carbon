@@ -1,30 +1,13 @@
--- Intercompany elimination — deterministic assertion harness.
---
--- Proves generateEliminationEntries across every bug class we have hit, WITHOUT
--- any manual UI data entry: it seeds an intercompany trade at the journal +
--- capture-line level (exactly what the posting edge functions write), runs the
--- elimination, and ASSERTS the consolidated result — all inside one transaction
--- that ROLLS BACK, so it touches no real data and re-runs in seconds.
---
--- Run against the local dev DB (reads existing companies/accounts by name/number
--- so it survives resets):
---   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
---     -f packages/database/supabase/tests/intercompany-elimination.test.sql
---
--- Any failed ASSERT aborts with the scenario name. "ALL SCENARIOS PASSED" at the
--- end means the elimination engine is correct for: fixed-asset buyer (the
--- negative-Finished-Goods bug), inventory buyer fully held, partial on-hand
--- realization, transaction-dated posting (the out-of-window bug), balanced
--- journals, and regenerate idempotency.
-
+-- Intercompany elimination against the real capture-driven RPC.
+-- Isolated fixture companies/accounts; no existing business data is read or edited.
+-- Run: pnpm exec tsx .context/accounting/run-local-check.ts psql -X
+--   -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/intercompany-elimination.test.sql
+-- Seeded SQL capture proves elimination, not TypeScript/HTTP posting wiring.
 \set ON_ERROR_STOP on
 BEGIN;
+SET LOCAL "app.sync_in_progress" = 'true';
+SET LOCAL statement_timeout = '60s';
 
--- Seed one matched intercompany trade + its capture lines, mirroring the edge
--- functions. Seller books Dr IC-Receivable / Cr Sales / Dr COGS / Cr Finished
--- Goods; buyer books Dr <capitalization> / Cr IC-Payable. Capitalization is
--- posted to Machinery & Equipment (1350) so the assertions are isolated from any
--- existing data (which nets to zero on 1130/2020/4010/5010 and never touches 1350).
 CREATE FUNCTION pg_temp.seed_ic_trade(
   p_grp     text,
   p_seller  text,
@@ -40,7 +23,7 @@ CREATE FUNCTION pg_temp.seed_ic_trade(
 ) RETURNS void AS $fn$
 DECLARE
   a_icrec text; a_icpay text; a_sales text; a_cogs text; a_fg text; a_cap text;
-  j_s text; j_b text;
+  j_s text; j_b text; seller_period text; buyer_period text;
   l_icrec text; l_sales text; l_cogs text; l_fg text; l_icpay text; l_cap text;
   t_s text; t_b text;
   ref text := 'harness-' || id();
@@ -52,25 +35,29 @@ BEGIN
   SELECT id INTO a_fg    FROM "account" WHERE "companyGroupId"=p_grp AND "number"='1220';
   SELECT id INTO a_cap   FROM "account" WHERE "companyGroupId"=p_grp AND "number"=p_cap_num;
 
+  SELECT id INTO STRICT seller_period FROM "accountingPeriod" WHERE "companyId"=p_seller AND "startDate"<=p_date AND "endDate">=p_date;
+  SELECT id INTO STRICT buyer_period FROM "accountingPeriod" WHERE "companyId"=p_buyer AND "startDate"<=p_date AND "endDate">=p_date;
+
+  -- Original fixture journals are explicitly posted with valid periods/audits.
   -- Seller sale journal
-  INSERT INTO "journal"("companyId","journalEntryId","postingDate","description","sourceType")
-    VALUES (p_seller,'HS-'||ref,p_date,'Harness sale','Sales Invoice') RETURNING id INTO j_s;
-  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId")
-    VALUES (j_s,a_icrec, p_revenue, ref,p_seller,'Invoice','HARNESS-SALE') RETURNING id INTO l_icrec;
-  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId")
-    VALUES (j_s,a_sales, p_revenue, ref,p_seller,'Invoice','HARNESS-SALE') RETURNING id INTO l_sales;
-  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId")
-    VALUES (j_s,a_cogs,  p_cogs,    ref,p_seller,'Invoice','HARNESS-SALE') RETURNING id INTO l_cogs;
-  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId")
-    VALUES (j_s,a_fg,   -p_cogs,    ref,p_seller,'Invoice','HARNESS-SALE') RETURNING id INTO l_fg;
+  INSERT INTO "journal"("companyId","journalEntryId","postingDate","description","sourceType","status","accountingPeriodId","createdBy")
+    VALUES (p_seller,'HS-'||ref,p_date,'Harness sale','Sales Invoice','Posted',seller_period,p_user) RETURNING id INTO j_s;
+  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId","createdBy")
+    VALUES (j_s,a_icrec, p_revenue, ref,p_seller,'Invoice','HARNESS-SALE',p_user) RETURNING id INTO l_icrec;
+  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId","createdBy")
+    VALUES (j_s,a_sales, p_revenue, ref,p_seller,'Invoice','HARNESS-SALE',p_user) RETURNING id INTO l_sales;
+  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId","createdBy")
+    VALUES (j_s,a_cogs,  p_cogs,    ref,p_seller,'Invoice','HARNESS-SALE',p_user) RETURNING id INTO l_cogs;
+  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId","createdBy")
+    VALUES (j_s,a_fg,   -p_cogs,    ref,p_seller,'Invoice','HARNESS-SALE',p_user) RETURNING id INTO l_fg;
 
   -- Buyer purchase journal (capitalizes the goods at the transfer price)
-  INSERT INTO "journal"("companyId","journalEntryId","postingDate","description","sourceType")
-    VALUES (p_buyer,'HB-'||ref,p_date,'Harness purchase','Purchase Invoice') RETURNING id INTO j_b;
-  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId")
-    VALUES (j_b,a_cap,  p_revenue, ref,p_buyer,'Invoice','HARNESS-PURCH') RETURNING id INTO l_cap;
-  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId")
-    VALUES (j_b,a_icpay, p_revenue, ref,p_buyer,'Invoice','HARNESS-PURCH') RETURNING id INTO l_icpay;
+  INSERT INTO "journal"("companyId","journalEntryId","postingDate","description","sourceType","status","accountingPeriodId","createdBy")
+    VALUES (p_buyer,'HB-'||ref,p_date,'Harness purchase','Purchase Invoice','Posted',buyer_period,p_user) RETURNING id INTO j_b;
+  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId","createdBy")
+    VALUES (j_b,a_cap,  p_revenue, ref,p_buyer,'Invoice','HARNESS-PURCH',p_user) RETURNING id INTO l_cap;
+  INSERT INTO "journalLine"("journalId","accountId","amount","journalLineReference","companyId","documentType","documentId","createdBy")
+    VALUES (j_b,a_icpay, p_revenue, ref,p_buyer,'Invoice','HARNESS-PURCH',p_user) RETURNING id INTO l_icpay;
 
   -- Matched intercompany transactions (both directions). targetJournalLineId is
   -- the per-trade seller<->buyer link that matchIntercompanyTransactions sets:
@@ -101,6 +88,11 @@ END $fn$ LANGUAGE plpgsql;
 CREATE FUNCTION pg_temp.assert_balanced(p_grp text, p_date date, p_label text) RETURNS void AS $fn$
 DECLARE r record;
 BEGIN
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM journal j JOIN company c ON c.id=j."companyId"
+    WHERE c."companyGroupId"=p_grp AND c."isEliminationEntity" AND j."eliminationKind" IS NOT NULL
+      AND j."postingDate"=p_date AND j.status<>'Posted'
+  ), p_label||': real elimination RPC must create Posted journals';
   FOR r IN
     SELECT j."id",
       round(sum(CASE WHEN a."class" IN ('Asset','Expense') THEN jl."amount" ELSE -jl."amount" END),5) AS debit_minus_credit
@@ -124,54 +116,106 @@ CREATE FUNCTION pg_temp.consol(p_grp text, p_num text, p_asof date DEFAULT NULL)
   JOIN "journal" j ON j."id"=jl."journalId"
   JOIN "company" c ON c."id"=jl."companyId"
   JOIN "account" a ON a."id"=jl."accountId"
-  WHERE c."companyGroupId"=p_grp AND a."number"=p_num
+  WHERE c."companyGroupId"=p_grp AND a."number"=p_num AND j.status='Posted'
     AND (p_asof IS NULL OR j."postingDate" <= p_asof);
 $fn$ LANGUAGE sql;
+
+-- Multiline capture contract: both controls, both merchandise revenues, both
+-- shipping revenues and both costs are retained. External tax is never captured.
+CREATE FUNCTION pg_temp.seed_ic_multiline(p_grp text,p_seller text,p_buyer text,p_user text,p_date date)
+RETURNS void LANGUAGE plpgsql AS $fn$
+DECLARE seller_j text; buyer_j text; seller_tx text; buyer_tx text; seller_control text; buyer_control text;
+  seller_period text; buyer_period text; r record; line_id text; captures jsonb:='[]'; ref text:=id();
+BEGIN
+  SELECT id INTO STRICT seller_period FROM "accountingPeriod" WHERE "companyId"=p_seller AND "startDate"<=p_date AND "endDate">=p_date;
+  SELECT id INTO STRICT buyer_period FROM "accountingPeriod" WHERE "companyId"=p_buyer AND "startDate"<=p_date AND "endDate">=p_date;
+  INSERT INTO journal ("companyId","journalEntryId","postingDate","sourceType",status,"accountingPeriodId","createdBy")
+    VALUES(p_seller,'HSM-'||ref,p_date,'Sales Invoice','Posted',seller_period,p_user) RETURNING id INTO seller_j;
+  INSERT INTO journal ("companyId","journalEntryId","postingDate","sourceType",status,"accountingPeriodId","createdBy")
+    VALUES(p_buyer,'HBM-'||ref,p_date,'Purchase Invoice','Posted',buyer_period,p_user) RETURNING id INTO buyer_j;
+  FOR r IN SELECT lines.*,a.id AS account_id FROM (VALUES
+    (true,'1130',71::numeric,'Control'),(true,'1130',39,'Control'),
+    (true,'4010',60,'Revenue'),(true,'4010',30,'Revenue'),
+    (true,'4040',4,'Revenue'),(true,'4040',6,'Revenue'),
+    (true,'2110',7,NULL),(true,'2110',3,NULL),
+    (true,'5010',40,'COGS'),(true,'5010',20,'COGS'),(true,'1220',-60,NULL),
+    (false,'2020',71,'Control'),(false,'2020',39,'Control'),
+    (false,'1350',64,'Capitalization'),(false,'1350',36,'Capitalization'),
+    (false,'1410',7,NULL),(false,'1410',3,NULL)
+  ) AS lines(seller,number,amount,role)
+  JOIN account a ON a.number=lines.number AND a."companyGroupId"=p_grp LOOP
+    INSERT INTO "journalLine" ("journalId","accountId",amount,"journalLineReference","companyId","documentType","documentId","createdBy",description)
+      VALUES(CASE WHEN r.seller THEN seller_j ELSE buyer_j END,r.account_id,r.amount,'HML-'||id(),
+        CASE WHEN r.seller THEN p_seller ELSE p_buyer END,'Invoice',ref,p_user,COALESCE(r.role,'External component')) RETURNING id INTO line_id;
+    IF r.role='Control' THEN
+      IF r.seller THEN seller_control:=COALESCE(seller_control,line_id);
+      ELSE buyer_control:=COALESCE(buyer_control,line_id); END IF;
+    END IF;
+    IF r.role IS NOT NULL THEN
+      captures:=captures||jsonb_build_array(jsonb_build_object('seller',r.seller,'role',r.role,'line_id',line_id,'account_id',r.account_id,'amount',r.amount));
+    END IF;
+  END LOOP;
+  INSERT INTO "intercompanyTransaction" ("companyGroupId","sourceCompanyId","targetCompanyId","sourceJournalLineId","targetJournalLineId",amount,"currencyCode",status,"documentType","documentId")
+    VALUES(p_grp,p_seller,p_buyer,seller_control,buyer_control,110,'USD','Matched','Invoice','HSM-'||ref) RETURNING id INTO seller_tx;
+  INSERT INTO "intercompanyTransaction" ("companyGroupId","sourceCompanyId","targetCompanyId","sourceJournalLineId","targetJournalLineId",amount,"currencyCode",status,"documentType","documentId")
+    VALUES(p_grp,p_buyer,p_seller,buyer_control,seller_control,110,'USD','Matched','Invoice','HBM-'||ref) RETURNING id INTO buyer_tx;
+  INSERT INTO "intercompanyEliminationLine" ("companyId","intercompanyTransactionId",role,"journalLineId","accountId",amount,"createdBy")
+    SELECT CASE WHEN c.seller THEN p_seller ELSE p_buyer END,CASE WHEN c.seller THEN seller_tx ELSE buyer_tx END,
+      c.role::"intercompanyEliminationRole",c.line_id,c.account_id,c.amount,p_user
+    FROM jsonb_to_recordset(captures) AS c(seller boolean,role text,line_id text,account_id text,amount numeric);
+  ASSERT (SELECT count(*)=12 AND sum(amount) FILTER(WHERE role='Control')=220 AND sum(amount) FILTER(WHERE role='Revenue')=100
+    FROM "intercompanyEliminationLine" WHERE "intercompanyTransactionId" IN (seller_tx,buyer_tx)), 'Complete multiline captures must retain all four control and four revenue rows';
+  ASSERT NOT EXISTS (SELECT 1 FROM journal j JOIN "journalLine" l ON l."journalId"=j.id JOIN account a ON a.id=l."accountId"
+    WHERE j.id IN (seller_j,buyer_j) GROUP BY j.id HAVING sum(CASE WHEN a.class IN ('Asset','Expense') THEN l.amount ELSE -l.amount END)<>0), 'Multiline original fixture journals must balance';
+END;
+$fn$;
 
 DO $main$
 DECLARE
   v_grp text; v_seller text; v_buyer text; v_user text; v_item text;
-  v_parent text; v_elim text; v_ref text;
+  v_parent text; v_elim text; v_ref text; fixture_company text; account_seed record;
   d date := DATE '2026-03-15';   -- distinct from any existing data
   n int;
-  -- SQLSTATE 22000 is our sentinel to unwind a scenario's data via the block's
+  -- SQLSTATE P9001 is our sentinel to unwind a scenario's data via the block's
   -- implicit savepoint. A real ASSERT failure raises P0004, which is NOT caught
   -- and therefore propagates and aborts the whole run.
 BEGIN
-  -- Self-provision an isolated intercompany group so the harness does not depend
-  -- on any manually-built scenario (a DB reset wipes those). Reuse an existing
-  -- company as the BUYER — it already has the group's shared chart of accounts,
-  -- items, and an employee — and provision parent/seller/elimination siblings by
-  -- copying its row. Everything rolls back with the outer transaction.
-  v_ref := id();
-  SELECT c."id", c."companyGroupId" INTO v_buyer, v_grp
-    FROM "company" c WHERE c."isEliminationEntity" = false
-    ORDER BY c."createdAt" LIMIT 1;
-  SELECT utc."userId" INTO v_user FROM "userToCompany" utc
-    JOIN "company" c ON c."id" = utc."companyId"
-    WHERE c."companyGroupId" = v_grp AND utc."role" = 'employee' LIMIT 1;
-  SELECT i."id" INTO v_item FROM "item" i WHERE i."companyId" = v_buyer LIMIT 1;
-
-  v_parent := id(); v_seller := id(); v_elim := id();
-  CREATE TEMP TABLE _co ON COMMIT DROP AS SELECT * FROM "company" WHERE "id" = v_buyer;
-  UPDATE _co SET "id"=v_parent, "name"='Harness Parent '||v_ref, "parentCompanyId"=NULL, "isEliminationEntity"=false;
-  INSERT INTO "company" SELECT * FROM _co;
-  UPDATE _co SET "id"=v_seller, "name"='Harness Seller '||v_ref, "parentCompanyId"=v_parent;
-  INSERT INTO "company" SELECT * FROM _co;
-  UPDATE _co SET "id"=v_elim, "name"='Harness Elim '||v_ref, "isEliminationEntity"=true;
-  INSERT INTO "company" SELECT * FROM _co;
-  UPDATE "company" SET "parentCompanyId"=v_parent WHERE "id"=v_buyer;   -- buyer under the parent
-
-  -- The elimination entity needs its own journalEntry sequence + fiscal settings
-  -- (the RPC calls get_next_sequence and get-or-creates a period on it).
-  -- sequence.id is a generated column, so copy explicit columns and let it regenerate.
-  INSERT INTO "sequence" ("table","name","prefix","suffix","next","size","step","companyId","updatedBy")
-  SELECT "table","name","prefix","suffix","next","size","step", v_elim, "updatedBy"
-  FROM "sequence" WHERE "table"='journalEntry' AND "companyId"=v_buyer LIMIT 1;
-  CREATE TEMP TABLE _fys ON COMMIT DROP AS
-    SELECT * FROM "fiscalYearSettings" WHERE "companyId"=v_buyer LIMIT 1;
-  UPDATE _fys SET "companyId"=v_elim;
-  INSERT INTO "fiscalYearSettings" SELECT * FROM _fys;
+  v_ref := id(); v_user := 'system';
+  INSERT INTO "companyGroup" (name,"createdBy") VALUES ('IC harness '||v_ref,v_user) RETURNING id INTO v_grp;
+  INSERT INTO company (name,"companyGroupId","baseCurrencyCode",timezone)
+    VALUES ('IC harness parent '||v_ref,v_grp,'USD','America/New_York') RETURNING id INTO v_parent;
+  INSERT INTO company (name,"companyGroupId","baseCurrencyCode","parentCompanyId",timezone)
+    VALUES ('IC harness seller '||v_ref,v_grp,'USD',v_parent,'America/New_York') RETURNING id INTO v_seller;
+  INSERT INTO company (name,"companyGroupId","baseCurrencyCode","parentCompanyId",timezone)
+    VALUES ('IC harness buyer '||v_ref,v_grp,'USD',v_parent,'America/New_York') RETURNING id INTO v_buyer;
+  INSERT INTO company (name,"companyGroupId","baseCurrencyCode","parentCompanyId","isEliminationEntity",timezone)
+    VALUES ('IC harness elimination '||v_ref,v_grp,'USD',v_parent,true,'America/New_York') RETURNING id INTO v_elim;
+  INSERT INTO "userToCompany" ("userId","companyId",role) VALUES (v_user,v_parent,'employee');
+  INSERT INTO currency (code,"companyGroupId","decimalPlaces","createdBy") VALUES ('USD',v_grp,2,v_user);
+  FOR account_seed IN SELECT * FROM (VALUES
+    ('1130','IC Receivable','Asset','Accounts Receivable','Balance Sheet'),
+    ('2020','IC Payable','Liability','Accounts Payable','Balance Sheet'),
+    ('4010','Sales','Revenue','Income','Income Statement'),
+    ('4040','Shipping Revenue','Revenue','Income','Income Statement'),
+    ('5010','COGS','Expense','Cost of Goods Sold','Income Statement'),
+    ('1220','Finished Goods','Asset','Inventory','Balance Sheet'),
+    ('1350','Machinery','Asset','Fixed Asset','Balance Sheet'),
+    ('1310','Acquisition Cost','Asset','Fixed Asset','Balance Sheet'),
+    ('2110','External sales tax','Liability','Tax','Balance Sheet'),
+    ('1410','External purchase tax','Asset','Other Current Asset','Balance Sheet')
+  ) AS accounts(number,name,class,account_type,income_balance) LOOP
+    INSERT INTO account (number,name,class,"accountType","incomeBalance","companyGroupId","createdBy")
+      VALUES(account_seed.number,account_seed.name,account_seed.class::"glAccountClass",account_seed.account_type::"accountType",account_seed.income_balance::"glIncomeBalance",v_grp,v_user);
+  END LOOP;
+  FOREACH fixture_company IN ARRAY ARRAY[v_parent,v_seller,v_buyer,v_elim] LOOP
+    INSERT INTO "accountingPeriod" ("startDate","endDate",status,"companyId","createdBy","fiscalYear","periodNumber")
+      VALUES('2026-01-01','2026-12-31','Active',fixture_company,v_user,2026,1);
+  END LOOP;
+  INSERT INTO "fiscalYearSettings" ("companyId","updatedBy") VALUES(v_elim,v_user);
+  INSERT INTO "sequence" ("table",name,prefix,"companyId","updatedBy")
+    VALUES('journalEntry','IC harness journals','HJE-',v_elim,v_user) ON CONFLICT DO NOTHING;
+  INSERT INTO item ("readableId",name,type,"itemTrackingType","companyId","createdBy")
+    VALUES('HI-'||v_ref,'IC harness item','Part','Inventory',v_buyer,v_user) RETURNING id INTO v_item;
 
   -- Scenario 1: FIXED-ASSET buyer, fully held (the negative-Finished-Goods bug).
   -- revenue 100, cost 60, margin 40; buyer capitalizes a fixed asset (no item).
@@ -196,8 +240,8 @@ BEGIN
         AND ict."documentId" IN ('HARNESS-SALE','HARNESS-PURCH')
     ), 'S1 fixed-asset: eliminationJournalId does not point to the IC Balance journal';
     RAISE NOTICE 'S1 fixed-asset buyer, fully held ....... PASS';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   -- Scenario 2: INVENTORY buyer, fully held (on-hand >= traded qty -> fraction 1).
   BEGIN
@@ -208,8 +252,8 @@ BEGIN
     ASSERT pg_temp.consol(v_grp,'1350')=60, 'S2 inventory-held: buyer inventory not at group cost';
     PERFORM pg_temp.assert_balanced(v_grp,d,'S2 inventory-held');
     RAISE NOTICE 'S2 inventory buyer, fully held ......... PASS';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   -- Scenario 3: INVENTORY buyer, PARTIAL realization (on-hand 2 of qty 5 -> 0.4).
   -- margin 40; defer only 40*0.4 = 16. Reversal scales by 0.4: Sales left 60,
@@ -222,8 +266,8 @@ BEGIN
     ASSERT pg_temp.consol(v_grp,'1350')=84, 'S3 partial: buyer asset expected 84, got '||pg_temp.consol(v_grp,'1350');
     PERFORM pg_temp.assert_balanced(v_grp,d,'S3 partial');
     RAISE NOTICE 'S3 inventory buyer, partial realization  PASS';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   -- Scenario 4: DATE WINDOW (the IC-payables-summing-wrong bug). The elimination
   -- must be dated to the transaction (2026-03-15), not the elimination entity's
@@ -237,8 +281,8 @@ BEGIN
     ASSERT pg_temp.consol(v_grp,'2020',d)=0, 'S4 date-window: IC Payables not 0 as-of the transaction date';
     ASSERT pg_temp.consol(v_grp,'1130',d)=0, 'S4 date-window: IC Receivables not 0 as-of the transaction date';
     RAISE NOTICE 'S4 elimination dated to transaction .... PASS';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   -- Scenario 5: REGENERATE idempotency. Generate, then regenerate (reverses +
   -- re-derives). The consolidated result must be unchanged — no double counting.
@@ -251,8 +295,8 @@ BEGIN
     ASSERT pg_temp.consol(v_grp,'4010')=0, 'S5 regenerate: Sales drifted';
     ASSERT pg_temp.consol(v_grp,'1350')=60, 'S5 regenerate: buyer asset drifted from group cost';
     RAISE NOTICE 'S5 regenerate idempotency ............. PASS';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   -- Scenario 6: MULTI-TRADE per pair with DIFFERENT margins and DIFFERENT
   -- capitalization accounts (the per-trade-allocation fix). Two fixed-asset
@@ -269,8 +313,27 @@ BEGIN
     ASSERT pg_temp.consol(v_grp,'1310')=90, 'S6 multi-trade: trade B asset expected 90 (per-trade), got '||pg_temp.consol(v_grp,'1310');
     PERFORM pg_temp.assert_balanced(v_grp,d,'S6 multi-trade');
     RAISE NOTICE 'S6 multi-trade, per-trade allocation ... PASS';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+
+  -- Scenario 7: multiple sales/shipping/tax/control rows from one matched trade.
+  BEGIN
+    PERFORM pg_temp.seed_ic_multiline(v_grp,v_seller,v_buyer,v_user,d);
+    ASSERT "generateEliminationEntries"(v_grp,v_user)=2,'S7 multiline: expected one control and one revenue elimination journal';
+    ASSERT pg_temp.consol(v_grp,'1130')=0 AND pg_temp.consol(v_grp,'2020')=0,'S7 multiline: every IC control must eliminate';
+    ASSERT pg_temp.consol(v_grp,'4010')=0 AND pg_temp.consol(v_grp,'4040')=0,'S7 multiline: every merchandise and shipping revenue row must eliminate';
+    ASSERT pg_temp.consol(v_grp,'5010')=0 AND pg_temp.consol(v_grp,'1350')=60 AND pg_temp.consol(v_grp,'1220')=-60,'S7 multiline: buyer capitalization must retain group cost';
+    ASSERT pg_temp.consol(v_grp,'2110')=10 AND pg_temp.consol(v_grp,'1410')=10,'S7 multiline: external payable/recoverable tax must remain';
+    PERFORM pg_temp.assert_balanced(v_grp,d,'S7 multiline');
+    ASSERT NOT EXISTS(SELECT 1 FROM "journalLine" l JOIN journal j ON j.id=l."journalId" JOIN account a ON a.id=l."accountId"
+      WHERE j."companyId"=v_elim AND a.number IN ('2110','1410')),'S7 multiline: elimination must not touch external tax';
+    PERFORM "generateEliminationEntries"(v_grp,v_user,true);
+    ASSERT pg_temp.consol(v_grp,'1130')=0 AND pg_temp.consol(v_grp,'2020')=0 AND pg_temp.consol(v_grp,'4010')=0 AND pg_temp.consol(v_grp,'4040')=0,'S7 multiline: regeneration must preserve all control/revenue elimination';
+    ASSERT pg_temp.consol(v_grp,'1350')=60 AND pg_temp.consol(v_grp,'2110')=10 AND pg_temp.consol(v_grp,'1410')=10,'S7 multiline: regeneration must preserve group cost and external tax';
+    PERFORM pg_temp.assert_balanced(v_grp,d,'S7 multiline regenerate');
+    RAISE NOTICE 'S7 multiline taxed/shipping full captures and regeneration PASS';
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   RAISE NOTICE '================= ALL SCENARIOS PASSED =================';
 END $main$;
