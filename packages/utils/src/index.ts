@@ -27,6 +27,7 @@ export * from "./payment-funding";
 export * from "./precision";
 export * from "./receiving";
 export * from "./revalidate";
+export * from "./sales-posting-amounts";
 export * from "./ssr";
 export * from "./status";
 export * from "./status-colors";
