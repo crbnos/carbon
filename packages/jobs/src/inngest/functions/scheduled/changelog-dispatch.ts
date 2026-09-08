@@ -16,11 +16,13 @@ import { inngest } from "../../client";
  * Changelog subscription pipeline (.ai/plans/2026-09-05-changelog-subscriptions.md).
  *
  * The docs site's RSS feed is the source of truth for "published": an entry is
- * live once its MDX merges and Vercel deploys. The dispatcher polls that feed,
+ * live once its MDX merges and Vercel deploys. The dispatcher reads that feed,
  * diffs its GUIDs against the `changelogDispatch` ledger, and fans anything new
- * out to confirmed subscribers. The ledger row is what makes the hourly cron,
- * the merge-fired `changelog/entry.merged` event (GitHub workflow), and a
- * manual re-fire safe to overlap.
+ * out to confirmed subscribers.
+ *
+ * It runs ON DEMAND only — send `carbon/changelog-dispatch` (Inngest dashboard
+ * or event API) after an entry is published. There is no cron and no
+ * merge-triggered workflow. The ledger row is what makes a repeated send safe.
  */
 
 /** Explicit env wins; the local dev marker (INNGEST_DEV) points at the local
@@ -31,10 +33,10 @@ const CHANGELOG_FEED_URL =
     ? "http://localhost:3002/changelog/rss.xml"
     : "https://docs.carbon.ms/changelog/rss.xml");
 
-/** A merge-triggered run races the Vercel deploy — the push fired the event,
- *  but the feed only updates when the deploy finishes. So event runs re-check a
- *  few times before giving up (the next cron is the backstop). */
-const MERGE_TRIGGER_ATTEMPTS = 5;
+/** A run sent right after a merge races the Vercel deploy — the feed only
+ *  updates when the deploy finishes. So a run re-checks a few times before
+ *  giving up; send the event again once the entry is visible. */
+const FEED_ATTEMPTS = 5;
 const RESEND_BATCH_SIZE = 100;
 
 const fromAddress = () => `Carbon <no-reply@${RESEND_DOMAIN}>`;
@@ -104,18 +106,15 @@ async function planFromLiveFeed(): Promise<DispatchPlan> {
 
 export const changelogDispatchFunction = inngest.createFunction(
   { id: "changelog-dispatch", retries: 2, concurrency: { limit: 1 } },
-  [{ cron: "0 * * * *" }, { event: "changelog/entry.merged" }],
-  async ({ event, step, logger }) => {
-    const mergeTriggered = event?.name === "changelog/entry.merged";
-    const maxAttempts = mergeTriggered ? MERGE_TRIGGER_ATTEMPTS : 1;
-
+  { event: "carbon/changelog-dispatch" },
+  async ({ step, logger }) => {
     let plan: DispatchPlan = { send: [], bootstrap: [] };
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= FEED_ATTEMPTS; attempt++) {
       plan = await step.run(`fetch-feed-${attempt}`, planFromLiveFeed);
       if (
         plan.send.length > 0 ||
         plan.bootstrap.length > 0 ||
-        attempt === maxAttempts
+        attempt === FEED_ATTEMPTS
       ) {
         break;
       }
@@ -147,7 +146,7 @@ export const changelogDispatchFunction = inngest.createFunction(
 
     const newEntries = plan.send;
     if (newEntries.length === 0) {
-      logger.info("No undispatched changelog entries", { mergeTriggered });
+      logger.info("No undispatched changelog entries");
       return { dispatched: 0 };
     }
 
