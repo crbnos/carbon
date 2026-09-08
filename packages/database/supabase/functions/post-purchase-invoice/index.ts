@@ -25,7 +25,10 @@ import {
 } from "../shared/get-posting-group.ts";
 import { round } from "../shared/precision.ts";
 import { classifyIntercompanyPostingLines } from "../shared/intercompany-capture.ts";
-import { calculatePurchasePostingAmounts } from "./purchase-posting-amounts.ts";
+import {
+  calculatePurchasePostingAmounts,
+  getInvoicedPurchaseQuantityAfterVoid,
+} from "./purchase-posting-amounts.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -189,13 +192,9 @@ serve(async (req: Request) => {
           purchaseOrderLine.purchaseQuantity &&
           purchaseOrderLine.purchaseQuantity > 0
         ) {
-          const invoicedQuantityInPurchaseUnit =
-            invoiceLine.quantity / (invoiceLine.conversionFactor ?? 1);
-
-          const newQuantityInvoiced = Math.max(
-            0,
-            (purchaseOrderLine.quantityInvoiced ?? 0) -
-            invoicedQuantityInPurchaseUnit
+          const newQuantityInvoiced = getInvoicedPurchaseQuantityAfterVoid(
+            purchaseOrderLine.quantityInvoiced,
+            invoiceLine.quantity,
           );
 
           // Short-close aware: compare against the billable (received)

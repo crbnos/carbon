@@ -6,8 +6,27 @@ import { round } from "../shared/precision.ts";
 import { allocateVarianceAcrossLayers } from "../shared/purchase-cost-adjustment.ts";
 import {
   calculatePurchasePostingAmounts,
+  getInvoicedPurchaseQuantityAfterVoid,
   type PurchasePostingLine,
 } from "./purchase-posting-amounts.ts";
+
+Deno.test("invoice void restores purchase-unit quantities when inventory UOM factor is five", () => {
+  for (const quantity of [2, 1]) {
+    const invoice = line({ quantity, conversionFactor: 5 });
+    const [posted] = calculatePurchasePostingAmounts({
+      lines: [invoice],
+      exchangeRate: 1.1,
+      supplierShippingCost: 0,
+    });
+    assertEquals(posted.inventoryQuantity, quantity * 5);
+    assertEquals(
+      getInvoicedPurchaseQuantityAfterVoid(quantity, invoice.quantity),
+      0,
+    );
+  }
+  assertEquals(getInvoicedPurchaseQuantityAfterVoid(5, 2), 3);
+  assertEquals(getInvoicedPurchaseQuantityAfterVoid(null, 2), 0);
+});
 
 function line(
   overrides: Partial<PurchasePostingLine> = {},

@@ -23,6 +23,14 @@ export type PurchasePostingAmounts = {
   intercompanyDocumentAmount: number;
 };
 
+/** Both the PO counter and invoice quantity are in purchase units. */
+export function getInvoicedPurchaseQuantityAfterVoid(
+  quantityInvoiced: number | null,
+  invoicePurchaseQuantity: number,
+): number {
+  return Math.max(0, (quantityInvoiced ?? 0) - invoicePurchaseQuantity);
+}
+
 export function calculatePurchasePostingAmounts(input: {
   lines: PurchasePostingLine[];
   exchangeRate: number;
