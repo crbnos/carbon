@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "Umsatzerlöse"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "Umsatzerlöskonto für den Kunden berechnete Versandkosten"
 
 msgid "Revenue and expenses over a period"
 msgstr "Umsatzerlöse und Aufwand über einen Zeitraum"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "Versandnotizen"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "Umsatzerlöse aus Versand"
 
 msgid "Shipping Supplier"
 msgstr "Versandlieferant"

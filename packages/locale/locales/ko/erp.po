@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "매출"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "고객에게 청구한 배송 매출 계정"
 
 msgid "Revenue and expenses over a period"
 msgstr "기간별 매출 및 비용"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "배송 메모"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "배송 매출"
 
 msgid "Shipping Supplier"
 msgstr "배송 공급업체"

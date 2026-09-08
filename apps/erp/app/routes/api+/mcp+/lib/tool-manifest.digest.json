@@ -1,5 +1,5 @@
 {
-  "totalTools": 1482,
+  "totalTools": 1484,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none"},
@@ -16,6 +16,7 @@
     {"name":"account_upsertNotificationPreference","classification":"WRITE","paramCount":3,"schema":"4bf056fb8af6","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none"},
     {"name":"account_upsertUserAttributeValue","classification":"WRITE","paramCount":4,"schema":"258c7a7e8f4e","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"none"},
     {"name":"accounting_addCloseTask","classification":"WRITE","paramCount":5,"schema":"6bf4c2d84b80","response":"none","injectAuth":"companyId+createdBy+updatedBy","permission":"accounting:create"},
+    {"name":"accounting_applyCtaToReportPeriodSeries","classification":"WRITE","paramCount":2,"schema":"1c2a01a22f6e","response":"5483e69d7515","injectAuth":"companyId","permission":"accounting:update"},
     {"name":"accounting_closeAccountingPeriod","classification":"WRITE","paramCount":1,"schema":"7e5905ac5974","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_closePeriodWithChecklist","classification":"WRITE","paramCount":1,"schema":"7e5905ac5974","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_completeCloseTask","classification":"WRITE","paramCount":2,"schema":"5d2e9a90637b","response":"none","injectAuth":"companyId","permission":"accounting:update"},
@@ -127,7 +128,7 @@
     {"name":"accounting_translateCompanyPeriodSeries","classification":"WRITE","paramCount":3,"schema":"decaf5350e1f","response":"0c01d5ac39c2","injectAuth":"companyId","permission":"accounting:update"},
     {"name":"accounting_unlockAccountingPeriod","classification":"WRITE","paramCount":1,"schema":"7e5905ac5974","response":"none","injectAuth":"companyId","permission":"accounting:update"},
     {"name":"accounting_updateDefaultBalanceSheetAccounts","classification":"WRITE","paramCount":21,"schema":"af820410074b","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
-    {"name":"accounting_updateDefaultIncomeAccounts","classification":"WRITE","paramCount":28,"schema":"d386cfbc865f","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
+    {"name":"accounting_updateDefaultIncomeAccounts","classification":"WRITE","paramCount":29,"schema":"9249b04e60e2","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_updateFiscalYearSettings","classification":"WRITE","paramCount":2,"schema":"b13ac9bf329b","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_updateFixedAsset","classification":"WRITE","paramCount":16,"schema":"72982c8925a1","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_updateJournalEntry","classification":"WRITE","paramCount":2,"schema":"f1c6f0ff1a41","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
@@ -144,6 +145,7 @@
     {"name":"accounting_upsertPeriodCloseTaskDefinition","classification":"WRITE","paramCount":9,"schema":"5b9d3a16980b","response":"none","injectAuth":"companyId+createdBy+updatedBy","permission":"accounting:create+update"},
     {"name":"accounting_upsertReportPin","classification":"WRITE","paramCount":2,"schema":"28ab82d5033e","response":"bcde375ebd4c","injectAuth":"companyId+createdBy+updatedBy","permission":"accounting:create+update"},
     {"name":"accounting_upsertReportView","classification":"WRITE","paramCount":1,"schema":"480a01fce4bd","response":"b8ded59f5c56","injectAuth":"companyId+createdBy+updatedBy","permission":"accounting:create+update"},
+    {"name":"accounting_validateDefaultIncomeAccounts","classification":"WRITE","paramCount":29,"schema":"9249b04e60e2","response":"090ed1ebfbc1","injectAuth":"companyId","permission":"accounting:update"},
     {"name":"documents_deleteDocument","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"documents:delete"},
     {"name":"documents_deleteDocumentFavorite","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"documents:delete"},
     {"name":"documents_deleteDocumentLabel","classification":"DESTRUCTIVE","paramCount":2,"schema":"5c453c6c156d","response":"bcde375ebd4c","injectAuth":"companyId","permission":"documents:delete"},

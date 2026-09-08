@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "राजस्व"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "ग्राहकों से लिए गए शिपिंग शुल्क का राजस्व खाता"
 
 msgid "Revenue and expenses over a period"
 msgstr "एक अवधि में राजस्व और व्यय"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "शिपिंग नोट्स"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "शिपिंग राजस्व"
 
 msgid "Shipping Supplier"
 msgstr "शिपिंग आपूर्तिकर्ता"

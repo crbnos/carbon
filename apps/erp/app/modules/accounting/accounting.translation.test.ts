@@ -19,9 +19,12 @@ vi.mock("@carbon/glossary", () => ({
 }));
 
 import {
+  applyCtaToReportPeriodSeries,
+  getFinancialStatementPeriodSeries,
   translateCompanyBalances,
   translateCompanyPeriodSeries
 } from "./accounting.ee.service";
+import type { ChartPeriodSeries } from "./types";
 import { NET_INCOME_ACCOUNT_ID } from "./types";
 
 type Balance = Parameters<typeof translateCompanyBalances>[6][number];
@@ -431,5 +434,155 @@ describe("translateCompanyPeriodSeries", () => {
       byBucket: {},
       error: expect.stringMatching(/rate|currency/i)
     });
+  });
+});
+
+describe("single-company period series and configured CTA", () => {
+  it("derives translated synthetic income, then rolls CTA into Equity without changing source cells", async () => {
+    const buckets = computeReportPeriodBuckets(
+      "2026-08-01",
+      "2026-08-31",
+      "month",
+      1
+    );
+    const row = (
+      id: string,
+      parentId: string | null,
+      accountClass: ChartPeriodSeries["class"],
+      extra: Partial<ChartPeriodSeries> = {}
+    ) => ({
+      id,
+      parentId,
+      class: accountClass,
+      companyGroupId: "group",
+      active: true,
+      isGroup: false,
+      isSystem: false,
+      incomeBalance: "Balance Sheet",
+      consolidatedRate: "Current",
+      ...extra
+    });
+    const chart = [
+      row("balance-sheet", null, "Asset", { isGroup: true, isSystem: true }),
+      row("assets", "balance-sheet", "Asset", { isGroup: true }),
+      row("cash", "assets", "Asset"),
+      row("equity", "balance-sheet", "Equity", { isGroup: true }),
+      row("reserves", "equity", "Equity", { isGroup: true }),
+      row("custom-cta", "reserves", "Equity", {
+        number: "3999",
+        name: "Renamed FX Reserve"
+      }),
+      row("income-statement", null, "Revenue", {
+        isGroup: true,
+        isSystem: true,
+        incomeBalance: "Income Statement"
+      }),
+      row("sales", "income-statement", "Revenue", {
+        consolidatedRate: "Average",
+        incomeBalance: "Income Statement"
+      }),
+      row("expenses", "income-statement", "Expense", {
+        consolidatedRate: "Average",
+        incomeBalance: "Income Statement"
+      })
+    ];
+    const client = {
+      rpc(name: string, args: RateArgs) {
+        if (name === "getConsolidationRates") {
+          expect(args.p_company_id).toBe("subsidiary");
+          expect(args.p_target_currency).toBe("USD");
+          return Promise.resolve({
+            data: [{ ...rates, closingRate: 2, averageRate: 1.5 }],
+            error: null
+          });
+        }
+        if (name === "accountTreeBalancePeriodSeries") {
+          return Promise.resolve({
+            data: balanced.map((account) => ({
+              accountId: account.id,
+              periodEnd: "2026-08-31",
+              netChange: account.balanceAtDate,
+              balanceAtDate: account.balanceAtDate
+            })),
+            error: null
+          });
+        }
+        throw new Error(`Unexpected RPC ${name}`);
+      },
+      from(table: string) {
+        const filters: Record<string, unknown> = {};
+        const builder = {
+          select: () => builder,
+          eq: (field: string, value: unknown) => {
+            filters[field] = value;
+            return builder;
+          },
+          order: () => builder,
+          single: async () => {
+            expect(table).toBe("accountDefault");
+            expect(filters.companyId).toBe("parent");
+            return {
+              data: { currencyTranslationAccount: "custom-cta" },
+              error: null
+            };
+          },
+          then: (resolve: (value: unknown) => unknown) => {
+            expect(table).toBe("accounts");
+            expect(filters.companyGroupId).toBe("group");
+            return resolve({ data: chart, error: null });
+          }
+        };
+        return builder;
+      }
+    } as unknown as SupabaseClient<Database>;
+
+    const source = await getFinancialStatementPeriodSeries(
+      client,
+      "group",
+      "subsidiary",
+      {
+        buckets,
+        includeCurrentYearEarnings: true,
+        translate: { targetCurrency: "USD" }
+      }
+    );
+    expect(source.error).toBeNull();
+    expect(source.ctaByBucket).toEqual({ "2026-08": 40 });
+    if (!source.data) throw new Error("Missing source report");
+    const original = structuredClone(source.data);
+    const args = {
+      accounts: source.data,
+      bucketKeys: ["2026-08"],
+      ctaByBucket: source.ctaByBucket
+    };
+    const adjusted = await applyCtaToReportPeriodSeries(
+      client,
+      "group",
+      "parent",
+      args
+    );
+    const repeated = await applyCtaToReportPeriodSeries(
+      client,
+      "group",
+      "parent",
+      args
+    );
+    expect(adjusted.error).toBeNull();
+    const cells = new Map(
+      adjusted.data?.map((account) => [account.id, account.periods["2026-08"]])
+    );
+    expect(cells.get("cash")?.translatedBalance).toBe(160);
+    expect(cells.get(NET_INCOME_ACCOUNT_ID)).toMatchObject({
+      balanceAtDate: 80,
+      netChange: 80,
+      translatedBalance: 120,
+      translatedNetChange: 120
+    });
+    expect(cells.get("custom-cta")?.translatedBalance).toBe(40);
+    expect(cells.get("reserves")?.translatedBalance).toBe(40);
+    expect(cells.get("equity")?.translatedBalance).toBe(160);
+    expect(cells.get("balance-sheet")?.translatedBalance).toBe(0);
+    expect(repeated).toEqual(adjusted);
+    expect(source.data).toEqual(original);
   });
 });

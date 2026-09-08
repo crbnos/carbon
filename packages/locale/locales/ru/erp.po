@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "Выручка"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "Счет выручки от доставки, начисляемой покупателям"
 
 msgid "Revenue and expenses over a period"
 msgstr "Выручка и расходы за период"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "Примечания к доставке"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "Выручка от доставки"
 
 msgid "Shipping Supplier"
 msgstr "Поставщик доставки"

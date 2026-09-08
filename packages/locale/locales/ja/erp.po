@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "売上高"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "得意先に請求する配送の売上高勘定"
 
 msgid "Revenue and expenses over a period"
 msgstr "期間中の売上高と費用"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "配送メモ"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "配送売上高"
 
 msgid "Shipping Supplier"
 msgstr "配送仕入先"

@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "Revenu"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "Compte de revenus pour les frais d’expédition facturés aux clients"
 
 msgid "Revenue and expenses over a period"
 msgstr "Revenus et charges sur une période"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "Notes d'expédition"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "Revenus d’expédition"
 
 msgid "Shipping Supplier"
 msgstr "Fournisseur d'expédition"

@@ -14,7 +14,8 @@ import {
   defaultIncomeAcountValidator,
   getDefaultAccounts,
   updateDefaultBalanceSheetAccounts,
-  updateDefaultIncomeAccounts
+  updateDefaultIncomeAccounts,
+  validateDefaultIncomeAccounts
 } from "~/modules/accounting";
 import { AccountDefaultsForm } from "~/modules/accounting/ui/AccountDefaults";
 import type { Handle } from "~/utils/handle";
@@ -74,6 +75,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (!incomeValidation.success || !balanceValidation.success) {
       throw new Error("Failed to parse default accounts");
+    }
+
+    const mappingValidation = await validateDefaultIncomeAccounts(client, {
+      ...incomeValidation.data,
+      companyId
+    });
+    if (mappingValidation.error) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(mappingValidation.error, "Failed to update default accounts")
+        )
+      );
     }
 
     const [updateIncome, updateBalance] = await Promise.all([

@@ -532,6 +532,154 @@ function rollUpTranslatedGroups<
   });
 }
 
+/** Apply report-only CTA to the reporting company's configured Equity account. */
+export async function applyCtaToReportPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  reportingCompanyId: string,
+  args: {
+    accounts: ChartPeriodSeries[];
+    bucketKeys: string[];
+    ctaByBucket: Record<string, number>;
+  }
+): Promise<{
+  data: ChartPeriodSeries[] | null;
+  error: { message: string } | null;
+}> {
+  const defaults = await getDefaultAccounts(client, reportingCompanyId);
+  if (defaults.error) return { data: null, error: defaults.error };
+  const accountId = defaults.data?.currencyTranslationAccount;
+  if (!accountId) {
+    return {
+      data: null,
+      error: {
+        message: `Configure a currency translation account for company ${reportingCompanyId}`
+      }
+    };
+  }
+  const ctaAccount = args.accounts.find((account) => account.id === accountId);
+  if (!ctaAccount) {
+    return {
+      data: null,
+      error: {
+        message:
+          "The configured currency translation account is missing from the report"
+      }
+    };
+  }
+
+  let mapping = ctaAccount;
+  if (
+    mapping.active === undefined ||
+    mapping.companyGroupId === undefined ||
+    mapping.class === undefined ||
+    mapping.incomeBalance === undefined ||
+    mapping.isGroup === undefined
+  ) {
+    const account = await client
+      .from("account")
+      .select("*")
+      .eq("id", accountId)
+      .eq("companyGroupId", companyGroupId)
+      .single();
+    if (account.error) return { data: null, error: account.error };
+    if (!account.data) {
+      return {
+        data: null,
+        error: {
+          message:
+            "The configured currency translation account could not be loaded"
+        }
+      };
+    }
+    mapping = { ...account.data, periods: ctaAccount.periods };
+  }
+  if (
+    mapping.companyGroupId !== companyGroupId ||
+    mapping.active !== true ||
+    mapping.isGroup !== false ||
+    mapping.class !== "Equity" ||
+    mapping.incomeBalance !== "Balance Sheet"
+  ) {
+    return {
+      data: null,
+      error: {
+        message:
+          "The currency translation account must be an active Balance Sheet Equity posting account in this company group"
+      }
+    };
+  }
+
+  const accounts = args.accounts.map((account) => ({
+    ...account,
+    periods: Object.fromEntries(
+      Object.entries(account.periods).map(([key, cell]) => [key, { ...cell }])
+    )
+  }));
+  const translatedCta = accounts.find((account) => account.id === accountId)!;
+  const netIncome = accounts.find(
+    (account) => account.id === NET_INCOME_ACCOUNT_ID
+  );
+
+  for (const key of args.bucketKeys) {
+    const cell = translatedCta.periods[key];
+    const cta = args.ctaByBucket[key];
+    if (
+      !cell ||
+      typeof cell.translatedBalance !== "number" ||
+      !Number.isFinite(cell.translatedBalance) ||
+      typeof cta !== "number" ||
+      !Number.isFinite(cta)
+    ) {
+      return {
+        data: null,
+        error: {
+          message: `Missing or invalid currency translation values for period ${key}`
+        }
+      };
+    }
+    translatedCta.periods[key] = {
+      ...cell,
+      translatedBalance: round(cell.translatedBalance + cta)
+    };
+
+    // Single-company translation deliberately excludes the synthetic income
+    // leaf. Derive its translated values from the full income statement before
+    // rolling Equity up; the raw current-year earnings remain unchanged.
+    const incomeCell = netIncome?.periods[key];
+    if (
+      netIncome &&
+      incomeCell &&
+      typeof incomeCell.translatedBalance !== "number"
+    ) {
+      let translatedBalance = 0;
+      let translatedNetChange = 0;
+      for (const account of accounts) {
+        if (account.incomeBalance !== "Income Statement" || account.isGroup)
+          continue;
+        const sign = rootSignMultiplier(account.class);
+        translatedBalance +=
+          sign * (account.periods[key]?.translatedBalance ?? 0);
+        translatedNetChange +=
+          sign * (account.periods[key]?.translatedNetChange ?? 0);
+      }
+      netIncome.periods[key] = {
+        ...incomeCell,
+        translatedBalance: round(translatedBalance),
+        translatedNetChange: round(translatedNetChange)
+      };
+    }
+  }
+
+  return {
+    data: applyRootSignCorrectionToSeries(
+      rollUpTranslatedGroups(accounts, args.bucketKeys),
+      args.bucketKeys
+    ),
+    error: null
+  };
+}
+
 // Overlay per-bucket translated leaf balances onto the series rows.
 function overlayTranslationOnSeries<
   T extends { id: string; periods: Record<string, PeriodCell> }
@@ -3764,10 +3912,71 @@ export async function updateDefaultIncomeAccounts(
     updatedBy: string;
   }
 ) {
+  const validation = await validateDefaultIncomeAccounts(
+    client,
+    defaultAccounts
+  );
+  if (validation.error) return { data: null, error: validation.error };
   return client
     .from("accountDefault")
     .update(defaultAccounts)
     .eq("companyId", defaultAccounts.companyId);
+}
+
+/** Validate the effective shipping mapping before either defaults section saves. */
+export async function validateDefaultIncomeAccounts(
+  client: SupabaseClient<Database>,
+  defaultAccounts: z.infer<typeof defaultIncomeAcountValidator> & {
+    companyId: string;
+  }
+) {
+  const [company, stored] = await Promise.all([
+    client
+      .from("company")
+      .select("companyGroupId")
+      .eq("id", defaultAccounts.companyId)
+      .single(),
+    getDefaultAccounts(client, defaultAccounts.companyId)
+  ]);
+  if (company.error || stored.error) {
+    return { error: company.error ?? stored.error };
+  }
+  if (!company.data?.companyGroupId || !stored.data) {
+    return { error: { message: "Company account defaults not found" } };
+  }
+  const shippingId =
+    defaultAccounts.salesShippingRevenueAccount === undefined
+      ? stored.data.salesShippingRevenueAccount
+      : defaultAccounts.salesShippingRevenueAccount;
+  if (!shippingId || shippingId === defaultAccounts.salesAccount) {
+    return {
+      error: {
+        message: "Select a shipping revenue account distinct from Sales"
+      }
+    };
+  }
+  const account = await client
+    .from("account")
+    .select("id, active, isGroup, class, incomeBalance")
+    .eq("id", shippingId)
+    .eq("companyGroupId", company.data.companyGroupId)
+    .maybeSingle();
+  if (account.error) return { error: account.error };
+  if (
+    !account.data ||
+    account.data.active !== true ||
+    account.data.isGroup !== false ||
+    account.data.class !== "Revenue" ||
+    account.data.incomeBalance !== "Income Statement"
+  ) {
+    return {
+      error: {
+        message:
+          "Shipping revenue must be an active Revenue leaf account in this company group"
+      }
+    };
+  }
+  return { error: null };
 }
 
 export async function updateFiscalYearSettings(

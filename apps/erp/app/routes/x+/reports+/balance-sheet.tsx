@@ -12,8 +12,8 @@ import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import type { ChartPeriodSeries } from "~/modules/accounting";
 import {
+  applyCtaToReportPeriodSeries,
   financialReportParamsValidator,
   getCompaniesInGroup,
   getFinancialStatementPeriodSeries,
@@ -38,26 +38,6 @@ export const handle: Handle = {
 };
 
 export const shouldRevalidate = revalidateIgnoringOffset;
-
-const CTA_RESERVES_ACCOUNT_NUMBER = "3200";
-
-function applyCtaByBucket(
-  accounts: ChartPeriodSeries[],
-  ctaByBucket: Record<string, number>
-) {
-  const ctaAccount = accounts.find(
-    (a) => a.number === CTA_RESERVES_ACCOUNT_NUMBER
-  );
-  if (!ctaAccount) return;
-  for (const [key, cta] of Object.entries(ctaByBucket)) {
-    const cell = ctaAccount.periods[key];
-    if (!cell) continue;
-    ctaAccount.periods[key] = {
-      ...cell,
-      translatedBalance: (cell.translatedBalance ?? 0) + cta
-    };
-  }
-}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -141,10 +121,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    const balanceSheetAccounts = consolidated.data.filter(
+    const adjusted = await applyCtaToReportPeriodSeries(
+      client,
+      companyGroupId,
+      parentCompany!.id,
+      {
+        accounts: consolidated.data,
+        bucketKeys: buckets.map((bucket) => bucket.key),
+        ctaByBucket: consolidated.ctaByBucket
+      }
+    );
+    if (adjusted.error || !adjusted.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            adjusted.error,
+            adjusted.error?.message ?? "Failed to apply currency translation"
+          )
+        )
+      );
+    }
+    const balanceSheetAccounts = adjusted.data.filter(
       (a) => a.incomeBalance === "Balance Sheet"
     );
-    applyCtaByBucket(balanceSheetAccounts, consolidated.ctaByBucket);
 
     return {
       balanceSheet: balanceSheetAccounts,
@@ -189,12 +190,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const balanceSheetAccounts = (series.data ?? []).filter(
+  let accounts = series.data ?? [];
+  if (showTranslated) {
+    const adjusted = await applyCtaToReportPeriodSeries(
+      client,
+      companyGroupId,
+      parentCompany!.id,
+      {
+        accounts,
+        bucketKeys: buckets.map((bucket) => bucket.key),
+        ctaByBucket: series.ctaByBucket
+      }
+    );
+    if (adjusted.error || !adjusted.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(
+            adjusted.error,
+            adjusted.error?.message ?? "Failed to apply currency translation"
+          )
+        )
+      );
+    }
+    accounts = adjusted.data;
+  }
+  const balanceSheetAccounts = accounts.filter(
     (a) => a.incomeBalance === "Balance Sheet"
   );
-  if (showTranslated) {
-    applyCtaByBucket(balanceSheetAccounts, series.ctaByBucket);
-  }
 
   return {
     balanceSheet: balanceSheetAccounts,

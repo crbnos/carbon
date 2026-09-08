@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "Hasılat"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "Müşterilere yansıtılan kargo için hasılat hesabı"
 
 msgid "Revenue and expenses over a period"
 msgstr "Bir dönem içinde hasılat ve giderler"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "Sevkiyat Notları"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "Kargo hasılatı"
 
 msgid "Shipping Supplier"
 msgstr "Nakliye Tedarikçisi"

@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "Przychody ze sprzedaży"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "Konto przychodów ze sprzedaży za wysyłkę naliczaną klientom"
 
 msgid "Revenue and expenses over a period"
 msgstr "Przychody ze sprzedaży i wydatki za okres"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "Notatki wysyłki"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "Przychody ze sprzedaży wysyłkowej"
 
 msgid "Shipping Supplier"
 msgstr "Dostawca wysyłki"

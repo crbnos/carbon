@@ -13412,7 +13412,7 @@ msgid "Revenue"
 msgstr "收入"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr ""
+msgstr "向客户收取的运输费用收入科目"
 
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
@@ -14648,7 +14648,7 @@ msgid "Shipping Notes"
 msgstr "运输备注"
 
 msgid "Shipping Revenue"
-msgstr ""
+msgstr "运输收入"
 
 msgid "Shipping Supplier"
 msgstr "运输供应商"
