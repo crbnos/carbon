@@ -164,6 +164,10 @@ msgstr "{0} verschrottet"
 msgid "{0} selected"
 msgstr "{0} ausgewählt"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} spezifisch"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} empfohlene Lose"
@@ -1180,6 +1184,9 @@ msgstr "Aktiv"
 msgid "Active Jobs"
 msgstr "Aktive Fertigungsaufträge"
 
+msgid "Active now"
+msgstr "Aktiv jetzt"
+
 msgid "Active Statuses"
 msgstr "Aktive Status"
 
@@ -1847,6 +1854,9 @@ msgstr "Angewendet auf"
 msgid "Applies to"
 msgstr "Gilt für"
 
+msgid "Applies To"
+msgstr "Gilt für"
+
 msgid "Applies to all"
 msgstr "Gilt für alle"
 
@@ -2045,6 +2055,10 @@ msgstr "Sind Sie sicher, dass Sie {0} aus diesem Vorgang löschen möchten? Dies
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Sind Sie sicher, dass Sie {0} löschen möchten?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie {0} löschen möchten? Dokumente, die auf diese Version verweisen, fallen auf die nächste passende Version zurück. Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "Gegenpartei"
 msgid "Counting…"
 msgstr "Zählen…"
 
+msgid "Countries"
+msgstr "Länder"
+
 msgid "Country"
 msgstr "Land"
 
@@ -6353,6 +6370,12 @@ msgstr "Webhook bearbeiten"
 msgid "Edit Work Center"
 msgstr "Arbeitsplatz bearbeiten"
 
+msgid "Effective From"
+msgstr "Gültig ab"
+
+msgid "Effective To"
+msgstr "Gültig bis"
+
 msgid "Eliminated"
 msgstr "Beseitigt"
 
@@ -7837,6 +7860,9 @@ msgstr "Sachkontoabstimmung"
 msgid "GL Tie-Out"
 msgstr "Sachkontoabstimmung"
 
+msgid "Global"
+msgstr "Global"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Starten Sie richtig beim ersten Mal — mit unserem Team an Ihrer Seite"
 
@@ -8421,6 +8447,9 @@ msgstr "Eingabe"
 msgid "Inputs"
 msgstr "Eingaben"
 
+msgid "Insert field"
+msgstr "Feld einfügen"
+
 msgid "Insert token"
 msgstr "Token einfügen"
 
@@ -8876,9 +8905,6 @@ msgstr "Auftragsvorgang"
 
 msgid "Job Operation"
 msgstr "Auftragsvorgang"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "Auftragsvorgang­änge"
@@ -10464,6 +10490,9 @@ msgstr "Neuer Lieferant"
 msgid "New Supplier Part"
 msgstr "Neuer Lieferantenteil"
 
+msgid "New Terms Version"
+msgstr "Neue Bedingungsversion"
+
 msgid "New Timecard"
 msgstr "Neue Zeiterfassung"
 
@@ -11449,6 +11478,9 @@ msgstr "Offene Transaktionen"
 
 msgid "Open Workflow"
 msgstr "Workflow öffnen"
+
+msgid "Open-ended"
+msgstr "Unbefristet"
 
 msgid "Opened"
 msgstr "Geöffnet"
@@ -15330,6 +15362,9 @@ msgstr "Bestimmter Kunde"
 msgid "Specific Customers"
 msgstr "Bestimmte Kunden"
 
+msgid "Specific customers or suppliers"
+msgstr "Spezifische Kunden oder Lieferanten"
+
 msgid "Specific Items"
 msgstr "Spezifische Artikel"
 
@@ -16089,11 +16124,17 @@ msgstr "Vorlagen"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Temporäres Veräußerungskonto, das mit dem Restbuchwert eines Vermögenswerts bei der Lieferung belastet und mit seinem Restbuchwert bei der Fakturierung gutgeschrieben wird, was sich über den Verkaufszyklus auf Null ausmacht."
 
+msgid "Terms & Conditions"
+msgstr "Geschäftsbedingungen"
+
 msgid "Terms and Privacy"
 msgstr "Bedingungen und Datenschutz"
 
 msgid "Terms of Service"
 msgstr "Nutzungsbedingungen"
+
+msgid "Terms Version"
+msgstr "Bedingungsversion"
 
 msgid "Test"
 msgstr "Testen"
@@ -16314,6 +16355,9 @@ msgstr "Der Steuersatz, der auf die Angebots- und Kundenauftrags-Positionen dies
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hierarchien untergeordnet ist; leer lassen für eine Abteilung der obersten Ebene."
+
+msgid "The documents this version prints on."
+msgstr "Die Dokumente, auf denen diese Version gedruckt wird."
 
 msgid "The early hours, {name}."
 msgstr "Die frühen Stunden, {name}."

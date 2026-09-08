@@ -164,6 +164,10 @@ msgstr "{0} स्क्रैप किया गया"
 msgid "{0} selected"
 msgstr "{0} चुने गए"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} विशेष"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} सुझाए गए बैच"
@@ -1180,6 +1184,9 @@ msgstr "सक्रिय"
 msgid "Active Jobs"
 msgstr "सक्रिय जॉब"
 
+msgid "Active now"
+msgstr "अभी सक्रिय"
+
 msgid "Active Statuses"
 msgstr "सक्रिय स्थितियाँ"
 
@@ -1847,6 +1854,9 @@ msgstr "लागू किया गया"
 msgid "Applies to"
 msgstr "लागू होता है"
 
+msgid "Applies To"
+msgstr "लागू होता है"
+
 msgid "Applies to all"
 msgstr "सभी पर लागू होता है"
 
@@ -2045,6 +2055,10 @@ msgstr "क्या आप इस ऑपरेशन से {0} को हट�
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "क्या आप {0} को हटाना चाहते हैं?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप {0} को हटाना चाहते हैं? दस्तावेज़ जो इस संस्करण का उपयोग करते हैं अगली लागू संस्करण का उपयोग करेंगे। यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "प्रतिपक्ष"
 msgid "Counting…"
 msgstr "गिनती हो रही है…"
 
+msgid "Countries"
+msgstr "देश"
+
 msgid "Country"
 msgstr "देश"
 
@@ -6353,6 +6370,12 @@ msgstr "वेबहुक संपादित करें"
 msgid "Edit Work Center"
 msgstr "वर्क सेंटर संपादित करें"
 
+msgid "Effective From"
+msgstr "प्रभावी तारीख से"
+
+msgid "Effective To"
+msgstr "प्रभावी तारीख तक"
+
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
@@ -7837,6 +7860,9 @@ msgstr "सामान्य खाता बही समन्वय"
 msgid "GL Tie-Out"
 msgstr "सामान्य खाता बही समन्वय"
 
+msgid "Global"
+msgstr "वैश्विक"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "पहली बार ही सही तरीके से लाइव जाएं — हमारी टीम आपके साथ है"
 
@@ -8421,6 +8447,9 @@ msgstr "इनपुट"
 msgid "Inputs"
 msgstr "इनपुट्स"
 
+msgid "Insert field"
+msgstr "फ़ील्ड सम्मिलित करें"
+
 msgid "Insert token"
 msgstr "टोकन डालें"
 
@@ -8876,9 +8905,6 @@ msgstr "जॉब ऑपरेशन"
 
 msgid "Job Operation"
 msgstr "जॉब ऑपरेशन"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "जॉब ऑपरेशन"
@@ -10464,6 +10490,9 @@ msgstr "नया आपूर्तिकर्ता"
 msgid "New Supplier Part"
 msgstr "नया आपूर्तिकर्ता भाग"
 
+msgid "New Terms Version"
+msgstr "शर्तें का नया संस्करण"
+
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
 
@@ -11449,6 +11478,9 @@ msgstr "खुले लेनदेन"
 
 msgid "Open Workflow"
 msgstr "वर्कफ़्लो खोलें"
+
+msgid "Open-ended"
+msgstr "अनिर्धारित"
 
 msgid "Opened"
 msgstr "खुला हुआ"
@@ -15330,6 +15362,9 @@ msgstr "विशिष्ट ग्राहक"
 msgid "Specific Customers"
 msgstr "विशिष्ट ग्राहक"
 
+msgid "Specific customers or suppliers"
+msgstr "विशिष्ट ग्राहक या आपूर्तिकर्ता"
+
 msgid "Specific Items"
 msgstr "विशिष्ट आइटम"
 
@@ -16089,11 +16124,17 @@ msgstr "टेम्पलेट्स"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "अस्थायी निपटान-समाशोधन खाता जिसे शिपमेंट पर एक संपत्ति के शुद्ध बही मूल्य के लिए डेबिट किया जाता है और बिलिंग पर इसके शुद्ध बही मूल्य के लिए क्रेडिट किया जाता है, बिक्रय चक्र पर शून्य तक नेट किया जाता है।"
 
+msgid "Terms & Conditions"
+msgstr "नियम और शर्तें"
+
 msgid "Terms and Privacy"
 msgstr "शर्तें और गोपनीयता"
 
 msgid "Terms of Service"
 msgstr "सेवा की शर्तें"
+
+msgid "Terms Version"
+msgstr "शर्तें का संस्करण"
 
 msgid "Test"
 msgstr "परीक्षण"
@@ -16314,6 +16355,9 @@ msgstr "डिफ़ॉल्ट कर दर इस ग्राहक की 
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "विभाग जिसके अंतर्गत यह रिपोर्टिंग और हेडकाउंट पदानुक्रमों के लिए रोल अप करता है; शीर्ष स्तरीय विभाग के लिए खाली छोड़ें।"
+
+msgid "The documents this version prints on."
+msgstr "दस्तावेज़ जिन पर यह संस्करण प्रिंट होता है"
 
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"

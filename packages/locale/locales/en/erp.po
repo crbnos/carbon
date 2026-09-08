@@ -164,6 +164,10 @@ msgstr "{0} scrapped"
 msgid "{0} selected"
 msgstr "{0} selected"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} specific"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} suggested batches"
@@ -1180,6 +1184,9 @@ msgstr "Active"
 msgid "Active Jobs"
 msgstr "Active Jobs"
 
+msgid "Active now"
+msgstr "Active now"
+
 msgid "Active Statuses"
 msgstr "Active Statuses"
 
@@ -1847,6 +1854,9 @@ msgstr "Applied To"
 msgid "Applies to"
 msgstr "Applies to"
 
+msgid "Applies To"
+msgstr "Applies To"
+
 msgid "Applies to all"
 msgstr "Applies to all"
 
@@ -2045,6 +2055,10 @@ msgstr "Are you sure you want to delete {0} from this operation? This cannot be 
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Are you sure you want to delete {0}?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "Counterparty"
 msgid "Counting…"
 msgstr "Counting…"
 
+msgid "Countries"
+msgstr "Countries"
+
 msgid "Country"
 msgstr "Country"
 
@@ -6353,6 +6370,12 @@ msgstr "Edit Webhook"
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
 
+msgid "Effective From"
+msgstr "Effective From"
+
+msgid "Effective To"
+msgstr "Effective To"
+
 msgid "Eliminated"
 msgstr "Eliminated"
 
@@ -7837,6 +7860,9 @@ msgstr "GL tie-out"
 msgid "GL Tie-Out"
 msgstr "GL Tie-Out"
 
+msgid "Global"
+msgstr "Global"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Go live right the first time — with our team alongside you"
 
@@ -8421,6 +8447,9 @@ msgstr "Input"
 msgid "Inputs"
 msgstr "Inputs"
 
+msgid "Insert field"
+msgstr "Insert field"
+
 msgid "Insert token"
 msgstr "Insert token"
 
@@ -8876,9 +8905,6 @@ msgstr "Job operation"
 
 msgid "Job Operation"
 msgstr "Job Operation"
-
-msgid "Job operation batch"
-msgstr "Job operation batch"
 
 msgid "Job Operations"
 msgstr "Job Operations"
@@ -10464,6 +10490,9 @@ msgstr "New Supplier"
 msgid "New Supplier Part"
 msgstr "New Supplier Part"
 
+msgid "New Terms Version"
+msgstr "New Terms Version"
+
 msgid "New Timecard"
 msgstr "New Timecard"
 
@@ -11449,6 +11478,9 @@ msgstr "Open transactions"
 
 msgid "Open Workflow"
 msgstr "Open Workflow"
+
+msgid "Open-ended"
+msgstr "Open-ended"
 
 msgid "Opened"
 msgstr "Opened"
@@ -15330,6 +15362,9 @@ msgstr "Specific Customer"
 msgid "Specific Customers"
 msgstr "Specific Customers"
 
+msgid "Specific customers or suppliers"
+msgstr "Specific customers or suppliers"
+
 msgid "Specific Items"
 msgstr "Specific Items"
 
@@ -16089,11 +16124,17 @@ msgstr "Templates"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 
+msgid "Terms & Conditions"
+msgstr "Terms & Conditions"
+
 msgid "Terms and Privacy"
 msgstr "Terms and Privacy"
 
 msgid "Terms of Service"
 msgstr "Terms of Service"
+
+msgid "Terms Version"
+msgstr "Terms Version"
 
 msgid "Test"
 msgstr "Test"
@@ -16314,6 +16355,9 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
+
+msgid "The documents this version prints on."
+msgstr "The documents this version prints on."
 
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."

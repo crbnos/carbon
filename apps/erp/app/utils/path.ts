@@ -429,6 +429,7 @@ export const path = {
     bulkUpdateShipmentLine: `${x}/shipment/lines/update`,
     bulkUpdateStockTransferLine: `${x}/stock-transfer/lines/update`,
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
+    bulkUpdateTermsVersion: `${x}/terms-version/update`,
     bulkUpdateTraining: `${x}/training/update`,
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
@@ -877,6 +878,8 @@ export const path = {
       generatePath(`${x}/supplier-quote/${id}/${lineId}/delete`),
     deleteSupplierType: (id: string) =>
       generatePath(`${x}/purchasing/supplier-types/delete/${id}`),
+    deleteTermsVersion: (id: string) =>
+      generatePath(`${x}/settings/terms-and-conditions/delete/${id}`),
     deleteTimecard: (id: string) =>
       generatePath(`${x}/people/timecard/delete/${id}`),
     deleteToolSupplier: (itemId: string, id: string) =>
@@ -1649,6 +1652,7 @@ export const path = {
       generatePath(`${x}/supplier-quote/${id}/new`),
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTag: `${x}/settings/tags/new`,
+    newTermsVersion: `${x}/settings/terms-and-conditions/new`,
     newTimecard: `${x}/people/timecard/new`,
     newTool: `${x}/tool/new`,
     newToolSupplier: (id: string) =>
@@ -2156,6 +2160,8 @@ export const path = {
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
     tags: `${x}/settings/tags`,
+    termsVersion: (id: string) => generatePath(`${x}/terms-version/${id}`),
+    termsVersions: `${x}/settings/terms-and-conditions`,
     theme: `${x}/account/theme`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,

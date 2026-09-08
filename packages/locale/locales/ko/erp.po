@@ -164,6 +164,10 @@ msgstr "{0} 폐기됨"
 msgid "{0} selected"
 msgstr "{0}개 선택됨"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} 특정"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "제안된 배치 {0}개"
@@ -1180,6 +1184,9 @@ msgstr "활성"
 msgid "Active Jobs"
 msgstr "진행 중인 작업 지시"
 
+msgid "Active now"
+msgstr "활성"
+
 msgid "Active Statuses"
 msgstr "활성 상태"
 
@@ -1847,6 +1854,9 @@ msgstr "적용 대상"
 msgid "Applies to"
 msgstr "적용 대상"
 
+msgid "Applies To"
+msgstr "적용 범위"
+
 msgid "Applies to all"
 msgstr "전체에 적용"
 
@@ -2045,6 +2055,10 @@ msgstr "이 공정작업에서 {0}을(를) 삭제하시겠습니까? 이 작업�
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "정말 {0}을(를) 삭제하시겠습니까? 이 버전으로 확인된 문서는 다음 일치하는 버전으로 폴백됩니다. 이 작업은 취소할 수 없습니다."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "거래처"
 msgid "Counting…"
 msgstr "집계 중…"
 
+msgid "Countries"
+msgstr "국가"
+
 msgid "Country"
 msgstr "국가"
 
@@ -6353,6 +6370,12 @@ msgstr "웹훅 편집"
 msgid "Edit Work Center"
 msgstr "작업장 편집"
 
+msgid "Effective From"
+msgstr "적용 시작일"
+
+msgid "Effective To"
+msgstr "적용 종료일"
+
 msgid "Eliminated"
 msgstr "제거됨"
 
@@ -7837,6 +7860,9 @@ msgstr "총계정원장 대사"
 msgid "GL Tie-Out"
 msgstr "총계정원장 대사"
 
+msgid "Global"
+msgstr "전체"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "저희 팀과 함께 첫 시도에 성공적으로 도입하세요"
 
@@ -8421,6 +8447,9 @@ msgstr "입력"
 msgid "Inputs"
 msgstr "입력"
 
+msgid "Insert field"
+msgstr "필드 삽입"
+
 msgid "Insert token"
 msgstr "토큰 삽입"
 
@@ -8876,9 +8905,6 @@ msgstr "작업 지시 공정"
 
 msgid "Job Operation"
 msgstr "작업 지시 공정"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "작업 지시 공정"
@@ -10464,6 +10490,9 @@ msgstr "새 공급업체"
 msgid "New Supplier Part"
 msgstr "새 공급업체 부품"
 
+msgid "New Terms Version"
+msgstr "새 약관 버전"
+
 msgid "New Timecard"
 msgstr "새 근무기록"
 
@@ -11449,6 +11478,9 @@ msgstr "미결 거래"
 
 msgid "Open Workflow"
 msgstr "워크플로우 열기"
+
+msgid "Open-ended"
+msgstr "개방형"
 
 msgid "Opened"
 msgstr "열림"
@@ -15330,6 +15362,9 @@ msgstr "특정 고객"
 msgid "Specific Customers"
 msgstr "특정 고객"
 
+msgid "Specific customers or suppliers"
+msgstr "특정 고객 또는 공급업체"
+
 msgid "Specific Items"
 msgstr "특정 품목"
 
@@ -16089,11 +16124,17 @@ msgstr "템플릿"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "자산의 순장부가액 만큼 출하 시에 차변 기입되고 송장 발행 시에 대변 기입되는 임시 처분-결제 계정으로, 판매 사이클 동안 0으로 상쇄됩니다."
 
+msgid "Terms & Conditions"
+msgstr "약관"
+
 msgid "Terms and Privacy"
 msgstr "이용약관 및 개인정보처리방침"
 
 msgid "Terms of Service"
 msgstr "이용약관"
+
+msgid "Terms Version"
+msgstr "약관 버전"
 
 msgid "Test"
 msgstr "테스트"
@@ -16314,6 +16355,9 @@ msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세�
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
+
+msgid "The documents this version prints on."
+msgstr "이 버전이 인쇄되는 문서들입니다."
 
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."

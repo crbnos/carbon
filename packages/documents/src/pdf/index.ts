@@ -2,6 +2,9 @@ import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
 import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
+
+export { buildQuoteVars } from "./blocks/quote";
+
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";

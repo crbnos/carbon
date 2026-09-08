@@ -7,6 +7,7 @@ import type {
   getItemSerialSequences,
   getSequences,
   getSubsidiaries,
+  getTermsVersions,
   getWebhooks
 } from "./settings.service";
 
@@ -40,6 +41,10 @@ export type Sequence = NonNullable<
 
 export type ItemSerialSequence = NonNullable<
   Awaited<ReturnType<typeof getItemSerialSequences>>["data"]
+>[number];
+
+export type TermsVersion = NonNullable<
+  Awaited<ReturnType<typeof getTermsVersions>>["data"]
 >[number];
 
 export type Webhook = NonNullable<

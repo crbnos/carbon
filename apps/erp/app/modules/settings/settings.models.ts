@@ -1,3 +1,4 @@
+import { Constants } from "@carbon/database";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -413,6 +414,53 @@ export const itemSerialSequenceValidator = z.object({
   step: zfd.numeric(z.number().min(1)),
   size: zfd.numeric(z.number().min(1).max(20))
 });
+
+export const termsDocumentTypes = Constants.public.Enums.termsDocumentType;
+export type TermsDocumentType = (typeof termsDocumentTypes)[number];
+export const termsVersionScopes = ["global", "party", "country"] as const;
+export type TermsVersionScope = (typeof termsVersionScopes)[number];
+
+// The `scope` select maps to columns in the route action, and only ONE scope
+// dimension is ever written (a DB CHECK enforces it): "global" → all cleared;
+// "party" → customerIds/supplierIds; "country" → countryCodes.
+export const termsVersionValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    documentTypes: z
+      .array(z.enum(termsDocumentTypes))
+      .min(1, { message: "Select at least one document" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    content: zfd.text(z.string().optional()), // JSON-stringified tiptap doc
+    scope: z.enum(termsVersionScopes),
+    customerIds: z.array(z.string()).optional().default([]),
+    supplierIds: z.array(z.string()).optional().default([]),
+    countryCodes: z.array(z.string()).optional().default([]),
+    effectiveFrom: zfd.text(z.string().optional()),
+    effectiveTo: zfd.text(z.string().optional()),
+    active: zfd.checkbox()
+  })
+  .refine(
+    (d) =>
+      d.scope !== "party" ||
+      d.customerIds.length > 0 ||
+      d.supplierIds.length > 0,
+    {
+      message: "Select at least one customer or supplier",
+      path: ["customerIds"]
+    }
+  )
+  .refine((d) => d.scope !== "country" || d.countryCodes.length > 0, {
+    message: "Select at least one country",
+    path: ["countryCodes"]
+  })
+  .refine(
+    (d) =>
+      !d.effectiveFrom || !d.effectiveTo || d.effectiveFrom <= d.effectiveTo,
+    {
+      message: "Effective from must be on or before effective to",
+      path: ["effectiveTo"]
+    }
+  );
 
 export const themes = [
   "zinc",

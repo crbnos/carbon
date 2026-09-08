@@ -19,14 +19,14 @@ import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines,
   getQuotePayment,
-  getQuoteShipment,
-  getSalesTerms
+  getQuoteShipment
 } from "~/modules/sales";
 import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings,
   getDocumentTemplate,
+  getEffectiveTerms,
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
@@ -57,7 +57,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quotePayment,
     quoteShipment,
     paymentTerms,
-    terms,
     shippingMethods,
     documentTemplate
   ] = await Promise.all([
@@ -71,10 +70,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getQuotePayment(client, id),
     getQuoteShipment(client, id),
     getPaymentTermsList(client, companyId),
-    getSalesTerms(client, companyId),
     getShippingMethodsList(client, companyId),
     getDocumentTemplate(client, companyId, "quote")
   ]);
+
+  // Resolved after the batch: needs the customer's country; quotes have no
+  // issue-date column, so the creation date stands in.
+  const terms = await getEffectiveTerms(client, {
+    companyId,
+    documentType: "quote",
+    partyId: quote.data?.customerId ?? null,
+    countryCode: quoteLocations.data?.customerCountryCode ?? null,
+    date: quote.data?.createdAt?.slice(0, 10) ?? null
+  });
 
   if (company.error) {
     logger.error("Failed to load company", { error: company.error });
@@ -184,7 +192,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
       paymentTerms={paymentTerms.data ?? []}
       shippingMethods={shippingMethods.data ?? []}
-      terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+      terms={(terms?.data ?? {}) as JSONContent}
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}

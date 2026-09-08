@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { buildQuoteVars } from "@carbon/documents/pdf";
+import { interpolateContent } from "@carbon/documents/template";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -78,11 +80,14 @@ import {
   getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
-  getSalesOrderLines,
-  getSalesTerms
+  getSalesOrderLines
 } from "~/modules/sales";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import {
+  getCompany,
+  getCompanySettings,
+  getEffectiveTerms
+} from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
 import { path } from "~/utils/path";
@@ -136,7 +141,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     quotePayment,
     quoteShipment,
     paymentTerms,
-    terms,
     shippingMethods,
     opportunity
   ] = await Promise.all([
@@ -148,10 +152,19 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getQuotePayment(serviceRole, quote.data.id),
     getQuoteShipment(serviceRole, quote.data.id),
     getPaymentTermsList(serviceRole, quote.data.companyId),
-    getSalesTerms(serviceRole, quote.data.companyId),
     getShippingMethodsList(serviceRole, quote.data.companyId),
     getOpportunity(serviceRole, quote.data.opportunityId)
   ]);
+
+  // Same resolver as the quote PDF, so the shared page and the PDF can never
+  // disagree about which terms apply.
+  const terms = await getEffectiveTerms(serviceRole, {
+    companyId: quote.data.companyId,
+    documentType: "quote",
+    partyId: quote.data.customerId ?? null,
+    countryCode: customerDetails.data?.customerCountryCode ?? null,
+    date: quote.data.createdAt?.slice(0, 10) ?? null
+  });
 
   // Started before the conditional await below so this costs no extra round trip.
   // The group's configured currency.decimalPlaces is authoritative over CLDR, and
@@ -224,7 +237,22 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       paymentTerm: paymentTerms.data?.find(
         (term) => term.id === quotePayment.data?.paymentTermId
       )?.name,
-      terms: terms.data?.salesTerms ?? "",
+      // Interpolated with the same vars the quote PDF uses, so merge fields in
+      // versioned terms resolve identically on both surfaces.
+      terms: terms.data
+        ? interpolateContent(
+            terms.data,
+            // The PDF loaders pass view rows; this route holds the equivalent
+            // table rows (nullability differs, fields match). buildQuoteVars
+            // reads every field defensively, so the cast is safe.
+            buildQuoteVars({
+              quote: quote.data,
+              quoteCustomerDetails: customerDetails.data,
+              company: company.data,
+              currencyCode: quote.data.currencyCode ?? ""
+            } as unknown as Parameters<typeof buildQuoteVars>[0])
+          )
+        : "",
       shippingMethod: shippingMethods.data?.find(
         (method) => method.id === quoteShipment.data?.shippingMethodId
       )?.name,

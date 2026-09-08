@@ -28,12 +28,12 @@ import {
 import {
   getCustomerLocation,
   getSalesOrder,
-  getSalesOrderShipment,
-  getSalesTerms
+  getSalesOrderShipment
 } from "~/modules/sales";
 import {
   getCompany,
   getDocumentTemplate,
+  getEffectiveTerms,
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
@@ -69,7 +69,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const terms = await getSalesTerms(serviceRole, companyId);
+  // The customer's location isn't loaded until the per-source-document branch
+  // below, so packing slips resolve global terms only (spec risk row).
+  const terms = await getEffectiveTerms(serviceRole, {
+    companyId,
+    documentType: "packingSlip",
+    partyId: null,
+    countryCode: null,
+    date: shipment.data?.createdAt?.slice(0, 10) ?? null
+  });
 
   if (terms.error) {
     logger.error("Failed to load terms", { error: terms.error });
@@ -196,7 +204,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           shipmentLines={shipmentLines.data ?? []}
           // @ts-expect-error
           shippingAddress={customerLocation.data?.address ?? null}
-          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          terms={(terms?.data ?? {}) as JSONContent}
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
@@ -319,7 +327,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           shipmentLines={shipmentLines.data ?? []}
           // @ts-expect-error
           shippingAddress={customerLocation.data?.address ?? null}
-          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          terms={(terms?.data ?? {}) as JSONContent}
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
@@ -435,7 +443,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           shipmentLines={shipmentLines.data ?? []}
           // @ts-expect-error
           shippingAddress={supplierLocation.data?.address ?? null}
-          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          terms={(terms?.data ?? {}) as JSONContent}
           paymentTerm={poPaymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={poShippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={poShipmentTracking.data ?? []}
@@ -548,7 +556,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           shipmentLines={shipmentLines.data ?? []}
           // @ts-expect-error
           shippingAddress={shippingAddress}
-          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          terms={(terms?.data ?? {}) as JSONContent}
           paymentTerm={{ id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}

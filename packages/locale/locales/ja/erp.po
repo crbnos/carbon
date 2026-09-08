@@ -164,6 +164,10 @@ msgstr "{0}廃棄"
 msgid "{0} selected"
 msgstr "{0} 件選択"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0}個別"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "推奨バッチ {0} 個"
@@ -1180,6 +1184,9 @@ msgstr "有効"
 msgid "Active Jobs"
 msgstr "有効な製造指図"
 
+msgid "Active now"
+msgstr "現在有効"
+
 msgid "Active Statuses"
 msgstr "アクティブなステータス"
 
@@ -1847,6 +1854,9 @@ msgstr "適用先"
 msgid "Applies to"
 msgstr "適用対象"
 
+msgid "Applies To"
+msgstr "適用対象"
+
 msgid "Applies to all"
 msgstr "すべてに適用"
 
@@ -2045,6 +2055,10 @@ msgstr "{0}をこの操作から削除してもよろしいですか?これは�
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "{0}を削除してもよろしいですか？このバージョンに対応していたドキュメントは、次に一致するバージョンにフォールバックします。この操作は取り消せません。"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "相手先"
 msgid "Counting…"
 msgstr "集計中…"
 
+msgid "Countries"
+msgstr "国"
+
 msgid "Country"
 msgstr "国"
 
@@ -6353,6 +6370,12 @@ msgstr "Webhookを編集"
 msgid "Edit Work Center"
 msgstr "作業区を編集"
 
+msgid "Effective From"
+msgstr "有効期間開始日"
+
+msgid "Effective To"
+msgstr "有効期間終了日"
+
 msgid "Eliminated"
 msgstr "削除済み"
 
@@ -7837,6 +7860,9 @@ msgstr "GL試算表"
 msgid "GL Tie-Out"
 msgstr "GL試算表"
 
+msgid "Global"
+msgstr "グローバル"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "初回から正しく本番運用を開始 — 当社チームがサポートします"
 
@@ -8421,6 +8447,9 @@ msgstr "入力"
 msgid "Inputs"
 msgstr "入力"
 
+msgid "Insert field"
+msgstr "フィールドを挿入"
+
 msgid "Insert token"
 msgstr "トークンを挿入"
 
@@ -8876,9 +8905,6 @@ msgstr "指図工程"
 
 msgid "Job Operation"
 msgstr "指図工程"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "指図工程"
@@ -10464,6 +10490,9 @@ msgstr "新規仕入先"
 msgid "New Supplier Part"
 msgstr "新規仕入先部品"
 
+msgid "New Terms Version"
+msgstr "新契約条件バージョン"
+
 msgid "New Timecard"
 msgstr "新しいタイムカード"
 
@@ -11449,6 +11478,9 @@ msgstr "未処理トランザクション"
 
 msgid "Open Workflow"
 msgstr "ワークフローを開く"
+
+msgid "Open-ended"
+msgstr "無期限"
 
 msgid "Opened"
 msgstr "開いている"
@@ -15330,6 +15362,9 @@ msgstr "特定の得意先"
 msgid "Specific Customers"
 msgstr "特定の得意先"
 
+msgid "Specific customers or suppliers"
+msgstr "特定の得意先または仕入先"
+
 msgid "Specific Items"
 msgstr "特定の品目"
 
@@ -16089,11 +16124,17 @@ msgstr "テンプレート"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "一時的な処分・清算勘定科目で、資産の未償却残高は出荷時に借方記入され、請求時に貸方記入され、販売サイクル全体でゼロに相殺されます。"
 
+msgid "Terms & Conditions"
+msgstr "契約条件"
+
 msgid "Terms and Privacy"
 msgstr "利用規約とプライバシー"
 
 msgid "Terms of Service"
 msgstr "利用規約"
+
+msgid "Terms Version"
+msgstr "契約条件バージョン"
 
 msgid "Test"
 msgstr "テスト"
@@ -16314,6 +16355,9 @@ msgstr "得意先の見積および販売注文明細に適用される既定の
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
+
+msgid "The documents this version prints on."
+msgstr "このバージョンが印刷されるドキュメント"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"

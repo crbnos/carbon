@@ -164,6 +164,10 @@ msgstr "{0} 报废"
 msgid "{0} selected"
 msgstr "{0} 已选择"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} 特定"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} 个建议生产批次"
@@ -1180,6 +1184,9 @@ msgstr "启用"
 msgid "Active Jobs"
 msgstr "启用的工单"
 
+msgid "Active now"
+msgstr "启用中"
+
 msgid "Active Statuses"
 msgstr "启用的状态"
 
@@ -1847,6 +1854,9 @@ msgstr "应用于"
 msgid "Applies to"
 msgstr "适用于"
 
+msgid "Applies To"
+msgstr "适用于"
+
 msgid "Applies to all"
 msgstr "适用于全部"
 
@@ -2045,6 +2055,10 @@ msgstr "你确定要从此操作中删除 {0} 吗？此操作无法撤销。"
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "您确定要删除 {0} 吗？引用此版本的文档将回退到下一个匹配的版本。此操作无法撤销。"
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "交易对手"
 msgid "Counting…"
 msgstr "统计中…"
 
+msgid "Countries"
+msgstr "国家"
+
 msgid "Country"
 msgstr "国家"
 
@@ -6353,6 +6370,12 @@ msgstr "编辑 Webhook"
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
 
+msgid "Effective From"
+msgstr "生效起始"
+
+msgid "Effective To"
+msgstr "生效截止"
+
 msgid "Eliminated"
 msgstr "已消除"
 
@@ -7837,6 +7860,9 @@ msgstr "总账对账"
 msgid "GL Tie-Out"
 msgstr "总账对账"
 
+msgid "Global"
+msgstr "全局"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "第一次就上线成功 — 我们的团队陪伴您"
 
@@ -8421,6 +8447,9 @@ msgstr "输入"
 msgid "Inputs"
 msgstr "输入"
 
+msgid "Insert field"
+msgstr "插入字段"
+
 msgid "Insert token"
 msgstr "插入令牌"
 
@@ -8876,9 +8905,6 @@ msgstr "工单工序"
 
 msgid "Job Operation"
 msgstr "工单工序"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "工单工序"
@@ -10464,6 +10490,9 @@ msgstr "新供应商"
 msgid "New Supplier Part"
 msgstr "新供应商零件"
 
+msgid "New Terms Version"
+msgstr "新的条款版本"
+
 msgid "New Timecard"
 msgstr "新时间卡"
 
@@ -11449,6 +11478,9 @@ msgstr "未结交易"
 
 msgid "Open Workflow"
 msgstr "打开工作流"
+
+msgid "Open-ended"
+msgstr "无期限"
 
 msgid "Opened"
 msgstr "打开"
@@ -15330,6 +15362,9 @@ msgstr "特定客户"
 msgid "Specific Customers"
 msgstr "特定客户"
 
+msgid "Specific customers or suppliers"
+msgstr "特定的客户或供应商"
+
 msgid "Specific Items"
 msgstr "特定物料"
 
@@ -16089,11 +16124,17 @@ msgstr "模板"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "临时处置清算账户，在发货时按资产账面净值做借方记录，在开票时按其账面净值做贷方记录，在销售周期内结余为零。"
 
+msgid "Terms & Conditions"
+msgstr "条款和条件"
+
 msgid "Terms and Privacy"
 msgstr "条款和隐私"
 
 msgid "Terms of Service"
 msgstr "服务条款"
+
+msgid "Terms Version"
+msgstr "条款版本"
 
 msgid "Test"
 msgstr "测试"
@@ -16314,6 +16355,9 @@ msgstr "适用于此客户的报价和销售订单行的默认税率，在每行
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
+
+msgid "The documents this version prints on."
+msgstr "此版本打印的文档。"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"

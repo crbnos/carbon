@@ -11,6 +11,7 @@ import type {
   WatermarkBlock
 } from "@carbon/documents/template";
 import {
+  appendText,
   BLOCK_META,
   BUILT_IN_SECTION_IDS,
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -55,24 +56,6 @@ import { MergeFieldMenu } from "./MergeFieldMenu";
 import { NumberRow } from "./NumberRow";
 import { SectionFormModal } from "./SectionFormModal";
 import { HEADER_LOGO_ID } from "./useHeaderConfig";
-
-/** Append a `{{token}}` snippet to the end of a tiptap doc (inline if possible). */
-function appendText(content: JSONContent, text: string): JSONContent {
-  const doc =
-    content && content.type === "doc"
-      ? content
-      : ({ type: "doc", content: [] } as JSONContent);
-  const nodes = Array.isArray(doc.content) ? [...doc.content] : [];
-  const last = nodes[nodes.length - 1];
-  if (last && last.type === "paragraph") {
-    const inline = Array.isArray(last.content) ? [...last.content] : [];
-    inline.push({ type: "text", text: inline.length ? ` ${text}` : text });
-    nodes[nodes.length - 1] = { ...last, content: inline };
-  } else {
-    nodes.push({ type: "paragraph", content: [{ type: "text", text }] });
-  }
-  return { ...doc, type: "doc", content: nodes };
-}
 
 export function BlockConfig() {
   const { blocks, sections, selectedId } = useDocumentTemplate();

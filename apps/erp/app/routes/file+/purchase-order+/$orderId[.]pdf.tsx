@@ -19,14 +19,14 @@ import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import {
   getPurchaseOrder,
   getPurchaseOrderLines,
-  getPurchaseOrderLocations,
-  getPurchasingTerms
+  getPurchaseOrderLocations
 } from "~/modules/purchasing";
 import {
   getAccountsPayableBillingAddress,
   getCompany,
   getCompanySettings,
   getDocumentTemplate,
+  getEffectiveTerms,
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
@@ -51,7 +51,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     purchaseOrder,
     purchaseOrderLines,
     purchaseOrderLocations,
-    terms,
     paymentTerms,
     documentTemplate
   ] = await Promise.all([
@@ -61,10 +60,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getPurchaseOrder(client, orderId),
     getPurchaseOrderLines(client, orderId),
     getPurchaseOrderLocations(client, orderId),
-    getPurchasingTerms(client, companyId),
     getPaymentTermsList(client, companyId),
     getDocumentTemplate(client, companyId, "purchaseOrder")
   ]);
+
+  // Resolved after the batch: needs the supplier's country and the order date.
+  const terms = await getEffectiveTerms(client, {
+    companyId,
+    documentType: "purchaseOrder",
+    partyId: purchaseOrder.data?.supplierId ?? null,
+    countryCode: purchaseOrderLocations.data?.supplierCountryCode ?? null,
+    date: purchaseOrder.data?.orderDate ?? null
+  });
 
   if (company.error) {
     logger.error("Failed to load company", { error: company.error });
@@ -181,7 +188,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       purchaseOrder={purchaseOrder.data}
       purchaseOrderLines={purchaseOrderLines.data ?? []}
       purchaseOrderLocations={purchaseOrderLocations.data}
-      terms={(terms?.data?.purchasingTerms || {}) as JSONContent}
+      terms={(terms?.data || {}) as JSONContent}
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}

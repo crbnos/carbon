@@ -18,6 +18,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
+import { datetime, resolveEffectiveTermsVersion } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -35,6 +36,7 @@ import type {
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
   subsidiaryValidator,
+  termsVersionValidator,
   webhookValidator
 } from "./settings.models";
 
@@ -584,11 +586,157 @@ export async function getSubsidiary(
   return client.from("company").select("*").eq("id", companyId).single();
 }
 
-export async function getTerms(
+export async function getTermsVersions(
   client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("termsVersion")
+    .select("*", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getTermsVersion(
+  client: SupabaseClient<Database>,
+  id: string,
   companyId: string
 ) {
-  return client.from("terms").select("*").eq("id", companyId).single();
+  return client
+    .from("termsVersion")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** The columns a terms-version write sets, with scope already resolved. */
+type TermsVersionScopeColumns = Omit<
+  z.infer<typeof termsVersionValidator>,
+  "id" | "scope" | "content" | "customerIds" | "supplierIds" | "countryCodes"
+> & {
+  content: Json;
+  customerIds: string[];
+  supplierIds: string[];
+  countryCodes: string[];
+};
+
+export async function upsertTermsVersion(
+  client: SupabaseClient<Database>,
+  termsVersion:
+    | (TermsVersionScopeColumns & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (TermsVersionScopeColumns & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in termsVersion) {
+    return client
+      .from("termsVersion")
+      .insert([termsVersion])
+      .select("id")
+      .single();
+  }
+  const { id, companyId, ...update } = termsVersion;
+  return client
+    .from("termsVersion")
+    .update({
+      ...sanitize(update),
+      // sanitize strips nulls, but clearing a scope or date is a real edit —
+      // write the nullable columns through explicitly.
+      customerIds: termsVersion.customerIds,
+      supplierIds: termsVersion.supplierIds,
+      countryCodes: termsVersion.countryCodes,
+      effectiveFrom: termsVersion.effectiveFrom ?? null,
+      effectiveTo: termsVersion.effectiveTo ?? null,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function deleteTermsVersion(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("termsVersion")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Resolve the terms & conditions content in effect for an outgoing document.
+ * `documentType` is the document being printed, `countryCode` is the
+ * counterparty's country (null → global terms only) and
+ * `date` is the document's issue date (null → today in the company timezone),
+ * so reprints stay stable across scheduled terms changes.
+ */
+export async function getEffectiveTerms(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    documentType: Database["public"]["Enums"]["termsDocumentType"];
+    partyId: string | null;
+    countryCode: string | null;
+    date: string | null;
+  }
+): Promise<
+  { data: JSONContent | null; error: null } | { data: null; error: unknown }
+> {
+  const { data, error } = await client
+    .from("termsVersion")
+    .select(
+      "id, content, customerIds, supplierIds, countryCodes, effectiveFrom, effectiveTo"
+    )
+    .eq("companyId", args.companyId)
+    .contains("documentTypes", [args.documentType])
+    .eq("active", true);
+
+  if (error) return { data: null, error };
+
+  const date =
+    args.date ??
+    datetime.today(await getCompanyTimeZone(client, args.companyId)).toString();
+
+  // A purchase order's counterparty is a supplier; every other terms-bearing
+  // document is customer-facing. Normalizing here keeps the resolver generic.
+  const rows = (data ?? []).map((row) => ({
+    ...row,
+    partyIds:
+      args.documentType === "purchaseOrder" ? row.supplierIds : row.customerIds
+  }));
+
+  const resolved = resolveEffectiveTermsVersion(
+    rows,
+    { partyId: args.partyId, countryCode: args.countryCode },
+    date
+  );
+  return {
+    data: (resolved?.content ?? null) as JSONContent | null,
+    error: null
+  };
 }
 
 export async function getDocumentTemplate(

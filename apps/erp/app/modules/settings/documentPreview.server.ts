@@ -17,8 +17,7 @@ import {
 import {
   getPurchaseOrder,
   getPurchaseOrderLines,
-  getPurchaseOrderLocations,
-  getPurchasingTerms
+  getPurchaseOrderLocations
 } from "~/modules/purchasing";
 import {
   getQuote,
@@ -29,14 +28,14 @@ import {
   getQuoteShipment,
   getSalesOrder,
   getSalesOrderCustomerDetails,
-  getSalesOrderLines,
-  getSalesTerms
+  getSalesOrderLines
 } from "~/modules/sales";
 import {
   getAccountsPayableBillingAddress,
   getAccountsReceivableBillingAddress,
   getCompany,
-  getCompanySettings
+  getCompanySettings,
+  getEffectiveTerms
 } from "~/modules/settings";
 
 type Client = SupabaseClient<Database>;
@@ -153,7 +152,13 @@ export async function buildPreviewProps(
         getSalesInvoiceLines(client, id),
         getSalesInvoiceCustomerDetails(client, id),
         getSalesInvoiceShipment(client, id),
-        getSalesTerms(client, companyId),
+        getEffectiveTerms(client, {
+          companyId,
+          documentType: "salesInvoice",
+          partyId: null,
+          countryCode: null,
+          date: null
+        }),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId),
         getAccountsReceivableBillingAddress(client, companyId)
@@ -169,7 +174,7 @@ export async function buildPreviewProps(
           ?.accountsReceivableAddress
           ? ar.data
           : null,
-        terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
+        terms: (terms?.data ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
         shippingMethods: shipping.data ?? []
       };
@@ -180,7 +185,13 @@ export async function buildPreviewProps(
           getSalesOrder(client, id),
           getSalesOrderLines(client, id),
           getSalesOrderCustomerDetails(client, id),
-          getSalesTerms(client, companyId),
+          getEffectiveTerms(client, {
+            companyId,
+            documentType: "salesOrder",
+            partyId: null,
+            countryCode: null,
+            date: null
+          }),
           getPaymentTermsList(client, companyId),
           getShippingMethodsList(client, companyId),
           getAccountsReceivableBillingAddress(client, companyId)
@@ -195,7 +206,7 @@ export async function buildPreviewProps(
           ?.accountsReceivableAddress
           ? ar.data
           : null,
-        terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
+        terms: (terms?.data ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
         shippingMethods: shipping.data ?? []
       };
@@ -205,7 +216,13 @@ export async function buildPreviewProps(
         getPurchaseOrder(client, id),
         getPurchaseOrderLines(client, id),
         getPurchaseOrderLocations(client, id),
-        getPurchasingTerms(client, companyId),
+        getEffectiveTerms(client, {
+          companyId,
+          documentType: "purchaseOrder",
+          partyId: null,
+          countryCode: null,
+          date: null
+        }),
         getPaymentTermsList(client, companyId),
         getAccountsPayableBillingAddress(client, companyId)
       ]);
@@ -219,7 +236,7 @@ export async function buildPreviewProps(
           ?.accountsPayableAddress
           ? ap.data
           : null,
-        terms: (terms?.data?.purchasingTerms ?? {}) as JSONContent,
+        terms: (terms?.data ?? {}) as JSONContent,
         paymentTerms: payment.data ?? []
       };
     }
@@ -241,7 +258,13 @@ export async function buildPreviewProps(
         getQuoteCustomerDetails(client, id),
         getQuotePayment(client, id),
         getQuoteShipment(client, id),
-        getSalesTerms(client, companyId),
+        getEffectiveTerms(client, {
+          companyId,
+          documentType: "quote",
+          partyId: null,
+          countryCode: null,
+          date: null
+        }),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId)
       ]);
@@ -259,7 +282,7 @@ export async function buildPreviewProps(
         quoteCustomerDetails: locations.data,
         payment: payment?.data,
         shipment: shipment?.data,
-        terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
+        terms: (terms?.data ?? {}) as JSONContent,
         paymentTerms: paymentTerms.data ?? [],
         shippingMethods: shipping.data ?? []
       };

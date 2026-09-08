@@ -164,6 +164,10 @@ msgstr "{0} hurdaya alındı"
 msgid "{0} selected"
 msgstr "{0} seçildi"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} belirli"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} önerilen parti"
@@ -1180,6 +1184,9 @@ msgstr "Aktif"
 msgid "Active Jobs"
 msgstr "Aktif İş emirleri"
 
+msgid "Active now"
+msgstr "Şu anda Aktif"
+
 msgid "Active Statuses"
 msgstr "Aktif Durumlar"
 
@@ -1847,6 +1854,9 @@ msgstr "Uygulandı"
 msgid "Applies to"
 msgstr "Uygulama"
 
+msgid "Applies To"
+msgstr "Uygulanacağı"
+
 msgid "Applies to all"
 msgstr "Tümüne uygulanır"
 
@@ -2045,6 +2055,10 @@ msgstr "Bu işlemden {0}'ı silmek istediğinizden emin misiniz? Bu geri alınam
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0} öğesini silmek istediğinizden emin misiniz?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "{0} sürümünü silmek istediğinize emin misiniz? Bu sürüme çözülen belgeler bir sonraki eşleşen sürüme geri dönecektir. Bu işlem geri alınamaz."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "Karşı Taraf"
 msgid "Counting…"
 msgstr "Sayılıyor…"
 
+msgid "Countries"
+msgstr "Ülkeler"
+
 msgid "Country"
 msgstr "Ülke"
 
@@ -6353,6 +6370,12 @@ msgstr "Webhook Düzenle"
 msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
 
+msgid "Effective From"
+msgstr "Başlama Tarihi"
+
+msgid "Effective To"
+msgstr "Bitiş Tarihi"
+
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
 
@@ -7837,6 +7860,9 @@ msgstr "Muhasebe mutabakatı"
 msgid "GL Tie-Out"
 msgstr "Muhasebe Mutabakatı"
 
+msgid "Global"
+msgstr "Küresel"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "İlk seferde canlı yayına geç — ekibimiz yanınızda"
 
@@ -8421,6 +8447,9 @@ msgstr "Giriş"
 msgid "Inputs"
 msgstr "Girişler"
 
+msgid "Insert field"
+msgstr "Alan Ekle"
+
 msgid "Insert token"
 msgstr "Token ekle"
 
@@ -8876,9 +8905,6 @@ msgstr "İş emri operasyonu"
 
 msgid "Job Operation"
 msgstr "İş emri operasyonu"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
@@ -10464,6 +10490,9 @@ msgstr "Yeni Tedarikçi"
 msgid "New Supplier Part"
 msgstr "Yeni Tedarikçi Parçası"
 
+msgid "New Terms Version"
+msgstr "Yeni Şartlar Sürümü"
+
 msgid "New Timecard"
 msgstr "Yeni Vardiya"
 
@@ -11449,6 +11478,9 @@ msgstr "Açık işlemler"
 
 msgid "Open Workflow"
 msgstr "İş Akışını Aç"
+
+msgid "Open-ended"
+msgstr "Açık Uçlu"
 
 msgid "Opened"
 msgstr "Açık"
@@ -15330,6 +15362,9 @@ msgstr "Belirli Müşteri"
 msgid "Specific Customers"
 msgstr "Belirli Müşteriler"
 
+msgid "Specific customers or suppliers"
+msgstr "Belirli Müşteriler veya Tedarikçiler"
+
 msgid "Specific Items"
 msgstr "Belirli Ürünler"
 
@@ -16089,11 +16124,17 @@ msgstr "Şablonlar"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Sevkiyat sırasında bir varlığın net defter değeri için borçlandırılan ve faturalama sırasında net defter değeri için alacaklandırılan, satış döngüsü boyunca sıfıra netleşen geçici elden çıkarma mahsup hesabı."
 
+msgid "Terms & Conditions"
+msgstr "Şartlar ve Koşullar"
+
 msgid "Terms and Privacy"
 msgstr "Şartlar ve Gizlilik"
 
 msgid "Terms of Service"
 msgstr "Hizmet Şartları"
+
+msgid "Terms Version"
+msgstr "Şartlar Sürümü"
 
 msgid "Test"
 msgstr "Test"
@@ -16314,6 +16355,9 @@ msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan va
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
+
+msgid "The documents this version prints on."
+msgstr "Bu sürümün yazdırıldığı belgeler."
 
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."

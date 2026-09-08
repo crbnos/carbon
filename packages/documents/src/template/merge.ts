@@ -50,6 +50,24 @@ export function mergeToken(token: string): string {
   return `{${token}}`;
 }
 
+/** Append a `{token}` snippet to the end of a tiptap doc (inline if possible). */
+export function appendText(content: JSONContent, text: string): JSONContent {
+  const doc =
+    content && content.type === "doc"
+      ? content
+      : ({ type: "doc", content: [] } as JSONContent);
+  const nodes = Array.isArray(doc.content) ? [...doc.content] : [];
+  const last = nodes[nodes.length - 1];
+  if (last && last.type === "paragraph") {
+    const inline = Array.isArray(last.content) ? [...last.content] : [];
+    inline.push({ type: "text", text: inline.length ? ` ${text}` : text });
+    nodes[nodes.length - 1] = { ...last, content: inline };
+  } else {
+    nodes.push({ type: "paragraph", content: [{ type: "text", text }] });
+  }
+  return { ...doc, type: "doc", content: nodes };
+}
+
 /**
  * Company detail fields shared by the customer/supplier-facing documents
  * (invoice, order, PO, quote, packing slip). Also the field list offered for

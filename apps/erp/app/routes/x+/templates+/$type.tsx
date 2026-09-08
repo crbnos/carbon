@@ -24,8 +24,9 @@ import {
   getCompanySettings,
   getDocumentSections,
   getDocumentTemplate,
-  getTerms,
+  getEffectiveTerms,
   resolveSections,
+  termsDocumentTypes,
   upsertDocumentSection,
   upsertDocumentTemplate
 } from "~/modules/settings";
@@ -46,6 +47,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const documentType = documentTemplateTypeSchema.parse(params.type);
 
+  // Terms versions exist per outgoing document type; internal docs have none.
+  const termsDocumentType = termsDocumentTypes.find(
+    (type) => type === documentType
+  );
+
   const [
     stored,
     sections,
@@ -62,29 +68,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getCustomFieldsSchemas(client, { companyId, table: documentType }),
     // Recent records to optionally preview against live data.
     listPreviewEntities(client, companyId, documentType),
-    // Company terms setting — seeds the Terms block when it has no content.
-    getTerms(client, companyId),
+    // Currently-effective global terms version — seeds the Terms block when it
+    // has no content of its own.
+    termsDocumentType
+      ? getEffectiveTerms(client, {
+          companyId,
+          documentType: termsDocumentType,
+          partyId: null,
+          countryCode: null,
+          date: null
+        })
+      : Promise.resolve({ data: null, error: null }),
     getCompany(client, companyId),
     // Company's configured label stock — seeds the label-size preview picker.
     getCompanySettings(client, companyId)
   ]);
 
-  // Map the document type to the relevant company terms setting (the Terms
-  // block's default/fallback). Internal docs have no terms.
-  const TERMS_FIELD: Partial<
-    Record<typeof documentType, "salesTerms" | "purchasingTerms">
-  > = {
-    salesInvoice: "salesTerms",
-    salesOrder: "salesTerms",
-    quote: "salesTerms",
-    packingSlip: "salesTerms",
-    purchaseOrder: "purchasingTerms"
-  };
-  const termsField = TERMS_FIELD[documentType];
-  const termsSeed = termsField
-    ? ((terms.data as Record<string, JSONContent> | null)?.[termsField] ??
-      undefined)
-    : undefined;
+  const termsSeed = (terms.data as JSONContent | null) ?? undefined;
 
   const customFields = (
     ((customFieldSchemas.data ?? []).find((t) => t.table === documentType)

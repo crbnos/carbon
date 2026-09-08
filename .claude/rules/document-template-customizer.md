@@ -109,7 +109,8 @@ in `@carbon/utils` `labelSizes`; ZPL needs a `labelSize.zpl` config).
 
 The built-in `terms` block carries optional rich-text `content`; renderers call
 `resolveTerms(block, data.terms, vars)` — the authored content (interpolated) when
-present, else the company `terms` table setting (`salesTerms`/`purchasingTerms`),
+present, else the resolved `termsVersion` (versioned, effective-dated, optionally
+country/region-scoped — `getEffectiveTerms` in the settings service),
 which routes still pass as the seed/fallback.
 
 <!-- UNVERIFIED: logo-resizer edge function (^GFA mono-PNG) for ZPL label logos — described in the old cache doc but not re-confirmed against current code in this pass -->

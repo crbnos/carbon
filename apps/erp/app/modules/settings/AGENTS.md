@@ -54,7 +54,8 @@ pnpm run lint
 | `config` / `industry` | Global config row; onboarding industry catalog (`active`, `sortOrder`) |
 | `documentTemplate` | Block layout + theme + settings per `(companyId, documentType)` |
 | `documentSection` | Company-global reusable header/body/footer rich text |
-| `terms` | Company `salesTerms` / `purchasingTerms` JSON (PK = company id) |
+| `termsVersion` | Versioned, effective-dated T&C covering one or more outgoing **document types** (`documentTypes "termsDocumentType"[]`), optionally scoped to named counterparties (`customerIds`/`supplierIds`) or a country list (`countryCodes`) — mutually exclusive by CHECK. Resolved at render time by `getEffectiveTerms` (counterparty > country > global). Edited in the full-screen editor at `x/terms-version/:id` |
+| `terms` | Legacy company `salesTerms` / `purchasingTerms` JSON (PK = company id) — backfilled into `termsVersion`, no longer read |
 | `sequence` | Readable-id numbering per table |
 | `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering |
 | `customField` / `customFieldTables` (view) | User-defined fields, grouped per table |
@@ -70,7 +71,7 @@ pnpm run lint
 - `getNextSequence` (RPC `get_next_sequence`) / `getCurrentSequence` / `getSequence(s)` / `updateSequence` — document numbering
 - `getDocumentTemplate` / `getDocumentTemplateConfig` / `upsertDocumentTemplate` — template read/write
 - `getDocumentSections` / `getDocumentSectionsByIds` / `upsertDocumentSection` / `deleteDocumentSection` / `resolveSections` — sections; `resolveSections` seeds built-ins first, then lets a stored row of the same id override
-- `getTerms` — company terms fallback for the Terms block; `getAccountsPayableBillingAddress` / `getAccountsReceivableBillingAddress` (+ `update*`) — addresses printed on documents
+- `getEffectiveTerms` — resolves the T&C version in effect for a document (document type + counterparty id + counterparty country + document date; country > region group > global, quiet fallback on dating gaps) — the Terms block fallback every PDF route and the shared quote page use; `getTermsVersions` / `getTermsVersion` / `upsertTermsVersion` / `deleteTermsVersion` back the Settings → Terms & Conditions page; `getAccountsPayableBillingAddress` / `getAccountsReceivableBillingAddress` (+ `update*`) — addresses printed on documents
 - `getCustomField(s)` / `getCustomFieldsTables`, plus `upsertCustomField` / `deleteCustomField` / `updateCustomFieldsSortOrder` (`settings.server.ts`, cache-clearing)
 - `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `deactivateIntegration` / `getIntegrationsWithHealth`
 - `upsertApiKey` / `deleteApiKey`; `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` / `getWebhookTables`

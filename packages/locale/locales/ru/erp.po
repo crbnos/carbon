@@ -164,6 +164,10 @@ msgstr "{0} брак"
 msgid "{0} selected"
 msgstr "{0} выбрано"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} конкретные"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} предложенных серий"
@@ -1180,6 +1184,9 @@ msgstr "Активно"
 msgid "Active Jobs"
 msgstr "Активные производственные заказы"
 
+msgid "Active now"
+msgstr "Активно"
+
 msgid "Active Statuses"
 msgstr "Активные статусы"
 
@@ -1847,6 +1854,9 @@ msgstr "Применено к"
 msgid "Applies to"
 msgstr "Применяется к"
 
+msgid "Applies To"
+msgstr "Применяется к"
+
 msgid "Applies to all"
 msgstr "Применяется ко всем"
 
@@ -2045,6 +2055,10 @@ msgstr "Вы уверены, что хотите удалить {0} из это�
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Вы уверены, что хотите удалить {0}?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "Вы уверены, что хотите удалить {0}? Документы, которые использовали эту версию, перейдут на следующую подходящую версию. Это действие невозможно отменить."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "Контрагент"
 msgid "Counting…"
 msgstr "Подсчёт…"
 
+msgid "Countries"
+msgstr "Страны"
+
 msgid "Country"
 msgstr "Страна"
 
@@ -6353,6 +6370,12 @@ msgstr "Изменить вебхук"
 msgid "Edit Work Center"
 msgstr "Изменить рабочий центр"
 
+msgid "Effective From"
+msgstr "Действительна с"
+
+msgid "Effective To"
+msgstr "Действительна до"
+
 msgid "Eliminated"
 msgstr "Исключено"
 
@@ -7837,6 +7860,9 @@ msgstr "Выверка главной книги"
 msgid "GL Tie-Out"
 msgstr "Выверка главной книги"
 
+msgid "Global"
+msgstr "Глобальный"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Запустите систему с первой попытки — с нашей командой рядом с вами"
 
@@ -8421,6 +8447,9 @@ msgstr "Ввод"
 msgid "Inputs"
 msgstr "Входные данные"
 
+msgid "Insert field"
+msgstr "Вставить поле"
+
 msgid "Insert token"
 msgstr "Вставить токен"
 
@@ -8876,9 +8905,6 @@ msgstr "Операция заказа"
 
 msgid "Job Operation"
 msgstr "Операция заказа"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "Операции заказа"
@@ -10464,6 +10490,9 @@ msgstr "Новый поставщик"
 msgid "New Supplier Part"
 msgstr "Новая деталь поставщика"
 
+msgid "New Terms Version"
+msgstr "Новая версия условий"
+
 msgid "New Timecard"
 msgstr "Новая табель учета рабочего времени"
 
@@ -11449,6 +11478,9 @@ msgstr "Открытые транзакции"
 
 msgid "Open Workflow"
 msgstr "Открыть рабочий процесс"
+
+msgid "Open-ended"
+msgstr "Без конечной даты"
 
 msgid "Opened"
 msgstr "Открыт"
@@ -15330,6 +15362,9 @@ msgstr "Конкретный Покупатель"
 msgid "Specific Customers"
 msgstr "Конкретные Покупатели"
 
+msgid "Specific customers or suppliers"
+msgstr "Конкретные покупатели или поставщики"
+
 msgid "Specific Items"
 msgstr "Конкретные товары"
 
@@ -16089,11 +16124,17 @@ msgstr "Шаблоны"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Временный счет для учета выбытия, дебетуемый на остаточную стоимость активов при отгрузке и кредитуемый на остаточную стоимость при выставлении счетов, нетто равно нулю в течение цикла продажи."
 
+msgid "Terms & Conditions"
+msgstr "Условия и положения"
+
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"
 
 msgid "Terms of Service"
 msgstr "Условия обслуживания"
+
+msgid "Terms Version"
+msgstr "Версия условий"
 
 msgid "Test"
 msgstr "Тест"
@@ -16314,6 +16355,9 @@ msgstr "Налоговая ставка по умолчанию, применя�
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
+
+msgid "The documents this version prints on."
+msgstr "Документы, на которые печатается эта версия."
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."

@@ -16,14 +16,14 @@ import { getShippingMethodsList } from "~/modules/inventory";
 import {
   getSalesOrder,
   getSalesOrderCustomerDetails,
-  getSalesOrderLines,
-  getSalesTerms
+  getSalesOrderLines
 } from "~/modules/sales";
 import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings,
   getDocumentTemplate,
+  getEffectiveTerms,
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
@@ -48,7 +48,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesOrder,
     salesOrderLines,
     salesOrderLocations,
-    terms,
     paymentTerms,
     shippingMethods,
     documentTemplate
@@ -59,11 +58,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSalesOrder(client, id),
     getSalesOrderLines(client, id),
     getSalesOrderCustomerDetails(client, id),
-    getSalesTerms(client, companyId),
     getPaymentTermsList(client, companyId),
     getShippingMethodsList(client, companyId),
     getDocumentTemplate(client, companyId, "salesOrder")
   ]);
+
+  // Resolved after the batch: needs the customer's country and the order date.
+  const terms = await getEffectiveTerms(client, {
+    companyId,
+    documentType: "salesOrder",
+    partyId: salesOrder.data?.customerId ?? null,
+    countryCode: salesOrderLocations.data?.customerCountryCode ?? null,
+    date: salesOrder.data?.orderDate ?? null
+  });
 
   if (company.error) {
     logger.error("Failed to load company", { error: company.error });
@@ -179,7 +186,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           ? arBillingAddress.data
           : null
       }
-      terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+      terms={(terms?.data ?? {}) as JSONContent}
       paymentTerms={paymentTerms.data ?? []}
       shippingMethods={shippingMethods.data ?? []}
       title="Sales Order"

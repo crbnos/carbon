@@ -35,6 +35,7 @@ export * from "./storage-rules";
 export * from "./string";
 export * from "./supabase";
 export * from "./tax";
+export * from "./terms";
 export * from "./themes";
 export * from "./tiptap";
 export * from "./types";

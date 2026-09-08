@@ -164,6 +164,10 @@ msgstr "{0} rebuté"
 msgid "{0} selected"
 msgstr "{0} sélectionnés"
 
+#. placeholder {0}: parties.length
+msgid "{0} specific"
+msgstr "{0} spécifique"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} lots de production suggérés"
@@ -1180,6 +1184,9 @@ msgstr "Actif"
 msgid "Active Jobs"
 msgstr "Ordres de fabrication actifs"
 
+msgid "Active now"
+msgstr "Actif maintenant"
+
 msgid "Active Statuses"
 msgstr "Statuts actifs"
 
@@ -1847,6 +1854,9 @@ msgstr "Appliqué à"
 msgid "Applies to"
 msgstr "S'applique à"
 
+msgid "Applies To"
+msgstr "S'applique à"
+
 msgid "Applies to all"
 msgstr "S'applique à tous"
 
@@ -2045,6 +2055,10 @@ msgstr "Êtes-vous sûr de vouloir supprimer {0} de cette opération ? Cette act
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Êtes-vous sûr de vouloir supprimer {0} ?"
+
+#. placeholder {0}: termsVersion.name
+msgid "Are you sure you want to delete {0}? Documents that resolved to this version will fall back to the next matching version. This cannot be undone."
+msgstr "Êtes-vous sûr(e) de vouloir supprimer {0}? Les documents utilisant cette version basculeront vers la version correspondante suivante. Cette action ne peut pas être annulée."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -4286,6 +4300,9 @@ msgstr "Contrepartie"
 msgid "Counting…"
 msgstr "Comptage…"
 
+msgid "Countries"
+msgstr "Pays"
+
 msgid "Country"
 msgstr "Pays"
 
@@ -6353,6 +6370,12 @@ msgstr "Modifier le Webhook"
 msgid "Edit Work Center"
 msgstr "Modifier le poste de travail"
 
+msgid "Effective From"
+msgstr "En vigueur à partir du"
+
+msgid "Effective To"
+msgstr "En vigueur jusqu'au"
+
 msgid "Eliminated"
 msgstr "Éliminé"
 
@@ -7837,6 +7860,9 @@ msgstr "Rapprochement du grand livre"
 msgid "GL Tie-Out"
 msgstr "Rapprochement du grand livre"
 
+msgid "Global"
+msgstr "Mondial"
+
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Lancez-vous correctement du premier coup — avec notre équipe à vos côtés"
 
@@ -8421,6 +8447,9 @@ msgstr "Entrée"
 msgid "Inputs"
 msgstr "Entrées"
 
+msgid "Insert field"
+msgstr "Insérer un champ"
+
 msgid "Insert token"
 msgstr "Insérer un jeton"
 
@@ -8876,9 +8905,6 @@ msgstr "Opération d'OF"
 
 msgid "Job Operation"
 msgstr "Opération d'OF"
-
-msgid "Job operation batch"
-msgstr ""
 
 msgid "Job Operations"
 msgstr "Opérations d'OF"
@@ -10464,6 +10490,9 @@ msgstr "Nouveau Fournisseur"
 msgid "New Supplier Part"
 msgstr "Nouvelle pièce fournisseur"
 
+msgid "New Terms Version"
+msgstr "Nouvelle version des conditions"
+
 msgid "New Timecard"
 msgstr "Nouvelle Feuille de Temps"
 
@@ -11449,6 +11478,9 @@ msgstr "Transactions ouvertes"
 
 msgid "Open Workflow"
 msgstr "Ouvrir le flux de travail"
+
+msgid "Open-ended"
+msgstr "Sans limite de durée"
 
 msgid "Opened"
 msgstr "Ouvert"
@@ -15330,6 +15362,9 @@ msgstr "Client spécifique"
 msgid "Specific Customers"
 msgstr "Clients spécifiques"
 
+msgid "Specific customers or suppliers"
+msgstr "Clients ou fournisseurs spécifiques"
+
 msgid "Specific Items"
 msgstr "Articles spécifiques"
 
@@ -16089,11 +16124,17 @@ msgstr "Modèles"
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Compte d'attente de cession temporaire, débité de la valeur nette comptable de l'actif à l'expédition et crédité de la valeur nette comptable à la facturation, pour un solde nul à l'issue du cycle de vente."
 
+msgid "Terms & Conditions"
+msgstr "Conditions générales"
+
 msgid "Terms and Privacy"
 msgstr "Conditions et Confidentialité"
 
 msgid "Terms of Service"
 msgstr "Conditions d'utilisation"
+
+msgid "Terms Version"
+msgstr "Version des conditions"
 
 msgid "Test"
 msgstr "Tester"
@@ -16314,6 +16355,9 @@ msgstr "Le taux de taxe par défaut appliqué aux lignes de devis et de commande
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Le département sous lequel celui-ci se cumule pour la déclaration et les hiérarchies de dénombrement; laisser vide pour un département au niveau supérieur."
+
+msgid "The documents this version prints on."
+msgstr "Les documents sur lesquels s'imprime cette version."
 
 msgid "The early hours, {name}."
 msgstr "Les premières heures, {name}."

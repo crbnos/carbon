@@ -13,9 +13,10 @@ export function hasContent(content?: JSONContent | null): boolean {
 }
 
 /**
- * The effective terms for a document: the block's own authored content
- * (interpolated with merge fields) when present, otherwise the company-level
- * terms setting passed in as `fallback`. Returns undefined when neither exists.
+ * The effective terms for a document: the block's own authored content when
+ * present, otherwise the resolved terms version passed in as `fallback`.
+ * Both paths are interpolated with merge fields — versioned terms may carry
+ * `{token}` placeholders too. Returns undefined when neither exists.
  */
 export function resolveTerms(
   block: TermsBlock,
@@ -25,5 +26,5 @@ export function resolveTerms(
   if (hasContent(block.content)) {
     return interpolateContent(block.content as JSONContent, vars);
   }
-  return fallback;
+  return fallback ? interpolateContent(fallback, vars) : undefined;
 }
