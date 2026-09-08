@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, toDocumentAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
@@ -11,6 +11,7 @@ import { getDefaultAccounts } from "~/modules/accounting";
 import {
   getOpenPurchaseInvoicesForSupplier,
   getOpenSalesInvoicesForCustomer,
+  getPaymentCurrencyConfiguration,
   PaymentForm,
   paymentValidator,
   replaceInvoiceSettlements,
@@ -34,6 +35,7 @@ async function getSeedableOpenInvoices(
     paymentType === "Receipt"
       ? await getOpenSalesInvoicesForCustomer(client, companyId, partyId)
       : await getOpenPurchaseInvoicesForSupplier(client, companyId, partyId);
+  if (res.error) throw new Error(res.error.message);
   return res.data ?? [];
 }
 
@@ -81,10 +83,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const selected = open.filter((inv) => invoiceIds.includes(inv.id ?? ""));
     if (selected.length > 0) {
       currencyCode = selected[0].currencyCode ?? currencyCode;
-      exchangeRate = Number(selected[0].exchangeRate ?? 1);
-      totalAmount = selected.reduce(
-        (sum, inv) => sum + Number(inv.balance ?? 0),
-        0
+      exchangeRate = Number(selected[0].exchangeRate);
+      if (selected.some((inv) => inv.currencyCode !== currencyCode))
+        throw redirect(
+          path.to.payments,
+          await flash(
+            request,
+            error(null, "Selected invoices must use the same currency")
+          )
+        );
+      const configuration = await getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        currencyCode
+      );
+      totalAmount = toDocumentAmount(
+        selected.reduce((sum, inv) => sum + inv.remainingDocument, 0),
+        1,
+        configuration.currencyDecimals
       );
     }
   }
@@ -126,6 +142,25 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(paymentValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  try {
+    await getPaymentCurrencyConfiguration(
+      client,
+      companyId,
+      validation.data.currencyCode
+    );
+  } catch (e) {
+    throw redirect(
+      path.to.paymentNew,
+      await flash(
+        request,
+        error(
+          e,
+          e instanceof Error ? e.message : "Invalid currency configuration"
+        )
+      )
+    );
   }
 
   let paymentId = validation.data.paymentId;
@@ -175,8 +210,10 @@ export async function action({ request }: ActionFunctionArgs) {
             partyId
           )
         : [];
-      const selected = open.filter((inv) =>
-        seedInvoiceIds.includes(inv.id ?? "")
+      const selected = open.filter(
+        (inv) =>
+          seedInvoiceIds.includes(inv.id ?? "") &&
+          inv.currencyCode === validation.data.currencyCode
       );
       if (selected.length > 0) {
         await replaceInvoiceSettlements(getDatabaseClient(), {
@@ -189,10 +226,11 @@ export async function action({ request }: ActionFunctionArgs) {
               ? undefined
               : (inv.id ?? undefined),
             appliedAmount: Number(inv.balance ?? 0),
+            sourceAmount: inv.remainingDocument,
             discountAmount: 0,
             writeOffAmount: 0,
-            targetExchangeRate: Number(inv.exchangeRate ?? 1),
-            sourceExchangeRate: Number(validation.data.exchangeRate) || 1,
+            targetExchangeRate: Number(inv.exchangeRate),
+            sourceExchangeRate: Number(validation.data.exchangeRate),
             appliedDate: validation.data.paymentDate
           }))
         });

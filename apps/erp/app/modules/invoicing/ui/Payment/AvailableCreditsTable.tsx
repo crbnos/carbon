@@ -16,7 +16,12 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import { INPUT_FORMAT, round } from "@carbon/utils";
+import {
+  INPUT_FORMAT,
+  round,
+  toBaseAmount,
+  toDocumentAmount
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuSave } from "react-icons/lu";
@@ -38,6 +43,7 @@ type AvailableCredit = {
   currencyCode: string;
   exchangeRate: number;
   remaining: number;
+  remainingDocument: number;
 };
 
 type OpenInvoiceOption = {
@@ -45,6 +51,7 @@ type OpenInvoiceOption = {
   invoiceId: string;
   exchangeRate: number;
   balance: number;
+  remainingDocument: number;
 };
 
 type AvailableCreditsTableProps = {
@@ -52,11 +59,18 @@ type AvailableCreditsTableProps = {
   // Drives which invoice column the settlement targets.
   side: "sales" | "purchase";
   currency: string;
+  documentCurrency: string;
+  documentDecimals: number;
   credits: AvailableCredit[];
   openInvoices: OpenInvoiceOption[];
   // Credit applications already staged on this (Draft) payment — pre-fills the
   // table so a staged credit shows as selected instead of vanishing.
-  staged?: { memoId: string; invoiceId: string; amount: number }[];
+  staged?: {
+    memoId: string;
+    invoiceId: string;
+    amount: number;
+    sourceAmount?: number | null;
+  }[];
 };
 
 type CreditRow = {
@@ -64,9 +78,12 @@ type CreditRow = {
   memoId: string;
   direction: string;
   remaining: number;
+  remainingDocument: number;
   checked: boolean;
   invoiceId: string; // target invoice id
   amount: number;
+  sourceAmount: number;
+  exchangeRate: number;
 };
 
 const GRID =
@@ -76,6 +93,8 @@ const AvailableCreditsTable = ({
   paymentId,
   side,
   currency,
+  documentCurrency,
+  documentDecimals,
   credits,
   openInvoices,
   staged = []
@@ -84,11 +103,14 @@ const AvailableCreditsTable = ({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const currencyFormatter = useCurrencyFormatter({ currency });
+  const documentFormatter = useCurrencyFormatter({
+    currency: documentCurrency
+  });
   const currencyDecimals = useCurrencyDecimals(currency);
   const canEdit = permissions.can("update", "invoicing");
 
   const balanceByInvoice = useMemo(
-    () => new Map(openInvoices.map((i) => [i.id, i.balance])),
+    () => new Map(openInvoices.map((i) => [i.id, i])),
     [openInvoices]
   );
 
@@ -106,69 +128,88 @@ const AvailableCreditsTable = ({
           memoId: c.memoId,
           direction: c.direction,
           remaining: c.remaining,
+          remainingDocument: c.remainingDocument,
+          exchangeRate: c.exchangeRate,
           checked: Boolean(s),
-          invoiceId: s?.invoiceId ?? openInvoices[0]?.id ?? "",
-          amount: s?.amount ?? 0
+          invoiceId:
+            s?.invoiceId ??
+            openInvoices.find((i) => i.exchangeRate === c.exchangeRate)?.id ??
+            "",
+          amount: s?.amount ?? 0,
+          sourceAmount:
+            s?.sourceAmount ??
+            (s
+              ? toDocumentAmount(s.amount, c.exchangeRate, documentDecimals)
+              : 0)
         };
       }),
-    [credits, openInvoices, stagedByMemo]
+    [credits, openInvoices, stagedByMemo, documentDecimals]
   );
 
   const [rows, setRows] = useState<CreditRow[]>(seed);
 
-  // The most a credit can apply to the chosen invoice: its remaining vs the
-  // invoice's open balance.
   const capFor = useCallback(
-    (remaining: number, invoiceId: string) =>
-      round(Math.min(remaining, Number(balanceByInvoice.get(invoiceId) ?? 0))),
+    (row: CreditRow, invoiceId: string) => {
+      const invoice = balanceByInvoice.get(invoiceId);
+      if (!invoice || invoice.exchangeRate !== row.exchangeRate)
+        return { amount: 0, sourceAmount: 0 };
+      const sourceAmount = Math.min(
+        row.remainingDocument,
+        invoice.remainingDocument
+      );
+      const amount =
+        sourceAmount === invoice.remainingDocument
+          ? invoice.balance
+          : sourceAmount === row.remainingDocument
+            ? row.remaining
+            : toBaseAmount(sourceAmount, row.exchangeRate);
+      return { amount, sourceAmount };
+    },
     [balanceByInvoice]
   );
-
   const toggleRow = useCallback(
     (id: string, checked: boolean) =>
       setRows((prev) =>
-        prev.map((r) => {
-          if (r.id !== id) return r;
-          if (checked) {
-            return {
-              ...r,
-              checked: true,
-              amount:
-                r.amount === 0 ? capFor(r.remaining, r.invoiceId) : r.amount
-            };
-          }
-          return { ...r, checked: false, amount: 0 };
-        })
-      ),
-    [capFor]
-  );
-
-  const updateInvoice = useCallback(
-    (id: string, invoiceId: string) =>
-      setRows((prev) =>
         prev.map((r) =>
-          r.id === id
-            ? {
+          r.id !== id
+            ? r
+            : {
                 ...r,
-                invoiceId,
-                amount: r.checked ? capFor(r.remaining, invoiceId) : r.amount
+                checked,
+                ...(checked
+                  ? capFor(r, r.invoiceId)
+                  : { amount: 0, sourceAmount: 0 })
               }
-            : r
         )
       ),
     [capFor]
   );
-
+  const updateInvoice = useCallback(
+    (id: string, invoiceId: string) =>
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id !== id
+            ? r
+            : { ...r, invoiceId, ...(r.checked ? capFor(r, invoiceId) : {}) }
+        )
+      ),
+    [capFor]
+  );
   const updateAmount = useCallback(
     (id: string, value: number) =>
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== id) return r;
           const amount = round(Math.max(0, value));
-          return { ...r, amount, checked: amount > 0 };
+          const cap = capFor(r, r.invoiceId);
+          const sourceAmount =
+            amount === cap.amount
+              ? cap.sourceAmount
+              : toDocumentAmount(amount, r.exchangeRate, documentDecimals);
+          return { ...r, amount, sourceAmount, checked: sourceAmount > 0 };
         })
       ),
-    []
+    [capFor, documentDecimals]
   );
 
   const totalApplied = useMemo(
@@ -178,11 +219,12 @@ const AvailableCreditsTable = ({
 
   const onSave = () => {
     const applications = rows
-      .filter((r) => r.checked && r.amount > 0 && r.invoiceId)
+      .filter((r) => r.checked && r.sourceAmount > 0 && r.invoiceId)
       .map((r) => ({
         memoId: r.id,
         invoiceId: r.invoiceId,
-        amount: r.amount
+        amount: r.amount,
+        sourceAmount: r.sourceAmount
       }));
 
     const formData = new FormData();
@@ -205,8 +247,8 @@ const AvailableCreditsTable = ({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Clear this invoice with the party's posted credits as well as cash.
-            Credits apply directly — no posting needed.
+            Credit amounts are in company base currency ({currency}). Credits
+            take effect when this payment posts.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -271,6 +313,9 @@ const AvailableCreditsTable = ({
                     </div>
                     <div className="text-right tabular-nums text-sm text-muted-foreground self-center">
                       {currencyFormatter.format(Number(r.remaining))}
+                      <div className="text-xs">
+                        {documentFormatter.format(r.remainingDocument)}
+                      </div>
                     </div>
                     <Select
                       value={r.invoiceId}
@@ -280,11 +325,13 @@ const AvailableCreditsTable = ({
                         <SelectValue placeholder={t`Select invoice`} />
                       </SelectTrigger>
                       <SelectContent>
-                        {openInvoices.map((inv) => (
-                          <SelectItem key={inv.id} value={inv.id}>
-                            {inv.invoiceId}
-                          </SelectItem>
-                        ))}
+                        {openInvoices
+                          .filter((inv) => inv.exchangeRate === r.exchangeRate)
+                          .map((inv) => (
+                            <SelectItem key={inv.id} value={inv.id}>
+                              {inv.invoiceId}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <NumberField
@@ -349,7 +396,7 @@ const CardFooterRow = ({
       leftIcon={<LuSave />}
       onClick={onSave}
       isLoading={isSaving}
-      isDisabled={!canEdit || totalApplied <= 0}
+      isDisabled={!canEdit}
     >
       <Trans>Apply credits</Trans>
     </Button>
