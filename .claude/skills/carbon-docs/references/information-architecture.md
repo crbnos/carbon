@@ -41,22 +41,28 @@ Keep a flow to ~2–5 chapters; a chapter to 3–5 `##` sections. If a chapter s
 `content/docs/**` → `/docs`, rendered through a **custom `DocsNav`** (`components/api/docs-nav.tsx`), not
 the stock Fumadocs sidebar.
 
-Folders today: `reference/` (the entity pages — "Product reference"), `platform/` (architecture/deployment/
-env/licensing), `building/` (API keys, webhooks, local development), `integrations/` (by category).
+Folders today, in sidebar order (the root `meta.json`): `reference/` ("Product reference"), `building/`
+(API keys, webhooks, local development, architecture), `integrations/` (by category), `platform/`
+(self-hosting, backups, demo data, licensing), then the glossary. Product reference leads because users
+and admins are the largest audience; platform/ops content sits low.
 
 The nav is built by `app/docs/layout.tsx`, and it is TWO layers:
 
-1. **Membership** — a folder's `meta.json` `pages` array says what's in the folder. But `toNav()` sorts
-   every folder's children **alphabetically**, so meta.json order does NOT control display order.
-2. **Grouping** — the flat Product-reference list is nested into sidebar groups ("Items & methods",
-   "Production", "Sales", …) by the hardcoded `REFERENCE_GROUPS` slug map in the same `layout.tsx`.
-   Group order and within-group order follow that map. A reference slug missing from the map is
-   appended **ungrouped after all the groups** — visible, but dangling at the bottom of the rail.
+1. **Membership + order** — a folder's `meta.json` `pages` array is authoritative for both. `toNav()`
+   preserves tree order (it no longer alphabetizes), so curating a section = editing its meta.json.
+2. **Grouping** — the flat Product-reference list is nested into sidebar groups ("Getting started",
+   "Sales", "Items & engineering", … "Administration") by the hardcoded `REFERENCE_GROUPS` slug map in
+   the same `layout.tsx`, ordered by the business flow (sell → engineer → plan → buy → make → stock →
+   ship → inspect → bill → account, then people/automation/admin). Group order and within-group order
+   follow that map. A reference slug missing from the map is appended **ungrouped after all the
+   groups** — visible, but dangling at the bottom of the rail.
 
 **To add a Reference page:** create `content/docs/<folder>/<slug>.mdx` (frontmatter = `title` +
 `description`, + `plan` if paid-gated), add `<slug>` to the folder's `meta.json` `pages`, **and** — for
 `reference/` — add it to the right `REFERENCE_GROUPS` group in `app/docs/layout.tsx`. No fitting group
-means proposing one, not skipping the step.
+means proposing one, not skipping the step. Moving a page between folders changes its URL: add a
+redirect in `next.config.mjs` and update inbound links (URLs are a contract). Note the site root `/`
+is a rewrite serving `/docs/building/architecture` — keep it pointed at wherever that page lives.
 
 One page **per entity/concept** (one-noun-per-page). Slugs: short, kebab-case, stable (URLs are a contract).
 

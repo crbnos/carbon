@@ -73,6 +73,8 @@ The **holy source of truth is the actual source code + the LATEST database migra
   subsystem the cache still describes the old way.
 - **Document only real, ACTIVE features.** Omit placeholders / inactive / not-yet-shipped things (e.g.
   integration registry entries with `active: false` like QuickBooks/Sage). Don't surface them.
+- **Deliberately undocumented:** the **Implementation Hub** (`/x/get-started`, `packages/onboarding`
+  content) stays out of the docs by the user's decision — don't document it, and don't link to it.
 - **When code and cache disagree, code wins** — and note the drift.
 - **Method:** one research subagent per feature → a structured **fact sheet** with `file:line` refs
   (contract in Authoring workflow step 1) → then write from it. This is how every flow in the Guide was
@@ -112,7 +114,8 @@ Guide for the story. (Guide chapters were given 12 cross-flow links — interlin
    rule:** editing an existing Reference page that has no `<Screenshot>`? Add the one slot its type calls
    for while you're there — the Reference surface shipped with almost none, and it goes on the media
    manifest like any new slot. Reuse existing slots on a rewrite; never drop or re-label one that a real
-   capture may already exist for.
+   capture may already exist for. Slot `label`s double as the image's alt text once a capture lands, so
+   write them as a description of what's *shown* (screen + state), never as a caption or a filename.
 4. **Verify — against the user's running dev server, read-only.** They usually have `pnpm --filter docs dev`
    up. **Never** `pkill`/restart it, run `next build`, or `rm .next` under it — verify by fetching pages:
    ```bash
@@ -185,13 +188,13 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
   `change-orders/` is the only folder today, and splitting a feature across a new folder needs the
   user's sign-off first.
 - **Nav is TWO layers — miss the second and your page dangles at the bottom of the sidebar.** Folders:
-  `content/docs/{reference,platform,building,integrations}/`. A folder's *membership* is its `meta.json`
-  `pages` array — but display **order is NOT meta.json order**: `app/docs/layout.tsx` (`toNav`) sorts every
-  folder's children alphabetically, and nests the flat Product-reference list into sidebar groups via the
-  hardcoded `REFERENCE_GROUPS` slug map in that same file. A reference page missing from that map is
-  appended **ungrouped** after the groups (how two-factor/workflows/workflow-runs ended up dangling). So
-  adding a reference page = slug into the folder's `meta.json` **and** into the right `REFERENCE_GROUPS`
-  group. **Don't list `index` in `pages`** — fumadocs treats `index.mdx` as the folder index
+  `content/docs/{reference,platform,building,integrations}/`. A folder's `meta.json` `pages` array is
+  authoritative for membership AND order (top-level section order is the root `meta.json`) — and the flat
+  Product-reference list is additionally nested into sidebar groups by the hardcoded `REFERENCE_GROUPS`
+  slug map in `app/docs/layout.tsx`, whose group order and within-group slug order are what the reader
+  sees. A reference page missing from that map is appended **ungrouped** after the groups. So adding a
+  reference page = slug into `reference/meta.json` **and** into the right `REFERENCE_GROUPS` group.
+  **Don't list `index` in `pages`** — fumadocs treats `index.mdx` as the folder index
   and the nav renders it as **"Overview"**; listing it duplicates the title as a sibling. Integrations are
   their own top-level section (`content/docs/integrations/`) grouped by category — document only `active`
   integrations (omit `active: false` placeholders + commented-out ones).
@@ -263,6 +266,15 @@ grounding and the gotchas but stay scannable; settings/how-to pages take only "q
 and "ground every where-to-click" — no narrative, no rhetorical asides, no answering questions nobody
 asked. Cutting to budget beats compressing: drop whole asides, don't shorten every sentence.
 
+- **Active voice, second person, one term per concept.** Never alternate synonyms for the same thing
+  ("API key" one paragraph, "API token" the next) — the glossary term is the term, everywhere. No
+  colloquialisms or idioms; the catalogs are translated and idioms don't survive it.
+- **Never state the obvious.** "Click Save to save" documents nothing. A step earns its place by
+  carrying something the button label doesn't already say.
+- **Every page stands alone.** A reader (or an AI retriever) lands cold from search: state the context
+  and prerequisites in place rather than leaning on the previous page. How-to/settings pages name their
+  prerequisites explicitly before the steps ("needs `settings` update permission", "requires the Slack
+  integration connected").
 - **Second person, concrete, narrative.** Anchor in the running example (the 90-unit humanoid-robot order).
   "Open the sales order dashboard." / "You don't build 90 robots as one monolithic job."
 - **Quote real status names exactly**, in quotes: `**"To Ship and Invoice"**`, `**"Posted"**`, `**"Open"**`.
@@ -365,6 +377,10 @@ to raise the whole site's connectivity.
 - **Regen `.source` before typecheck** after any frontmatter/schema change (the schema is baked into
   `.source/` at generate time).
 - **Figure keys must exist** — see the list above; a typo renders nothing, silently.
+- **Inline code chips are for identifiers, never statements.** A full command, SQL statement, or long
+  path in an inline `` `…` `` span renders as one unbroken chip that can overflow its container —
+  anything that reads as a *line of code* goes in a fenced block (fences are fine inside Callouts),
+  and inline stays for short tokens (`companyId`, `crbn_…`, `Settings → X` labels stay plain bold).
 - **Bare `{…}` in MDX is a JS expression.** A token in prose like `{item.id}` (e.g. inside an example rule
   message) fails the build with `item is not defined`. Wrap any literal braces/tokens in backticks: `` `{item.id}` ``.
 - **`Write` blocks on existing files** — natural collision protection when a parallel session co-writes the
@@ -398,6 +414,7 @@ awk '/<AgentContext>/{s=1} !s{print} /<\/AgentContext>/{s=0}' <page>.mdx | wc -w
 awk '/<AgentContext>/{s=1} !s{print} /<\/AgentContext>/{s=0}' <page>.mdx | grep -o '—' | wc -l  # em-dashes ≤ 1 per ~150 words
 grep -n '<StatusFlow>' <page>.mdx                         # bare = gray pills; must carry entity="…"
 grep -nE '^(title|description): [^"]*: ' <page>.mdx       # unquoted colon-space = YAML, 500s the site
+grep -m1 '^description:' <page>.mdx | wc -c               # ≤ ~170 raw (the SEO meta: 150–160 chars of text)
 ```
 
 Plus two eyeball checks no grep covers: a `## Troubleshooting` heading may exist only inside
