@@ -69,7 +69,11 @@ export default function PurchaseOrderExplorer() {
 
   const purchaseOrderLineInitialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as ItemType,
+    // "Item" is the picker's generic mode, not a member of the line-type enum.
+    // Posting it made the validator fail with "Type is required" — an error
+    // naming a field the modal doesn't show. Start from a real type; the item
+    // picker overwrites it with the selected item's type on change.
+    purchaseOrderLineType: "Part" as ItemType,
     purchaseQuantity: 1,
     supplierUnitPrice: 0,
     locationId:
