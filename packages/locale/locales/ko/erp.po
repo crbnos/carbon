@@ -614,7 +614,7 @@ msgid "A job's status changes"
 msgstr "작업의 상태가 변경됨"
 
 msgid "A line settles more than its invoice's open balance"
-msgstr ""
+msgstr "한 항목이 송장의 미결제 잔액보다 많이 정산합니다"
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."

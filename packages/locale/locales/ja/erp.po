@@ -614,7 +614,7 @@ msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
 msgid "A line settles more than its invoice's open balance"
-msgstr ""
+msgstr "明細が請求書の未払い残高を超えて消込しています"
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."

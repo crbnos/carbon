@@ -614,7 +614,7 @@ msgid "A job's status changes"
 msgstr "Le statut d'un travail change"
 
 msgid "A line settles more than its invoice's open balance"
-msgstr ""
+msgstr "Une ligne règle plus que le solde impayé de sa facture"
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
