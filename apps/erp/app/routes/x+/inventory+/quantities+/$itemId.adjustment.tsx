@@ -15,6 +15,17 @@ import {
 } from "~/modules/inventory";
 import { path, requestReferrer } from "~/utils/path";
 
+// Business-validation messages the edge function raises that are safe and
+// useful to show the user verbatim. Anything else is an unexpected failure and
+// gets the generic message.
+const PASSTHROUGH_ERRORS = new Set([
+  "Insufficient quantity for negative adjustment",
+  "Serial number not found",
+  "Batch number not found",
+  "Tracked entity not found",
+  "Multiple tracked entities in this storage unit — select a specific row to adjust"
+]);
+
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -109,15 +120,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // Return the error as fetcher data so the modal can toast the reason and
     // stay open. A redirect+flash would be lost here: the modal submits via a
     // fetcher, so a redirect-throw never surfaces the flash message.
-    const message =
-      itemLedger.error === "Insufficient quantity for negative adjustment"
-        ? "Insufficient quantity for negative adjustment"
-        : itemLedger.error === "Serial number not found"
-          ? "Serial number not found"
-          : itemLedger.error ===
-              "Multiple tracked entities in this storage unit — select a specific row to adjust"
-            ? "Multiple tracked entities in this storage unit — select a specific row to adjust"
-            : "Failed to create manual inventory adjustment";
+    const message = PASSTHROUGH_ERRORS.has(itemLedger.error ?? "")
+      ? (itemLedger.error as string)
+      : "Failed to create manual inventory adjustment";
 
     return {
       error: { message },
