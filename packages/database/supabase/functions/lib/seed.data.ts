@@ -708,6 +708,7 @@ export const accounts = [
   { key: "4010", number: "4010", name: "Sales", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4020", number: "4020", name: "Sales Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4030", number: "4030", name: "Manufacturing Services Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4040", number: "4040", name: "Customer Payment Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // Other Income
   { key: "other-income", number: null, name: "Other Income", isGroup: true, parentKey: "income-statement", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
@@ -722,6 +723,7 @@ export const accounts = [
   { key: "5050", number: "5050", name: "Indirect Materials & Services", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5060", number: "5060", name: "Labor & Machine Absorption", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5070", number: "5070", name: "Overhead Absorption", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "5080", number: "5080", name: "Supplier Payment Discounts", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // Variances
   { key: "variances", number: null, name: "Variances", isGroup: true, parentKey: "cogs", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -759,8 +761,6 @@ export const accounts = [
   // ─── 7000-7999: OTHER / NON-OPERATING EXPENSES ───
   { key: "other-expenses", number: null, name: "Other Expenses", isGroup: true, parentKey: "income-statement", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "7010", number: "7010", name: "Interest Expense", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
-  { key: "7020", number: "7020", name: "Supplier Payment Discounts", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
-  { key: "7030", number: "7030", name: "Customer Payment Discounts", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "7040", number: "7040", name: "Service Charge Account", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "7050", number: "7050", name: "Rounding Account", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "7060", number: "7060", name: "Foreign Exchange Losses", isGroup: false, parentKey: "other-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -790,8 +790,8 @@ export const accountDefaults = {
   assetLossOnDisposalAccount: "6320",
   serviceChargeAccount: "7040",
   interestAccount: "7010",
-  supplierPaymentDiscountAccount: "7020",
-  customerPaymentDiscountAccount: "7030",
+  supplierPaymentDiscountAccount: "5080",
+  customerPaymentDiscountAccount: "4040",
   roundingAccount: "7050",
   assetAquisitionCostAccount: "1310",
   assetAquisitionCostOnDisposalAccount: "1320",

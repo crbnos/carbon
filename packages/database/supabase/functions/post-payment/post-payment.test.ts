@@ -20,6 +20,7 @@ import { round } from "../shared/precision.ts";
 const ACCOUNTS: PaymentJournalAccounts = {
   controlAccountId: "control", // receivables (AR) or payables (AP); driver resolves
   discountAccountId: "discount",
+  discountAccountClass: "Revenue", // AR default: customer discount is contra-revenue
   writeOffAccountId: "writeoff",
   fxGainAccountId: "fxgain",
   fxLossAccountId: "fxloss",
@@ -66,6 +67,8 @@ const apBase = (
       sourceExchangeRate: 1,
     },
   ],
+  // AP: supplier discount is contra-COGS (Expense natural balance).
+  accounts: { ...ACCOUNTS, discountAccountClass: "Expense" },
   ...over,
 });
 
@@ -136,7 +139,7 @@ Deno.test("AP full payment, no FX: CR bank / DR payables, balanced", () => {
 // Discount / write-off — invoice-currency reliefs, no FX.
 // ---------------------------------------------------------------------------
 
-Deno.test("AR discount: bank 90 / receivables 100 / discount expense 10", () => {
+Deno.test("AR discount: bank 90 / receivables 100 / discount contra-revenue -10", () => {
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
       totalAmount: 90,
@@ -157,7 +160,7 @@ Deno.test("AR discount: bank 90 / receivables 100 / discount expense 10", () => 
   assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // (90+10)*1
   const discount = line(lines, "Customer Payment Discount")!;
   assertEquals(discount.accountId, "discount");
-  assertEquals(discount.amount, 10); // debit expense
+  assertEquals(discount.amount, -10); // debit to a Revenue-class account (contra-revenue)
   assert(balanced(signedDebitTotal));
 });
 
@@ -204,6 +207,31 @@ Deno.test("AP write-off: vendor write-off income credited (revenue)", () => {
   const wo = line(lines, "Vendor Write-Off Income")!;
   assertEquals(wo.accountId, "writeoff");
   assertEquals(wo.amount, 10); // credit revenue → natural-positive
+  assert(balanced(signedDebitTotal));
+});
+
+Deno.test("AP discount: supplier discount credited to a contra-COGS (Expense) account", () => {
+  const { lines, signedDebitTotal } = buildPaymentJournal(
+    apBase({
+      totalAmount: 90,
+      applications: [
+        {
+          targetPurchaseInvoiceId: "pi_1",
+          appliedAmount: 90,
+          discountAmount: 10,
+          writeOffAmount: 0,
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+        },
+      ],
+    })
+  );
+
+  assertEquals(line(lines, "Bank / Cash")!.amount, -90); // credit asset (cash out)
+  assertEquals(line(lines, "Accounts Payable")!.amount, -100); // (90+10)×1, debit liability → natural-negative
+  const discount = line(lines, "Supplier Payment Discount")!;
+  assertEquals(discount.accountId, "discount");
+  assertEquals(discount.amount, -10); // credit to an Expense/COGS account → contra-cost
   assert(balanced(signedDebitTotal));
 });
 
@@ -715,7 +743,7 @@ Deno.test("AR discount + write-off + FX on one invoice all coexist, balanced", (
 
   assertEquals(line(lines, "Bank / Cash")!.amount, 96); // 80 × 1.2
   assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // (80+10+10) × 1.0
-  assertEquals(line(lines, "Customer Payment Discount")!.amount, 10); // 10 × 1.0
+  assertEquals(line(lines, "Customer Payment Discount")!.amount, -10); // −(10 × 1.0): debit to Revenue = contra-revenue
   assertEquals(line(lines, "Bad Debt Expense")!.amount, 10); // 10 × 1.0
   assertEquals(line(lines, "Realized FX Gain")!.amount, 16); // 80 × (1.2 − 1.0)
   assert(balanced(signedDebitTotal));

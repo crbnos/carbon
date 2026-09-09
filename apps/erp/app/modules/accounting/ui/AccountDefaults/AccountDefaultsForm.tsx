@@ -457,7 +457,7 @@ const AccountDefaultsForm = ({
             name: "customerPaymentDiscountAccount",
             label: t`Customer Payment Discounts`,
             description: t`Discounts given to customers for early payment`,
-            badgeType: "Expense",
+            badgeType: "Revenue",
             termId: "account-default-customer-payment-discounts"
           },
           {
