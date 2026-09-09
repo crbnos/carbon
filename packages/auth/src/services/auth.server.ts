@@ -464,7 +464,13 @@ const CAPTCHA_FAILED_MESSAGE = "Bot verification failed. Please try again.";
 // Cloud with a real site key requires a Turnstile token on login.
 export const requiresTurnstile =
   CarbonEdition === Edition.Cloud &&
+  Boolean(CLOUDFLARE_TURNSTILE_SITE_KEY) &&
   CLOUDFLARE_TURNSTILE_SITE_KEY !== TURNSTILE_TEST_SITE_KEY;
+
+// For login loaders: the widget renders exactly when the server requires it.
+export const turnstileSiteKey = requiresTurnstile
+  ? (CLOUDFLARE_TURNSTILE_SITE_KEY ?? null)
+  : null;
 
 export async function sendMagicLink(email: string, turnstileToken?: string) {
   return getCarbonServiceRole().auth.signInWithOtp({
@@ -520,13 +526,15 @@ async function verifyTurnstileToken(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       {
         method: "POST",
+        signal: AbortSignal.timeout(5000),
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
         },
         body: new URLSearchParams({
           secret: CLOUDFLARE_TURNSTILE_SECRET_KEY ?? "",
           response: token ?? "",
-          remoteip
+          // the client address, not the full x-forwarded-for proxy chain
+          remoteip: remoteip.split(",")[0]?.trim() ?? ""
         })
       }
     );

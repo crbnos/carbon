@@ -1,6 +1,5 @@
 import {
   assertIsPost,
-  CLOUDFLARE_TURNSTILE_SITE_KEY,
   carbonClient,
   error,
   magicLinkValidator,
@@ -11,6 +10,7 @@ import {
 import {
   getMagicLinkErrorMessage,
   sendMagicLink,
+  turnstileSiteKey,
   verifyAuthSession,
   verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
@@ -58,7 +58,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     hasOutlookAuth: !!SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
-    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+    turnstileSiteKey
   };
 }
 
@@ -120,7 +121,11 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
-  const { hasOutlookAuth, hasGoogleAuth } = useLoaderData<typeof loader>();
+  const {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    turnstileSiteKey: siteKey
+  } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
@@ -239,8 +244,7 @@ export default function LoginRoute() {
 
               <Submit
                 isDisabled={
-                  fetcher.state !== "idle" ||
-                  (!!CLOUDFLARE_TURNSTILE_SITE_KEY && !turnstileToken)
+                  fetcher.state !== "idle" || (!!siteKey && !turnstileToken)
                 }
                 isLoading={fetcher.state === "submitting"}
                 size="lg"
@@ -251,7 +255,7 @@ export default function LoginRoute() {
                 Sign in with Email
               </Submit>
               <TurnstileChallenge
-                siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                siteKey={siteKey ?? undefined}
                 onToken={setTurnstileToken}
               />
             </VStack>

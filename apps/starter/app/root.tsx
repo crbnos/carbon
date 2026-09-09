@@ -56,7 +56,6 @@ export const meta: MetaFunction = () => {
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     LOG_LEVEL,
     NODE_ENV,
     POSTHOG_API_HOST,
@@ -69,7 +68,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     {
       env: {
         CARBON_EDITION,
-        CLOUDFLARE_TURNSTILE_SITE_KEY,
         LOG_LEVEL,
         NODE_ENV,
         POSTHOG_API_HOST,

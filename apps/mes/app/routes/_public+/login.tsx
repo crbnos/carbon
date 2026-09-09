@@ -1,7 +1,6 @@
 import {
   assertIsPost,
   CarbonEdition,
-  CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
@@ -13,6 +12,7 @@ import {
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
+  turnstileSiteKey,
   verifyAuthSession,
   verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
@@ -79,12 +79,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
-      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth },
+      {
+        hasOutlookAuth,
+        hasGoogleAuth,
+        hasPasskeyAuth,
+        hasSsoAuth,
+        turnstileSiteKey
+      },
       { headers: cookieHeaders }
     );
   }
 
-  return { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth };
+  return {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    hasPasskeyAuth,
+    hasSsoAuth,
+    turnstileSiteKey
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -203,8 +215,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   const { t } = useLingui();
-  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth } =
-    useLoaderData<typeof loader>();
+  const {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    hasPasskeyAuth,
+    hasSsoAuth,
+    turnstileSiteKey: siteKey
+  } = useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
@@ -537,7 +554,7 @@ export default function LoginRoute() {
                 isDisabled={
                   fetcher.state !== "idle" ||
                   ssoLoading ||
-                  (!!CLOUDFLARE_TURNSTILE_SITE_KEY && !turnstileToken)
+                  (!!siteKey && !turnstileToken)
                 }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
@@ -549,7 +566,7 @@ export default function LoginRoute() {
                 <Trans>Continue</Trans>
               </Submit>
               <TurnstileChallenge
-                siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                siteKey={siteKey ?? undefined}
                 onToken={setTurnstileToken}
               />
             </VStack>
