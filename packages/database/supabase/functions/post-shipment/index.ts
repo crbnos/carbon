@@ -4088,7 +4088,11 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error(err);
-    if ("shipmentId" in payload) {
+    // A failed VOID must not touch status: the shipment is still Posted and its
+    // ledger/journal rows still stand, so forcing it to Draft would contradict
+    // the books and let it be edited and posted a second time. Same guard
+    // post-receipt and post-purchase-invoice already carry.
+    if (payload.type !== "void" && "shipmentId" in payload) {
       const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "inventory" });
       await client
         .from("shipment")
