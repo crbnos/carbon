@@ -120,14 +120,37 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
      OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
    );
    ```
-6. Ladder columns + tolerance (idempotent `ADD COLUMN IF NOT EXISTS`). **No view recreation is required** — verified: no `SELECT *` view selects from `location`/`itemPlanning`/`itemPostingGroup` (they appear only in RPC functions selecting explicit columns).
+6. Ladder columns + tolerance (idempotent `ADD COLUMN IF NOT EXISTS`). **No view recreation is required** — verified: no `SELECT *` view selects from `location`/`itemPlanning` (they appear only in RPC functions selecting explicit columns). Note the item-group tier is a TABLE (step 6b), not a column on `itemPostingGroup`.
    ```sql
-   ALTER TABLE "itemPlanning"     ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
-   ALTER TABLE "itemPostingGroup" ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
-   ALTER TABLE "location"         ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
-   ALTER TABLE "companySettings"  ADD COLUMN IF NOT EXISTS "defaultResponsibleEmployee" TEXT REFERENCES "user"("id");
-   ALTER TABLE "companySettings"  ADD COLUMN IF NOT EXISTS "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
+   ALTER TABLE "itemPlanning"    ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "location"        ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "companySettings" ADD COLUMN IF NOT EXISTS "defaultResponsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "companySettings" ADD COLUMN IF NOT EXISTS "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
    ```
+6b. **Location-specific item-group ownership table** (the "location → item group" tier — the same group can have a different owner per location, so it is NOT a column on `itemPostingGroup`). **Before writing the composite FKs, verify the PK shape** of `location` and `itemPostingGroup`: `psql`-inspect or grep their creating migrations. Carbon convention is composite PK `("id","companyId")` (unlike `item`, whose PK is `id` alone — see the `item has single-column PK` lesson). If either is single-column, use a single-column FK on `id` + a `companyId` FK instead of the composite FK. Then:
+   ```sql
+   CREATE TABLE IF NOT EXISTS "itemPostingGroupResponsibility" (
+       "id" TEXT NOT NULL DEFAULT id('pgr'),
+       "companyId" TEXT NOT NULL,
+       "locationId" TEXT NOT NULL,
+       "itemPostingGroupId" TEXT NOT NULL,
+       "responsibleEmployee" TEXT REFERENCES "user"("id"),
+       "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+       "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+       "updatedBy" TEXT REFERENCES "user"("id"),
+       "updatedAt" TIMESTAMP WITH TIME ZONE,
+       PRIMARY KEY ("id", "companyId"),
+       FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+       CONSTRAINT "itemPostingGroupResponsibility_location_fkey"
+         FOREIGN KEY ("locationId", "companyId") REFERENCES "location"("id", "companyId") ON DELETE CASCADE,
+       CONSTRAINT "itemPostingGroupResponsibility_group_fkey"
+         FOREIGN KEY ("itemPostingGroupId", "companyId") REFERENCES "itemPostingGroup"("id", "companyId") ON DELETE CASCADE,
+       CONSTRAINT "itemPostingGroupResponsibility_unique" UNIQUE ("companyId", "locationId", "itemPostingGroupId")
+   );
+   CREATE INDEX IF NOT EXISTS "itemPostingGroupResponsibility_companyId_idx" ON "itemPostingGroupResponsibility" ("companyId");
+   CREATE INDEX IF NOT EXISTS "itemPostingGroupResponsibility_createdBy_idx" ON "itemPostingGroupResponsibility" ("createdBy");
+   ```
+   Add the four RLS policies to this table (SELECT via `get_companies_with_employee_role()`; INSERT/UPDATE/DELETE via `get_companies_with_employee_permission('settings_update')`), same form as the `planningAction` block above.
 7. Apply locally: `pnpm db:migrate`.
 
 **Verify:**
@@ -248,14 +271,14 @@ pnpm exec turbo run typecheck --filter=erp
    ```ts
    export function resolveResponsibleEmployee(rungs: {
      item: string | null;        // itemPlanning.responsibleEmployee for (itemId, locationId)
-     itemGroup: string | null;   // itemPostingGroup.responsibleEmployee via itemCost.itemPostingGroupId
+     itemGroup: string | null;   // itemPostingGroupResponsibility.responsibleEmployee for (locationId, group) — location-specific
      location: string | null;    // location.responsibleEmployee
      company: string | null;     // companySettings.defaultResponsibleEmployee
    }): string | null {
      return rungs.item ?? rungs.itemGroup ?? rungs.location ?? rungs.company ?? null;
    }
    ```
-2. Bulk-load helper (Kysely) that, for a company, returns per-(itemId, locationId) the four rung values: join `item` → `itemCost` (`itemPostingGroupId`) → `itemPostingGroup`, plus `itemPlanning` (by itemId+locationId), `location`, and the single `companySettings` row. Return a `Map<string, string|null>` keyed `itemId·locationId` of the resolved employee. One query per run — never per-item (no N+1).
+2. Bulk-load helper (Kysely) that, for a company, returns per-(itemId, locationId) the four rung values: `itemPlanning.responsibleEmployee` (by itemId+locationId); the **location-specific item-group** value from `itemPostingGroupResponsibility` joined by `(locationId, itemPostingGroupId)` where `itemPostingGroupId` comes from `item → itemCost.itemPostingGroupId`; `location.responsibleEmployee`; and the single `companySettings.defaultResponsibleEmployee`. Return a `Map<string, string|null>` keyed `itemId·locationId` of the resolved employee. One query per run — never per-item (no N+1). The item-group lookup is keyed by BOTH locationId and group, so the same group resolves to different owners at different locations.
 3. Unit test the resolver: item wins over group wins over location wins over company; all null → null.
 
 **Verify:**
@@ -402,10 +425,18 @@ pnpm exec turbo run typecheck --filter=erp
 - Copy from (precedent): `apps/erp/app/modules/settings/ui/Printing/AssignmentsCard.tsx` + `apps/erp/app/routes/x+/settings+/printing.tsx` (fetcher + `intent` action returning `{success,message}`, Combobox-per-row, no ValidatedForm)
 
 **Steps:**
-1. Clone the `AssignmentsCard` structure into `ResponsibleEmployeeCard`: three sections — a **company default** row (writes `companySettings.defaultResponsibleEmployee`), a list of all **locations** (writes `location.responsibleEmployee`), and a list of all **item groups** (writes `itemPostingGroup.responsibleEmployee`). Each row = an `Employee`/`Combobox` picker; unset rows show an **inherited-placeholder** ("inherits {company default}") the way `AssignmentRow` shows `inherits {defaultName}`.
-2. Loader: `requirePermissions(request, { view: "settings" })`; load `companySettings`, `getLocationsList`, and all `itemPostingGroup` rows + the people list (`getPeople`/`usePeople` source).
-3. Action: `requirePermissions(request, { update: "settings" })`; `intent`-switch (`setCompanyDefault` | `setLocation` | `setItemGroup`), each validating an id+employee and calling the matching writer, returning `{ success, message }` (no redirect; fetcher + toast).
+1. Clone the `AssignmentsCard` + `LocationSection` **tree** structure into `ResponsibleEmployeeCard` — this maps 1:1 onto printers (location default → per-work-center override), here **company default → per-location → per-item-group**:
+   - a top **company default** row (writes `companySettings.defaultResponsibleEmployee`);
+   - one **section per location**, each with a **location default** row (writes `location.responsibleEmployee`) and, nested/indented beneath it, **one row per item group** (writes `itemPostingGroupResponsibility` for that `(locationId, itemPostingGroupId)`), exactly like `LocationSection` renders per-work-center rows under a location.
+   - Each row = an `Employee`/`Combobox` picker; an unset item-group row shows an **inherited-placeholder** ("inherits {location default}" — or the company default when the location is itself unset), the way `AssignmentRow` computes `displayState` (`assigned` / `inherited` / `missing`).
+2. Loader: `requirePermissions(request, { view: "settings" })`; load `companySettings`, `getLocationsList`, all `itemPostingGroup` rows, all `itemPostingGroupResponsibility` rows for the company (to seed the nested rows), + the people list (`usePeople` source).
+3. Action: `requirePermissions(request, { update: "settings" })`; `intent`-switch:
+   - `setCompanyDefault` → update `companySettings.defaultResponsibleEmployee`;
+   - `setLocation` (locationId, employee) → update `location.responsibleEmployee`;
+   - `setItemGroup` (locationId, itemPostingGroupId, employee) → **upsert** `itemPostingGroupResponsibility` on `(companyId, locationId, itemPostingGroupId)` (delete the row when employee is cleared, matching the printer "unset → inherit" behavior).
+   Each returns `{ success, message }` (no redirect; fetcher + toast).
 4. Register the settings link + `path.to.settingsPlanning`.
+5. Settings writers go in the appropriate settings service (`setResponsibleEmployeeDefault`, `setLocationResponsibleEmployee`, `upsertItemPostingGroupResponsibility`).
 
 **Verify:**
 ```bash
@@ -413,7 +444,7 @@ pnpm exec turbo run typecheck --filter=erp
 # Expected: clean typecheck. (Browser check happens in Task 12.)
 ```
 
-**Out of scope:** a (location × item-group) grid — three independent flat lists only.
+**Out of scope:** treating this as a free (customer-type × item-group)-style classification matrix — it is a printer-style **inheritance tree** (company → location → item-group) where only configured cells persist and each falls back up the tree.
 
 ---
 

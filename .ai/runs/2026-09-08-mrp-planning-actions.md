@@ -8,6 +8,10 @@
 ## Decisions
 - Scope path (approval): **B** — focused spec carving the planned-order + action-message core out of MRP-v2 + adding buyer/planner assignment; RCCP / CTP / continuous-regen deferred to the MRP-v2 spec. — Brad, 2026-09-08
 
+## Post-PR refinements
+- 2026-09-09 (Brad): ladder item-group tier is **location-specific**. Tree = **all → location → item group** (per-item leaf + per-message assignee still on top). Item-group ownership moved OFF a column on itemPostingGroup INTO a sparse `itemPostingGroupResponsibility` table keyed (companyId, locationId, itemPostingGroupId) — mirrors the printer AssignmentsCard inheritance tree (location → work-center → here location → item-group). Updated spec §P1.2/§P1.3/§P1.8/§P1.11 + changelog; plan Task 1 (new table + PK-shape verify for composite FKs), Task 5 (resolver rung from the table by location+group), Task 10 (settings screen nests item-groups under each location). PR #1601 updated.
+- 2026-09-09 (Brad): fix stale `.claude/rules/supersession-system.md` — MRP is `@carbon/ee/planning` `runMrp`, not the deleted `functions/mrp/**`.
+
 ## Open questions being grilled (one at a time)
 - [x] Q1 assignment axis — **RESOLVED.** Decision C: per-level owner default + per-message assignee override (reuse Assignee/Employee picker, value=user.id). A SINGLE unified field `responsibleEmployee` (not separate buyer/planner) at each rung. Resolved via a PRIORITY LADDER (printer-style inheritance UI per resolveContextAssignment/AssignmentsCard), NOT a location×group matrix. Ladder most-specific→general: **item (planning tab) → item-group → location → company default → unassigned**; per-message assignee overrides. Same ladder for both purchasing (Buy) and production (Make) worklists; the item's replenishmentSystem decides which worklist shows it. itemPostingGroup table confirmed alive (only the party×item matrix was dropped); no buyer/planner table exists today (net-new). — Brad, 2026-09-08
 - [x] Q2 persistence model — **RESOLVED.** B + reconciliation (i): a focused persisted **`planningAction`** table is the v1 spine — ALL action types, each optionally referencing a real open PO-line/job, carrying resolved responsibleEmployee + overridable assignee + status (Open/Dismissed/Actioned), written **diff-write** (match on natural key, update in place, close stale, insert new; never delete-rewrite — preserves assignment/dismissal). **No Firm lifecycle in v1.** Heavy MRP-v2 pieces (plannedOrder Planned→Firm→Released lifecycle, plannedOrderPeg, planningRun, planningState, RCCP, CTP, continuous regen) → "Deferred / later phases" section of the SAME spec. **Home: UPDATE `.ai/specs/2026-08-22-mrp-v2-planned-order-generation.md` in place, with changelog entry**; MRP-v2 becomes a phased spec. — Brad: "b" then "i", 2026-09-08
@@ -27,7 +31,8 @@
 - PR: opening now (autonomous — Brad asked). Committing only my artifacts (spec update, plan, research, run record); NOT the unrelated pre-existing tool-manifest.digest.json change.
 
 ## Outcome
-- PR: (pending — link below once opened)
+- PR: https://github.com/crbnos/carbon/pull/1601 (docs only — spec §P1 + plan + research + run record). Awaiting review/approval, then /execute Phase 1.
+- Commit: b788d5ff2f on branch mrp-action-suggestions (4 files; unrelated tool-manifest.digest.json left uncommitted).
 
 ## Phase log
 - research: DONE — .ai/research/mrp-planning-actions.md (SAP, D365 SCM+BC, NetSuite, Epicor, Infor SyteLine/LN + Carbon current-state map).

@@ -139,15 +139,44 @@ CREATE UNIQUE INDEX "planningAction_natural_key_idx" ON "planningAction"
   WHERE "status" <> 'Actioned';
 ```
 
-Ownership ladder columns + the tolerance scalar:
+Ownership ladder (tree: **company default → location → location-specific item group → item**) + the tolerance scalar:
 
 ```sql
-ALTER TABLE "itemPlanning"     ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per item+location (most specific)
-ALTER TABLE "itemPostingGroup" ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per item group
-ALTER TABLE "location"         ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per location
-ALTER TABLE "companySettings"  ADD COLUMN "defaultResponsibleEmployee" TEXT REFERENCES "user"("id"); -- company default
-ALTER TABLE "companySettings"  ADD COLUMN "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
+ALTER TABLE "itemPlanning"    ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per item+location (most specific leaf)
+ALTER TABLE "location"        ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per location
+ALTER TABLE "companySettings" ADD COLUMN "defaultResponsibleEmployee" TEXT REFERENCES "user"("id"); -- company default (all)
+ALTER TABLE "companySettings" ADD COLUMN "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
+
+-- The "location > item group" tier. Item-group ownership is LOCATION-SPECIFIC — the
+-- same group can have a different owner at each location — so it is NOT a column on
+-- itemPostingGroup; it is a sparse per-(location, group) assignment table (the printer
+-- AssignmentsCard tree: location default → per-work-center override, here location →
+-- per-item-group override). Rows exist only for configured cells.
+CREATE TABLE "itemPostingGroupResponsibility" (
+    "id" TEXT NOT NULL DEFAULT id('pgr'),
+    "companyId" TEXT NOT NULL,
+    "locationId" TEXT NOT NULL,
+    "itemPostingGroupId" TEXT NOT NULL,
+    "responsibleEmployee" TEXT REFERENCES "user"("id"),
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY ("id", "companyId"),
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+    -- composite FKs assume location/itemPostingGroup have PK ("id","companyId") — the
+    -- plan's migration task verifies PK shape first (item.id is single-column; these are not).
+    CONSTRAINT "itemPostingGroupResponsibility_location_fkey"
+      FOREIGN KEY ("locationId", "companyId") REFERENCES "location"("id", "companyId") ON DELETE CASCADE,
+    CONSTRAINT "itemPostingGroupResponsibility_group_fkey"
+      FOREIGN KEY ("itemPostingGroupId", "companyId") REFERENCES "itemPostingGroup"("id", "companyId") ON DELETE CASCADE,
+    CONSTRAINT "itemPostingGroupResponsibility_unique" UNIQUE ("companyId", "locationId", "itemPostingGroupId")
+);
 ```
+
+`itemPostingGroupResponsibility` gets the four standard RLS policies (SELECT via
+`get_companies_with_employee_role()`; writes via `settings_update`, since it is
+configured on the settings screen).
 
 `planningAction` gets the four standard RLS policies — SELECT via
 `get_companies_with_employee_role()`, writes via `production_*`/`purchasing_*` (mirroring
@@ -157,24 +186,31 @@ convention).
 
 ## P1.3 Ownership resolution (the inheritance ladder)
 
-`responsibleEmployee` for an item+location resolves **most-specific first**:
+`responsibleEmployee` for an item+location resolves **most-specific first**. Drawn as a
+tree it is **all → location → item group**, with a per-item leaf override on top (and the
+per-message assignee override on top of that):
 
 ```
-itemPlanning.responsibleEmployee                 -- this item at this location
-  ?? itemPostingGroup.responsibleEmployee        -- the item's group (via itemCost.itemPostingGroupId)
-  ?? location.responsibleEmployee                -- this location
-  ?? companySettings.defaultResponsibleEmployee  -- company default
-  ?? NULL                                        -- Unassigned
+itemPlanning.responsibleEmployee                     -- this item at this location (leaf override)
+  ?? itemPostingGroupResponsibility[location, group] -- the item's group AT THIS LOCATION
+  ?? location.responsibleEmployee                     -- this location
+  ?? companySettings.defaultResponsibleEmployee       -- company default (all, the root)
+  ?? NULL                                             -- Unassigned
 ```
 
 - `itemPostingGroupId` lives on **`itemCost`** (not `item`), so the resolver joins
-  `item → itemCost.itemPostingGroupId → itemPostingGroup` — the same join the planning
-  RPCs already do.
-- It is a **priority ladder, not a matrix** — each rung stores at most one employee; the
-  resolver returns the first non-null. There is **no (location × item-group) cell grid**
-  (the N×M posting-group matrix was deliberately removed —
-  `20260229000000_drop-posting-groups.sql` — leaving `itemPostingGroup` as a plain
-  classification table, which is what makes this single-axis ladder safe).
+  `item → itemCost.itemPostingGroupId`, then looks up
+  `itemPostingGroupResponsibility` by `(companyId, locationId, itemPostingGroupId)` — the
+  item-group tier is **location-specific** (same group, potentially different owner per
+  location).
+- It is a **hierarchical inheritance tree, not a free classification matrix.** Although
+  the item-group tier is keyed by `(location, group)`, it is the exact shape of the
+  printer `AssignmentsCard` tree (location default → per-work-center override): a **sparse**
+  set of configured cells that each fall back up the tree, resolved by one shared
+  function. This is deliberately different from the removed N×M posting-group matrix
+  (`20260229000000_drop-posting-groups.sql`), which was an independent customer-type ×
+  item-group cross-product with no inheritance. Here every tier inherits from the tier
+  above and returns the first non-null.
 - The engine stamps the resolved value onto each `planningAction.assignee` at write time.
   A human reassignment (P1.7) sets `assigneeOverridden = true`; subsequent regens leave
   that row's assignee alone.
@@ -299,7 +335,7 @@ prerequisite for persistence/assignment.
 | Firm lifecycle | **None in v1** | Carbon converts a suggestion straight into a real `Planned` PO/job; no unfirmed tier needed for action messages. Planned→Firm→Released is Phase 2. |
 | Action enum | **`Order\|Make\|Expedite\|Defer\|Cancel\|Increase\|Decrease`** (directional, user-facing) | Direction-in-the-type reads best for a buyer (SAP/D365/Epicor); Increase/Decrease included per Brad. Advisory/warning types excluded (actionable-only). |
 | Change-action source | **Real open POs/jobs vs net requirement** | SAP's reschedule/cancel-on-firmed-receipt model; needs no planned-order layer. |
-| Assignment | **Unified `responsibleEmployee` on a priority ladder** item→group→location→company + per-row assignee override | Auto-routes on day one (SAP MRP-controller / Epicor Buyer-ID); ladder not matrix (posting-group matrix was dropped). |
+| Assignment | **Unified `responsibleEmployee` inheritance tree** all → location → location-specific item group → item, + per-row assignee override | Auto-routes on day one (SAP MRP-controller / Epicor Buyer-ID). The item-group tier is location-specific (sparse `itemPostingGroupResponsibility` table), mirroring the printer AssignmentsCard tree — an inheritance hierarchy, not the removed N×M classification matrix. |
 | Acting | **Recommendation; existing subsystem executes.** Apply on uncommitted supply; navigate on committed | Committed = external commitment (sent PO / released job); silent edits there are wrong. Change-order/notify automation deferred. |
 | Noise gating | **One company `rescheduleToleranceDays` (7)**, no qty dampener | 80/20 — date reschedules are the dominant noise; qty deltas already partly rounded. |
 | Suggestion source of truth | **Persisted `planningAction`**; keep live projection columns | Grid and worklist can't disagree; refreshes per run (assignment prerequisite). |
@@ -365,8 +401,11 @@ Phase 1 is forward-compatible with the `plannedOrder` design below:
       simulation to Phases 2+ of this spec.
 - [x] **Persistence: full plannedOrder lifecycle or focused table?** — **Focused
       `planningAction` table, no Firm lifecycle**, diff-write, all types persisted.
-- [x] **Assignment axis?** — **Unified `responsibleEmployee` on the
-      item→group→location→company ladder** + per-row assignee override; not a matrix.
+- [x] **Assignment axis?** — **Unified `responsibleEmployee` inheritance tree**
+      all → location → **location-specific** item group → item + per-row assignee
+      override (2026-09-09 refinement: the item-group tier is per-location, stored in a
+      sparse `itemPostingGroupResponsibility` table — a printer-style inheritance tree,
+      not the removed N×M matrix).
 - [x] **Enum names + Increase/Decrease in v1?** — **`Order|Make|Expedite|Defer|Cancel|
       Increase|Decrease`**; Increase/Decrease **included**.
 - [x] **Advisory exceptions in v1?** — **Actionable-only**; urgency is a flag, conditions
@@ -1615,3 +1654,9 @@ except `api+/planning.what-if.ts`.
   calm-by-default) is retained below as **Phases 2+**, deferred. Research:
   `.ai/research/mrp-planning-actions.md`; run record:
   `.ai/runs/2026-09-08-mrp-planning-actions.md`.
+- 2026-09-09: **Ladder refinement** (Brad): the item-group tier is now
+  **location-specific** — the tree is **all → location → item group** (per-item leaf +
+  per-message assignee still on top). Item-group ownership moves off a column on
+  `itemPostingGroup` into a sparse `itemPostingGroupResponsibility` table keyed
+  `(companyId, locationId, itemPostingGroupId)`, mirroring the printer AssignmentsCard
+  inheritance tree. Updated §P1.2 (data model), §P1.3 (resolver), §P1.8, §P1.11.
