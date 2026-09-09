@@ -171,6 +171,31 @@ jobs:
 
       - run: pnpm test
 
+  edge-functions:
+    name: Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          # Pin the major the functions are written against; the Supabase edge
+          # runtime is Deno, so this suite needs Deno rather than Node/vitest.
+          deno-version: v1.x
+
+      # Runs with --no-check: `packages/database/tsconfig.json` only covers
+      # `src` and `supabase/functions/lib/postgres/**`, so most of this tree is
+      # not typechecked by tsgo either, and `deno check` currently reports 8
+      # pre-existing errors (kysely/deno-postgres Pool typings + a TS2589).
+      # Closing that gap is separate work — tracked in
+      # .ai/plans/2026-09-09-accounting-nuclear-review-fixes.md.
+      #
+      # The 20 regressions that need a real Postgres SKIP here (see
+      # `databaseTest` in post-payment/payment-test-fixture.ts). Everything that
+      # can run without a database does.
+      - name: Test
+        working-directory: packages/database/supabase/functions
+        run: deno task test
+
   audit:
     name: Audit
     runs-on: ubuntu-latest
