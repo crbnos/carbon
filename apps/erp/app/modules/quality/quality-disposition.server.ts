@@ -988,6 +988,55 @@ export async function closeIssue(
         linksByItem.set(link.nonConformanceItemId, arr);
       }
 
+      // The supplier-return bridge was read in the preflight too, and it moves
+      // independently of this issue: a linked return can ship (or be voided, or
+      // confirmed) between that read and here. The write-off was computed from
+      // the stale coverage, so posting it now would relieve the same goods the
+      // return shipment already relieved — the double relief AC 15 forbids.
+      // Re-read the linked return state and refuse if it moved.
+      if (linkedReturnLineIds.length > 0) {
+        const freshReturnLines = await trx
+          .selectFrom("purchaseReturnOrderLine as prol")
+          .innerJoin("purchaseReturnOrder as pro", (join) =>
+            join
+              .onRef("pro.id", "=", "prol.purchaseReturnOrderId")
+              .onRef("pro.companyId", "=", "prol.companyId")
+          )
+          .select([
+            "prol.id as id",
+            "prol.quantityShipped as quantityShipped",
+            "pro.status as status"
+          ])
+          .where("prol.id", "in", linkedReturnLineIds)
+          .where("prol.companyId", "=", companyId)
+          .forUpdate()
+          .execute();
+
+        const shippedAtPreflight = new Map(
+          linkedReturns.map((row: any) => [
+            row.purchaseReturnOrderLineId as string,
+            Number(row.purchaseReturnOrderLine?.quantityShipped ?? 0)
+          ])
+        );
+        for (const fresh of freshReturnLines) {
+          if (
+            ["Draft", "Confirmed", "Partially Shipped"].includes(
+              fresh.status ?? ""
+            )
+          ) {
+            throw new Error(
+              "A linked supplier return was reopened while closing; please retry."
+            );
+          }
+          const before = shippedAtPreflight.get(fresh.id) ?? 0;
+          if (Math.abs(Number(fresh.quantityShipped ?? 0) - before) > EPSILON) {
+            throw new Error(
+              "A linked supplier return shipped while closing; please retry."
+            );
+          }
+        }
+      }
+
       const freshPlan: DispositionRow[] = itemRows.map((row) => ({
         id: row.id,
         itemId: row.itemId,
