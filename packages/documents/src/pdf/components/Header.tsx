@@ -38,9 +38,11 @@ const Header = ({
       ? (company.logoLightIcon ?? company.logoLight)
       : (company.logoLight ?? company.logoLightIcon);
   const showLogo = opts.showLogo && Boolean(logoSrc);
-  // Name fallback only when a logo is wanted but missing. With the logo turned
-  // off, render nothing here (the company name still shows in the details block).
-  const showNameFallback = opts.showLogo && !logoSrc;
+  // Name fallback only when a logo is wanted but missing AND the details block
+  // is not already printing the name — otherwise the 2xl fallback and the 9px
+  // details line both draw `company.name` and visibly overlap.
+  const showNameFallback =
+    opts.showLogo && !logoSrc && !opts.showCompanyDetails;
 
   const headerView = (
     <View style={tw("flex flex-row justify-between mb-1")}>
@@ -79,8 +81,11 @@ const Header = ({
           </View>
         )}
       </View>
+      {/* `shrink` (not `shrink-0`) so a long title — "Return Merchandise
+          Authorization" — wraps inside its 55% bound instead of overflowing
+          the page. Short titles still size to their content. */}
       <View
-        style={tw("flex flex-col items-end justify-start shrink-0 max-w-[55%]")}
+        style={tw("flex flex-col items-end justify-start shrink max-w-[55%]")}
       >
         {opts.showDocumentTitle && (
           <Text style={tw("text-2xl font-bold text-gray-800 text-right")}>
