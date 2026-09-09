@@ -2,7 +2,7 @@ import {
   assertEquals,
   assertRejects,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { paymentFixture } from "../post-payment/payment-test-fixture.ts";
+import { databaseTest, paymentFixture } from "../post-payment/payment-test-fixture.ts";
 import { postMemoTransaction } from "./post-memo-transaction.ts";
 import { postPaymentTransaction } from "../post-payment/post-payment-transaction.ts";
 
@@ -26,7 +26,7 @@ async function memoFixture(f: Fixture) {
   }).execute();
   return id;
 }
-Deno.test("memo transaction posts authoritative base50, is idempotent, and reverses actual lines after defaults change", async () => {
+databaseTest("memo transaction posts authoritative base50, is idempotent, and reverses actual lines after defaults change", async () => {
   const f = await paymentFixture();
   try {
     const memoId = await memoFixture(f);
@@ -85,7 +85,7 @@ Deno.test("memo transaction posts authoritative base50, is idempotent, and rever
     await f.cleanup();
   }
 });
-Deno.test("memo period lock is rechecked against transaction state, overriding a stale open-period read", async () => {
+databaseTest("memo period lock is rechecked against transaction state, overriding a stale open-period read", async () => {
   const f = await paymentFixture();
   try {
     const memoId = await memoFixture(f);
@@ -103,7 +103,7 @@ Deno.test("memo period lock is rechecked against transaction state, overriding a
     await f.cleanup();
   }
 });
-Deno.test("memo refuses invalid precision and invalid posting accounts without writes", async () => {
+databaseTest("memo refuses invalid precision and invalid posting accounts without writes", async () => {
   const f = await paymentFixture();
   try {
     const memoId = await memoFixture(f);
@@ -139,7 +139,7 @@ Deno.test("memo refuses invalid precision and invalid posting accounts without w
     await f.cleanup();
   }
 });
-Deno.test("memo journal insertion failure rolls back header, lines and sequence", async () => {
+databaseTest("memo journal insertion failure rolls back header, lines and sequence", async () => {
   const f = await paymentFixture();
   try {
     const memoId = await memoFixture(f);
@@ -184,7 +184,7 @@ Deno.test("memo journal insertion failure rolls back header, lines and sequence"
   }
 });
 
-Deno.test("memo currency and tenant checks still apply when accounting is disabled", async () => {
+databaseTest("memo currency and tenant checks still apply when accounting is disabled", async () => {
   const f = await paymentFixture();
   const other = await paymentFixture();
   try {
@@ -229,7 +229,7 @@ Deno.test("memo currency and tenant checks still apply when accounting is disabl
   }
 });
 
-Deno.test("consumed memo cannot be voided until its applying payment is voided", async () => {
+databaseTest("consumed memo cannot be voided until its applying payment is voided", async () => {
   const f = await paymentFixture();
   try {
     const memoId = await memoFixture(f);
@@ -250,7 +250,7 @@ Deno.test("consumed memo cannot be voided until its applying payment is voided",
   } finally { await f.cleanup(); }
 });
 
-Deno.test("draft memo reservation does not prevent memo void", async () => {
+databaseTest("draft memo reservation does not prevent memo void", async () => {
   const f = await paymentFixture();
   try {
     const memoId = await memoFixture(f);

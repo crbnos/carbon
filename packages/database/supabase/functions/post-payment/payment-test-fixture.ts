@@ -5,6 +5,35 @@ import { Pool } from "pg";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/types.ts";
 
+/** Is an existing LOCAL database configured?
+ *
+ *  These regressions exercise real transactions, row locks and concurrency, so
+ *  they cannot be faked against a mock. Without a database they SKIP rather than
+ *  fail: hard-failing made a bare `deno test` red on a clean checkout, which is
+ *  a large part of why none of this directory was ever wired into CI. A skip is
+ *  visible in the run output; a failure just trains people to ignore the suite. */
+export const hasLocalDatabase: boolean = (() => {
+  try {
+    // Also catches PermissionDenied: this runs at module scope, so without
+    // --allow-env it would throw before a single pure test could run.
+    const databaseUrl = Deno.env.get("SUPABASE_DB_URL");
+    if (!databaseUrl) return false;
+    return ["localhost", "127.0.0.1", "[::1]"].includes(
+      new URL(databaseUrl).hostname,
+    );
+  } catch {
+    return false;
+  }
+})();
+
+/** `Deno.test` for a regression that requires the local database. */
+export function databaseTest(
+  name: string,
+  fn: () => void | Promise<void>,
+): void {
+  Deno.test({ name, ignore: !hasLocalDatabase, fn });
+}
+
 export async function connectPaymentTestDatabase() {
   const databaseUrl = Deno.env.get("SUPABASE_DB_URL");
   if (!databaseUrl) throw new Error("Payment regressions require SUPABASE_DB_URL for an existing local database");

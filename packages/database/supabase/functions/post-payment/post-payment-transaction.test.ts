@@ -2,10 +2,10 @@ import {
   assertEquals,
   assertRejects,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { paymentFixture } from "./payment-test-fixture.ts";
+import { databaseTest, paymentFixture } from "./payment-test-fixture.ts";
 import { postPaymentTransaction } from "./post-payment-transaction.ts";
 
-Deno.test("posting locks authoritative snapshots, overwrites forged rates, and is idempotent", async () => {
+databaseTest("posting locks authoritative snapshots, overwrites forged rates, and is idempotent", async () => {
   const f = await paymentFixture();
   try {
     const paymentId = await f.payment();
@@ -37,7 +37,7 @@ Deno.test("posting locks authoritative snapshots, overwrites forged rates, and i
   }
 });
 
-Deno.test("target over-consumption rolls back and leaves the payment draft unchanged", async () => {
+databaseTest("target over-consumption rolls back and leaves the payment draft unchanged", async () => {
   const f = await paymentFixture();
   try {
     const paymentId = await f.payment({ amount: 111, sourceAmount: 111 });
@@ -63,7 +63,7 @@ Deno.test("target over-consumption rolls back and leaves the payment draft uncha
   }
 });
 
-Deno.test("prior credit is attributed to its original source and source void is blocked until consumer void", async () => {
+databaseTest("prior credit is attributed to its original source and source void is blocked until consumer void", async () => {
   const f = await paymentFixture();
   try {
     const sourceId = await f.payment({ noApplication: true, rate: 1 });
@@ -99,7 +99,7 @@ Deno.test("prior credit is attributed to its original source and source void is 
   }
 });
 
-Deno.test("a sequence fault after settlement replacement rolls the entire post back", async () => {
+databaseTest("a sequence fault after settlement replacement rolls the entire post back", async () => {
   const f = await paymentFixture();
   try {
     const paymentId = await f.payment();
@@ -141,7 +141,7 @@ Deno.test("a sequence fault after settlement replacement rolls the entire post b
   }
 });
 
-Deno.test("accounting-disabled posting still rejects an invalid bank account", async () => {
+databaseTest("accounting-disabled posting still rejects an invalid bank account", async () => {
   const f = await paymentFixture();
   try {
     await f.db.updateTable("companySettings").set({ accountingEnabled: false })
@@ -170,7 +170,7 @@ Deno.test("accounting-disabled posting still rejects an invalid bank account", a
   }
 });
 
-Deno.test("a wrong new-credit control account class cannot create an unbalanced stored ledger", async () => {
+databaseTest("a wrong new-credit control account class cannot create an unbalanced stored ledger", async () => {
   const f = await paymentFixture();
   try {
     await f.db.updateTable("accountDefault").set({
@@ -195,7 +195,7 @@ Deno.test("a wrong new-credit control account class cannot create an unbalanced 
   }
 });
 
-Deno.test("positive document remainder with zero base carrying remains eligible until its final unit", async () => {
+databaseTest("positive document remainder with zero base carrying remains eligible until its final unit", async () => {
   const f = await paymentFixture();
   try {
     const invoiceId = await f.invoice({ amount: 0.01, rate: 16001 });
@@ -249,7 +249,7 @@ Deno.test("positive document remainder with zero base carrying remains eligible 
   }
 });
 
-Deno.test("changed defaults preserve original invoice and prior-credit control accounts", async () => {
+databaseTest("changed defaults preserve original invoice and prior-credit control accounts", async () => {
   const f = await paymentFixture();
   try {
     await f.db.insertInto("account").values(
@@ -298,7 +298,7 @@ Deno.test("changed defaults preserve original invoice and prior-credit control a
 });
 
 for (const isAR of [true, false]) {
-  Deno.test(`${isAR ? "AR" : "AP"} mixed-sign original controls settle their net carrying without fictitious FX`, async () => {
+  databaseTest(`${isAR ? "AR" : "AP"} mixed-sign original controls settle their net carrying without fictitious FX`, async () => {
     const f = await paymentFixture();
     try {
       const invoiceId = isAR ? f.invoiceId : `${f.companyId}-purchase`;
@@ -378,7 +378,7 @@ for (const isAR of [true, false]) {
   });
 }
 
-Deno.test("intercompany invoice settlement retains its original control after defaults change", async () => {
+databaseTest("intercompany invoice settlement retains its original control after defaults change", async () => {
   const f = await paymentFixture();
   try {
     const invoiceId = await f.invoice({ controlDescription: "IC Receivables" });

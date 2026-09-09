@@ -1,8 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { paymentFixture } from "./payment-test-fixture.ts";
+import { databaseTest, paymentFixture } from "./payment-test-fixture.ts";
 import { postPaymentTransaction } from "./post-payment-transaction.ts";
 
-Deno.test("independent concurrent invoice consumers cannot overspend one posted credit source", async () => {
+databaseTest("independent concurrent invoice consumers cannot overspend one posted credit source", async () => {
   const f = await paymentFixture();
   const left = await f.connect();
   const right = await f.connect();
@@ -80,7 +80,7 @@ Deno.test("independent concurrent invoice consumers cannot overspend one posted 
   }
 });
 
-Deno.test("concurrent retries of one payment create exactly one journal and funding allocation", async () => {
+databaseTest("concurrent retries of one payment create exactly one journal and funding allocation", async () => {
   const f = await paymentFixture();
   const left = await f.connect();
   const right = await f.connect();
