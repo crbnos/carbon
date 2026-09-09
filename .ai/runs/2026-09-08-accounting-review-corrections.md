@@ -22,7 +22,7 @@
 
 ## Outcome
 
-In progress; PR https://github.com/crbnos/carbon/pull/1599
+COMMITTED AND PUSHED: `de7ab3bbdb` — PR https://github.com/crbnos/carbon/pull/1599
 
 
 ## Verified corrections
@@ -58,3 +58,12 @@ No database reset, provider writes, GitHub review comments or merge occurred.
 | Dataset/backup compatibility | Four datasets PASS; live schema restorable against main manifest |
 
 All40 CodeRabbit findings have dispositions in [the review resolution](../reviews/2026-09-08-accounting-review.md). Two suggestions conflict with tested accounting invariants; the generated Swagger2 nullable suggestion remains an inherited generator limitation. Independent integration source review found no new blocker. Provider transport remains mocked; browser testing was not repeated in this correction pass.
+
+
+## Delivery
+
+- Corrections committed and pushed in `de7ab3bbdb`; PR description updated with full scope, evidence and provider acceptance limits.
+- Commit hooks passed lint-staged, translation compilation, MCP generation/current digest, all four datasets, and the real backup schema check.
+- The backup hook initially staged its output relative to the package directory under an inherited Git worktree context. This was corrected before pushing by using an explicit absolute GIT_WORK_TREE; no stray root manifest ships. Generated manifest content was identical to the previous version apart from timestamp/column order, so that unrelated regeneration churn was excluded after a structural comparison.
+- Refreshed remote CI/CodeRabbit checks are pending; their earlier review was received and all40 findings were addressed or given an evidence-backed disposition. This does not claim the correction commit has received a second completed bot review.
+- Working tree was clean after the correction commit. No merge or deployment action was taken.

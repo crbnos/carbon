@@ -3,7 +3,7 @@
 - PR: https://github.com/crbnos/carbon/pull/1599
 - Branch: assess-issue-against-code; base: origin/main
 - Request: after making the PR, wait for the coderabbit review, and then solve the problems
-- Status: CodeRabbit review received; corrections implemented; final validation in progress
+- Status: corrections validated and pushed in de7ab3bbdb; refreshed remote checks pending
 - Scope: approved accounting posting corrections, confirmed nuclear-review findings, and verified CodeRabbit findings
 - Exclusions remain: France/e-invoicing, historical cutover machinery, live provider writes, new production dependencies, database reset/rebuild
 
@@ -19,8 +19,8 @@
 - [x] Narrow subsidiary CTA resolution, atomic defaults update, and historical chart completeness (M6, M8, R5, S3)
 - [x] Address additional confirmed CodeRabbit findings
 - [x] Update docs/test runner and remove duplicate SQL regression ownership where warranted (D1-D4, S1)
-- [ ] Run ordered scoped validation, review integrated diff, commit and push fixes
-- [ ] Check resulting PR review/check state and update PR description with final evidence
+- [x] Run ordered scoped validation, review integrated diff, commit and push fixes
+- [x] Check resulting PR review/check state and update PR description with final evidence
 
 ## Implementation slices
 
