@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "当制造成本吸收入在制品时使用的贷方科目"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "贷方金额以公司基本货币（{currency}）表示。此付款过账后，贷方记录即生效。"
+msgstr "抵扣金额以公司基本货币（{currency}）表示。此付款过账后，抵扣才会生效。"
 
 msgid "Credit Memo"
 msgstr "贷项凭证"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "付款"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "应用于此发票的付款和贷方记录。已应用金额和汇率均以公司基本货币表示。点击某一行以打开源单据。"
+msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
 
 msgid "PDF"
 msgstr "PDF"

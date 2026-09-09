@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
@@ -14,7 +15,9 @@ vi.mock("@carbon/auth", () => ({
   success: (message: string) => ({ message })
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
-vi.mock("@carbon/auth/session.server", () => ({ flash: async () => ({}) }));
+vi.mock("@carbon/auth/session.server", () => ({
+  flash: vi.fn(async () => ({}))
+}));
 vi.mock("@carbon/react", () => ({
   ScrollArea: () => null,
   VStack: () => null
@@ -76,7 +79,10 @@ const shipping = {
   incomeBalance: "Income Statement"
 };
 
-function database(account = shipping) {
+function database(
+  account = shipping,
+  writeError: { message: string } | null = null
+) {
   const rows: Record<string, Record<string, unknown>[]> = {
     company: [{ id: "company", companyGroupId: "group" }],
     accountDefault: [{ ...defaults }],
@@ -93,6 +99,8 @@ function database(account = shipping) {
         );
         if (values) {
           writes(table, values);
+          if (writeError && "receivablesAccount" in values)
+            return { data: null, error: writeError };
           for (const row of matched) Object.assign(row, values);
         }
         return { data: values ? null : (matched[0] ?? null), error: null };
@@ -115,7 +123,7 @@ function database(account = shipping) {
       return query;
     }
   } as unknown as SupabaseClient<Database>;
-  return { client, writes };
+  return { client, writes, rows };
 }
 
 function payload(overrides: Record<string, string> = {}) {
@@ -246,5 +254,66 @@ describe("shipping revenue defaults", () => {
     });
     expect(result.error).toBeTruthy();
     expect(writes).not.toHaveBeenCalled();
+  });
+});
+
+describe("combined defaults action", () => {
+  async function submit(client: SupabaseClient<Database>) {
+    vi.mocked(requirePermissions).mockResolvedValue({
+      client,
+      companyId: "company",
+      userId: "user"
+    } as never);
+    const body = new FormData();
+    for (const field of Object.keys(defaultAccountValidator.shape))
+      body.set(field, `${field}-new`);
+    body.set("salesAccount", "sales");
+    body.set("salesShippingRevenueAccount", "shipping");
+    body.set("intent", "all");
+    const { action } = await import("~/routes/x+/accounting+/defaults");
+    return action({
+      request: new Request("http://localhost/x/accounting/defaults", {
+        method: "POST",
+        body
+      }),
+      params: {},
+      context: {}
+    } as never);
+  }
+
+  it("saves the full form as one statement", async () => {
+    const { client, writes } = database();
+    await expect(submit(client)).rejects.toMatchObject({ status: 302 });
+    expect(writes).toHaveBeenCalledOnce();
+    expect(writes).toHaveBeenCalledWith(
+      "accountDefault",
+      expect.objectContaining({
+        companyId: "company",
+        salesShippingRevenueAccount: "shipping",
+        receivablesAccount: "receivablesAccount-new"
+      })
+    );
+  });
+
+  it("leaves both sections unchanged when a balance mapping is rejected", async () => {
+    const { client, rows } = database(shipping, {
+      message: "Invalid receivables account"
+    });
+    const original = structuredClone(rows.accountDefault);
+    await submit(client);
+    expect(rows.accountDefault).toEqual(original);
+  });
+
+  it("shows the actual shipping mapping validation error", async () => {
+    vi.mocked(flash).mockClear();
+    const { client } = database({ ...shipping, active: false });
+    await submit(client);
+    expect(flash).toHaveBeenCalledWith(
+      expect.any(Request),
+      expect.objectContaining({
+        message:
+          "Shipping revenue must be an active Revenue leaf account in this company group"
+      })
+    );
   });
 });

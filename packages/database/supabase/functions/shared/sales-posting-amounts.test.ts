@@ -272,14 +272,7 @@ for (const mode of ["direct", "shipment"] as const) {
       ),
       true,
     );
-    // Voiding negates these recorded rows; no current defaults/rates are needed.
-    assertEquals(
-      result.lines.map((line) => -line.amount).reduce(
-        (sum, value, index) => sum + value + result.lines[index]!.amount,
-        0,
-      ),
-      0,
-    );
+
   });
 }
 

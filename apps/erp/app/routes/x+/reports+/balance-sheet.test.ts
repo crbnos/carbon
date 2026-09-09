@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -70,8 +71,12 @@ vi.mock("~/modules/accounting", async () => ({
   getFinancialStatementPeriodSeries: vi.fn(),
   getFiscalYearSettings: vi.fn()
 }));
-vi.mock("~/modules/accounting/accounting.ee.server", () => ({
+vi.mock("~/modules/accounting/accounting.ee.server", async () => ({
+  ...(await vi.importActual("~/modules/accounting/accounting.ee.server")),
   getConsolidatedPeriodSeriesForReport: vi.fn()
+}));
+vi.mock("@carbon/auth/client.server", () => ({
+  getCarbonServiceRole: vi.fn()
 }));
 vi.mock("~/modules/accounting/ui/Reports", () => ({
   exportPeriodReport: vi.fn(),
@@ -188,6 +193,8 @@ function chart(bookedCta = 0): ChartPeriodSeries[] {
 let sourceChart: ChartPeriodSeries[];
 let defaults: Record<string, string | null>;
 let defaultError: { message: string } | null;
+let rootGroup: string;
+let rootParent: string | null;
 let client: SupabaseClient<Database>;
 let reads: Array<{ table: string; filters: Record<string, unknown> }>;
 
@@ -196,6 +203,8 @@ beforeEach(() => {
   sourceChart = chart();
   defaults = { parent: "custom-cta", child: "child-cta" };
   defaultError = null;
+  rootGroup = "group";
+  rootParent = null;
   reads = [];
   client = {
     from(table: string) {
@@ -206,8 +215,28 @@ beforeEach(() => {
           filters[field] = value;
           return builder;
         },
+        is: (field: string, value: unknown) => {
+          filters[field] = value;
+          return builder;
+        },
         single: async () => {
           reads.push({ table, filters: { ...filters } });
+          if (table === "company") {
+            const row = {
+              id: "parent",
+              companyGroupId: rootGroup,
+              parentCompanyId: rootParent
+            };
+            const visible = Object.entries(filters).every(
+              ([key, value]) => row[key as keyof typeof row] === value
+            );
+            return {
+              data: visible ? { id: row.id } : null,
+              error: visible
+                ? null
+                : { message: "Root company is not in the authorized group" }
+            };
+          }
           if (table === "accountDefault") {
             return {
               data: {
@@ -261,7 +290,11 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-function runLoader(companiesParam = "all", showTranslated = true) {
+function runLoader(
+  companiesParam = "all",
+  showTranslated = true,
+  headers?: HeadersInit
+) {
   const params = new URLSearchParams({
     companies: companiesParam,
     showTranslated: String(showTranslated),
@@ -269,7 +302,9 @@ function runLoader(companiesParam = "all", showTranslated = true) {
     endDate: "2026-08-31"
   });
   return loader({
-    request: new Request(`http://localhost/x/reports/balance-sheet?${params}`),
+    request: new Request(`http://localhost/x/reports/balance-sheet?${params}`, {
+      headers
+    }),
     params: {},
     context: {}
   } as Parameters<typeof loader>[0]);
@@ -280,6 +315,67 @@ function amount(rows: ChartPeriodSeries[], id: string, key = "2026-07") {
 }
 
 describe("balance sheet configured CTA", () => {
+  it("translates a subsidiary for an accountant who cannot read parent defaults", async () => {
+    const deniedClient = {
+      from: () => ({
+        select() {
+          return this;
+        },
+        eq() {
+          return this;
+        },
+        single: async () => ({
+          data: null,
+          error: { message: "Parent defaults are not visible" }
+        })
+      })
+    } as unknown as SupabaseClient<Database>;
+    vi.mocked(requirePermissions).mockImplementation(
+      async (_request, permissions) =>
+        ({
+          client: permissions.bypassRls ? client : deniedClient,
+          companyId: "child",
+          companyGroupId: "group",
+          userId: "user"
+        }) as Awaited<ReturnType<typeof requirePermissions>>
+    );
+    const result = await runLoader("child");
+    expect(amount(result.balanceSheet, "custom-cta")).toBe(40);
+    expect(amount(result.balanceSheet, "balance-sheet")).toBe(0);
+    expect(reads).toContainEqual({
+      table: "company",
+      filters: { id: "parent", companyGroupId: "group", parentCompanyId: null }
+    });
+  });
+
+  it.each([
+    "cross-group",
+    "non-root"
+  ])("refuses %s configuration before reading defaults", async (caseName) => {
+    if (caseName === "cross-group") rootGroup = "other-group";
+    else rootParent = "another-parent";
+    await expect(runLoader("child")).rejects.toMatchObject({ status: 302 });
+    expect(reads.some((read) => read.table === "accountDefault")).toBe(false);
+  });
+
+  it("does not escalate an API key when auth returns an RLS client", async () => {
+    defaultError = {
+      message: "Parent defaults are not visible to this API key"
+    };
+    await expect(
+      runLoader("child", true, { "carbon-key": "test-report-key" })
+    ).rejects.toMatchObject({ status: 302 });
+    expect(getCarbonServiceRole).not.toHaveBeenCalled();
+  });
+
+  it("does not read root configuration after permission denial", async () => {
+    vi.mocked(requirePermissions).mockRejectedValue(
+      new Response("Forbidden", { status: 403 })
+    );
+    await expect(runLoader("child")).rejects.toMatchObject({ status: 403 });
+    expect(reads).toEqual([]);
+  });
+
   it.each([
     "all",
     "child"

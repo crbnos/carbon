@@ -23,6 +23,7 @@ function invoice(): Accounting.SalesInvoice {
     baseCurrencyDecimalPlaces: 2,
     currencyDecimalPlaces: 2,
     headerShippingCost: 0,
+    shippingRevenueAccountId: "acct-shipping",
     exchangeRate: 1,
     dateIssued: "2026-08-12",
     dateDue: "2026-09-11",
@@ -97,6 +98,7 @@ function charges(): Accounting.SalesInvoice {
     currencyCode: "EUR",
     exchangeRate: 0.8,
     headerShippingCost: 5,
+    shippingRevenueAccountId: "acct-shipping",
     subtotal: 133,
     totalTax: 13,
     totalAmount: 151,
@@ -212,7 +214,7 @@ function setupInvoice(missingShipping = false) {
         orderBy: () => query,
         executeTakeFirst: async () =>
           table === "accountDefault"
-            ? { salesShippingRevenueAccount: "acct-shipping" }
+            ? { salesShippingRevenueAccount: "replacement-shipping" }
             : {
                 id: "acct-shipping",
                 class: "Revenue",

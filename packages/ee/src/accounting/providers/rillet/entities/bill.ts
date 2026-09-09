@@ -121,8 +121,7 @@ function describeCostingLine(line: CostingLine): string | undefined {
 /**
  * Map a Carbon bill to the Rillet bill create payload. Pure — exported for
  * tests. `postingJournalLines` are the bill's costing lines (AP control line
- * already excluded by `loadBillCostingLines`); the mapper re-runs the AP
- * filter defensively so direct callers may pass raw journal lines too.
+ * already excluded by `loadBillCostingLines`). The mapper accepts costing only.
  *
  * The costing lines carry base-currency debit-signed amounts;
  * `bill.exchangeRate` converts them to the invoice's transaction currency
@@ -141,8 +140,6 @@ export function mapBillToRilletBill(args: {
   companyId: string;
   /** Costing lines of the bill's posted Purchase Invoice journal, debit-signed. */
   postingJournalLines: BillPostingJournalLine[];
-  /** accountDefault.payablesAccount — the AP control line(s) to exclude. */
-  payablesAccountId: string | null;
   /**
    * Slot config + resolved Field-value ids (same contract as the journal
    * mapper's RilletJournalDimensionArgs). Slotted line dimensions with no
@@ -163,12 +160,7 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  // Defensive re-filter: loadBillCostingLines already dropped the AP control
-  // line, but keep the filter so raw journal lines (tests) also work.
-  const costingLines = args.postingJournalLines.filter(
-    (line) =>
-      line.accountId === null || line.accountId !== args.payablesAccountId
-  );
+  const costingLines = args.postingJournalLines;
 
   const unmapped = new Set<string>();
   const lineIdsWithoutAccount: string[] = [];
@@ -500,7 +492,6 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       );
     }
 
-    const payablesAccountId = await this.getPayablesAccountId();
     const {
       lines: costingLines,
       documentTotal,
@@ -511,8 +502,7 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       exchangeRate
     } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
-      billId: local.id,
-      payablesAccountId
+      billId: local.id
     });
 
     // Send ALL dimensions on the bill: auto-provision every Rillet Field +
@@ -533,19 +523,8 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
       postingJournalLines: costingLines,
-      payablesAccountId,
       dimensions: { fieldIdByDimensionId, fieldValueIdsByValue }
     });
-  }
-
-  /** accountDefault.payablesAccount — the AP control line to exclude. */
-  private async getPayablesAccountId(): Promise<string | null> {
-    const defaults = await this.database
-      .selectFrom("accountDefault")
-      .select("payablesAccount")
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-    return defaults?.payablesAccount ?? null;
   }
 
   // =================================================================

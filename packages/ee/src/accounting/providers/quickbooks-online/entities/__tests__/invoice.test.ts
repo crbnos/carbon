@@ -130,6 +130,7 @@ function fullInvoice(): Accounting.SalesInvoice {
     baseCurrencyDecimalPlaces: 2,
     currencyDecimalPlaces: 2,
     headerShippingCost: 5,
+    shippingRevenueAccountId: "acct-shipping",
     dateIssued: "2026-09-07",
     dateDue: null,
     datePaid: null,
@@ -205,7 +206,7 @@ function setupInvoice(
         orderBy: () => query,
         executeTakeFirst: async () =>
           table === "accountDefault"
-            ? { salesShippingRevenueAccount: "acct-shipping" }
+            ? { salesShippingRevenueAccount: "replacement-shipping" }
             : {
                 id: "acct-shipping",
                 class: "Revenue",
@@ -358,6 +359,7 @@ function lineArguments(
     currencyCode: "USD",
     exchangeRate: 1,
     headerShippingCost: 0,
+    shippingRevenueAccountId: "acct-shipping",
     lines,
     subtotal,
     totalTax: 0,
@@ -373,3 +375,18 @@ function lineArguments(
     )
   };
 }
+
+it("retries a failed tax catalog read on the same syncer and caches a later success", async () => {
+  const test = setupInvoice();
+  test.provider.getCompanyInfo.mockRejectedValueOnce(
+    new Error("temporary provider outage")
+  );
+  await expect(test.map(fullInvoice())).rejects.toThrow(
+    /temporary provider outage/
+  );
+  await expect(test.map(fullInvoice())).resolves.toMatchObject({
+    TxnTaxDetail: { TotalTax: 10.4 }
+  });
+  await test.map(fullInvoice());
+  expect(test.provider.getCompanyInfo).toHaveBeenCalledTimes(2);
+});

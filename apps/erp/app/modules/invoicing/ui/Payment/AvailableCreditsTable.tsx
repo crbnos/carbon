@@ -201,15 +201,15 @@ const AvailableCreditsTable = ({
         prev.map((r) => {
           if (r.id !== id) return r;
           const amount = round(Math.max(0, value));
-          const cap = capFor(r, r.invoiceId);
-          const sourceAmount =
-            amount === cap.amount
-              ? cap.sourceAmount
-              : toDocumentAmount(amount, r.exchangeRate, documentDecimals);
+          const sourceAmount = toDocumentAmount(
+            amount,
+            r.exchangeRate,
+            documentDecimals
+          );
           return { ...r, amount, sourceAmount, checked: sourceAmount > 0 };
         })
       ),
-    [capFor, documentDecimals]
+    [documentDecimals]
   );
 
   const totalApplied = useMemo(

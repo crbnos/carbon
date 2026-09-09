@@ -316,7 +316,7 @@ describe("QboBillSyncer.mapToRemote (FX currency wiring)", () => {
           {
             id: "jl-2",
             accountId: "acc-ap",
-            amount: 100, // Liability natural balance → debit-signed -300
+            amount: 100, // Liability natural balance → debit-signed -100
             description: "Accounts Payable",
             documentLineReference: null,
             accountClass: "Liability"
@@ -349,7 +349,7 @@ describe("QboBillSyncer.mapToRemote (FX currency wiring)", () => {
 
     expect(payload.CurrencyRef).toEqual({ value: "EUR" });
     expect(payload.ExchangeRate).toBe(1.25);
-    // Base 300 @ rate 2 → 150 EUR to the mapped GR/IR account only (AP excluded).
+    // Base 100 @ rate 0.8 → 80 EUR to the mapped GR/IR account only (AP excluded).
     expect(payload.Line).toEqual([
       {
         Amount: 80,
@@ -512,5 +512,52 @@ describe("QBO inbound bill stored currency snapshots", () => {
     expect(rows[0]).not.toHaveProperty("unitPrice");
     expect(rows[0]).not.toHaveProperty("totalAmount");
     expect(rows[0]).not.toHaveProperty("supplierExtendedPrice");
+  });
+});
+
+it("handles a malformed QBO account detail without AccountRef without losing the remaining bill", async () => {
+  const database = {
+    selectFrom: () => {
+      const q: any = {
+        select: () => q,
+        where: () => q,
+        execute: async () => [],
+        executeTakeFirst: async () => ({ baseCurrencyCode: "USD" })
+      };
+      return q;
+    }
+  };
+  const syncer = new QboBillSyncer({
+    database: database as never,
+    companyId: "company-1",
+    provider: { id: "quickbooks" } as never,
+    config: { enabled: true, direction: "two-way", owner: "accounting" },
+    entityType: "bill"
+  }) as any;
+  await expect(
+    syncer.mapToLocal({
+      Id: "remote",
+      VendorRef: { value: "vendor" },
+      CurrencyRef: { value: "USD" },
+      TotalAmt: 10,
+      Balance: 10,
+      Line: [
+        {
+          Id: "bad",
+          Amount: 0,
+          DetailType: "AccountBasedExpenseLineDetail",
+          AccountBasedExpenseLineDetail: {}
+        },
+        {
+          Id: "good",
+          Amount: 10,
+          DetailType: "AccountBasedExpenseLineDetail",
+          AccountBasedExpenseLineDetail: { AccountRef: { value: "cost" } }
+        }
+      ]
+    })
+  ).resolves.toMatchObject({
+    totalAmount: 10,
+    lines: expect.arrayContaining([expect.objectContaining({ id: "good" })])
   });
 });

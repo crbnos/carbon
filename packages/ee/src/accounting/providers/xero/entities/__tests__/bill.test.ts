@@ -185,7 +185,7 @@ function makeBillDb(config: {
           return [
             {
               quantity: 1,
-              supplierUnitPrice: 80,
+              supplierUnitPrice: 100 * config.purchaseInvoice.exchangeRate,
               supplierShippingCost: 0,
               supplierTaxAmount: 0
             }
@@ -231,9 +231,9 @@ function makeBillSyncer(db: never, remoteId: string | null) {
 }
 
 describe("BillSyncer.mapToRemote (FX + guards)", () => {
-  const fxDb = () =>
+  const fxDb = (exchangeRate = 0.8) =>
     makeBillDb({
-      purchaseInvoice: { currencyCode: "EUR", exchangeRate: 0.8 },
+      purchaseInvoice: { currencyCode: "EUR", exchangeRate },
       journalLine: [
         {
           id: "jl-1",
@@ -286,6 +286,13 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
     expect(payload.TotalTax).toBeUndefined();
   });
 
+  it("pins a foreign identity rate instead of letting Xero choose a rate", async () => {
+    const payload = await makeBillSyncer(fxDb(1), null).mapToRemote(
+      bill({ currencyCode: "EUR", exchangeRate: 1 })
+    );
+    expect(payload.CurrencyRate).toBe(1);
+  });
+
   it("lands a DOC_HAS_PAYMENTS Warning when re-pushing a paid bill", async () => {
     try {
       await makeBillSyncer(fxDb(), "xero-bill-1").mapToRemote(
@@ -306,4 +313,40 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
     });
     expect(result).toContain("must be posted");
   });
+});
+
+it("refuses unsupported Xero bill monetary precision without changing principal", () => {
+  expect(() =>
+    buildXeroBillLineItems({
+      bill: bill(),
+      costingLines: [
+        {
+          id: "cost",
+          accountId: "acct_grir",
+          amount: 1.001,
+          description: "Subcent cost"
+        }
+      ],
+      accountCodesById: CODES
+    })
+  ).toThrow(/Xero.*precision|Xero.*decimal/i);
+});
+it.each([
+  false,
+  true
+])("opts into supported unit precision at the actual bill transport (batch=%s)", async (batch) => {
+  const syncer = makeBillSyncer({} as never, null) as any;
+  const requests: string[] = [];
+  syncer.provider.request = async (_method: string, url: string) => {
+    requests.push(url);
+    return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+  };
+  const payload = {
+    Type: "ACCPAY",
+    InvoiceNumber: "AP000001",
+    LineItems: [{ LineAmount: 10, AccountCode: "2125", TaxType: "NONE" }]
+  };
+  if (batch) await syncer.upsertRemoteBatch([{ localId: "pi_1", payload }]);
+  else await syncer.upsertRemote(payload, "pi_1");
+  expect(requests).toEqual(["/Invoices?unitdp=4"]);
 });

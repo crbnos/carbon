@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Invoice balances and reporting normalized to the document/source currency contract.
 -- Requires new sourceAmount column. No historical fallback/backfill.
@@ -312,6 +311,7 @@ AS $$
     GROUP BY s."targetSalesInvoiceId"
   ), memo_source_consumed AS (
     SELECT s."memoId" AS memo_id, SUM(s."sourceAmount") AS settled_document,
+      bool_and(s."sourceAmount" IS NOT NULL) AS principal_known,
       SUM(s."appliedAmount" + s."fxGainLossAmount") AS settled_base
     FROM effective_settlements s
     WHERE s."memoId" IS NOT NULL
@@ -326,11 +326,11 @@ AS $$
   ), invoice_carrying AS (
     -- Same original control snapshots used by post-payment; a document rate
     -- conversion cannot reconstruct carrying value after document rounding.
-    SELECT line."documentId" AS invoice_id, SUM(abs(line."amount")) AS original_base
+    SELECT line."documentId" AS invoice_id, SUM(line."amount") AS original_base
     FROM "journalLine" line
     JOIN "journal" j ON j."id"=line."journalId" AND j."companyId"=line."companyId"
     WHERE line."companyId"=_company_id AND line."documentType"='Invoice'
-      AND line."description"='Accounts Receivable' AND j."sourceType"='Sales Invoice'
+      AND line."description" IN ('Accounts Receivable','IC Receivables') AND j."sourceType"='Sales Invoice'
       AND j."status"='Posted' AND j."postingDate"<=_as_of_date
     GROUP BY line."documentId"
   ), invoice_open AS (
@@ -364,6 +364,8 @@ AS $$
     LEFT JOIN memo_target_settled t ON t.memo_id = m."id"
     WHERE m."companyId" = _company_id AND m."customerId" IS NOT NULL
       AND m."status" = 'Posted' AND m."postingDate" <= _as_of_date
+      -- Unknown principal cannot be reconstructed from rounded carrying base.
+      AND COALESCE(s.principal_known, true)
   )
   -- Preserve totalAmount/settled's existing per-document denomination:
   -- invoices carry base; memo amount/settled carry memo currency.
@@ -439,6 +441,7 @@ AS $$
     GROUP BY s."targetPurchaseInvoiceId"
   ), memo_source_consumed AS (
     SELECT s."memoId" AS memo_id, SUM(s."sourceAmount") AS settled_document,
+      bool_and(s."sourceAmount" IS NOT NULL) AS principal_known,
       SUM(s."appliedAmount" - s."fxGainLossAmount") AS settled_base
     FROM effective_settlements s
     WHERE s."memoId" IS NOT NULL
@@ -453,11 +456,11 @@ AS $$
   ), invoice_carrying AS (
     -- Same original control snapshots used by post-payment; a document rate
     -- conversion cannot reconstruct carrying value after document rounding.
-    SELECT line."documentId" AS invoice_id, SUM(abs(line."amount")) AS original_base
+    SELECT line."documentId" AS invoice_id, SUM(line."amount") AS original_base
     FROM "journalLine" line
     JOIN "journal" j ON j."id"=line."journalId" AND j."companyId"=line."companyId"
     WHERE line."companyId"=_company_id AND line."documentType"='Invoice'
-      AND line."description"='Accounts Payable' AND j."sourceType"='Purchase Invoice'
+      AND line."description" IN ('Accounts Payable','IC Payables') AND j."sourceType"='Purchase Invoice'
       AND j."status"='Posted' AND j."postingDate"<=_as_of_date
     GROUP BY line."documentId"
   ), invoice_open AS (
@@ -491,6 +494,8 @@ AS $$
     LEFT JOIN memo_target_settled t ON t.memo_id = m."id"
     WHERE m."companyId" = _company_id AND m."supplierId" IS NOT NULL
       AND m."status" = 'Posted' AND m."postingDate" <= _as_of_date
+      -- Unknown principal cannot be reconstructed from rounded carrying base.
+      AND COALESCE(s.principal_known, true)
   )
   -- Preserve totalAmount/settled's existing per-document denomination:
   -- invoices carry base; memo amount/settled carry memo currency.
@@ -830,4 +835,3 @@ AS $$
 $$;
 
 NOTIFY pgrst, 'reload schema';
-COMMIT;

@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const harness = vi.hoisted(() => ({
   submit: vi.fn(),
-  buttons: [] as { children: ReactNode; onClick?: () => void }[],
+  buttons: [] as {
+    children: ReactNode;
+    onClick?: () => void;
+    isDisabled?: boolean;
+  }[],
   amounts: [] as {
     "aria-label"?: string;
     onChange?: (value: number) => void;
@@ -34,7 +38,11 @@ vi.mock("@carbon/react", () => {
   const Box = ({ children }: { children: ReactNode }) =>
     createElement("div", null, children);
   return {
-    Button: (props: { children: ReactNode; onClick?: () => void }) => {
+    Button: (props: {
+      children: ReactNode;
+      onClick?: () => void;
+      isDisabled?: boolean;
+    }) => {
       harness.buttons.push(props);
       return createElement("button", null, props.children);
     },
@@ -494,4 +502,80 @@ it("payment history aggregates invoice splits and subtracts only current documen
   expect(html).toContain("$100.00");
   expect(html).toContain("€0.00");
   expect(html).toContain("€110.00");
+});
+
+const memoHighRateProps = {
+  paymentId: "current",
+  side: "sales" as const,
+  currency: "USD",
+  documentCurrency: "EUR",
+  documentDecimals: 2,
+  credits: [
+    {
+      id: "m",
+      memoId: "CM1",
+      direction: "Credit",
+      currencyCode: "EUR",
+      exchangeRate: 16000,
+      remaining: 0.01,
+      remainingDocument: 160.01
+    }
+  ],
+  openInvoices: [
+    {
+      id: "i",
+      invoiceId: "INV",
+      exchangeRate: 16000,
+      balance: 0.01,
+      remainingDocument: 160.01
+    }
+  ]
+};
+it.each([
+  false,
+  true
+])("manual memo base .01 preserves a document cent (reopened: %s)", (reopened) => {
+  const creditProps = {
+    ...memoHighRateProps,
+    staged: reopened
+      ? [{ memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160.01 }]
+      : []
+  };
+  renderToStaticMarkup(createElement(AvailableCreditsTable, creditProps));
+  expect(harness.amounts).toHaveLength(1);
+  harness.amounts[0]?.onChange?.(0.01);
+  harness.buttons = [];
+  renderToStaticMarkup(createElement(AvailableCreditsTable, creditProps));
+  click("Apply credits");
+  const submitted = harness.submit.mock.calls.at(-1)?.[0] as FormData;
+  expect(JSON.parse(String(submitted.get("applications")))).toEqual([
+    { memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160 }
+  ]);
+});
+it("full memo checkbox selection retains the exact document remainder", () => {
+  renderToStaticMarkup(createElement(AvailableCreditsTable, memoHighRateProps));
+  harness.checkboxes[0]?.onCheckedChange?.(true);
+  harness.buttons = [];
+  renderToStaticMarkup(createElement(AvailableCreditsTable, memoHighRateProps));
+  click("Apply credits");
+  const submitted = harness.submit.mock.calls.at(-1)?.[0] as FormData;
+  expect(JSON.parse(String(submitted.get("applications")))).toEqual([
+    { memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160.01 }
+  ]);
+});
+it("shows an empty state when every supplied invoice is filtered out", () => {
+  const html = render({
+    openInvoices: [
+      { ...props.openInvoices[0], currencyCode: "USD" },
+      { ...props.openInvoices[1], remainingDocument: 0 }
+    ]
+  });
+  expect(html).toContain("No open invoices");
+  expect(harness.amounts).toHaveLength(0);
+  const autoApply = harness.buttons.find((b) =>
+    renderToStaticMarkup(createElement("span", null, b.children)).includes(
+      "Auto apply"
+    )
+  );
+  expect(autoApply?.isDisabled).toBe(true);
 });

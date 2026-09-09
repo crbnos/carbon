@@ -1,6 +1,6 @@
 -- Database denomination, source-principal constraints, and real consolidation rates.
 -- Complements production posting/transaction tests; seeded SQL does not execute HTTP posting.
--- Run: pnpm exec tsx .context/accounting/run-local-check.ts psql -X -v ON_ERROR_STOP=1
+-- Run: pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1
 --   -f packages/database/supabase/tests/accounting-posting-corrections.test.sql
 \set ON_ERROR_STOP on
 BEGIN;

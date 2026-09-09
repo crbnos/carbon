@@ -17,7 +17,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 
 ## Never
 
-- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **One deliberate exception:** `math.ts` re-exports `packages/database/supabase/functions/shared/precision.ts` by relative path. That file is dependency-free pure TS and lives there because the Supabase edge runtime only mounts `supabase/functions/`; it is not a package import and not something to "fix" (same pattern as `packages/database/src/sampling.ts`).
+- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate edge-shared utilities:** `math.ts`/`precision.ts`, `accounting-currency.ts`, `accounting-posting.ts`, `payment-funding.ts`, and `sales-posting-amounts.ts` re-export pure modules from `packages/database/supabase/functions/shared/` by relative path. Those implementations live there because the Supabase edge runtime only mounts `supabase/functions/`; these are client-safe source imports, not imports of the server/database package. Keep their dependency graphs pure.
 - Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers).
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
@@ -33,6 +33,10 @@ pnpm --filter @carbon/utils typecheck
 | Module | Provides |
 |--------|----------|
 | `accounting` | Currency formatting, financial calculations |
+| `accounting-currency` | Explicit foreign-per-base conversion and settlement FX |
+| `accounting-posting` | Original journal role vocabulary, including intercompany controls and exclusion of void reversals |
+| `payment-funding` | Shared effective-settlement, invoice/funding balance reducers and exact document-principal allocation; callers own tenant/status/reservation queries |
+| `sales-posting-amounts` | Pure sales component normalization and posting calculations |
 | `arrays` | Array manipulation, grouping, deduplication |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |

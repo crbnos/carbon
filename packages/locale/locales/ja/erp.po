@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "製造原価が仕掛品に吸収されたときに使用される貸方勘定"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "貸方金額は会社の基本通貨（{currency}）で表示されます。貸方はこの支払を転記すると反映されます。"
+msgstr "クレジット金額は会社の基本通貨（{currency}）で表示されます。この支払を転記すると、クレジットの適用が反映されます。"
 
 msgid "Credit Memo"
 msgstr "クレジットメモ"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "支払い"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "この請求書に適用された支払と貸方。適用済み金額と為替レートは会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
+msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
 msgid "PDF"
 msgstr "PDF"

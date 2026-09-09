@@ -1,4 +1,4 @@
-import type { Kysely, Transaction } from "kysely";
+import { sql, type Kysely, type Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DB } from "../lib/database.ts";
@@ -12,14 +12,17 @@ import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
   allocatePaymentFunding,
+  isEffectiveSettlement,
+  invoiceRemainingAmounts,
+  remainingFundingSources,
   type FundingRequest,
-  type FundingSource,
 } from "../shared/payment-funding.ts";
 import {
   toBaseAmount,
   toDocumentAmount,
 } from "../shared/accounting-currency.ts";
 import { round } from "../shared/precision.ts";
+import { RECEIVABLE_POSTING_DESCRIPTIONS, PAYABLE_POSTING_DESCRIPTIONS } from "../shared/accounting-posting.ts";
 
 export type PostPaymentArgs = {
   type: "post" | "void";
@@ -66,22 +69,6 @@ function settlementQuery(trx: Transaction<DB>, companyId: string) {
       "vp.status as viaStatus",
     ])
     .where("s.companyId", "=", companyId);
-}
-
-function effective(
-  row: {
-    paymentId: string | null;
-    memoId: string | null;
-    appliedViaPaymentId: string | null;
-    paymentStatus: string | null;
-    memoStatus: string | null;
-    viaStatus: string | null;
-  },
-) {
-  return row.paymentId
-    ? row.paymentStatus === "Posted"
-    : row.memoId && row.memoStatus === "Posted" &&
-      (!row.appliedViaPaymentId || row.viaStatus === "Posted");
 }
 
 function principal(value: number | null, label: string): number {
@@ -147,7 +134,7 @@ export function postPaymentTransaction(
       ).execute();
       if (
         consumers.some((row) =>
-          effective(row) && principal(row.sourceAmount, row.id) > 0
+          isEffectiveSettlement(row) && principal(row.sourceAmount, row.id) > 0
         )
       ) {
         throw new Error(
@@ -332,7 +319,7 @@ export function postPaymentTransaction(
         `s.${targetColumn}`,
         "in",
         targetIds,
-      ).execute()).filter(effective)
+      ).execute()).filter(isEffectiveSettlement)
       : [];
     const controls = targetIds.length
       ? await trx.selectFrom("journalLine as line")
@@ -352,8 +339,8 @@ export function postPaymentTransaction(
         ).where("line.documentType", "=", "Invoice")
         .where("line.documentId", "in", targetIds).where(
           "line.description",
-          "=",
-          isAR ? "Accounts Receivable" : "Accounts Payable",
+          "in",
+          isAR ? RECEIVABLE_POSTING_DESCRIPTIONS : PAYABLE_POSTING_DESCRIPTIONS,
         )
         .where(
           "journal.sourceType",
@@ -377,7 +364,7 @@ export function postPaymentTransaction(
           line.documentId,
           round(
             (carryingById.get(line.documentId) ?? 0) +
-              Math.abs(Number(line.amount)),
+              Number(line.amount),
           ),
         );
       }
@@ -398,30 +385,9 @@ export function postPaymentTransaction(
       }
       const rate = Number(invoice.exchangeRate);
       const total = totalById.get(invoice.id)!;
-      let remainingDocument = toDocumentAmount(total, rate, decimals);
-      let remainingBase = carryingById.get(invoice.id) ??
-        toBaseAmount(total, 1);
-      for (const row of priorTargetRows) {
-        if (row[targetColumn] === invoice.id) {
-          remainingDocument = toDocumentAmount(
-            remainingDocument - principal(row.sourceAmount, row.id) -
-              toDocumentAmount(
-                Number(row.discountAmount) + Number(row.writeOffAmount),
-                rate,
-                decimals,
-              ),
-            1,
-            decimals,
-          );
-          remainingBase = round(
-            remainingBase - Number(row.appliedAmount) -
-              Number(row.discountAmount) - Number(row.writeOffAmount),
-          );
-        }
-      }
-      if (remainingDocument < 0 || remainingBase < 0) {
-        throw new Error("Invoice already has excessive settlements");
-      }
+      const { remainingDocument, remainingBase } = invoiceRemainingAmounts(
+        { ...invoice, totalAmount: total }, priorTargetRows, carryingById, decimals, isAR
+      );
       targets.set(invoice.id, { rate, remainingDocument, remainingBase });
     }
 
@@ -438,7 +404,7 @@ export function postPaymentTransaction(
     }
     const memoConsumption = memoIds.length
       ? (await settlementQuery(trx, companyId).where("s.memoId", "in", memoIds)
-        .execute()).filter(effective)
+        .execute()).filter(isEffectiveSettlement)
       : [];
     const memoRemaining = new Map(memos.map((memo) => {
       if (
@@ -591,37 +557,11 @@ export function postPaymentTransaction(
             eb("s.paymentId", "in", sourceIds),
           ]),
         ])
-      ).execute()).filter(effective)
+      ).execute()).filter(isEffectiveSettlement)
       : [];
-    const priorSources: FundingSource[] = sources.map((source) => {
-      let remainingDocument = Number(source.totalAmount);
-      let remainingBase = toBaseAmount(
-        remainingDocument,
-        Number(source.exchangeRate),
-      );
-      for (const row of consumed) {
-        if ((row.sourcePaymentId ?? row.paymentId) === source.id) {
-          remainingDocument = toDocumentAmount(
-            remainingDocument - principal(row.sourceAmount, row.id),
-            1,
-            decimals,
-          );
-          remainingBase = round(
-            remainingBase - Number(row.appliedAmount) -
-              (isAR
-                ? Number(row.fxGainLossAmount)
-                : -Number(row.fxGainLossAmount)),
-          );
-        }
-      }
-      return {
-        paymentId: source.id,
-        postingDate: source.postingDate ?? source.paymentDate,
-        exchangeRate: Number(source.exchangeRate),
-        remainingDocument,
-        remainingBase,
-      };
-    });
+    const priorSources = remainingFundingSources(
+      sources, consumed, new Map([[payment.currencyCode, decimals]]), isAR
+    );
     const requestByTarget = new Map<string, FundingRequest>();
     for (const draft of drafts.filter((row) => row.paymentId === paymentId)) {
       const targetId = draft[targetColumn]!;
@@ -818,7 +758,6 @@ export function postPaymentTransaction(
     }
     // One set-based UPDATE preserves memo row identities and avoids query-per-row writes.
     if (normalizedMemos.length) {
-      const { sql } = await import("kysely");
       await sql`UPDATE "invoiceSettlement" s SET "appliedAmount"=v."appliedAmount", "sourceAmount"=v."sourceAmount",
         "sourceExchangeRate"=v."sourceExchangeRate", "targetExchangeRate"=v."targetExchangeRate", "fxGainLossAmount"=0, "appliedDate"=${today}::date, "updatedBy"=${userId}
         FROM jsonb_to_recordset(${

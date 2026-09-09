@@ -11,6 +11,10 @@ import {
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
+  loadSalesInvoices,
+  requirePostedShippingAccountId
+} from "../../../core/sales-invoice-source";
+import {
   type Accounting,
   BaseEntitySyncer,
   type ShouldSyncContext
@@ -58,47 +62,6 @@ const SYNCABLE_STATUSES: Accounting.SalesInvoice["status"][] = [
   "Paid",
   "Overdue"
 ];
-
-// Row shapes for sales invoice queries (mirror the Xero syncer's)
-type InvoiceRow = {
-  id: string;
-  invoiceId: string;
-  companyId: string;
-  customerId: string;
-  status: Accounting.SalesInvoice["status"];
-  currencyCode: string;
-  exchangeRate: number;
-  dateIssued: string | null;
-  dateDue: string | null;
-  datePaid: string | null;
-  customerReference: string | null;
-  subtotal: number;
-  totalTax: number;
-  totalDiscount: number;
-  totalAmount: number;
-  balance: number;
-  headerShippingCost: number | null;
-  baseCurrencyCode: string;
-  baseCurrencyDecimalPlaces: number | null;
-  currencyDecimalPlaces: number | null;
-  updatedAt: string | null;
-};
-
-type InvoiceLineRow = {
-  id: string;
-  invoiceId: string;
-  invoiceLineType: string;
-  itemId: string | null;
-  description: string | null;
-  quantity: number;
-  unitPrice: number;
-  convertedUnitPrice: number | null;
-  shippingCost: number | null;
-  addOnCost: number | null;
-  nonTaxableAddOnCost: number | null;
-  taxPercent: number;
-  itemReadableIdWithRevision: string | null;
-};
 
 /**
  * Derive the Carbon invoice status from QBO's Balance/TotalAmt (QBO has no
@@ -175,52 +138,31 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
   QboWriteOmit
 > {
   private taxCatalogPromise?: Promise<QboInvoiceTaxCatalog>;
-  private shippingAccountPromise?: Promise<string>;
+  private shippingAccountRefsPromise?: ReturnType<
+    typeof loadQboAccountRefsById
+  >;
   private shippingItemSyncerPromise?: Promise<QboItemSyncer>;
 
-  private getShippingAccountId(): Promise<string> {
-    if (!this.shippingAccountPromise)
-      this.shippingAccountPromise = (async () => {
-        const defaults = await this.database
-          .selectFrom("accountDefault")
-          .select("salesShippingRevenueAccount")
-          .where("companyId", "=", this.companyId)
-          .executeTakeFirst();
-        const id = defaults?.salesShippingRevenueAccount;
-        const account = id
-          ? await this.database
-              .selectFrom("account as a")
-              .innerJoin("company as c", "c.companyGroupId", "a.companyGroupId")
-              .select(["a.id", "a.class", "a.active", "a.isGroup"])
-              .where("c.id", "=", this.companyId)
-              .where("a.id", "=", id)
-              .executeTakeFirst()
-          : undefined;
-        const refs = await loadQboAccountRefsById(this.database, {
-          companyId: this.companyId,
-          integration: this.provider.id
-        });
-        if (
-          !account ||
-          account.class !== "Revenue" ||
-          !account.active ||
-          account.isGroup ||
-          !id ||
-          !refs.has(id)
-        )
-          throw new JournalEntrySyncError({
-            errorCode: "UNMAPPED_ACCOUNTS",
-            warning: true,
-            message:
-              "Cannot sync invoice: Shipping Revenue requires an active Revenue leaf with a QuickBooks account mapping",
-            metadata: {
-              accountId: id,
-              missingDefaults: ["salesShippingRevenueAccount"]
-            }
-          });
-        return id;
-      })();
-    return this.shippingAccountPromise;
+  private async getShippingAccountId(
+    local: Accounting.SalesInvoice
+  ): Promise<string> {
+    const id = requirePostedShippingAccountId(local);
+    this.shippingAccountRefsPromise ??= loadQboAccountRefsById(this.database, {
+      companyId: this.companyId,
+      integration: this.provider.id
+    }).catch((error) => {
+      this.shippingAccountRefsPromise = undefined;
+      throw error;
+    });
+    if (!(await this.shippingAccountRefsPromise).has(id))
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message:
+          "Cannot sync invoice: original Shipping Revenue account has no QuickBooks mapping",
+        metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
+      });
+    return id;
   }
 
   private getShippingItemSyncer(): Promise<QboItemSyncer> {
@@ -331,183 +273,10 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     return this.fetchInvoicesByIds(ids);
   }
 
-  private async fetchInvoicesByIds(
+  private fetchInvoicesByIds(
     ids: string[]
   ): Promise<Map<string, Accounting.SalesInvoice>> {
-    if (ids.length === 0) return new Map();
-
-    const invoiceRows = await this.database
-      .selectFrom("salesInvoice")
-      // `balance` is derived and lives only on the `salesInvoices` view
-      .leftJoin("salesInvoices", (join) =>
-        join
-          .onRef("salesInvoices.id", "=", "salesInvoice.id")
-          .onRef("salesInvoices.companyId", "=", "salesInvoice.companyId")
-      )
-      .innerJoin("company", "company.id", "salesInvoice.companyId")
-      .leftJoin("salesInvoiceShipment", (join) =>
-        join
-          .onRef("salesInvoiceShipment.id", "=", "salesInvoice.id")
-          .onRef(
-            "salesInvoiceShipment.companyId",
-            "=",
-            "salesInvoice.companyId"
-          )
-      )
-      .leftJoin("currency as documentCurrency", (join) =>
-        join
-          .onRef("documentCurrency.code", "=", "salesInvoice.currencyCode")
-          .onRef(
-            "documentCurrency.companyGroupId",
-            "=",
-            "company.companyGroupId"
-          )
-      )
-      .leftJoin("currency as baseCurrency", (join) =>
-        join
-          .onRef("baseCurrency.code", "=", "company.baseCurrencyCode")
-          .onRef("baseCurrency.companyGroupId", "=", "company.companyGroupId")
-      )
-      .select([
-        "salesInvoice.id",
-        "salesInvoice.invoiceId",
-        "salesInvoice.companyId",
-        "salesInvoice.customerId",
-        "salesInvoice.status",
-        "salesInvoice.currencyCode",
-        "salesInvoice.exchangeRate",
-        "salesInvoice.dateIssued",
-        "salesInvoice.dateDue",
-        "salesInvoice.datePaid",
-        "salesInvoice.customerReference",
-        "salesInvoices.subtotal",
-        "salesInvoices.totalTax",
-        "salesInvoice.totalDiscount",
-        "salesInvoices.totalAmount",
-        "salesInvoices.balance",
-        "salesInvoiceShipment.shippingCost as headerShippingCost",
-        "company.baseCurrencyCode",
-        "baseCurrency.decimalPlaces as baseCurrencyDecimalPlaces",
-        "documentCurrency.decimalPlaces as currencyDecimalPlaces",
-        "salesInvoice.updatedAt"
-      ])
-      .where("salesInvoice.id", "in", ids)
-      .where("salesInvoice.companyId", "=", this.companyId)
-      .execute();
-
-    if (invoiceRows.length === 0) return new Map();
-
-    const lineRows = await this.database
-      .selectFrom("salesInvoiceLine")
-      .leftJoin("item", (join) =>
-        join
-          .onRef("item.id", "=", "salesInvoiceLine.itemId")
-          .onRef("item.companyId", "=", "salesInvoiceLine.companyId")
-      )
-      .select([
-        "salesInvoiceLine.id",
-        "salesInvoiceLine.invoiceId",
-        "salesInvoiceLine.invoiceLineType",
-        "salesInvoiceLine.itemId",
-        "salesInvoiceLine.description",
-        "salesInvoiceLine.quantity",
-        "salesInvoiceLine.unitPrice",
-        "salesInvoiceLine.convertedUnitPrice",
-        "salesInvoiceLine.shippingCost",
-        "salesInvoiceLine.addOnCost",
-        "salesInvoiceLine.nonTaxableAddOnCost",
-        "salesInvoiceLine.taxPercent",
-        "item.readableIdWithRevision as itemReadableIdWithRevision"
-      ])
-      .where("salesInvoiceLine.companyId", "=", this.companyId)
-      .where(
-        "salesInvoiceLine.invoiceId",
-        "in",
-        invoiceRows.map((r) => r.id)
-      )
-      .execute();
-
-    const linesByInvoiceId = new Map<string, InvoiceLineRow[]>();
-    for (const line of lineRows as InvoiceLineRow[]) {
-      const existing = linesByInvoiceId.get(line.invoiceId) ?? [];
-      existing.push(line);
-      linesByInvoiceId.set(line.invoiceId, existing);
-    }
-
-    const result = new Map<string, Accounting.SalesInvoice>();
-    for (const row of invoiceRows as InvoiceRow[]) {
-      if (
-        !row.baseCurrencyCode ||
-        !row.currencyCode ||
-        row.baseCurrencyDecimalPlaces == null ||
-        row.currencyDecimalPlaces == null
-      ) {
-        throw new Error(
-          `Invoice ${row.id} is missing authoritative currency precision metadata`
-        );
-      }
-      if (
-        row.subtotal == null ||
-        row.totalTax == null ||
-        row.totalAmount == null ||
-        row.balance == null
-      ) {
-        throw new Error(
-          `Invoice ${row.id} is missing authoritative source view totals`
-        );
-      }
-      const lines = linesByInvoiceId.get(row.id) ?? [];
-
-      result.set(row.id, {
-        id: row.id,
-        invoiceId: row.invoiceId,
-        companyId: row.companyId,
-        customerId: row.customerId,
-        customerExternalId: null, // Resolved during mapToRemote
-        status: row.status,
-        currencyCode: row.currencyCode,
-        baseCurrencyCode: row.baseCurrencyCode,
-        baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
-        currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
-        headerShippingCost: Number(row.headerShippingCost ?? 0),
-        exchangeRate: Number(row.exchangeRate),
-        dateIssued: row.dateIssued,
-        dateDue: row.dateDue,
-        datePaid: row.datePaid,
-        customerReference: row.customerReference,
-        subtotal: Number(row.subtotal),
-        totalTax: Number(row.totalTax),
-        totalDiscount: Number(row.totalDiscount) || 0,
-        totalAmount: Number(row.totalAmount),
-        balance: Number(row.balance),
-        lines: lines.map((line) => {
-          const quantity = Number(line.quantity) || 0;
-          const unitPrice = Number(line.unitPrice) || 0;
-          return {
-            id: line.id,
-            invoiceLineType: line.invoiceLineType,
-            itemId: line.itemId,
-            itemCode: line.itemReadableIdWithRevision,
-            description: line.description,
-            quantity,
-            unitPrice,
-            convertedUnitPrice:
-              line.convertedUnitPrice == null
-                ? null
-                : Number(line.convertedUnitPrice),
-            shippingCost: Number(line.shippingCost ?? 0),
-            addOnCost: Number(line.addOnCost ?? 0),
-            nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
-            taxPercent: Number(line.taxPercent) || 0,
-            lineAmount: quantity * unitPrice
-          };
-        }),
-        updatedAt: row.updatedAt ?? datetime.timestamp(),
-        raw: row
-      });
-    }
-
-    return result;
+    return loadSalesInvoices(this.database, { companyId: this.companyId, ids });
   }
 
   // =================================================================
@@ -544,7 +313,12 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       throw new Error("QuickBooks exchange rate must be finite");
     let catalog: QboInvoiceTaxCatalog;
     try {
-      this.taxCatalogPromise ??= loadQboInvoiceTaxCatalog(this.qboProvider);
+      this.taxCatalogPromise ??= loadQboInvoiceTaxCatalog(
+        this.qboProvider
+      ).catch((error) => {
+        this.taxCatalogPromise = undefined;
+        throw error;
+      });
       catalog = await this.taxCatalogPromise;
     } catch (error) {
       throw new JournalEntrySyncError({
@@ -566,7 +340,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
     );
     const shippingAccountId = hasShipping
-      ? await this.getShippingAccountId()
+      ? await this.getShippingAccountId(local)
       : null;
     // Tax, account and currency preflight finishes before any dependency writes.
     const customerRemoteId = await this.ensureDependencySynced(

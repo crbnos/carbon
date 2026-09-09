@@ -1,6 +1,6 @@
 -- Intercompany elimination against the real capture-driven RPC.
 -- Isolated fixture companies/accounts; no existing business data is read or edited.
--- Run: pnpm exec tsx .context/accounting/run-local-check.ts psql -X
+-- Run: pnpm exec tsx scripts/run-local-accounting-check.ts psql -X
 --   -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/intercompany-elimination.test.sql
 -- Seeded SQL capture proves elimination, not TypeScript/HTTP posting wiring.
 \set ON_ERROR_STOP on

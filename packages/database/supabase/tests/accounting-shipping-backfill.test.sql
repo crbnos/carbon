@@ -1,6 +1,6 @@
--- Shipping-account migration and settlement-funding constraints.
+-- Shipping-account migration and backfill behavior.
 -- Run from the repository root against the existing local development database:
---   pnpm exec tsx .context/accounting/run-local-check.ts psql -X \
+--   pnpm exec tsx scripts/run-local-accounting-check.ts psql -X \
 --     -v ON_ERROR_STOP=1 \
 --     -f packages/database/supabase/tests/accounting-shipping-backfill.test.sql
 --
@@ -161,8 +161,8 @@ BEGIN
     ASSERT (SELECT jsonb_agg(to_jsonb(ad) ORDER BY "companyId") FROM "accountDefault" ad WHERE "companyId" = ANY(f.company_ids)) = before_defaults,
       'Rerun must preserve defaults including timestamps';
     RAISE NOTICE 'PASS fresh/shared chart and exact rerun preservation';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart(2);
@@ -178,8 +178,8 @@ BEGIN
     ASSERT (SELECT count(*) = 1 FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
       'Reuse must not duplicate shipping';
     RAISE NOTICE 'PASS custom default and custom-number leaf preservation';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -190,8 +190,8 @@ BEGIN
     ASSERT (SELECT number = '4040' AND name = 'Existing account at 4040' FROM "account" WHERE id = custom_id),
       'Occupied 4040: preserve its owner';
     RAISE NOTICE 'PASS account-number collision';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -203,8 +203,8 @@ BEGIN
     ASSERT NOT EXISTS (SELECT 1 FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
       'Exhausted range: do not insert an unnumbered shipping account';
     RAISE NOTICE 'PASS exhausted number range rejected with group identity';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -213,8 +213,8 @@ BEGIN
     ASSERT (SELECT "parentId" = f.parent_id FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
       'Renamed Revenue group: use the unique compatible sales parent';
     RAISE NOTICE 'PASS renamed parent resolution';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -222,8 +222,8 @@ BEGIN
     UPDATE "account" SET "parentId" = NULL WHERE id = f.sales_id;
     PERFORM pg_temp.expect_backfill_failure('Cannot resolve Shipping Revenue');
     RAISE NOTICE 'PASS missing compatible parent rejected';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart(2);
@@ -237,8 +237,8 @@ BEGIN
     ASSERT NOT EXISTS (SELECT 1 FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
       'Ambiguous parents: no orphaned/guessed shipping account';
     RAISE NOTICE 'PASS ambiguous sales parents rejected';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     good := pg_temp.seed_shipping_chart();
@@ -256,8 +256,8 @@ BEGIN
       WHERE "companyId" = ANY(good.company_ids || f.company_ids)) = before_defaults,
       'One incompatible group must roll back all default changes';
     RAISE NOTICE 'PASS incompatible canonical parent and multi-group atomic failure';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -265,8 +265,8 @@ BEGIN
       VALUES ('Shipping Revenue', 'Revenue', 'Income', 'Income Statement', true, f.group_id, 'system');
     PERFORM pg_temp.expect_backfill_failure('Cannot resolve Shipping Revenue');
     RAISE NOTICE 'PASS conflicting Shipping Revenue group rejected';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -274,24 +274,24 @@ BEGIN
     UPDATE "account" SET "parentId" = NULL WHERE id = shipping_id;
     PERFORM pg_temp.expect_backfill_failure('Cannot resolve Shipping Revenue');
     RAISE NOTICE 'PASS existing incompatible shipping leaf rejected';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
     UPDATE "account" SET name = 'Shipping Revenue' WHERE id = f.sales_id;
     PERFORM pg_temp.expect_backfill_failure('Cannot resolve Shipping Revenue');
     RAISE NOTICE 'PASS shipping candidate cannot equal the sales default';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
     UPDATE "accountDefault" SET "salesShippingRevenueAccount" = f.sales_id WHERE "companyId" = f.company_ids[1];
     PERFORM pg_temp.expect_backfill_failure('Invalid shipping defaults');
     RAISE NOTICE 'PASS populated shipping default cannot equal sales';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
@@ -300,8 +300,8 @@ BEGIN
     UPDATE "accountDefault" SET "salesShippingRevenueAccount" = custom_id WHERE "companyId" = f.company_ids[1];
     PERFORM pg_temp.expect_backfill_failure('Invalid shipping defaults for companies: ' || f.company_ids[1]);
     RAISE NOTICE 'PASS cross-group shipping default rejected with company identity';
-    RAISE SQLSTATE '22000';
-  EXCEPTION WHEN SQLSTATE '22000' THEN NULL; END;
+    RAISE SQLSTATE 'P9001';
+  EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
   ASSERT NOT EXISTS (SELECT 1 FROM accounting_original_accounts original
     LEFT JOIN "account" a ON a.id = original.id WHERE to_jsonb(a) IS DISTINCT FROM original.body),
@@ -311,106 +311,5 @@ BEGIN
     'Harness must not alter any original defaults';
 END;
 $backfill_cases$;
-
-DO $settlement_cases$
-DECLARE
-  f pg_temp.shipping_fixture;
-  other pg_temp.shipping_fixture;
-  customer_id text;
-  other_customer_id text;
-  owner_id text;
-  source_id text;
-  other_source_id text;
-  target_id text;
-  memo_source_id text;
-  settlement_id text;
-  invalid_amount numeric;
-  constraint_name text;
-BEGIN
-  f := pg_temp.seed_shipping_chart();
-  other := pg_temp.seed_shipping_chart();
-  INSERT INTO "customer" (name, "companyId", "createdBy")
-    VALUES ('Settlement customer', f.company_ids[1], 'system') RETURNING id INTO customer_id;
-  INSERT INTO "customer" (name, "companyId", "createdBy")
-    VALUES ('Other company customer', other.company_ids[1], 'system') RETURNING id INTO other_customer_id;
-  INSERT INTO "payment" ("paymentId", "paymentType", "paymentDate", "currencyCode", "totalAmount", "bankAccount", "customerId", "companyId", "createdBy")
-    VALUES ('APPLY', 'Receipt', DATE '2026-09-07', 'USD', 0.01, f.sales_id, customer_id, f.company_ids[1], 'system') RETURNING id INTO owner_id;
-  INSERT INTO "payment" ("paymentId", "paymentType", "paymentDate", "currencyCode", "totalAmount", "bankAccount", "customerId", "companyId", "createdBy")
-    VALUES ('SOURCE', 'Receipt', DATE '2026-09-06', 'USD', 0.01, f.sales_id, customer_id, f.company_ids[1], 'system') RETURNING id INTO source_id;
-  INSERT INTO "payment" ("paymentId", "paymentType", "paymentDate", "currencyCode", "totalAmount", "bankAccount", "customerId", "companyId", "createdBy")
-    VALUES ('OTHER-SOURCE', 'Receipt', DATE '2026-09-06', 'USD', 0.01, other.sales_id, other_customer_id, other.company_ids[1], 'system') RETURNING id INTO other_source_id;
-  INSERT INTO "memo" ("memoId", direction, "memoDate", "currencyCode", amount, "customerId", "companyId", "createdBy")
-    VALUES ('TARGET', 'Debit', DATE '2026-09-07', 'USD', 0.01, customer_id, f.company_ids[1], 'system') RETURNING id INTO target_id;
-  INSERT INTO "memo" ("memoId", direction, "memoDate", "currencyCode", amount, "customerId", "companyId", "createdBy")
-    VALUES ('MEMO-SOURCE', 'Credit', DATE '2026-09-07', 'USD', 0.01, customer_id, f.company_ids[1], 'system') RETURNING id INTO memo_source_id;
-
-  -- This is the terminal 0.01 document-currency application at rate 16000:
-  -- internal base principal rounds to zero, but source principal must survive.
-  INSERT INTO "invoiceSettlement" ("paymentId", "sourcePaymentId", "targetMemoId", "appliedAmount", "sourceAmount",
-    "sourceExchangeRate", "targetExchangeRate", "appliedDate", "companyId", "createdBy", "fxGainLossAmount")
-  VALUES (owner_id, source_id, target_id, 0, 0.01, 16000, 16000, DATE '2026-09-07', f.company_ids[1], 'system', 0)
-  RETURNING id INTO settlement_id;
-  ASSERT (SELECT "appliedAmount" = 0 AND "sourceAmount" = 0.01 FROM "invoiceSettlement" WHERE id = settlement_id),
-    'Source-only minor-unit allocation must survive base rounding';
-  UPDATE "invoiceSettlement" SET "fxGainLossAmount" = -0.00001 WHERE id = settlement_id;
-  ASSERT (SELECT "fxGainLossAmount" = -0.00001 FROM "invoiceSettlement" WHERE id = settlement_id),
-    'Signed FX snapshot must be writable';
-  RAISE NOTICE 'PASS source-only minor-unit allocation and writable FX snapshot';
-
-  BEGIN
-    UPDATE "invoiceSettlement" SET "sourcePaymentId" = other_source_id WHERE id = settlement_id;
-    ASSERT false, 'Cross-company source payment must be refused';
-  EXCEPTION WHEN foreign_key_violation THEN
-    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'invoiceSettlement_sourcePaymentId_companyId_fkey', 'Expected same-company funding FK';
-  END;
-  BEGIN
-    UPDATE "invoiceSettlement" SET "sourcePaymentId" = owner_id WHERE id = settlement_id;
-    ASSERT false, 'A payment must not fund itself as prior credit';
-  EXCEPTION WHEN check_violation THEN
-    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'invoiceSettlement_sourcePaymentId_check', 'Expected self-funding constraint';
-  END;
-  BEGIN
-    UPDATE "invoiceSettlement" SET "paymentId" = NULL, "memoId" = memo_source_id WHERE id = settlement_id;
-    ASSERT false, 'Memo-owned allocation must not name a source payment';
-  EXCEPTION WHEN check_violation THEN
-    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'invoiceSettlement_sourcePaymentId_check', 'Expected payment-only funding constraint';
-  END;
-  BEGIN
-    DELETE FROM "payment" WHERE id = source_id AND "companyId" = f.company_ids[1];
-    ASSERT false, 'Referenced funding payment must be retained';
-  EXCEPTION WHEN foreign_key_violation THEN
-    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'invoiceSettlement_sourcePaymentId_companyId_fkey', 'Expected funding-source delete protection';
-  END;
-  RAISE NOTICE 'PASS same-company FK, self-funding, payment owner, and source deletion guards';
-
-  FOREACH invalid_amount IN ARRAY ARRAY[-0.01::numeric, 'NaN'::numeric, 'Infinity'::numeric, '-Infinity'::numeric] LOOP
-    BEGIN
-      -- Positive appliedAmount isolates sourceAmount validation from the
-      -- zero-components check, proving exactly the constraint under test.
-      UPDATE "invoiceSettlement" SET "appliedAmount" = 1, "sourceAmount" = invalid_amount WHERE id = settlement_id;
-      ASSERT false, 'Invalid source amount accepted: ' || invalid_amount;
-    EXCEPTION WHEN check_violation THEN
-      GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-      ASSERT constraint_name = 'invoiceSettlement_sourceAmount_check', 'Expected source-amount constraint for ' || invalid_amount;
-    END;
-  END LOOP;
-  BEGIN
-    UPDATE "invoiceSettlement" SET "sourceAmount" = 0 WHERE id = settlement_id;
-    ASSERT false, 'An entirely empty allocation must still be refused';
-  EXCEPTION WHEN check_violation THEN
-    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'invoiceSettlement_anyComponent_check', 'Expected empty-allocation constraint';
-  END;
-  UPDATE "invoiceSettlement" SET "sourcePaymentId" = NULL WHERE id = settlement_id;
-  ASSERT (SELECT "sourcePaymentId" IS NULL AND "sourceAmount" = 0.01 FROM "invoiceSettlement" WHERE id = settlement_id),
-    'Current cash may supply a source-only minor-unit allocation';
-  RAISE NOTICE 'PASS finite/nonnegative source amounts, empty allocation refusal, and current-cash source';
-  RAISE NOTICE 'ALL SHIPPING BACKFILL AND SETTLEMENT SCHEMA SCENARIOS PASSED';
-END;
-$settlement_cases$;
 
 ROLLBACK;

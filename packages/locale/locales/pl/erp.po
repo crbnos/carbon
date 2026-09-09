@@ -1746,7 +1746,7 @@ msgid "Applied To"
 msgstr "Zastosowano do"
 
 msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
-msgstr "Zastosowane kwoty, rabaty i kwoty spisane są wyrażone w walucie bazowej firmy ({baseCurrency})."
+msgstr "Kwoty rozliczeń, rabatów i spisań sald są wyrażone w walucie bazowej firmy ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Dotyczy"
@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Konta kredytowe używane do absorpcji kosztów produkcji do produkcji w toku"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "Kwoty po stronie Ma są wyrażone w walucie bazowej firmy ({currency}). Zapisy po stronie Ma zaczynają obowiązywać po zaksięgowaniu tej płatności."
+msgstr "Kwoty uznań są wyrażone w walucie bazowej firmy ({currency}). Uznania są uwzględniane po zaksięgowaniu tej płatności."
 
 msgid "Credit Memo"
 msgstr "Faktura korygująca"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "Płatności"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Płatności i zapisy po stronie Ma rozliczone z tą fakturą. Rozliczone kwoty i kursy walut są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
+msgstr "Płatności i uznania rozliczone z tą fakturą. Kwoty rozliczeń i różnice kursowe są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
 
 msgid "PDF"
 msgstr "PDF"
@@ -13418,7 +13418,7 @@ msgid "Revenue"
 msgstr "Przychody ze sprzedaży"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr "Konto przychodów ze sprzedaży za wysyłkę naliczaną klientom"
+msgstr "Konto przychodów z opłat za wysyłkę pobieranych od klientów"
 
 msgid "Revenue and expenses over a period"
 msgstr "Przychody ze sprzedaży i wydatki za okres"
@@ -14651,7 +14651,7 @@ msgid "Shipping Notes"
 msgstr "Notatki wysyłki"
 
 msgid "Shipping Revenue"
-msgstr "Przychody ze sprzedaży wysyłkowej"
+msgstr "Przychody z opłat za wysyłkę"
 
 msgid "Shipping Supplier"
 msgstr "Dostawca wysyłki"

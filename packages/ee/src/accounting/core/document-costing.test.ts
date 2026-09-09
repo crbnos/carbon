@@ -54,7 +54,19 @@ function makeDb(tables: {
       },
       orderBy: () => builder,
       async execute() {
-        if (table === "journalLine") return tables.journalLine ?? [];
+        if (table === "journalLine")
+          return (
+            tables.journalLine ?? [
+              {
+                id: "control",
+                accountId: "ap",
+                amount: 100,
+                description: "Accounts Payable",
+                documentLineReference: null,
+                accountClass: "Liability"
+              }
+            ]
+          );
         if (table === "journalLineDimension")
           return tables.journalLineDimension ?? [];
         if (table === "purchaseOrderLine")
@@ -122,8 +134,7 @@ describe("loadBillCostingLines", () => {
 
     const result = await loadBillCostingLines(db, {
       companyId: "company-1",
-      billId: "pi_1",
-      payablesAccountId: "acct_ap"
+      billId: "pi_1"
     });
 
     expect(result.currencyCode).toBe("USD");
@@ -179,8 +190,7 @@ describe("loadBillCostingLines", () => {
 
     const result = await loadBillCostingLines(db, {
       companyId: "company-1",
-      billId: "pi_1",
-      payablesAccountId: "acct_ap"
+      billId: "pi_1"
     });
 
     expect(result.lines).toEqual([
@@ -211,6 +221,14 @@ describe("loadBillCostingLines", () => {
           description: "GR/IR",
           documentLineReference: null,
           accountClass: "Asset"
+        },
+        {
+          id: "ap",
+          accountId: "ap",
+          amount: 100,
+          description: "Accounts Payable",
+          documentLineReference: null,
+          accountClass: "Liability"
         }
       ],
       journalLineDimension: [
@@ -220,8 +238,7 @@ describe("loadBillCostingLines", () => {
 
     const result = await loadBillCostingLines(db, {
       companyId: "company-1",
-      billId: "pi_1",
-      payablesAccountId: "acct_ap"
+      billId: "pi_1"
     });
 
     expect(result.lines[0]?.dimensions).toEqual([
@@ -229,21 +246,18 @@ describe("loadBillCostingLines", () => {
     ]);
   });
 
-  it("returns no lines when the bill has no posted journal", async () => {
-    const db = makeDb({
-      purchaseInvoice: { currencyCode: "EUR", exchangeRate: 1.1 },
-      journalLine: []
+  it("warns when the bill has no posted journal", async () => {
+    await expect(
+      loadBillCostingLines(
+        makeDb({
+          purchaseInvoice: { currencyCode: "EUR", exchangeRate: 1.1 },
+          journalLine: []
+        }),
+        { companyId: "company-1", billId: "pi_1" }
+      )
+    ).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
     });
-
-    const result = await loadBillCostingLines(db, {
-      companyId: "company-1",
-      billId: "pi_1",
-      payablesAccountId: "acct_ap"
-    });
-
-    expect(result.lines).toEqual([]);
-    expect(result.currencyCode).toBe("EUR");
-    expect(result.exchangeRate).toBe(1.1);
   });
 });
 
@@ -379,7 +393,7 @@ describe("authoritative bill metadata", () => {
         ],
         purchaseInvoiceDelivery: { supplierShippingCost: 4 }
       }),
-      { companyId: "company-1", billId: "pi-1", payablesAccountId: null }
+      { companyId: "company-1", billId: "pi-1" }
     );
     expect(result).toMatchObject({
       documentTotal: 80,
@@ -401,7 +415,7 @@ describe("authoritative bill metadata", () => {
           purchaseInvoice: { currencyCode: "EUR", exchangeRate: 0.8 },
           ...overrides
         }),
-        { companyId: "company-1", billId: "pi-1", payablesAccountId: null }
+        { companyId: "company-1", billId: "pi-1" }
       )
     ).rejects.toThrow();
   });
@@ -414,7 +428,94 @@ it("does not borrow currency precision from another company group", async () => 
         purchaseInvoice: { currencyCode: "EUR", exchangeRate: 0.8 },
         foreignCurrencyOnly: true
       }),
-      { companyId: "company-1", billId: "pi-1", payablesAccountId: null }
+      { companyId: "company-1", billId: "pi-1" }
     )
   ).rejects.toThrow(/precision/);
+});
+
+describe("original bill control provenance", () => {
+  it.each([
+    "Accounts Payable",
+    "IC Payables"
+  ])("excludes original %s after a default change without dropping a costing row on the same account", async (description) => {
+    const result = await loadBillCostingLines(
+      makeDb({
+        purchaseInvoice: { currencyCode: "EUR", exchangeRate: 1.1 },
+        purchaseInvoiceLine: [
+          {
+            quantity: 1,
+            supplierUnitPrice: 110,
+            supplierShippingCost: 0,
+            supplierTaxAmount: 0
+          }
+        ],
+        journalLine: [
+          {
+            id: "cost",
+            accountId: "old-ap",
+            amount: -100,
+            description: "Explicit account charge",
+            documentLineReference: null,
+            accountClass: "Liability"
+          },
+          {
+            id: "ap",
+            accountId: "old-ap",
+            amount: 100,
+            description,
+            documentLineReference: null,
+            accountClass: "Liability"
+          }
+        ]
+      }),
+      { companyId: "company-1", billId: "pi_1" }
+    );
+    expect(result.lines.map((line) => [line.id, line.amount])).toEqual([
+      ["cost", 100]
+    ]);
+    expect(toTransactionCurrencyLines(result.lines, result)[0]?.amount).toBe(
+      110
+    );
+  });
+  it.each(
+    [
+      [],
+      [
+        {
+          id: "cost",
+          accountId: "expense",
+          amount: 100,
+          description: "Cost",
+          documentLineReference: null,
+          accountClass: "Expense"
+        }
+      ],
+      [
+        {
+          id: "ap",
+          accountId: null,
+          amount: 100,
+          description: "Accounts Payable",
+          documentLineReference: null,
+          accountClass: null
+        }
+      ]
+    ].map((rows) => [rows])
+  )("reports missing original posting metadata before numeric reconciliation", async (journalLine) => {
+    await expect(
+      loadBillCostingLines(
+        makeDb({
+          purchaseInvoice: { currencyCode: "USD", exchangeRate: 1 },
+          journalLine
+        }),
+        { companyId: "company-1", billId: "pi_1" }
+      )
+    ).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        metadata: { billId: "pi_1" }
+      }
+    });
+  });
 });

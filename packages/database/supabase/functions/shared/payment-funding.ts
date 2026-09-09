@@ -212,3 +212,130 @@ export function allocatePaymentFunding(input: {
     sourceRemainders
   };
 }
+
+export type SettlementEffectiveness = {
+  paymentId: string | null;
+  memoId: string | null;
+  appliedViaPaymentId: string | null;
+  paymentStatus: string | null;
+  memoStatus: string | null;
+  viaStatus: string | null;
+};
+
+/** Parent status determines whether a persisted settlement has taken effect. */
+export function isEffectiveSettlement(row: SettlementEffectiveness): boolean {
+  return row.paymentId
+    ? row.paymentStatus === "Posted"
+    : Boolean(row.memoId && row.memoStatus === "Posted" &&
+      (!row.appliedViaPaymentId || row.viaStatus === "Posted"));
+}
+
+export type SettlementBalanceRow = {
+  targetSalesInvoiceId: string | null;
+  targetPurchaseInvoiceId: string | null;
+  sourceAmount: number | null;
+  appliedAmount: number;
+  discountAmount: number;
+  writeOffAmount: number;
+};
+
+function sourcePrincipal(value: number | null): number {
+  if (value === null) throw new Error("Settlement is missing its document principal");
+  return nonnegativeAmount(Number(value), "Settlement document principal");
+}
+
+/** Accumulate first; each adjustment is rounded at its document boundary. */
+export function reduceInvoiceSettlements(
+  rows: readonly Pick<SettlementBalanceRow, "sourceAmount" | "appliedAmount" | "discountAmount" | "writeOffAmount">[],
+  exchangeRate: number,
+  decimals: number
+): { document: number; base: number } {
+  let document = 0;
+  let base = 0;
+  for (const row of rows) {
+    const adjustments = nonnegativeAmount(Number(row.discountAmount), "Settlement discount") +
+      nonnegativeAmount(Number(row.writeOffAmount), "Settlement write-off");
+    document += sourcePrincipal(row.sourceAmount) + toDocumentAmount(adjustments, exchangeRate, decimals);
+    base += nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount") + adjustments;
+  }
+  return { document: toDocumentAmount(document, 1, decimals), base: round(base) };
+}
+
+/** Original controls use signed natural balances for both AR and AP. */
+export function invoiceRemainingAmounts(
+  invoice: { id: string | null; totalAmount: number | null; exchangeRate: number | null },
+  rows: readonly SettlementBalanceRow[],
+  controlAmounts: ReadonlyMap<string, number>,
+  decimals: number,
+  isAR: boolean
+): { remainingDocument: number; remainingBase: number } {
+  if (!invoice.id || invoice.totalAmount == null || invoice.exchangeRate == null) {
+    throw new Error("Invoice identity, total or exchange rate is missing");
+  }
+  const rate = Number(invoice.exchangeRate);
+  const consumed = reduceInvoiceSettlements(rows.filter((row) =>
+    (isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId) === invoice.id
+  ), rate, decimals);
+  const originalDocument = toDocumentAmount(Number(invoice.totalAmount), rate, decimals);
+  const remainingDocument = toDocumentAmount(originalDocument - consumed.document, 1, decimals);
+  const originalBase = controlAmounts.get(invoice.id) ?? round(Number(invoice.totalAmount));
+  const remainingBase = round(originalBase - consumed.base);
+  if (!Number.isFinite(remainingBase) || remainingDocument < 0 || remainingBase < 0) {
+    throw new Error("Invoice already has excessive settlements or an invalid carrying balance");
+  }
+  return { remainingDocument, remainingBase };
+}
+
+export type FundingPaymentRow = {
+  id: string;
+  totalAmount: number;
+  exchangeRate: number;
+  postingDate: string | null;
+  paymentDate: string;
+  currencyCode: string;
+};
+export type FundingConsumptionRow = {
+  paymentId: string | null;
+  sourcePaymentId: string | null;
+  sourceAmount: number | null;
+  appliedAmount: number;
+  fxGainLossAmount: number | null;
+};
+
+/** Callers select effective payments or reserved memos before reducing money. */
+export function remainingFundingSources(
+  payments: readonly FundingPaymentRow[],
+  consumption: readonly FundingConsumptionRow[],
+  decimals: ReadonlyMap<string, number>,
+  isAR: boolean
+): FundingSource[] {
+  const consumed = new Map<string, { document: number; base: number }>();
+  for (const row of consumption) {
+    const sourceId = row.sourcePaymentId ?? row.paymentId;
+    if (!sourceId) continue;
+    const current = consumed.get(sourceId) ?? { document: 0, base: 0 };
+    current.document += sourcePrincipal(row.sourceAmount);
+    const fx = Number(row.fxGainLossAmount ?? 0);
+    if (!Number.isFinite(fx)) throw new Error("Settlement FX must be finite");
+    current.base += nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount") + (isAR ? 1 : -1) * fx;
+    consumed.set(sourceId, current);
+  }
+  return payments.map((payment) => {
+    const precision = decimals.get(payment.currencyCode);
+    if (precision == null) throw new Error(`Currency ${payment.currencyCode} requires configured decimal places`);
+    const use = consumed.get(payment.id);
+    const total = nonnegativeAmount(Number(payment.totalAmount), "Funding document total");
+    const remainingDocument = toDocumentAmount(total - (use?.document ?? 0), 1, precision);
+    const remainingBase = round(toBaseAmount(total, Number(payment.exchangeRate)) - (use?.base ?? 0));
+    if (remainingDocument < 0 || remainingBase < 0 || (remainingDocument === 0 && remainingBase !== 0)) {
+      throw new Error(`Invalid remaining funding balance for payment ${payment.id}`);
+    }
+    return {
+      paymentId: payment.id,
+      postingDate: payment.postingDate ?? payment.paymentDate,
+      exchangeRate: Number(payment.exchangeRate),
+      remainingDocument,
+      remainingBase
+    };
+  }).filter((payment) => payment.remainingDocument > 0);
+}

@@ -121,19 +121,12 @@ export function resolveQboInvoiceTax(args: {
     .map(([, match]) => match);
   if (isUS && new Set(nonzero.map((match) => match.code.Id)).size > 1)
     fail("US invoices support only one transaction tax code");
-  const marker = (taxable: boolean): Qbo.Ref => {
-    // These are provider catalog identities, not synthesized numeric tax IDs.
-    const matches = codes.filter(
-      (code) =>
-        code.Id === (taxable ? "TAX" : "NON") && code.Taxable !== !taxable
-    );
-    if (matches.length !== 1)
-      fail(
-        `Missing or ambiguous US ${taxable ? "taxable" : "non-taxable"} line marker`,
-        matches
-      );
-    return { value: matches[0]!.Id };
-  };
+  // US line refs are protocol markers, not query-returned TaxCode IDs.
+  // Intuit's SDK quickstart documents TAX/NON; transaction rates still come
+  // from the actual catalog resolved above.
+  const marker = (taxable: boolean): Qbo.Ref => ({
+    value: taxable ? "TAX" : "NON"
+  });
   const lineTaxCodeRefs = new Map<string, Qbo.Ref>();
   const nativeByRate = new Map<
     string,

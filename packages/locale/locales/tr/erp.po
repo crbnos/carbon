@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "Ödemeler"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve döviz kurları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
+msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve kur farkları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
 
 msgid "PDF"
 msgstr "PDF"

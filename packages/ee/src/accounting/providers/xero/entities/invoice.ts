@@ -13,6 +13,10 @@ import {
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
+  loadSalesInvoices,
+  requirePostedShippingAccountId
+} from "../../../core/sales-invoice-source";
+import {
   type Accounting,
   BaseEntitySyncer,
   type ShouldSyncContext
@@ -20,62 +24,10 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import { assertXeroMoneyPrecision } from "../serialize";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
-
-// Type for rows returned from sales invoice queries with line joins
-type InvoiceRow = {
-  id: string;
-  invoiceId: string;
-  companyId: string;
-  customerId: string;
-  status:
-    | "Draft"
-    | "Pending"
-    | "Submitted"
-    | "Partially Paid"
-    | "Paid"
-    | "Overdue"
-    | "Voided"
-    | "Credit Note Issued"
-    | "Return";
-  currencyCode: string;
-  exchangeRate: number;
-  dateIssued: string | null;
-  dateDue: string | null;
-  datePaid: string | null;
-  customerReference: string | null;
-  subtotal: number;
-  totalTax: number;
-  totalDiscount: number;
-  totalAmount: number;
-  balance: number;
-  headerShippingCost: number | null;
-  baseCurrencyCode: string;
-  baseCurrencyDecimalPlaces: number | null;
-  currencyDecimalPlaces: number | null;
-  updatedAt: string | null;
-};
-
-type InvoiceLineRow = {
-  id: string;
-  invoiceId: string;
-  invoiceLineType: string;
-  itemId: string | null;
-  description: string | null;
-  quantity: number;
-  /** BASE currency, as stored. */
-  unitPrice: number;
-  /** Document-currency mirror (unitPrice * exchangeRate). */
-  convertedUnitPrice: number | null;
-  shippingCost: number | null;
-  addOnCost: number | null;
-  nonTaxableAddOnCost: number | null;
-  taxPercent: number;
-  // For item code lookup
-  itemReadableIdWithRevision: string | null;
-};
 
 // Status mapping: Carbon -> Xero
 const CARBON_TO_XERO_STATUS: Record<
@@ -120,6 +72,16 @@ export function buildXeroSalesInvoiceLines(args: {
   salesAccountCode: string;
   shippingAccountCode: string | null;
 }): Xero.InvoiceLineItem[] {
+  assertXeroMoneyPrecision(
+    args.document.subtotal,
+    args.document.totalTax,
+    args.document.totalAmount,
+    args.document.balance,
+    ...args.document.components.flatMap((component) => [
+      component.netAmount,
+      component.taxAmount
+    ])
+  );
   return args.document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
@@ -133,10 +95,21 @@ export function buildXeroSalesInvoiceLines(args: {
         message: `Cannot sync invoice: missing ${shipping ? "shipping revenue" : "sales"} account mapping`,
         metadata: { invoiceId: args.document.invoiceId }
       });
+    if (Math.abs(component.taxAmount) > Math.abs(component.netAmount)) {
+      throw new Error(
+        "Xero tax override cannot exceed its monetary line unit amount"
+      );
+    }
+    // A monetary unit preserves exact net/native tax even for bulk quantities
+    // or source unit prices finer than Xero supports. Keep the source detail.
+    const description =
+      component.quantity === 1 && component.unitAmount === component.netAmount
+        ? component.description
+        : `${component.description} (${component.quantity} × ${component.unitAmount} ${args.document.currencyCode})`;
     return {
-      Description: component.description,
-      Quantity: component.quantity,
-      UnitAmount: component.unitAmount,
+      Description: description,
+      Quantity: 1,
+      UnitAmount: component.netAmount,
       LineAmount: component.netAmount,
       TaxAmount: component.taxAmount,
       TaxType: component.taxPercent !== 0 ? "OUTPUT" : "NONE",
@@ -154,7 +127,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   "UpdatedDateUTC"
 > {
   private salesAccountCodePromise?: Promise<string>;
-  private shippingAccountCodePromise?: Promise<string>;
+  private shippingAccountCodesPromise?: ReturnType<typeof loadAccountCodesById>;
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
@@ -210,57 +183,27 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     return this.salesAccountCodePromise;
   }
 
-  private getShippingAccountCode(): Promise<string> {
-    if (!this.shippingAccountCodePromise)
-      this.shippingAccountCodePromise = (async () => {
-        const defaults = await this.database
-          .selectFrom("accountDefault")
-          .select("salesShippingRevenueAccount")
-          .where("companyId", "=", this.companyId)
-          .executeTakeFirst();
-        const accountId = defaults?.salesShippingRevenueAccount;
-        const account = accountId
-          ? await this.database
-              .selectFrom("account as a")
-              .innerJoin("company as c", "c.companyGroupId", "a.companyGroupId")
-              .select(["a.id", "a.class", "a.active", "a.isGroup"])
-              .where("c.id", "=", this.companyId)
-              .where("a.id", "=", accountId)
-              .executeTakeFirst()
-          : undefined;
-        if (
-          !account ||
-          account.class !== "Revenue" ||
-          !account.active ||
-          account.isGroup
-        ) {
-          throw new JournalEntrySyncError({
-            errorCode: "UNMAPPED_ACCOUNTS",
-            warning: true,
-            message:
-              "Cannot sync invoice: Shipping Revenue requires an active Revenue leaf in the company group",
-            metadata: {
-              missingDefaults: ["salesShippingRevenueAccount"],
-              accountId
-            }
-          });
-        }
-        const mappings = await loadAccountCodesById(this.database, {
-          companyId: this.companyId,
-          integration: this.provider.id
-        });
-        const code = mappings.get(accountId!);
-        if (!code)
-          throw new JournalEntrySyncError({
-            errorCode: "UNMAPPED_ACCOUNTS",
-            warning: true,
-            message:
-              "Cannot sync invoice: Shipping Revenue has no Xero account mapping",
-            metadata: { unmappedAccountIds: [accountId] }
-          });
-        return code;
-      })();
-    return this.shippingAccountCodePromise;
+  private async getShippingAccountCode(
+    local: Accounting.SalesInvoice
+  ): Promise<string> {
+    const id = requirePostedShippingAccountId(local);
+    this.shippingAccountCodesPromise ??= loadAccountCodesById(this.database, {
+      companyId: this.companyId,
+      integration: this.provider.id
+    }).catch((error) => {
+      this.shippingAccountCodesPromise = undefined;
+      throw error;
+    });
+    const code = (await this.shippingAccountCodesPromise).get(id);
+    if (!code)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message:
+          "Cannot sync invoice: original Shipping Revenue account has no Xero mapping",
+        metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
+      });
+    return code;
   }
 
   // =================================================================
@@ -320,191 +263,10 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     return this.fetchInvoicesByIds(ids);
   }
 
-  private async fetchInvoicesByIds(
+  private fetchInvoicesByIds(
     ids: string[]
   ): Promise<Map<string, Accounting.SalesInvoice>> {
-    if (ids.length === 0) return new Map();
-
-    // Fetch invoice headers
-    const invoiceRows = await this.database
-      .selectFrom("salesInvoice")
-      // `balance` is derived (totalAmount - posted payment applications) and
-      // lives only on the `salesInvoices` view now, not the base table.
-      .leftJoin("salesInvoices", (join) =>
-        join
-          .onRef("salesInvoices.id", "=", "salesInvoice.id")
-          .onRef("salesInvoices.companyId", "=", "salesInvoice.companyId")
-      )
-      .innerJoin("company", "company.id", "salesInvoice.companyId")
-      .leftJoin("salesInvoiceShipment", (join) =>
-        join
-          .onRef("salesInvoiceShipment.id", "=", "salesInvoice.id")
-          .onRef(
-            "salesInvoiceShipment.companyId",
-            "=",
-            "salesInvoice.companyId"
-          )
-      )
-      .leftJoin("currency as documentCurrency", (join) =>
-        join
-          .onRef("documentCurrency.code", "=", "salesInvoice.currencyCode")
-          .onRef(
-            "documentCurrency.companyGroupId",
-            "=",
-            "company.companyGroupId"
-          )
-      )
-      .leftJoin("currency as baseCurrency", (join) =>
-        join
-          .onRef("baseCurrency.code", "=", "company.baseCurrencyCode")
-          .onRef("baseCurrency.companyGroupId", "=", "company.companyGroupId")
-      )
-      .select([
-        "salesInvoice.id",
-        "salesInvoice.invoiceId",
-        "salesInvoice.companyId",
-        "salesInvoice.customerId",
-        "salesInvoice.status",
-        "salesInvoice.currencyCode",
-        "salesInvoice.exchangeRate",
-        "salesInvoice.dateIssued",
-        "salesInvoice.dateDue",
-        "salesInvoice.datePaid",
-        "salesInvoice.customerReference",
-        "salesInvoices.subtotal",
-        "salesInvoices.totalTax",
-        "salesInvoice.totalDiscount",
-        "salesInvoices.totalAmount",
-        "salesInvoices.balance",
-        "salesInvoiceShipment.shippingCost as headerShippingCost",
-        "company.baseCurrencyCode",
-        "baseCurrency.decimalPlaces as baseCurrencyDecimalPlaces",
-        "documentCurrency.decimalPlaces as currencyDecimalPlaces",
-        "salesInvoice.updatedAt"
-      ])
-      .where("salesInvoice.id", "in", ids)
-      .where("salesInvoice.companyId", "=", this.companyId)
-      .execute();
-
-    if (invoiceRows.length === 0) return new Map();
-
-    // Fetch invoice lines with item codes
-    const lineRows = await this.database
-      .selectFrom("salesInvoiceLine")
-      .leftJoin("item", (join) =>
-        join
-          .onRef("item.id", "=", "salesInvoiceLine.itemId")
-          .onRef("item.companyId", "=", "salesInvoiceLine.companyId")
-      )
-      .select([
-        "salesInvoiceLine.id",
-        "salesInvoiceLine.invoiceId",
-        "salesInvoiceLine.invoiceLineType",
-        "salesInvoiceLine.itemId",
-        "salesInvoiceLine.description",
-        "salesInvoiceLine.quantity",
-        "salesInvoiceLine.unitPrice",
-        "salesInvoiceLine.convertedUnitPrice",
-        "salesInvoiceLine.shippingCost",
-        "salesInvoiceLine.addOnCost",
-        "salesInvoiceLine.nonTaxableAddOnCost",
-        "salesInvoiceLine.taxPercent",
-        "item.readableIdWithRevision as itemReadableIdWithRevision"
-      ])
-      .where("salesInvoiceLine.companyId", "=", this.companyId)
-      .where(
-        "salesInvoiceLine.invoiceId",
-        "in",
-        invoiceRows.map((r) => r.id)
-      )
-      .execute();
-
-    // Group lines by invoice ID
-    const linesByInvoiceId = new Map<string, InvoiceLineRow[]>();
-    for (const line of lineRows as InvoiceLineRow[]) {
-      const existing = linesByInvoiceId.get(line.invoiceId) ?? [];
-      existing.push(line);
-      linesByInvoiceId.set(line.invoiceId, existing);
-    }
-
-    // Transform to Accounting.SalesInvoice
-    const result = new Map<string, Accounting.SalesInvoice>();
-    for (const row of invoiceRows as InvoiceRow[]) {
-      if (
-        !row.baseCurrencyCode ||
-        !row.currencyCode ||
-        row.baseCurrencyDecimalPlaces == null ||
-        row.currencyDecimalPlaces == null
-      ) {
-        throw new Error(
-          `Invoice ${row.id} is missing authoritative currency precision metadata`
-        );
-      }
-      if (
-        row.subtotal == null ||
-        row.totalTax == null ||
-        row.totalAmount == null ||
-        row.balance == null
-      ) {
-        throw new Error(
-          `Invoice ${row.id} is missing authoritative source view totals`
-        );
-      }
-      const lines = linesByInvoiceId.get(row.id) ?? [];
-
-      result.set(row.id, {
-        id: row.id,
-        invoiceId: row.invoiceId,
-        companyId: row.companyId,
-        customerId: row.customerId,
-        customerExternalId: null, // Will be resolved during mapToRemote
-        status: row.status,
-        currencyCode: row.currencyCode,
-        baseCurrencyCode: row.baseCurrencyCode,
-        baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
-        currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
-        headerShippingCost: Number(row.headerShippingCost ?? 0),
-        exchangeRate: Number(row.exchangeRate),
-        dateIssued: row.dateIssued,
-        dateDue: row.dateDue,
-        datePaid: row.datePaid,
-        customerReference: row.customerReference,
-        subtotal: Number(row.subtotal),
-        totalTax: Number(row.totalTax),
-        totalDiscount: Number(row.totalDiscount) || 0,
-        totalAmount: Number(row.totalAmount),
-        balance: Number(row.balance),
-        lines: lines.map((line) => {
-          const quantity = Number(line.quantity) || 0;
-          const unitPrice = Number(line.unitPrice) || 0;
-          const taxPercent = Number(line.taxPercent) || 0;
-          const convertedUnitPrice =
-            line.convertedUnitPrice === null ||
-            line.convertedUnitPrice === undefined
-              ? null
-              : Number(line.convertedUnitPrice);
-          return {
-            id: line.id,
-            invoiceLineType: line.invoiceLineType,
-            itemId: line.itemId,
-            itemCode: line.itemReadableIdWithRevision,
-            description: line.description,
-            quantity,
-            unitPrice,
-            shippingCost: Number(line.shippingCost ?? 0),
-            addOnCost: Number(line.addOnCost ?? 0),
-            nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
-            convertedUnitPrice,
-            taxPercent,
-            lineAmount: quantity * unitPrice
-          };
-        }),
-        updatedAt: row.updatedAt ?? datetime.timestamp(),
-        raw: row
-      });
-    }
-
-    return result;
+    return loadSalesInvoices(this.database, { companyId: this.companyId, ids });
   }
 
   // =================================================================
@@ -557,7 +319,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     );
     const salesAccountCode = hasSales ? await this.getSalesAccountCode() : "";
     const shippingAccountCode = hasShipping
-      ? await this.getShippingAccountCode()
+      ? await this.getShippingAccountCode(local)
       : null;
     const lineItems = buildXeroSalesInvoiceLines({
       document,
@@ -607,13 +369,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         document.decimalPlaces
       ),
       CurrencyCode: local.currencyCode,
-      // Xero's CurrencyRate is [invoice currency] PER [base currency] -- the
-      // same direction Carbon stores exchangeRate in, so it passes through
-      // unchanged. Inverting it earns Xero's "inverse rate" warning and books
-      // the base amounts wrong. Omit it on base-currency invoices: Xero calls
-      // an explicit rate of 1 redundant and warns on a 1 that reaches an FX
-      // document.
-      CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined
+      // Xero stores foreign per base too. A foreign negotiated 1:1 must be
+      // explicit; omission would let Xero choose its own market rate.
+      CurrencyRate:
+        local.currencyCode !== local.baseCurrencyCode
+          ? local.exchangeRate
+          : undefined
     };
   }
 
@@ -715,7 +476,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
 
     const result = await this.xeroProvider.request<{
       Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices", { body: JSON.stringify({ Invoices: invoices }) });
+    }>("POST", "/Invoices?unitdp=4", {
+      body: JSON.stringify({ Invoices: invoices })
+    });
 
     if (result.error) {
       throwXeroApiError(
@@ -757,7 +520,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
 
     const response = await this.xeroProvider.request<{
       Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices", { body: JSON.stringify({ Invoices: invoices }) });
+    }>("POST", "/Invoices?unitdp=4", {
+      body: JSON.stringify({ Invoices: invoices })
+    });
 
     if (response.error) {
       throwXeroApiError("batch upsert invoices", response);

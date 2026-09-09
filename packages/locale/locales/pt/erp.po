@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "Pagamentos"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Pagamentos e créditos aplicados a esta fatura. Os valores aplicados e as taxas de câmbio estão na moeda base da empresa. Clique em uma linha para abrir o documento de origem."
+msgstr "Pagamentos e créditos aplicados a esta fatura. Os valores aplicados e de variação cambial estão na moeda base da empresa. Clique em uma linha para abrir o documento de origem."
 
 msgid "PDF"
 msgstr "PDF"

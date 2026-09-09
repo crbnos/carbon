@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Conti di credito utilizzati quando i costi di produzione vengono assorbiti nel WIP"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "Gli importi in avere sono espressi nella valuta di base dell'azienda ({currency}). Gli accrediti hanno effetto quando questo pagamento viene registrato."
+msgstr "Gli importi dei crediti sono espressi nella valuta di base dell'azienda ({currency}). I crediti vengono applicati quando questo pagamento viene registrato."
 
 msgid "Credit Memo"
 msgstr "Nota di Credito"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "Pagamenti"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Pagamenti e accrediti applicati a questa fattura. Gli importi applicati e i tassi di cambio sono espressi nella valuta di base dell'azienda. Fai clic su una riga per aprire il documento di origine."
+msgstr "Pagamenti e crediti applicati a questa fattura. Gli importi applicati e le differenze di cambio sono espressi nella valuta di base dell'azienda. Fai clic su una riga per aprire il documento di origine."
 
 msgid "PDF"
 msgstr "PDF"

@@ -18,13 +18,24 @@ vi.mock("../accounting/accounting.ee.service", () => ({}));
 import * as service from "./invoicing.service";
 
 type Row = Record<string, any>;
-function clientFor(tables: Record<string, Row[]>) {
-  const calls: { table: string; filters: [string, unknown][] }[] = [];
+function clientFor(
+  tables: Record<string, Row[]>,
+  failedPages: Record<string, number> = {}
+) {
+  const calls: {
+    table: string;
+    filters: [string, unknown][];
+    idFilters: unknown[][];
+  }[] = [];
   return {
     calls,
     client: {
       from(table: string) {
-        const call = { table, filters: [] as [string, unknown][] };
+        const call = {
+          table,
+          filters: [] as [string, unknown][],
+          idFilters: [] as unknown[][]
+        };
         calls.push(call);
         let result = tables[table] ?? [];
         let offset = 0;
@@ -47,6 +58,7 @@ function clientFor(tables: Record<string, Row[]>) {
             return q;
           },
           in: (key: string, values: unknown[]) => {
+            call.idFilters.push(values);
             result = result.filter(
               (r) => r[key] === undefined || values.includes(r[key])
             );
@@ -56,8 +68,14 @@ function clientFor(tables: Record<string, Row[]>) {
             Promise.resolve({ data: result[0] ?? null, error: null }),
           then: (done: any) =>
             Promise.resolve({
-              data: result.slice(offset, end + 1),
-              error: null
+              data:
+                failedPages[table] === offset
+                  ? null
+                  : result.slice(offset, end + 1),
+              error:
+                failedPages[table] === offset
+                  ? { message: "Later page failed" }
+                  : null
             }).then(done)
         };
         return q;
@@ -502,6 +520,8 @@ describe("composer invoice balances", () => {
       invoiceSettlement: [
         {
           targetSalesInvoiceId: "invoice",
+          paymentId: "posted",
+          memoId: null,
           sourceAmount: 0.01,
           appliedAmount: 0.00001,
           discountAmount: 0,
@@ -860,5 +880,388 @@ it("keeps same-rate memo FX zero when the target releases its posted rounding re
     sourceAmount: 110,
     appliedAmount: 100.00001,
     fxGainLossAmount: 0
+  });
+});
+
+describe("complete composer source reads", () => {
+  const application = {
+    paymentId: "posted",
+    memoId: null,
+    targetSalesInvoiceId: "invoice",
+    targetPurchaseInvoiceId: "invoice",
+    sourceAmount: 1,
+    appliedAmount: 1,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    payment: { status: "Posted" },
+    memo: null,
+    appliedViaPayment: null
+  };
+  it.each([
+    "sales",
+    "purchase"
+  ] as const)("reads all %s settlements beyond the response cap", async (side) => {
+    const { client } = clientFor({
+      ...config,
+      [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
+        {
+          ...invoice,
+          totalAmount: 1002,
+          exchangeRate: 1,
+          balance: 1,
+          status: "Partially Paid"
+        }
+      ],
+      journalLine: [{ documentId: "invoice", amount: 1002 }],
+      invoiceSettlement: Array.from({ length: 1001 }, (_, index) => ({
+        ...application,
+        id: `s${index}`
+      }))
+    });
+    const result =
+      side === "sales"
+        ? await service.getOpenSalesInvoicesForCustomer(
+            client,
+            "co",
+            "cust",
+            "EUR"
+          )
+        : await service.getOpenPurchaseInvoicesForSupplier(
+            client,
+            "co",
+            "supplier",
+            "EUR"
+          );
+    expect(result.error).toBeNull();
+    expect(result.data?.[0]).toMatchObject({
+      balance: 1,
+      remainingDocument: 1
+    });
+  });
+  it("reads every original control line beyond the response cap", async () => {
+    const { client } = clientFor({
+      ...config,
+      salesInvoices: [{ ...invoice, totalAmount: 1001, exchangeRate: 1 }],
+      journalLine: Array.from({ length: 1001 }, (_, index) => ({
+        id: `line${index}`,
+        documentId: "invoice",
+        amount: 1
+      }))
+    });
+    const result = await service.getOpenSalesInvoicesForCustomer(
+      client,
+      "co",
+      "cust",
+      "EUR"
+    );
+    expect(result.data?.[0]).toMatchObject({
+      balance: 1001,
+      remainingDocument: 1001
+    });
+  });
+  it("reads every invoice and bounds contributing ID filters across an ordinary invoice batch", async () => {
+    const invoices = Array.from({ length: 1001 }, (_, index) => ({
+      ...invoice,
+      id: `invoice${index}`,
+      totalAmount: 3,
+      exchangeRate: 1
+    }));
+    const { client, calls } = clientFor({
+      ...config,
+      salesInvoices: invoices,
+      journalLine: invoices.map((i) => ({ documentId: i.id, amount: 3 })),
+      invoiceSettlement: invoices.flatMap((i, index) =>
+        [0, 1].map((n) => ({
+          ...application,
+          id: `s${index}-${n}`,
+          targetSalesInvoiceId: i.id
+        }))
+      )
+    });
+    const result = await service.getOpenSalesInvoicesForCustomer(
+      client,
+      "co",
+      "cust",
+      "EUR"
+    );
+    expect(result.data).toHaveLength(1001);
+    expect(
+      result.data?.every((i) => i.balance === 1 && i.remainingDocument === 1)
+    ).toBe(true);
+    const contributing = calls.filter(
+      (c) => c.table === "invoiceSettlement" || c.table === "journalLine"
+    );
+    expect(
+      contributing.every((c) => c.idFilters.every((ids) => ids.length <= 100))
+    ).toBe(true);
+    expect(
+      contributing.every((c) =>
+        c.filters.some(([key, value]) => key === "companyId" && value === "co")
+      )
+    ).toBe(true);
+  });
+  it("refuses a partial balance if a later contributing page fails", async () => {
+    const { client } = clientFor(
+      {
+        ...config,
+        salesInvoices: [{ ...invoice, totalAmount: 1002, exchangeRate: 1 }],
+        invoiceSettlement: Array.from({ length: 1001 }, (_, index) => ({
+          ...application,
+          id: `s${index}`
+        }))
+      },
+      { invoiceSettlement: 1000 }
+    );
+    const result = await service.getOpenSalesInvoicesForCustomer(
+      client,
+      "co",
+      "cust",
+      "EUR"
+    );
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toBe("Later page failed");
+  });
+});
+
+it("rounds merged fractional document principal in invoice history", async () => {
+  const { client } = clientFor({
+    invoiceSettlement: [0.1, 0.2].map((amount, index) => ({
+      id: `s${index}`,
+      companyId: "co",
+      paymentId: "posted",
+      memoId: null,
+      targetSalesInvoiceId: "invoice",
+      sourceAmount: amount,
+      appliedAmount: amount,
+      discountAmount: 0,
+      writeOffAmount: 0,
+      fxGainLossAmount: 0,
+      targetExchangeRate: 1,
+      sourceExchangeRate: 1,
+      appliedDate: "2026-09-07",
+      appliedViaPaymentId: null
+    })),
+    payment: [{ ...payment, id: "posted", paymentId: "PAY1" }]
+  });
+  const result = await service.getInvoiceSettlementsForInvoice(
+    client,
+    "co",
+    "sales",
+    "invoice"
+  );
+  expect(result.data?.[0]?.sourceAmount).toBe(0.3);
+});
+
+it("saves a manual memo partial and then its final document cent with zero carrying base", async () => {
+  const highRateInvoice = {
+    ...invoice,
+    totalAmount: 160.01 / 16000,
+    exchangeRate: 16000
+  };
+  const memo = {
+    id: "memo",
+    companyId: "co",
+    status: "Posted",
+    direction: "Credit",
+    customerId: "cust",
+    supplierId: null,
+    currencyCode: "EUR",
+    exchangeRate: 16000,
+    amount: 160.01,
+    memoDate: "2026-09-07",
+    postingDate: "2026-09-07"
+  };
+  const tables = {
+    payment: [{ ...current, totalAmount: 0, exchangeRate: 16000 }],
+    salesInvoice: [highRateInvoice],
+    salesInvoices: [highRateInvoice],
+    memo: [memo],
+    journalLine: [{ documentId: "invoice", amount: 0.01 }]
+  };
+  const args = {
+    paymentId: "current",
+    companyId: "co",
+    createdBy: "user",
+    side: "sales" as const,
+    appliedDate: "2026-09-07"
+  };
+  const partial = draftDb(tables);
+  await service.applyCreditsToInvoices(partial.db, {
+    ...args,
+    applications: [
+      { memoId: "memo", invoiceId: "invoice", amount: 0.01, sourceAmount: 160 }
+    ]
+  });
+  expect(partial.inserts[0]).toMatchObject({
+    appliedAmount: 0.01,
+    sourceAmount: 160
+  });
+  const final = draftDb({
+    ...tables,
+    invoiceSettlement: [
+      {
+        ...partial.inserts[0],
+        paymentId: null,
+        appliedViaPaymentId: "posted",
+        targetPurchaseInvoiceId: null,
+        discountAmount: 0,
+        writeOffAmount: 0
+      }
+    ]
+  });
+  await service.applyCreditsToInvoices(final.db, {
+    ...args,
+    applications: [
+      { memoId: "memo", invoiceId: "invoice", amount: 0, sourceAmount: 0.01 }
+    ]
+  });
+  expect(final.inserts[0]).toMatchObject({
+    appliedAmount: 0,
+    sourceAmount: 0.01,
+    fxGainLossAmount: 0
+  });
+});
+
+it.each([
+  "sales",
+  "purchase"
+] as const)("preserves signed original %s controls", async (side) => {
+  const { client } = clientFor({
+    ...config,
+    [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
+      {
+        ...invoice,
+        status: side === "sales" ? "Submitted" : "Open",
+        totalAmount: 90,
+        exchangeRate: 1
+      }
+    ],
+    journalLine: [
+      { documentId: "invoice", amount: 100 },
+      { documentId: "invoice", amount: -10 }
+    ]
+  });
+  const result =
+    side === "sales"
+      ? await service.getOpenSalesInvoicesForCustomer(
+          client,
+          "co",
+          "cust",
+          "EUR"
+        )
+      : await service.getOpenPurchaseInvoicesForSupplier(
+          client,
+          "co",
+          "supplier",
+          "EUR"
+        );
+  expect(result.data?.[0]).toMatchObject({
+    balance: 90,
+    remainingDocument: 90
+  });
+});
+
+it.each([
+  null,
+  -1,
+  Number.NaN
+])("refuses invalid effective invoice principal %s", async (sourceAmount) => {
+  const { client } = clientFor({
+    ...config,
+    salesInvoices: [{ ...invoice, totalAmount: 90, exchangeRate: 1 }],
+    invoiceSettlement: [
+      {
+        paymentId: "posted",
+        memoId: null,
+        targetSalesInvoiceId: "invoice",
+        sourceAmount,
+        appliedAmount: 1,
+        discountAmount: 0,
+        writeOffAmount: 0,
+        payment: { status: "Posted" },
+        memo: null,
+        appliedViaPayment: null
+      }
+    ]
+  });
+  const result = await service.getOpenSalesInvoicesForCustomer(
+    client,
+    "co",
+    "cust",
+    "EUR"
+  );
+  expect(result.data).toBeNull();
+  expect(result.error?.message).toMatch(/principal/i);
+});
+it("refuses excess invoice settlements instead of silently clamping the balance", async () => {
+  const { client } = clientFor({
+    ...config,
+    salesInvoices: [{ ...invoice, totalAmount: 90, exchangeRate: 1 }],
+    invoiceSettlement: [
+      {
+        paymentId: "posted",
+        memoId: null,
+        targetSalesInvoiceId: "invoice",
+        sourceAmount: 91,
+        appliedAmount: 91,
+        discountAmount: 0,
+        writeOffAmount: 0,
+        payment: { status: "Posted" },
+        memo: null,
+        appliedViaPayment: null
+      }
+    ]
+  });
+  const result = await service.getOpenSalesInvoicesForCustomer(
+    client,
+    "co",
+    "cust",
+    "EUR"
+  );
+  expect(result.data).toBeNull();
+  expect(result.error?.message).toMatch(/excessive settlements/i);
+});
+
+it.each([
+  "sales",
+  "purchase"
+] as const)("uses original IC %s controls and excludes VOID rows", async (side) => {
+  const description = side === "sales" ? "IC Receivables" : "IC Payables";
+  const { client } = clientFor({
+    ...config,
+    [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
+      {
+        ...invoice,
+        status: side === "sales" ? "Submitted" : "Open",
+        totalAmount: 99,
+        exchangeRate: 1
+      }
+    ],
+    journalLine: [
+      { documentId: "invoice", amount: 100, description },
+      {
+        documentId: "invoice",
+        amount: -100,
+        description: `VOID: ${description}`
+      }
+    ]
+  });
+  const result =
+    side === "sales"
+      ? await service.getOpenSalesInvoicesForCustomer(
+          client,
+          "co",
+          "cust",
+          "EUR"
+        )
+      : await service.getOpenPurchaseInvoicesForSupplier(
+          client,
+          "co",
+          "supplier",
+          "EUR"
+        );
+  expect(result.data?.[0]).toMatchObject({
+    balance: 100,
+    remainingDocument: 99
   });
 });

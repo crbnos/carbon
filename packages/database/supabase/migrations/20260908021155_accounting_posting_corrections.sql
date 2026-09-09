@@ -1,5 +1,4 @@
--- Planning appendix only. Copy into the CLI-created forward migration.
-BEGIN;
+-- Separate shipping revenue and retain exact settlement funding principal.
 
 ALTER TABLE "accountDefault"
   ADD COLUMN IF NOT EXISTS "salesShippingRevenueAccount" TEXT;
@@ -162,4 +161,3 @@ COMMENT ON COLUMN "invoiceSettlement"."fxGainLossAmount" IS 'Server-calculated p
 COMMENT ON COLUMN "payment"."totalAmount" IS 'Gross cash amount in payment currency; divide by foreign-per-base exchangeRate for company base.';
 COMMENT ON COLUMN "memo"."amount" IS 'Memo amount in memo currency; divide by foreign-per-base exchangeRate for company base.';
 NOTIFY pgrst, 'reload schema';
-COMMIT;

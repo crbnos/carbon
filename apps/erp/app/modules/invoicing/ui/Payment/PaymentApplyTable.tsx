@@ -483,7 +483,7 @@ const PaymentApplyTable = ({
               variant="secondary"
               leftIcon={<LuListChecks />}
               onClick={onAutoApply}
-              isDisabled={!canEdit || openInvoices.length === 0}
+              isDisabled={!canEdit || rows.length === 0}
             >
               <Trans>Auto apply</Trans>
             </Button>
@@ -500,7 +500,7 @@ const PaymentApplyTable = ({
         </HStack>
       </CardHeader>
       <CardContent>
-        {openInvoices.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 px-6 text-center">
             <p className="text-sm font-medium text-foreground">
               <Trans>No open invoices</Trans>
@@ -606,7 +606,7 @@ const PaymentApplyTable = ({
         )}
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-4">
-        {openInvoices.length > 0 ? (
+        {rows.length > 0 ? (
           <div className="w-full">
             <div className="flex items-baseline justify-between text-sm">
               <span className="text-muted-foreground">

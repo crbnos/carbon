@@ -296,3 +296,96 @@ Deno.test("changed defaults preserve original invoice and prior-credit control a
     await f.cleanup();
   }
 });
+
+for (const isAR of [true, false]) {
+  Deno.test(`${isAR ? "AR" : "AP"} mixed-sign original controls settle their net carrying without fictitious FX`, async () => {
+    const f = await paymentFixture();
+    try {
+      const invoiceId = isAR ? f.invoiceId : `${f.companyId}-purchase`;
+      const controlId = isAR ? f.account("control") : f.account("payable");
+      const paymentId = await f.payment({
+        amount: 90, rate: 1, sourceAmount: 90, appliedAmount: 90,
+        noApplication: !isAR,
+      });
+      const journal = await f.db.selectFrom("journal").select([
+        "id", "accountingPeriodId",
+      ]).where("companyId", "=", f.companyId)
+        .where("sourceType", "=", "Sales Invoice").executeTakeFirstOrThrow();
+      if (isAR) {
+        await f.db.updateTable("salesInvoice").set({ exchangeRate: 1 })
+          .where("id", "=", invoiceId).where("companyId", "=", f.companyId).execute();
+        await f.db.insertInto("salesInvoiceLine").values({
+          invoiceId, invoiceLineType: "Service", quantity: 1, unitPrice: -10,
+          unitOfMeasureCode: "EA", companyId: f.companyId, createdBy: "system",
+        }).execute();
+      } else {
+        const supplier = await f.db.insertInto("supplier").values({
+          name: "Mixed-sign supplier", companyId: f.companyId,
+        }).returning("id").executeTakeFirstOrThrow();
+        const interaction = await f.db.insertInto("supplierInteraction").values({
+          supplierId: supplier.id, companyId: f.companyId,
+        }).returning("id").executeTakeFirstOrThrow();
+        await f.db.insertInto("account").values({
+          id: controlId, name: "Mixed-sign AP", class: "Liability",
+          incomeBalance: "Balance Sheet", companyGroupId: f.groupId, createdBy: "system",
+        }).execute();
+        await f.db.updateTable("accountDefault").set({
+          payablesAccount: controlId, supplierPaymentDiscountAccount: f.account("discount"),
+          supplierWriteOffAccount: f.account("sales"),
+        }).where("companyId", "=", f.companyId).execute();
+        await f.db.insertInto("purchaseInvoice").values({
+          id: invoiceId, invoiceId, supplierId: supplier.id,
+          supplierInteractionId: interaction.id, currencyCode: "EUR", exchangeRate: 1,
+          status: "Open", companyId: f.companyId, createdBy: "system",
+        }).execute();
+        await f.db.insertInto("purchaseInvoiceLine").values([100, -10].map((amount) => ({
+          invoiceId, invoiceLineType: "G/L Account" as const, quantity: 1,
+          supplierUnitPrice: amount, exchangeRate: 1, accountId: f.account("loss"),
+          companyId: f.companyId, createdBy: "system",
+        }))).execute();
+        await f.db.updateTable("payment").set({
+          paymentType: "Disbursement", customerId: null, supplierId: supplier.id,
+        }).where("id", "=", paymentId).where("companyId", "=", f.companyId).execute();
+        await f.db.insertInto("invoiceSettlement").values({
+          paymentId, targetPurchaseInvoiceId: invoiceId, sourceAmount: 90, appliedAmount: 90,
+          sourceExchangeRate: 1, targetExchangeRate: 1,
+          appliedDate: "2026-09-07", companyId: f.companyId, createdBy: "system",
+        }).execute();
+      }
+      const extraJournal = await f.db.insertInto("journal").values({
+        journalEntryId: `${invoiceId}-adjustment`, accountingPeriodId: journal.accountingPeriodId,
+        companyId: f.companyId, sourceType: isAR ? "Sales Invoice" : "Purchase Invoice",
+        status: "Posted", postingDate: "2026-09-01", createdBy: "system",
+      }).returning("id").executeTakeFirstOrThrow();
+      await f.db.insertInto("journalLine").values((isAR ? [-10] : [100, -10]).flatMap((amount) => [
+        { accountId: controlId, description: isAR ? "Accounts Receivable" : "Accounts Payable" },
+        { accountId: isAR ? f.account("sales") : f.account("loss"), description: "Invoice offset" },
+      ].map((line) => ({
+        ...line, amount, quantity: 1, journalId: extraJournal.id, documentId: invoiceId,
+        documentType: "Invoice" as const, journalLineReference: invoiceId, companyId: f.companyId,
+      })))).execute();
+      const result = await postPaymentTransaction(f.db, { ...f.args, paymentId });
+      const settlement = await f.db.selectFrom("invoiceSettlement").select([
+        "sourceAmount", "appliedAmount", "fxGainLossAmount",
+      ]).where("paymentId", "=", paymentId).where("companyId", "=", f.companyId).executeTakeFirstOrThrow();
+      assertEquals(settlement, { sourceAmount: 90, appliedAmount: 90, fxGainLossAmount: 0 });
+      const paymentLines = await f.db.selectFrom("journalLine").select(["amount", "accountId"])
+        .where("journalId", "=", result.journalId!).where("companyId", "=", f.companyId).execute();
+      assertEquals(paymentLines.filter((line) => line.accountId === controlId).reduce((sum, line) => sum + Number(line.amount), 90), 0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+}
+
+Deno.test("intercompany invoice settlement retains its original control after defaults change", async () => {
+  const f = await paymentFixture();
+  try {
+    const invoiceId = await f.invoice({ controlDescription: "IC Receivables" });
+    await f.db.updateTable("accountDefault").set({ receivablesAccount: f.account("bank") }).where("companyId", "=", f.companyId).execute();
+    const paymentId = await f.payment({ invoiceId });
+    const posted = await postPaymentTransaction(f.db, { ...f.args, paymentId });
+    const lines = await f.db.selectFrom("journalLine").select(["accountId", "amount"]).where("journalId", "=", posted.journalId!).execute();
+    assertEquals(lines.find((line) => line.accountId === f.account("control"))?.amount, -100);
+  } finally { await f.cleanup(); }
+});

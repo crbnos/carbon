@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "제조 원가가 재공품에 편입될 때 사용되는 대변 계정"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "대변 금액은 회사 기본 통화({currency})로 표시됩니다. 이 지불이 전기되면 대변이 적용됩니다."
+msgstr "크레딧 금액은 회사 기본 통화({currency})로 표시됩니다. 이 지불이 전기되면 크레딧이 적용됩니다."
 
 msgid "Credit Memo"
 msgstr "대변전표"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "지불"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "이 송장에 적용된 지불 및 대변입니다. 적용된 금액과 환율은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
+msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
 
 msgid "PDF"
 msgstr "PDF"

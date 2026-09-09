@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Cuentas de haber utilizadas cuando los costos de manufactura se absorben en producto en proceso"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "Los importes del haber están expresados en la moneda base de la empresa ({currency}). Los créditos tienen efecto cuando se contabiliza este pago."
+msgstr "Los importes de crédito están expresados en la moneda base de la empresa ({currency}). Los créditos tienen efecto cuando se contabiliza este pago."
 
 msgid "Credit Memo"
 msgstr "Nota de Crédito"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "Pagos"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "Pagos y créditos aplicados a esta factura. Los importes aplicados y los tipos de cambio están expresados en la moneda base de la empresa. Haga clic en una fila para abrir el documento de origen."
+msgstr "Pagos y créditos aplicados a esta factura. Los importes aplicados y las diferencias de cambio están expresados en la moneda base de la empresa. Haga clic en una fila para abrir el documento de origen."
 
 msgid "PDF"
 msgstr "PDF"
@@ -13418,7 +13418,7 @@ msgid "Revenue"
 msgstr "Ingresos por ventas"
 
 msgid "Revenue account for shipping charged to customers"
-msgstr "Cuenta de ingresos por ventas de envíos cobrados a los clientes"
+msgstr "Cuenta de ingresos por gastos de envío cobrados a los clientes"
 
 msgid "Revenue and expenses over a period"
 msgstr "Ingresos por ventas y gastos durante un período"
@@ -14651,7 +14651,7 @@ msgid "Shipping Notes"
 msgstr "Notas de Envío"
 
 msgid "Shipping Revenue"
-msgstr "Ingresos por ventas de envíos"
+msgstr "Ingresos por gastos de envío"
 
 msgid "Shipping Supplier"
 msgstr "Proveedor de Envío"

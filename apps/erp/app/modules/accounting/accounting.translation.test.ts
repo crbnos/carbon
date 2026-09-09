@@ -20,6 +20,7 @@ vi.mock("@carbon/glossary", () => ({
 
 import {
   applyCtaToReportPeriodSeries,
+  getFinancialStatementBalances,
   getFinancialStatementPeriodSeries,
   translateCompanyBalances,
   translateCompanyPeriodSeries
@@ -438,7 +439,12 @@ describe("translateCompanyPeriodSeries", () => {
 });
 
 describe("single-company period series and configured CTA", () => {
-  it("derives translated synthetic income, then rolls CTA into Equity without changing source cells", async () => {
+  it.each([
+    "active",
+    "inactive leaf",
+    "inactive group",
+    "paged history"
+  ])("derives translated synthetic income including %s history, then rolls CTA into Equity", async (state) => {
     const buckets = computeReportPeriodBuckets(
       "2026-08-01",
       "2026-08-31",
@@ -462,7 +468,14 @@ describe("single-company period series and configured CTA", () => {
       consolidatedRate: "Current",
       ...extra
     });
+    const emptyHistory =
+      state === "paged history"
+        ? Array.from({ length: 1000 }, (_, index) =>
+            row(`old-${index}`, "assets", "Asset", { active: false })
+          )
+        : [];
     const chart = [
+      ...emptyHistory,
       row("balance-sheet", null, "Asset", { isGroup: true, isSystem: true }),
       row("assets", "balance-sheet", "Asset", { isGroup: true }),
       row("cash", "assets", "Asset"),
@@ -481,11 +494,36 @@ describe("single-company period series and configured CTA", () => {
         consolidatedRate: "Average",
         incomeBalance: "Income Statement"
       }),
-      row("expenses", "income-statement", "Expense", {
+      row("expense-group", "income-statement", "Expense", {
+        isGroup: true,
+        active: state !== "inactive group",
+        incomeBalance: "Income Statement"
+      }),
+      row("expenses", "expense-group", "Expense", {
+        active: state !== "inactive leaf",
         consolidatedRate: "Average",
         incomeBalance: "Income Statement"
       })
     ];
+    const sourceBalances = [
+      ...emptyHistory.map((account) => ({ ...account, balanceAtDate: 0 })),
+      ...balanced
+    ];
+    const paged = (data: unknown[]) => {
+      let start = 0,
+        end = 999;
+      const query = {
+        order: () => query,
+        range: (from: number, to: number) => {
+          start = from;
+          end = to;
+          return query;
+        },
+        then: (resolve: (value: unknown) => unknown) =>
+          resolve({ data: data.slice(start, end + 1), error: null })
+      };
+      return query;
+    };
     const client = {
       rpc(name: string, args: RateArgs) {
         if (name === "getConsolidationRates") {
@@ -496,22 +534,38 @@ describe("single-company period series and configured CTA", () => {
             error: null
           });
         }
+        if (name === "accountTreeBalancesByCompany") {
+          return paged(
+            sourceBalances.map((account) => ({
+              accountId: account.id,
+              balance: account.balanceAtDate,
+              balanceAtDate: account.balanceAtDate,
+              netChange: account.balanceAtDate
+            }))
+          );
+        }
         if (name === "accountTreeBalancePeriodSeries") {
-          return Promise.resolve({
-            data: balanced.map((account) => ({
+          return paged(
+            sourceBalances.map((account) => ({
               accountId: account.id,
               periodEnd: "2026-08-31",
               netChange: account.balanceAtDate,
               balanceAtDate: account.balanceAtDate
-            })),
-            error: null
-          });
+            }))
+          );
         }
         throw new Error(`Unexpected RPC ${name}`);
       },
       from(table: string) {
         const filters: Record<string, unknown> = {};
+        let pageStart = 0,
+          pageEnd = 999;
         const builder = {
+          range: (from: number, to: number) => {
+            pageStart = from;
+            pageEnd = to;
+            return builder;
+          },
           select: () => builder,
           eq: (field: string, value: unknown) => {
             filters[field] = value;
@@ -529,7 +583,16 @@ describe("single-company period series and configured CTA", () => {
           then: (resolve: (value: unknown) => unknown) => {
             expect(table).toBe("accounts");
             expect(filters.companyGroupId).toBe("group");
-            return resolve({ data: chart, error: null });
+            return resolve({
+              data: chart
+                .filter((row) =>
+                  Object.entries(filters).every(
+                    ([key, value]) => row[key as keyof typeof row] === value
+                  )
+                )
+                .slice(pageStart, pageEnd + 1),
+              error: null
+            });
           }
         };
         return builder;
@@ -547,6 +610,30 @@ describe("single-company period series and configured CTA", () => {
       }
     );
     expect(source.error).toBeNull();
+    expect(
+      source.data?.find((account) => account.id === "expense-group")?.periods[
+        "2026-08"
+      ]?.translatedBalance
+    ).toBe(30);
+    const singlePeriod = await getFinancialStatementBalances(
+      client,
+      "group",
+      "subsidiary",
+      {
+        startDate: "2026-08-01",
+        endDate: "2026-08-31",
+        includeCurrentYearEarnings: true
+      }
+    );
+    expect(singlePeriod.error).toBeNull();
+    expect(
+      singlePeriod.data?.find((account) => account.id === "expenses")
+        ?.balanceAtDate
+    ).toBe(20);
+    expect(
+      singlePeriod.data?.find((account) => account.id === NET_INCOME_ACCOUNT_ID)
+        ?.balanceAtDate
+    ).toBe(80);
     expect(source.ctaByBucket).toEqual({ "2026-08": 40 });
     if (!source.data) throw new Error("Missing source report");
     const original = structuredClone(source.data);

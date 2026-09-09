@@ -470,7 +470,6 @@ export class QboBillSyncer extends BaseEntitySyncer<
     // the item is a label only, so NO item dependency sync is needed here (the
     // PO keeps item lines via buildQboExpenseLines; the bill does not).
     const accountRefsById = await this.getAccountRefsById();
-    const payablesAccountId = await this.getPayablesAccountId();
     const {
       lines: costingLines,
       currencyCode,
@@ -480,8 +479,7 @@ export class QboBillSyncer extends BaseEntitySyncer<
       baseCurrencyCode
     } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
-      billId: local.id,
-      payablesAccountId
+      billId: local.id
     });
 
     const transactionLines = toTransactionCurrencyLines(costingLines, {
@@ -529,16 +527,6 @@ export class QboBillSyncer extends BaseEntitySyncer<
     };
   }
 
-  /** accountDefault.payablesAccount — the AP control line to exclude. */
-  private async getPayablesAccountId(): Promise<string | null> {
-    const defaults = await this.database
-      .selectFrom("accountDefault")
-      .select("payablesAccount")
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-    return defaults?.payablesAccount ?? null;
-  }
-
   // =================================================================
   // 6. TRANSFORMATION (QBO -> Carbon)
   // =================================================================
@@ -569,7 +557,7 @@ export class QboBillSyncer extends BaseEntitySyncer<
         (remote.Line ?? [])
           .flatMap((line) => [
             line.ItemBasedExpenseLineDetail?.ItemRef?.value,
-            line.AccountBasedExpenseLineDetail?.AccountRef.value
+            line.AccountBasedExpenseLineDetail?.AccountRef?.value
           ])
           .filter((id): id is string => !!id)
       )
@@ -601,7 +589,7 @@ export class QboBillSyncer extends BaseEntitySyncer<
         ? (localReference.get(`item:${remoteItemId}`) ?? null)
         : null;
       const remoteAccountId =
-        line.AccountBasedExpenseLineDetail?.AccountRef.value;
+        line.AccountBasedExpenseLineDetail?.AccountRef?.value;
       const accountId = remoteAccountId
         ? (localReference.get(`account:${remoteAccountId}`) ?? null)
         : null;

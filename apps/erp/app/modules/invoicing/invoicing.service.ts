@@ -3,10 +3,20 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   allocatePaymentFunding,
+  chunkArray,
   datetime,
+  type FundingConsumptionRow,
+  type FundingPaymentRow,
   type FundingRequest,
   type FundingSource,
+  invoiceRemainingAmounts,
+  isEffectiveSettlement,
+  PAYABLE_POSTING_DESCRIPTIONS,
+  RECEIVABLE_POSTING_DESCRIPTIONS,
+  reduceInvoiceSettlements,
+  remainingFundingSources,
   round,
+  type SettlementBalanceRow,
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
@@ -1518,7 +1528,7 @@ export async function getInvoiceSettlementsForInvoice(
     previous.sourceAmount =
       previous.sourceAmount == null || row.sourceAmount == null
         ? null
-        : previous.sourceAmount + row.sourceAmount;
+        : round(previous.sourceAmount + row.sourceAmount);
     previous.fxGainLossAmount = round(
       Number(previous.fxGainLossAmount ?? 0) + Number(row.fxGainLossAmount ?? 0)
     );
@@ -1659,24 +1669,48 @@ async function getOpenInvoicesForParty(
   partyId: string,
   currencyCode?: string
 ) {
-  let query = client
-    .from(isAR ? "salesInvoices" : "purchaseInvoices")
-    .select(
-      "id, invoiceId, dateDue, currencyCode, exchangeRate, totalAmount, balance, status"
-    )
-    .eq("companyId", companyId)
-    .in(
-      "status",
-      isAR
-        ? ["Submitted", "Partially Paid", "Overdue"]
-        : ["Open", "Partially Paid", "Overdue"]
-    );
-  query = isAR
-    ? query.eq("customerId", partyId)
-    : query.eq("supplierId", partyId);
-  if (currencyCode) query = query.eq("currencyCode", currencyCode);
+  type OpenInvoiceRow = Pick<
+    Database["public"]["Views"]["salesInvoices" | "purchaseInvoices"]["Row"],
+    | "id"
+    | "invoiceId"
+    | "dateDue"
+    | "currencyCode"
+    | "exchangeRate"
+    | "totalAmount"
+    | "balance"
+    | "status"
+  >;
+  type SettlementRow = SettlementBalanceRow & {
+    paymentId: string | null;
+    memoId: string | null;
+    appliedViaPaymentId: string | null;
+    payment: { status: string } | null;
+    memo: { status: string } | null;
+    appliedViaPayment: { status: string } | null;
+  };
+  type ControlRow = Pick<
+    Database["public"]["Tables"]["journalLine"]["Row"],
+    "documentId" | "amount"
+  >;
   const [invoices, company] = await Promise.all([
-    query.order("dateDue", { ascending: true }),
+    fetchAllFromTable<OpenInvoiceRow>(
+      client,
+      isAR ? "salesInvoices" : "purchaseInvoices",
+      "id, invoiceId, dateDue, currencyCode, exchangeRate, totalAmount, balance, status",
+      (query) => {
+        query = query
+          .eq("companyId", companyId)
+          .in(
+            "status",
+            isAR
+              ? ["Submitted", "Partially Paid", "Overdue"]
+              : ["Open", "Partially Paid", "Overdue"]
+          )
+          .eq(isAR ? "customerId" : "supplierId", partyId);
+        if (currencyCode) query = query.eq("currencyCode", currencyCode);
+        return query.order("dateDue", { ascending: true }).order("id");
+      }
+    ),
     client.from("company").select("companyGroupId").eq("id", companyId).single()
   ]);
   if (invoices.error) return { data: null, error: invoices.error };
@@ -1685,51 +1719,77 @@ async function getOpenInvoicesForParty(
       data: null,
       error: { message: "Company currency configuration is missing" }
     };
-  const ids = (invoices.data ?? []).map((i) => i.id!);
-  const [currencies, settlements, controls] = await Promise.all([
-    client
-      .from("currency")
-      .select("code, decimalPlaces")
-      .eq("companyGroupId", company.data.companyGroupId),
-    ids.length
-      ? client
-          .from("invoiceSettlement")
-          .select(
-            "targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)"
-          )
-          .eq("companyId", companyId)
-          .in(isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId", ids)
-      : Promise.resolve({ data: [], error: null }),
-    ids.length
-      ? client
-          .from("journalLine")
-          .select(
-            "documentId, amount, journal:journalId!inner(status,sourceType,companyId)"
-          )
-          .eq("companyId", companyId)
-          .eq("journal.companyId", companyId)
-          .eq("journal.status", "Posted")
-          .eq("journal.sourceType", isAR ? "Sales Invoice" : "Purchase Invoice")
-          .eq("documentType", "Invoice")
-          .eq("description", isAR ? "Accounts Receivable" : "Accounts Payable")
-          .in("documentId", ids)
-      : Promise.resolve({ data: [], error: null })
-  ]);
-  const error = currencies.error ?? settlements.error ?? controls.error;
-  if (error) return { data: null, error };
+  const currencies = await client
+    .from("currency")
+    .select("code, decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId);
+  if (currencies.error) return { data: null, error: currencies.error };
+  const ids = invoices.data.map((i) => i.id!);
+  const settlements: SettlementRow[] = [];
+  const controls: ControlRow[] = [];
+  // Bound filter URLs as well as response pages. A single invoice can itself
+  // have more than one response page of control lines or settlements.
+  for (const batch of chunkArray(ids, 100)) {
+    const [batchSettlements, batchControls] = await Promise.all([
+      fetchAllFromTable<SettlementRow>(
+        client,
+        "invoiceSettlement",
+        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in(
+              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+              batch
+            )
+            .order("id")
+      ),
+      fetchAllFromTable<ControlRow>(
+        client,
+        "journalLine",
+        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .eq("journal.companyId", companyId)
+            .eq("journal.status", "Posted")
+            .eq(
+              "journal.sourceType",
+              isAR ? "Sales Invoice" : "Purchase Invoice"
+            )
+            .eq("documentType", "Invoice")
+            .in(
+              "description",
+              isAR
+                ? RECEIVABLE_POSTING_DESCRIPTIONS
+                : PAYABLE_POSTING_DESCRIPTIONS
+            )
+            .in("documentId", batch)
+            .order("id")
+      )
+    ]);
+    const error = batchSettlements.error ?? batchControls.error;
+    if (error) return { data: null, error };
+    settlements.push(...(batchSettlements.data ?? []));
+    controls.push(...(batchControls.data ?? []));
+  }
   try {
     const decimals = new Map(
       (currencies.data ?? []).map((c) => [c.code, c.decimalPlaces])
     );
     if (currencyCode) requireCurrencyDecimals(decimals, currencyCode);
-    const effective = (settlements.data ?? []).filter(
-      (s) =>
-        s.payment?.status === "Posted" ||
-        (s.memo?.status === "Posted" &&
-          (!s.appliedViaPaymentId || s.appliedViaPayment?.status === "Posted"))
+    const effective = settlements.filter((s) =>
+      isEffectiveSettlement({
+        paymentId: s.paymentId,
+        memoId: s.memoId,
+        appliedViaPaymentId: s.appliedViaPaymentId,
+        paymentStatus: s.payment?.status ?? null,
+        memoStatus: s.memo?.status ?? null,
+        viaStatus: s.appliedViaPayment?.status ?? null
+      })
     );
     const controlAmounts = new Map<string, number>();
-    for (const line of controls.data ?? [])
+    for (const line of controls)
       if (line.documentId)
         controlAmounts.set(
           line.documentId,
@@ -1774,78 +1834,6 @@ async function getOpenInvoicesForParty(
 type PaymentParty =
   | { paymentType: "Receipt"; customerId: string }
   | { paymentType: "Disbursement"; supplierId: string };
-
-type FundingPaymentRow = {
-  id: string;
-  totalAmount: number;
-  exchangeRate: number;
-  postingDate: string | null;
-  paymentDate: string;
-  currencyCode: string;
-};
-type FundingConsumptionRow = {
-  paymentId: string | null;
-  sourcePaymentId: string | null;
-  sourceAmount: number | null;
-  appliedAmount: number;
-  fxGainLossAmount: number | null;
-};
-
-function remainingFundingSources(
-  payments: FundingPaymentRow[],
-  consumption: FundingConsumptionRow[],
-  decimals: Map<string, number>,
-  isAR: boolean
-): FundingSource[] {
-  const consumed = new Map<string, { document: number; base: number }>();
-  for (const row of consumption) {
-    const sourceId = row.sourcePaymentId ?? row.paymentId;
-    if (!sourceId) continue;
-    if (
-      row.sourceAmount == null ||
-      !Number.isFinite(Number(row.sourceAmount))
-    ) {
-      throw new Error("Posted settlement is missing its document principal");
-    }
-    const current = consumed.get(sourceId) ?? { document: 0, base: 0 };
-    current.document += Number(row.sourceAmount);
-    current.base +=
-      Number(row.appliedAmount) +
-      (isAR ? 1 : -1) * Number(row.fxGainLossAmount ?? 0);
-    consumed.set(sourceId, current);
-  }
-  return payments
-    .map((p) => {
-      const precision = requireCurrencyDecimals(decimals, p.currencyCode);
-      const use = consumed.get(p.id);
-      const remainingDocument = toDocumentAmount(
-        Number(p.totalAmount) - (use?.document ?? 0),
-        1,
-        precision
-      );
-      const remainingBase = round(
-        toBaseAmount(Number(p.totalAmount), Number(p.exchangeRate)) -
-          (use?.base ?? 0)
-      );
-      if (
-        remainingDocument < 0 ||
-        remainingBase < 0 ||
-        (remainingDocument === 0 && remainingBase !== 0)
-      ) {
-        throw new Error(
-          `Invalid remaining funding balance for payment ${p.id}`
-        );
-      }
-      return {
-        paymentId: p.id,
-        postingDate: p.postingDate ?? p.paymentDate,
-        exchangeRate: Number(p.exchangeRate),
-        remainingDocument,
-        remainingBase
-      };
-    })
-    .filter((p) => p.remainingDocument > 0);
-}
 
 function requireCurrencyDecimals(
   decimals: Map<string, number>,
@@ -2106,68 +2094,6 @@ export async function deleteInvoiceSettlement(
 // applications wiped and nothing in their place. Kysely bypasses RLS, so we
 // re-assert the payment is Draft inside the txn — the FOR UPDATE lock also
 // serializes this against a concurrent post/void of the same payment.
-type SettlementBalanceRow = {
-  targetSalesInvoiceId: string | null;
-  targetPurchaseInvoiceId: string | null;
-  sourceAmount: number | null;
-  appliedAmount: number;
-  discountAmount: number;
-  writeOffAmount: number;
-};
-function invoiceRemainingAmounts(
-  invoice: {
-    id: string | null;
-    totalAmount: number | null;
-    exchangeRate: number | null;
-  },
-  rows: SettlementBalanceRow[],
-  controlAmounts: Map<string, number>,
-  decimals: number,
-  isAR: boolean
-) {
-  const rate = Number(invoice.exchangeRate);
-  const originalDocument = toDocumentAmount(
-    Number(invoice.totalAmount),
-    rate,
-    decimals
-  );
-  let usedDocument = 0;
-  let usedBase = 0;
-  for (const row of rows) {
-    if (
-      (isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId) !==
-      invoice.id
-    )
-      continue;
-    if (row.sourceAmount == null)
-      throw new Error("Effective settlement is missing its document principal");
-    usedDocument +=
-      Number(row.sourceAmount) +
-      toDocumentAmount(
-        Number(row.discountAmount) + Number(row.writeOffAmount),
-        rate,
-        decimals
-      );
-    usedBase +=
-      Number(row.appliedAmount) +
-      Number(row.discountAmount) +
-      Number(row.writeOffAmount);
-  }
-  return {
-    remainingDocument: Math.max(
-      0,
-      toDocumentAmount(originalDocument - usedDocument, 1, decimals)
-    ),
-    remainingBase: Math.max(
-      0,
-      round(
-        (controlAmounts.get(invoice.id!) ??
-          round(Number(invoice.totalAmount))) - usedBase
-      )
-    )
-  };
-}
-
 async function loadTransactionCurrency(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2320,8 +2246,8 @@ async function loadTransactionInvoices(
       .where("journalLine.documentType", "=", "Invoice")
       .where(
         "journalLine.description",
-        "=",
-        isAR ? "Accounts Receivable" : "Accounts Payable"
+        "in",
+        isAR ? RECEIVABLE_POSTING_DESCRIPTIONS : PAYABLE_POSTING_DESCRIPTIONS
       )
       .where("journalLine.documentId", "in", ids)
       .execute()
@@ -2483,16 +2409,17 @@ export async function replaceInvoiceSettlements(
       if (!invoice) continue;
       if (Number(memo.exchangeRate) !== invoice.exchangeRate)
         throw new Error("Staged credit and invoice exchange rates must match");
-      if (row.sourceAmount == null)
-        throw new Error("Staged credit is missing its document principal");
+      const reserved = reduceInvoiceSettlements(
+        [row],
+        invoice.exchangeRate,
+        currencyDecimals
+      );
       invoice.remainingDocument = toDocumentAmount(
-        invoice.remainingDocument - Number(row.sourceAmount),
+        invoice.remainingDocument - reserved.document,
         1,
         currencyDecimals
       );
-      invoice.remainingBase = round(
-        invoice.remainingBase - Number(row.appliedAmount)
-      );
+      invoice.remainingBase = round(invoice.remainingBase - reserved.base);
     }
     let priorQuery = trx
       .selectFrom("payment")
@@ -2741,11 +2668,14 @@ async function loadAvailableMemoCredits(
 ): Promise<AvailableMemoCredit[]> {
   const [memos, company] = await Promise.all([
     fetchAllFromTable<
-      Omit<AvailableMemoCredit, "remaining" | "remainingDocument">
+      Omit<AvailableMemoCredit, "remaining" | "remainingDocument"> & {
+        memoDate: string;
+        postingDate: string | null;
+      }
     >(
       client,
       "memo",
-      "id, memoId, direction, currencyCode, exchangeRate, amount",
+      "id, memoId, direction, currencyCode, exchangeRate, amount, memoDate, postingDate",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -2802,43 +2732,52 @@ async function loadAvailableMemoCredits(
     }
   );
   if (apps.error) throw new Error(apps.error.message);
-  const used = new Map<string, { document: number; base: number }>();
-  for (const a of apps.data ?? []) {
-    if (
-      !a.memoId ||
-      (excludePaymentId && a.appliedViaPaymentId === excludePaymentId)
-    )
-      continue;
-    if (
-      a.appliedViaPaymentId &&
-      !["Draft", "Posted"].includes(a.appliedViaPayment?.status ?? "")
-    )
-      continue;
-    if (a.sourceAmount == null)
-      throw new Error("Credit application is missing its document principal");
-    const current = used.get(a.memoId) ?? { document: 0, base: 0 };
-    current.document += Number(a.sourceAmount);
-    current.base +=
-      Number(a.appliedAmount) +
-      (side === "sales" ? 1 : -1) * Number(a.fxGainLossAmount ?? 0);
-    used.set(a.memoId, current);
-  }
-  return memos.data
-    .map((m) => {
-      const precision = requireCurrencyDecimals(decimals, m.currencyCode);
-      const amount = toBaseAmount(Number(m.amount), Number(m.exchangeRate));
-      return {
-        ...m,
-        amount,
-        remaining: round(amount - (used.get(m.id)?.base ?? 0)),
-        remainingDocument: toDocumentAmount(
-          Number(m.amount) - (used.get(m.id)?.document ?? 0),
-          1,
-          precision
-        )
-      };
-    })
-    .filter((m) => m.remainingDocument > 0);
+  // Memo availability reserves competing Draft applications as well as Posted
+  // ones; sharing the arithmetic must not change this eligibility policy.
+  const reserved = apps.data.filter(
+    (row) =>
+      row.memoId &&
+      !(excludePaymentId && row.appliedViaPaymentId === excludePaymentId) &&
+      (!row.appliedViaPaymentId ||
+        ["Draft", "Posted"].includes(row.appliedViaPayment?.status ?? ""))
+  );
+  const sources = remainingFundingSources(
+    memos.data.map((memo) => ({
+      ...memo,
+      totalAmount: memo.amount,
+      paymentDate: memo.memoDate
+    })),
+    reserved.map((row) => ({
+      ...row,
+      paymentId: row.memoId,
+      sourcePaymentId: null
+    })),
+    decimals,
+    side === "sales"
+  );
+  const remaining = new Map(
+    sources.map((source) => [source.paymentId, source])
+  );
+  return memos.data.flatMap((memo) => {
+    const source = remaining.get(memo.id);
+    return source
+      ? [
+          {
+            id: memo.id,
+            memoId: memo.memoId,
+            direction: memo.direction,
+            currencyCode: memo.currencyCode,
+            exchangeRate: memo.exchangeRate,
+            amount: toBaseAmount(
+              Number(memo.amount),
+              Number(memo.exchangeRate)
+            ),
+            remaining: source.remainingBase,
+            remainingDocument: source.remainingDocument
+          }
+        ]
+      : [];
+  });
 }
 
 export async function getAvailableCreditsForParty(
@@ -3038,27 +2977,18 @@ export async function applyCreditsToInvoices(
       const id = isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId;
       const invoice = id ? invoices.get(id) : undefined;
       if (!invoice) continue;
-      if (row.sourceAmount == null)
-        throw new Error("Cash application is missing its document principal");
+      const reserved = reduceInvoiceSettlements(
+        [row],
+        invoice.exchangeRate,
+        currencyDecimals
+      );
       invoice.remainingDocument = toDocumentAmount(
-        invoice.remainingDocument -
-          Number(row.sourceAmount) -
-          toDocumentAmount(
-            Number(row.discountAmount) + Number(row.writeOffAmount),
-            invoice.exchangeRate,
-            currencyDecimals
-          ),
+        invoice.remainingDocument - reserved.document,
         1,
         currencyDecimals
       );
-      invoice.remainingBase = round(
-        invoice.remainingBase -
-          Number(row.appliedAmount) -
-          Number(row.discountAmount) -
-          Number(row.writeOffAmount)
-      );
+      invoice.remainingBase = round(invoice.remainingBase - reserved.base);
     }
-    const sources = new Map<string, FundingSource>();
     for (const id of memoIds) {
       const memo = memos.find((m) => m.id === id);
       if (!memo || memo.status !== "Posted")
@@ -3069,38 +2999,28 @@ export async function applyCreditsToInvoices(
         throw new Error("Memo and payment party must match");
       if (memo.currencyCode !== payment.currencyCode)
         throw new Error("Memo and payment currency must match");
-      let usedDocument = 0;
-      let usedBase = 0;
-      for (const row of prior) {
-        if (row.memoId !== id) continue;
-        if (row.sourceAmount == null)
-          throw new Error(
-            "Credit application is missing its document principal"
-          );
-        usedDocument += Number(row.sourceAmount);
-        usedBase +=
-          Number(row.appliedAmount) +
-          (isAR ? 1 : -1) * Number(row.fxGainLossAmount ?? 0);
-      }
-      sources.set(id, {
-        paymentId: id,
-        postingDate: memo.postingDate ?? memo.memoDate,
-        exchangeRate: Number(memo.exchangeRate),
-        remainingDocument: toDocumentAmount(
-          Number(memo.amount) - usedDocument,
-          1,
-          currencyDecimals
-        ),
-        remainingBase: round(
-          toBaseAmount(Number(memo.amount), Number(memo.exchangeRate)) -
-            usedBase
-        )
-      });
     }
+    const sources = new Map(
+      remainingFundingSources(
+        memos.map((memo) => ({
+          ...memo,
+          totalAmount: memo.amount,
+          paymentDate: memo.memoDate
+        })),
+        prior.map((row) => ({
+          ...row,
+          paymentId: row.memoId,
+          sourcePaymentId: null
+        })),
+        new Map([[payment.currencyCode, currencyDecimals]]),
+        isAR
+      ).map((source) => [source.paymentId, source])
+    );
     const values: Database["public"]["Tables"]["invoiceSettlement"]["Insert"][] =
       [];
     for (const app of args.applications) {
-      const source = sources.get(app.memoId)!;
+      const source = sources.get(app.memoId);
+      if (!source) throw new Error("Credit has no remaining funding balance");
       const invoice = invoices.get(app.invoiceId);
       if (!invoice)
         throw new Error(`Invoice ${app.invoiceId} balance not found`);

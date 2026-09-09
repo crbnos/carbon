@@ -135,29 +135,31 @@ function expectWarning(
   remote: QboInvoiceTaxCatalog,
   reason?: RegExp
 ) {
+  let error: unknown;
   try {
     resolveQboInvoiceTax({ document: source, catalog: remote });
-    expect.fail("Expected tax preflight to fail");
-  } catch (error) {
-    expect(error).toMatchObject({
-      name: "JournalEntrySyncError",
-      failure: {
-        errorCode: "UNMAPPED_TAX_CODES",
-        warning: true,
-        metadata: {
-          invoiceId: "invoice",
-          requestedRates: expect.any(Array),
-          candidateTaxCodeIds: expect.any(Array),
-          reason: expect.any(String)
-        }
-      }
-    });
-    if (reason) expect(String(error)).toMatch(reason);
+  } catch (caught) {
+    error = caught;
   }
+  expect(error, "Expected tax preflight to fail").toBeDefined();
+  expect(error).toMatchObject({
+    name: "JournalEntrySyncError",
+    failure: {
+      errorCode: "UNMAPPED_TAX_CODES",
+      warning: true,
+      metadata: {
+        invoiceId: "invoice",
+        requestedRates: expect.any(Array),
+        candidateTaxCodeIds: expect.any(Array),
+        reason: expect.any(String)
+      }
+    }
+  });
+  if (reason) expect(String(error)).toMatch(reason);
 }
 
 describe("QuickBooks native invoice tax", () => {
-  it("uses US transaction tax and actual taxable/non-taxable catalog markers, grouping native tax once", () => {
+  it("uses US transaction tax and documented taxable/non-taxable markers, grouping native tax once", () => {
     const result = resolveQboInvoiceTax({
       document: document(),
       catalog: catalog()
@@ -235,7 +237,7 @@ describe("QuickBooks native invoice tax", () => {
       /multiple|transaction/i
     );
   });
-  it("uses catalog non-tax markers for all-zero tax and omits empty native tax detail", () => {
+  it("uses documented US non-tax markers for all-zero tax and omits empty native tax detail", () => {
     const source = document();
     source.components.forEach((line) => {
       line.taxPercent = 0;
@@ -285,10 +287,7 @@ describe("QuickBooks native invoice tax", () => {
       ];
     expectWarning(document(), remote);
   });
-  it("fails rather than fabricating missing zero-tax markers or guessing jurisdiction", () => {
-    const remote = catalog();
-    remote.taxCodes = remote.taxCodes.filter((code) => code.Id !== "NON");
-    expectWarning(document(), remote);
+  it("fails rather than guessing jurisdiction", () => {
     expectWarning(document(), { ...catalog(), country: "" });
   });
   it("rejects source tax amounts that cannot be reproduced by the resolved percentage", () => {
@@ -337,4 +336,29 @@ describe("loadQboInvoiceTaxCatalog", () => {
       } as unknown as QboProvider)
     ).rejects.toThrow(/jurisdiction|country/i);
   });
+});
+
+it("uses documented US markers without requiring marker rows in the tax catalog", () => {
+  const source = document();
+  const remote = catalog();
+  remote.taxCodes = remote.taxCodes.filter(
+    (code) => code.Id !== "TAX" && code.Id !== "NON"
+  );
+  expect(
+    resolveQboInvoiceTax({
+      document: source,
+      catalog: remote
+    }).lineTaxCodeRefs.get("merch")
+  ).toEqual({ value: "TAX" });
+  source.components.forEach((line) => {
+    line.taxPercent = 0;
+    line.taxAmount = 0;
+  });
+  source.totalTax = 0;
+  expect(
+    resolveQboInvoiceTax({
+      document: source,
+      catalog: { country: "US", taxCodes: [], taxRates: [] }
+    })
+  ).toMatchObject({ txnTaxDetail: undefined });
 });

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1486,
+  "totalTools": 1487,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none"},
@@ -127,6 +127,7 @@
     {"name":"accounting_translateCompanyBalances","classification":"WRITE","paramCount":4,"schema":"2e961eb702d9","response":"be5b093fb6e6","injectAuth":"companyId","permission":"accounting:update"},
     {"name":"accounting_translateCompanyPeriodSeries","classification":"WRITE","paramCount":3,"schema":"decaf5350e1f","response":"0c01d5ac39c2","injectAuth":"companyId","permission":"accounting:update"},
     {"name":"accounting_unlockAccountingPeriod","classification":"WRITE","paramCount":1,"schema":"7e5905ac5974","response":"none","injectAuth":"companyId","permission":"accounting:update"},
+    {"name":"accounting_updateDefaultAccounts","classification":"WRITE","paramCount":50,"schema":"ba73ae92b14f","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_updateDefaultBalanceSheetAccounts","classification":"WRITE","paramCount":21,"schema":"af820410074b","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_updateDefaultIncomeAccounts","classification":"WRITE","paramCount":29,"schema":"9249b04e60e2","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
     {"name":"accounting_updateFiscalYearSettings","classification":"WRITE","paramCount":2,"schema":"b13ac9bf329b","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"accounting:update"},
@@ -321,8 +322,8 @@
     {"name":"invoicing_getMemo","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"ee27f56e2f82","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getMemoApplications","classification":"READ","paramCount":1,"schema":"188417093a55","response":"667060f6a7e4","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getMemos","classification":"READ","paramCount":6,"schema":"b120ea106813","response":"4b05f5647015","injectAuth":"companyId","permission":"invoicing:view"},
-    {"name":"invoicing_getOpenPurchaseInvoicesForSupplier","classification":"READ","paramCount":2,"schema":"da8678ca28c2","response":"031a5e88662d","injectAuth":"companyId","permission":"invoicing:view"},
-    {"name":"invoicing_getOpenSalesInvoicesForCustomer","classification":"READ","paramCount":2,"schema":"2d555b8aaf06","response":"031a5e88662d","injectAuth":"companyId","permission":"invoicing:view"},
+    {"name":"invoicing_getOpenPurchaseInvoicesForSupplier","classification":"READ","paramCount":2,"schema":"da8678ca28c2","response":"028a5d08f997","injectAuth":"companyId","permission":"invoicing:view"},
+    {"name":"invoicing_getOpenSalesInvoicesForCustomer","classification":"READ","paramCount":2,"schema":"2d555b8aaf06","response":"028a5d08f997","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getPayment","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"dcd7a2b028c7","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getPaymentCurrencyConfiguration","classification":"READ","paramCount":1,"schema":"cc2bce783cc5","response":"35b15cbf37ce","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getPayments","classification":"READ","paramCount":8,"schema":"0e0e62822fd1","response":"cb3415df82d8","injectAuth":"companyId","permission":"invoicing:view"},

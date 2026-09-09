@@ -1,3 +1,6 @@
+import { toBaseAmount } from "../shared/accounting-currency.ts";
+import { round } from "../shared/precision.ts";
+
 export type PurchasePostingLine = {
   id: string;
   invoiceLineType: string;
@@ -97,5 +100,3 @@ export function calculatePurchasePostingAmounts(input: {
     };
   });
 }
-import { toBaseAmount } from "../shared/accounting-currency.ts";
-import { round } from "../shared/precision.ts";

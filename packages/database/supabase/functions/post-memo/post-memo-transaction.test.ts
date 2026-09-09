@@ -4,6 +4,7 @@ import {
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { paymentFixture } from "../post-payment/payment-test-fixture.ts";
 import { postMemoTransaction } from "./post-memo-transaction.ts";
+import { postPaymentTransaction } from "../post-payment/post-payment-transaction.ts";
 
 type Fixture = Awaited<ReturnType<typeof paymentFixture>>;
 async function memoFixture(f: Fixture) {
@@ -226,4 +227,41 @@ Deno.test("memo currency and tenant checks still apply when accounting is disabl
     await f.cleanup();
     await other.cleanup();
   }
+});
+
+Deno.test("consumed memo cannot be voided until its applying payment is voided", async () => {
+  const f = await paymentFixture();
+  try {
+    const memoId = await memoFixture(f);
+    const original = await postMemoTransaction(f.db, { ...f.args, memoId });
+    const paymentId = await f.payment({ amount: 0, noApplication: true });
+    await f.db.insertInto("invoiceSettlement").values({
+      memoId, appliedViaPaymentId: paymentId, targetSalesInvoiceId: f.invoiceId,
+      sourceAmount: 55, appliedAmount: 50, sourceExchangeRate: 1.1,
+      targetExchangeRate: 1.1, appliedDate: "2026-09-07", companyId: f.companyId, createdBy: "system"
+    }).execute();
+    await postPaymentTransaction(f.db, { ...f.args, paymentId });
+    await assertRejects(() => postMemoTransaction(f.db, { ...f.args, memoId, type: "void" }), Error, "consumed");
+    assertEquals(await f.db.selectFrom("memo").select(["status", "journalId"]).where("id", "=", memoId).executeTakeFirstOrThrow(), { status: "Posted", journalId: original.journalId });
+    assertEquals((await f.db.selectFrom("journal").select("id").where("companyId", "=", f.companyId).where("sourceType", "=", "Credit Memo").execute()).length, 1);
+    await postPaymentTransaction(f.db, { ...f.args, paymentId, type: "void" });
+    await postMemoTransaction(f.db, { ...f.args, memoId, type: "void" });
+    assertEquals((await f.db.selectFrom("memo").select("status").where("id", "=", memoId).executeTakeFirstOrThrow()).status, "Voided");
+  } finally { await f.cleanup(); }
+});
+
+Deno.test("draft memo reservation does not prevent memo void", async () => {
+  const f = await paymentFixture();
+  try {
+    const memoId = await memoFixture(f);
+    await postMemoTransaction(f.db, { ...f.args, memoId });
+    const paymentId = await f.payment({ amount: 0, noApplication: true });
+    await f.db.insertInto("invoiceSettlement").values({
+      memoId, appliedViaPaymentId: paymentId, targetSalesInvoiceId: f.invoiceId,
+      sourceAmount: 55, appliedAmount: 50, sourceExchangeRate: 1.1,
+      targetExchangeRate: 1.1, appliedDate: "2026-09-07", companyId: f.companyId, createdBy: "system"
+    }).execute();
+    await postMemoTransaction(f.db, { ...f.args, memoId, type: "void" });
+    await assertRejects(() => postPaymentTransaction(f.db, { ...f.args, paymentId }), Error);
+  } finally { await f.cleanup(); }
 });

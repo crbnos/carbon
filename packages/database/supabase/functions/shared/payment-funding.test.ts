@@ -5,6 +5,10 @@ import {
 import { toBaseAmount } from "./accounting-currency.ts";
 import {
   allocatePaymentFunding,
+  invoiceRemainingAmounts,
+  isEffectiveSettlement,
+  remainingFundingSources,
+  reduceInvoiceSettlements,
   type FundingApplication,
   type FundingRequest,
   type FundingSource
@@ -341,4 +345,56 @@ Deno.test("inconsistent discount-only closure cannot leave target carrying base 
     remainingDocument: 1, remainingBase: 0.33334, discountAmount: 0.33334
   })]);
   assertEquals(firstApplication(complete.applications).discountAmount, 0.33334);
+});
+
+
+Deno.test("settlement effectiveness requires the owning posted parent", () => {
+  const row = { paymentId: null, memoId: null, appliedViaPaymentId: null,
+    paymentStatus: null, memoStatus: null, viaStatus: null };
+  assertEquals(isEffectiveSettlement({ ...row, paymentStatus: "Posted" }), false);
+  assertEquals(isEffectiveSettlement({ ...row, memoStatus: "Posted" }), false);
+  for (const status of ["Draft", "Posted", "Voided"]) {
+    assertEquals(isEffectiveSettlement({ ...row, paymentId: "payment", paymentStatus: status }), status === "Posted");
+    assertEquals(isEffectiveSettlement({ ...row, memoId: "memo", memoStatus: "Posted", appliedViaPaymentId: "payment", viaStatus: status }), status === "Posted");
+  }
+  assertEquals(isEffectiveSettlement({ ...row, memoId: "memo", memoStatus: "Posted" }), true);
+  assertEquals(isEffectiveSettlement({ ...row, paymentId: "payment", paymentStatus: "Draft", memoId: "memo", memoStatus: "Posted" }), false);
+});
+Deno.test("invoice reducers preserve signed controls and aggregate before rounding", () => {
+  for (const isAR of [true, false]) {
+    const invoice = { id: "invoice", totalAmount: 90, exchangeRate: 1 };
+    const controls = new Map([["invoice", 100 - 10]]);
+    const row = { targetSalesInvoiceId: "invoice", targetPurchaseInvoiceId: "invoice",
+      sourceAmount: 90, appliedAmount: 90, discountAmount: 0, writeOffAmount: 0 };
+    assertEquals(invoiceRemainingAmounts(invoice, [row], controls, 2, isAR), { remainingDocument: 0, remainingBase: 0 });
+    assertThrows(() => invoiceRemainingAmounts(invoice, [{ ...row, sourceAmount: 91 }], controls, 2, isAR), Error, "excessive settlements");
+  }
+  assertEquals(reduceInvoiceSettlements(Array.from({ length: 1001 }, () => ({
+    sourceAmount: 0, appliedAmount: 0.000004, discountAmount: 0, writeOffAmount: 0
+  })), 1, 2), { document: 0, base: 0.004 });
+  assertEquals(reduceInvoiceSettlements([{ sourceAmount: 0.1, appliedAmount: 0.09091, discountAmount: 0.004, writeOffAmount: 0.004 },
+    { sourceAmount: 0.2, appliedAmount: 0.18182, discountAmount: 0.004, writeOffAmount: 0.004 }], 1.1, 2),
+    { document: 0.32, base: 0.28873 });
+});
+Deno.test("source reduction preserves principal, final carry and AP FX direction", () => {
+  const payment = { id: "source", totalAmount: 160.01, exchangeRate: 16000,
+    postingDate: null, paymentDate: "2026-09-07", currencyCode: "EUR" };
+  const use = { paymentId: "current", sourcePaymentId: "source", sourceAmount: 160,
+    appliedAmount: 0.01, fxGainLossAmount: 0 };
+  const decimals = new Map([["EUR", 2]]);
+  assertEquals(remainingFundingSources([payment], [use], decimals, true)[0], {
+    paymentId: "source", postingDate: "2026-09-07", exchangeRate: 16000, remainingDocument: 0.01, remainingBase: 0
+  });
+  assertEquals(remainingFundingSources([payment], [use, { ...use, sourceAmount: 0.01, appliedAmount: 0 }], decimals, true), []);
+  assertEquals(remainingFundingSources([{ ...payment, totalAmount: 1, exchangeRate: 3 }],
+    [{ ...use, sourceAmount: 0.5, appliedAmount: 0.16667 }], decimals, true)[0]?.remainingBase, 0.16666);
+  assertEquals(remainingFundingSources([{ ...payment, totalAmount: 110, exchangeRate: 1.1 }],
+    [{ ...use, sourceAmount: 55, appliedAmount: 60, fxGainLossAmount: 10 }], decimals, false)[0]?.remainingBase, 50);
+  assertEquals(remainingFundingSources([{ ...payment, totalAmount: 3, exchangeRate: 3 }],
+    [{ ...use, sourceAmount: 1, appliedAmount: 0.33333 }, { ...use, sourceAmount: 1, appliedAmount: 0.33333 }],
+    decimals, true)[0]?.remainingBase, 0.33334);
+  for (const principal of [null, -1, Number.NaN]) {
+    assertThrows(() => remainingFundingSources([payment], [{ ...use, sourceAmount: principal }], decimals, true), Error, "principal");
+  }
+  assertThrows(() => remainingFundingSources([payment], [{ ...use, sourceAmount: 161 }], decimals, true), Error, "Invalid remaining");
 });

@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   datetime,
@@ -27,6 +28,7 @@ import type {
   accountValidator,
   costCenterValidator,
   currencyValidator,
+  defaultAccountValidator,
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
   depreciationMethods,
@@ -258,8 +260,8 @@ export async function getFinancialStatementBalances(
     .from("accounts")
     .select("*")
     .eq("companyGroupId", companyGroupId)
-    .eq("active", true)
-    .order("number", { ascending: true });
+    .order("number", { ascending: true })
+    .order("id", { ascending: true });
 
   const balancesQuery = client.rpc("accountTreeBalancesByCompany", {
     p_company_group_id: companyGroupId,
@@ -270,12 +272,18 @@ export async function getFinancialStatementBalances(
   });
 
   const [accountsResponse, balancesResponse] = await Promise.all([
-    accountsQuery,
-    balancesQuery
+    fetchAll<Database["public"]["Views"]["accounts"]["Row"]>(
+      () => accountsQuery
+    ),
+    fetchAll<
+      Database["public"]["Functions"]["accountTreeBalancesByCompany"]["Returns"][number]
+    >(() => balancesQuery.order("accountId", { ascending: true }))
   ]);
 
-  if (accountsResponse.error) return accountsResponse;
-  if (balancesResponse.error) return balancesResponse;
+  if (accountsResponse.error)
+    return { data: null, error: accountsResponse.error };
+  if (balancesResponse.error)
+    return { data: null, error: balancesResponse.error };
 
   const balancesByAccountId = (
     balancesResponse.data as unknown as (Transaction & { accountId: string })[]
@@ -356,6 +364,16 @@ export async function getFinancialStatementBalances(
 }
 
 export async function getAccountPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { start: string; periodEnds: string[] }
+) {
+  return accountPeriodSeriesQuery(client, companyGroupId, companyId, args);
+}
+
+// Keep the exported RPC response contract while report readers page the same query.
+function accountPeriodSeriesQuery(
   client: SupabaseClient<Database>,
   companyGroupId: string,
   companyId: string,
@@ -546,7 +564,11 @@ export async function applyCtaToReportPeriodSeries(
   data: ChartPeriodSeries[] | null;
   error: { message: string } | null;
 }> {
-  const defaults = await getDefaultAccounts(client, reportingCompanyId);
+  const defaults = await client
+    .from("accountDefault")
+    .select("currencyTranslationAccount")
+    .eq("companyId", reportingCompanyId)
+    .single();
   if (defaults.error) return { data: null, error: defaults.error };
   const accountId = defaults.data?.currencyTranslationAccount;
   if (!accountId) {
@@ -568,38 +590,12 @@ export async function applyCtaToReportPeriodSeries(
     };
   }
 
-  let mapping = ctaAccount;
   if (
-    mapping.active === undefined ||
-    mapping.companyGroupId === undefined ||
-    mapping.class === undefined ||
-    mapping.incomeBalance === undefined ||
-    mapping.isGroup === undefined
-  ) {
-    const account = await client
-      .from("account")
-      .select("*")
-      .eq("id", accountId)
-      .eq("companyGroupId", companyGroupId)
-      .single();
-    if (account.error) return { data: null, error: account.error };
-    if (!account.data) {
-      return {
-        data: null,
-        error: {
-          message:
-            "The configured currency translation account could not be loaded"
-        }
-      };
-    }
-    mapping = { ...account.data, periods: ctaAccount.periods };
-  }
-  if (
-    mapping.companyGroupId !== companyGroupId ||
-    mapping.active !== true ||
-    mapping.isGroup !== false ||
-    mapping.class !== "Equity" ||
-    mapping.incomeBalance !== "Balance Sheet"
+    ctaAccount.companyGroupId !== companyGroupId ||
+    ctaAccount.active !== true ||
+    ctaAccount.isGroup !== false ||
+    ctaAccount.class !== "Equity" ||
+    ctaAccount.incomeBalance !== "Balance Sheet"
   ) {
     return {
       data: null,
@@ -808,12 +804,12 @@ export async function getFinancialStatementPeriodSeries(
     .from("accounts")
     .select("*")
     .eq("companyGroupId", companyGroupId)
-    .eq("active", true)
-    .order("number", { ascending: true });
+    .order("number", { ascending: true })
+    .order("id", { ascending: true });
 
   // The buckets helper may truncate a very wide range, so the series start is
   // the FIRST bucket's start — not whatever the caller had before bucketing.
-  const seriesQuery = getAccountPeriodSeries(
+  const seriesQuery = accountPeriodSeriesQuery(
     client,
     companyGroupId,
     companyId,
@@ -824,8 +820,16 @@ export async function getFinancialStatementPeriodSeries(
   );
 
   const [accountsResponse, seriesResponse] = await Promise.all([
-    accountsQuery,
-    seriesQuery
+    fetchAll<Database["public"]["Views"]["accounts"]["Row"]>(
+      () => accountsQuery
+    ),
+    fetchAll<
+      Database["public"]["Functions"]["accountTreeBalancePeriodSeries"]["Returns"][number]
+    >(() =>
+      seriesQuery
+        .order("accountId", { ascending: true })
+        .order("periodEnd", { ascending: true })
+    )
   ]);
 
   if (accountsResponse.error) {
@@ -3890,6 +3894,25 @@ export async function getPaymentTermsList(
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
+}
+
+/** Save both defaults sections atomically after validating the effective mapping. */
+export async function updateDefaultAccounts(
+  client: SupabaseClient<Database>,
+  defaultAccounts: z.infer<typeof defaultAccountValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const validation = await validateDefaultIncomeAccounts(
+    client,
+    defaultAccounts
+  );
+  if (validation.error) return { data: null, error: validation.error };
+  return client
+    .from("accountDefault")
+    .update(defaultAccounts)
+    .eq("companyId", defaultAccounts.companyId);
 }
 
 export async function updateDefaultBalanceSheetAccounts(

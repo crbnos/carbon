@@ -4426,7 +4426,7 @@ msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "जब विनिर्माण लागत को WIP में अवशोषित किया जाता है तब उपयोग किए जाने वाले क्रेडिट खाते"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
-msgstr "जमा राशियाँ कंपनी की आधार मुद्रा ({currency}) में हैं। यह भुगतान पोस्ट होने पर जमा प्रभावी हो जाते हैं।"
+msgstr "क्रेडिट राशियाँ कंपनी की आधार मुद्रा ({currency}) में हैं। यह भुगतान पोस्ट होने पर क्रेडिट लागू होते हैं।"
 
 msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
@@ -8317,7 +8317,7 @@ msgid "Inv Rate"
 msgstr "इनवॉइस दर"
 
 msgid "Invalid applications"
-msgstr "अमान्य अनुप्रयोग"
+msgstr "अमान्य आवंटन"
 
 msgid "Invalid Invite"
 msgstr "अमान्य निमंत्रण"
@@ -11620,7 +11620,7 @@ msgid "Payments"
 msgstr "भुगतान"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "इस चालान पर लागू किए गए भुगतान और जमा। लागू की गई राशियाँ और विदेशी मुद्रा दरें कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
+msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
 
 msgid "PDF"
 msgstr "PDF"

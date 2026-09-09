@@ -5,6 +5,7 @@ import { RilletSalesInvoiceSyncer } from "../providers/rillet/entities/invoice";
 import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
 import { SalesInvoiceSchema } from "./models";
 import { buildSalesDocumentComponents } from "./sales-document-components";
+import { loadSalesInvoices } from "./sales-invoice-source";
 import type { Accounting } from "./types";
 
 function fixture() {
@@ -21,6 +22,7 @@ function fixture() {
     baseCurrencyDecimalPlaces: 2,
     currencyDecimalPlaces: 2,
     headerShippingCost: 5,
+    shippingRevenueAccountId: "acct-shipping",
     dateIssued: "2026-09-07",
     dateDue: null,
     datePaid: null,
@@ -396,7 +398,20 @@ describe("normalized sales invoice currency/component contract", () => {
   });
 });
 
-function sourceDatabase(missingCurrency = false) {
+function sourceDatabase(
+  missingCurrency = false,
+  postingRows = [
+    {
+      documentId: "invoice",
+      accountId: "posted-shipping",
+      description: "Shipping Revenue",
+      amount: 15,
+      accountClass: "Revenue",
+      isGroup: false
+    }
+  ],
+  invoiceIds = ["invoice"]
+) {
   const source = fixture();
   const headerValues: Record<string, unknown> = Object.fromEntries(
     Object.entries(source).map(([key, value]) => [`salesInvoice.${key}`, value])
@@ -471,15 +486,23 @@ function sourceDatabase(missingCurrency = false) {
           return builder.leftJoin(name, ...args);
         },
         async execute() {
+          if (table === "journalLine") return postingRows;
           const values = table === "salesInvoice" ? headerValues : lineValues;
-          return [
+          return invoiceIds.map((id) =>
             Object.fromEntries(
               read.columns.map((column) => {
                 const [name, alias] = column.split(" as ");
-                return [alias ?? name!.split(".").at(-1)!, values[name!]];
+                const value =
+                  name === "salesInvoice.id" ||
+                  name === "salesInvoiceLine.invoiceId"
+                    ? id
+                    : name === "salesInvoiceLine.id"
+                      ? `line-${id}`
+                      : values[name!];
+                return [alias ?? name!.split(".").at(-1)!, value];
               })
             )
-          ];
+          );
         }
       };
       return builder;
@@ -519,6 +542,7 @@ describe.each([
       totalAmount: 151,
       balance: 151,
       headerShippingCost: 5,
+      shippingRevenueAccountId: "posted-shipping",
       baseCurrencyCode: "USD",
       baseCurrencyDecimalPlaces: 2,
       currencyDecimalPlaces: 2
@@ -534,7 +558,7 @@ describe.each([
       totalTax: 10.4,
       totalAmount: 120.8
     });
-    expect(reads).toHaveLength(2);
+    expect(reads).toHaveLength(3);
     expect(reads[0]?.where).toContainEqual([
       "salesInvoice.companyId",
       "=",
@@ -572,5 +596,83 @@ describe.each([
     await expect(syncer.fetchLocal("invoice")).rejects.toThrow(
       /currency|precision/i
     );
+  });
+});
+
+describe("canonical invoice posting source", () => {
+  it("keeps different original shipping accounts in one batch and scopes every posting read", async () => {
+    const postings = ["a", "b"].map((id) => ({
+      documentId: id,
+      accountId: `shipping-${id}`,
+      description: "Shipping Revenue",
+      amount: 15,
+      accountClass: "Revenue",
+      isGroup: false
+    }));
+    const { database, reads } = sourceDatabase(false, postings, ["a", "b"]);
+    const result = await loadSalesInvoices(database as never, {
+      companyId: "company",
+      ids: ["a", "b"]
+    });
+    expect(
+      [...result.values()].map((invoice) => invoice.shippingRevenueAccountId)
+    ).toEqual(["shipping-a", "shipping-b"]);
+    const read = reads.find((read) => read.table === "journalLine")!;
+    expect(read.where).toEqual(
+      expect.arrayContaining([
+        ["journalLine.companyId", "=", "company"],
+        ["journal.companyId", "=", "company"],
+        ["journal.sourceType", "=", "Sales Invoice"],
+        ["journalLine.documentType", "=", "Invoice"],
+        ["journal.status", "=", "Posted"],
+        ["journalLine.documentId", "in", ["a", "b"]]
+      ])
+    );
+    expect(read.on).toContainEqual([
+      "account.companyGroupId",
+      "=",
+      "company.companyGroupId"
+    ]);
+    expect(reads.some((read) => read.table === "accountDefault")).toBe(false);
+  });
+  it("refuses ambiguous original shipping accounts without choosing today's default", async () => {
+    const postings = ["a", "b"].map((id) => ({
+      documentId: "invoice",
+      accountId: `shipping-${id}`,
+      description: "Shipping Revenue",
+      amount: 15,
+      accountClass: "Revenue",
+      isGroup: false
+    }));
+    const { database } = sourceDatabase(false, postings);
+    await expect(
+      loadSalesInvoices(database as never, {
+        companyId: "company",
+        ids: ["invoice"]
+      })
+    ).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+  });
+  it("ignores reversal and arbitrary revenue descriptions as original shipping facts", async () => {
+    const postings = ["VOID: Shipping Revenue", "Some revenue"].map(
+      (description) => ({
+        documentId: "invoice",
+        accountId: "other",
+        description,
+        amount: 15,
+        accountClass: "Revenue",
+        isGroup: false
+      })
+    );
+    const { database } = sourceDatabase(false, postings);
+    expect(
+      (
+        await loadSalesInvoices(database as never, {
+          companyId: "company",
+          ids: ["invoice"]
+        })
+      ).get("invoice")?.shippingRevenueAccountId
+    ).toBeNull();
   });
 });

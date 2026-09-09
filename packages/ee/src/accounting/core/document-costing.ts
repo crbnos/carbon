@@ -1,7 +1,13 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { round, toDocumentAmount } from "@carbon/utils";
+import {
+  classifyAccountingPostingRole,
+  round,
+  SCALE,
+  toDocumentAmount
+} from "@carbon/utils";
 import { loadJournalLineDimensions } from "./dimension-mapping";
 import {
+  JournalEntrySyncError,
   type JournalLineDimensionRef,
   toDebitSignedAmount,
   toPostingDateString
@@ -77,12 +83,12 @@ export type BillCostingResult = {
  * (`documentLineReference = purchase-invoice:<purchaseOrderLineId>`); direct
  * no-PO lines and variance lines resolve to `sourceItem: undefined`.
  *
- * Returns `lines: []` when the invoice has no posted Purchase Invoice
- * journal (not posted / accounting off) — the caller surfaces the Warning.
+ * Missing original posting/control metadata raises a structured Warning before
+ * any currency reconciliation can hide the actionable source problem.
  */
 export async function loadBillCostingLines(
   db: Db,
-  args: { companyId: string; billId: string; payablesAccountId: string | null }
+  args: { companyId: string; billId: string }
 ): Promise<BillCostingResult> {
   const invoice = await db
     .selectFrom("purchaseInvoice")
@@ -171,6 +177,7 @@ export async function loadBillCostingLines(
       "journalLine.documentLineReference",
       "account.class as accountClass"
     ])
+    .where("journalLine.documentType", "=", "Invoice")
     .where("journalLine.documentId", "=", args.billId)
     .where("journalLine.companyId", "=", args.companyId)
     .where("journal.sourceType", "=", "Purchase Invoice")
@@ -179,11 +186,43 @@ export async function loadBillCostingLines(
     .orderBy("journalLine.journalLineReference", "asc")
     .execute();
 
-  // AP control line(s) are re-booked by the provider's own bill mechanics —
-  // exclude them; keep null-account lines (they fail preflight as unmapped).
-  const costingRows = rows.filter(
-    (row) => row.accountId === null || row.accountId !== args.payablesAccountId
+  const controls = rows.filter(
+    (row) => classifyAccountingPostingRole(row.description) === "Payables"
   );
+  if (
+    !rows.length ||
+    !controls.length ||
+    controls.some((row) => !row.accountId)
+  ) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message: !rows.length
+        ? "Cannot sync bill: no posted Purchase Invoice journal found. Post the invoice with accounting enabled, then retry."
+        : "Cannot sync bill: its original posted payables control account is missing. Correct the posting, then retry.",
+      metadata: {
+        billId: args.billId,
+        controlLineIds: controls.map((row) => row.id)
+      }
+    });
+  }
+  // The provider creates its own AP control. Exclude the original role rows,
+  // preserving explicit costing even when it happens to use the same account.
+  const costingRows = rows.filter(
+    (row) => classifyAccountingPostingRole(row.description) !== "Payables"
+  );
+  const missingAccountLines = costingRows.filter((row) => !row.accountId);
+  if (missingAccountLines.length)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync bill: posted costing lines have no account. Correct the posting, then retry.",
+      metadata: {
+        billId: args.billId,
+        lineIdsWithoutAccount: missingAccountLines.map((row) => row.id)
+      }
+    });
 
   const dimensionsByLine = await loadJournalLineDimensions(db, {
     companyId: args.companyId,
@@ -288,7 +327,7 @@ export function toTransactionCurrencyLines(
   if (
     !Number.isInteger(decimalPlaces) ||
     decimalPlaces < 0 ||
-    decimalPlaces > 5
+    decimalPlaces > SCALE
   )
     throw new Error("Unsupported document decimal scale");
   toDocumentAmount(documentTotal, exchangeRate, decimalPlaces);
@@ -299,10 +338,11 @@ export function toTransactionCurrencyLines(
       throw new Error("Costing line amount must be finite");
     return sum + line.amount * exchangeRate;
   }, 0);
-  // Each posted source is stored to five decimals; the authoritative document
+  // Each posted source is stored at SCALE; the authoritative document
   // is rounded once at its own boundary. This envelope cannot conceal a cost gap.
   const envelope =
-    lines.length * 0.000005 * exchangeRate + 0.5 * 10 ** -decimalPlaces;
+    lines.length * (0.5 / 10 ** SCALE) * exchangeRate +
+    0.5 * 10 ** -decimalPlaces;
   if (
     Math.abs(unroundedTotal - documentTotal) >
     envelope + Number.EPSILON * Math.max(1, Math.abs(documentTotal)) * 8

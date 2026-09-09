@@ -1,5 +1,5 @@
 -- AR/AP balances, source funding and reporting contracts against the real views/RPCs.
--- Run from the repository root via .context/accounting/run-local-check.ts psql.
+-- Run from the repository root via scripts/run-local-accounting-check.ts psql.
 -- Every fixture owns its company/group/parties/accounts. No fixture touches real
 -- documents; transaction rollback and event suppression cover all scenarios.
 \set ON_ERROR_STOP on
@@ -163,6 +163,35 @@ DO $cases$
 DECLARE f pg_temp.report_fixture; other_fixture pg_temp.report_fixture; is_ar boolean; doc text; p1 text; p2 text; m text; s text; row_value record; open_sum numeric; n integer; excluded_status text; new_account text;
 BEGIN
   FOREACH is_ar IN ARRAY ARRAY[true,false] LOOP
+    BEGIN
+      f:=pg_temp.seed_report_company();
+      doc:=pg_temp.seed_invoice(f,is_ar,100,1.25);
+      m:=pg_temp.seed_memo(f,is_ar,55,1.25,'2026-01-02');
+      INSERT INTO "invoiceSettlement" ("memoId","targetSalesInvoiceId","targetPurchaseInvoiceId","sourceAmount","appliedAmount","sourceExchangeRate","targetExchangeRate","appliedDate","companyId","createdBy")
+        VALUES(m,CASE WHEN is_ar THEN doc END,CASE WHEN NOT is_ar THEN doc END,NULL,20,1.25,1.25,'2026-01-03',f.company_id,'system');
+      IF is_ar THEN SELECT count(*) INTO n FROM get_ar_open_by_customer(f.company_id,'2026-01-03') WHERE "documentId"=m;
+      ELSE SELECT count(*) INTO n FROM get_ap_open_by_supplier(f.company_id,'2026-01-03') WHERE "documentId"=m; END IF;
+      ASSERT n=0,'Memo with unknown consumed principal must not present a fabricated open balance';
+      -- Before that application takes effect the original memo remains valid.
+      IF is_ar THEN SELECT count(*) INTO n FROM get_ar_open_by_customer(f.company_id,'2026-01-02') WHERE "documentId"=m;
+      ELSE SELECT count(*) INTO n FROM get_ap_open_by_supplier(f.company_id,'2026-01-02') WHERE "documentId"=m; END IF;
+      ASSERT n=1,'Future invalid application must not hide the historical memo';
+      RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
+    EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+
+    BEGIN
+      f:=pg_temp.seed_report_company();
+      doc:=pg_temp.seed_invoice(f,is_ar,90,1);
+      PERFORM pg_temp.book_control(f,is_ar,100,'2026-01-01',doc);
+      PERFORM pg_temp.book_control(f,is_ar,-10,'2026-01-01',doc);
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-01-01',90,0,90,'signed original controls retain net carrying');
+      p1:=pg_temp.seed_payment(f,is_ar,90,1,'2026-01-02');
+      PERFORM pg_temp.apply_cash(f,is_ar,p1,doc,90,90,1,1,'2026-01-02');
+      PERFORM pg_temp.book_control(f,is_ar,-90,'2026-01-02',NULL,'Payment',p1);
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-01-02',0,0,0,'mixed-sign invoice fully clears without FX');
+      RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
+    EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+
     -- Each subtransaction unwinds fixture state. SQLSTATE P9001 is our explicit
     -- successful cleanup; ASSERT uses P0004 and is never caught as success.
     BEGIN

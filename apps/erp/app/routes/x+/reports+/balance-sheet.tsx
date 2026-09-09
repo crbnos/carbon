@@ -13,13 +13,15 @@ import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import {
-  applyCtaToReportPeriodSeries,
   financialReportParamsValidator,
   getCompaniesInGroup,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
+import {
+  applyCtaToReportPeriodSeriesForReport,
+  getConsolidatedPeriodSeriesForReport
+} from "~/modules/accounting/accounting.ee.server";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,
@@ -121,9 +123,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    const adjusted = await applyCtaToReportPeriodSeries(
-      client,
-      companyGroupId,
+    const adjusted = await applyCtaToReportPeriodSeriesForReport(
+      request,
       parentCompany!.id,
       {
         accounts: consolidated.data,
@@ -192,9 +193,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   let accounts = series.data ?? [];
   if (showTranslated) {
-    const adjusted = await applyCtaToReportPeriodSeries(
-      client,
-      companyGroupId,
+    const adjusted = await applyCtaToReportPeriodSeriesForReport(
+      request,
       parentCompany!.id,
       {
         accounts,

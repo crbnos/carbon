@@ -6,7 +6,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/types.ts";
 
 export async function connectPaymentTestDatabase() {
-  const url = new URL(Deno.env.get("SUPABASE_DB_URL") ?? "");
+  const databaseUrl = Deno.env.get("SUPABASE_DB_URL");
+  if (!databaseUrl) throw new Error("Payment regressions require SUPABASE_DB_URL for an existing local database");
+  const url = new URL(databaseUrl);
   if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {
     throw new Error("Payment regressions require an existing local database");
   }
@@ -245,7 +247,7 @@ export async function paymentFixture() {
       });
       return id;
     },
-    async invoice(input: { amount?: number; rate?: number } = {}) {
+    async invoice(input: { amount?: number; rate?: number; controlDescription?: string } = {}) {
       const id = `${prefix}-invoice-${crypto.randomUUID()}`;
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -278,7 +280,7 @@ export async function paymentFixture() {
           createdBy: "system",
         }).returning("id").executeTakeFirstOrThrow();
         await trx.insertInto("journalLine").values([
-          { accountId: account("control"), description: "Accounts Receivable" },
+          { accountId: account("control"), description: input.controlDescription ?? "Accounts Receivable" },
           { accountId: account("sales"), description: "Sales" },
         ].map((row) => ({
           ...row,

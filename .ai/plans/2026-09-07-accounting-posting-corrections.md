@@ -4,7 +4,7 @@
 **Research:** [.ai/research/accounting-posting-corrections.md](../research/accounting-posting-corrections.md)
 **Branch:** `assess-issue-against-code`; base `origin/main`
 **Source baseline:** `0a9aef2444b04f0a0f0ade6f99dcd8e60aa3ec30`
-**Status:** approved by user on 2026-09-07; execution in progress.
+**Status:** implementation complete; PR review corrections and final validation tracked in [the review-corrections plan](2026-09-08-accounting-review-corrections.md).
 
 The user approved Shipping Revenue account/default/backfill and explicitly allowed assuming accounting has no users. Implement one corrected contract. Do not add legacy calculation versions, historical correction tools, France/e-invoicing, a tax engine, or new refund/cross-currency workflows. Preserve operational records and the existing database.
 
@@ -44,7 +44,7 @@ Only the final integrated result is deployable. Per-task commits are local revie
 **Depends on:** none
 **Files:**
 - Modify: `apps/erp/app/modules/accounting/accounting.periods.test.ts` — repair missing timezone lookup mocks.
-- Create: `.context/accounting/run-local-check.ts` — gitignored command launcher for local SQL/concurrency checks.
+- Create: `scripts/run-local-accounting-check.ts` — tracked command launcher for local SQL/concurrency checks.
 - Read: `apps/erp/vitest.config.ts`, `packages/config/vitest.mts`, `packages/config/package.json`.
 
 **Steps:**
@@ -146,7 +146,7 @@ pnpm db:migrate
 ```bash
 pnpm run generate:types
 rg -n 'salesShippingRevenueAccount|sourcePaymentId|sourceAmount' packages/database/src/types.ts packages/database/supabase/functions/lib/types.ts
-pnpm exec tsx .context/accounting/run-local-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/accounting-shipping-backfill.test.sql
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/accounting-shipping-backfill.test.sql
 # Expected: generated fields found; named PASS notices, ALL SCENARIOS PASSED, ROLLBACK, exit 0.
 ```
 
@@ -533,7 +533,7 @@ pnpm db:migrate
 **Verify:**
 ```bash
 pnpm run generate:types
-pnpm exec tsx .context/accounting/run-local-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/accounting-balances-and-reports.test.sql
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/accounting-balances-and-reports.test.sql
 # Expected: every AR/AP/source/cutoff/precision assertion passes, ALL SCENARIOS PASSED, ROLLBACK, exit 0.
 ```
 
@@ -558,9 +558,9 @@ pnpm exec tsx .context/accounting/run-local-check.ts psql -v ON_ERROR_STOP=1 -f 
 
 **Verify:**
 ```bash
-pnpm exec tsx .context/accounting/run-local-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/accounting-posting-corrections.test.sql
-pnpm exec tsx .context/accounting/run-local-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/intercompany-elimination.test.sql
-pnpm exec tsx .context/accounting/run-local-check.ts deno test --no-lock --allow-env --allow-net --config packages/database/supabase/functions/deno.json packages/database/supabase/functions/post-payment/post-payment-concurrency.test.ts
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/accounting-posting-corrections.test.sql
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/intercompany-elimination.test.sql
+pnpm exec tsx scripts/run-local-accounting-check.ts deno test --no-lock --allow-env --allow-net --config packages/database/supabase/functions/deno.json packages/database/supabase/functions/post-payment/post-payment-concurrency.test.ts
 # Expected: both SQL harnesses report ALL SCENARIOS PASSED and ROLLBACK; actual concurrency/rollback tests pass against local DB.
 ```
 
@@ -648,7 +648,7 @@ matching report CSV, and a successful playbook with current selectors.
 - Task 17 full `pnpm run test` passes all 27 Turbo tasks. Earlier dev supervisor test timeouts coincided with measured Mac sleep intervals; its 65 tests pass in seven seconds while awake. Verification uses a bounded local keep-awake process. Docker clock lag after sleep caused browser session refresh loops; runtime recovery preserves database volumes.
 
 - Tasks 6/7/10 committed as `6a23f5e74d`, `a48586c98e`, `41e0617b1d`; 43 combined sales/purchase runtime tests, typed pure purchase helpers, 156 provider boundary tests, utils and EE scoped typechecks passed. Existing Deno Node/Pool driver diagnostics were reproduced on the baseline; runtime edge tests are explicit `--no-check`.
-- Task 8 internal seams include a reusable local DB fixture and the memo transaction entrypoint. Both endpoints retain their HTTP authorization wrappers. DB tests use `pnpm exec tsx .context/accounting/run-local-check.ts deno test --no-lock --no-check --allow-env --allow-net --config packages/database/supabase/functions/deno.json <tests>`; typed pure tests run separately. The local fixture suppresses outbound triggers on every independent connection and removes only its own company and generated tenant tables.
+- Task 8 internal seams include a reusable local DB fixture and the memo transaction entrypoint. Both endpoints retain their HTTP authorization wrappers. DB tests use `pnpm exec tsx scripts/run-local-accounting-check.ts deno test --no-lock --no-check --allow-env --allow-net --config packages/database/supabase/functions/deno.json <tests>`; typed pure tests run separately. The local fixture suppresses outbound triggers on every independent connection and removes only its own company and generated tenant tables.
 - Task 14 reporting correction: `openInBase` retains original posted control carrying less effective A/D/W; source carrying retains original rounded gross less recorded A±FX releases. A 100.004 control must remain 100.004 despite document rounding to 80 at r0.8. Document completion is tracked independently; a positive document/zero-base remainder stays visible with base zero. Appendix B includes this verified correction.
 
 - Task 10 represents a provider-omitted rate as `NormalizedPayment.exchangeRate: number | null`, resolving identity only after authoritative base/document currency reads. Persisted rates remain positive finite numbers; all three provider normalization callers carry omission faithfully.

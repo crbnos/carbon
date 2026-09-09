@@ -188,24 +188,30 @@ Rillet AR_ONLY retains the provider-owned translation limitation described below
 
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
   NOT the item's account. `core/document-costing.ts` is the shared core:
-  `loadBillCostingLines(db, { companyId, billId, payablesAccountId })` reads the
+  `loadBillCostingLines(db, { companyId, billId })` reads the
   posted journal (`journal.sourceType='Purchase Invoice'`, `status='Posted'`),
-  drops the AP control line, and returns base-currency debit-signed
+  excludes original AP/IC control rows using `classifyAccountingPostingRole` from
+  `@carbon/utils` (never today's payables default), and returns base-currency debit-signed
   `CostingLine[]` (+ `currencyCode`/`exchangeRate`, document total, base currency and precision). Item labels are joined via
   `journalLine.documentLineReference` (`purchase-invoice:<purchaseOrderLineId>`
   → `purchaseOrderLine.itemId` → `item`); direct no-PO / variance lines have
   `sourceItem: undefined`. `toTransactionCurrencyLines(lines, {exchangeRate, documentTotal, decimalPlaces})`
   multiplies base values by the foreign-per-base rate, rounds at document
   currency precision, and reconciles only a permitted rounding residual to the
-  largest absolute line. Identity conversion also rounds; signed PPV is retained. The item is a **description
+  largest absolute line; its storage envelope derives from shared `SCALE`.
+  Identity conversion also rounds; signed PPV is retained. The item is a **description
   label only** (`costingLineItemLabel`). Bill lines are **tax-neutral** (the
   purchase posting folds tax into cost): Rillet no `tax_rate`, QBO no
   `TxnTaxDetail`, Xero `TaxType: "NONE"`. FX bills pin the provider rate
   (Rillet named `exchange_rate` object, QBO `CurrencyRef` + reciprocal
-  `ExchangeRate = 1/r`, Xero `CurrencyRate = r`).
+  `ExchangeRate = 1/r`, Xero `CurrencyRate = r`, including foreign 1:1 snapshots).
+  Rillet's directed-pair request shape is schema-backed; returned economic
+  translation still requires connected-provider acceptance.
   Every bill syncer has a posted-status `shouldSync` (Draft excluded — no
-  journal to replay). Unmapped/account-less/no-journal lines throw the
-  structured `UNMAPPED_ACCOUNTS` Warning.
+  journal to replay). Missing original journal/control/account metadata throws
+  the structured `UNMAPPED_ACCOUNTS` Warning before numeric reconciliation.
+  A genuine costing amount discrepancy remains a failure. Provider builders
+  accept costing-only rows and do not repeat the AP filter.
   - QBO bill emits `AccountBasedExpenseLineDetail` from a NEW bill-only builder
     (`buildQboBillLines`); it no longer uses the shared `buildQboExpenseLines`
     or `ensureDependencySynced("item")`. Xero bill uses `buildXeroBillLineItems`.
@@ -214,18 +220,41 @@ Rillet AR_ONLY retains the provider-owned translation limitation described below
     `loadAccountCodesById` (Xero) / `loadQboAccountRefsById` (QBO) /
     `loadRilletAccountCodesById` (Rillet).
 - **AR invoices preserve separate sales, shipping and native tax components.**
-  `core/sales-document-components.ts` shares the internal posting breakdown,
-  converts base amounts once, and reconciles document rounding. All three
-  `fetchLocalBatch` implementations read authoritative invoice-view totals,
-  add-ons, line/header shipping, and scoped currency precision. Merchandise and
-  add-ons retain the item's sales mapping; shipping resolves
-  `accountDefault.salesShippingRevenueAccount`. Xero uses explicit shipping account
-  lines. QBO and Rillet provision reusable service/product helpers with a
-  separate `shippingItem` mapping identity. Tax appears once through native
-  provider fields. QBO resolves existing sales tax codes/rates before dependency
-  writes; missing or ambiguous configuration raises `UNMAPPED_TAX_CODES`.
-  Rillet AR_ONLY has no documented request rate field, so its base translation
-  remains provider-owned. COGS stays on the pushed `Sales Shipment` journal.
+  `core/sales-invoice-source.ts` is the single typed batch loader for all three
+  invoice adapters: authoritative view totals, add-ons, line/header shipping,
+  group-scoped currency metadata and the original posted Shipping Revenue
+  account. `core/sales-document-components.ts` shares the internal posting
+  breakdown, converts base amounts once and reconciles document rounding.
+  Original journal reads scope company, document, source type and Posted
+  status; the shared role selector excludes VOID descriptions. Missing or
+  ambiguous original shipping accounts refuse sync before dependency writes.
+  Changing defaults after posting cannot change the account used on retry.
+  Merchandise and add-ons retain the item's existing sales mapping. QBO and
+  Rillet provision reusable service/product helpers under `shippingItem`, keyed
+  by the original shipping account (Rillet also includes base currency).
+  Tax appears once through native provider fields; COGS stays on the pushed
+  `Sales Shipment` journal.
+  - Xero sends one monetary unit per component, keeping original quantity and
+    unit price in Description. This preserves net and native tax for bulk
+    quantities and fine unit prices. Actual invoice/bill POSTs use `unitdp=4`;
+    amounts that cannot be represented at Xero's two-decimal monetary boundary
+    are refused before document writes rather than rounded away. Tax magnitude
+    cannot exceed the monetary line unit; exotic/negative taxable adjustments
+    still need provider acceptance. [Xero rounding contract](https://developer.xero.com/documentation/guides/how-to-guides/rounding-in-xero/).
+    CurrencyRate is omitted only for identical currencies; foreign 1:1 stays
+    explicit. Preflight and mocked transports do not prove returned-provider
+    totals; connected acceptance must compare those independently.
+  - QBO US line `TAX`/`NON` values are documented protocol markers, so an
+    untaxed US invoice does not require catalog marker rows. Nonzero US
+    transaction tax rates and all non-US line codes still resolve from the
+    real active catalog; missing/ambiguous configuration raises
+    `UNMAPPED_TAX_CODES` before dependencies. Failed catalog reads evict the
+    cached promise so another invoice can retry. [Intuit SDK tax contract](https://intuit.github.io/QuickBooks-V3-PHP-SDK/quickstart.html#constructing-entities-with-tax).
+  - Rillet AR_ONLY has no documented invoice request rate field, so its base
+    translation remains provider-owned. Its bill rate object is confirmed by
+    [the request schema](https://docs.api.rillet.com/v2.0/reference/create-a-bill-1);
+    directed arithmetic has not been independently verified against a provider
+    ledger. Keep this limitation in connected-provider acceptance.
 - **Provider items are non-tracked** so the provider never posts inventory
   (bills) or COGS (invoices): Xero pushes `IsTrackedAsInventory: false` on
   create and OMITS the flag on update (Xero rejects untracking an item with

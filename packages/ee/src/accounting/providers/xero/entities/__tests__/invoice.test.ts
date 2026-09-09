@@ -26,6 +26,7 @@ const invoice = (): Accounting.SalesInvoice =>
     baseCurrencyDecimalPlaces: 2,
     currencyDecimalPlaces: 2,
     headerShippingCost: 0,
+    shippingRevenueAccountId: "acct_shipping",
     exchangeRate: 1,
     dateIssued: "2026-08-04",
     dateDue: null,
@@ -235,8 +236,9 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
   it("pushes line amounts in the currency the payload declares", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
     expect(payload.CurrencyCode).toBe("EUR");
-    // 40 EUR/ea, not the 50 base
-    expect(payload.LineItems[0]?.UnitAmount).toBe(40);
+    // One monetary unit carries the full 80 EUR net; source detail remains.
+    expect(payload.LineItems[0]?.UnitAmount).toBe(80);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 40 EUR");
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
@@ -281,6 +283,7 @@ function chargedInvoice(): Accounting.SalesInvoice {
     currencyCode: "EUR",
     exchangeRate: 0.8,
     headerShippingCost: 5,
+    shippingRevenueAccountId: "acct_shipping",
     subtotal: 133,
     totalTax: 13,
     totalAmount: 151,
@@ -353,4 +356,143 @@ describe("Xero native sales components", () => {
         .ensureDependencySynced
     ).not.toHaveBeenCalled();
   });
+});
+
+function reviewSyncer() {
+  const database = makeInvoiceDb({
+    accountDefault: {
+      salesAccount: "acct_sales",
+      salesShippingRevenueAccount: "acct_replacement"
+    },
+    accountMappings: [
+      ...mappedAccounts,
+      {
+        ...mappedAccounts[1]!,
+        id: "replacement-map",
+        accountId: "acct_replacement",
+        metadata: { externalCode: "4050" }
+      }
+    ]
+  });
+  return makeInvoiceSyncer(database);
+}
+describe("Xero posted facts and monetary representation", () => {
+  it("keeps the posted shipping account after changing defaults", async () => {
+    const source = Object.assign(chargedInvoice(), {
+      shippingRevenueAccountId: "acct_shipping"
+    });
+    const payload = await reviewSyncer().mapToRemote(source);
+    expect(
+      payload.LineItems.filter((line) =>
+        line.Description?.startsWith("Shipping")
+      ).map((line) => line.AccountCode)
+    ).toEqual(["4010", "4010"]);
+  });
+  it("represents bulk native tax against a monetary unit without losing the source quantity", async () => {
+    const source = invoice();
+    source.totalTax = 10;
+    source.totalAmount = 110;
+    source.balance = 110;
+    source.lines[0] = {
+      ...source.lines[0]!,
+      quantity: 100,
+      unitPrice: 1,
+      taxPercent: 0.1
+    };
+    const payload = await reviewSyncer().mapToRemote(source);
+    expect(payload.LineItems[0]).toMatchObject({
+      Quantity: 1,
+      UnitAmount: 100,
+      LineAmount: 100,
+      TaxAmount: 10
+    });
+    expect(payload.LineItems[0]?.Description).toContain("100 × 1 USD");
+  });
+  it("refuses subcent document principal before dependency writes", async () => {
+    const source = invoice();
+    source.currencyDecimalPlaces = 3;
+    source.subtotal = 1.001;
+    source.totalAmount = 1.001;
+    source.balance = 1.001;
+    source.lines[0] = { ...source.lines[0]!, quantity: 1, unitPrice: 1.001 };
+    await expect(reviewSyncer().mapToRemote(source)).rejects.toThrow(
+      /Xero.*precision|Xero.*decimal/i
+    );
+  });
+  it("pins an explicit foreign 1:1 rate", async () => {
+    const source = invoice();
+    source.currencyCode = "EUR";
+    expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
+  });
+  it.each([
+    false,
+    true
+  ])("opts into supported unit precision at the actual invoice transport (batch=%s)", async (batch) => {
+    const syncer = reviewSyncer();
+    const requests: string[] = [];
+    (syncer as any).provider.request = async (_method: string, url: string) => {
+      requests.push(url);
+      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+    };
+    const payload = await syncer.mapToRemote(invoice());
+    if (batch)
+      await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
+    else await (syncer as any).upsertRemote(payload, "si_1");
+    expect(requests).toEqual(["/Invoices?unitdp=4"]);
+  });
+});
+
+it("preserves an exact extended net when the source unit price has four decimals", async () => {
+  const source = fxInvoice();
+  source.subtotal = 59.997;
+  source.totalAmount = 59.997;
+  source.balance = 59.997;
+  source.lines[0] = {
+    ...source.lines[0]!,
+    quantity: 3,
+    unitPrice: 19.999,
+    convertedUnitPrice: 15.9992
+  };
+  const payload = await reviewSyncer().mapToRemote(source);
+  expect(payload.LineItems[0]).toMatchObject({
+    Quantity: 1,
+    UnitAmount: 48,
+    LineAmount: 48
+  });
+  expect(payload.LineItems[0]?.Description).toContain("3 × 15.9992 EUR");
+  expect(payload.Total).toBe(48);
+});
+it("preserves a negative untaxed offset without increasing the invoice principal", async () => {
+  const source = invoice();
+  source.subtotal = 90;
+  source.totalAmount = 90;
+  source.balance = 90;
+  source.lines.push({
+    ...source.lines[0]!,
+    id: "offset",
+    quantity: 5,
+    unitPrice: -2
+  });
+  const payload = await reviewSyncer().mapToRemote(source);
+  expect(
+    payload.LineItems.map((line) => [
+      line.Quantity,
+      line.UnitAmount,
+      line.LineAmount,
+      line.TaxAmount
+    ])
+  ).toEqual([
+    [1, 100, 100, 0],
+    [1, -10, -10, 0]
+  ]);
+  expect(payload.Total).toBe(90);
+});
+it("refuses missing original shipping provenance before provisioning", async () => {
+  const source = chargedInvoice();
+  source.shippingRevenueAccountId = null;
+  const syncer = reviewSyncer();
+  await expect(syncer.mapToRemote(source)).rejects.toMatchObject({
+    failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+  });
+  expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
 });
