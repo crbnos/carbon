@@ -467,10 +467,11 @@ export const requiresTurnstile =
   Boolean(CLOUDFLARE_TURNSTILE_SITE_KEY) &&
   CLOUDFLARE_TURNSTILE_SITE_KEY !== TURNSTILE_TEST_SITE_KEY;
 
-// For login loaders: the widget renders exactly when the server requires it.
-export const turnstileSiteKey = requiresTurnstile
-  ? (CLOUDFLARE_TURNSTILE_SITE_KEY ?? null)
-  : null;
+// For login loaders: render the widget whenever a key is configured — the
+// test key gives previews an auto-passing widget. Enforcement (requiresTurnstile)
+// is deliberately narrower, so a widget without enforcement is possible but
+// enforcement without a widget is not.
+export const turnstileSiteKey = CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
 
 export async function sendMagicLink(email: string, turnstileToken?: string) {
   return getCarbonServiceRole().auth.signInWithOtp({
