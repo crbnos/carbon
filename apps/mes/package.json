@@ -31,7 +31,6 @@
     "@lingui/macro": "catalog:",
     "@lingui/react": "catalog:",
     "@lingui/vite-plugin": "catalog:",
-    "@marsidev/react-turnstile": "1.5.0",
     "@nanostores/react": "catalog:",
     "@react-aria/i18n": "catalog:",
     "@react-pdf/renderer": "catalog:",

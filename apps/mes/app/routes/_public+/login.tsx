@@ -7,15 +7,14 @@ import {
   error,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT,
-  SUPABASE_AUTH_CAPTCHA_ENABLED
+  RATE_LIMIT
 } from "@carbon/auth";
 import {
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
   verifyAuthSession,
-  verifyTurnstileToken
+  verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -35,14 +34,13 @@ import {
   Heading,
   ItarLoginDisclaimer,
   Separator,
+  TurnstileChallenge,
   toast,
-  useMode,
   useMount,
   VStack
 } from "@carbon/react";
 import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Turnstile } from "@marsidev/react-turnstile";
 import {
   browserSupportsWebAuthn,
   startAuthentication
@@ -116,25 +114,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { email, turnstileToken } = validation.data;
 
-  const requiresTurnstile =
-    CarbonEdition === Edition.Cloud &&
-    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA";
-
-  // Turnstile tokens are single-use, so exactly one side may verify them. With
-  // Supabase Auth captcha enabled, GoTrue verifies the token on the /otp call
-  // itself; without it, verify in-app (MES has no signup branch, so this is
-  // the only verification site).
-  if (requiresTurnstile && !SUPABASE_AUTH_CAPTCHA_ENABLED) {
-    const passed = await verifyTurnstileToken(turnstileToken, ip);
-    if (!passed) {
-      return data(
-        error(null, "Bot verification failed. Please try again."),
-        await flash(
-          request,
-          error(null, "Bot verification failed. Please try again.")
-        )
-      );
-    }
+  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
+  if (captchaError) {
+    return data(
+      error(null, captchaError),
+      await flash(request, error(null, captchaError))
+    );
   }
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
@@ -191,10 +176,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(
-      email,
-      SUPABASE_AUTH_CAPTCHA_ENABLED ? turnstileToken : undefined
-    );
+    const magicLink = await sendMagicLink(email, turnstileToken);
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -238,7 +220,6 @@ export default function LoginRoute() {
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
-  const theme = useMode();
 
   // Detect passkey support and start conditional UI (autofill) on mount
   useMount(() => {
@@ -567,19 +548,10 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
-              {!!CLOUDFLARE_TURNSTILE_SITE_KEY && (
-                <div className="w-full flex justify-center">
-                  <Turnstile
-                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                    options={{
-                      theme: theme === "dark" ? "dark" : "light"
-                    }}
-                  />
-                </div>
-              )}
+              <TurnstileChallenge
+                siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                onToken={setTurnstileToken}
+              />
             </VStack>
           </ValidatedForm>
         )}

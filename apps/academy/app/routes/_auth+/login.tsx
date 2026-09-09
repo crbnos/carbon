@@ -1,12 +1,10 @@
 import {
   assertIsPost,
-  CarbonEdition,
   CLOUDFLARE_TURNSTILE_SITE_KEY,
   carbonClient,
   error,
   magicLinkValidator,
   RATE_LIMIT,
-  SUPABASE_AUTH_CAPTCHA_ENABLED,
   SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
 } from "@carbon/auth";
@@ -14,7 +12,7 @@ import {
   getMagicLinkErrorMessage,
   sendMagicLink,
   verifyAuthSession,
-  verifyTurnstileToken
+  verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
@@ -27,11 +25,10 @@ import {
   Button,
   Heading,
   Separator,
+  TurnstileChallenge,
   toast,
   VStack
 } from "@carbon/react";
-import { Edition } from "@carbon/utils";
-import { Turnstile } from "@marsidev/react-turnstile";
 import { useState } from "react";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
@@ -92,33 +89,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { email, turnstileToken } = validation.data;
 
-  const requiresTurnstile =
-    CarbonEdition === Edition.Cloud &&
-    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA";
-
-  // Turnstile tokens are single-use, so exactly one side may verify them. With
-  // Supabase Auth captcha enabled, GoTrue verifies the token on the /otp call
-  // itself; without it, verify in-app.
-  if (requiresTurnstile && !SUPABASE_AUTH_CAPTCHA_ENABLED) {
-    const passed = await verifyTurnstileToken(turnstileToken, ip);
-    if (!passed) {
-      return data(
-        error(null, "Bot verification failed. Please try again."),
-        await flash(
-          request,
-          error(null, "Bot verification failed. Please try again.")
-        )
-      );
-    }
+  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
+  if (captchaError) {
+    return data(
+      error(null, captchaError),
+      await flash(request, error(null, captchaError))
+    );
   }
 
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(
-      email,
-      SUPABASE_AUTH_CAPTCHA_ENABLED ? turnstileToken : undefined
-    );
+    const magicLink = await sendMagicLink(email, turnstileToken);
 
     if (magicLink.error) {
       const message = getMagicLinkErrorMessage(magicLink.error);
@@ -259,16 +241,10 @@ export default function LoginRoute() {
               >
                 Sign in with Email
               </Submit>
-              {!!CLOUDFLARE_TURNSTILE_SITE_KEY && (
-                <div className="w-full flex justify-center">
-                  <Turnstile
-                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                  />
-                </div>
-              )}
+              <TurnstileChallenge
+                siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                onToken={setTurnstileToken}
+              />
             </VStack>
           </ValidatedForm>
         )}

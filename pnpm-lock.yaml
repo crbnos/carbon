@@ -51,6 +51,9 @@ catalogs:
     '@logtape/testing':
       specifier: 2.2.3
       version: 2.2.3
+    '@marsidev/react-turnstile':
+      specifier: 1.5.0
+      version: 1.5.0
     '@nanostores/react':
       specifier: 0.7.3
       version: 0.7.3
@@ -567,9 +570,6 @@ importers:
       '@lingui/vite-plugin':
         specifier: 'catalog:'
         version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      '@marsidev/react-turnstile':
-        specifier: 1.5.0
-        version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -738,9 +738,6 @@ importers:
       '@lingui/react':
         specifier: 'catalog:'
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
-      '@marsidev/react-turnstile':
-        specifier: 1.5.0
-        version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@modelcontextprotocol/sdk':
         specifier: 1.29.0
         version: 1.29.0(zod@4.5.4)
@@ -1207,9 +1204,6 @@ importers:
       '@lingui/vite-plugin':
         specifier: 'catalog:'
         version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      '@marsidev/react-turnstile':
-        specifier: 1.5.0
-        version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@nanostores/react':
         specifier: 'catalog:'
         version: 0.7.3(nanostores@0.9.5)(react@18.3.1)
@@ -1545,9 +1539,6 @@ importers:
       '@lingui/vite-plugin':
         specifier: 'catalog:'
         version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      '@marsidev/react-turnstile':
-        specifier: 1.5.0
-        version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -3075,6 +3066,9 @@ importers:
       '@lingui/react':
         specifier: 'catalog:'
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
+      '@marsidev/react-turnstile':
+        specifier: 'catalog:'
+        version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@nanostores/react':
         specifier: 'catalog:'
         version: 0.7.3(nanostores@0.9.5)(react@18.3.1)

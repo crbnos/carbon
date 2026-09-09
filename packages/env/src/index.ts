@@ -343,10 +343,8 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isSecret: true
   }
 );
-// True once Supabase Auth's captcha (Attack Protection → Turnstile) is enabled:
-// GoTrue then rejects /otp calls without a captchaToken, so the login actions
-// forward the browser's Turnstile token instead of verifying it in-app
-// (siteverify consumes the single-use token, so exactly one side may verify).
+// True once Supabase Auth captcha (Attack Protection) is enabled — login
+// actions then forward Turnstile tokens to GoTrue instead of verifying in-app.
 export const SUPABASE_AUTH_CAPTCHA_ENABLED = parseBoolean(
   getEnv("SUPABASE_AUTH_CAPTCHA_ENABLED", {
     isRequired: false,

@@ -7,8 +7,7 @@ import {
   error,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT,
-  SUPABASE_AUTH_CAPTCHA_ENABLED
+  RATE_LIMIT
 } from "@carbon/auth";
 import {
   getMagicLinkErrorMessage,
@@ -16,7 +15,7 @@ import {
   sendMagicLink,
   signInWithBypassEmail,
   verifyAuthSession,
-  verifyTurnstileToken
+  verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -38,14 +37,13 @@ import {
   Heading,
   ItarLoginDisclaimer,
   Separator,
+  TurnstileChallenge,
   toast,
-  useMode,
   useMount,
   VStack
 } from "@carbon/react";
 import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Turnstile } from "@marsidev/react-turnstile";
 import {
   browserSupportsWebAuthn,
   startAuthentication
@@ -148,26 +146,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const requiresTurnstile =
-    CarbonEdition === Edition.Cloud &&
-    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA";
-
-  // Turnstile tokens are single-use, so exactly one side may verify them. With
-  // Supabase Auth captcha enabled, GoTrue verifies the token on the /otp call
-  // itself (which also protects direct-to-API abuse); the token is forwarded
-  // there and only branches that never reach GoTrue — the signup verification
-  // code — verify in-app, at the branch. Without it, verify up front as before.
-  if (requiresTurnstile && !SUPABASE_AUTH_CAPTCHA_ENABLED) {
-    const passed = await verifyTurnstileToken(turnstileToken, ip);
-    if (!passed) {
-      return data(
-        error(null, "Bot verification failed. Please try again."),
-        await flash(
-          request,
-          error(null, "Bot verification failed. Please try again.")
-        )
-      );
-    }
+  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
+  if (captchaError) {
+    return data(
+      error(null, captchaError),
+      await flash(request, error(null, captchaError))
+    );
   }
 
   // Count this attempt against the account. If it tips the account past the
@@ -226,10 +210,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(
-      email,
-      SUPABASE_AUTH_CAPTCHA_ENABLED ? turnstileToken : undefined
-    );
+    const magicLink = await sendMagicLink(email, turnstileToken);
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -256,19 +237,17 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, "Failed to sign in"))
     );
   } else {
-    // The signup verification code goes out via Resend, never GoTrue — so when
-    // GoTrue owns captcha verification, this branch still verifies in-app.
-    if (requiresTurnstile && SUPABASE_AUTH_CAPTCHA_ENABLED) {
-      const passed = await verifyTurnstileToken(turnstileToken, ip);
-      if (!passed) {
-        return data(
-          error(null, "Bot verification failed. Please try again."),
-          await flash(
-            request,
-            error(null, "Bot verification failed. Please try again.")
-          )
-        );
-      }
+    // Signup verification codes go out via Resend, never GoTrue.
+    const signupCaptchaError = await verifyLoginCaptcha(
+      turnstileToken,
+      ip,
+      "app"
+    );
+    if (signupCaptchaError) {
+      return data(
+        error(null, signupCaptchaError),
+        await flash(request, error(null, signupCaptchaError))
+      );
     }
 
     // User doesn't exist, send verification code for signup
@@ -303,7 +282,6 @@ export default function LoginRoute() {
   const conditionalAbortRef = useRef<AbortController | null>(null);
 
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
-  const theme = useMode();
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data.mode) {
@@ -673,19 +651,10 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
-              {!!CLOUDFLARE_TURNSTILE_SITE_KEY && (
-                <div className="w-full flex justify-center">
-                  <Turnstile
-                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                    options={{
-                      theme: theme === "dark" ? "dark" : "light"
-                    }}
-                  />
-                </div>
-              )}
+              <TurnstileChallenge
+                siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                onToken={setTurnstileToken}
+              />
             </VStack>
           </ValidatedForm>
         )}
