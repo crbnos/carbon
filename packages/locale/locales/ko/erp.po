@@ -613,6 +613,9 @@ msgstr "작업 지시의 시작일이 변경됨"
 msgid "A job's status changes"
 msgstr "작업의 상태가 변경됨"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "목록이 {0}에 연결되어 있으므로 이 단계는 각 항목마다 한 번씩 실행되고 결과 목록을 반환합니다."

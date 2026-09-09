@@ -613,6 +613,9 @@ msgstr "İş emrinin başlangıç tarihi değişiyor"
 msgid "A job's status changes"
 msgstr "Bir işin durumu değiştirildi"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Bir liste {0} öğesine bağlandı, bu nedenle bu adım her öğe için bir kez çalışır ve sonuçların listesini döndürür."

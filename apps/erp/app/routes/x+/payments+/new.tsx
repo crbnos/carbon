@@ -3,12 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { getDefaultAccounts } from "~/modules/accounting";
+import { getCurrencyByCode, getDefaultAccounts } from "~/modules/accounting";
 import {
+  computeEarlyPaymentDiscounts,
   getOpenPurchaseInvoicesForSupplier,
   getOpenSalesInvoicesForCustomer,
   PaymentForm,
@@ -37,6 +38,44 @@ async function getSeedableOpenInvoices(
   return res.data ?? [];
 }
 
+// Resolve the payment currency's decimals, then the early-payment discount per
+// invoice as of `asOfDate`. Returns an all-zero map (no discount) when the
+// currency can't be resolved, so a missing currency never blocks seeding.
+async function getSeededDiscounts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  companyGroupId: string,
+  currencyCode: string,
+  asOfDate: string,
+  invoices: {
+    id?: string | null;
+    balance?: number | null;
+    dateIssued?: string | null;
+    paymentTermId?: string | null;
+  }[]
+): Promise<Map<string, number>> {
+  const currency = await getCurrencyByCode(
+    client,
+    companyGroupId,
+    currencyCode
+  );
+  const currencyDecimals = currency.data?.decimalPlaces;
+  if (currencyDecimals == null) {
+    return new Map(invoices.map((inv) => [inv.id ?? "", 0]));
+  }
+  return computeEarlyPaymentDiscounts(client, {
+    companyId,
+    asOfDate,
+    currencyDecimals,
+    invoices: invoices.map((inv) => ({
+      id: inv.id ?? "",
+      balance: Number(inv.balance ?? 0),
+      dateIssued: inv.dateIssued ?? null,
+      paymentTermId: inv.paymentTermId ?? null
+    }))
+  });
+}
+
 // Loader pre-fills the form. Query params:
 //   customerId  -> seeds counterparty + paymentType=Receipt
 //   supplierId  -> seeds counterparty + paymentType=Disbursement
@@ -44,9 +83,12 @@ async function getSeedableOpenInvoices(
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      create: "invoicing"
+    }
+  );
 
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId");
@@ -69,8 +111,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   let totalAmount = amount ? Number(amount) : 0;
 
+  const paymentDate = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+
   // When seeded from invoices, the total and currency come from the invoices
-  // themselves (authoritative), not the URL amount.
+  // themselves (authoritative), not the URL amount. The seeded total is NET of
+  // any early-payment discount the invoice's terms grant as of the payment date,
+  // so a "2/10 net 30" invoice paid today pre-fills the discounted cash amount.
   if (invoiceIds.length > 0 && partyId) {
     const open = await getSeedableOpenInvoices(
       client,
@@ -82,8 +130,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (selected.length > 0) {
       currencyCode = selected[0].currencyCode ?? currencyCode;
       exchangeRate = Number(selected[0].exchangeRate ?? 1);
+      const discounts = await getSeededDiscounts(
+        client,
+        companyId,
+        companyGroupId,
+        currencyCode,
+        paymentDate,
+        selected
+      );
       totalAmount = selected.reduce(
-        (sum, inv) => sum + Number(inv.balance ?? 0),
+        (sum, inv) =>
+          sum +
+          round(Number(inv.balance ?? 0) - (discounts.get(inv.id ?? "") ?? 0)),
         0
       );
     }
@@ -95,9 +153,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       paymentType,
       customerId: customerId ?? "",
       supplierId: supplierId ?? "",
-      paymentDate: datetime
-        .today(await getCompanyTimeZone(client, companyId))
-        .toString(),
+      paymentDate,
       currencyCode,
       exchangeRate,
       totalAmount,
@@ -111,9 +167,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "invoicing"
+    });
 
   const formData = await request.formData();
   // Hidden field set by the loader so the action can seed applications without
@@ -179,22 +236,40 @@ export async function action({ request }: ActionFunctionArgs) {
         seedInvoiceIds.includes(inv.id ?? "")
       );
       if (selected.length > 0) {
+        // Seed the early-payment discount from each invoice's terms as of the
+        // chosen payment date, so applied + discount = balance (settles the
+        // invoice in full without over-settling). The discount uses the SAME
+        // date basis as the loader's total, so the two agree for the default
+        // (pay today) case.
+        const discounts = await getSeededDiscounts(
+          client,
+          companyId,
+          companyGroupId,
+          validation.data.currencyCode,
+          validation.data.paymentDate,
+          selected
+        );
         await replaceInvoiceSettlements(getDatabaseClient(), {
           paymentId: insert.data.id,
           companyId,
           createdBy: userId,
-          applications: selected.map((inv) => ({
-            targetSalesInvoiceId: isReceipt ? (inv.id ?? undefined) : undefined,
-            targetPurchaseInvoiceId: isReceipt
-              ? undefined
-              : (inv.id ?? undefined),
-            appliedAmount: Number(inv.balance ?? 0),
-            discountAmount: 0,
-            writeOffAmount: 0,
-            targetExchangeRate: Number(inv.exchangeRate ?? 1),
-            sourceExchangeRate: Number(validation.data.exchangeRate) || 1,
-            appliedDate: validation.data.paymentDate
-          }))
+          applications: selected.map((inv) => {
+            const discount = discounts.get(inv.id ?? "") ?? 0;
+            return {
+              targetSalesInvoiceId: isReceipt
+                ? (inv.id ?? undefined)
+                : undefined,
+              targetPurchaseInvoiceId: isReceipt
+                ? undefined
+                : (inv.id ?? undefined),
+              appliedAmount: round(Number(inv.balance ?? 0) - discount),
+              discountAmount: discount,
+              writeOffAmount: 0,
+              targetExchangeRate: Number(inv.exchangeRate ?? 1),
+              sourceExchangeRate: Number(validation.data.exchangeRate) || 1,
+              appliedDate: validation.data.paymentDate
+            };
+          })
         });
       }
     } catch (e) {

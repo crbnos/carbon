@@ -613,6 +613,9 @@ msgstr "A data de início de um trabalho muda"
 msgid "A job's status changes"
 msgstr "O status de um trabalho muda"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Uma lista é conectada a {0}, portanto, esta etapa é executada uma vez para cada item e retorna uma lista de resultados."

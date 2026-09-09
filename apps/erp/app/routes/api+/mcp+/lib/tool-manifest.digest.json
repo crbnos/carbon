@@ -1,5 +1,5 @@
 {
-  "totalTools": 1494,
+  "totalTools": 1495,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none"},
@@ -293,6 +293,7 @@
     {"name":"inventory_upsertWarehouseTransfer","classification":"WRITE","paramCount":9,"schema":"893e85262ecf","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"inventory:create+update"},
     {"name":"inventory_upsertWarehouseTransferLine","classification":"WRITE","paramCount":1,"schema":"93538fae689b","response":"237082879d41","injectAuth":"companyId+createdBy+updatedBy","permission":"inventory:create+update"},
     {"name":"invoicing_applyCreditsToInvoices","classification":"DESTRUCTIVE","paramCount":4,"schema":"a9944c8799d0","response":"none","injectAuth":"companyId","permission":"invoicing:update"},
+    {"name":"invoicing_computeEarlyPaymentDiscounts","classification":"READ","paramCount":3,"schema":"0069677fb034","response":"d8bb760d2850","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_computeInvoiceDateDue","classification":"READ","paramCount":2,"schema":"c07433aded5b","response":"174e29b899b9","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_createPurchaseInvoiceFromPurchaseOrder","classification":"WRITE","paramCount":1,"schema":"28cffcd9d6e8","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"invoicing:create"},
     {"name":"invoicing_createSalesInvoiceFromSalesOrder","classification":"WRITE","paramCount":1,"schema":"d160a49d6787","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"invoicing:create"},
@@ -318,8 +319,8 @@
     {"name":"invoicing_getMemo","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"ee27f56e2f82","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getMemoApplications","classification":"READ","paramCount":1,"schema":"188417093a55","response":"667060f6a7e4","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getMemos","classification":"READ","paramCount":6,"schema":"b120ea106813","response":"4b05f5647015","injectAuth":"companyId","permission":"invoicing:view"},
-    {"name":"invoicing_getOpenPurchaseInvoicesForSupplier","classification":"READ","paramCount":1,"schema":"67043a31b1b5","response":"1e5e706e6a7c","injectAuth":"companyId","permission":"invoicing:view"},
-    {"name":"invoicing_getOpenSalesInvoicesForCustomer","classification":"READ","paramCount":1,"schema":"09e48c79fb16","response":"1e5e706e6a7c","injectAuth":"companyId","permission":"invoicing:view"},
+    {"name":"invoicing_getOpenPurchaseInvoicesForSupplier","classification":"READ","paramCount":1,"schema":"67043a31b1b5","response":"1c5bb161d464","injectAuth":"companyId","permission":"invoicing:view"},
+    {"name":"invoicing_getOpenSalesInvoicesForCustomer","classification":"READ","paramCount":1,"schema":"09e48c79fb16","response":"1c5bb161d464","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getPayment","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"dcd7a2b028c7","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getPayments","classification":"READ","paramCount":8,"schema":"8294255666da","response":"cb3415df82d8","injectAuth":"companyId","permission":"invoicing:view"},
     {"name":"invoicing_getPurchaseInvoice","classification":"READ","paramCount":1,"schema":"9fcbb4e4e012","response":"8af6fcfff1cc","injectAuth":"companyId","permission":"invoicing:view"},

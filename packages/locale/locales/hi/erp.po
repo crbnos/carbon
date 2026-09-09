@@ -613,6 +613,9 @@ msgstr "किसी नौकरी की प्रारंभ तिथि �
 msgid "A job's status changes"
 msgstr "किसी नौकरी की स्थिति में परिवर्तन"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "एक सूची {0} में जुड़ी हुई है, इसलिए यह चरण प्रत्येक आइटम के लिए एक बार चलता है और परिणामों की एक सूची लौटाता है।"

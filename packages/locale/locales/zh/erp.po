@@ -613,6 +613,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr ""
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "列表被接入到 {0}，所以此步骤为每个项目运行一次并返回结果列表。"
