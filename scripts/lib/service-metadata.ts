@@ -1163,14 +1163,23 @@ function permissionActionsFor(
   return ["update"];
 }
 
-// Services that pick insert-vs-update this way are the only ones MCP can't infer.
-function usesCreatedByDiscriminator(
+// Services that pick insert-vs-update by testing for an audit field on the
+// payload are the only ones MCP can't infer, so they need the `_operation` flag.
+// BOTH directions count: `"createdBy" in` (create-branch first, e.g.
+// upsertQuoteOperation) and `"updatedBy" in` (update-branch first, e.g.
+// upsertQuoteMaterial / upsertJobMaterial). The dispatch stamps createdBy on
+// create and updatedBy on update and suppresses the other, so either convention
+// lands on the branch the caller asked for.
+function usesOperationDiscriminator(
   content: string,
   funcName: string
 ): boolean {
   const body = extractFunctionBody(content, funcName);
   if (body === null) return false;
-  return stripComments(body).includes('"createdBy" in');
+  const stripped = stripComments(body);
+  return (
+    stripped.includes('"createdBy" in') || stripped.includes('"updatedBy" in')
+  );
 }
 
 // The `:` guard keeps `https://` intact.
@@ -1487,7 +1496,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       });
       if (
         injectAuth.includes("createdBy") &&
-        usesCreatedByDiscriminator(content, func.name)
+        usesOperationDiscriminator(content, func.name)
       ) {
         addOperationArg(schema);
       }

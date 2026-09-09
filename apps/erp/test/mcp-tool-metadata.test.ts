@@ -160,4 +160,29 @@ describe("mcp tool-metadata generator", () => {
     expect(Object.keys(ability?.properties ?? {})).toContain("name");
     expect(ability?.required).toBeUndefined();
   });
+
+  // Insert-vs-update discriminator, BOTH directions, gets a required `_operation`.
+  // upsertQuoteMaterial / upsertJobMaterial branch on `if ("updatedBy" in …)` — the
+  // generator used to detect only the `"createdBy" in` convention, so these tools
+  // shipped without `_operation`, the dispatch always stamped updatedBy, and every
+  // create was forced down the UPDATE branch (0 rows → PGRST116, silent no-op).
+  it("gives an `_operation` flag to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
+    const requiresOperation = (name: string) => {
+      const t = get(name);
+      expect(props(t)._operation, `${name} should expose _operation`).toMatchObject({
+        enum: ["create", "update"]
+      });
+      expect(t.schema.required ?? [], `${name} should require _operation`).toContain(
+        "_operation"
+      );
+    };
+    // Inverted (`"updatedBy" in`) — the ones that were broken.
+    requiresOperation("sales_upsertQuoteMaterial");
+    requiresOperation("production_upsertJobMaterial");
+    requiresOperation("production_upsertJob");
+    requiresOperation("production_upsertProductionQuantity");
+    requiresOperation("resources_upsertPartner");
+    // Standard (`"createdBy" in`) control — unchanged, still carries the flag.
+    requiresOperation("sales_upsertQuoteOperation");
+  });
 });

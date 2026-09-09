@@ -59,7 +59,8 @@ export function enrichWithAuthContext(
     ...(value as Record<string, unknown>)
   };
 
-  // A caller-supplied createdBy would send the service down its insert branch.
+  // A caller-supplied createdBy would send a `"createdBy" in` service down its
+  // insert branch.
   if (operation === "update") {
     delete enriched.createdBy;
   } else if (fields.includes("createdBy")) {
@@ -68,7 +69,15 @@ export function enrichWithAuthContext(
     // the same reason, and the two shapes must not disagree.
     enriched.createdBy = context.userId;
   }
-  if (fields.includes("updatedBy")) {
+  // Symmetric to createdBy: a stamped updatedBy sends a service that
+  // discriminates on `"updatedBy" in` (update-branch first — upsertJobMaterial,
+  // upsertQuoteMaterial, …) down its UPDATE branch, which matches zero rows for a
+  // new id and returns PGRST116, so the record never inserts. Suppress it on an
+  // explicit create so the row inserts. With no _operation (operation undefined)
+  // both audit fields are stamped, exactly as before.
+  if (operation === "create") {
+    delete enriched.updatedBy;
+  } else if (fields.includes("updatedBy")) {
     enriched.updatedBy = context.userId;
   }
   if (fields.includes("companyId")) {

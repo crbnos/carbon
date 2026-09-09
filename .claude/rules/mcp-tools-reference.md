@@ -218,14 +218,32 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   genuine `delete*`) → `["companyId"]`. A DESTRUCTIVE-classified `upsert*` still
   inserts rows, so it keeps its `createdBy` — the label is only a caller hint.
 
-- **`_operation`** (`usesCreatedByDiscriminator`): the ~96 tools whose service picks
-  insert-vs-update with `if ("createdBy" in …)` get a **required**
-  `_operation: "create" | "update"` in their schema — the schema is the only marker,
-  there is no parallel metadata flag. The dispatch (`api+/v1+/lib/dispatch.server.ts`)
-  strips `_operation` from the args (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
-  suppresses the `createdBy` stamp when it is `"update"` — otherwise every MCP edit would
-  take the insert branch. Missing/invalid `_operation` on such a tool is rejected before
+- **`_operation`** (`usesOperationDiscriminator`): a tool whose service picks
+  insert-vs-update by testing for an audit field on the payload gets a **required**
+  `_operation: "create" | "update"` in its schema — the schema is the only marker,
+  there is no parallel metadata flag. **BOTH discriminator directions count**:
+  `if ("createdBy" in …)` (create-branch first, e.g. `upsertQuoteOperation`) AND
+  `if ("updatedBy" in …)` (update-branch first, e.g. `upsertQuoteMaterial`,
+  `upsertJobMaterial`, `upsertJob`, `upsertProductionQuantity`, `upsertPartner`,
+  `upsertPeriodCloseTaskDefinition`). The generator only matched `"createdBy" in`
+  until it was broadened — so the inverted ones shipped WITHOUT `_operation`, and
+  since `enrichWithAuthContext` always stamped `updatedBy`, their `"updatedBy" in`
+  test was always true: every create was forced down the UPDATE branch, matched
+  zero rows for a fresh id, and returned **PGRST116** — a silent no-op the customer
+  hit trying to add quote/job materials over the connector. (A few — `upsertJobOperation`,
+  `upsertContractor`, `upsertGaugeCalibrationRecord` — got `_operation` anyway from
+  a secondary `"createdBy" in` in the body, but were broken the same way until the
+  dispatch fix below, because their PRIMARY branch is `"updatedBy" in`.)
+  The dispatch (`api+/v1+/lib/dispatch.server.ts`) strips `_operation` from the args
+  (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
+  stamps audit fields **symmetrically**: on `"create"` it stamps `createdBy` and
+  **suppresses `updatedBy`**; on `"update"` it stamps `updatedBy` and **suppresses
+  `createdBy`** — so either convention lands on the branch the caller asked for, and
+  the create path matches the create-variant service type / UI insert (createdBy, no
+  updatedBy). With no `_operation` (operation `undefined`) both audit fields are
+  stamped, as before. Missing/invalid `_operation` on such a tool is rejected before
   the service is called; `call_tool.arguments` is `z.any()`, so the dispatch is the gate.
+  Pinned by `dispatch-parity.test.ts` (cases o/p/q) and `mcp-tool-metadata.test.ts`.
 
 ## The 15 modules (current `tool-metadata.json`)
 
