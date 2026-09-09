@@ -65,7 +65,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.salesOrders);
   }
 
-  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  if (opportunity.error) {
+    throw new Error(
+      `Failed to get opportunity record for sales order ${orderId} (opportunityId: ${
+        salesOrder.data?.opportunityId ?? "null"
+      }): ${opportunity.error.message}`
+    );
+  }
+
+  if (!salesOrder.data?.opportunityId) {
+    throw new Error(
+      `Sales order ${orderId} has no opportunityId; the opportunity record is missing`
+    );
+  }
+
+  if (!opportunity.data) {
+    throw new Error(
+      `No opportunity found with id ${salesOrder.data.opportunityId} referenced by sales order ${orderId}`
+    );
+  }
 
   const serviceRole = getCarbonServiceRole();
   const [quote, customer, companySettings, invoiceLines] = await Promise.all([

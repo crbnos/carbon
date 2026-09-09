@@ -56,8 +56,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     rfqSummary.data?.opportunityId ?? null
   );
 
-  if (!opportunity.data) throw new Error("Failed to get opportunity record");
-
   if (rfqSummary.error) {
     throw redirect(
       path.to.salesRfqs,
@@ -72,6 +70,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(
       path.to.salesRfqs,
       await flash(request, error(lines.error, "Failed to load RFQ lines"))
+    );
+  }
+
+  if (opportunity.error) {
+    throw new Error(
+      `Failed to get opportunity record for sales RFQ ${rfqId} (opportunityId: ${
+        rfqSummary.data?.opportunityId ?? "null"
+      }): ${opportunity.error.message}`
+    );
+  }
+
+  if (!rfqSummary.data?.opportunityId) {
+    throw new Error(
+      `The sales RFQ ${rfqId} has no opportunityId; the opportunity record is missing`
+    );
+  }
+
+  if (!opportunity.data) {
+    throw new Error(
+      `No opportunity found with id ${rfqSummary.data.opportunityId} referenced by sales RFQ ${rfqId}`
     );
   }
 

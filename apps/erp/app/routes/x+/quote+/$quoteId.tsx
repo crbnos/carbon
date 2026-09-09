@@ -93,7 +93,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getCompanySettings(client, companyId)
   ]);
 
-  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  if (opportunity.error) {
+    throw new Error(
+      `Failed to get opportunity record for quote ${quoteId} (opportunityId: ${
+        quote.data?.opportunityId ?? "null"
+      }): ${opportunity.error.message}`
+    );
+  }
+
+  if (!quote.data?.opportunityId) {
+    throw new Error(
+      `The quote ${quoteId} has no opportunityId; the opportunity record is missing`
+    );
+  }
+
+  if (!opportunity.data) {
+    throw new Error(
+      `No opportunity found with id ${quote.data.opportunityId} referenced by quote ${quoteId}`
+    );
+  }
 
   if (companyId !== quote.data?.companyId) {
     throw redirect(path.to.quotes);

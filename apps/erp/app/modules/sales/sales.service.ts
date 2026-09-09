@@ -3712,6 +3712,9 @@ export async function upsertQuote(
 
     if (customerPayment.error) return customerPayment;
     if (customerShipping.error) return customerShipping;
+    // Without this the quote is inserted with a null opportunityId, and its
+    // detail page then fails to load for good.
+    if (opportunity.error) return opportunity;
 
     const {
       paymentTermId,
@@ -5666,6 +5669,9 @@ export async function upsertSalesOrder(
 
   if (customerPayment.error) return customerPayment;
   if (customerShipping.error) return customerShipping;
+  // Without this the sales order is inserted with a null opportunityId, and its
+  // detail page then fails to load for good.
+  if (opportunity.error) return opportunity;
 
   const {
     paymentTermId,
