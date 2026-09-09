@@ -3,17 +3,20 @@ import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
   addOneMonth,
+  allocateNettingApplications,
   buildDepreciationLines,
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  computeNettingPosition,
   depreciationRunLineDisplay,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
-  getNextPeriodEnd
+  getNextPeriodEnd,
+  roundToCents
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -818,5 +821,244 @@ describe("buildDepreciationLines", () => {
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
     expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Intercompany netting (workbench math — spec §4)
+// ---------------------------------------------------------------------------
+
+describe("roundToCents", () => {
+  it("rounds half-cents decimal-safe (1.005 → 1.01, not 1.00)", () => {
+    // Math.round(1.005 * 100) / 100 gives 1 because 1.005 is not representable
+    // in binary; roundToCents re-parses at a shifted exponent so it lands on 1.01.
+    expect(roundToCents(1.005)).toBe(1.01);
+    expect(roundToCents(2.675)).toBe(2.68);
+  });
+
+  it("normalizes scientific-notation inputs (1e-7 → 0, never NaN)", () => {
+    // A naive `${1e-7}e2` builds the malformed string "1e-7e2" → NaN.
+    const rounded = roundToCents(1e-7);
+    expect(rounded).toBe(0);
+    expect(Number.isNaN(rounded)).toBe(false);
+  });
+
+  it("guards non-finite inputs so netting rows can never carry NaN", () => {
+    expect(roundToCents(Infinity)).toBe(0);
+    expect(roundToCents(-Infinity)).toBe(0);
+    expect(roundToCents(NaN)).toBe(0);
+  });
+
+  it("floors large finite inputs whose cent-scaling overflows to Infinity", () => {
+    // 1e307 * 100 overflows to Infinity, which shifts back to the string
+    // "Infinitye-2" → NaN; the finite re-check floors that to 0.
+    expect(roundToCents(1e307)).toBe(0);
+    expect(roundToCents(Number.MAX_VALUE)).toBe(0);
+    expect(Number.isNaN(roundToCents(1e307))).toBe(false);
+  });
+});
+
+describe("computeNettingPosition", () => {
+  it("nets the smaller of the two mutual balances; residual owed by the net debtor", () => {
+    // B owes A 100, A owes B 80 → net 80 clears both directions, B still owes 20
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 100,
+      grossReceivableBtoA: 80
+    });
+    expect(pos.nettedAmount).toBe(80);
+    expect(pos.residualAmount).toBe(20);
+    expect(pos.residualPayerCompanyId).toBe("B");
+  });
+
+  it("residual points at A when A owes more", () => {
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 80,
+      grossReceivableBtoA: 100
+    });
+    expect(pos.nettedAmount).toBe(80);
+    expect(pos.residualAmount).toBe(20);
+    expect(pos.residualPayerCompanyId).toBe("A");
+  });
+
+  it("equal balances net fully with no residual and no payer", () => {
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 500,
+      grossReceivableBtoA: 500
+    });
+    expect(pos.nettedAmount).toBe(500);
+    expect(pos.residualAmount).toBe(0);
+    expect(pos.residualPayerCompanyId).toBeNull();
+  });
+
+  it("a one-directional balance nets to zero (nothing to offset)", () => {
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 250,
+      grossReceivableBtoA: 0
+    });
+    expect(pos.nettedAmount).toBe(0);
+    expect(pos.residualAmount).toBe(250);
+    expect(pos.residualPayerCompanyId).toBe("B");
+  });
+
+  it("rounds to cents and treats negatives as zero", () => {
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 100.005,
+      grossReceivableBtoA: -5
+    });
+    expect(pos.nettedAmount).toBe(0);
+    expect(pos.residualAmount).toBe(100.01);
+    expect(pos.residualPayerCompanyId).toBe("B");
+  });
+
+  it("a sub-cent scientific-notation balance never yields NaN in the row", () => {
+    // 1e-7 stringifies as "1e-7"; the old `${value}e2` shift produced "1e-7e2"
+    // → NaN, which would poison nettedAmount/residualAmount on the statement row.
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 1e-7,
+      grossReceivableBtoA: 100
+    });
+    expect(Number.isNaN(pos.nettedAmount)).toBe(false);
+    expect(Number.isNaN(pos.residualAmount)).toBe(false);
+    expect(pos.nettedAmount).toBe(0);
+    expect(pos.residualAmount).toBe(100);
+    expect(pos.residualPayerCompanyId).toBe("A");
+  });
+
+  it("rounds half-cent balances up decimal-safely (1.005 → 1.01, not 1.00)", () => {
+    // Regression: naive Math.round(1.005 * 100) / 100 mis-rounds to 1.00
+    // because 1.005 * 100 is 100.49999… in binary floating point.
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 1.005,
+      grossReceivableBtoA: 0
+    });
+    expect(pos.residualAmount).toBe(1.01);
+    expect(pos.nettedAmount).toBe(0);
+    expect(pos.residualPayerCompanyId).toBe("B");
+  });
+
+  it("nets a half-cent balance decimal-safely (both sides 1.005 → net 1.01)", () => {
+    const pos = computeNettingPosition({
+      companyAId: "A",
+      companyBId: "B",
+      grossReceivableAtoB: 1.005,
+      grossReceivableBtoA: 1.005
+    });
+    expect(pos.nettedAmount).toBe(1.01);
+    expect(pos.residualAmount).toBe(0);
+    expect(pos.residualPayerCompanyId).toBeNull();
+  });
+});
+
+describe("allocateNettingApplications", () => {
+  it("closes invoices oldest-first, last touched invoice takes the partial", () => {
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(80, [
+        { id: "inv1", openAmount: 30 },
+        { id: "inv2", openAmount: 30 },
+        { id: "inv3", openAmount: 30 }
+      ]);
+    expect(applications).toEqual([
+      { id: "inv1", openAmount: 30, appliedAmount: 30 },
+      { id: "inv2", openAmount: 30, appliedAmount: 30 },
+      { id: "inv3", openAmount: 30, appliedAmount: 20 }
+    ]);
+    expect(totalApplied).toBe(80);
+    expect(unapplied).toBe(0);
+  });
+
+  it("the acceptance case: 80 netted against a single 100 invoice leaves 20 open", () => {
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(80, [{ id: "ar1", openAmount: 100 }]);
+    expect(applications).toEqual([
+      { id: "ar1", openAmount: 100, appliedAmount: 80 }
+    ]);
+    expect(totalApplied).toBe(80);
+    expect(unapplied).toBe(0);
+  });
+
+  it("reports the unapplied remainder when the target exceeds the open total", () => {
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(150, [
+        { id: "ap1", openAmount: 60 },
+        { id: "ap2", openAmount: 40 }
+      ]);
+    expect(applications).toEqual([
+      { id: "ap1", openAmount: 60, appliedAmount: 60 },
+      { id: "ap2", openAmount: 40, appliedAmount: 40 }
+    ]);
+    expect(totalApplied).toBe(100);
+    expect(unapplied).toBe(50);
+  });
+
+  it("skips zero/negative open items and stops once the target is exhausted", () => {
+    const { applications, totalApplied } = allocateNettingApplications(50, [
+      { id: "a", openAmount: 0 },
+      { id: "b", openAmount: -10 },
+      { id: "c", openAmount: 40 },
+      { id: "d", openAmount: 40 },
+      { id: "e", openAmount: 40 }
+    ]);
+    expect(applications).toEqual([
+      { id: "c", openAmount: 40, appliedAmount: 40 },
+      { id: "d", openAmount: 40, appliedAmount: 10 }
+    ]);
+    expect(totalApplied).toBe(50);
+  });
+
+  it("a zero target applies nothing", () => {
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(0, [{ id: "x", openAmount: 100 }]);
+    expect(applications).toEqual([]);
+    expect(totalApplied).toBe(0);
+    expect(unapplied).toBe(0);
+  });
+
+  it("applied amounts round to cents and tie out to the total", () => {
+    const { applications, totalApplied } = allocateNettingApplications(33.34, [
+      { id: "a", openAmount: 10 },
+      { id: "b", openAmount: 10 },
+      { id: "c", openAmount: 20 }
+    ]);
+    expect(applications).toEqual([
+      { id: "a", openAmount: 10, appliedAmount: 10 },
+      { id: "b", openAmount: 10, appliedAmount: 10 },
+      { id: "c", openAmount: 20, appliedAmount: 13.34 }
+    ]);
+    expect(totalApplied).toBe(33.34);
+  });
+
+  it("rounds a half-cent target decimal-safely (1.005 → 1.01, not 1.00)", () => {
+    // Regression: naive Math.round(1.005 * 100) / 100 mis-rounds to 1.00.
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(1.005, [{ id: "a", openAmount: 100 }]);
+    expect(applications).toEqual([
+      { id: "a", openAmount: 100, appliedAmount: 1.01 }
+    ]);
+    expect(totalApplied).toBe(1.01);
+    expect(unapplied).toBe(0);
+  });
+
+  it("rounds a half-cent open item decimal-safely (1.005 → 1.01)", () => {
+    const { applications, totalApplied, unapplied } =
+      allocateNettingApplications(100, [{ id: "a", openAmount: 1.005 }]);
+    expect(applications).toEqual([
+      { id: "a", openAmount: 1.01, appliedAmount: 1.01 }
+    ]);
+    expect(totalApplied).toBe(1.01);
+    expect(unapplied).toBe(98.99);
   });
 });
