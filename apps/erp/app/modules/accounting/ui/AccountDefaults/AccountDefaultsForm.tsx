@@ -288,6 +288,13 @@ const AccountDefaultsForm = ({
             termId: "account-default-sales-discounts"
           },
           {
+            name: "customerPaymentDiscountAccount",
+            label: t`Customer Payment Discounts`,
+            description: t`Discounts given to customers for early payment`,
+            badgeType: "Revenue",
+            termId: "account-default-customer-payment-discounts"
+          },
+          {
             name: "realizedExchangeGainAccount",
             label: t`Realized Exchange Gain`,
             description: t`Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate`,
@@ -313,6 +320,13 @@ const AccountDefaultsForm = ({
             description: t`Expense account for non-inventory purchases (services, supplies)`,
             badgeType: "Expense",
             termId: "account-default-indirect-materials-services"
+          },
+          {
+            name: "supplierPaymentDiscountAccount",
+            label: t`Supplier Payment Discounts`,
+            description: t`Discounts earned for early payment to suppliers`,
+            badgeType: "Expense",
+            termId: "account-default-supplier-payment-discounts"
           }
         ]
       },
@@ -445,20 +459,6 @@ const AccountDefaultsForm = ({
             description: t`Interest income or expense from banking activities`,
             badgeType: "Expense",
             termId: "account-default-interest"
-          },
-          {
-            name: "supplierPaymentDiscountAccount",
-            label: t`Supplier Payment Discounts`,
-            description: t`Discounts earned for early payment to suppliers`,
-            badgeType: "Expense",
-            termId: "account-default-supplier-payment-discounts"
-          },
-          {
-            name: "customerPaymentDiscountAccount",
-            label: t`Customer Payment Discounts`,
-            description: t`Discounts given to customers for early payment`,
-            badgeType: "Revenue",
-            termId: "account-default-customer-payment-discounts"
           },
           {
             name: "roundingAccount",
