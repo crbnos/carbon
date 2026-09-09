@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "एक पैरामीटर जोड़ें (कार्यविधि खोजकर्ता में)"
+msgstr "एक पैरामीटर जोड़ें (कार्यविधि एक्सप्लोरर में)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "लेबल सीधे प्रिंट करने के लिए प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें।"
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr "एक चरण या प्रश्न जोड़ें (कार्यविधि और प्रशिक्षण खोजकर्ता में)"
+msgstr "एक चरण या प्रश्न जोड़ें (कार्यविधि और प्रशिक्षण एक्सप्लोरर में)"
 
 msgid "Add Ability"
 msgstr "क्षमता जोड़ें"
@@ -4271,7 +4271,7 @@ msgstr "दस्तावेज़ नहीं पढ़ा जा सका: 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "जारी नहीं कर सके {0}: {1}"
+msgstr "{0} को जारी नहीं किया जा सका: {1}"
 
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "इस तारीख को या इससे पहले दिनांकित जर्नल को लॉक माना जाता है। दोनों मौजूद होने पर प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ मर्ज किया जाता है।"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "विवरण पृष्ठों पर किसी अनुभाग पर जाएं (समान संशोधक + अनुभाग का अक्षर)"
+msgstr "विस्तार पृष्ठों पर एक खंड पर जाएं (समान संशोधक + खंड का अक्षर)"
 
 msgid "Just one"
 msgstr "बस एक"
@@ -11557,6 +11557,9 @@ msgstr "ऑपरेशन"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
+
+msgid "Operation batch"
+msgstr "ऑपरेशन बैच"
 
 msgid "Operation lead time"
 msgstr "ऑपरेशन लीड टाइम"
@@ -17953,6 +17956,9 @@ msgstr "अनस्क्रैप करें {label}"
 
 msgid "Unshipped orders"
 msgstr "अभी भेजे जाने वाले ऑर्डर"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "एक बैच-योग्य प्रक्रिया पर शुरू न किए गए जॉब ऑपरेशन वर्क सेंटर पर एक साथ चलने के लिए समूहित, एक सेटअप और एक टाइमर साझा करते हुए जिसका समय प्रति जॉब मात्रा के अनुपात में वापस विभाजित होता है।"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"

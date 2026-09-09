@@ -89,6 +89,66 @@ registered individually:
 | `describe_tool` | Return the JSON-Schema + classification + description for one tool name. |
 | `call_tool` | Execute any ERP tool: `{ name, arguments }`. `arguments` may arrive as a JSON string and is normalized to an object. |
 
+### Response formatting is token-lean BY CONTRACT (`lib/format-result.ts`)
+
+MCP text responses deliberately differ from the HTTP API's exact data — the
+HTTP/agent/workflow callers of `callOperation` are untouched:
+
+- `call_tool` results are COMPACT JSON with **null fields omitted** (an absent
+  field means null — stated in the server instructions) via `formatMcpResult`.
+  Top-level arrays are hard-capped at `MCP_MAX_ROWS` (100) with an explicit
+  "… N more rows omitted" marker — the backstop for the unpaginated `get*List`
+  (fetchAll) operations. A paginated read short of its total appends
+  `(showing R of C rows)` from the envelope's `count`.
+- `call_tool` INJECTS the pagination PAIR — `limit: MCP_DEFAULT_LIMIT` (25) AND
+  `offset: 0` — into a **list operation's** args for whichever of the two the
+  caller omits (`isListOperation` on the manifest entry; both the flat body and
+  the `{ args: {...} }` wrapper, and the argless call). The pair matters:
+  `setGenericQueryFilters` applies its `.range()` only when BOTH are integers,
+  so a bare `limit` (injected or caller-supplied) silently paginated nothing
+  and an argless list read returned up to PostgREST's 1000-row cap.
+- `describe_tool` prints the schema compactly, and the generator strips
+  `pattern` wherever a sibling `format` exists (`stripRedundantPatterns` —
+  zod's email conversion emits a ~200-char regex next to `format: "email"`).
+  Pinned by `mcp-tool-metadata.test.ts` ("never publishes pattern alongside
+  format") and `format-result.test.ts`.
+- `search_tools` returns just the grouped list — the old how-to footer
+  duplicated the server instructions and re-listed every name a second time.
+
+### Schemas tell the caller the WHOLE contract (agent-found bug class)
+
+Three fixes from letting a real MCP agent drive the server; all pinned by
+`mcp-tool-metadata.test.ts` and `validation-issues.test.ts`:
+
+- **Intersection extras are published.** A single-object param typed
+  `(z.infer<V> & { jobId; …; createdBy }) | (z.infer<V> & { jobId; …;
+  updatedBy })` used to publish the validator VERBATIM (the unanchored
+  `z.infer<` match in `buildToolSchema` won first), silently dropping every
+  `& {...}` extra — `jobId` (NOT NULL in the DB) was missing from
+  `production_upsertJobMaterial`, `quoteId`/`quoteLineId` from
+  `sales_upsertQuoteMaterial`; ~120 tools carried some form of it. Union
+  branches now resolve through the intersection-aware machinery and merge
+  flat: properties from every branch, required only where required in EVERY
+  branch (so a create-only `Omit<…, "id">` branch demotes `id` to optional),
+  auth fields stripped via `CONTEXT_PARAMS`. An `Omit<…, "field">` is honored
+  too — `purchasing_insertSupplier` no longer re-publishes the `id` its
+  signature refuses. The `& ({createdBy} | {updatedBy})` audit union still
+  resolves to the validator verbatim by design (its extras are all injected).
+- **String-encoded booleans publish their two legal values.**
+  `zfd.text(z.string().transform((v) => v === "true"))` converted to a bare
+  `{type:"string"}`, so JSON callers sent real booleans and got an opaque
+  rejection. `validator-to-json-schema.ts` PROBES each field (parses "true" →
+  `true`, "false" → `false`; nothing else in the codebase does that —
+  `z.coerce.boolean()` maps "false" to `true`) and adds
+  `enum: ["true","false"]`.
+- **Validation errors name the fields.** oRPC's bare "Input validation failed"
+  is expanded by `callOperation` from the issues on the ORPCError
+  (`formatValidationIssues`, `api+/v1+/lib/validation-issues.ts`): each
+  issue's dotted path + message, capped at 8. Because `.input()` compiles from
+  the published schema, the fixed schemas also mean jobId-missing /
+  boolean-for-string mistakes are caught at validation with a self-correcting
+  message instead of surfacing as a Postgres 23502.
+
 ## How `call_tool` actually runs a tool (the canonical oRPC dispatch)
 
 `call_tool` does **not** go back through the MCP protocol — it calls
@@ -306,3 +366,18 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
   metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
   holds `issueMaterial` / `completeJob`.
+- **A same-named `{module}.mcp.server.ts` export SHADOWS the service function** —
+  the generator dedupes by name (mcp wins, matching the runtime registry spread),
+  so an orchestration wrapper can replace a bare service function without
+  renaming the published tool. Precedent: `upsertJobMaterial` — the ROUTES run
+  the requirements recalc themselves (`recalculateJobMakeMethodRequirements`,
+  which fills `estimatedQuantity`; the generated `quantityToIssue` derives from
+  it), so a connector call to the bare service left every imported material at
+  estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
+  routes' orchestration (MTO method pull on transition, recalc released creates /
+  all updates) and keeps the exact service payload type so the published schema
+  hash is unchanged. Body scans (classification, `_operation`) read the FIRST
+  match in the concatenated content — the service body — so a wrapper must keep
+  the same discriminator convention as the function it shadows. Pinned by
+  `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
+  function exactly once" case in `mcp-tool-metadata.test.ts`.

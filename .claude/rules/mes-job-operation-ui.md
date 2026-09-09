@@ -138,8 +138,8 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   row 0/0) disables submit. Scrap / Rework /
   Finish are hidden in the actions sheet (per-op writes would double-count a
   member); Maintenance + Quality Issue stay. The batch chip menu also offers
-  "Print load list" (`path.to.file.batchLoadList` → the ERP
-  `/file/batch/:id.pdf` route, `BatchLoadListPDF`). The kanban keyboard wedge is
+  "Print batch list" (`path.to.file.batchLoadList` → the ERP
+  `/file/batch/:id.pdf` route, `BatchListPDF`). The kanban keyboard wedge is
   disabled (`active: !!kanban?.id && !isBatched`) — it completes a single op,
   never a batched member.
 

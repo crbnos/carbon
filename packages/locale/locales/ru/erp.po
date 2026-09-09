@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Операции, датированные в эту дату или ранее, считаются заблокированными. Объединены с датой блокировки, указанной поставщиком, если обе существуют."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "Перейти к разделу на странице деталей (те же модификаторы + буква раздела)"
+msgstr "Перейти к разделу на страницах деталей (те же модификаторы + буква раздела)"
 
 msgid "Just one"
 msgstr "Только один"
@@ -11557,6 +11557,9 @@ msgstr "операция"
 
 msgid "Operation"
 msgstr "Операция"
+
+msgid "Operation batch"
+msgstr "Серия операций"
 
 msgid "Operation lead time"
 msgstr "Срок поставки операции"
@@ -17953,6 +17956,9 @@ msgstr "Восстановить из списания {label}"
 
 msgid "Unshipped orders"
 msgstr "Невыполненные заказы"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Неначатые операции заказа по одному группируемому процессу, собранные для совместного выполнения в рабочем центре, с общей наладкой и единым таймером, время которого распределяется по каждому заказу пропорционально количеству."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"

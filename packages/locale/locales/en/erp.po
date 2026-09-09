@@ -11558,6 +11558,9 @@ msgstr "operation"
 msgid "Operation"
 msgstr "Operation"
 
+msgid "Operation batch"
+msgstr "Operation batch"
+
 msgid "Operation lead time"
 msgstr "Operation lead time"
 
@@ -17953,6 +17956,9 @@ msgstr "Unscrap {label}"
 
 msgid "Unshipped orders"
 msgstr "Unshipped orders"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Unsupported source document type: {sourceDocument}"

@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Los asientos fechados en o antes de esta fecha se tratan como bloqueados. Se combinan con la fecha de bloqueo reportada por el proveedor cuando ambas existen."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "Ir a una sección en las páginas de detalle (los mismos modificadores + la letra de la sección)"
+msgstr "Saltar a una sección en las páginas de detalle (mismos modificadores + la letra de la sección)"
 
 msgid "Just one"
 msgstr "Solo uno"
@@ -11558,6 +11558,9 @@ msgstr "operación"
 msgid "Operation"
 msgstr "Operación"
 
+msgid "Operation batch"
+msgstr "Operación de lote de producción"
+
 msgid "Operation lead time"
 msgstr "Plazo de entrega de la operación"
 
@@ -13436,7 +13439,7 @@ msgstr "Liberado"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr "Se liberaron {0} lotes de producción"
+msgstr "Liberados {0} lotes de producción"
 
 msgid "Released date"
 msgstr "Fecha de liberación"
@@ -17953,6 +17956,9 @@ msgstr "Restaurar {label}"
 
 msgid "Unshipped orders"
 msgstr "Pedidos no enviados"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Operaciones de la orden no iniciadas en un proceso que se puede agrupar, agrupadas para ejecutarse juntas en un centro de trabajo, compartiendo una preparación y un temporizador cuyo tiempo se distribuye nuevamente por cada orden en proporción a la cantidad."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo de documento de origen no compatible: {sourceDocument}"

@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "パラメータを追加（手順書エクスプローラー内）"
+msgstr "手順書エクスプローラーでパラメータを追加"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "ステップを追加"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr "ステップまたは質問を追加（手順書と教育訓練エクスプローラー内）"
+msgstr "手順書と教育訓練エクスプローラーでステップまたは質問を追加"
 
 msgid "Add Ability"
 msgstr "能力を追加"
@@ -4271,7 +4271,7 @@ msgstr "文書が読み込めません: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "{0}をリリースできませんでした：{1}"
+msgstr "{0}をリリースできませんでした: {1}"
 
 msgid "Could not save"
 msgstr "保存できませんでした"
@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "詳細ページのセクションへジャンプ（同じ修飾子+セクション文字）"
+msgstr "詳細ページのセクションにジャンプします (同じ修飾子 + セクションの文字)"
 
 msgid "Just one"
 msgstr "1つだけ"
@@ -11558,6 +11558,9 @@ msgstr "工程"
 msgid "Operation"
 msgstr "操作"
 
+msgid "Operation batch"
+msgstr "工程バッチ"
+
 msgid "Operation lead time"
 msgstr "工程リードタイム"
 
@@ -13436,7 +13439,7 @@ msgstr "リリース済み"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr "{0}個のバッチをリリース済"
+msgstr "{0}個のバッチがリリース済"
 
 msgid "Released date"
 msgstr "リリース日"
@@ -17953,6 +17956,9 @@ msgstr "スクラップ解除 {label}"
 
 msgid "Unshipped orders"
 msgstr "未発送注文"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "1つのバッチ可能な工法上の未開始の指図工程がグループ化されて作業区で一緒に実行され、1つの段取りと1つのタイマーを共有し、そのタイマーの時間は各製造指図の数量に比例して配分される"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"

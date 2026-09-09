@@ -153,6 +153,11 @@ export const terms = {
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,
     href: "/docs/reference/work-centers"
   },
+  "operation-batch": {
+    term: msg`Operation batch`,
+    definition: msg`Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity.`,
+    href: "/docs/reference/batching"
+  },
   backflush: {
     term: msg`Backflush`,
     definition: msg`Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually.`,

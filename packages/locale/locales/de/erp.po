@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Materialien-Abschnitt hinzufügen, der jeden Artikel auf der Stückliste mit seiner Menge auflistet."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "Einen Parameter hinzufügen (im Verfahrensanweisungs-Explorer)"
+msgstr "Parameter hinzufügen (im Verfahrensanweisung-Explorer)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "Einen Schritt hinzufügen"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr "Einen Schritt oder eine Frage hinzufügen (in Verfahrensanweisungs- und Schulungs-Explorern)"
+msgstr "Schritt oder Frage hinzufügen (in Verfahrensanweisung- und Schulungs-Explorern)"
 
 msgid "Add Ability"
 msgstr "Fähigkeit hinzufügen"
@@ -11558,6 +11558,9 @@ msgstr "Arbeitsgang"
 msgid "Operation"
 msgstr "Betrieb"
 
+msgid "Operation batch"
+msgstr "Arbeitsgang-Los"
+
 msgid "Operation lead time"
 msgstr "Beschaffungszeit des Arbeitsgangs"
 
@@ -17953,6 +17956,9 @@ msgstr "Entschrotten {label}"
 
 msgid "Unshipped orders"
 msgstr "Nicht versendete Bestellungen"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Nicht gestartete Auftragsvorvorgänge auf einem gruppierbaren Verfahren, zusammengefasst zum Betrieb an einem Arbeitsplatz mit gemeinsamer Rüstzeit und Timer, deren Zeit sich pro Fertigungsauftrag proportional zur Menge aufteilt."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"

@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "자재 섹션을 추가하여 자재 명세서의 각 항목과 수량을 나열합니다."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "절차서 탐색기에서 파라미터 추가"
+msgstr "절차서 탐색기에서 매개변수 추가"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
@@ -4271,7 +4271,7 @@ msgstr "문서를 읽을 수 없습니다: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "릴리스 실패: {0}: {1}"
+msgstr "{0}을 릴리스할 수 없음: {1}"
 
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "이 날짜 또는 이전 날짜의 전표는 잠김으로 처리됩니다. 둘 다 존재할 때 공급자 보고 잠금 날짜와 병합됩니다."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "상세 페이지의 섹션으로 이동(같은 한정자 + 섹션의 문자)"
+msgstr "상세 페이지의 섹션으로 이동 (같은 수정자 + 섹션의 문자)"
 
 msgid "Just one"
 msgstr "정확히 하나"
@@ -11557,6 +11557,9 @@ msgstr "공정"
 
 msgid "Operation"
 msgstr "공정작업"
+
+msgid "Operation batch"
+msgstr "공정 배치"
 
 msgid "Operation lead time"
 msgstr "공정 리드타임"
@@ -17953,6 +17956,9 @@ msgstr "{label} 폐기 취소"
 
 msgid "Unshipped orders"
 msgstr "미출하 주문"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "한 작업장의 배치 가능 공법에서 함께 실행하도록 그룹화된 미시작 작업 지시 공정들로, 하나의 셋업과 타이머를 공유하며, 타이머의 시간은 수량에 비례하여 각 작업 지시로 분배됩니다."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"

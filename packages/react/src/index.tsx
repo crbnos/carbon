@@ -348,6 +348,7 @@ import {
   usePickOrderOptions
 } from "./TrackedEntityPicker";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
+import { TurnstileChallenge } from "./Turnstile";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
@@ -633,6 +634,7 @@ export {
   TimePicker,
   Toaster,
   Toggle,
+  TurnstileChallenge,
   ToggleGroup,
   ToggleGroupItem,
   TrackedEntityPicker,

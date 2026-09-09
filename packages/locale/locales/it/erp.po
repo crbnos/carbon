@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Aggiungi una sezione materiali che elenca ogni articolo della distinta base con la sua quantità."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "Aggiungi un parametro (nell'esplora procedure)"
+msgstr "Aggiungi un parametro (nello strumento procedure)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Aggiungi una stampante nelle impostazioni di stampa per stampare le etichette direttamente."
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "Aggiungi un passaggio"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr "Aggiungi un passo o una domanda (negli esplora procedure e formazione)"
+msgstr "Aggiungi un passo o una domanda (negli strumenti procedure e formazione)"
 
 msgid "Add Ability"
 msgstr "Aggiungi Capacità"
@@ -4271,7 +4271,7 @@ msgstr "Non è stato possibile leggere il documento: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "Impossibile rilasciare {0}: {1}"
+msgstr "Non è stato possibile rilasciare {0}: {1}"
 
 msgid "Could not save"
 msgstr "Impossibile salvare"
@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Le prime note datate su o prima di questa data sono trattate come bloccate. Unite alla data di blocco segnalata dal provider quando entrambe esistono."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "Salta a una sezione nelle pagine di dettaglio (stessi modificatori + la lettera della sezione)"
+msgstr "Salta a una sezione sulle pagine di dettaglio (stessi modificatori + la lettera della sezione)"
 
 msgid "Just one"
 msgstr "Solo uno"
@@ -11557,6 +11557,9 @@ msgstr "operazione"
 
 msgid "Operation"
 msgstr "Operazione"
+
+msgid "Operation batch"
+msgstr "Lotto di Operazioni"
 
 msgid "Operation lead time"
 msgstr "Lead time dell'operazione"
@@ -17953,6 +17956,9 @@ msgstr "Annulla scarto {label}"
 
 msgid "Unshipped orders"
 msgstr "Ordini non spediti"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Operazioni dell'ordine non avviate in un processo raggruppabile, raggruppate per funzionare insieme in un centro di lavoro, condividendo un attrezzaggio e un timer il cui tempo si suddivide per ogni ordine in proporzione alla quantità."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo di documento di origine non supportato: {sourceDocument}"

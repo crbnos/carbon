@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "跳转到详情页面上的某个部分（使用相同的修饰符 + 该部分的字母）"
+msgstr "跳转到详情页面中的某个分区（同样的修饰符 + 分区字母）"
 
 msgid "Just one"
 msgstr "仅一个"
@@ -11557,6 +11557,9 @@ msgstr "工序"
 
 msgid "Operation"
 msgstr "操作"
+
+msgid "Operation batch"
+msgstr "工序生产批次"
 
 msgid "Operation lead time"
 msgstr "操作提前期"
@@ -17953,6 +17956,9 @@ msgstr "取消报废 {label}"
 
 msgid "Unshipped orders"
 msgstr "未发货订单"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "在工作中心的可组批工艺上，分组在一起运行的未开始工单工序，共享一个换型和一个计时器，其时间按工单数量比例分配回各工单。"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"

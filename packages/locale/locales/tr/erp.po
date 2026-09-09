@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "Prosedür açıcısında bir parametre ekle"
+msgstr "Bir parametre ekle (prosedür gezgininde)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "Bir adım ekle"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr "Prosedür ve eğitim açıcılarında bir adım veya soru ekle"
+msgstr "Bir adım veya soru ekle (prosedür ve eğitim gezginlerinde)"
 
 msgid "Add Ability"
 msgstr "Yetenek Ekle"
@@ -8971,7 +8971,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Bu tarihte veya öncesinde tarihlendirilen muhasebe fişleri kilitli olarak değerlendirilir. Her ikisi de mevcutsa sağlayıcı tarafından rapor edilen kilit tarihi ile birleştirilir."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "Ayrıntı sayfalarında bir bölüme atla (aynı değiştiriciler + bölümün harfi)"
+msgstr "Detay sayfalarındaki bir bölüme atla (aynı değiştiriciler + bölümün harfi)"
 
 msgid "Just one"
 msgstr "Sadece bir"
@@ -11557,6 +11557,9 @@ msgstr "operasyon"
 
 msgid "Operation"
 msgstr "Operasyon"
+
+msgid "Operation batch"
+msgstr "Operasyon partisi"
 
 msgid "Operation lead time"
 msgstr "Operasyon tedarik süresi"
@@ -17953,6 +17956,9 @@ msgstr "Çıkartmayı Geri Al {label}"
 
 msgid "Unshipped orders"
 msgstr "Gönderilmemiş siparişler"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Bir batchable proses üzerindeki başlanmamış iş emri operasyonları, bir iş merkezinde birlikte çalışmak üzere gruplandırılmış, bir hazırlık ve bir zamanlayıcı paylaşan ve zamanı iş emri başına miktar ile orantılı olarak bölünen."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
