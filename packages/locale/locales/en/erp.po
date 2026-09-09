@@ -1339,6 +1339,12 @@ msgstr "Add Line Item"
 msgid "Add Lines"
 msgstr "Add Lines"
 
+msgid "Add lines from a receipt"
+msgstr "Add lines from a receipt"
+
+msgid "Add lines from a shipment"
+msgstr "Add lines from a shipment"
+
 msgid "Add lines from document"
 msgstr "Add lines from document"
 
@@ -9372,6 +9378,12 @@ msgstr "Linear Team"
 msgid "Lines"
 msgstr "Lines"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+
 msgid "Lines need internal part numbers"
 msgstr "Lines need internal part numbers"
 
@@ -11111,11 +11123,11 @@ msgstr "No results"
 msgid "No results found"
 msgstr "No results found"
 
-msgid "No returnable lines found for this customer"
-msgstr "No returnable lines found for this customer"
+msgid "No returnable lines for this customer"
+msgstr "No returnable lines for this customer"
 
-msgid "No returnable lines found for this supplier"
-msgstr "No returnable lines found for this supplier"
+msgid "No returnable lines for this supplier"
+msgstr "No returnable lines for this supplier"
 
 msgid "No rows here."
 msgstr "No rows here."
@@ -15362,6 +15374,12 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+
+msgid "Show available batch numbers"
+msgstr "Show available batch numbers"
+
+msgid "Show available tracking numbers"
+msgstr "Show available tracking numbers"
 
 msgid "Show Customer IDs"
 msgstr "Show Customer IDs"

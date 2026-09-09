@@ -1,10 +1,14 @@
 import { useCarbon } from "@carbon/auth";
 import type { Json } from "@carbon/database";
-import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
+import {
+  Combobox as ComboboxField,
+  DatePicker,
+  InputControlled,
+  ValidatedForm
+} from "@carbon/form";
 import {
   Badge,
   Button,
-  Combobox,
   HStack,
   Modal,
   ModalBody,
@@ -21,7 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { useFetcher, useParams } from "react-router";
@@ -51,6 +55,23 @@ import type { SalesReturnOrder } from "./types";
 // route segment outranks the `$id` param, so this resolves to
 // routes/x+/sales-return-order+/update.tsx.
 const updateAction = path.to.salesReturnOrderUpdate;
+
+// Inline preview for the Sales Order field, matching the badge the linked
+// state renders so switching between linked and unlinked doesn't reflow.
+const SalesOrderPreview = (
+  value: string,
+  options: { value: string; label: string | React.ReactNode }[]
+) => {
+  const label = options.find((option) => option.value === value)?.label;
+  return (
+    <Hyperlink to={path.to.salesOrder(value)}>
+      <Badge variant="secondary">
+        <RiProgress8Line className="w-3 h-3 mr-1" />
+        {label ?? value}
+      </Badge>
+    </Hyperlink>
+  );
+};
 
 const SalesReturnOrderProperties = () => {
   const { t } = useLingui();
@@ -93,38 +114,55 @@ const SalesReturnOrderProperties = () => {
       });
   }, [carbon, linkedOrderId]);
 
-  const lineItemIds = (routeData?.lines ?? [])
-    .map((line) => line.itemId)
-    .filter((itemId): itemId is string => Boolean(itemId));
-  const lineItemKey = lineItemIds.sort().join(",");
+  // Every order for the customer is offered. An earlier version filtered to
+  // orders containing the RMA's items via `salesOrderLine!inner(itemId)`,
+  // which silently emptied the list as soon as the RMA had a line the order
+  // didn't match — including every blind return, whose items may legitimately
+  // have come from a different order. The link is convenience context, not a
+  // costing input, so an over-broad list beats an empty one.
   useEffect(() => {
-    if (!carbon || !customerId) return;
-    // Only offer orders that actually contain the RMA's items — linking to
-    // an order that never sold these items would be meaningless. With no
-    // lines yet, every order of the customer is offered.
-    const query =
-      lineItemIds.length > 0
-        ? carbon
-            .from("salesOrder")
-            .select("id, salesOrderId, salesOrderLine!inner(itemId)")
-            .eq("customerId", customerId)
-            .in("salesOrderLine.itemId", lineItemIds)
-            .order("salesOrderId", { ascending: false })
-        : carbon
-            .from("salesOrder")
-            .select("id, salesOrderId")
-            .eq("customerId", customerId)
-            .order("salesOrderId", { ascending: false });
-    query.then(({ data }) => {
-      setSalesOrderOptions(
-        (data ?? []).map((order) => ({
-          value: order.id,
-          label: order.salesOrderId
-        }))
-      );
-    });
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lineItemKey stands in for the array identity
-  }, [carbon, customerId, lineItemKey]);
+    if (!carbon || !customerId) {
+      setSalesOrderOptions([]);
+      return;
+    }
+    let cancelled = false;
+    carbon
+      .from("salesOrder")
+      .select("id, salesOrderId")
+      .eq("customerId", customerId)
+      .order("salesOrderId", { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          toast.error(t`Failed to load sales orders`);
+          setSalesOrderOptions([]);
+          return;
+        }
+        setSalesOrderOptions(
+          (data ?? []).map((order) => ({
+            value: order.id,
+            label: order.salesOrderId
+          }))
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, customerId, t]);
+
+  // The linked order may not be in the list query's results yet (or at all, if
+  // it was later reassigned to another customer). Keep it in the options so the
+  // inline preview resolves a readable label instead of falling back to the id.
+  const salesOrderOptionsWithLinked = useMemo(() => {
+    if (!linkedOrderId) return salesOrderOptions;
+    if (salesOrderOptions.some((option) => option.value === linkedOrderId)) {
+      return salesOrderOptions;
+    }
+    return [
+      { value: linkedOrderId, label: linkedOrderLabel ?? linkedOrderId },
+      ...salesOrderOptions
+    ];
+  }, [salesOrderOptions, linkedOrderId, linkedOrderLabel]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -243,56 +281,35 @@ const SalesReturnOrderProperties = () => {
         </span>
       </VStack>
 
-      {routeData?.salesReturnOrder?.salesOrderId ? (
-        <VStack spacing={0} className="w-full">
-          <span className="text-xs text-muted-foreground">
-            <Trans>Sales Order</Trans>
-          </span>
-          <HStack className="group w-full justify-between" spacing={0}>
-            <Hyperlink
-              to={path.to.salesOrder(routeData.salesReturnOrder.salesOrderId)}
-            >
-              <Badge variant="secondary">
-                <RiProgress8Line className="w-3 h-3 mr-1" />
-                {linkedOrderLabel ??
-                  salesOrderOptions.find(
-                    (option) =>
-                      option.value === routeData.salesReturnOrder.salesOrderId
-                  )?.label ??
-                  t`Sales Order`}
-              </Badge>
-            </Hyperlink>
-            {!isDisabled && (
-              <Button
-                className="group-hover:opacity-100 opacity-0 transition-opacity duration-200"
-                variant="ghost"
-                size="sm"
-                leftIcon={<LuUnlink2 className="w-3 h-3" />}
-                onClick={unlinkDisclosure.onOpen}
-              >
-                <Trans>Unlink</Trans>
-              </Button>
-            )}
-          </HStack>
-        </VStack>
-      ) : (
-        <VStack spacing={0} className="w-full">
-          <span className="text-xs text-muted-foreground">
-            <Trans>Sales Order</Trans>
-          </span>
-          <Combobox
-            size="sm"
-            className="w-full"
-            value=""
-            options={salesOrderOptions}
-            isReadOnly={isDisabled}
-            placeholder={t`Link a sales order`}
-            onChange={(value) => {
-              if (value) onUpdate("salesOrderId", value);
-            }}
-          />
-        </VStack>
-      )}
+      {/* One control for both states. The linked badge is the Combobox's own
+          inline preview, so picking an order swaps the label in place instead
+          of flipping to a differently-shaped read-only row once the fetcher
+          lands. Clearing routes through the unlink confirmation. */}
+      <ValidatedForm
+        key={linkedOrderId ?? "unlinked"}
+        defaultValues={{ salesOrderId: linkedOrderId ?? "" }}
+        validator={z.object({
+          salesOrderId: zfd.text(z.string().optional())
+        })}
+        className="w-full"
+      >
+        <ComboboxField
+          name="salesOrderId"
+          label={t`Sales Order`}
+          options={salesOrderOptionsWithLinked}
+          inline={SalesOrderPreview}
+          isOptional
+          isReadOnly={isDisabled}
+          placeholder={t`Link a sales order`}
+          onChange={(option) => {
+            if (option?.value) {
+              onUpdate("salesOrderId", option.value);
+            } else if (linkedOrderId) {
+              unlinkDisclosure.onOpen();
+            }
+          }}
+        />
+      </ValidatedForm>
 
       <Assignee
         id={id}

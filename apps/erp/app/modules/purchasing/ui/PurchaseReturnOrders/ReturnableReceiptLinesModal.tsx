@@ -171,9 +171,18 @@ const ReturnableReceiptLinesModal = ({
               <Trans>Loading returnable lines...</Trans>
             </p>
           ) : lines.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              <Trans>No returnable lines found for this supplier</Trans>
-            </p>
+            <VStack spacing={1} className="py-6 items-center">
+              <p className="text-sm text-muted-foreground text-center">
+                <Trans>No returnable lines for this supplier</Trans>
+              </p>
+              <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
+                <Trans>
+                  Lines appear here once a purchase order receipt has been
+                  posted, and only for quantities not already authorized on
+                  another supplier return. Use Add Line Item for a blind return.
+                </Trans>
+              </p>
+            </VStack>
           ) : (
             <ScrollArea className="max-h-[50dvh] w-full">
               <VStack spacing={2} className="w-full">

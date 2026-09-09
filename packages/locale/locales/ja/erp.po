@@ -1339,6 +1339,12 @@ msgstr "ラインアイテムを追加"
 msgid "Add Lines"
 msgstr "行を追加"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "ドキュメントから行を追加"
 
@@ -9372,6 +9378,12 @@ msgstr "Linear Team"
 msgid "Lines"
 msgstr "行"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "明細には社内部品番号が必要です"
 
@@ -11111,11 +11123,11 @@ msgstr "結果がありません"
 msgid "No results found"
 msgstr "検索結果が見つかりません"
 
-msgid "No returnable lines found for this customer"
-msgstr "この顧客に返品対象行が見つかりません"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "この仕入先に返品対象行が見つかりません"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "ここに行はありません。"
@@ -15362,6 +15374,12 @@ msgstr "得意先リスト、得意先フォーム、ドロップダウンで読
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "仕入先リスト、仕入先フォーム、ドロップダウンで読みやすい仕入先IDカラムを表示します。仕入先はどちらの方法でも内部的に識別されます。"
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "得意先IDを表示"

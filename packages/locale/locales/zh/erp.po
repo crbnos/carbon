@@ -1339,6 +1339,12 @@ msgstr "添加行项目"
 msgid "Add Lines"
 msgstr "添加行"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "从文档添加行"
 
@@ -9372,6 +9378,12 @@ msgstr "线性班组"
 msgid "Lines"
 msgstr "行"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "行需要内部零件号"
 
@@ -11111,11 +11123,11 @@ msgstr "无结果"
 msgid "No results found"
 msgstr "未找到结果"
 
-msgid "No returnable lines found for this customer"
-msgstr "未找到该客户的可退货行"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "未找到该供应商的可退货行"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "这里没有行。"
@@ -15362,6 +15374,12 @@ msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"

@@ -1339,6 +1339,12 @@ msgstr "लाइन आइटम जोड़ें"
 msgid "Add Lines"
 msgstr "लाइनें जोड़ें"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "दस्तावेज़ से लाइनें जोड़ें"
 
@@ -9372,6 +9378,12 @@ msgstr "Linear Team"
 msgid "Lines"
 msgstr "पंक्तियाँ"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "लाइनों को आंतरिक भाग संख्याओं की आवश्यकता है"
 
@@ -11111,11 +11123,11 @@ msgstr "कोई परिणाम नहीं"
 msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
-msgid "No returnable lines found for this customer"
-msgstr "इस ग्राहक के लिए कोई रिटर्न योग्य लाइनें नहीं मिलीं"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "इस आपूर्तिकर्ता के लिए कोई रिटर्न योग्य लाइनें नहीं मिलीं"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
@@ -15362,6 +15374,12 @@ msgstr "ग्राहक सूची, ग्राहक फॉर्म औ�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "ग्राहक आईडी दिखाएं"

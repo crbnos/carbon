@@ -1339,6 +1339,12 @@ msgstr "Добавить позицию"
 msgid "Add Lines"
 msgstr "Добавить строки"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "Добавить строки из документа"
 
@@ -9372,6 +9378,12 @@ msgstr "Команда Linear"
 msgid "Lines"
 msgstr "Строки"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "Строки требуют внутренние номера деталей"
 
@@ -11111,11 +11123,11 @@ msgstr "Нет результатов"
 msgid "No results found"
 msgstr "Результатов не найдено"
 
-msgid "No returnable lines found for this customer"
-msgstr "Для этого клиента не найдено возвратных строк"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "Для этого поставщика не найдено возвратных строк"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "Нет строк здесь."
@@ -15362,6 +15374,12 @@ msgstr "Показывать столбец с читаемым ID Покупа�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Показывать ID Покупателей"

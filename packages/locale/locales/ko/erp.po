@@ -1339,6 +1339,12 @@ msgstr "라인 항목 추가"
 msgid "Add Lines"
 msgstr "라인 추가"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "문서에서 라인 추가"
 
@@ -9372,6 +9378,12 @@ msgstr "Linear 팀"
 msgid "Lines"
 msgstr "라인"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "내부 품번이 필요한 라인"
 
@@ -11111,11 +11123,11 @@ msgstr "결과 없음"
 msgid "No results found"
 msgstr "결과가 없습니다"
 
-msgid "No returnable lines found for this customer"
-msgstr "이 고객에 대한 반품 가능한 라인을 찾을 수 없습니다"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "이 공급업체에 대한 반품 가능한 라인을 찾을 수 없습니다"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "행이 없습니다."
@@ -15362,6 +15374,12 @@ msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID �
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"

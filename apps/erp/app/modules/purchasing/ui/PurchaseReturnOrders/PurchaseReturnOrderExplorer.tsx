@@ -9,8 +9,13 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Kbd,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   useKeyboardShortcuts,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -42,6 +47,7 @@ export default function PurchaseReturnOrderExplorer() {
     lines: PurchaseReturnOrderLine[];
   }>(path.to.purchaseReturnOrder(orderId));
   const permissions = usePermissions();
+  const prettifyShortcut = usePrettifyShortcut();
 
   const newLineDisclosure = useDisclosure();
   const fromDocumentDisclosure = useDisclosure();
@@ -86,7 +92,7 @@ export default function PurchaseReturnOrderExplorer() {
 
   return (
     <>
-      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height))] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <VStack
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
@@ -116,26 +122,47 @@ export default function PurchaseReturnOrderExplorer() {
           )}
         </VStack>
         <div className="w-full flex border-t border-border p-4 gap-2">
-          <Button
-            ref={newButtonRef}
-            className="flex-1"
-            isDisabled={isDisabled}
-            leftIcon={<LuCirclePlus />}
-            variant="secondary"
-            onClick={newLineDisclosure.onOpen}
-          >
-            <Trans>Add Line Item</Trans>
-          </Button>
-          <IconButton
-            aria-label={t`Add lines from document`}
-            icon={<LuFileInput />}
-            variant="ghost"
-            className="text-muted-foreground"
-            isDisabled={
-              isDisabled || !routeData?.purchaseReturnOrder?.supplierId
-            }
-            onClick={fromDocumentDisclosure.onOpen}
-          />
+          <Tooltip>
+            <TooltipTrigger className="flex-1">
+              <Button
+                ref={newButtonRef}
+                className="w-full"
+                isDisabled={isDisabled}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <HStack>
+                <span>
+                  <Trans>New Line Item</Trans>
+                </span>
+                <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
+              </HStack>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <IconButton
+                aria-label={t`Add lines from a receipt`}
+                icon={<LuFileInput />}
+                variant="ghost"
+                className="text-muted-foreground"
+                isDisabled={
+                  isDisabled || !routeData?.purchaseReturnOrder?.supplierId
+                }
+                onClick={fromDocumentDisclosure.onOpen}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>
+                <Trans>Add lines from a receipt</Trans>
+              </span>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </VStack>
       {newLineDisclosure.isOpen && (

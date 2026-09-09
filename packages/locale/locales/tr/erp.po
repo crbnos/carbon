@@ -1339,6 +1339,12 @@ msgstr "Satır Ekle"
 msgid "Add Lines"
 msgstr "Satır Ekle"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "Belgeden satır ekle"
 
@@ -9372,6 +9378,12 @@ msgstr "Lineer Takım"
 msgid "Lines"
 msgstr "Satırlar"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "Satırlar dahili parça numaralarına ihtiyaç duyuyor"
 
@@ -11111,11 +11123,11 @@ msgstr "Sonuç bulunamadı"
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
-msgid "No returnable lines found for this customer"
-msgstr "Bu müşteri için iadesine uygun satır bulunamadı"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "Bu tedarikçi için iadesine uygun satır bulunamadı"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "Burada satır yok."
@@ -15362,6 +15374,12 @@ msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde oku
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde okunabilir bir Tedarikçi Kimliği sütunu gösterir. Tedarikçiler her iki durumda da dahili olarak tanımlanmaya devam eder."
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"

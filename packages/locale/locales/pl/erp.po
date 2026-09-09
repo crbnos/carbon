@@ -1339,6 +1339,12 @@ msgstr "Dodaj pozycję"
 msgid "Add Lines"
 msgstr "Dodaj wiersze"
 
+msgid "Add lines from a receipt"
+msgstr ""
+
+msgid "Add lines from a shipment"
+msgstr ""
+
 msgid "Add lines from document"
 msgstr "Dodaj wiersze z dokumentu"
 
@@ -9372,6 +9378,12 @@ msgstr "Zespół Linear"
 msgid "Lines"
 msgstr "Linie"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "Linie wymagają wewnętrznych numerów części"
 
@@ -11111,11 +11123,11 @@ msgstr "Brak wyników"
 msgid "No results found"
 msgstr "Nie znaleziono wyników"
 
-msgid "No returnable lines found for this customer"
-msgstr "Nie znaleziono linii podlegających zwrotowi dla tego klienta"
+msgid "No returnable lines for this customer"
+msgstr ""
 
-msgid "No returnable lines found for this supplier"
-msgstr "Nie znaleziono linii podlegających zwrotowi dla tego dostawcy"
+msgid "No returnable lines for this supplier"
+msgstr ""
 
 msgid "No rows here."
 msgstr "Brak wierszy tutaj."
@@ -15362,6 +15374,12 @@ msgstr "Pokaż kolumnę czytelnego identyfikatora klienta na liście klientów, 
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Pokaż kolumnę czytelnego identyfikatora dostawcy na liście dostawców, formularzach dostawcy i listach rozwijanych. Dostawcy są nadal identyfikowani wewnętrznie w każdym przypadku."
+
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Pokaż identyfikatory klientów"

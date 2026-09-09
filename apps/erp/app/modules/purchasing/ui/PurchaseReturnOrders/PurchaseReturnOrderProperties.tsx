@@ -1,10 +1,14 @@
 import { useCarbon } from "@carbon/auth";
 import type { Json } from "@carbon/database";
-import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
+import {
+  Combobox as ComboboxField,
+  DatePicker,
+  InputControlled,
+  ValidatedForm
+} from "@carbon/form";
 import {
   Badge,
   Button,
-  Combobox,
   HStack,
   Modal,
   ModalBody,
@@ -21,7 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { useFetcher, useParams } from "react-router";
@@ -50,6 +54,23 @@ import type { PurchaseReturnOrder } from "./types";
 // The static `update` route segment outranks the `$id` param, so this
 // resolves to routes/x+/purchase-return-order+/update.tsx.
 const updateAction = path.to.purchaseReturnOrderUpdate;
+
+// Inline preview for the Purchase Order field, matching the badge the linked
+// state renders so switching between linked and unlinked doesn't reflow.
+const PurchaseOrderPreview = (
+  value: string,
+  options: { value: string; label: string | React.ReactNode }[]
+) => {
+  const label = options.find((option) => option.value === value)?.label;
+  return (
+    <Hyperlink to={path.to.purchaseOrder(value)}>
+      <Badge variant="secondary">
+        <RiProgress8Line className="w-3 h-3 mr-1" />
+        {label ?? value}
+      </Badge>
+    </Hyperlink>
+  );
+};
 
 const PurchaseReturnOrderProperties = () => {
   const { t } = useLingui();
@@ -92,37 +113,53 @@ const PurchaseReturnOrderProperties = () => {
       });
   }, [carbon, linkedOrderId]);
 
-  const lineItemIds = (routeData?.lines ?? [])
-    .map((line) => line.itemId)
-    .filter((itemId): itemId is string => Boolean(itemId));
-  const lineItemKey = lineItemIds.sort().join(",");
+  // Every order for the supplier is offered. An earlier version filtered to
+  // orders containing the return's items via `purchaseOrderLine!inner(itemId)`,
+  // which silently emptied the list as soon as the return had a line the order
+  // didn't match — including every blind return. The link is convenience
+  // context, not a costing input, so an over-broad list beats an empty one.
   useEffect(() => {
-    if (!carbon || !supplierId) return;
-    // Only offer orders that actually contain the return's items. With no
-    // lines yet, every order of the supplier is offered.
-    const query =
-      lineItemIds.length > 0
-        ? carbon
-            .from("purchaseOrder")
-            .select("id, purchaseOrderId, purchaseOrderLine!inner(itemId)")
-            .eq("supplierId", supplierId)
-            .in("purchaseOrderLine.itemId", lineItemIds)
-            .order("purchaseOrderId", { ascending: false })
-        : carbon
-            .from("purchaseOrder")
-            .select("id, purchaseOrderId")
-            .eq("supplierId", supplierId)
-            .order("purchaseOrderId", { ascending: false });
-    query.then(({ data }) => {
-      setPurchaseOrderOptions(
-        (data ?? []).map((order) => ({
-          value: order.id,
-          label: order.purchaseOrderId
-        }))
-      );
-    });
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lineItemKey stands in for the array identity
-  }, [carbon, supplierId, lineItemKey]);
+    if (!carbon || !supplierId) {
+      setPurchaseOrderOptions([]);
+      return;
+    }
+    let cancelled = false;
+    carbon
+      .from("purchaseOrder")
+      .select("id, purchaseOrderId")
+      .eq("supplierId", supplierId)
+      .order("purchaseOrderId", { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          toast.error(t`Failed to load purchase orders`);
+          setPurchaseOrderOptions([]);
+          return;
+        }
+        setPurchaseOrderOptions(
+          (data ?? []).map((order) => ({
+            value: order.id,
+            label: order.purchaseOrderId
+          }))
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, supplierId, t]);
+
+  // The linked order may not be in the list query's results yet. Keep it in the
+  // options so the inline preview resolves a readable label, not a raw id.
+  const purchaseOrderOptionsWithLinked = useMemo(() => {
+    if (!linkedOrderId) return purchaseOrderOptions;
+    if (purchaseOrderOptions.some((option) => option.value === linkedOrderId)) {
+      return purchaseOrderOptions;
+    }
+    return [
+      { value: linkedOrderId, label: linkedOrderLabel ?? linkedOrderId },
+      ...purchaseOrderOptions
+    ];
+  }, [purchaseOrderOptions, linkedOrderId, linkedOrderLabel]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -242,59 +279,35 @@ const PurchaseReturnOrderProperties = () => {
         </span>
       </VStack>
 
-      {routeData?.purchaseReturnOrder?.purchaseOrderId ? (
-        <VStack spacing={0} className="w-full">
-          <span className="text-xs text-muted-foreground">
-            <Trans>Purchase Order</Trans>
-          </span>
-          <HStack className="group w-full justify-between" spacing={0}>
-            <Hyperlink
-              to={path.to.purchaseOrder(
-                routeData.purchaseReturnOrder.purchaseOrderId
-              )}
-            >
-              <Badge variant="secondary">
-                <RiProgress8Line className="w-3 h-3 mr-1" />
-                {linkedOrderLabel ??
-                  purchaseOrderOptions.find(
-                    (option) =>
-                      option.value ===
-                      routeData.purchaseReturnOrder.purchaseOrderId
-                  )?.label ??
-                  t`Purchase Order`}
-              </Badge>
-            </Hyperlink>
-            {!isDisabled && (
-              <Button
-                className="group-hover:opacity-100 opacity-0 transition-opacity duration-200"
-                variant="ghost"
-                size="sm"
-                leftIcon={<LuUnlink2 className="w-3 h-3" />}
-                onClick={unlinkDisclosure.onOpen}
-              >
-                <Trans>Unlink</Trans>
-              </Button>
-            )}
-          </HStack>
-        </VStack>
-      ) : (
-        <VStack spacing={0} className="w-full">
-          <span className="text-xs text-muted-foreground">
-            <Trans>Purchase Order</Trans>
-          </span>
-          <Combobox
-            size="sm"
-            className="w-full"
-            value=""
-            options={purchaseOrderOptions}
-            isReadOnly={isDisabled}
-            placeholder={t`Link a purchase order`}
-            onChange={(value) => {
-              if (value) onUpdate("purchaseOrderId", value);
-            }}
-          />
-        </VStack>
-      )}
+      {/* One control for both states. The linked badge is the Combobox's own
+          inline preview, so picking an order swaps the label in place instead
+          of flipping to a differently-shaped read-only row once the fetcher
+          lands. Clearing routes through the unlink confirmation. */}
+      <ValidatedForm
+        key={linkedOrderId ?? "unlinked"}
+        defaultValues={{ purchaseOrderId: linkedOrderId ?? "" }}
+        validator={z.object({
+          purchaseOrderId: zfd.text(z.string().optional())
+        })}
+        className="w-full"
+      >
+        <ComboboxField
+          name="purchaseOrderId"
+          label={t`Purchase Order`}
+          options={purchaseOrderOptionsWithLinked}
+          inline={PurchaseOrderPreview}
+          isOptional
+          isReadOnly={isDisabled}
+          placeholder={t`Link a purchase order`}
+          onChange={(option) => {
+            if (option?.value) {
+              onUpdate("purchaseOrderId", option.value);
+            } else if (linkedOrderId) {
+              unlinkDisclosure.onOpen();
+            }
+          }}
+        />
+      </ValidatedForm>
 
       <Assignee
         id={id}
