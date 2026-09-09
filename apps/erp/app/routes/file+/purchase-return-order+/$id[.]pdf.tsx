@@ -16,7 +16,8 @@ import {
   getPurchaseReturnOrderLines,
   getPurchasingTerms,
   getSupplier,
-  getSupplierLocation
+  getSupplierLocation,
+  getSupplierLocations
 } from "~/modules/purchasing";
 import { getLocation } from "~/modules/resources";
 import {
@@ -93,12 +94,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       purchaseReturnOrder.data.supplierId
         ? getSupplier(client, purchaseReturnOrder.data.supplierId)
         : null,
+      // The header's location when set; otherwise fall back to the supplier's
+      // own location(s) — without this the SUPPLIER box prints a bare name
+      // with no address whenever no default location is configured.
       purchaseReturnOrder.data.supplierLocationId
         ? getSupplierLocation(
             client,
             purchaseReturnOrder.data.supplierLocationId
           )
-        : null,
+        : purchaseReturnOrder.data.supplierId
+          ? getSupplierLocations(client, purchaseReturnOrder.data.supplierId)
+          : null,
       purchaseReturnOrder.data.currencyCode
         ? getCurrencyByCode(
             client,
@@ -121,15 +127,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
+  // `getSupplierLocation` returns one row; the `getSupplierLocations` fallback
+  // returns an array — normalize to a single row before reading the address.
+  const supplierLocationRow = Array.isArray(supplierLocation?.data)
+    ? supplierLocation.data[0]
+    : supplierLocation?.data;
+  const supplierAddr = supplierLocationRow?.address;
+
   const supplierAddress = supplier?.data
     ? {
         name: supplier.data.name,
-        addressLine1: supplierLocation?.data?.address?.addressLine1,
-        addressLine2: supplierLocation?.data?.address?.addressLine2,
-        city: supplierLocation?.data?.address?.city,
-        stateProvince: supplierLocation?.data?.address?.stateProvince,
-        postalCode: supplierLocation?.data?.address?.postalCode,
-        country: supplierLocation?.data?.address?.country?.name ?? null
+        addressLine1: supplierAddr?.addressLine1,
+        addressLine2: supplierAddr?.addressLine2,
+        city: supplierAddr?.city,
+        stateProvince: supplierAddr?.stateProvince,
+        postalCode: supplierAddr?.postalCode,
+        country: supplierAddr?.country?.name ?? null
       }
     : null;
 

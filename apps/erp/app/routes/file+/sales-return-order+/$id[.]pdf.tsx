@@ -15,6 +15,7 @@ import { getLocation } from "~/modules/resources";
 import {
   getCustomer,
   getCustomerLocation,
+  getCustomerLocations,
   getSalesReturnOrder,
   getSalesReturnOrderLines,
   getSalesTerms
@@ -93,9 +94,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       salesReturnOrder.data.customerId
         ? getCustomer(client, salesReturnOrder.data.customerId)
         : null,
+      // The header's location when set; otherwise fall back to the customer's
+      // own location(s). `customerLocationId` is only populated when the
+      // customer has a default shipping location configured, so without this
+      // fallback the CUSTOMER box on the PDF prints a bare name with no address.
       salesReturnOrder.data.customerLocationId
         ? getCustomerLocation(client, salesReturnOrder.data.customerLocationId)
-        : null,
+        : salesReturnOrder.data.customerId
+          ? getCustomerLocations(client, salesReturnOrder.data.customerId)
+          : null,
       salesReturnOrder.data.currencyCode
         ? getCurrencyByCode(
             client,
@@ -118,16 +125,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
+  // `getCustomerLocation` returns one row; the `getCustomerLocations` fallback
+  // returns an array — normalize to a single row before reading the address.
+  const customerLocationRow = Array.isArray(customerLocation?.data)
+    ? customerLocation.data[0]
+    : customerLocation?.data;
+  const customerAddr = customerLocationRow?.address;
+
   const customerAddress = customer?.data
     ? {
         name: customer.data.name,
-        addressLine1: customerLocation?.data?.address?.addressLine1,
-        addressLine2: customerLocation?.data?.address?.addressLine2,
-        city: customerLocation?.data?.address?.city,
-        stateProvince: customerLocation?.data?.address?.stateProvince,
-        postalCode: customerLocation?.data?.address?.postalCode,
-        country: customerLocation?.data?.address?.country?.name ?? null,
-        countryCode: customerLocation?.data?.address?.countryCode ?? null
+        addressLine1: customerAddr?.addressLine1,
+        addressLine2: customerAddr?.addressLine2,
+        city: customerAddr?.city,
+        stateProvince: customerAddr?.stateProvince,
+        postalCode: customerAddr?.postalCode,
+        country: customerAddr?.country?.name ?? null,
+        // The plural fallback's select omits `countryCode`; `country.alpha2`
+        // is the same ISO code, so read it from whichever shape is present.
+        countryCode:
+          ("countryCode" in (customerAddr ?? {})
+            ? (customerAddr as { countryCode?: string | null }).countryCode
+            : customerAddr?.country?.alpha2) ?? null
       }
     : null;
 
