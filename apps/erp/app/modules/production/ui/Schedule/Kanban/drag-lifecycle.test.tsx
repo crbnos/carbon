@@ -113,6 +113,7 @@ vi.mock("react-router", () => ({
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
+      priorityBatchingUpdate: "/x/priority/batching/update",
       priorityDatesUpdate: "/x/priority/dates/update",
       priorityOperationUpdate: "/x/priority/operations/update"
     }
@@ -124,6 +125,9 @@ vi.mock("./components/ColumnCard", () => ({
 }));
 vi.mock("./components/ItemCard", () => ({
   ItemCard: () => null
+}));
+vi.mock("./components/BatchItemCard", () => ({
+  BatchItemCard: () => null
 }));
 vi.mock("./components/JobCard", () => ({
   JobCard: () => null
@@ -170,6 +174,22 @@ const operationItems = [
     title: "Operation C"
   }
 ] as DragItem[];
+
+// A live batch collapses to one draggable card in its work-center column.
+// Dragging it to another column reassigns the whole batch's work center
+// (intent "update" → priorityBatchingUpdate), while a within-column drop is a
+// no-op (member priorities own the card's position).
+const batchItem = {
+  id: "batch:BAT1",
+  columnId: "wc-1",
+  columnType: "Process",
+  priority: 5,
+  title: "Batch BAT0001",
+  batchId: "BAT1",
+  batchReadableId: "BAT0001",
+  batchStatus: "Active",
+  members: []
+} as DragItem;
 
 const dateColumns: Column[] = [
   { id: "2026-08-08", title: "Aug 8", type: ["Job"] },
@@ -746,5 +766,44 @@ describe("Operations board drag lifecycle", () => {
 
     expect(arrayMove).not.toHaveBeenCalled();
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("reassigns a batch's work center when dropped on another column", () => {
+    const board = captureOperationsBoard([...operationItems, batchItem]);
+
+    startItemDrag(board, batchItem);
+    board.onDragEnd({
+      active: itemActive(batchItem),
+      over: columnOver(operationColumns[1])
+    });
+
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit).toHaveBeenCalledWith(
+      { intent: "update", batchId: "BAT1", workCenterId: "wc-2" },
+      expect.objectContaining({ action: "/x/priority/batching/update" })
+    );
+  });
+
+  it("does not reassign a batch dropped within its own column", () => {
+    const board = captureOperationsBoard([...operationItems, batchItem]);
+
+    startItemDrag(board, batchItem);
+    board.onDragEnd({
+      active: itemActive(batchItem),
+      over: itemOver(operationItems[0])
+    });
+
+    // A within-column drop is a REORDER, so it legitimately writes the batch's
+    // new priority through the batching endpoint. What it must never do is
+    // reassign the work center — that is the `intent: "update"` payload the
+    // cross-column case sends. Asserting `submit` was never called at all would
+    // contradict the reorder the drop actually performed.
+    expect(submit).not.toHaveBeenCalledWith(
+      expect.objectContaining({ intent: "update" }),
+      expect.anything()
+    );
+    for (const [payload] of submit.mock.calls) {
+      expect(payload).not.toHaveProperty("workCenterId");
+    }
   });
 });

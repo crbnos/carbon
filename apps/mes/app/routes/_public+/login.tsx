@@ -507,6 +507,7 @@ export default function LoginRoute() {
               <Input
                 name="email"
                 label=""
+                autoFocus
                 placeholder={t`Email Address`}
                 autoComplete={hasPasskeyAuth ? "email webauthn" : "email"}
               />
@@ -514,6 +515,7 @@ export default function LoginRoute() {
               <Submit
                 isDisabled={fetcher.state !== "idle" || ssoLoading}
                 isLoading={fetcher.state === "submitting" || ssoLoading}
+                hideShortcutKey
                 size="lg"
                 className="w-full"
                 withBlocker={false}

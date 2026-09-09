@@ -7,6 +7,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  SHORTCUTS,
   toast
 } from "@carbon/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -85,11 +86,14 @@ const Confirm = ({
             onSubmit={() => (submitted.current = true)}
           >
             {children}
+            {/* Same z-50 tie-break dependency as ConfirmDelete: this modal
+                wins over an open drawer only because it mounts later. */}
             <Button
               variant={confirmVariant}
               isLoading={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               type="submit"
+              shortcut={SHORTCUTS.confirm}
             >
               {confirmText}
             </Button>

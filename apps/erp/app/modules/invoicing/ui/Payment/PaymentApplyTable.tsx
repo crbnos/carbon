@@ -15,6 +15,7 @@ import {
 } from "@carbon/react";
 import {
   allocatePaymentFunding,
+  EPSILON,
   type FundingSource,
   INPUT_FORMAT,
   round,
@@ -272,7 +273,25 @@ const PaymentApplyTable = ({
       currencyDecimals
     )
   );
-  const overApplied = totalCash > maxApplicable;
+  // EPSILON, not a hand-picked 1e-4: every amount here is already rounded to
+  // internal scale, so the only slack needed is float noise. A 1e-4 band is
+  // coarser than the 1e-5 the values carry, and let a real over-application of
+  // 0.0001 through.
+  const overApplied = totalCash > maxApplicable + EPSILON;
+  // A row can't settle more than the invoice's open balance
+  // (applied + discount + write-off). Mirrors the authoritative cap in the
+  // post-payment edge function, so a manual discount that over-settles is caught
+  // here — before Post — instead of failing server-side.
+  const overSettled = useMemo(
+    () =>
+      rows.some(
+        (r) =>
+          r.checked &&
+          round(r.appliedAmount + r.discountAmount + r.writeOffAmount) >
+            r.balance + EPSILON
+      ),
+    [rows]
+  );
   const appliedPct =
     maxApplicable > 0
       ? Math.min(100, Math.max(0, (totalCash / maxApplicable) * 100))
@@ -653,7 +672,13 @@ const PaymentApplyTable = ({
         ) : null}
         <HStack className="justify-between w-full">
           <span className="text-sm">
-            {overApplied ? (
+            {overSettled ? (
+              <span className="font-semibold text-destructive">
+                <Trans>
+                  A line settles more than its invoice's open balance
+                </Trans>
+              </span>
+            ) : overApplied ? (
               <span className="font-semibold text-destructive">
                 <Trans>Over-applied by</Trans>{" "}
                 {currencyFormatter.format(totalCash - maxApplicable)}
@@ -679,7 +704,9 @@ const PaymentApplyTable = ({
             leftIcon={<LuSave />}
             onClick={onSave}
             isLoading={isSaving}
-            isDisabled={!canEdit || overApplied || Boolean(preview.error)}
+            isDisabled={
+              !canEdit || overApplied || overSettled || Boolean(preview.error)
+            }
           >
             <Trans>Save applications</Trans>
           </Button>

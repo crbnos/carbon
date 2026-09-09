@@ -6,7 +6,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
@@ -18,6 +19,14 @@ type ConfirmDeleteProps = {
   name: string;
   text: string;
   deleteText?: string;
+  /** Overrides the default "Delete {name}" heading (e.g. "Remove from batch"). */
+  title?: string;
+  /**
+   * Extra values posted with the form — hidden inputs, so the modal can drive an
+   * intent-based action (`{ intent, batchId, jobOperationIds }`) rather than only
+   * a URL-addressable delete route. Array values render one input per entry.
+   */
+  fields?: Record<string, string | string[]>;
   onCancel: () => void;
   onSubmit?: () => void;
 };
@@ -28,6 +37,8 @@ const ConfirmDelete = ({
   name,
   text,
   deleteText = "Delete",
+  title,
+  fields,
   onCancel,
   onSubmit
 }: ConfirmDeleteProps) => {
@@ -50,7 +61,7 @@ const ConfirmDelete = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>{t`Delete ${name}`}</ModalTitle>
+          <ModalTitle>{title ?? t`Delete ${name}`}</ModalTitle>
         </ModalHeader>
 
         <ModalBody>
@@ -66,11 +77,28 @@ const ConfirmDelete = ({
             action={action}
             onSubmit={() => (submitted.current = true)}
           >
+            {/* Drawer and Modal are both z-50 (Drawer.tsx:23, Modal.tsx:35), so
+                when this modal stacks over a drawer form the topmost-dialog
+                guard resolves by "later-mounted wins" (utils/dialog.ts). If
+                either z-index ever changes, re-verify ⌘Enter targets this
+                modal, not the drawer's Submit. */}
+            {fields &&
+              Object.entries(fields).flatMap(([key, value]) =>
+                (Array.isArray(value) ? value : [value]).map((v, i) => (
+                  <input
+                    key={`${key}-${i}`}
+                    type="hidden"
+                    name={key}
+                    value={v}
+                  />
+                ))
+              )}
             <Button
               variant="destructive"
               isLoading={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               type="submit"
+              shortcut={SHORTCUTS.confirm}
             >
               {deleteText}
             </Button>

@@ -124,7 +124,10 @@ LEFT JOIN sales_parents sp ON sp."companyGroupId"=g."companyGroupId"
 LEFT JOIN "account" existing ON existing."companyGroupId"=g."companyGroupId"
   AND existing.name='Shipping Revenue' AND existing."isGroup"=false
 LEFT JOIN LATERAL (
-  SELECT n::text AS number FROM generate_series(4040,4990,10) n
+  -- Starts at 4050: 4040 is reserved for "Customer Payment Discounts", which
+  -- the later 20260909014032 migration renumbers 7030 into. That renumber is
+  -- guarded by NOT EXISTS, so claiming 4040 here would silently suppress it.
+  SELECT n::text AS number FROM generate_series(4050,4990,10) n
   WHERE NOT EXISTS (SELECT 1 FROM "account" a
     WHERE a."companyGroupId"=g."companyGroupId" AND a.number=n::text)
   ORDER BY n LIMIT 1

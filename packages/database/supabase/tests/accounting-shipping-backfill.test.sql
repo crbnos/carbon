@@ -144,7 +144,7 @@ BEGIN
     SELECT "salesShippingRevenueAccount" INTO shipping_id FROM "accountDefault"
       WHERE "companyId" = f.company_ids[1];
     ASSERT shipping_id IS NOT NULL AND shipping_id <> f.sales_id, 'Fresh chart: separate shipping account';
-    ASSERT (SELECT number = '4040' AND name = 'Shipping Revenue' AND class = 'Revenue'
+    ASSERT (SELECT number = '4050' AND name = 'Shipping Revenue' AND class = 'Revenue'
       AND "accountType" = 'Income' AND "incomeBalance" = 'Income Statement'
       AND "consolidatedRate" = 'Average' AND NOT "isGroup" AND active
       AND "parentId" = f.parent_id AND "companyGroupId" = f.group_id
@@ -183,12 +183,12 @@ BEGIN
 
   BEGIN
     f := pg_temp.seed_shipping_chart();
-    custom_id := pg_temp.add_revenue_leaf(f, 'Existing account at 4040', '4040');
+    custom_id := pg_temp.add_revenue_leaf(f, 'Existing account at 4050', '4050');
     PERFORM pg_temp.run_shipping_backfill();
-    ASSERT (SELECT number = '4050' FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
-      'Occupied 4040: use next free account number';
-    ASSERT (SELECT number = '4040' AND name = 'Existing account at 4040' FROM "account" WHERE id = custom_id),
-      'Occupied 4040: preserve its owner';
+    ASSERT (SELECT number = '4060' FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
+      'Occupied 4050: use next free account number';
+    ASSERT (SELECT number = '4050' AND name = 'Existing account at 4050' FROM "account" WHERE id = custom_id),
+      'Occupied 4050: preserve its owner';
     RAISE NOTICE 'PASS account-number collision';
     RAISE SQLSTATE 'P9001';
   EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
@@ -198,7 +198,7 @@ BEGIN
     INSERT INTO "account" (number, name, class, "accountType", "incomeBalance", "consolidatedRate",
       "parentId", "companyGroupId", "createdBy")
     SELECT n::text, 'Occupied ' || n, 'Revenue', 'Income', 'Income Statement', 'Average',
-      f.parent_id, f.group_id, 'system' FROM generate_series(4040, 4990, 10) AS n;
+      f.parent_id, f.group_id, 'system' FROM generate_series(4050, 4990, 10) AS n;
     PERFORM pg_temp.expect_backfill_failure('Cannot resolve Shipping Revenue parent/account/number for groups: ' || f.group_id);
     ASSERT NOT EXISTS (SELECT 1 FROM "account" WHERE "companyGroupId" = f.group_id AND name = 'Shipping Revenue'),
       'Exhausted range: do not insert an unnumbered shipping account';

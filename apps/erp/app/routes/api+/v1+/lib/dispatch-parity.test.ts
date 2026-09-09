@@ -13,6 +13,7 @@ const spies = vi.hoisted(() => ({
   getAccountLedger: vi.fn(),
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
+  upsertJobMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
@@ -44,7 +45,8 @@ vi.mock("~/modules/items/items.service", () => ({}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
-  insertJob: spies.insertJob
+  insertJob: spies.insertJob,
+  upsertJobMaterial: spies.upsertJobMaterial
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
@@ -124,6 +126,7 @@ const allSpies = [
   spies.getAccountLedger,
   spies.getTrialBalance,
   spies.upsertAccount,
+  spies.upsertJobMaterial,
   spies.upsertQuoteLinePrices,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
@@ -172,7 +175,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     ]);
   });
 
-  it("b. _operation create at top level: stripped, createdBy/updatedBy/companyId stamped", async () => {
+  it("b. _operation create at top level: stripped, createdBy + companyId stamped, updatedBy NOT stamped (matches the create-variant service type / UI insert path)", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
@@ -188,11 +191,12 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          updatedBy: "u1",
           companyId: "c1"
         }
       ]
     ]);
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect("updatedBy" in payload).toBe(false);
   });
 
   it("c. _operation update nested in the payload: stripped, createdBy suppressed", async () => {
@@ -385,7 +389,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          updatedBy: "u1",
           companyId: "c1"
         }
       ]
@@ -408,6 +411,62 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       data: [{ id: "e1" }, { id: "e2" }],
       count: 7
     });
+  });
+
+  // The inverted discriminator: upsertJobMaterial branches on `if ("updatedBy" in
+  // jobMaterial)` (update-branch first), the mirror image of upsertAccount. A stamped
+  // updatedBy would force its UPDATE branch, which matches zero rows for a fresh id and
+  // returns PGRST116 — the create silently no-ops. The generator now gives these tools a
+  // required `_operation` too, and the dispatch suppresses updatedBy on create so the
+  // service falls through to its insert branch.
+  it('o. inverted `"updatedBy" in` discriminator, create: updatedBy suppressed, createdBy + companyId stamped, so the service inserts', async () => {
+    const r = await runDispatch(
+      "production_upsertJobMaterial",
+      spies.upsertJobMaterial,
+      {
+        _operation: "create",
+        jobId: "j1",
+        itemId: "i1",
+        methodType: "Pull from Inventory",
+        quantity: 2
+      }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect("updatedBy" in payload).toBe(false);
+    expect(payload).toMatchObject({
+      createdBy: "u1",
+      companyId: "c1",
+      jobId: "j1",
+      itemId: "i1"
+    });
+  });
+
+  it('p. inverted `"updatedBy" in` discriminator, update: updatedBy + companyId stamped, createdBy suppressed', async () => {
+    const r = await runDispatch(
+      "production_upsertJobMaterial",
+      spies.upsertJobMaterial,
+      { _operation: "update", id: "jm1", quantity: 3 }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect("createdBy" in payload).toBe(false);
+    expect(payload).toMatchObject({
+      updatedBy: "u1",
+      companyId: "c1",
+      id: "jm1"
+    });
+  });
+
+  it("q. an inverted-discriminator tool requires _operation, same as the createdBy convention", async () => {
+    const r = await runDispatch(
+      "production_upsertJobMaterial",
+      spies.upsertJobMaterial,
+      { jobId: "j1", itemId: "i1" }
+    );
+    expect(r.calls).toEqual([]);
+    expect(r.dispatchError).toBeInstanceOf(ORPCError);
+    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
+      'production_upsertJobMaterial requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+    );
   });
 });
 

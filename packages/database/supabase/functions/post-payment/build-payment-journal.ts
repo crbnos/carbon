@@ -7,7 +7,7 @@ import {
   toBaseAmount,
 } from "../shared/accounting-currency.ts";
 import { onAccountCreditDescription } from "../shared/accounting-posting.ts";
-import { credit, debit } from "../lib/utils.ts";
+import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 export interface PaymentJournalLine {
   accountId: string;
@@ -40,6 +40,12 @@ export interface PaymentJournalApplicationInput {
 export interface PaymentJournalAccounts {
   controlAccountId: string | null;
   discountAccountId: string | null;
+  /** The discount account's glAccountClass. Drives the discount line's natural-
+   *  balance sign so a customer discount (Revenue) debits contra-revenue and a
+   *  supplier discount (Expense/COGS) credits contra-cost. Resolved by index.ts;
+   *  optional so callers without a discount need not supply it (falls back to
+   *  "expense" for back-compat). */
+  discountAccountClass?: string | null;
   writeOffAccountId: string | null;
   fxGainAccountId: string | null;
   fxLossAccountId: string | null;
@@ -230,7 +236,9 @@ export function buildPaymentJournal(
     );
     push(
       cashIn ? "debit" : "credit",
-      "expense",
+      accounts.discountAccountClass
+        ? accountTypeFromClass(accounts.discountAccountClass)
+        : "expense",
       discount,
       accounts.discountAccountId,
       isAR ? "Customer Payment Discount" : "Supplier Payment Discount",

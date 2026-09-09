@@ -53,10 +53,14 @@ The **Forecast** page renders the schedule the engine actually booked: a lane pe
 
 Click any bar and a side panel explains its timing. A **schedule note** answers "why does this start when it does" in plain language, for example *"Waited 14h for the work center — queued behind J000001 (3 ops)"* or *"Waited 2d 3h for a qualified operator to be available"*. The panel also separates **work** from **span**: an operation stretched across shift boundaries might show 6 hours of work across a 22-hour span, which is honest rather than alarming. A popover on each lane, *"How are these hours calculated?"*, shows which rung of the availability ladder is in use and what downtime and staffing subtract from it.
 
+A **released operation batch** — several operations that run together on one batchable process — books a **single** reservation, so it appears as one bar labeled by the batch, *"BAT000005 · 2 jobs"*, not one bar per member. Its side panel names the batch and its action button opens the **batch** rather than a single member's job.
+
+An **operation batch** (`BAT…`) groups job operations that run together on a machine — a scheduling concept. It is unrelated to batch tracking, the lot/batch numbers that trace a quantity of identical units through inventory. Same word, different feature.
+
 The header counts two kinds of trouble separately:
 
 - **Conflicts** are placed operations that finish **after the job's due date**. The stored reason names the cause, e.g. *"Finishes 2026-09-12 but the job is due 2026-09-05 — waited for a qualified operator, queued behind J000001 (3 ops)"*. The same reason appears as a tooltip on the red-flagged card on the ops board.
-- **"Can't be scheduled"** operations found no feasible slot at all: no qualified operator exists, no manned coverage under a staffing-required policy, or no open capacity within the horizon. They get a non-binding placeholder bar marking where they *would* run, flagged with an **"Unschedulable"** chip; the panel notes the bar *"isn't holding capacity"* against other jobs.
+- **"Can't be scheduled"** operations found no feasible slot at all: no qualified operator exists, no manned coverage under a staffing-required policy, or no open capacity within the horizon. They get a non-binding placeholder bar marking where they *would* run, flagged with an **"Unschedulable"** chip; the panel notes the bar *"isn't holding capacity"* against other jobs. The placeholder is drawn on the next **working day**, so it never lands on a night or weekend just because that's when the schedule ran. A released **batch** can be unschedulable for a different reason: its member operations carry **no estimated time** at all, so there's nothing to size the run from. The panel shows an **Estimated time** of **0h** and the reason *"add setup, labor, or machine time to its operations to schedule it"* — the fix is data entry on the operations, not capacity.
 
 The engine always produces a complete answer. Late work is placed and flagged, unplaceable work gets an explained placeholder, and the job's projected completion extends over both, so the forecast finish is never quietly optimistic.
 
@@ -81,7 +85,10 @@ A conflict means the placement **finishes after the job's due date**, or the ope
 Amber is **behind target**, not a conflict: the projected finish is later than the operation's need-by target (its `dueDate`). The job may still be on time overall. It clears when capacity frees up or the target moves.
 
 ### The Forecast says "can't be scheduled"
-No feasible slot existed: no qualified operator for the required ability, no manned coverage while the location's **Staffing required** policy is on (lights-out work centers exempt), or no open capacity in the horizon. The bar shown is a placeholder marking where the work would run; it holds no capacity. Man the station, qualify someone, or relax the constraint.
+No feasible slot existed: no qualified operator for the required ability, no manned coverage while the location's **Staffing required** policy is on (lights-out work centers exempt), or no open capacity in the horizon. The bar shown is a placeholder marking where the work would run; it holds no capacity, and it's drawn on the next working day rather than the day the schedule happened to run. Man the station, qualify someone, or relax the constraint.
+
+### A batch can't be scheduled and the panel shows "Estimated time 0h"
+The batch's member operations carry no setup, labor, or machine time, so the engine has nothing to size the run from. The 1-hour bar you see is a nominal placeholder, not real work — that's why the panel reports the estimated time as **0h**. Add time standards (setup, labor, or machine) to the operations and the batch schedules on the next run.
 
 ### New dates didn't appear right after my edit
 Most edits (due-date drags, manning changes, shift/work-center/ability edits) stamp jobs **schedule outdated** and queue a debounced replan wave (~30 seconds after the last change, batched per company). Dates land when the wave finishes. Job release and status changes reschedule immediately. In local dev the jobs worker must be running or the wave never fires.

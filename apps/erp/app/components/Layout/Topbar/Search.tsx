@@ -1,4 +1,3 @@
-import type { ShortcutDefinition } from "@carbon/react";
 import {
   Command,
   CommandGroup,
@@ -65,11 +64,6 @@ type RecentSearch = Route & {
   entityType?: string;
   module?: string;
   description?: string;
-};
-
-export const searchShortcut: ShortcutDefinition = {
-  key: "K",
-  modifiers: ["mod"]
 };
 
 export const SearchModal = () => {

@@ -40,7 +40,48 @@ variant rather than styling a bare element.
   `destructive` · `ghost` · `outline` · `link`
 - **size**: `sm` · `md` (default) · `lg`
 - **props**: `isDisabled`, `isLoading`, `isIcon`, `isRound`, `leftIcon`,
-  `rightIcon`, `asChild`
+  `rightIcon`, `asChild`, `shortcut`, `hideShortcutKey`, `shortcutGuard`
+
+### Keyboard shortcuts
+
+`shortcut` binds a hotkey that ref-clicks the button and renders a keycap badge
+(`ShortcutKey`); it is inert while disabled/loading and while a dialog the
+button isn't inside is open. `shortcutGuard` AND-composes an extra guard.
+**Every combo is a named constant** — shared ones in
+`packages/react/src/shortcuts.ts` (`SHORTCUTS`), app ones in
+`apps/erp/app/shortcuts.ts` / `apps/mes/app/shortcuts.ts`. Never write a combo
+string literal at a call site. Many-bindings-to-many-actions use
+`useShortcutKeyMap(entries)` (dev-warns on duplicate combos); two-key sequences
+(`g` then a letter) use `useShortcutSequence`. The `?` overlay
+(`ShortcutHelpOverlay`) lists shortcuts; each app's `ShortcutHelp.tsx` declares
+its entries from the central files. `Submit` (`@carbon/form`) defaults to the
+`SHORTCUTS.save` binding (⌘/Ctrl+Enter) with a focus-aware guard; pass
+`shortcut={false}` to opt out of the binding or `hideShortcutKey` to keep it
+silent. The legacy `useKeyboardShortcuts` / `usePrettifyShortcut` hooks are
+deleted.
+
+All matching goes through **react-hotkeys-hook** (`useShortcutKeys` and
+`useShortcutKeyMap` both delegate to `useHotkeys`) — never hand-roll a
+document keydown listener; the library already handles typing-in-input
+suppression and physical-key (`event.code`) matching. `useShortcutSequence`
+is the one hand-rolled exception (the library has no sequence support).
+
+**Interaction design rules** (apply per screen, don't bind mechanically):
+
+- **Enter** is the shortcut when there is one obvious action: a single input
+  (native form submit already handles it), a choice screen, "select and
+  continue". **⌘/Ctrl+Enter** is for real forms — multiple fields, selects,
+  editors — where Enter has other meanings and submission should be deliberate.
+- **Badge visibility is a design decision.** Don't advertise a shortcut on a
+  trivial screen (login email, OTP screens, single-input dialogs): the binding
+  can stay, the badge goes (`hideShortcutKey`). Multi-field forms keep the
+  ⌘↵ badge.
+- **Choice screens are radio groups**: one tab stop, arrow keys move AND
+  select, Enter confirms and continues (Radix radios don't activate on Enter,
+  which leaves it free for the continue button's `shortcut`). Use
+  `ChoiceCardGroup` (cards, `autoFocus` prop) or `RadioGroupButton`
+  (button-styled options); give the screen initial focus on the selected
+  option.
 
 ```typescript
 <Button variant="primary" leftIcon={<LuPlus />}>Save</Button>

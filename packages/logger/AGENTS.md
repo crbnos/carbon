@@ -37,9 +37,13 @@ categories, env-driven levels, and cloud-agnostic request-id correlation.
   parse). It covers `POST/PUT/PATCH/DELETE` with `application/json` or
   `application/x-www-form-urlencoded` bodies at/under 8KB (`content-length`
   required); multipart uploads, oversized, and unknown-length bodies log a short
-  marker instead. Sensitive fields (`password`/`token`/`secret`/`email`/… — the
-  `DEFAULT_REDACT_FIELDS` set) are masked `[REDACTED]` in the captured object.
-  The body is read from a clone, so the route handler's stream stays intact.
+  marker instead. Sensitive fields (`password`/`token`/`secret`/… — the
+  `REDACT_FIELD_PATTERNS` set in `src/redaction.ts`) are masked `[REDACTED]` in
+  the captured object. That set is LogTape's `DEFAULT_REDACT_FIELDS` minus
+  `email`/`phone`/`address` — ordinary ERP business data stays visible, and the
+  prod sink MASKS matched fields rather than deleting them (a deleted key once
+  made a PGRST204 failure unreconstructable from the log line). The body is read
+  from a clone, so the route handler's stream stays intact.
 
 ## Ask First
 

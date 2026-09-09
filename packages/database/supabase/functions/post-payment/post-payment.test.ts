@@ -447,3 +447,64 @@ Deno.test("inconsistent cash source snapshots cannot be concealed by an unapplie
   );
   assertThrows(() => buildPaymentJournal(payment({ newOnAccountBase: 5 })));
 });
+
+// #1600 reclassified the seeded discount accounts: customer discounts are
+// contra-revenue (4040, class Revenue) and supplier discounts contra-COGS
+// (5080, class Expense) — neither is an operating expense. The journal line's
+// natural-balance sign therefore follows the ACCOUNT'S class, not a hardcoded
+// "expense". The tests above omit `discountAccountClass` on purpose and pin the
+// back-compat fallback.
+Deno.test("AR customer discount debits a Revenue-class account as contra-revenue", () => {
+  const result = buildPaymentJournal(payment({
+    totalAmount: 88,
+    exchangeRate: 1,
+    accounts: { ...accounts, discountAccountClass: "Revenue" },
+    applications: [
+      app({
+        sourceAmount: 88,
+        sourceExchangeRate: 1,
+        appliedAmount: 80,
+        discountAmount: 15,
+        writeOffAmount: 5,
+        fxGainLossAmount: 8,
+      }),
+    ],
+  }));
+  // A debit to a credit-natural account stores negative: the discount REDUCES
+  // revenue rather than adding an expense.
+  assertEquals(total(result, "discount"), -15);
+  assertEquals(total(result, "control"), -100);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("AP supplier discount credits an Expense-class account as contra-cost", () => {
+  const result = buildPaymentJournal(payment({
+    isAR: false,
+    cashIn: false,
+    totalAmount: 88,
+    exchangeRate: 1,
+    accounts: { ...accounts, discountAccountClass: "Expense" },
+    applications: [app({
+      targetSalesInvoiceId: null,
+      targetPurchaseInvoiceId: "invoice",
+      sourceAmount: 88,
+      sourceExchangeRate: 1,
+      appliedAmount: 80,
+      discountAmount: 15,
+      writeOffAmount: 5,
+      fxGainLossAmount: -8,
+    })],
+  }));
+  assertEquals(total(result, "discount"), -15);
+  assertEquals(total(result, "control"), -100);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("an unknown discount account class is refused rather than guessed", () => {
+  assertThrows(() =>
+    buildPaymentJournal(payment({
+      accounts: { ...accounts, discountAccountClass: "Contra-Revenue" },
+      applications: [app({ discountAmount: 10 })],
+    }))
+  );
+});

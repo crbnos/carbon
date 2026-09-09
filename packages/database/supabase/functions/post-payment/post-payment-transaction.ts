@@ -660,6 +660,24 @@ export function postPaymentTransaction(
       if (!defaults) {
         throw new Error("Accounting defaults are required before posting");
       }
+      // Resolve the discount account's class so buildPaymentJournal signs the
+      // discount line by the account's real natural balance (customer discount
+      // -> Revenue/contra-revenue; supplier discount -> Expense/contra-COGS),
+      // mirroring how post-memo resolves its reason account's class.
+      const discountAccountId = isAR
+        ? defaults.customerPaymentDiscountAccount
+        : defaults.supplierPaymentDiscountAccount;
+      let discountAccountClass: string | null = null;
+      if (discountAccountId) {
+        const discountAccount = await trx.selectFrom("account").select("class")
+          .where("id", "=", discountAccountId)
+          .where("companyGroupId", "=", company.companyGroupId)
+          .executeTakeFirst();
+        if (!discountAccount) {
+          throw new Error("Failed to fetch the payment discount account class");
+        }
+        discountAccountClass = discountAccount.class;
+      }
       const accounts = {
         controlAccountId: isAR
           ? (party.intercompanyCompanyId
@@ -668,9 +686,8 @@ export function postPaymentTransaction(
           : (party.intercompanyCompanyId
             ? defaults.intercompanyPayablesAccount
             : defaults.payablesAccount),
-        discountAccountId: isAR
-          ? defaults.customerPaymentDiscountAccount
-          : defaults.supplierPaymentDiscountAccount,
+        discountAccountId,
+        discountAccountClass,
         writeOffAccountId: isAR
           ? defaults.customerWriteOffAccount
           : defaults.supplierWriteOffAccount,
@@ -679,7 +696,7 @@ export function postPaymentTransaction(
       };
       expectedAccountClasses.push(
         [accounts.controlAccountId, isAR ? "Asset" : "Liability"],
-        [accounts.discountAccountId, "Expense"],
+        [accounts.discountAccountId, isAR ? "Revenue" : "Expense"],
         [accounts.writeOffAccountId, isAR ? "Expense" : "Revenue"],
         [accounts.fxGainAccountId, "Revenue"],
         [accounts.fxLossAccountId, "Expense"],

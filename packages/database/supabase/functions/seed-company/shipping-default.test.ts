@@ -12,13 +12,16 @@ const resolve = (accounts = [parent, shipping], parentDefaultId: string | null =
   resolveShippingDefault({ accounts, parentDefaultId, companyGroupId: "group" });
 
 Deno.test("new company seeds a separate Shipping Revenue account under Revenue", () => {
+  // 4050, not 4040: 4040 is "Customer Payment Discounts" (#1600), which the
+  // 20260909014032 migration renumbers 7030 into. Claiming 4040 here would
+  // silently suppress that guarded renumber for every company.
   const account = seedAccounts.find((a) => String(a.name) === "Shipping Revenue");
   assertEquals<unknown>(account, {
-    key: "4040", number: "4040", name: "Shipping Revenue", isGroup: false,
+    key: "4050", number: "4050", name: "Shipping Revenue", isGroup: false,
     parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement",
     class: "Revenue", consolidatedRate: "Average", createdBy: "system"
   });
-  assertEquals((accountDefaults as Record<string, string>).salesShippingRevenueAccount, "4040");
+  assertEquals((accountDefaults as Record<string, string>).salesShippingRevenueAccount, "4050");
 });
 
 Deno.test("existing company group resolves a semantic leaf without assuming number4040", () => {

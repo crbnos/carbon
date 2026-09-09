@@ -641,6 +641,7 @@ export default function LoginRoute() {
               <Input
                 name="email"
                 label=""
+                autoFocus
                 placeholder={t`Email Address`}
                 autoComplete={hasPasskeyAuth ? "email webauthn" : "email"}
               />
@@ -652,6 +653,7 @@ export default function LoginRoute() {
                   (!!CLOUDFLARE_TURNSTILE_SITE_KEY && !turnstileToken)
                 }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
+                hideShortcutKey
                 size="lg"
                 className="w-full"
                 withBlocker={false}

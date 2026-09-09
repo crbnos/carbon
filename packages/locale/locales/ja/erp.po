@@ -68,9 +68,21 @@ msgstr "{0} 件のアカウント"
 msgid "{0} ago"
 msgstr "{0}前"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0}はすでにバッチに含まれています"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0}はすでに開始されています"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0}個のデルタを持つセル"
+
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} 顧客"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -106,6 +118,24 @@ msgstr "{0} 件/{1} 件の転記勘定がマップされました"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}個の{maxSlots}プロバイダースロットが使用されています"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0}件の作業 · {totalQuantity}部品"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "このプロセスの{0}の操作はリストされていません: {1}"
+
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr "{0} 工程"
+
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} 作業 · {1} 個"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -125,6 +155,18 @@ msgstr "{0}登録済み"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
+
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0}廃棄"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr "{0} 件選択"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "推奨バッチ {0} 個"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -207,6 +249,9 @@ msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
+msgid "{days}d"
+msgstr "{days}日"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
@@ -230,6 +275,9 @@ msgstr "{inserted}件を追加、{updated}件を更新、{0}件を修正が必�
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
+msgid "{load} in queue"
+msgstr "キューに{load}件"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -247,6 +295,15 @@ msgstr "{name}が削除されました"
 
 msgid "{name} returns!"
 msgstr "{name}が戻ってきました！"
+
+msgid "{names} differs"
+msgstr "{names}が異なります"
+
+msgid "{names} doesn't match the batch"
+msgstr "{names}はバッチと一致しません"
+
+msgid "{names} must match — separate load"
+msgstr "{names}は一致する必要があります — 別ロード"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}個の部品はスキップ済 — 製造する必要がありません"
@@ -275,6 +332,18 @@ msgstr "{total}個のフェーズをライブにする"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
+msgstr "{totalQuantity} / {batchCapacity} 個 · 1ラン内に収まります"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
+msgstr "{totalQuantity} / {batchCapacity} 個 · 容量超過 — {loads} ロード（{batchCapacity} 個）"
+
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr "{unbatchedBatchableOperations} がバッチ化を待機中です"
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr "{unbatchedBatchableOperations} バッチ対象の工程はバッチに含まれていません — それらはバッチ化されるまで個別に実行されます"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
@@ -315,11 +384,18 @@ msgstr "+{0}h"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>この商品の仕入先部品を追加</0>して、優先仕入先を設定してください。"
 
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
+
 msgid "0 operations"
 msgstr "0 件の工程"
 
 msgid "0-4 weeks"
 msgstr "0～4週間"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr "1 つのバッチ対象の工程はバッチに含まれていません — それはバッチ化されるまで個別に実行されます"
 
 msgid "1 can't be scheduled"
 msgstr "1はスケジュール化できません"
@@ -347,6 +423,9 @@ msgstr "1個の部品はスキップ済 — 製造する必要がありません
 
 msgid "1 problem — not published"
 msgstr "1個の問題 — 公開済ではありません"
+
+msgid "1 suggested batch"
+msgstr "推奨バッチ 1 個"
 
 msgid "1 unposted document"
 msgstr "1 件の未転記文書"
@@ -398,6 +477,9 @@ msgstr "9～12週間"
 
 msgid "90D"
 msgstr "90日"
+
+msgid "A \"must match\" rule on this process blocks these from sharing a batch"
+msgstr "このプロセスの\"一致必須\"ルールにより、これらはバッチを共有できません"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
@@ -530,6 +612,9 @@ msgstr "ジョブの開始日が変更されました"
 
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
+
+msgid "A line settles more than its invoice's open balance"
+msgstr "明細が請求書の未払い残高を超えて消込しています"
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
@@ -1128,6 +1213,10 @@ msgstr "実際の時間"
 msgid "Add"
 msgstr "追加"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "{0}の作業を追加"
+
 msgid "Add & Issue"
 msgstr "追加して発行"
 
@@ -1143,8 +1232,14 @@ msgstr "数量、価格、配送、リードタイム、および税を上書き
 msgid "Add a domain"
 msgstr "ドメインを追加"
 
+msgid "Add a line (in document explorers)"
+msgstr "行を追加（文書エクスプローラーで）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -1157,6 +1252,9 @@ msgstr "行を追加"
 
 msgid "Add a step"
 msgstr "ステップを追加"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "能力を追加"
@@ -1241,6 +1339,13 @@ msgstr "メモを追加"
 
 msgid "Add Operation"
 msgstr "操作を追加"
+
+msgid "Add operations"
+msgstr "作業を追加"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "{0}に作業を追加"
 
 msgid "Add options above first"
 msgstr "上記のオプションを追加してください"
@@ -1334,6 +1439,9 @@ msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリッ�
 
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
+
+msgid "Add to batch"
+msgstr "バッチに追加"
 
 msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
@@ -1637,6 +1745,9 @@ msgstr "アイテムの計量単位が変更されます"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内作業区ではなく外部仕入先が実行する工程で、外注発注書でカバーされます。"
+
+msgid "An operation on this job runs in this batch"
+msgstr "このジョブの工程がこのバッチで実行されます"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "作業区のキューにおける工程のポジション — 床がピックアップする順序。エンジンは配置順序（最初に予想される開始が最初）からそれに番号を付けます。作業区ボード上でカードを並べ替えることは、日付を変えずにそれを上書きします。"
@@ -2494,6 +2605,9 @@ msgstr "ジョブを自動的に開始するには、自動リリースを有効
 msgid "Auto Start Job"
 msgstr "自動ジョブ開始"
 
+msgid "Auto-assigned on release"
+msgstr "リリース時に自動割り当て"
+
 msgid "Auto-create"
 msgstr "自動作成"
 
@@ -2633,6 +2747,9 @@ msgstr "基本通貨"
 msgid "Base Currency"
 msgstr "基本通貨"
 
+msgid "Base material — e.g. steel vs aluminum"
+msgstr "ベース材料 — 例：鋼 vs アルミニウム"
+
 msgid "Base Price"
 msgstr "基本価格"
 
@@ -2647,6 +2764,9 @@ msgstr "バッチ"
 
 msgid "Batch / Serial"
 msgstr "バッチ / シリアル"
+
+msgid "Batch Capacity"
+msgstr "バッチ容量"
 
 msgid "Batch items require a sales order"
 msgstr "バッチ品目は受注が必要です"
@@ -2668,6 +2788,21 @@ msgstr "バッチ追跡"
 
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
+
+msgid "Batch type"
+msgstr "バッチタイプ"
+
+msgid "Batchable"
+msgstr "バッチ可能"
+
+msgid "Batchable process"
+msgstr "バッチ可能なプロセス"
+
+msgid "Batches"
+msgstr "バッチ"
+
+msgid "Batching"
+msgstr "バッチ処理"
 
 msgid "Beginning"
 msgstr "開始"
@@ -3233,6 +3368,9 @@ msgstr "勘定科目表"
 msgid "Chat"
 msgstr "チャット"
 
+msgid "Check operations on the left to build the batch."
+msgstr "左側の作業をチェックしてバッチを構築します。"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
 
@@ -3250,6 +3388,9 @@ msgstr "チェックポイント"
 
 msgid "Choose a batch number"
 msgstr "バッチ番号を選択"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "バッチ可能なプロセスを選択して、一緒に実行できる作業を表示します。"
 
 msgid "Choose a company"
 msgstr "会社を選択"
@@ -3473,14 +3614,17 @@ msgstr "見積もりを比較"
 msgid "Compare Supplier Quotes"
 msgstr "仕入先見積を比較"
 
+msgid "Compatibility rules"
+msgstr "互換性ルール"
+
 msgid "Complete"
 msgstr "完了"
 
 msgid "Complete All"
 msgstr "すべて完了"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "バーコードスキャン時にすべての数量を完了"
+msgid "Complete all quantities on kanban complete scan"
+msgstr "かんばんスキャン完了時にすべての数量を完了する"
 
 msgid "Complete Job"
 msgstr "ジョブを完了"
@@ -3503,11 +3647,17 @@ msgstr "完了日"
 msgid "Completed Qty"
 msgstr "完了数量"
 
+msgid "Completing"
+msgstr "完了中"
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "このトレーニングを完了すると、選択した能力が付与または更新されます。"
 
 msgid "Completion Barcode"
 msgstr "完了バーコード"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr "完了進行中 — ショップフロアで再試行してください"
 
 msgid "Completion Time"
 msgstr "完了時間"
@@ -3615,6 +3765,9 @@ msgstr "{0}を確認"
 
 msgid "Confirm & release"
 msgstr "確認してリリース"
+
+msgid "Confirm a dialog"
+msgstr "ダイアログを確認"
 
 msgid "Confirm all"
 msgstr "すべて確認"
@@ -3845,7 +3998,7 @@ msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr "セットアップのプロンプトをクリップボードにコピーしました"
+msgstr "セットアップ プロンプトをクリップボードにコピーしました"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AIコーディングツール用の段取りプロンプトをコピーします"
@@ -3858,6 +4011,9 @@ msgstr "すべての品目と価格設定を別の得意先またはタイプに
 
 msgid "Copy API Key"
 msgstr "APIキーをコピー"
+
+msgid "Copy batch number"
+msgstr "バッチ番号をコピー"
 
 msgid "Copy company unique identifier"
 msgstr "会社の一意の識別子をコピー"
@@ -4091,12 +4247,22 @@ msgstr "領域を分析できませんでした: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDFを作成できませんでした。もう一度お試しください。"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "{0} を解散できません: {1} — 本番環境が既に記録されています"
+
 msgid "Could not prepare region image for analysis"
 msgstr "分析用の領域画像を準備できませんでした"
 
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "保存できませんでした"
@@ -4161,6 +4327,9 @@ msgstr "{0}を作成"
 msgid "Create {0} values"
 msgstr "{0}個の値を作成"
 
+msgid "Create & Release"
+msgstr "作成 & リリース"
+
 msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
 
@@ -4211,6 +4380,12 @@ msgstr "発注書を作成して承認"
 
 msgid "Create audit trail entries"
 msgstr "監査証跡エントリを作成"
+
+msgid "Create batch"
+msgstr "バッチを作成"
+
+msgid "Create Batch"
+msgstr "バッチを作成"
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
@@ -5426,6 +5601,9 @@ msgstr "開発者"
 msgid "Diagram saved"
 msgstr "図が保存されました"
 
+msgid "Differs from the selection — allowed, but confirm they nest together"
+msgstr "選択と異なります — 許可されていますが、それらが一緒に実行できることを確認してください"
+
 msgid "Digital Quote"
 msgstr "デジタル見積"
 
@@ -5479,6 +5657,12 @@ msgstr "無効"
 
 msgid "Discard"
 msgstr "破棄"
+
+msgid "Discard import"
+msgstr "インポートを破棄"
+
+msgid "Discard this import?"
+msgstr "このインポートを破棄しますか?"
 
 msgid "Discarded"
 msgstr "破棄されました"
@@ -5558,6 +5742,27 @@ msgstr "処置"
 
 msgid "Dispositions"
 msgstr "処置"
+
+msgid "Dissolve"
+msgstr "解散"
+
+#. placeholder {0}: dissolvable.length
+msgid "Dissolve {0} batches"
+msgstr "バッチ {0} を解散"
+
+msgid "Dissolve batch"
+msgstr "バッチを解除"
+
+msgid "Dissolve Batch"
+msgstr "バッチを解散"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "{0} バッチを解散しました"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "{0}を解散すると、その{memberCount}個の工程がスケジュールの未実行状態に戻り、バッチが削除されます。実績が記録されたバッチは代わりに完了する必要があります。"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "このユーザーの現在の権限をこの従業員タイプのデフォルト権限で上書きしますか？"
@@ -5698,6 +5903,10 @@ msgstr "期限"
 msgid "Due (by due date)"
 msgstr "期限（期限日による）"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "納期 {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
@@ -5723,11 +5932,26 @@ msgstr "バルクバッチの最初の製造指図の期日。後続の製造指
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "バルクバッチの最終製造指図の期日。最初の製造指図の期日と組み合わせて、製造指図を均等に配置します。"
 
+msgid "Due dates span {dueSpreadDays} days"
+msgstr "納期が {dueSpreadDays} 日間に分散しています"
+
 msgid "Due Days"
 msgstr "期日"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod}後の支払期日"
+
+msgid "due in {days} days"
+msgstr "{days} 日後が納期"
+
+msgid "due in 1 day"
+msgstr "1 日後が納期"
+
+msgid "due now"
+msgstr "本日が納期"
+
+msgid "Due within"
+msgstr "期限内"
 
 msgid "Duplicate"
 msgstr "複製"
@@ -7195,8 +7419,14 @@ msgstr "この会社に現実的な業界ストーリーを入れて、すべて
 msgid "Filled with a default"
 msgstr "デフォルト値で埋められました"
 
+msgid "fills a run"
+msgstr "1 ラン分を満たす"
+
 msgid "Filter"
 msgstr "絞り込み"
+
+msgid "Filter by…"
+msgstr "フィルター…"
 
 msgid "Finalize"
 msgstr "確定"
@@ -7324,6 +7554,12 @@ msgstr "予測方法: <0>{0}</0>。この行は処理中の製造指図から導
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れましたか？"
+
+msgid "form"
+msgstr "形状"
+
+msgid "Form"
+msgstr "フォーム"
 
 msgid "Format"
 msgstr "フォーマット"
@@ -7640,6 +7876,9 @@ msgstr "{0}に移動"
 msgid "Go to implementation hub"
 msgstr "実施ハブに移動"
 
+msgid "Go to module"
+msgstr "モジュールに移動"
+
 msgid "Go to that week"
 msgstr "その週に移動"
 
@@ -7705,6 +7944,9 @@ msgstr "グループ"
 
 msgid "Group by"
 msgstr "グループ化"
+
+msgid "Group by material"
+msgstr "材料でグループ化"
 
 msgid "Group Members"
 msgstr "グループメンバー"
@@ -7826,6 +8068,9 @@ msgstr "時間/1000個"
 msgid "Hours/Piece"
 msgstr "時間/個"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr "バッチ可能なプロセスがグループ化された作業をどのように実行するかについて: 逐次は1台のマシン上で部品を順番に実行し（ソーまたはレーザーテーブル）、同時実行はそれらを単一の負荷でまとめて実行します（炉、オーブン、またはめっき槽）。"
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "品目全体がどのように補充されるか(購入、内製、または購入・内製)。品目ごとに設定され、行ごとの供給方式とは異なります"
 
@@ -7894,6 +8139,9 @@ msgstr "この測定器をどのくらい頻繁に再校正する必要がある
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
+
+msgid "How strictly each material property must match for operations to share a batch on this process."
+msgstr "このプロセスで工程がバッチを共有する場合、各材料特性がどの程度厳密に一致する必要があるか"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "スケジューラーが容量を割り当てるときに製造指図がどのようにランク付けされるか — ASAP が最初に請求し、その後ハード期限、ソフト期限、期限なしが最後です。ランキング信号のみ；期限タイプは配置をブロックまたはゲートしません。"
@@ -8014,6 +8262,9 @@ msgstr "何か問題が生じた場合"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "部品番号を変更したい場合は、[キャンセル]をクリックして、変換する前に各行アイテムの部品を手動で割り当ててください。"
+
+msgid "Ignore"
+msgstr "無視"
 
 msgid "II (normal default)"
 msgstr "II（通常デフォルト）"
@@ -8661,6 +8912,9 @@ msgstr "指図工程"
 msgid "Job Operation"
 msgstr "指図工程"
 
+msgid "Job operation batch"
+msgstr "指図工程バッチ"
+
 msgid "Job Operations"
 msgstr "指図工程"
 
@@ -8707,6 +8961,9 @@ msgstr "仕訳明細"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "1つだけ"
 
@@ -8727,6 +8984,9 @@ msgstr "保持"
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
+
+msgid "Keep editing"
+msgstr "編集を続ける"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格設定を保持し、新しい品目のみを追加"
@@ -8749,6 +9009,9 @@ msgstr "注文、見積、設定を2段階認証で保護します"
 msgid "Key"
 msgstr "キー"
 
+msgid "Keyboard shortcuts"
+msgstr "キーボードショートカット"
+
 msgid "Kind of record"
 msgstr "レコード種別"
 
@@ -8761,7 +9024,7 @@ msgstr "ラベル"
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのラベル"
 
@@ -8812,6 +9075,9 @@ msgstr "言語"
 
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
+
+msgid "Last Activity"
+msgstr "最終更新"
 
 msgid "Last attempt"
 msgstr "最後の試行"
@@ -8972,6 +9238,9 @@ msgstr "ライト"
 msgid "Light Mode"
 msgstr "ライトモード"
 
+msgid "Light or dark mode"
+msgstr "ライト/ダークモード"
+
 msgid "Lights Out (24×7)"
 msgstr "ライツアウト（24×7）"
 
@@ -9045,6 +9314,9 @@ msgstr "リストオプション"
 
 msgid "List Parameters"
 msgstr "リストパラメータ"
+
+msgid "List view"
+msgstr "リスト表示"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -9503,8 +9775,14 @@ msgstr "表面処理"
 msgid "Material Form"
 msgstr "マテリアルフォーム"
 
+msgid "Material form — e.g. sheet, bar, tube"
+msgstr "材料形状 — 例：シート、バー、チューブ"
+
 msgid "Material Grade"
 msgstr "材料グレード"
+
+msgid "Material grade or alloy designation"
+msgstr "材料グレードまたは合金呼称"
 
 msgid "Material Grades"
 msgstr "材料グレード"
@@ -9517,6 +9795,12 @@ msgstr "材料ID"
 
 msgid "Material is pre-selected"
 msgstr "材料は事前に選択されています"
+
+msgid "material item"
+msgstr "材料品目"
+
+msgid "Material item"
+msgstr "材料品目"
 
 msgid "Material Planning"
 msgstr "材料計画"
@@ -9614,6 +9898,9 @@ msgstr "中"
 msgid "Meeting cadence"
 msgstr "ミーティング頻度"
 
+msgid "Member"
+msgstr "メンバー"
+
 msgid "Members"
 msgstr "メンバー"
 
@@ -9677,6 +9964,12 @@ msgstr "真夜中、{name}さん。"
 msgid "Migrate data"
 msgstr "データを移行"
 
+msgid "min {minimumBatchQuantity} — met"
+msgstr "最小 {minimumBatchQuantity} — 達成済み"
+
+msgid "min {minimumBatchQuantity} — short"
+msgstr "最小 {minimumBatchQuantity} — 不足"
+
 msgid "Min Qty"
 msgstr "最小数量"
 
@@ -9685,6 +9978,9 @@ msgstr "最小"
 
 msgid "Minimum Amount"
 msgstr "最小金額"
+
+msgid "Minimum Batch Quantity"
+msgstr "最小バッチ数量"
 
 msgid "Minimum Cost"
 msgstr "最小原価"
@@ -9727,6 +10023,11 @@ msgstr "仕入先が不足しています"
 
 msgid "Missing:"
 msgstr "不足:"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "混合材料: {0}{1}。これらがこの実行で一緒にネストされていることを確認します。"
 
 msgid "Mobile Phone"
 msgstr "携帯電話"
@@ -9815,6 +10116,9 @@ msgstr "移動"
 msgid "Move {accountName}"
 msgstr "{accountName} を移動"
 
+msgid "Move batch"
+msgstr "バッチを移動"
+
 msgid "Move entities"
 msgstr "エンティティを移動"
 
@@ -9861,6 +10165,9 @@ msgstr "MRP (計画)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr "複数のジョブがこのプロセスで同時に実行できます — 例：レーザーテーブル、炉、またはめっき槽"
 
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
@@ -9963,6 +10270,9 @@ msgstr "新しい属性"
 
 msgid "New Attribute Category"
 msgstr "新しい属性カテゴリ"
+
+msgid "New Batch"
+msgstr "新規バッチ"
 
 msgid "New Change Notice"
 msgstr "新規変更通知"
@@ -10141,6 +10451,9 @@ msgstr "新規見積明細"
 msgid "New Receipt"
 msgstr "新しい領収書"
 
+msgid "New record (on list pages)"
+msgstr "新規記録（リストページで）"
+
 msgid "New record created"
 msgstr "新しいレコードが作成されました"
 
@@ -10264,6 +10577,9 @@ msgstr "次の期日"
 msgid "Next page"
 msgstr "次のページ"
 
+msgid "Next page (in tables)"
+msgstr "次ページ（テーブルで）"
+
 msgid "Next Sequence"
 msgstr "次の採番"
 
@@ -10349,6 +10665,9 @@ msgstr "利用可能な絞り込みはありません"
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
+msgid "No batches"
+msgstr "バッチなし"
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
 
@@ -10414,6 +10733,9 @@ msgstr "期日なし"
 
 msgid "No editable properties for this item."
 msgstr "このアイテムの編集可能なプロパティはありません。"
+
+msgid "No eligible operations"
+msgstr "対象となる作業がありません"
 
 msgid "No employees assigned this week"
 msgstr "今週割り当てられた従業員がいません"
@@ -10517,6 +10839,12 @@ msgstr "一致するものがありません。作成するには入力してく
 msgid "No matching bins"
 msgstr "一致するビンがありません"
 
+msgid "No matching operations"
+msgstr "一致する作業がありません"
+
+msgid "No materials"
+msgstr "物料がありません"
+
 msgid "No new notifications"
 msgstr "新しい通知はありません"
 
@@ -10543,6 +10871,9 @@ msgstr "工程が見つかりません。"
 
 msgid "No operations require picking at this location"
 msgstr "この拠点でピッキングが必要な工程はありません"
+
+msgid "No operations selected"
+msgstr "作業が選択されていません"
 
 msgid "No operators."
 msgstr "作業者がいません。"
@@ -10583,6 +10914,9 @@ msgstr "買掛金がありません"
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
 
+msgid "No planned or recorded time."
+msgstr "計画時間または記録時間がありません。"
+
 msgid "No planning data"
 msgstr "計画データなし"
 
@@ -10606,6 +10940,9 @@ msgstr "プロセスが選択されていません"
 
 msgid "No production events recorded for this operation yet"
 msgstr "この操作で記録された生産イベントはまだありません"
+
+msgid "No production recorded yet."
+msgstr "生産がまだ記録されていません。"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
@@ -10658,6 +10995,9 @@ msgstr "このウィンドウにはスケジュール済みの作業がありま
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "シフトが構成されていません — 月～金、8時間営業を想定"
 
+msgid "No shortcuts available on this page."
+msgstr "このページではショートカットはありません。"
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
 
@@ -10703,6 +11043,9 @@ msgstr "マップされていない勘定科目でプロバイダーコードと
 msgid "No unmapped values match a provider option name"
 msgstr "マップされていない値がプロバイダーオプション名と一致しません"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "このロケーションのこのプロセスで、未開始で未バッチの作業はありません。"
+
 msgid "No value needed"
 msgstr "値が不要です"
 
@@ -10723,6 +11066,9 @@ msgstr "このアイテムの倉庫在庫は記録されていません。それ
 
 msgid "No work center utilization data within range"
 msgstr "範囲内の作業区の稼働率データがありません"
+
+msgid "No work centers at this location"
+msgstr "この拠点には作業区がありません"
 
 msgid "No work centers exist"
 msgstr "作業区がありません"
@@ -10842,11 +11188,17 @@ msgstr "この場所には\"{0}\"に一致するものはありません。"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
+msgid "Nothing here matches your search and filters."
+msgstr "ここには検索とフィルタに一致するものがありません。"
+
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "スケジュールがありません。以下にステーションを追加してください。"
+
+msgid "Nothing selected yet"
+msgstr "まだ選択されていません"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
@@ -11001,6 +11353,15 @@ msgstr "Carbonが個別に追跡する1個のシリアルユニットまたは1�
 msgid "One set of numbers"
 msgstr "1つの数字セット"
 
+msgid "One shared setup instead of one per operation"
+msgstr "工程ごとではなく1回の段取りで共有"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr "共有の段取り 1 つと最長の労務と機械時間 — メンバーは一緒に実行されます"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "1つの共有セットアップと合計labor時間およびmachine時間"
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "製造指図の工順の1つのステップ。工法と作業区を指定し、段取り、労務、機械時間とそのレートを独自に保有しています。"
 
@@ -11060,6 +11421,9 @@ msgstr "未払い売掛金"
 
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
+
+msgid "Open batch"
+msgstr "バッチを開く"
 
 msgid "Open date"
 msgstr "開始日"
@@ -11175,6 +11539,9 @@ msgstr "営業時間"
 
 msgid "Operating Income"
 msgstr "営業収益"
+
+msgid "operation"
+msgstr "工程"
 
 msgid "Operation"
 msgstr "操作"
@@ -11538,6 +11905,12 @@ msgstr "部品"
 msgid "Parts & items"
 msgstr "部品・品目"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr "部品が1台のマシン上で順番に実行されます。例：ソーまたはレーザーテーブル。"
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr "部品が単一の負荷でまとめて実行されます。例：炉、オーブン、またはめっき槽。"
+
 msgid "Parts, materials, and how you classify them."
 msgstr "部品、材料、およびそれらの分類方法。"
 
@@ -11715,6 +12088,9 @@ msgstr "割り当て可能な物理プリンター。"
 msgid "Pick"
 msgstr "ピック"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "バッチ可能なプロセスを選択し、対象となる作業を材料でフィルタリングし、一緒に実行するものを選択します。"
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Carbonディメンションと、それを投稿するプロバイダーターゲットを選択します。自動作成は、プッシュ時に不足しているプロバイダーオプションを名前で追加します。"
 
@@ -11729,6 +12105,9 @@ msgstr "日付を選択するか、空白のままにしてクリアしてくだ
 
 msgid "Pick a list variable…"
 msgstr "リスト変数を選択..."
+
+msgid "Pick a process to start"
+msgstr "開始するプロセスを選択"
 
 msgid "Pick a property"
 msgstr "プロパティを選択"
@@ -11783,6 +12162,9 @@ msgstr "ピッキングリスト"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "ピッキングは追跡対象品目を使用期限が最も近い順に提供するため、期限切れが最も近い在庫がデフォルトで最初に出荷されます。"
+
+msgid "Pieces per run. Leave empty for no limit."
+msgstr "ラン当たりの個数。制限なしの場合は空白のままにしてください。"
 
 msgid "Pieces/Hour"
 msgstr "個/時間"
@@ -11839,6 +12221,9 @@ msgstr "計画開始"
 
 msgid "Planned Start Time"
 msgstr "計画開始時刻"
+
+msgid "Planned time"
+msgstr "予定時間"
 
 msgid "Planning"
 msgstr "計画"
@@ -12020,6 +12405,9 @@ msgstr "前の日"
 msgid "Previous page"
 msgstr "前のページ"
 
+msgid "Previous page (in tables)"
+msgstr "前ページ（テーブルで）"
+
 msgid "Previous step"
 msgstr "前のステップ"
 
@@ -12081,6 +12469,9 @@ msgstr "印刷"
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "{0}個のラベルを印刷"
+
+msgid "Print batch list"
+msgstr "バッチリストを印刷"
 
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
@@ -12165,6 +12556,9 @@ msgid "Production event"
 msgstr "生産イベント"
 
 msgid "Production Event"
+msgstr "生産イベント"
+
+msgid "Production events"
 msgstr "生産イベント"
 
 msgid "Production Events"
@@ -12478,7 +12872,7 @@ msgstr "会計にプッシュ"
 msgid "Putting your data back"
 msgstr "データを復元中"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
 
@@ -12991,6 +13385,13 @@ msgstr "相対的なタイムライン · 確認待ちの日付"
 msgid "Release"
 msgstr "リリース"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
+msgid "Release Batch"
+msgstr "バッチをリリース"
+
 msgid "Release change notice"
 msgstr "変更通知をリリース"
 
@@ -13005,6 +13406,10 @@ msgstr "ジョブをリリース"
 
 msgid "Released"
 msgstr "リリース済み"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "リリース日"
@@ -13031,6 +13436,10 @@ msgstr "除去"
 msgid "Remove {0}"
 msgstr "{0}を除去"
 
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr "{0}をこのバッチから除去しますか？その工程はスケジュールに戻り、独自に実行されます。"
+
 msgid "Remove {label}"
 msgstr "{label}を除去"
 
@@ -13054,6 +13463,9 @@ msgstr "絞り込みを除去"
 
 msgid "Remove Filters"
 msgstr "絞り込みを除去"
+
+msgid "Remove from batch"
+msgstr "バッチから削除"
 
 msgid "Remove from board"
 msgstr "ボードから削除"
@@ -13229,6 +13641,9 @@ msgstr "金額の閾値に基づいて発注書の承認が必要です"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフローの品質ドキュメントについて承認が必要です"
+
+msgid "Require Match"
+msgstr "照合が必須"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSOを必須にする"
@@ -13461,6 +13876,9 @@ msgstr "戻す中…"
 
 msgid "Review"
 msgstr "レビュー"
+
+msgid "Review & create"
+msgstr "確認と作成"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
@@ -13828,6 +14246,10 @@ msgstr "土曜日"
 msgid "Save"
 msgstr "保存"
 
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "{0}を保存"
+
 msgid "Save & Close"
 msgstr "保存して閉じる"
 
@@ -13851,6 +14273,9 @@ msgstr "メソッドを保存"
 
 msgid "Save Rate"
 msgstr "レートを保存"
+
+msgid "Save the form you're editing"
+msgstr "編集中のフォームを保存"
 
 msgid "Save view"
 msgstr "ビューを保存"
@@ -13919,7 +14344,7 @@ msgid "Schedule Name"
 msgstr "スケジュール名"
 
 msgid "Schedule outdated at"
-msgstr "スケジュール無効化時刻"
+msgstr "スケジュール時代遅れ時刻"
 
 msgid "Schedule outdated reason"
 msgstr "スケジュール古くなった理由"
@@ -14014,6 +14439,9 @@ msgstr "ワークスペース全体を検索..."
 msgid "Search actions…"
 msgstr "アクションを検索…"
 
+msgid "Search batches…"
+msgstr "バッチを検索…"
+
 msgid "Search by Jira issue title..."
 msgstr "Jiraの課題タイトルで検索..."
 
@@ -14043,6 +14471,9 @@ msgstr "アイテムまたはビンを検索"
 
 msgid "Search Job"
 msgstr "ジョブを検索"
+
+msgid "Search jobs or items"
+msgstr "ジョブまたはアイテムを検索"
 
 msgid "Search list variables…"
 msgstr "リスト変数を検索…"
@@ -14228,6 +14659,9 @@ msgstr "フィールドを選択"
 msgid "Select Gauge"
 msgstr "測定器を選択"
 
+msgid "Select group"
+msgstr "グループを選択"
+
 msgid "Select groups or individuals"
 msgstr "グループまたは個人を選択"
 
@@ -14248,6 +14682,12 @@ msgstr "アイテムを選択"
 
 msgid "Select method..."
 msgstr "メソッドを選択..."
+
+msgid "Select operation"
+msgstr "作業を選択"
+
+msgid "Select operations"
+msgstr "作業を選択"
 
 msgid "Select Printer"
 msgstr "プリンターを選択"
@@ -14357,6 +14797,9 @@ msgstr "メール通知がオンになっている各受信者に送信されま
 
 msgid "Sequences"
 msgstr "採番"
+
+msgid "Sequential"
+msgstr "逐次"
 
 msgid "Serial"
 msgstr "シリアル"
@@ -14487,6 +14930,11 @@ msgstr "設定"
 
 msgid "Setup"
 msgstr "セットアップ"
+
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr "段取り {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"
@@ -14725,12 +15173,19 @@ msgstr "仕入先IDを表示"
 msgid "Show sync options"
 msgstr "同期オプションを表示"
 
+msgid "Show this overlay"
+msgstr "このオーバーレイを表示"
+
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "{totalFiltered}中{0}を表示中 — 検索を絞り込む"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"
@@ -14792,6 +15247,9 @@ msgstr "サインインには認証アプリからのワンタイムコードも
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
 
+msgid "Simultaneous"
+msgstr "同時"
+
 msgid "Single Sign-On"
 msgstr "シングルサインオン"
 
@@ -14845,6 +15303,9 @@ msgstr "費用を場所、原価センター、またはディメンションで
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "売上高を得意先、得意先タイプ、またはディメンションでスライス"
+
+msgid "Smallest run worth batching. Leave empty for none."
+msgstr "バッチ処理に値する最小ラン。設定しない場合は空白のままにしてください。"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コアの毎日のワークフローをエンドツーエンドでスモークテストします"
@@ -14979,7 +15440,7 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr "人員配置は任意"
+msgstr "人員配置は任意です"
 
 msgid "Staffing required"
 msgstr "スタッフが必要"
@@ -15122,6 +15583,9 @@ msgstr "まだフロアは暗い。"
 
 msgid "Stock movement corrected"
 msgstr "在庫移動が訂正されました"
+
+msgid "Stock size — e.g. sheet thickness or bar diameter"
+msgstr "在庫サイズ — 例：シート厚さまたはバー直径"
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
@@ -15307,6 +15771,9 @@ msgstr "マッピングを提案"
 msgid "Suggest mappings with AI"
 msgstr "AIでマッピングを提案"
 
+msgid "Suggest Match"
+msgstr "照合を提案"
+
 msgid "Suggest with AI"
 msgstr "AIで提案"
 
@@ -15487,6 +15954,9 @@ msgstr "サポート"
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
 msgstr "{0} ファイルに対応しています"
+
+msgid "Surface finish — e.g. anodized vs powder-coat"
+msgstr "表面仕上げ — 例：アルマイト vs パウダーコート"
 
 msgid "Surfaces"
 msgstr "サーフェス"
@@ -15780,6 +16250,9 @@ msgstr "バックアップジョブがこのエラーを報告しました。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
 
@@ -15949,6 +16422,9 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
 
 msgid "The evening hours, {name}."
+msgstr "夜間のようですね、{name}さん。"
+
+msgid "The exact material part, not just its properties"
 msgstr "夜間の時間、{name}。"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -15956,6 +16432,9 @@ msgstr "生産中にこの品目の出力の失われると予想される割合
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "アップロードしたファイルと設定したマッピングは失われます。"
 
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
@@ -16164,7 +16643,7 @@ msgstr "手順書の新しいバージョン番号"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr "この拠点での次のスケジュール作業は{0}に開始されます。"
+msgstr "この拠点の次のスケジュール作業は{0}に開始します。"
 
 msgid "The night shift suits you, {name}."
 msgstr "夜間シフトはあなたに合っています、{name}。"
@@ -16527,6 +17006,9 @@ msgstr "このRFQに対して比較する有効な仕入先見積がありませ
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "この製造指図に関連する外注工程があり、それらに仕入先が割り当てられていません。リリースする前に、各外注工程に仕入先を割り当ててください。"
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr "これらの工程に段取り、労務、機械時間がないため、実行サイズの根拠となるものがありません。バーは名目的なマーカーであり、容量を保持していません — スケジュール設定するには、工程に時間基準を追加してください。"
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
 
@@ -16661,7 +17143,7 @@ msgid "This job's own required quantity for the material."
 msgstr "この材料に対するこのジョブ自体の必要数量。"
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr "この拠点は人員が配置された作業区のみをスケジュール管理しますが、ここは無人（24×7）ステーション — 除外され、無人で稼働を続けます。"
+msgstr "この拠点は人員配置された作業区のみをスケジュールしますが、これは無人(24×7)ステーションです — 適用対象外であり、無人で稼働し続けます。"
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "この拠点は、マニング ボード上に作業者が割り当てられている作業のみをスケジュールします。ここに誰も割り当てられていない場合、作業はスケジュールされず、スケジュール不可として表示されます。"
@@ -16680,6 +17162,9 @@ msgstr "今月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "この工程はまだスケジュールできません — バーは競合が解決されたら実行される場所をマークします。容量を保持していません。"
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr "この工程はバッチにありますが、その材料が他のものと一致しません — 除去するか、一緒に実行することを確認してください。"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "実施ハブのこのページは構築中です。完成するまでコマンドセンターから開始してください。"
@@ -16739,7 +17224,7 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "この受注には製造指図の作成が必要な明細があります"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "このステーションはスキル要求のある仕事を実行します — 適格な作業者がシフト中にのみ稼働し、人員配置ボード上に割当済の作業者がさらに利用可能な労務を形成します。"
+msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "このステーションはスキル要求事項がない作業を実行します。マニング ボード上に割り当てられた作業者は、利用可能な労務を形作ります。"
@@ -16893,6 +17378,9 @@ msgstr "タイムカードは無効です"
 msgid "Timecards are enabled"
 msgstr "タイムカードが有効です"
 
+msgid "Timer running"
+msgstr "タイマー実行中"
+
 msgid "Timezone"
 msgstr "タイムゾーン"
 
@@ -16965,6 +17453,9 @@ msgstr "レベルを切り替え"
 msgid "Toggle Properties"
 msgstr "プロパティを切り替え"
 
+msgid "Toggle the sidebar"
+msgstr "サイドバーの表示/非表示を切り替える"
+
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
@@ -17027,6 +17518,9 @@ msgstr "合計分"
 
 msgid "Total Price"
 msgstr "合計価格"
+
+msgid "Total quantity"
+msgstr "合計数量"
 
 msgid "Total Quantity"
 msgstr "合計数量"
@@ -17277,6 +17771,9 @@ msgstr "未割り当て"
 msgid "Unballoon"
 msgstr "バルーンを削除"
 
+msgid "Unbatched Operations"
+msgstr "バッチ外工程"
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"
 
@@ -17406,6 +17903,12 @@ msgstr "{name}の公開を取り消しますか?"
 msgid "Unreceived POs"
 msgstr "未受領PO"
 
+msgid "Unrelease"
+msgstr "リリース解除"
+
+msgid "Unrelease Batch"
+msgstr "バッチのリリース解除"
+
 msgid "Unsaved changes"
 msgstr "未保存の変更"
 
@@ -17441,6 +17944,10 @@ msgstr "未使用のピッキング済み材料が作業区から倉庫に戻さ
 
 msgid "UoM"
 msgstr "UoM"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "最大 {0} 削減"
 
 msgid "Update"
 msgstr "更新"
@@ -17821,6 +18328,9 @@ msgstr "添付ファイルを表示"
 msgid "View Attributes"
 msgstr "属性を表示"
 
+msgid "View Batch"
+msgstr "バッチを表示"
+
 msgid "View Certificate"
 msgstr "証明書を表示"
 
@@ -17874,6 +18384,9 @@ msgstr "欠落値を表示"
 
 msgid "View notes"
 msgstr "メモを表示"
+
+msgid "View on schedule board"
+msgstr "スケジュールボードで表示"
 
 msgid "View Open"
 msgstr "開く"
@@ -18541,6 +19054,9 @@ msgstr "作業区"
 
 msgid "Work Center"
 msgstr "作業区"
+
+msgid "Work center (optional)"
+msgstr "ワークセンター(オプション)"
 
 msgid "Work Center Reservation"
 msgstr "作業センター予約"

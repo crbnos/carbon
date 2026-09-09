@@ -68,9 +68,21 @@ msgstr "{0} 个账户"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0} 已在批次中"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0} 已启动"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
+
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} 个客户"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -106,6 +118,24 @@ msgstr "{0} / {1} 个过账科目已映射"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} 工序 · {totalQuantity} 零件"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "{0} 个此工序的操作未列出：{1}"
+
+#. placeholder {0}: target.memberCount
+msgid "{0} ops"
+msgstr "{0} 工序"
+
+#. placeholder {0}: s.members.length
+#. placeholder {1}: s.totalQuantity
+msgid "{0} ops · {1} pcs"
+msgstr "{0} 道工序 · {1} 件"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -125,6 +155,18 @@ msgstr "{0}已登记"
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
+
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} 报废"
+
+#. placeholder {0}: selected.length
+msgid "{0} selected"
+msgstr "{0} 已选择"
+
+#. placeholder {0}: suggestions.length
+msgid "{0} suggested batches"
+msgstr "{0} 个建议生产批次"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -207,6 +249,9 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{days}d"
+msgstr "{days}天"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
@@ -230,6 +275,9 @@ msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已�
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
+msgid "{load} in queue"
+msgstr "{load} 在队列中"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -247,6 +295,15 @@ msgstr "{name} 已删除"
 
 msgid "{name} returns!"
 msgstr "{name}回来了！"
+
+msgid "{names} differs"
+msgstr "{names} 存在差异"
+
+msgid "{names} doesn't match the batch"
+msgstr "{names} 与生产批次不匹配"
+
+msgid "{names} must match — separate load"
+msgstr "{names} 必须匹配 — 需要单独一批"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
@@ -275,6 +332,18 @@ msgstr "{total}个阶段即可正式运行"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
+msgstr "{totalQuantity} / {batchCapacity} 件 · 适合单批"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
+msgstr "{totalQuantity} / {batchCapacity} 件 · 超出容量 — {loads} 批 {batchCapacity} 件"
+
+msgid "{unbatchedBatchableOperations} awaiting batching"
+msgstr "{unbatchedBatchableOperations} 等待分组"
+
+msgid "{unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched"
+msgstr "{unbatchedBatchableOperations} 个可分组的工序不在生产批次中 — 它们单独运行，直到被分组"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
@@ -315,11 +384,18 @@ msgstr "+{0}h"
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
 
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
+
 msgid "0 operations"
 msgstr "0个工序"
 
 msgid "0-4 weeks"
 msgstr "0-4 周"
+
+msgid "1 batchable operation is not in a batch — it runs individually until batched"
+msgstr "1 个可分组的工序不在生产批次中 — 它单独运行，直到被分组"
 
 msgid "1 can't be scheduled"
 msgstr "1无法排程"
@@ -347,6 +423,9 @@ msgstr "1 个零件已跳过 — 没有需要生产的"
 
 msgid "1 problem — not published"
 msgstr "1个问题——未发布"
+
+msgid "1 suggested batch"
+msgstr "1 个建议生产批次"
 
 msgid "1 unposted document"
 msgstr "1个未过账的文件"
@@ -398,6 +477,9 @@ msgstr "9-12 周"
 
 msgid "90D"
 msgstr "90天"
+
+msgid "A \"must match\" rule on this process blocks these from sharing a batch"
+msgstr "此工序上的 \"必须匹配\" 规则阻止这些共享一个生产批次"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
@@ -530,6 +612,9 @@ msgstr "任务的开始日期已变更"
 
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
+
+msgid "A line settles more than its invoice's open balance"
+msgstr "某行结算金额超过其发票的未结余额"
 
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
@@ -1128,6 +1213,10 @@ msgstr "实际时间"
 msgid "Add"
 msgstr "添加"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "添加 {0} 项操作"
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 
@@ -1143,8 +1232,14 @@ msgstr "添加自定义定价行以覆盖数量、价格、运费、提前期和
 msgid "Add a domain"
 msgstr "添加一个域"
 
+msgid "Add a line (in document explorers)"
+msgstr "添加一行（在文件浏览器中）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
@@ -1157,6 +1252,9 @@ msgstr "添加一行"
 
 msgid "Add a step"
 msgstr "添加步骤"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -1241,6 +1339,13 @@ msgstr "添加备注"
 
 msgid "Add Operation"
 msgstr "添加操作"
+
+msgid "Add operations"
+msgstr "添加操作"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "向 {0} 添加操作"
 
 msgid "Add options above first"
 msgstr "先添加选项"
@@ -1334,6 +1439,9 @@ msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS �
 
 msgid "Add Timecard"
 msgstr "添加工时卡"
+
+msgid "Add to batch"
+msgstr "添加到生产批次"
 
 msgid "Add to stock for future use"
 msgstr "添加到库存以供将来使用"
@@ -1637,6 +1745,9 @@ msgstr "物料的计量单位更改"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "一项由外部供应商而非内部工作中心执行的工序，由分包采购订单涵盖。"
+
+msgid "An operation on this job runs in this batch"
+msgstr "此工作的一道工序在此批次中运行"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "工序在所在工作中心队列中的位置——车间人员拿工作的顺序。引擎按安排顺序编号（最早预计开始时间优先）；在工作中心看板上重新排列卡片会覆盖它，不会改变日期。"
@@ -2494,6 +2605,9 @@ msgstr "必须启用自动下达才能自动启动工单"
 msgid "Auto Start Job"
 msgstr "自动启动作业"
 
+msgid "Auto-assigned on release"
+msgstr "下达时自动分配"
+
 msgid "Auto-create"
 msgstr "自动创建"
 
@@ -2633,6 +2747,9 @@ msgstr "基础货币"
 msgid "Base Currency"
 msgstr "基础货币"
 
+msgid "Base material — e.g. steel vs aluminum"
+msgstr "基础材料 — 例如 钢 与 铝"
+
 msgid "Base Price"
 msgstr "基础价格"
 
@@ -2647,6 +2764,9 @@ msgstr "批次"
 
 msgid "Batch / Serial"
 msgstr "批次 / 序列号"
+
+msgid "Batch Capacity"
+msgstr "生产批次容量"
 
 msgid "Batch items require a sales order"
 msgstr "生产批次物料需要销售订单"
@@ -2668,6 +2788,21 @@ msgstr "批次追踪"
 
 msgid "Batch Tracking"
 msgstr "批次追踪"
+
+msgid "Batch type"
+msgstr "生产批次类型"
+
+msgid "Batchable"
+msgstr "可批量的"
+
+msgid "Batchable process"
+msgstr "可批处理的工序"
+
+msgid "Batches"
+msgstr "批次"
+
+msgid "Batching"
+msgstr "分批"
 
 msgid "Beginning"
 msgstr "开始"
@@ -3233,6 +3368,9 @@ msgstr "会计科目表"
 msgid "Chat"
 msgstr "聊天"
 
+msgid "Check operations on the left to build the batch."
+msgstr "勾选左侧的操作以构建批次。"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
 
@@ -3250,6 +3388,9 @@ msgstr "检查点"
 
 msgid "Choose a batch number"
 msgstr "选择批号"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
 msgid "Choose a company"
 msgstr "选择公司"
@@ -3473,14 +3614,17 @@ msgstr "比较报价"
 msgid "Compare Supplier Quotes"
 msgstr "比较供应商报价"
 
+msgid "Compatibility rules"
+msgstr "兼容性规则"
+
 msgid "Complete"
 msgstr "完成"
 
 msgid "Complete All"
 msgstr "全部完成"
 
-msgid "Complete all quantities on barcode scan"
-msgstr "在条形码扫码时完成所有数量"
+msgid "Complete all quantities on kanban complete scan"
+msgstr "完成看板扫码时完成所有数量"
 
 msgid "Complete Job"
 msgstr "完成工作"
@@ -3503,11 +3647,17 @@ msgstr "完成日期"
 msgid "Completed Qty"
 msgstr "已完成数量"
 
+msgid "Completing"
+msgstr "完成中"
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "完成此培训将授予或更新所选能力。"
 
 msgid "Completion Barcode"
 msgstr "完成条码"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr "完成进行中 — 请在生产车间重试"
 
 msgid "Completion Time"
 msgstr "完成时间"
@@ -3615,6 +3765,9 @@ msgstr "确认 {0}"
 
 msgid "Confirm & release"
 msgstr "确认并下达"
+
+msgid "Confirm a dialog"
+msgstr "确认对话框"
 
 msgid "Confirm all"
 msgstr "全部确认"
@@ -3845,7 +3998,7 @@ msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr "已将设置提示复制到剪贴板"
+msgstr "已将换型提示复制到剪贴板"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "复制换型提示给您的AI编码工具"
@@ -3858,6 +4011,9 @@ msgstr "将所有物料和定价复制到另一个客户或类型。"
 
 msgid "Copy API Key"
 msgstr "复制API密钥"
+
+msgid "Copy batch number"
+msgstr "复制生产批次号"
 
 msgid "Copy company unique identifier"
 msgstr "复制公司唯一标识符"
@@ -4091,12 +4247,22 @@ msgstr "无法分析区域：{0}"
 msgid "Could not build PDF. Try again."
 msgstr "无法生成 PDF。请重试。"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "无法解散 {0}: {1} — 生产已记录"
+
 msgid "Could not prepare region image for analysis"
 msgstr "无法准备区域图像以进行分析"
 
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "无法保存"
@@ -4161,6 +4327,9 @@ msgstr "创建 {0}"
 msgid "Create {0} values"
 msgstr "创建 {0} 个值"
 
+msgid "Create & Release"
+msgstr "创建并下达"
+
 msgid "Create & Snapshot"
 msgstr "创建并快照"
 
@@ -4211,6 +4380,12 @@ msgstr "创建并审批采购订单"
 
 msgid "Create audit trail entries"
 msgstr "创建审计跟踪条目"
+
+msgid "Create batch"
+msgstr "创建生产批次"
+
+msgid "Create Batch"
+msgstr "创建生产批次"
 
 msgid "Create Change Notice"
 msgstr "创建变更通知"
@@ -5426,6 +5601,9 @@ msgstr "开发人员"
 msgid "Diagram saved"
 msgstr "图表已保存"
 
+msgid "Differs from the selection — allowed, but confirm they nest together"
+msgstr "与选择不同 — 允许，但请确认它们能够嵌套在一起"
+
 msgid "Digital Quote"
 msgstr "数字报价"
 
@@ -5479,6 +5657,12 @@ msgstr "已禁用"
 
 msgid "Discard"
 msgstr "丢弃"
+
+msgid "Discard import"
+msgstr "丢弃导入"
+
+msgid "Discard this import?"
+msgstr "丢弃此次导入？"
 
 msgid "Discarded"
 msgstr "已放弃"
@@ -5558,6 +5742,27 @@ msgstr "处置"
 
 msgid "Dispositions"
 msgstr "处置"
+
+msgid "Dissolve"
+msgstr "解散"
+
+#. placeholder {0}: dissolvable.length
+msgid "Dissolve {0} batches"
+msgstr "解散 {0} 批次"
+
+msgid "Dissolve batch"
+msgstr "解散批次"
+
+msgid "Dissolve Batch"
+msgstr "解散批次"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "已解散 {0} 批次"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "解散{0}会将其{memberCount}个操作返回到未运行的计划中，并删除该批次。包含已记录生产的批次必须改为完成。"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
@@ -5698,6 +5903,10 @@ msgstr "到期"
 msgid "Due (by due date)"
 msgstr "截止期限（按截止日期）"
 
+#. placeholder {0}: formatDate(s.earliestDue, undefined, locale)
+msgid "due {0}"
+msgstr "截止 {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "截止日期 {0}"
@@ -5723,11 +5932,26 @@ msgstr "批量批次中最早工单的到期日；之后的工单在该日期与
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "批量批次中最后一个工单的到期日；与第一个工单的到期日结合以均匀分布工单。"
 
+msgid "Due dates span {dueSpreadDays} days"
+msgstr "交期跨度为 {dueSpreadDays} 天"
+
 msgid "Due Days"
 msgstr "到期天数"
 
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "到期天数（{selectedCalculationMethod}之后）"
+
+msgid "due in {days} days"
+msgstr "在 {days} 天内到期"
+
+msgid "due in 1 day"
+msgstr "明天到期"
+
+msgid "due now"
+msgstr "立即到期"
+
+msgid "Due within"
+msgstr "应收期限"
 
 msgid "Duplicate"
 msgstr "复制"
@@ -7195,8 +7419,14 @@ msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。
 msgid "Filled with a default"
 msgstr "填充默认值"
 
+msgid "fills a run"
+msgstr "可组成一个生产批次"
+
 msgid "Filter"
 msgstr "筛选"
+
+msgid "Filter by…"
+msgstr "按…筛选"
 
 msgid "Finalize"
 msgstr "完成"
@@ -7324,6 +7554,12 @@ msgstr "预测方法: <0>{0}</0>。此行不是从活跃工单派生的，因此
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
+
+msgid "form"
+msgstr "形状"
+
+msgid "Form"
+msgstr "表单"
 
 msgid "Format"
 msgstr "格式"
@@ -7640,6 +7876,9 @@ msgstr "前往 {0}"
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
+msgid "Go to module"
+msgstr "转到模块"
+
 msgid "Go to that week"
 msgstr "跳转到该周"
 
@@ -7705,6 +7944,9 @@ msgstr "组"
 
 msgid "Group by"
 msgstr "分组依据"
+
+msgid "Group by material"
+msgstr "按材料分组"
 
 msgid "Group Members"
 msgstr "群组成员"
@@ -7826,6 +8068,9 @@ msgstr "小时/1000件"
 msgid "Hours/Piece"
 msgstr "小时/件"
 
+msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
+
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "物料整体的补货方式（采购、自制或采购与自制），按物料设定，与按行的供料方式不同"
 
@@ -7894,6 +8139,9 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
+
+msgid "How strictly each material property must match for operations to share a batch on this process."
+msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "调度程序分配产能时工单的排名方式——立即执行优先，然后是硬期限、软期限，最后是无期限。仅作为排序信号；任何期限类型都不会阻止或限制安排。"
@@ -8014,6 +8262,9 @@ msgstr "如果有什么偏离轨道"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
+
+msgid "Ignore"
+msgstr "忽略"
 
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
@@ -8661,6 +8912,9 @@ msgstr "工单工序"
 msgid "Job Operation"
 msgstr "工单工序"
 
+msgid "Job operation batch"
+msgstr "工单工序批次"
+
 msgid "Job Operations"
 msgstr "工单工序"
 
@@ -8707,6 +8961,9 @@ msgstr "日记账行"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "仅一个"
 
@@ -8727,6 +8984,9 @@ msgstr "保留"
 
 msgid "Keep Current"
 msgstr "保持当前"
+
+msgid "Keep editing"
+msgstr "继续编辑"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新物料"
@@ -8749,6 +9009,9 @@ msgstr "让订单、报价单和设置受到第二道检查的保护"
 msgid "Key"
 msgstr "钥匙"
 
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
 msgid "Kind of record"
 msgstr "记录类型"
 
@@ -8761,7 +9024,7 @@ msgstr "标签"
 msgid "Label to complete the current operation for this kanban"
 msgstr "用于完成此看板当前操作的标签"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "用于为此看板创建 {0} 的标签"
 
@@ -8812,6 +9075,9 @@ msgstr "语言"
 
 msgid "Last 6 Months"
 msgstr "最近6个月"
+
+msgid "Last Activity"
+msgstr "最近活动"
 
 msgid "Last attempt"
 msgstr "上次尝试"
@@ -8972,6 +9238,9 @@ msgstr "浅色"
 msgid "Light Mode"
 msgstr "浅色模式"
 
+msgid "Light or dark mode"
+msgstr "亮色或深色模式"
+
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
 
@@ -9045,6 +9314,9 @@ msgstr "列表选项"
 
 msgid "List Parameters"
 msgstr "列表参数"
+
+msgid "List view"
+msgstr "列表视图"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -9503,8 +9775,14 @@ msgstr "表面处理"
 msgid "Material Form"
 msgstr "原材料表单"
 
+msgid "Material form — e.g. sheet, bar, tube"
+msgstr "原材料形状 — 例如 板材、棒材、管材"
+
 msgid "Material Grade"
 msgstr "牌号"
+
+msgid "Material grade or alloy designation"
+msgstr "原材料牌号或合金标准"
 
 msgid "Material Grades"
 msgstr "牌号"
@@ -9517,6 +9795,12 @@ msgstr "原材料IDs"
 
 msgid "Material is pre-selected"
 msgstr "原材料已预选"
+
+msgid "material item"
+msgstr "原材料物料"
+
+msgid "Material item"
+msgstr "原材料物料"
 
 msgid "Material Planning"
 msgstr "物料规划"
@@ -9614,6 +9898,9 @@ msgstr "中等"
 msgid "Meeting cadence"
 msgstr "会议节奏"
 
+msgid "Member"
+msgstr "成员"
+
 msgid "Members"
 msgstr "成员"
 
@@ -9677,6 +9964,12 @@ msgstr "午夜时分，{name}。"
 msgid "Migrate data"
 msgstr "迁移数据"
 
+msgid "min {minimumBatchQuantity} — met"
+msgstr "最小 {minimumBatchQuantity} — 已达到"
+
+msgid "min {minimumBatchQuantity} — short"
+msgstr "最小 {minimumBatchQuantity} — 未达到"
+
 msgid "Min Qty"
 msgstr "最小数量"
 
@@ -9685,6 +9978,9 @@ msgstr "最小值"
 
 msgid "Minimum Amount"
 msgstr "最低金额"
+
+msgid "Minimum Batch Quantity"
+msgstr "最小生产批次数量"
 
 msgid "Minimum Cost"
 msgstr "最低成本"
@@ -9727,6 +10023,11 @@ msgstr "缺少供应商"
 
 msgid "Missing:"
 msgstr "缺失："
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "混合材料：{0}{1}。确认它们在此运行中可以相互嵌套。"
 
 msgid "Mobile Phone"
 msgstr "手机"
@@ -9815,6 +10116,9 @@ msgstr "移动"
 msgid "Move {accountName}"
 msgstr "移动 {accountName}"
 
+msgid "Move batch"
+msgstr "移动批次"
+
 msgid "Move entities"
 msgstr "移动实体"
 
@@ -9861,6 +10165,9 @@ msgstr "MRP (计划)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
@@ -9963,6 +10270,9 @@ msgstr "新属性"
 
 msgid "New Attribute Category"
 msgstr "新属性类别"
+
+msgid "New Batch"
+msgstr "新批次"
 
 msgid "New Change Notice"
 msgstr "新建变更通知"
@@ -10141,6 +10451,9 @@ msgstr "新报价行"
 msgid "New Receipt"
 msgstr "新收据"
 
+msgid "New record (on list pages)"
+msgstr "新建记录（在列表页面）"
+
 msgid "New record created"
 msgstr "新记录已创建"
 
@@ -10264,6 +10577,9 @@ msgstr "下次到期日期"
 msgid "Next page"
 msgstr "下一页"
 
+msgid "Next page (in tables)"
+msgstr "下一页（在表格中）"
+
 msgid "Next Sequence"
 msgstr "下一个编号规则"
 
@@ -10349,6 +10665,9 @@ msgstr "没有可用的筛选器"
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
+msgid "No batches"
+msgstr "无生产批次"
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
 
@@ -10414,6 +10733,9 @@ msgstr "没有到期日"
 
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
+
+msgid "No eligible operations"
+msgstr "没有符合条件的操作"
 
 msgid "No employees assigned this week"
 msgstr "本周没有分配员工"
@@ -10517,6 +10839,12 @@ msgstr "无匹配项。输入内容以创建一个。"
 msgid "No matching bins"
 msgstr "没有匹配的料箱"
 
+msgid "No matching operations"
+msgstr "没有匹配的操作"
+
+msgid "No materials"
+msgstr "无物料"
+
 msgid "No new notifications"
 msgstr "没有新通知"
 
@@ -10543,6 +10871,9 @@ msgstr "未找到工序。"
 
 msgid "No operations require picking at this location"
 msgstr "此地点没有工序需要拣货"
+
+msgid "No operations selected"
+msgstr "未选择操作"
 
 msgid "No operators."
 msgstr "没有操作员。"
@@ -10583,6 +10914,9 @@ msgstr "没有应付款项"
 msgid "No payments yet."
 msgstr "还没有付款。"
 
+msgid "No planned or recorded time."
+msgstr "没有计划或记录的时间。"
+
 msgid "No planning data"
 msgstr "没有计划数据"
 
@@ -10606,6 +10940,9 @@ msgstr "未选择工艺"
 
 msgid "No production events recorded for this operation yet"
 msgstr "此操作尚未记录任何生产事件"
+
+msgid "No production recorded yet."
+msgstr "还没有生产记录。"
 
 msgid "No purchases in this period"
 msgstr "此期间无采购"
@@ -10658,6 +10995,9 @@ msgstr "此时间窗内无排程工作"
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
 
+msgid "No shortcuts available on this page."
+msgstr "此页面没有可用的快捷键。"
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "库存管理或工单状态没有单一的可信数字"
 
@@ -10703,6 +11043,9 @@ msgstr "没有未映射的账户与提供商代码匹配"
 msgid "No unmapped values match a provider option name"
 msgstr "没有未映射的值与提供商选项名称匹配"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "此位置此工序上没有未开始、未批处理的操作。"
+
 msgid "No value needed"
 msgstr "不需要值"
 
@@ -10723,6 +11066,9 @@ msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库�
 
 msgid "No work center utilization data within range"
 msgstr "范围内没有工作中心利用率数据"
+
+msgid "No work centers at this location"
+msgstr "此地点没有工作中心"
 
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
@@ -10842,11 +11188,17 @@ msgstr "此位置处没有与\"{0}\"匹配的内容。"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
+msgid "Nothing here matches your search and filters."
+msgstr "没有与您的搜索和过滤条件匹配的内容。"
+
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
+
+msgid "Nothing selected yet"
+msgstr "尚未选择任何内容"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -11001,6 +11353,15 @@ msgstr "Carbon单独跟踪的一个编号件或一个生产批次，具有自己
 msgid "One set of numbers"
 msgstr "一套数字"
 
+msgid "One shared setup instead of one per operation"
+msgstr "共享一次设置，而非每道工序一次"
+
+msgid "One shared setup plus the longest labor and machine time — the members run together"
+msgstr "一次共享换型加上最长的人工和机器工时 — 成员一起运行"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "一个共享设置加上汇总的劳动和机器时间"
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "工单工艺路线中的一个步骤，命名一个工艺和工作中心，并包含其自己的换型、人工和机器工时及费率。"
 
@@ -11060,6 +11421,9 @@ msgstr "未结应收账款"
 
 msgid "Open Audit Log"
 msgstr "打开审计日志"
+
+msgid "Open batch"
+msgstr "未结生产批次"
 
 msgid "Open date"
 msgstr "打开日期"
@@ -11175,6 +11539,9 @@ msgstr "运营时间"
 
 msgid "Operating Income"
 msgstr "营运收益"
+
+msgid "operation"
+msgstr "工序"
 
 msgid "Operation"
 msgstr "操作"
@@ -11538,6 +11905,12 @@ msgstr "零件"
 msgid "Parts & items"
 msgstr "零件和物料"
 
+msgid "Parts run one after another — e.g. a saw or laser table."
+msgstr "零件逐一运行 — 例如锯床或激光台。"
+
+msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+msgstr "零件在一个负荷中一起运行 — 例如炉、烤箱或电镀槽。"
+
 msgid "Parts, materials, and how you classify them."
 msgstr "零件、原材料及其分类方式"
 
@@ -11715,6 +12088,9 @@ msgstr "可用于分配的物理打印机。"
 msgid "Pick"
 msgstr "拣货"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "选择可批处理的工序，按材料筛选符合条件的操作，然后选择要一起运行的操作。"
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "选择一个 Carbon 维度和它过账到的提供商目标。自动创建在推送时按名称添加缺失的提供商选项。"
 
@@ -11729,6 +12105,9 @@ msgstr "选择一个日期或留空以清除它。"
 
 msgid "Pick a list variable…"
 msgstr "选择一个列表变量…"
+
+msgid "Pick a process to start"
+msgstr "选择要开始的工序"
 
 msgid "Pick a property"
 msgstr "选择属性"
@@ -11783,6 +12162,9 @@ msgstr "拣货单"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "拣货按最早有效期优先的方式处理可追踪实体，以便最即将过期的库存首先出库。"
+
+msgid "Pieces per run. Leave empty for no limit."
+msgstr "每批的件数。留空表示无限制。"
 
 msgid "Pieces/Hour"
 msgstr "件/小时"
@@ -11839,6 +12221,9 @@ msgstr "计划开始"
 
 msgid "Planned Start Time"
 msgstr "计划开始时间"
+
+msgid "Planned time"
+msgstr "已计划时间"
 
 msgid "Planning"
 msgstr "计划"
@@ -12020,6 +12405,9 @@ msgstr "前一天"
 msgid "Previous page"
 msgstr "上一页"
 
+msgid "Previous page (in tables)"
+msgstr "上一页（在表格中）"
+
 msgid "Previous step"
 msgstr "上一步骤"
 
@@ -12081,6 +12469,9 @@ msgstr "打印"
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
 msgstr "打印 {0} 个标签"
+
+msgid "Print batch list"
+msgstr "打印生产批次列表"
 
 msgid "Print Jobs"
 msgstr "打印工单"
@@ -12165,6 +12556,9 @@ msgid "Production event"
 msgstr "生产事件"
 
 msgid "Production Event"
+msgstr "生产事件"
+
+msgid "Production events"
 msgstr "生产事件"
 
 msgid "Production Events"
@@ -12478,7 +12872,7 @@ msgstr "推送到会计系统"
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
 
@@ -12991,6 +13385,13 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
+msgid "Release Batch"
+msgstr "下达生产批次"
+
 msgid "Release change notice"
 msgstr "下达变更通知"
 
@@ -13005,6 +13406,10 @@ msgstr "下达工单"
 
 msgid "Released"
 msgstr "已下达"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "下达日期"
@@ -13031,6 +13436,10 @@ msgstr "移除"
 msgid "Remove {0}"
 msgstr "移除{0}"
 
+#. placeholder {0}: removing.jobReadableId ?? "this operation"
+msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
+msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行。"
+
 msgid "Remove {label}"
 msgstr "移除 {label}"
 
@@ -13054,6 +13463,9 @@ msgstr "移除筛选"
 
 msgid "Remove Filters"
 msgstr "移除筛选"
+
+msgid "Remove from batch"
+msgstr "从批次中移除"
 
 msgid "Remove from board"
 msgstr "从看板中删除"
@@ -13229,6 +13641,9 @@ msgstr "根据金额阈值对采购订单需要审批"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "工作流中的质量文档需要审批"
+
+msgid "Require Match"
+msgstr "必需匹配"
 
 msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
@@ -13461,6 +13876,9 @@ msgstr "还原中…"
 
 msgid "Review"
 msgstr "评审"
+
+msgid "Review & create"
+msgstr "查看和创建"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
@@ -13828,6 +14246,10 @@ msgstr "星期六"
 msgid "Save"
 msgstr "保存"
 
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "保存 {0}"
+
 msgid "Save & Close"
 msgstr "保存并关闭"
 
@@ -13851,6 +14273,9 @@ msgstr "保存方法"
 
 msgid "Save Rate"
 msgstr "保存汇率"
+
+msgid "Save the form you're editing"
+msgstr "保存您正在编辑的表单"
 
 msgid "Save view"
 msgstr "保存视图"
@@ -13919,7 +14344,7 @@ msgid "Schedule Name"
 msgstr "排程名称"
 
 msgid "Schedule outdated at"
-msgstr "排程过时于"
+msgstr "排程过期于"
 
 msgid "Schedule outdated reason"
 msgstr "排程过时原因"
@@ -14014,6 +14439,9 @@ msgstr "在您的工作区中搜索..."
 msgid "Search actions…"
 msgstr "搜索操作…"
 
+msgid "Search batches…"
+msgstr "搜索生产批次…"
+
 msgid "Search by Jira issue title..."
 msgstr "按 Jira 问题标题搜索..."
 
@@ -14043,6 +14471,9 @@ msgstr "搜索物料或料箱"
 
 msgid "Search Job"
 msgstr "搜索任务"
+
+msgid "Search jobs or items"
+msgstr "搜索工单或物品"
 
 msgid "Search list variables…"
 msgstr "搜索列表变量…"
@@ -14228,6 +14659,9 @@ msgstr "选择字段"
 msgid "Select Gauge"
 msgstr "选择量具"
 
+msgid "Select group"
+msgstr "选择组"
+
 msgid "Select groups or individuals"
 msgstr "选择群组或个人"
 
@@ -14248,6 +14682,12 @@ msgstr "选择物料"
 
 msgid "Select method..."
 msgstr "选择方法..."
+
+msgid "Select operation"
+msgstr "选择操作"
+
+msgid "Select operations"
+msgstr "选择工序"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -14357,6 +14797,9 @@ msgstr "发送给打开了电子邮件通知的每个收件人。"
 
 msgid "Sequences"
 msgstr "编号规则"
+
+msgid "Sequential"
+msgstr "顺序"
 
 msgid "Serial"
 msgstr "序列号"
@@ -14487,6 +14930,11 @@ msgstr "设置"
 
 msgid "Setup"
 msgstr "换型"
+
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr "设置 {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "换型与控制"
@@ -14725,12 +15173,19 @@ msgstr "显示供应商ID"
 msgid "Show sync options"
 msgstr "显示同步选项"
 
+msgid "Show this overlay"
+msgstr "显示此覆盖层"
+
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
 
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "显示 {0} / {totalFiltered} — 优化您的搜索"
 
 msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
@@ -14792,6 +15247,9 @@ msgstr "登录还需要来自您的身份验证器应用的一次性代码"
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
 
+msgid "Simultaneous"
+msgstr "同时"
+
 msgid "Single Sign-On"
 msgstr "单点登录"
 
@@ -14845,6 +15303,9 @@ msgstr "按地点、成本中心或任何维度分割费用"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "按客户、客户类型或任何维度划分收入"
+
+msgid "Smallest run worth batching. Leave empty for none."
+msgstr "最小分批数量。留空表示无。"
 
 msgid "Smoke-test the core daily flows end to end"
 msgstr "进行核心日常流程的端到端冒烟测试"
@@ -15123,6 +15584,9 @@ msgstr "车间仍在黑暗中。"
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
 
+msgid "Stock size — e.g. sheet thickness or bar diameter"
+msgstr "库存尺寸 — 例如 板材厚度或棒材直径"
+
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
 
@@ -15307,6 +15771,9 @@ msgstr "建议映射"
 msgid "Suggest mappings with AI"
 msgstr "使用 AI 建议映射"
 
+msgid "Suggest Match"
+msgstr "建议匹配"
+
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
 
@@ -15487,6 +15954,9 @@ msgstr "支持"
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
 msgstr "支持 {0} 文件"
+
+msgid "Surface finish — e.g. anodized vs powder-coat"
+msgstr "表面处理 — 例如 阳极氧化 vs 粉末涂料"
 
 msgid "Surfaces"
 msgstr "表面"
@@ -15780,6 +16250,9 @@ msgstr "备份工作报告了此错误。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已过账凭证行的汇总簿，按账户汇总——仅当公司启用会计时才编制。"
 
@@ -15949,6 +16422,9 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "此检验计划关联的工程图纸；针对此零件记录的检验将引用此图纸。"
 
 msgid "The evening hours, {name}."
+msgstr "傍晚时段，{name}。"
+
+msgid "The exact material part, not just its properties"
 msgstr "傍晚时刻，{name}。"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -15956,6 +16432,9 @@ msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "此间接支出行过账至的费用科目；因为间接行没有物料分类账条目来推导科目，所以这是必需的。"
+
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "您上传的文件和已完成的映射将会丢失。"
 
 msgid "the first 3 to 4 weeks"
 msgstr "前3到4周"
@@ -16164,7 +16643,7 @@ msgstr "程序文件的新版本号"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr "此位置的下一个已排程工作开始于{0}。"
+msgstr "此地点下一个排程工作将于{0}开始。"
 
 msgid "The night shift suits you, {name}."
 msgstr "晚班适合你，{name}。"
@@ -16527,6 +17006,9 @@ msgstr "此询价单没有可比较的启用供应商报价。"
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "有与此工单相关的外包工序但没有分配供应商。请在发放之前为每个外包工序分配一个供应商。"
 
+msgid "There's no setup, labor, or machine time on these operations, so there's nothing to size a run from. The bar is a nominal marker and isn't holding capacity — add time standards to the operations to schedule it."
+msgstr "这些工序上没有换型、人工或机器工时，因此没有任何东西来确定运行大小。该栏是一个名义标记，并不保持容量 — 向工序添加时间标准来排程它。"
+
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "没有可应用这些贷方的未结款项。"
 
@@ -16661,7 +17143,7 @@ msgid "This job's own required quantity for the material."
 msgstr "这个工单所需的原材料数量。"
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr "此地点仅对配置人员的工作中心进行排程，但这是一个无人值守（24×7）工作站——它被豁免，可以无人值守运行。"
+msgstr "此地点仅排程有人值守的工作中心，但这是一个无人值守工作站（24×7）— 它被豁免并保持无人运行。"
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "该地点仅排程在人员配备板上已分配操作员的工作。此处未分配任何人员时，工作不会被排程并显示为无法排程。"
@@ -16680,6 +17162,9 @@ msgstr "本月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "该工序暂时无法排程 — 条形图标记一旦冲突解决后它将运行的位置。它不占用产能。"
+
+msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
+msgstr "此工序在生产批次中，但其原材料与其他不匹配 — 移除它或确认它一起运行"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "这个实施中心页面正在开发中。在我们完成之前，请从指挥中心开始。"
@@ -16739,7 +17224,7 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "该工作站运行受技能限制的工作——仅在班次内有具合格操作员在岗时运行;人员配置板上已分配的操作员进一步决定可用人工。"
+msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "该站运行无技能要求的工作；人员配备板上分配的操作员塑造可用人工。"
@@ -16893,6 +17378,9 @@ msgstr "工时记录已禁用"
 msgid "Timecards are enabled"
 msgstr "工时记录已启用"
 
+msgid "Timer running"
+msgstr "计时器运行中"
+
 msgid "Timezone"
 msgstr "时区"
 
@@ -16965,6 +17453,9 @@ msgstr "切换级别"
 msgid "Toggle Properties"
 msgstr "切换属性"
 
+msgid "Toggle the sidebar"
+msgstr "切换侧边栏"
+
 msgid "Toggle views"
 msgstr "切换视图"
 
@@ -17027,6 +17518,9 @@ msgstr "总计分钟"
 
 msgid "Total Price"
 msgstr "总价格"
+
+msgid "Total quantity"
+msgstr "总计数量"
 
 msgid "Total Quantity"
 msgstr "总数量"
@@ -17277,6 +17771,9 @@ msgstr "未分配"
 msgid "Unballoon"
 msgstr "取消气球标注"
 
+msgid "Unbatched Operations"
+msgstr "未分批工序"
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
 
@@ -17406,6 +17903,12 @@ msgstr "取消发布 {name}？"
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
 
+msgid "Unrelease"
+msgstr "取消下达"
+
+msgid "Unrelease Batch"
+msgstr "取消下达生产批次"
+
 msgid "Unsaved changes"
 msgstr "未保存的更改"
 
@@ -17441,6 +17944,10 @@ msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
 
 msgid "UoM"
 msgstr "计量单位"
+
+#. placeholder {0}: formatDurationMilliseconds(topSaving, { style: "short" })
+msgid "up to {0} saved"
+msgstr "最多可节省 {0}"
 
 msgid "Update"
 msgstr "更新"
@@ -17821,6 +18328,9 @@ msgstr "查看附件"
 msgid "View Attributes"
 msgstr "查看属性"
 
+msgid "View Batch"
+msgstr "查看批次"
+
 msgid "View Certificate"
 msgstr "查看证书"
 
@@ -17874,6 +18384,9 @@ msgstr "查看缺失值"
 
 msgid "View notes"
 msgstr "查看备注"
+
+msgid "View on schedule board"
+msgstr "在排程看板中查看"
 
 msgid "View Open"
 msgstr "查看未结"
@@ -18541,6 +19054,9 @@ msgstr "工作中心"
 
 msgid "Work Center"
 msgstr "工作中心"
+
+msgid "Work center (optional)"
+msgstr "工作中心（可选）"
 
 msgid "Work Center Reservation"
 msgstr "工作中心预留"

@@ -43,16 +43,74 @@ export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
 ) {
-  return client
+  // Floor rule: an operation in a Released (Active/Completing) batch is
+  // floor-visible even when its own job is not released yet, so the jobs
+  // list widens to include those member jobs alongside the released ones.
+  const memberJobs = await client
+    .from("jobOperation")
+    .select("jobId, jobOperationBatch!inner(status)")
+    .eq("companyId", args.companyId)
+    .in("jobOperationBatch.status", ["Active", "Completing"]);
+
+  const memberJobIds = [
+    ...new Set((memberJobs.data ?? []).map((op) => op.jobId))
+  ];
+
+  let query = client
     .from("jobs")
     .select(
       "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
     )
     .eq("companyId", args.companyId)
-    .eq("locationId", args.locationId)
-    .in("status", [...activeJobStatuses])
-    .order("jobId", { ascending: true });
+    .eq("locationId", args.locationId);
+
+  if (memberJobIds.length > 0) {
+    // PostgREST `in` lists inside `.or()` quote each value — "In Progress"
+    // contains a space.
+    const statuses = activeJobStatuses.map((s) => `"${s}"`).join(",");
+    const ids = memberJobIds.map((id) => `"${id}"`).join(",");
+    query = query.or(`status.in.(${statuses}),id.in.(${ids})`);
+  } else {
+    query = query.in("status", [...activeJobStatuses]);
+  }
+
+  return query.order("jobId", { ascending: true });
 }
+
+export async function getJobOperationBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  // Only what the operation view's batch mode consumes: member planned times
+  // (summed into the work-type toggle), completion pre-fill quantities, and the
+  // member's job id for the chip / completion table.
+  const operations = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, job(jobId)"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  return {
+    data: {
+      ...batch.data,
+      operations: operations.data ?? []
+    },
+    error: operations.error
+  };
+}
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
+>;
 
 export async function getTrackedEntitiesByJobMakeMethodIds(
   client: SupabaseClient<Database>,
@@ -87,7 +145,9 @@ export async function getJobOperations(
 ) {
   return client
     .from("jobOperation")
-    .select("*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))")
+    .select(
+      "*, jobOperationBatch(readableId, status), jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+    )
     .eq("jobId", jobId);
 }
 
@@ -1300,6 +1360,20 @@ export async function getProductionQuantitiesForJobOperation(
     .eq("jobOperationId", operationId);
 }
 
+// Every productionEvent tagged with the batch — a batch timer started from any
+// member's operation page is tagged with the batch id, not one member's
+// operationId, so a batched operation view reads the batch's events rather than
+// its own to show the shared running timer and progress.
+export async function getProductionEventsForBatch(
+  client: SupabaseClient<Database>,
+  batchId: string
+) {
+  return client
+    .from("productionEvent")
+    .select("*")
+    .eq("jobOperationBatchId", batchId);
+}
+
 export async function getToolsByOperationId(
   client: SupabaseClient<Database>,
   operationId: string
@@ -1971,6 +2045,8 @@ export async function startProductionEvent(
     employeeId: string;
     companyId: string;
     createdBy: string;
+    // Tags the event as part of an operation batch (sliced per-member at completion).
+    jobOperationBatchId?: string;
   },
   trackedEntityId: string | undefined,
   unitIndex?: number,

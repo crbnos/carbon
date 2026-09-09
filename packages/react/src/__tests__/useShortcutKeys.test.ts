@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canonicalCombo,
   KeyboardKeys,
   parseShortcut,
   resolveShortcutKeys
@@ -98,5 +99,38 @@ describe("parseShortcut", () => {
     };
     expect(parseShortcut(definition, true)).toEqual(definition.mac);
     expect(parseShortcut(definition, false)).toEqual(definition.windows);
+  });
+});
+
+describe("canonicalCombo", () => {
+  // The canonical form must mirror react-hotkeys-hook's internal `mapKey`
+  // normalization (`Key`/`Digit`/`Numpad`/`Arrow` prefixes stripped), because
+  // useShortcutKeyMap dispatches by matching a combo string's canonical form
+  // against the parsed hotkey the library hands back to the handler.
+  it("orders modifier flags alt,ctrl,meta,mod,shift", () => {
+    expect(canonicalCombo("mod+enter")).toBe("00010:enter");
+    expect(canonicalCombo("shift+alt+enter")).toBe("10001:enter");
+    expect(canonicalCombo("meta+ctrl+k")).toBe("01100:k");
+  });
+
+  it("is case- and whitespace-insensitive", () => {
+    expect(canonicalCombo("mod+S")).toBe(canonicalCombo("mod+s"));
+    expect(canonicalCombo("mod + s")).toBe(canonicalCombo("mod+s"));
+  });
+
+  it("normalizes arrow keys the way the library does", () => {
+    expect(canonicalCombo("arrowleft")).toBe("00000:left");
+    expect(canonicalCombo("arrowright")).toBe("00000:right");
+  });
+
+  it("keeps named keys and digits as-is", () => {
+    expect(canonicalCombo("alt+1")).toBe("10000:1");
+    expect(canonicalCombo("shift+slash")).toBe("00001:slash");
+    expect(canonicalCombo("space")).toBe("00000:space");
+    expect(canonicalCombo("escape")).toBe("00000:escape");
+  });
+
+  it("treats a lone modifier-looking token as a flag with no key", () => {
+    expect(canonicalCombo("mod")).toBe("00010:");
   });
 });

@@ -386,7 +386,7 @@ serve(async (req: Request) => {
               .executeTakeFirst()
           : undefined;
         const parentDefaultId = parentDefaults?.salesShippingRevenueAccount;
-        accountIdByKey["4040"] = resolveShippingDefault({
+        accountIdByKey["4050"] = resolveShippingDefault({
           parentDefaultId: parentDefaultId && parentDefaultId !== parentDefaults?.salesAccount
             ? parentDefaultId : null,
           accounts: existingAccounts.filter((account) => account.id !== accountIdByKey["4010"]),

@@ -3,10 +3,12 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   allocatePaymentFunding,
+  applyRate,
   assertCurrencyDecimals,
   assertExchangeRate,
   chunkArray,
   datetime,
+  EPSILON,
   type FundingConsumptionRow,
   type FundingPaymentRow,
   type FundingRequest,
@@ -146,6 +148,109 @@ export async function computeInvoiceDateDue(
   } catch {
     return null;
   }
+}
+
+/**
+ * Early-payment (cash) discount per invoice, for seeding a payment's
+ * applications. A discount only applies when the payment lands within the
+ * term's discount window (e.g. "2/10 net 30" → 2% only if paid within 10 days
+ * of the issue date). Returns a Map keyed by invoice id; invoices with no term,
+ * a zero discount percentage, a missing issue date, or a payment date past the
+ * window map to 0.
+ *
+ * The discount is a settlement amount, so it rounds to the currency's decimals
+ * via `applyRate` (`discountPercentage` is stored as points, e.g. 2 → 0.02).
+ * The deadline uses the same calculationMethod anchoring as the due date (see
+ * computeInvoiceDateDue) but with `daysDiscount` instead of `daysDue`. Terms are
+ * batch-loaded in one query — never per invoice (N+1).
+ */
+export async function computeEarlyPaymentDiscounts(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    asOfDate: string;
+    currencyDecimals: number;
+    invoices: {
+      id: string;
+      balance: number;
+      dateIssued: string | null;
+      paymentTermId: string | null;
+    }[];
+  }
+): Promise<Map<string, number>> {
+  const { companyId, asOfDate, currencyDecimals, invoices } = args;
+  const result = new Map<string, number>(invoices.map((inv) => [inv.id, 0]));
+
+  const termIds = [
+    ...new Set(
+      invoices
+        .map((inv) => inv.paymentTermId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (termIds.length === 0) return result;
+
+  const terms = await client
+    .from("paymentTerm")
+    .select("id, daysDiscount, discountPercentage, calculationMethod")
+    .in("id", termIds)
+    .eq("companyId", companyId);
+  if (terms.error) {
+    throw new Error(
+      `Failed to load payment terms while computing early-payment discounts: ${terms.error.message}`
+    );
+  }
+  const termById = new Map((terms.data ?? []).map((term) => [term.id, term]));
+
+  let asOf: ReturnType<typeof parseDate>;
+  try {
+    asOf = parseDate(asOfDate);
+  } catch {
+    return result;
+  }
+
+  for (const inv of invoices) {
+    if (!inv.paymentTermId || !inv.dateIssued) continue;
+    const term = termById.get(inv.paymentTermId);
+    if (!term) continue;
+    const pct = Number(term.discountPercentage ?? 0);
+    const days = Number(term.daysDiscount ?? 0);
+    if (pct <= 0) continue;
+
+    let issued: ReturnType<typeof parseDate>;
+    try {
+      issued = parseDate(inv.dateIssued);
+    } catch {
+      continue;
+    }
+
+    let deadline: ReturnType<typeof parseDate>;
+    switch (term.calculationMethod) {
+      case "End of Month":
+        deadline = endOfMonth(issued).add({ days });
+        break;
+      case "Day of Month": {
+        const sameMonth = issued.set({ day: days });
+        deadline =
+          sameMonth.compare(issued) >= 0
+            ? sameMonth
+            : issued.add({ months: 1 }).set({ day: days });
+        break;
+      }
+      default:
+        deadline = issued.add({ days });
+    }
+
+    // Past the discount window → the early-payment discount is no longer offered.
+    if (asOf.compare(deadline) > 0) continue;
+
+    result.set(
+      inv.id,
+      applyRate(Number(inv.balance), pct / 100, currencyDecimals)
+    );
+  }
+
+  return result;
 }
 
 export async function createPurchaseInvoiceFromPurchaseOrder(
@@ -1675,7 +1780,11 @@ async function getOpenInvoicesForParty(
     Database["public"]["Views"]["salesInvoices" | "purchaseInvoices"]["Row"],
     | "id"
     | "invoiceId"
+    // dateIssued + paymentTermId drive the early-payment discount window when a
+    // payment is seeded from these invoices.
+    | "dateIssued"
     | "dateDue"
+    | "paymentTermId"
     | "currencyCode"
     | "exchangeRate"
     | "totalAmount"
@@ -1698,7 +1807,7 @@ async function getOpenInvoicesForParty(
     fetchAllFromTable<OpenInvoiceRow>(
       client,
       isAR ? "salesInvoices" : "purchaseInvoices",
-      "id, invoiceId, dateDue, currencyCode, exchangeRate, totalAmount, balance, status",
+      "id, invoiceId, dateIssued, dateDue, paymentTermId, currencyCode, exchangeRate, totalAmount, balance, status",
       (query) => {
         query = query
           .eq("companyId", companyId)

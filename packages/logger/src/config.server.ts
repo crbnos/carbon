@@ -10,6 +10,7 @@ import { readEnv } from "./env";
 import { httpDevFormatter } from "./http-formatter";
 import { type CarbonLogLevel, resolveLevel } from "./levels";
 import { CARBON_ROOT_CATEGORY } from "./logger";
+import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
 
@@ -42,8 +43,14 @@ export function ensureLoggingConfigured(
   const formatter = pretty ? ansiColorFormatter : getJsonLinesFormatter();
   const consoleSink = getConsoleSink({ formatter });
   // Redact sensitive field names (password, token, secret, …) before records
-  // reach the sink. Cheap: matches field names, not values.
-  const sink = pretty ? consoleSink : redactByField(consoleSink);
+  // reach the sink. Cheap: matches field names, not values. Masks rather than
+  // deletes, and skips email/phone/address — see ./redaction.ts.
+  const sink = pretty
+    ? consoleSink
+    : redactByField(consoleSink, {
+        fieldPatterns: REDACT_FIELD_PATTERNS,
+        action: maskRedactedField
+      });
 
   // HTTP access logs (`requestIdMiddleware`) get their own sink: a Morgan
   // "dev"-style colored line in dev, the same structured+redacted sink as
