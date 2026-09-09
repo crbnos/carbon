@@ -174,7 +174,6 @@ export function allocateSalesHeaderShipping(
 export function calculateSalesIntercompanyAmount(
   lines: Array<SalesPostingAmountsInput & { invoiceLineType: string }>,
   exchangeRate: number,
-  currencyDecimals: number,
 ): number {
   // Preserve the buyer-compatible matching basis: exclude add-ons, tax and header shipping.
   const base = lines.reduce(
@@ -185,7 +184,14 @@ export function calculateSalesIntercompanyAmount(
         finite(line.shippingCost ?? 0, "Line shipping"),
     0,
   );
-  return toDocumentAmount(base, exchangeRate, currencyDecimals);
+  // The buyer records its half with round() at internal SCALE
+  // (post-purchase-invoice), and generate_intercompany_matches pairs the two
+  // sides on exact NUMERIC equality with no tolerance. Rounding this half at
+  // settlement precision instead would leave every trade whose document amount
+  // carries sub-cent digits permanently Unmatched, so eliminations would never
+  // run. This is a matching key, not a settlement amount: both halves round at
+  // SCALE.
+  return toDocumentAmount(base, exchangeRate, SCALE);
 }
 
 export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {

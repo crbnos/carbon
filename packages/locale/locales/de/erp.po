@@ -13423,6 +13423,9 @@ msgstr "Umsatzerlöskonto für Versandkosten, die Kunden in Rechnung gestellt we
 msgid "Revenue and expenses over a period"
 msgstr "Umsatzerlöse und Aufwand über einen Zeitraum"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Sachkonto für Umsatzerlöse, das für an Kunden berechneten Versand gutgeschrieben wird, gebucht auf seiner eigenen Position; es muss sich vom Standardkonto des Vertriebs unterscheiden."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Alle Bestandskorrektionen rückgängig machen"
 
@@ -14653,6 +14656,9 @@ msgstr "Versandnotizen"
 msgid "Shipping Revenue"
 msgstr "Umsatzerlöse aus Versand"
 
+msgid "Shipping Revenue (default)"
+msgstr "Versand-Umsatzerlöse (Standard)"
+
 msgid "Shipping Supplier"
 msgstr "Versandlieferant"
 
@@ -15661,6 +15667,9 @@ msgstr "Steuerprozentsatz"
 
 msgid "Tax Residual Value %"
 msgstr "Steuerlicher Restwert %"
+
+msgid "Tax Status"
+msgstr "Steuerstatus"
 
 msgid "Tax Useful Life (default)"
 msgstr "Steuerliche Nutzungsdauer (Standard)"

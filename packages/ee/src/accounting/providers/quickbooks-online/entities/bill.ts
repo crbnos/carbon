@@ -1,5 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
-import { toBaseAmount } from "@carbon/utils";
+import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
 import {
   type CostingLine,
@@ -645,7 +645,7 @@ export class QboBillSyncer extends BaseEntitySyncer<
       throw new Error(
         "Bill currency and exchange rate are required before storing supplier amounts"
       );
-    toBaseAmount(0, data.exchangeRate);
+    assertExchangeRate(data.exchangeRate);
     const existingLocalId = await this.getLocalId(remoteId);
 
     // Resolve supplier from the QBO VendorRef via the vendor mapping

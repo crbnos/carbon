@@ -224,7 +224,18 @@ Rillet AR_ONLY retains the provider-owned translation limitation described below
   invoice adapters: authoritative view totals, add-ons, line/header shipping,
   group-scoped currency metadata and the original posted Shipping Revenue
   account. `core/sales-document-components.ts` shares the internal posting
-  breakdown, converts base amounts once and reconciles document rounding.
+  breakdown, converts base amounts once and reconciles document rounding
+  through `distributeRoundingResidual` (`@carbon/utils`) — **largest remainder,
+  one minor unit per component**, ordered by component id so an exact tie
+  resolves the same way whatever order the lines arrive in. Do NOT go back to
+  concentrating the residual on a single component: that breaks the component's
+  own percent/amount pair, and QBO's `tax = net × percent` preflight
+  (`invoice-tax.ts`) then refuses the invoice with a message blaming the
+  customer's tax configuration, which they cannot act on. A component's unit
+  price is DERIVED from its reconciled net when the stored `convertedUnitPrice`
+  mirror and the converted extension straddle a rounding tie (the two are
+  rounded on independent float paths); it still refuses when no representable
+  price can reproduce the net, which is a real quantity/total contradiction.
   Original journal reads scope company, document, source type and Posted
   status; the shared role selector excludes VOID descriptions. Missing or
   ambiguous original shipping accounts refuse sync before dependency writes.

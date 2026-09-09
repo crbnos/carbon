@@ -13423,6 +13423,9 @@ msgstr "Compte de revenus pour les frais d’expédition facturés aux clients"
 msgid "Revenue and expenses over a period"
 msgstr "Revenus et charges sur une période"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Compte général de revenus crédité pour l'expédition facturée aux clients, comptabilisé sur sa propre ligne ; il doit être un compte différent du compte par défaut de Ventes."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Extourner tous les ajustements de stock"
 
@@ -14653,6 +14656,9 @@ msgstr "Notes d'expédition"
 msgid "Shipping Revenue"
 msgstr "Revenus d’expédition"
 
+msgid "Shipping Revenue (default)"
+msgstr "Revenus d'expédition (par défaut)"
+
 msgid "Shipping Supplier"
 msgstr "Fournisseur d'expédition"
 
@@ -15661,6 +15667,9 @@ msgstr "Pourcentage de taxe"
 
 msgid "Tax Residual Value %"
 msgstr "Valeur résiduelle fiscale %"
+
+msgid "Tax Status"
+msgstr "Statut fiscal"
 
 msgid "Tax Useful Life (default)"
 msgstr "Durée d'utilité fiscale (par défaut)"

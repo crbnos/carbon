@@ -72,6 +72,18 @@ full float precision; Postgres computes derived values (generated columns);
 - `deriveRate(amount, subtotal)` — the inverse of `applyRate`: recover the rate
   an absolute amount implies, rounded to internal scale. The ONE place a rate is
   derived from an amount; a bare `amount / subtotal` at a call site is a bug.
+- `distributeRoundingResidual(exactValues, target, scale)` — round N parts so
+  they sum EXACTLY to an authoritative total, moving at most ONE minor unit per
+  part (largest remainder: parts rounded furthest down get the surplus first,
+  ties by index). Use this ANY time a document total is apportioned across
+  components. Rounding parts independently leaves a residual of up to N/2 minor
+  units, and **concentrating that residual on one part is a real defect, not a
+  cosmetic one**: it breaks that part's own relative/absolute pair, so a tax line
+  no longer matches its `taxPercent` and QuickBooks refuses the whole invoice
+  (`providers/quickbooks-online/entities/invoice-tax.ts` re-derives
+  `round(net × percent)` within one minor unit). It also produced a negative tax
+  on positive revenue, which Xero accepts and posts. Refuses a residual larger
+  than one unit per part — that is a genuine disagreement, not rounding.
 - `equals(a, b)` / `EPSILON = 1e-6` — the one float-noise tolerance.
 - `assertBalanced(debits, credits, tolerance = EPSILON, label = "Journal")` —
   ledger invariant. Pass a `label` so the refusal names the journal and its

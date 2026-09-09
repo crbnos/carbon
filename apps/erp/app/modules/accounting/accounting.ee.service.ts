@@ -29,7 +29,6 @@ import type {
   costCenterValidator,
   currencyValidator,
   defaultAccountValidator,
-  defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
   depreciationMethods,
   dimensionValidator,
@@ -3900,37 +3899,6 @@ export async function getPaymentTermsList(
 export async function updateDefaultAccounts(
   client: SupabaseClient<Database>,
   defaultAccounts: z.infer<typeof defaultAccountValidator> & {
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  const validation = await validateDefaultIncomeAccounts(
-    client,
-    defaultAccounts
-  );
-  if (validation.error) return { data: null, error: validation.error };
-  return client
-    .from("accountDefault")
-    .update(defaultAccounts)
-    .eq("companyId", defaultAccounts.companyId);
-}
-
-export async function updateDefaultBalanceSheetAccounts(
-  client: SupabaseClient<Database>,
-  defaultAccounts: z.infer<typeof defaultBalanceSheetAccountValidator> & {
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("accountDefault")
-    .update(defaultAccounts)
-    .eq("companyId", defaultAccounts.companyId);
-}
-
-export async function updateDefaultIncomeAccounts(
-  client: SupabaseClient<Database>,
-  defaultAccounts: z.infer<typeof defaultIncomeAcountValidator> & {
     companyId: string;
     updatedBy: string;
   }

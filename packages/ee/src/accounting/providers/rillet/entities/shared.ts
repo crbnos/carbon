@@ -1,5 +1,9 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { moneyFormatOptions, toDocumentAmount } from "@carbon/utils";
+import {
+  assertExchangeRate,
+  moneyFormatOptions,
+  toDocumentAmount
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
@@ -126,11 +130,19 @@ export async function writeDroppingUnregisteredReferences<
   }
 }
 
-/** Rillet requires an ungrouped decimal string at the document currency scale. */
+/**
+ * Rillet requires an ungrouped decimal string at the document currency scale.
+ *
+ * `decimalPlaces` has NO default: the settlement scale is the currency's own
+ * `currency.decimalPlaces` (data, never a literal — see
+ * `.claude/rules/numeric-precision.md`). A `= 2` default silently serialised a
+ * JPY payment as "1000.00" (JPY settles at 0) and truncated a BHD/KWD third
+ * decimal, so every caller must supply the authoritative value.
+ */
 export function toRilletMoney(
   amount: number,
   currency: string,
-  decimalPlaces = 2
+  decimalPlaces: number
 ): Rillet.MonetaryAmount {
   if (decimalPlaces > 5) throw new Error("Unsupported document decimal scale");
   return {
@@ -157,7 +169,10 @@ export function toRilletExchangeRate(args: {
   } = args;
   if (!base.trim() || !target.trim())
     throw new Error("Rillet exchange-rate currencies are required");
-  toDocumentAmount(0, rate, 2);
+  // Validation only — the result is discarded. `toDocumentAmount` refuses a
+  // non-finite/invalid rate, and the internal SCALE is the named constant the
+  // precision standard exposes (a bare scale literal is a violation).
+  assertExchangeRate(rate);
   parseDate(date);
   if (base === target) {
     if (rate !== 1)
@@ -252,6 +267,42 @@ export async function loadCompanyBaseCurrency(
     .executeTakeFirst();
 
   return company?.baseCurrencyCode ?? "USD";
+}
+
+/**
+ * `currency.decimalPlaces` for one currency code — the authoritative
+ * settlement scale, group-scoped exactly like `loadBillCostingLines`'s read
+ * (the source the bill syncer already threads into `toRilletMoney`). Throws
+ * rather than defaulting: a guessed scale is how a JPY amount acquires cents.
+ */
+export async function loadCurrencyDecimalPlaces(
+  database: Kysely<KyselyDatabase>,
+  args: { companyId: string; currencyCode: string }
+): Promise<number> {
+  const company = await database
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+
+  if (!company?.companyGroupId)
+    throw new Error(
+      "Company group is required to resolve currency decimal places"
+    );
+
+  const currency = await database
+    .selectFrom("currency")
+    .select("decimalPlaces")
+    .where("code", "=", args.currencyCode)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+
+  if (!currency || currency.decimalPlaces == null)
+    throw new Error(
+      `Currency precision for ${args.currencyCode} is required to serialize Rillet amounts`
+    );
+
+  return currency.decimalPlaces;
 }
 
 /** Every Rillet read shape carries an optional updated_at timestamp. */

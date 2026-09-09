@@ -13423,6 +13423,9 @@ msgstr "得意先に請求する配送の売上高勘定"
 msgid "Revenue and expenses over a period"
 msgstr "期間中の売上高と費用"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "配送料として顧客に請求される売上高の貸記に用いられる勘定科目。独自の明細行に転記され、販売のデフォルト勘定科目とは異なる必要があります。"
+
 msgid "Reverse all inventory adjustments"
 msgstr "すべての在庫調整を取り消す"
 
@@ -14653,6 +14656,9 @@ msgstr "配送メモ"
 msgid "Shipping Revenue"
 msgstr "配送売上高"
 
+msgid "Shipping Revenue (default)"
+msgstr "送料売上高(デフォルト)"
+
 msgid "Shipping Supplier"
 msgstr "配送仕入先"
 
@@ -15661,6 +15667,9 @@ msgstr "税率"
 
 msgid "Tax Residual Value %"
 msgstr "税務残存価額 %"
+
+msgid "Tax Status"
+msgstr "税務ステータス"
 
 msgid "Tax Useful Life (default)"
 msgstr "税務耐用年数（デフォルト）"

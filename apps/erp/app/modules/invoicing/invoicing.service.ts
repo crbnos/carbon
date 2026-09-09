@@ -3,6 +3,8 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   allocatePaymentFunding,
+  assertCurrencyDecimals,
+  assertExchangeRate,
   chunkArray,
   datetime,
   type FundingConsumptionRow,
@@ -1843,7 +1845,7 @@ function requireCurrencyDecimals(
   if (value == null || !Number.isInteger(value) || value < 0) {
     throw new Error(`Currency ${code} requires configured decimal places`);
   }
-  toDocumentAmount(0, 1, value);
+  assertCurrencyDecimals(value);
   return value;
 }
 
@@ -2175,7 +2177,7 @@ async function loadTransactionInvoices(
       ).includes(invoice.status)
     )
       throw new Error(`Invoice ${id} is not open`);
-    toBaseAmount(0, Number(invoice.exchangeRate));
+    assertExchangeRate(Number(invoice.exchangeRate));
   }
   const [totals, settlements, controls] = await Promise.all([
     db
@@ -2306,7 +2308,7 @@ export async function replaceInvoiceSettlements(
       args.companyId,
       payment.currencyCode
     );
-    toBaseAmount(0, Number(payment.exchangeRate));
+    assertExchangeRate(Number(payment.exchangeRate));
     const isAR = payment.paymentType === "Receipt";
     const partyId = isAR ? payment.customerId : payment.supplierId;
     if (!partyId) throw new Error("Payment party is required");

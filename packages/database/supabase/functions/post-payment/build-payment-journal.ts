@@ -2,7 +2,11 @@
 // Cash/sourceAmount are document currency. Control, relief, carrying remainders,
 // and the persisted per-application realized FX snapshots are company base.
 import { assertBalanced, EPSILON, round } from "../shared/precision.ts";
-import { toBaseAmount } from "../shared/accounting-currency.ts";
+import {
+  assertExchangeRate,
+  toBaseAmount,
+} from "../shared/accounting-currency.ts";
+import { onAccountCreditDescription } from "../shared/accounting-posting.ts";
 import { credit, debit } from "../lib/utils.ts";
 
 export interface PaymentJournalLine {
@@ -181,8 +185,8 @@ export function buildPaymentJournal(
     if (
       !target || (isAR ? app.targetPurchaseInvoiceId : app.targetSalesInvoiceId)
     ) throw new Error("Invalid payment application target");
-    toBaseAmount(0, app.targetExchangeRate);
-    toBaseAmount(0, app.sourceExchangeRate);
+    assertExchangeRate(app.targetExchangeRate);
+    assertExchangeRate(app.sourceExchangeRate);
     const applied = nonnegative(app.appliedAmount, "Applied amount");
     const discount = nonnegative(app.discountAmount, "Discount amount");
     const writeOff = nonnegative(app.writeOffAmount, "Write-off amount");
@@ -256,7 +260,7 @@ export function buildPaymentJournal(
     isAR ? "asset" : "liability",
     newOnAccountBase,
     accounts.controlAccountId,
-    `${isAR ? "Accounts Receivable" : "Accounts Payable"} (on-account credit)`,
+    onAccountCreditDescription(isAR),
   );
   for (const [accountId, amount] of priorCreditReleased) {
     push(

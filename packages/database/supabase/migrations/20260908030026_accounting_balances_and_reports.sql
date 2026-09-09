@@ -5,6 +5,23 @@
 -- Save/post refuse missing config/rates; the LEFT JOIN keeps operational draft rows visible.
 -- Read balances preserve sub-internal-unit foreign remainders; only ledger lines use internal rounding.
 
+-- Internal-scale rounding boundary for SQL. `no-raw-rounding` in @carbon/checks
+-- reads TypeScript only, so a bare `round(x, 5)` here is unguarded: this is the
+-- SQL twin of `round(value)` at the default SCALE in
+-- packages/database/supabase/functions/shared/precision.ts. Settlement values
+-- keep rounding at currency."decimalPlaces" and must NOT use this function.
+CREATE OR REPLACE FUNCTION accounting_round_internal(_value NUMERIC)
+RETURNS NUMERIC
+LANGUAGE SQL
+IMMUTABLE
+PARALLEL SAFE
+AS $accounting_round_internal$
+  SELECT pg_catalog.round(_value, 5)
+$accounting_round_internal$;
+
+COMMENT ON FUNCTION accounting_round_internal(NUMERIC) IS
+  'Rounds a value-bearing number to the internal precision scale (SCALE = 5). The one named SQL boundary for internal-scale rounding; settlement amounts round at currency."decimalPlaces" instead.';
+
 -- Latest source: packages/database/supabase/migrations/20260702224219_fix-ar-ap-legacy-paid.sql
 CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
   WITH settled AS (
@@ -336,7 +353,7 @@ AS $$
   ), invoice_open AS (
     SELECT i.*, COALESCE(s.settled_base, 0) AS settled_base,
       amounts.remaining_document,
-      COALESCE(c.original_base, round(i."totalAmount",5)) - COALESCE(s.settled_base,0) AS remaining_base
+      COALESCE(c.original_base, accounting_round_internal(i."totalAmount")) - COALESCE(s.settled_base,0) AS remaining_base
     FROM "salesInvoices" i
     JOIN "salesInvoice" ib ON ib."id" = i."id" AND ib."companyId" = i."companyId"
     LEFT JOIN invoice_settled s ON s.invoice_id = i."id"
@@ -355,7 +372,7 @@ AS $$
         AND (ib."datePaid" IS NULL OR ib."datePaid" <= _as_of_date))
   ), memo_open AS (
     SELECT m.*,
-      round(m."amount"/m."exchangeRate",5) - COALESCE(s.settled_base,0) - COALESCE(t.settled_base,0) AS remaining_base,
+      accounting_round_internal(m."amount"/m."exchangeRate") - COALESCE(s.settled_base,0) - COALESCE(t.settled_base,0) AS remaining_base,
       COALESCE(s.settled_document, 0) + COALESCE(t.settled_base, 0) * m."exchangeRate" AS settled_document,
       m."amount" - COALESCE(s.settled_document, 0)
         - COALESCE(t.settled_base, 0) * m."exchangeRate" AS remaining_document
@@ -466,7 +483,7 @@ AS $$
   ), invoice_open AS (
     SELECT i.*, COALESCE(s.settled_base, 0) AS settled_base,
       amounts.remaining_document,
-      COALESCE(c.original_base, round(i."totalAmount",5)) - COALESCE(s.settled_base,0) AS remaining_base
+      COALESCE(c.original_base, accounting_round_internal(i."totalAmount")) - COALESCE(s.settled_base,0) AS remaining_base
     FROM "purchaseInvoices" i
     JOIN "purchaseInvoice" ib ON ib."id" = i."id" AND ib."companyId" = i."companyId"
     LEFT JOIN invoice_settled s ON s.invoice_id = i."id"
@@ -485,7 +502,7 @@ AS $$
         AND (ib."datePaid" IS NULL OR ib."datePaid" <= _as_of_date))
   ), memo_open AS (
     SELECT m.*,
-      round(m."amount"/m."exchangeRate",5) - COALESCE(s.settled_base,0) - COALESCE(t.settled_base,0) AS remaining_base,
+      accounting_round_internal(m."amount"/m."exchangeRate") - COALESCE(s.settled_base,0) - COALESCE(t.settled_base,0) AS remaining_base,
       COALESCE(s.settled_document, 0) + COALESCE(t.settled_base, 0) * m."exchangeRate" AS settled_document,
       m."amount" - COALESCE(s.settled_document, 0)
         - COALESCE(t.settled_base, 0) * m."exchangeRate" AS remaining_document
@@ -541,11 +558,16 @@ AS $$
       AND applying."postingDate" <= _as_of_date
     GROUP BY COALESCE(s."sourcePaymentId", s."paymentId")
   ), payment_unapplied AS (
-    SELECT (round(p."totalAmount" / p."exchangeRate",5) - COALESCE(c.source_base_amount,0)) AS open_base
+    SELECT (accounting_round_internal(p."totalAmount" / p."exchangeRate") - COALESCE(c.source_base_amount,0)) AS open_base
     FROM "payment" p
     LEFT JOIN funding_consumed c ON c.source_payment_id = p."id"
     WHERE p."companyId" = _company_id AND p."paymentType" = 'Receipt'
       AND p."status" = 'Posted' AND p."postingDate" <= _as_of_date
+      -- Same party predicate as get_ar_aging. payment_party_check allows a
+      -- Receipt whose party is a SUPPLIER (an AP refund); it belongs to the AP
+      -- subledger, and without this it entered the AR tie-out but never AR
+      -- aging, leaving a permanent variance the tie-out exists to disprove.
+      AND p."customerId" IS NOT NULL
   ), subledger AS (
     SELECT COALESCE((SELECT SUM(o."openInBase")
       FROM get_ar_open_by_customer(_company_id, _as_of_date) o), 0)
@@ -608,11 +630,14 @@ AS $$
       AND applying."postingDate" <= _as_of_date
     GROUP BY COALESCE(s."sourcePaymentId", s."paymentId")
   ), payment_unapplied AS (
-    SELECT (round(p."totalAmount" / p."exchangeRate",5) - COALESCE(c.source_base_amount,0)) AS open_base
+    SELECT (accounting_round_internal(p."totalAmount" / p."exchangeRate") - COALESCE(c.source_base_amount,0)) AS open_base
     FROM "payment" p
     LEFT JOIN funding_consumed c ON c.source_payment_id = p."id"
     WHERE p."companyId" = _company_id AND p."paymentType" = 'Disbursement'
       AND p."status" = 'Posted' AND p."postingDate" <= _as_of_date
+      -- Same party predicate as get_ap_aging. A Disbursement whose party is a
+      -- CUSTOMER is an AR refund and belongs to the AR subledger.
+      AND p."supplierId" IS NOT NULL
   ), subledger AS (
     SELECT COALESCE((SELECT SUM(o."openInBase")
       FROM get_ap_open_by_supplier(_company_id, _as_of_date) o), 0)
@@ -708,7 +733,7 @@ AS $$
   ),
   unapplied AS (
     SELECT p."customerId",
-      -COALESCE(SUM((round(p."totalAmount" / p."exchangeRate",5) - COALESCE(c.source_base_amount,0))), 0) AS "unapplied"
+      -COALESCE(SUM((accounting_round_internal(p."totalAmount" / p."exchangeRate") - COALESCE(c.source_base_amount,0))), 0) AS "unapplied"
     FROM "payment" p
     LEFT JOIN funding_consumed c ON c.source_payment_id = p."id"
     WHERE p."companyId" = _company_id AND p."paymentType" = 'Receipt'
@@ -801,7 +826,7 @@ AS $$
   ),
   unapplied AS (
     SELECT p."supplierId",
-      -COALESCE(SUM((round(p."totalAmount" / p."exchangeRate",5) - COALESCE(c.source_base_amount,0))), 0) AS "unapplied"
+      -COALESCE(SUM((accounting_round_internal(p."totalAmount" / p."exchangeRate") - COALESCE(c.source_base_amount,0))), 0) AS "unapplied"
     FROM "payment" p
     LEFT JOIN funding_consumed c ON c.source_payment_id = p."id"
     WHERE p."companyId" = _company_id AND p."paymentType" = 'Disbursement'

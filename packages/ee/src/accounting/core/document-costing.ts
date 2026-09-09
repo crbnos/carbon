@@ -1,5 +1,7 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
+  assertCurrencyDecimals,
+  assertExchangeRate,
   classifyAccountingPostingRole,
   round,
   SCALE,
@@ -124,7 +126,8 @@ export async function loadBillCostingLines(
   if (!currency || currency.decimalPlaces == null)
     throw new Error("Bill currency precision is required");
   const decimalPlaces = currency.decimalPlaces;
-  toDocumentAmount(0, exchangeRate, decimalPlaces);
+  assertExchangeRate(exchangeRate);
+  assertCurrencyDecimals(decimalPlaces);
   if (currencyCode === baseCurrencyCode && exchangeRate !== 1)
     throw new Error("Base-currency bill requires identity exchange rate");
   const [invoiceLines, delivery] = await Promise.all([

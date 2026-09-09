@@ -9,7 +9,6 @@ import {
   getRilletPaymentAmount,
   getRilletPaymentCurrency,
   getRilletPaymentSyncEntityId,
-  getSettledInvoiceStatus,
   mapRilletPaymentToLocal,
   parseRilletPaymentSyncEntityId,
   RilletPaymentSyncer
@@ -76,40 +75,6 @@ describe("composite payment sync entity id", () => {
     expect(() => parseRilletPaymentSyncEntityId("bill:b-1:")).toThrow(
       /Invalid Rillet payment sync entity id/
     );
-  });
-});
-
-describe("getSettledInvoiceStatus", () => {
-  it("covers the zero / partial / exact / over boundaries", () => {
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 0 })
-    ).toBeNull();
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 40 })
-    ).toBe("Partially Paid");
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 100 })
-    ).toBe("Paid");
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 150 })
-    ).toBe("Paid");
-  });
-
-  it("is cents-accurate and never restates degenerate invoices", () => {
-    // 99.999 rounds to 10000 cents — exact at 2dp
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 99.999 })
-    ).toBe("Paid");
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 99.99 })
-    ).toBe("Partially Paid");
-
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 0, settledTotal: 50 })
-    ).toBeNull();
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: -5 })
-    ).toBeNull();
   });
 });
 

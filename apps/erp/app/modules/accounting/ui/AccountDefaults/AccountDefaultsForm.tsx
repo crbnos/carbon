@@ -290,7 +290,8 @@ const AccountDefaultsForm = ({
             name: "salesShippingRevenueAccount",
             label: t`Shipping Revenue`,
             description: t`Revenue account for shipping charged to customers`,
-            badgeType: "Revenue"
+            badgeType: "Revenue",
+            termId: "account-default-sales-shipping-revenue"
           },
           {
             name: "salesDiscountAccount",

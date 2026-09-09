@@ -18,11 +18,17 @@ import {
   type FundingRequest,
 } from "../shared/payment-funding.ts";
 import {
+  assertCurrencyDecimals,
+  assertExchangeRate,
   toBaseAmount,
   toDocumentAmount,
 } from "../shared/accounting-currency.ts";
 import { round } from "../shared/precision.ts";
-import { RECEIVABLE_POSTING_DESCRIPTIONS, PAYABLE_POSTING_DESCRIPTIONS } from "../shared/accounting-posting.ts";
+import {
+  onAccountCreditDescription,
+  PAYABLE_POSTING_DESCRIPTIONS,
+  RECEIVABLE_POSTING_DESCRIPTIONS,
+} from "../shared/accounting-posting.ts";
 
 export type PostPaymentArgs = {
   type: "post" | "void";
@@ -225,11 +231,14 @@ export function postPaymentTransaction(
     if (
       !partyId || Boolean(payment.customerId) === Boolean(payment.supplierId)
     ) throw new Error("Payment must have exactly one customer or supplier");
+    // Direction of cash and ledger side are deliberately independent: a
+    // Disbursement to a CUSTOMER is an AR refund and a Receipt from a SUPPLIER
+    // is an AP refund. `isAR` picks the ledger, its control accounts and which
+    // prior payments can fund it (a refund consumes on-account credit, so the
+    // source query below stays on the ledger side, never this payment's type);
+    // `cashIn` picks the debit/credit side of each line in the journal builder.
     const cashIn = payment.paymentType === "Receipt";
-    if (cashIn !== isAR) {
-      throw new Error("Refund funding is unsupported for invoice applications");
-    }
-    toBaseAmount(0, Number(payment.exchangeRate));
+    assertExchangeRate(Number(payment.exchangeRate));
     const company = await trx.selectFrom("company").select([
       "companyGroupId",
       "baseCurrencyCode",
@@ -247,7 +256,7 @@ export function postPaymentTransaction(
       throw new Error("Payment currency decimal places are not configured");
     }
     const decimals = currency.decimalPlaces;
-    toDocumentAmount(0, 1, decimals);
+    assertCurrencyDecimals(decimals);
     if (
       company.baseCurrencyCode === payment.currencyCode &&
       Number(payment.exchangeRate) !== 1
@@ -417,7 +426,7 @@ export function postPaymentTransaction(
           "Staged memo must be posted with matching party, currency and direction",
         );
       }
-      toBaseAmount(0, Number(memo.exchangeRate));
+      assertExchangeRate(Number(memo.exchangeRate));
       return [memo.id, {
         memo,
         document: toDocumentAmount(Number(memo.amount), 1, decimals) -
@@ -522,9 +531,7 @@ export function postPaymentTransaction(
         .where(
           "line.description",
           "=",
-          `${
-            isAR ? "Accounts Receivable" : "Accounts Payable"
-          } (on-account credit)`,
+          onAccountCreditDescription(isAR),
         )
         .where("journal.sourceType", "=", "Payment").where(
           "journal.status",

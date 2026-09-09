@@ -13423,6 +13423,9 @@ msgstr "Konto przychodów z opłat za wysyłkę pobieranych od klientów"
 msgid "Revenue and expenses over a period"
 msgstr "Przychody ze sprzedaży i wydatki za okres"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Konto księgowe przychodów ze wysyłki rozliczanej z klientami, zaksięgowane na osobnej pozycji; musi różnić się od domyślnego konta Sprzedaży."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Odwróć wszystkie korekty zapasów"
 
@@ -14653,6 +14656,9 @@ msgstr "Notatki wysyłki"
 msgid "Shipping Revenue"
 msgstr "Przychody z opłat za wysyłkę"
 
+msgid "Shipping Revenue (default)"
+msgstr "Przychody ze wysyłki (domyślne)"
+
 msgid "Shipping Supplier"
 msgstr "Dostawca wysyłki"
 
@@ -15661,6 +15667,9 @@ msgstr "Procent podatku"
 
 msgid "Tax Residual Value %"
 msgstr "Podatkowa wartość rezydualna %"
+
+msgid "Tax Status"
+msgstr "Status podatku"
 
 msgid "Tax Useful Life (default)"
 msgstr "Okres użytkowania dla podatku (domyślnie)"

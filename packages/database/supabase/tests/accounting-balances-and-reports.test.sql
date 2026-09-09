@@ -104,6 +104,20 @@ BEGIN
 END;
 $fn$;
 
+-- payment_party_check permits exactly one party and deliberately decouples the
+-- direction from it: a Receipt whose party is a SUPPLIER is an AP refund, and a
+-- Disbursement whose party is a CUSTOMER is an AR refund. Same paymentType as
+-- seed_payment, opposite party -- so this cash belongs to the OTHER subledger.
+CREATE FUNCTION pg_temp.seed_crossparty_payment(f pg_temp.report_fixture,is_ar boolean,amount_document numeric,rate numeric,at_date date,status_text text DEFAULT 'Posted')
+RETURNS text LANGUAGE plpgsql AS $fn$
+DECLARE p text;
+BEGIN
+  INSERT INTO payment ("paymentId","paymentType","customerId","supplierId","paymentDate","postingDate","currencyCode","exchangeRate","totalAmount","bankAccount","companyId","createdBy",status)
+    VALUES ('HX-'||id(),CASE WHEN is_ar THEN 'Receipt' ELSE 'Disbursement' END::"paymentType",CASE WHEN NOT is_ar THEN f.customer_id END,CASE WHEN is_ar THEN f.supplier_id END,at_date,at_date,'EUR',rate,amount_document,f.bank_account,f.company_id,'system',status_text::"paymentStatus") RETURNING id INTO p;
+  RETURN p;
+END;
+$fn$;
+
 CREATE FUNCTION pg_temp.seed_memo(f pg_temp.report_fixture,is_ar boolean,amount_document numeric,rate numeric,at_date date,credit_to_invoice boolean DEFAULT true)
 RETURNS text LANGUAGE plpgsql AS $fn$
 DECLARE m text;
@@ -512,6 +526,49 @@ BEGIN
       RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
     EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
 
+    -- The tie-out exists to prove the subledger and the aging agree, so its
+    -- unapplied-cash predicate must be the aging's. A party-less payment for
+    -- this side (a Receipt from a supplier / a Disbursement to a customer) is
+    -- the other subledger's cash: counting it in the tie-out but not the aging
+    -- left get_ar_tie_out/get_ap_tie_out with a permanent non-zero variance.
+    BEGIN
+      f:=pg_temp.seed_report_company();
+      doc:=pg_temp.seed_invoice(f,is_ar,100,.8);
+      PERFORM pg_temp.book_control(f,is_ar,100,'2026-01-01',doc);
+      -- No control journal: this cash posts to the OTHER side's control account.
+      p1:=pg_temp.seed_crossparty_payment(f,is_ar,80,.8,'2026-01-02');
+      ASSERT (SELECT CASE WHEN is_ar THEN "customerId" ELSE "supplierId" END IS NULL
+        FROM payment WHERE id=p1),'Cross-party fixture must leave this side party-less';
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-01-02',100,0,100,'party-less payment stays out of both the tie-out and the aging');
+      -- The same cash under this side own party still reaches both.
+      p2:=pg_temp.seed_payment(f,is_ar,80,.8,'2026-01-02');
+      PERFORM pg_temp.book_control(f,is_ar,-100,'2026-01-02',NULL,'Payment',p2,' (on-account credit)');
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-01-02',100,-100,0,'same-party unapplied payment still reaches the tie-out and the aging');
+      RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
+    EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+
+    -- fxGainLossAmount is no longer GENERATED ALWAYS, so writers supply it and
+    -- readers sum it bare -- SUM("appliedAmount" +/- "fxGainLossAmount"). NULL
+    -- plus anything is NULL, so a single nullable row would erase that whole
+    -- settlement principal from the tie-out and the aging. The column must
+    -- refuse a NULL outright rather than have six read sites COALESCE it.
+    BEGIN
+      f:=pg_temp.seed_report_company();
+      doc:=pg_temp.seed_invoice(f,is_ar,100,1);
+      p1:=pg_temp.seed_payment(f,is_ar,100,1,'2026-01-02');
+      BEGIN
+        INSERT INTO "invoiceSettlement" ("paymentId","targetSalesInvoiceId","targetPurchaseInvoiceId","sourceAmount","appliedAmount","sourceExchangeRate","targetExchangeRate","fxGainLossAmount","appliedDate","companyId","createdBy")
+          VALUES (p1,CASE WHEN is_ar THEN doc END,CASE WHEN NOT is_ar THEN doc END,100,100,1,1,NULL,'2026-01-02',f.company_id,'system');
+        ASSERT false,'invoiceSettlement.fxGainLossAmount accepted an explicit NULL';
+      EXCEPTION WHEN not_null_violation THEN NULL; END;
+      -- Omitting it lands on the 0 default, never on NULL.
+      INSERT INTO "invoiceSettlement" ("paymentId","targetSalesInvoiceId","targetPurchaseInvoiceId","sourceAmount","appliedAmount","sourceExchangeRate","targetExchangeRate","appliedDate","companyId","createdBy")
+        VALUES (p1,CASE WHEN is_ar THEN doc END,CASE WHEN NOT is_ar THEN doc END,100,100,1,1,'2026-01-02',f.company_id,'system')
+        RETURNING "fxGainLossAmount" INTO open_sum;
+      ASSERT open_sum=0,'invoiceSettlement.fxGainLossAmount default is no longer 0';
+      RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
+    EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+
   END LOOP;
 END;
 $cases$;
@@ -523,6 +580,10 @@ BEGIN
   ASSERT NOT EXISTS (SELECT 1 FROM pg_class WHERE oid IN ('"salesInvoices"'::regclass,'"purchaseInvoices"'::regclass) AND NOT ('security_invoker=true'=ANY(COALESCE(reloptions,ARRAY[]::text[])))), 'Invoice views must use security invoker';
   ASSERT (SELECT count(*)=40 FROM information_schema.columns WHERE table_schema='public' AND table_name='salesInvoices'), 'salesInvoices column contract changed';
   ASSERT (SELECT count(*)=36 FROM information_schema.columns WHERE table_schema='public' AND table_name='purchaseInvoices'), 'purchaseInvoices column contract changed';
+  ASSERT (SELECT attnotnull FROM pg_attribute WHERE attrelid='"invoiceSettlement"'::regclass AND attname='fxGainLossAmount'), 'invoiceSettlement.fxGainLossAmount must stay NOT NULL now that it is written rather than generated';
+  ASSERT (SELECT provolatile='i' AND prorettype='numeric'::regtype AND pronargs=1 AND proargtypes[0]='numeric'::regtype FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname='accounting_round_internal'), 'accounting_round_internal must remain an immutable numeric(numeric) helper';
+  ASSERT accounting_round_internal(1.0000050)=1.00001 AND accounting_round_internal(-1.0000050)=-1.00001 AND accounting_round_internal(NULL) IS NULL, 'accounting_round_internal must behave exactly as round(value,5)';
+  ASSERT NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname IN ('get_ar_tie_out','get_ap_tie_out','get_ar_open_by_customer','get_ap_open_by_supplier','get_ar_aging','get_ap_aging') AND prosrc ~ 'round\([^()]*,[[:space:]]*5[[:space:]]*\)'), 'Reporting RPCs must round internal scale through accounting_round_internal, never a bare scale literal';
   FOR fn IN SELECT proname,prosecdef,proargnames FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname IN ('get_ar_tie_out','get_ap_tie_out','get_ar_open_by_customer','get_ap_open_by_supplier','get_ar_aging','get_ap_aging') LOOP
     ASSERT NOT fn.prosecdef,'RPC must remain security invoker: '||fn.proname;
     ASSERT fn.proargnames[1:2]=ARRAY['_company_id','_as_of_date'],'RPC arguments changed: '||fn.proname;

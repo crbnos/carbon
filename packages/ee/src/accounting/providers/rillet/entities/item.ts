@@ -9,6 +9,7 @@ import {
   carbonCompanyExternalReference,
   carbonExternalReference,
   loadCompanyBaseCurrency,
+  loadCurrencyDecimalPlaces,
   loadRilletAccountCodesById,
   RilletEntitySyncer,
   toRilletMoney,
@@ -56,6 +57,8 @@ export function mapItemToRilletProduct(args: {
   accountCodesById: ReadonlyMap<string, string>;
   revenueAccountId: string | null;
   currency: string;
+  /** `currency.decimalPlaces` of `currency` — the settlement scale, not a default. */
+  decimalPlaces: number;
 }): RilletProductWrite {
   const { item } = args;
 
@@ -101,7 +104,11 @@ export function mapItemToRilletProduct(args: {
     description: item.description ?? item.name,
     price: {
       type: "ONE_TIME",
-      amount: toRilletMoney(item.unitSalePrice, args.currency)
+      amount: toRilletMoney(
+        item.unitSalePrice,
+        args.currency,
+        args.decimalPlaces
+      )
     },
     include_in_arr_mrr: false,
     revenue_pattern: "EVEN_PERIOD",
@@ -190,11 +197,6 @@ export class RilletItemSyncer extends RilletEntitySyncer<
   ): Promise<string> {
     if (!args.baseCurrencyCode.trim())
       throw new Error("Missing shipping-product base currency");
-    const price = toRilletMoney(
-      0,
-      args.baseCurrencyCode,
-      args.baseCurrencyDecimals
-    );
     const codes = await this.getAccountCodesById();
     const item: Accounting.Item = {
       id: helperId,
@@ -215,9 +217,9 @@ export class RilletItemSyncer extends RilletEntitySyncer<
       item,
       accountCodesById: codes,
       revenueAccountId: args.shippingAccountId,
-      currency: args.baseCurrencyCode
+      currency: args.baseCurrencyCode,
+      decimalPlaces: args.baseCurrencyDecimals
     });
-    payload.price.amount = price;
     const mappedId = await this.mappingService.getExternalId(
       "shippingItem",
       helperId,
@@ -277,6 +279,7 @@ export class RilletItemSyncer extends RilletEntitySyncer<
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
   private revenueAccountIdPromise?: Promise<string | null>;
   private baseCurrencyPromise?: Promise<string>;
+  private baseCurrencyDecimalsPromise?: Promise<number>;
 
   protected get pushOnlyEntityLabel(): string {
     return "Items";
@@ -323,6 +326,21 @@ export class RilletItemSyncer extends RilletEntitySyncer<
       );
     }
     return this.baseCurrencyPromise;
+  }
+
+  /**
+   * The base currency's own `currency.decimalPlaces` — the product price is a
+   * settlement amount, so its scale is the currency's, never an assumed 2.
+   */
+  private getBaseCurrencyDecimals(): Promise<number> {
+    if (!this.baseCurrencyDecimalsPromise) {
+      this.baseCurrencyDecimalsPromise = (async () =>
+        loadCurrencyDecimalPlaces(this.database, {
+          companyId: this.companyId,
+          currencyCode: await this.getBaseCurrency()
+        }))();
+    }
+    return this.baseCurrencyDecimalsPromise;
   }
 
   // =================================================================
@@ -424,12 +442,14 @@ export class RilletItemSyncer extends RilletEntitySyncer<
     const accountCodesById = await this.getAccountCodesById();
     const revenueAccountId = await this.getRevenueAccountId();
     const currency = await this.getBaseCurrency();
+    const decimalPlaces = await this.getBaseCurrencyDecimals();
 
     return mapItemToRilletProduct({
       item: local,
       accountCodesById,
       revenueAccountId,
-      currency
+      currency,
+      decimalPlaces
     });
   }
 

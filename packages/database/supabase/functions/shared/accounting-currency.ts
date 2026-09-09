@@ -7,9 +7,31 @@ function requireFinite(amount: number, label: string): number {
   return amount;
 }
 
+/** Refuse an unusable foreign-per-base rate.
+ *
+ *  Exported so callers that only need the CHECK can say so. The alternative
+ *  spelling — `toBaseAmount(0, rate)` with the result thrown away — reads as
+ *  dead code to every reader, linter and dead-code pass, so deleting it looks
+ *  free while silently removing rate validation from a posting path. */
+export function assertExchangeRate(rate: number): void {
+  requireRate(rate);
+}
+
 function requireRate(rate: number): void {
   if (!Number.isFinite(rate) || rate <= 0) {
     throw new Error("Foreign-per-base exchange rate must be positive and finite");
+  }
+}
+
+/** Refuse a currency precision that cannot describe a settlement amount.
+ *  Exported for the same reason as `assertExchangeRate`. */
+export function assertCurrencyDecimals(currencyDecimals: number): void {
+  requireCurrencyDecimals(currencyDecimals);
+}
+
+function requireCurrencyDecimals(currencyDecimals: number): void {
+  if (!Number.isSafeInteger(currencyDecimals) || currencyDecimals < 0) {
+    throw new Error("Currency decimal places must be a nonnegative integer");
   }
 }
 
@@ -31,9 +53,7 @@ export function toDocumentAmount(
 ): number {
   requireFinite(baseAmount, "Base amount");
   requireRate(foreignPerBaseRate);
-  if (!Number.isSafeInteger(currencyDecimals) || currencyDecimals < 0) {
-    throw new Error("Currency decimal places must be a nonnegative integer");
-  }
+  requireCurrencyDecimals(currencyDecimals);
   return requireFinite(
     round(baseAmount * foreignPerBaseRate, currencyDecimals),
     "Document amount"

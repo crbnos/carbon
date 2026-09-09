@@ -1,5 +1,6 @@
 import type { KyselyTx } from "@carbon/database/client";
 import {
+  assertExchangeRate,
   calculateSettlementFx,
   round,
   toBaseAmount,
@@ -56,28 +57,6 @@ export type NormalizedPayment = {
    */
   linkedDocuments?: { remoteId: string; amount: number }[];
 };
-
-/**
- * Invoice status implied by its settled total (cents-accurate). Returns null
- * for "don't touch": a zero/negative settled total says nothing about what the
- * status should be, and a degenerate zero-total invoice is never restated.
- *
- * Kept as a shared export because the payment tests assert its boundaries. The
- * runtime pull path no longer calls it — `post-payment` owns document status
- * (the invoice/bill status is derived in the `salesInvoices`/`purchaseInvoices`
- * views from Posted-payment settlements).
- */
-export function getSettledInvoiceStatus(args: {
-  invoiceTotal: number;
-  settledTotal: number;
-}): "Paid" | "Partially Paid" | null {
-  const totalCents = Math.round(args.invoiceTotal * 100);
-  const settledCents = Math.round(args.settledTotal * 100);
-
-  if (totalCents <= 0 || settledCents <= 0) return null;
-  if (settledCents >= totalCents) return "Paid";
-  return "Partially Paid";
-}
 
 /**
  * Separator in the outbound push's per-settlement `payment` mapping key
@@ -231,7 +210,7 @@ export async function upsertLocalPaymentDraft(
         `Mapped ${docEntityType} ${invoiceId} is missing or has invalid company/party/currency metadata`
       );
     const rate = Number(invoice.exchangeRate);
-    toBaseAmount(0, rate);
+    assertExchangeRate(rate);
     if (invoice.currencyCode === company?.baseCurrencyCode && rate !== 1)
       throw new Error("Base-currency document requires identity exchange rate");
     if (partyId && partyId !== invoice.partyId)
@@ -321,7 +300,7 @@ export async function upsertLocalPaymentDraft(
     (currencyCode === company.baseCurrencyCode ? 1 : null);
   if (exchangeRate === null)
     throw new Error("Foreign-currency payment exchange rate is required");
-  toBaseAmount(0, exchangeRate);
+  assertExchangeRate(exchangeRate);
   if (currencyCode === company.baseCurrencyCode && exchangeRate !== 1)
     throw new Error("Base-currency payment requires identity exchange rate");
   const currency = await tx

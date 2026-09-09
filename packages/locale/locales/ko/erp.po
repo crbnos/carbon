@@ -13423,6 +13423,9 @@ msgstr "고객에게 청구한 배송 매출 계정"
 msgid "Revenue and expenses over a period"
 msgstr "기간별 매출 및 비용"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "고객에게 청구하는 배송료 수익을 대변기입하는 계정과목으로, 자신의 라인에 전기되며, 영업 기본값과는 달라야 합니다."
+
 msgid "Reverse all inventory adjustments"
 msgstr "모든 재고 조정 취소"
 
@@ -14653,6 +14656,9 @@ msgstr "배송 메모"
 msgid "Shipping Revenue"
 msgstr "배송 매출"
 
+msgid "Shipping Revenue (default)"
+msgstr "배송료 매출 (기본값)"
+
 msgid "Shipping Supplier"
 msgstr "배송 공급업체"
 
@@ -15661,6 +15667,9 @@ msgstr "세금 비율"
 
 msgid "Tax Residual Value %"
 msgstr "세금 잔존가액 %"
+
+msgid "Tax Status"
+msgstr "세금 상태"
 
 msgid "Tax Useful Life (default)"
 msgstr "세금 내용연수 (기본값)"

@@ -13423,6 +13423,9 @@ msgstr "Счет выручки от доставки, начисляемой п
 msgid "Revenue and expenses over a period"
 msgstr "Выручка и расходы за период"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Счет учета выручки, кредитуемый за доставку, взимаемую с покупателей, проводимый отдельной строкой; должен отличаться от счета Продажи по умолчанию."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Отменить все корректировки запасов"
 
@@ -14653,6 +14656,9 @@ msgstr "Примечания к доставке"
 msgid "Shipping Revenue"
 msgstr "Выручка от доставки"
 
+msgid "Shipping Revenue (default)"
+msgstr "Выручка за доставку (по умолчанию)"
+
 msgid "Shipping Supplier"
 msgstr "Поставщик доставки"
 
@@ -15661,6 +15667,9 @@ msgstr "Процент налога"
 
 msgid "Tax Residual Value %"
 msgstr "Налоговая ликвидационная стоимость %"
+
+msgid "Tax Status"
+msgstr "Статус налога"
 
 msgid "Tax Useful Life (default)"
 msgstr "Налоговый срок полезного использования (по умолчанию)"

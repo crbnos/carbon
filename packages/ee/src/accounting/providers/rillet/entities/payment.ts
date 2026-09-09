@@ -9,6 +9,7 @@ import type { Rillet, RilletLocalPayment } from "../models";
 import { buildRilletIdempotencyKey, type RilletProvider } from "../provider";
 import {
   loadCompanyBaseCurrency,
+  loadCurrencyDecimalPlaces,
   loadRilletAccountCodesById,
   RILLET_CARBON_REFERENCE_TYPE,
   toRilletMoney
@@ -16,7 +17,6 @@ import {
 
 // Re-exported for the payment tests (moved to the family-agnostic core, where
 // the runtime document-status boundary now lives — post-payment owns status).
-export { getSettledInvoiceStatus } from "../../../core/payment-application";
 
 /**
  * RilletPaymentSyncer — the AR payment syncer for Rillet, on the shared
@@ -163,6 +163,29 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       );
     }
     return this.baseCurrencyPromise;
+  }
+
+  /**
+   * `currency.decimalPlaces` per currency code, read once per code per syncer
+   * instance. A payment is a SETTLEMENT amount, so its scale is the currency's
+   * own: JPY settles at 0 decimals, BHD/KWD at 3. `PaymentPushContext` carries
+   * the currency code but no precision, so the syncer resolves it here.
+   */
+  private currencyDecimalsPromises = new Map<string, Promise<number>>();
+
+  private getCurrencyDecimals(currencyCode: string): Promise<number> {
+    let pending = this.currencyDecimalsPromises.get(currencyCode);
+    if (!pending) {
+      pending = loadCurrencyDecimalPlaces(this.database, {
+        companyId: this.companyId,
+        currencyCode
+      }).catch((error) => {
+        this.currencyDecimalsPromises.delete(currencyCode);
+        throw error;
+      });
+      this.currencyDecimalsPromises.set(currencyCode, pending);
+    }
+    return pending;
   }
 
   /** Carbon account.id → Rillet account code, read once per syncer instance. */
@@ -403,8 +426,14 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       });
     }
 
+    const decimalPlaces = await this.getCurrencyDecimals(context.currencyCode);
+
     const payload = {
-      amount: toRilletMoney(context.amount, context.currencyCode),
+      amount: toRilletMoney(
+        context.amount,
+        context.currencyCode,
+        decimalPlaces
+      ),
       date: context.paidDate,
       account_code: accountCode,
       external_references: [

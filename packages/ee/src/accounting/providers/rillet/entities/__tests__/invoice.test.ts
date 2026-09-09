@@ -172,8 +172,11 @@ describe("Rillet AR_ONLY native sales components", () => {
     source.currencyDecimalPlaces = decimals;
     const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
     expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
+    // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
+    // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
+    // whose 2.4 is the only component carrying a fractional remainder.
     expect(payload.items[0]?.total_amount.amount).toBe(
-      decimals === 0 ? "81" : "80.000"
+      decimals === 0 ? "80" : "80.000"
     );
   });
   it("requires actual products for all nonshipping components and never uses the shipping product as fallback", () => {

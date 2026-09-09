@@ -233,3 +233,88 @@ describe("Rillet shipping product helper", () => {
     });
   });
 });
+
+/**
+ * The merchandise path resolves the product price scale from the company's own
+ * base currency row (company.baseCurrencyCode -> currency.decimalPlaces), the
+ * same authoritative source the bill syncer threads through. A hardcoded
+ * 2-decimal serialization gives a JPY price cents it cannot have and truncates
+ * a 3-decimal BHD price.
+ */
+function makeItemDb(baseCurrencyCode: string, decimalPlaces: number) {
+  const chain = (row: unknown) => {
+    const b: Record<string, unknown> = {};
+    b.select = () => b;
+    b.leftJoin = () => b;
+    b.where = () => b;
+    b.execute = async () => [row];
+    b.executeTakeFirst = async () => row;
+    return b;
+  };
+  return {
+    selectFrom: (table: string) => {
+      if (table === "company")
+        return chain({ baseCurrencyCode, companyGroupId: "group-1" });
+      if (table === "currency") return chain({ decimalPlaces });
+      if (table === "accountDefault")
+        return chain({ salesAccount: "acct-sales" });
+      return chain(undefined);
+    }
+  } as never;
+}
+
+function makeMerchandiseSyncer(
+  baseCurrencyCode: string,
+  decimalPlaces: number
+) {
+  const syncer = new RilletItemSyncer({
+    database: makeItemDb(baseCurrencyCode, decimalPlaces),
+    companyId: "company-1",
+    provider: { id: "rillet" } as never,
+    config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
+    entityType: "item"
+  });
+  (syncer as any).getAccountCodesById = async () =>
+    new Map([["acct-sales", "4000"]]);
+  return syncer;
+}
+
+const merchandiseItem = {
+  id: "item-1",
+  code: "PART-1",
+  name: "Part 1",
+  description: "Part 1",
+  companyId: "company-1",
+  type: "Part" as const,
+  unitOfMeasureCode: "EA",
+  unitCost: 0,
+  unitSalePrice: 1000,
+  isPurchased: true,
+  isSold: true,
+  isTrackedAsInventory: false,
+  updatedAt: "2026-09-09T00:00:00.000Z"
+};
+
+describe("Rillet merchandise product price precision", () => {
+  it("serializes a 0-decimal base currency (JPY) at its own scale", async () => {
+    const syncer = makeMerchandiseSyncer("JPY", 0);
+    const payload = await (
+      syncer as unknown as {
+        mapToRemote(item: unknown): Promise<RilletProductWrite>;
+      }
+    ).mapToRemote(merchandiseItem);
+
+    expect(payload.price.amount).toEqual({ amount: "1000", currency: "JPY" });
+  });
+
+  it("keeps the third decimal of a 3-decimal base currency (BHD)", async () => {
+    const syncer = makeMerchandiseSyncer("BHD", 3);
+    const payload = await (
+      syncer as unknown as {
+        mapToRemote(item: unknown): Promise<RilletProductWrite>;
+      }
+    ).mapToRemote({ ...merchandiseItem, unitSalePrice: 0.563 });
+
+    expect(payload.price.amount).toEqual({ amount: "0.563", currency: "BHD" });
+  });
+});

@@ -492,8 +492,6 @@
   "no-raw-rounding::packages/documents/src/pdf/components/labelGeometry.ts::const qrModuleSize = Math.max(2, Math.min(8, Math.round(4 * scale)));",
   "no-raw-rounding::packages/ee/src/accounting/core/document-costing.ts::(sum, line) => sum + Math.round(line.amount * 100),",
   "no-raw-rounding::packages/ee/src/accounting/core/document-costing.ts::const targetCents = Math.round(baseTotalCents / exchangeRate);",
-  "no-raw-rounding::packages/ee/src/accounting/core/payment-application.ts::const settledCents = Math.round(args.settledTotal * 100);",
-  "no-raw-rounding::packages/ee/src/accounting/core/payment-application.ts::const totalCents = Math.round(args.invoiceTotal * 100);",
   "no-raw-rounding::packages/ee/src/accounting/core/posting.ts::(centsByAccount.get(key) ?? 0) + Math.round(line.amount * 100)",
   "no-raw-rounding::packages/ee/src/accounting/core/posting.ts::(sum, line) => sum + Math.round(line.amount * 100),",
   "no-raw-rounding::packages/ee/src/accounting/core/posting.ts::const cents = Math.round(line.amount * 100);",

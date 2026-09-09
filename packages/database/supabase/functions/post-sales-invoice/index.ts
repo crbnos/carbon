@@ -20,7 +20,10 @@ import {
 } from "../shared/get-posting-group.ts";
 import { round } from "../shared/precision.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
-import { toBaseAmount, toDocumentAmount } from "../shared/accounting-currency.ts";
+import {
+  assertCurrencyDecimals,
+  assertExchangeRate,
+} from "../shared/accounting-currency.ts";
 import { classifyIntercompanyPostingLines } from "../shared/intercompany-capture.ts";
 import {
   allocateSalesHeaderShipping,
@@ -306,7 +309,7 @@ serve(async (req: Request) => {
           (invoiceCurrencyCode === companyRecord.data.baseCurrencyCode ? 1 : Number.NaN);
         if (accountingEnabled) {
           if (!companyGroupId) throw new Error("Accounting requires a company group");
-          toBaseAmount(0, invoiceExchangeRate);
+          assertExchangeRate(invoiceExchangeRate);
           if (invoiceCurrencyCode === companyRecord.data.baseCurrencyCode && invoiceExchangeRate !== 1) {
             throw new Error("Base-currency invoices require an identity exchange rate");
           }
@@ -348,7 +351,7 @@ serve(async (req: Request) => {
           throw new Error("Missing invoice currency precision configuration");
         }
         const invoiceCurrencyDecimals = currencyConfig.data?.decimalPlaces;
-        if (accountingEnabled) toDocumentAmount(0, invoiceExchangeRate, invoiceCurrencyDecimals!);
+        if (accountingEnabled) assertCurrencyDecimals(invoiceCurrencyDecimals!);
         const assetsById = new Map<string, AssetRecord>((assetRecords.data ?? []).map((asset: AssetRecord) => [asset.id, asset]));
         const latestDisposalByAsset = new Map<string, DisposalRecord>();
         for (const disposal of disposalRecords.data ?? []) {
@@ -920,7 +923,7 @@ serve(async (req: Request) => {
             // every emitted control line so multiline balances eliminate fully.
             const icJournalLineId = classifiedLines.find((line) => line.role === "Control")?.journalLineId;
             const intercompanyAmount = calculateSalesIntercompanyAmount(
-              salesInvoiceLines.data, invoiceExchangeRate, invoiceCurrencyDecimals!
+              salesInvoiceLines.data, invoiceExchangeRate
             );
 
             if (icJournalLineId) {

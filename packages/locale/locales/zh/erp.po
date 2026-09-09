@@ -13423,6 +13423,9 @@ msgstr "向客户收取的运输费用收入科目"
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "用于向客户收取的运费收入贷记的总账科目，已过账显示在单独行；必须与销售默认账户不同。"
+
 msgid "Reverse all inventory adjustments"
 msgstr "反转所有库存调整"
 
@@ -14653,6 +14656,9 @@ msgstr "运输备注"
 msgid "Shipping Revenue"
 msgstr "运输收入"
 
+msgid "Shipping Revenue (default)"
+msgstr "运费收入（默认）"
+
 msgid "Shipping Supplier"
 msgstr "运输供应商"
 
@@ -15661,6 +15667,9 @@ msgstr "税收百分比"
 
 msgid "Tax Residual Value %"
 msgstr "税务残值 %"
+
+msgid "Tax Status"
+msgstr "税状态"
 
 msgid "Tax Useful Life (default)"
 msgstr "税使用年限（默认）"

@@ -13423,6 +13423,9 @@ msgstr "Müşterilere yansıtılan kargo için hasılat hesabı"
 msgid "Revenue and expenses over a period"
 msgstr "Bir dönem içinde hasılat ve giderler"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Müşterilere yapılan kargo masrafları için alacaklandırılan Hasılat muhasebe hesabı, kendi satırında muhasebeleştirilir; Satış varsayılanından farklı bir hesap olması gerekir."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Tüm stok düzeltmelerini ters kayıt yap"
 
@@ -14653,6 +14656,9 @@ msgstr "Sevkiyat Notları"
 msgid "Shipping Revenue"
 msgstr "Kargo hasılatı"
 
+msgid "Shipping Revenue (default)"
+msgstr "Kargo Hasılat (varsayılan)"
+
 msgid "Shipping Supplier"
 msgstr "Nakliye Tedarikçisi"
 
@@ -15661,6 +15667,9 @@ msgstr "Vergi Yüzdesi"
 
 msgid "Tax Residual Value %"
 msgstr "Vergi Kalıntı Değeri %"
+
+msgid "Tax Status"
+msgstr "Vergi Durumu"
 
 msgid "Tax Useful Life (default)"
 msgstr "Vergi faydalı ömrü (varsayılan)"

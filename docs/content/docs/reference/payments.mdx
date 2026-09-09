@@ -45,14 +45,17 @@ Cash and memos both settle open items through one primitive: the **invoice settl
 
 <FieldTable>
   <Field name="source" type="payment XOR memo">Exactly one of a `paymentId` (cash) or a `memoId` (memo) funds the settlement.</Field>
+  <Field name="sourcePaymentId" type="payment">A *prior* posted payment supplying on-account credit. `NULL` means the row is funded by the applying payment's own cash. Either way `paymentId` stays the applying and voiding owner, so a credit-funded row can only sit on a cash payment, never on a memo.</Field>
   <Field name="target" type="one of three">Exactly one of a sales invoice, a purchase invoice, or a memo. (A balance-increasing memo is itself an open item, settled by targeting it.)</Field>
-  <Field name="appliedAmount">Principal that reduces the target's balance.</Field>
-  <Field name="discountAmount">An early-payment discount you're granting. **Cash payments only** — a memo-sourced settlement can't carry one.</Field>
-  <Field name="writeOffAmount">A remainder you're forgiving to the write-off account. **Cash payments only.**</Field>
+  <Field name="sourceAmount">Principal consumed **in the funding source's document currency**, stored independently of `appliedAmount`.</Field>
+  <Field name="appliedAmount">Target-document principal relieved, **in company base currency**.</Field>
+  <Field name="discountAmount">An early-payment discount you're granting, in **base currency**. **Cash payments only** — a memo-sourced settlement can't carry one.</Field>
+  <Field name="writeOffAmount">A remainder you're forgiving to the write-off account, in **base currency**. **Cash payments only.**</Field>
+  <Field name="fxGainLossAmount">The realized FX this one application books, in **base currency**: positive is a gain, negative a loss. Server-calculated at posting, never entered.</Field>
   <Field name="appliedDate">When the application takes effect.</Field>
 </FieldTable>
 
-At least one of applied, discount, or write-off must be positive. An AR source only settles AR targets for the same counterparty, and an AP source only settles AP targets — the posting functions enforce party and side consistency (a Receipt rejects purchase invoices, a Disbursement rejects sales invoices, and a payment can only settle its own party's invoices).
+A settlement row has to move something: either applied, discount, and write-off sum to more than zero, or the row consumes a positive `sourceAmount`. An AR source only settles AR targets for the same counterparty, and an AP source only settles AP targets — the posting functions enforce party and side consistency (a Receipt rejects purchase invoices, a Disbursement rejects sales invoices, and a payment can only settle its own party's invoices).
 
 <Callout type="note">
 Settlements are **staged while their source is Draft** and only go live when it posts. This includes a memo-sourced "apply credit" made through a payment: even though the memo itself is posted, its credit application is tied to the payment applying it and doesn't count until *that* payment posts — so the composer stays consistent with cash applications.
@@ -74,8 +77,8 @@ Only a **Draft** can be deleted; a **Posted** payment or memo must be voided ins
 
 Posting only touches the ledger when accounting is enabled for the company; otherwise the document still moves to **Posted** and its settlements still apply, but no journal is written.
 
-- **A payment** books the **bank account** against the **AR or AP control account** (receivables for a customer, payables for a supplier), split per application. Each settlement's discount goes to the discount account and its write-off to the write-off account. A single realized-FX plug reconciles the base-currency difference when the payment's rate differs from the invoice's, to the realized exchange gain or loss account.
-- **A memo** books a balanced two-line entry: the **control account** against the derived **reason account**. Applying a balance-reducing memo to an invoice afterward is GL-neutral — both sit in AR/AP — except for any realized FX.
+- **A payment** books the **bank account** against the **AR or AP control account** (receivables for a customer, payables for a supplier), split per application. Each settlement's discount goes to the discount account and its write-off to the write-off account. Realized FX is computed **per application** — the carrying value released from the funding source, less the base principal relieved on the target — and stored on that settlement row as `fxGainLossAmount`. The journal then books the **net** of those to the realized exchange gain or loss account as one line.
+- **A memo** books a balanced two-line entry: the **control account** against the derived **reason account**. Applying a balance-reducing memo to an invoice afterward is GL-neutral — both sit in AR/AP — and realizes no FX, because Carbon only lets you apply a credit whose exchange rate matches the invoice's.
 
 Every payment and memo journal line is tagged with the counterparty's type and entity dimensions, so AR and AP can be reported by customer or supplier. Voiding emits a paired reversing journal rather than mutating the original, and carries the same dimensions so dimension-filtered balances net to zero. See [Accounting & the ledger](/docs/reference/accounting) for where these entries land.
 

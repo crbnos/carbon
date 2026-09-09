@@ -13423,6 +13423,9 @@ msgstr "Cuenta de ingresos por gastos de envío cobrados a los clientes"
 msgid "Revenue and expenses over a period"
 msgstr "Ingresos por ventas y gastos durante un período"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Cuenta contable de Ingresos por Envío acreditada por gastos de envío cobrados a clientes, contabilizada en su propia línea; debe ser una cuenta diferente de la predeterminada de Ventas."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Revertir todos los ajustes de inventario"
 
@@ -14653,6 +14656,9 @@ msgstr "Notas de Envío"
 msgid "Shipping Revenue"
 msgstr "Ingresos por gastos de envío"
 
+msgid "Shipping Revenue (default)"
+msgstr "Ingresos por Envío (predeterminado)"
+
 msgid "Shipping Supplier"
 msgstr "Proveedor de Envío"
 
@@ -15661,6 +15667,9 @@ msgstr "Porcentaje de Impuesto"
 
 msgid "Tax Residual Value %"
 msgstr "Valor residual fiscal %"
+
+msgid "Tax Status"
+msgstr "Estado fiscal"
 
 msgid "Tax Useful Life (default)"
 msgstr "Vida útil fiscal (predeterminada)"

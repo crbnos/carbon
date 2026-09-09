@@ -130,3 +130,78 @@ for (const isAR of [true, false]) {
     assertEquals(result.signedDebitTotal, 0);
   });
 }
+
+// Direction of cash and ledger side are independent. A Disbursement to a
+// CUSTOMER is an AR refund (cash out, receivable restored); a Receipt from a
+// SUPPLIER is an AP refund. `payment_party_check` permits both, the composer
+// stages them, and the docs describe them as supported — post-payment must not
+// refuse them.
+for (const isAR of [true, false]) {
+  Deno.test(`${isAR ? "AR" : "AP"} refund posts cash on the opposite side of its ledger`, () => {
+    const result = buildPaymentJournal({
+      paymentId: "payment",
+      companyId: "company",
+      isAR,
+      // The refund case: cash moves the opposite way to the normal flow.
+      cashIn: !isAR,
+      totalAmount: 40,
+      exchangeRate: 1,
+      bankAccount: "bank",
+      journalLineReference: "reference",
+      applications: [
+        {
+          targetSalesInvoiceId: isAR ? "memo-a" : null,
+          targetPurchaseInvoiceId: isAR ? null : "memo-a",
+          targetControlAccountId: "original-control",
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+          sourcePaymentId: null,
+          sourceAmount: 40,
+          appliedAmount: 40,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          fxGainLossAmount: 0,
+        },
+      ],
+      newOnAccountBase: 0,
+      accounts: {
+        controlAccountId: "today-control",
+        discountAccountId: "discount",
+        writeOffAccountId: "writeoff",
+        fxGainAccountId: "fxgain",
+        fxLossAccountId: "fxloss",
+      },
+    });
+
+    // An AR refund pays cash OUT, so the bank asset falls; an AP refund
+    // receives cash back, so it rises. This is the axis `cashIn` owns.
+    assertEquals(
+      result.lines.find((line) => line.accountId === "bank")?.amount,
+      isAR ? -40 : 40,
+    );
+    // The ledger side is the axis `isAR` owns: the refund restores the
+    // original control account rather than relieving it.
+    assertEquals(
+      result.lines.find((line) => line.accountId === "original-control")
+        ?.amount,
+      40,
+    );
+    const classes: Record<
+      string,
+      "Asset" | "Liability" | "Expense" | "Revenue"
+    > = {
+      bank: "Asset",
+      "original-control": isAR ? "Asset" : "Liability",
+    };
+    const debitSigned = result.lines.reduce((sum, line) => {
+      const accountClass = classes[line.accountId];
+      assert(accountClass, `Unexpected account ${line.accountId}`);
+      return sum +
+        (accountClass === "Asset" || accountClass === "Expense"
+          ? line.amount
+          : -line.amount);
+    }, 0);
+    assertEquals(round(debitSigned), 0);
+    assertEquals(result.signedDebitTotal, 0);
+  });
+}

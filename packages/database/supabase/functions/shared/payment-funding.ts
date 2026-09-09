@@ -1,7 +1,9 @@
 import {
+  assertCurrencyDecimals,
+  assertExchangeRate,
   calculateSettlementFx,
   toBaseAmount,
-  toDocumentAmount
+  toDocumentAmount,
 } from "./accounting-currency.ts";
 import { round } from "./precision.ts";
 
@@ -74,7 +76,7 @@ export function allocatePaymentFunding(input: {
 } {
   const { currencyDecimals, isAR } = input;
   // This also validates the configured decimal count through the common boundary.
-  toDocumentAmount(0, 1, currencyDecimals);
+  assertCurrencyDecimals(currencyDecimals);
   const documentScale = 10 ** currencyDecimals;
   const documentUnits = (amount: number, label: string): number => {
     nonnegativeAmount(amount, label);
@@ -99,7 +101,7 @@ export function allocatePaymentFunding(input: {
     return a.paymentId < b.paymentId ? -1 : a.paymentId > b.paymentId ? 1 : 0;
   })].map((source) => {
     addUniqueId(sourceIds, source.paymentId, "funding source");
-    toBaseAmount(0, source.exchangeRate);
+    assertExchangeRate(source.exchangeRate);
     const remainingUnits = documentUnits(source.remainingDocument, "Source amount");
     const remainingBase = toBaseAmount(nonnegativeAmount(source.remainingBase, "Source carrying base"), 1);
     if (remainingUnits === 0 && remainingBase !== 0) {
@@ -115,7 +117,7 @@ export function allocatePaymentFunding(input: {
   const targetIds = new Set<string>();
   const requests = input.requests.map((request) => {
     addUniqueId(targetIds, request.targetId, "target");
-    toBaseAmount(0, request.targetExchangeRate);
+    assertExchangeRate(request.targetExchangeRate);
     const remainingUnits = documentUnits(request.remainingDocument, "Remaining target document amount");
     const principalUnits = documentUnits(request.requestedDocumentPrincipal, "Requested document principal");
     const remainingBase = toBaseAmount(nonnegativeAmount(request.remainingBase, "Remaining target base"), 1);

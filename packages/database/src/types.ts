@@ -19642,7 +19642,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           discountAmount: number
-          fxGainLossAmount: number | null
+          fxGainLossAmount: number
           id: string
           memoId: string | null
           paymentId: string | null
@@ -19664,7 +19664,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           discountAmount?: number
-          fxGainLossAmount?: number | null
+          fxGainLossAmount?: number
           id?: string
           memoId?: string | null
           paymentId?: string | null
@@ -19686,7 +19686,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           discountAmount?: number
-          fxGainLossAmount?: number | null
+          fxGainLossAmount?: number
           id?: string
           memoId?: string | null
           paymentId?: string | null
@@ -77448,6 +77448,7 @@ export type Database = {
     }
     Functions: {
       _xid_machine_id: { Args: never; Returns: number }
+      accounting_round_internal: { Args: { _value: number }; Returns: number }
       accountTreeBalancePeriodSeries: {
         Args: {
           p_company_group_id: string

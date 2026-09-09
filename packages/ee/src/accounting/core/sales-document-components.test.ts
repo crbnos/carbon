@@ -1,4 +1,4 @@
-import { round } from "@carbon/utils";
+import { EPSILON, round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/invoice";
 import { RilletSalesInvoiceSyncer } from "../providers/rillet/entities/invoice";
@@ -66,7 +66,10 @@ describe("buildSalesDocumentComponents", () => {
     source.lines[0]!.unitPrice = 100 / quantity;
     source.lines[0]!.convertedUnitPrice = 80 / quantity;
     const document = build(source);
-    expect(document.components[0]?.netAmount).toBe(81);
+    // 100 base converts to exactly 80 at rate 0.8. The JPY rounding unit is
+    // apportioned to the component with the largest fractional remainder (the
+    // non-taxable add-on, exactly 2.4), not concentrated on merchandise.
+    expect(document.components[0]?.netAmount).toBe(80);
     for (const component of document.components) {
       expect(
         round(component.quantity * component.unitAmount, document.decimalPlaces)
@@ -674,5 +677,86 @@ describe("canonical invoice posting source", () => {
         })
       ).get("invoice")?.shippingRevenueAccountId
     ).toBeNull();
+  });
+});
+
+describe("document rounding residual distribution", () => {
+  function uniformLines(count: number, unitPrice: number, taxPercent: number) {
+    const lines = Array.from({ length: count }, (_, index) => ({
+      id: `l${String(index).padStart(3, "0")}`,
+      invoiceLineType: "Service",
+      itemId: "item",
+      itemCode: "SVC",
+      description: "Work",
+      quantity: 1,
+      unitPrice,
+      convertedUnitPrice: unitPrice,
+      shippingCost: 0,
+      addOnCost: 0,
+      nonTaxableAddOnCost: 0,
+      taxPercent,
+      lineAmount: unitPrice
+    }));
+    const subtotal = round(count * unitPrice);
+    const totalTax = round(subtotal * taxPercent);
+    return {
+      ...fixture(),
+      currencyCode: "USD",
+      exchangeRate: 1,
+      headerShippingCost: 0,
+      subtotal,
+      totalTax,
+      totalAmount: round(subtotal + totalTax),
+      balance: round(subtotal + totalTax),
+      lines
+    };
+  }
+
+  // Each case below concentrated its whole residual on one component before
+  // largest-remainder distribution, producing a line whose tax no percentage
+  // could reproduce. QuickBooks refuses exactly that (invoice-tax.ts), and the
+  // 30 x 0.10 case previously emitted a negative tax on positive revenue.
+  it.each([
+    [20, 1.99, 0.0825],
+    [30, 0.1, 0.0625],
+    [40, 0.07, 0.07],
+    [15, 0.5, 0.13],
+    [3, 1.2, 0.0625]
+  ])("keeps every component of %i x %d @ %d within one minor unit of its own rate", (count, unitPrice, taxPercent) => {
+    const document = build(
+      uniformLines(count, unitPrice, taxPercent) as ReturnType<typeof fixture>
+    );
+    const net = round(
+      document.components.reduce((sum, c) => sum + c.netAmount, 0),
+      document.decimalPlaces
+    );
+    const tax = round(
+      document.components.reduce((sum, c) => sum + c.taxAmount, 0),
+      document.decimalPlaces
+    );
+    expect(net).toBe(
+      round(document.totalAmount - document.totalTax, document.decimalPlaces)
+    );
+    expect(tax).toBe(document.totalTax);
+    for (const component of document.components) {
+      const implied = round(
+        component.netAmount * component.taxPercent,
+        document.decimalPlaces
+      );
+      // The exact envelope QuickBooks' `tax = net x percent` preflight uses
+      // (invoice-tax.ts), so passing here means the push is accepted.
+      expect(Math.abs(implied - component.taxAmount)).toBeLessThanOrEqual(
+        1 / 10 ** document.decimalPlaces + EPSILON
+      );
+      // A negative tax on positive revenue is silently postable in Xero.
+      if (component.taxAmount !== 0) {
+        expect(Math.sign(component.taxAmount)).toBe(
+          Math.sign(component.netAmount)
+        );
+      }
+      expect(
+        round(component.quantity * component.unitAmount, document.decimalPlaces)
+      ).toBe(component.netAmount);
+    }
   });
 });

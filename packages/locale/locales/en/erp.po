@@ -13423,6 +13423,9 @@ msgstr "Revenue account for shipping charged to customers"
 msgid "Revenue and expenses over a period"
 msgstr "Revenue and expenses over a period"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Reverse all inventory adjustments"
 
@@ -14653,6 +14656,9 @@ msgstr "Shipping Notes"
 msgid "Shipping Revenue"
 msgstr "Shipping Revenue"
 
+msgid "Shipping Revenue (default)"
+msgstr "Shipping Revenue (default)"
+
 msgid "Shipping Supplier"
 msgstr "Shipping Supplier"
 
@@ -15661,6 +15667,9 @@ msgstr "Tax Percent"
 
 msgid "Tax Residual Value %"
 msgstr "Tax Residual Value %"
+
+msgid "Tax Status"
+msgstr "Tax Status"
 
 msgid "Tax Useful Life (default)"
 msgstr "Tax Useful Life (default)"

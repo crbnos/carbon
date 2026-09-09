@@ -553,6 +553,10 @@ export const terms = {
     term: msg`Sales (default)`,
     definition: msg`Default revenue GL account credited when a sales invoice posts.`
   },
+  "account-default-sales-shipping-revenue": {
+    term: msg`Shipping Revenue (default)`,
+    definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
+  },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,
     definition: msg`Contra-revenue GL account for discounts given on customer invoices.`

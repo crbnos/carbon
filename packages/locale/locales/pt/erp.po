@@ -13423,6 +13423,9 @@ msgstr "Conta de receita de envio cobrado aos clientes"
 msgid "Revenue and expenses over a period"
 msgstr "Receita e despesas em um período"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Conta contábil de receita creditada por frete cobrado dos clientes, contabilizada em sua própria linha; deve ser uma conta diferente do padrão de Vendas."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Reverter todos os ajustes de estoque"
 
@@ -14653,6 +14656,9 @@ msgstr "Observações de envio"
 msgid "Shipping Revenue"
 msgstr "Receita de envio"
 
+msgid "Shipping Revenue (default)"
+msgstr "Receita de Frete (padrão)"
+
 msgid "Shipping Supplier"
 msgstr "Fornecedor de Envio"
 
@@ -15661,6 +15667,9 @@ msgstr "Percentual de Imposto"
 
 msgid "Tax Residual Value %"
 msgstr "% Valor residual fiscal"
+
+msgid "Tax Status"
+msgstr "Status de Imposto"
 
 msgid "Tax Useful Life (default)"
 msgstr "Vida útil fiscal (padrão)"

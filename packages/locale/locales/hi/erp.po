@@ -13423,6 +13423,9 @@ msgstr "ग्राहकों से लिए गए शिपिंग श�
 msgid "Revenue and expenses over a period"
 msgstr "एक अवधि में राजस्व और व्यय"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "ग्राहकों को चार्ज की गई शिपिंग के लिए जमा किया गया राजस्व लेजर खाता, अपनी पंक्ति पर पोस्ट किया गया; यह बिक्री डिफ़ॉल्ट से अलग खाता होना चाहिए।"
+
 msgid "Reverse all inventory adjustments"
 msgstr "सभी इन्वेंटरी समायोजन को उलट दें"
 
@@ -14653,6 +14656,9 @@ msgstr "शिपिंग नोट्स"
 msgid "Shipping Revenue"
 msgstr "शिपिंग राजस्व"
 
+msgid "Shipping Revenue (default)"
+msgstr "शिपिंग राजस्व (डिफ़ॉल्ट)"
+
 msgid "Shipping Supplier"
 msgstr "शिपिंग आपूर्तिकर्ता"
 
@@ -15661,6 +15667,9 @@ msgstr "कर प्रतिशत"
 
 msgid "Tax Residual Value %"
 msgstr "कर अवशिष्ट मूल्य %"
+
+msgid "Tax Status"
+msgstr "कर स्थिति"
 
 msgid "Tax Useful Life (default)"
 msgstr "कर उपयोगी जीवन (डिफ़ॉल्ट)"

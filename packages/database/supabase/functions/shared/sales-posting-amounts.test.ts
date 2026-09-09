@@ -359,8 +359,26 @@ Deno.test("seller matching basis converts raw base once and continues excluding 
     quantity: 100,
     unitPrice: 100,
   }];
-  assertEquals(calculateSalesIntercompanyAmount(lines, 0.8, 2), 88);
-  assertEquals(calculateSalesIntercompanyAmount(lines, 1.1, 2), 121);
+  assertEquals(calculateSalesIntercompanyAmount(lines, 0.8), 88);
+  assertEquals(calculateSalesIntercompanyAmount(lines, 1.1), 121);
+});
+
+Deno.test("seller matching basis rounds at SCALE so it can equal the buyer's half exactly", () => {
+  // generate_intercompany_matches pairs the two halves on `src.amount =
+  // tgt.amount` with no tolerance, and the buyer records its half with
+  // round() at internal SCALE. A document amount carrying sub-cent digits
+  // (100.005 x 3) must therefore survive here undisturbed — rounding it at
+  // settlement precision would store 300.02 against the buyer's 300.015 and
+  // leave the trade permanently Unmatched.
+  const lines = [{
+    invoiceLineType: "Service",
+    quantity: 3,
+    unitPrice: 100.005,
+  }];
+  const seller = calculateSalesIntercompanyAmount(lines, 1);
+  assertEquals(seller, 300.015);
+  // The buyer's half, as post-purchase-invoice computes it.
+  assertEquals(seller, round(3 * 100.005));
 });
 
 Deno.test("actual multiline charge rows feed complete IC control and shipping revenue capture", () => {

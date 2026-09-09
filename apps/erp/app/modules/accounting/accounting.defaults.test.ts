@@ -51,7 +51,7 @@ vi.mock("~/modules/accounting", async () => ({
 
 import {
   getDefaultAccounts,
-  updateDefaultIncomeAccounts
+  updateDefaultAccounts
 } from "./accounting.ee.service";
 import {
   defaultAccountValidator,
@@ -64,8 +64,11 @@ const income = Object.fromEntries(
     `${key}-id`
   ])
 );
+const allAccounts = Object.fromEntries(
+  Object.keys(defaultAccountValidator.shape).map((key) => [key, `${key}-id`])
+);
 const defaults = {
-  ...income,
+  ...allAccounts,
   companyId: "company",
   salesAccount: "sales",
   salesShippingRevenueAccount: "shipping"
@@ -79,10 +82,7 @@ const shipping = {
   incomeBalance: "Income Statement"
 };
 
-function database(
-  account = shipping,
-  writeError: { message: string } | null = null
-) {
+function database(account = shipping) {
   const rows: Record<string, Record<string, unknown>[]> = {
     company: [{ id: "company", companyGroupId: "group" }],
     accountDefault: [{ ...defaults }],
@@ -99,8 +99,6 @@ function database(
         );
         if (values) {
           writes(table, values);
-          if (writeError && "receivablesAccount" in values)
-            return { data: null, error: writeError };
           for (const row of matched) Object.assign(row, values);
         }
         return { data: values ? null : (matched[0] ?? null), error: null };
@@ -128,8 +126,8 @@ function database(
 
 function payload(overrides: Record<string, string> = {}) {
   return {
-    ...defaultIncomeAcountValidator.parse({
-      ...income,
+    ...defaultAccountValidator.parse({
+      ...allAccounts,
       salesAccount: "sales",
       ...overrides
     }),
@@ -179,13 +177,13 @@ describe("shipping revenue defaults", () => {
   });
 
   it("accepts an older payload without shipping and preserves the stored mapping", async () => {
-    const { salesShippingRevenueAccount: _, ...older } = income;
-    const parsed = defaultIncomeAcountValidator.parse({
+    const { salesShippingRevenueAccount: _, ...older } = allAccounts;
+    const parsed = defaultAccountValidator.parse({
       ...older,
       salesAccount: "sales"
     });
     const { client, writes } = database();
-    const result = await updateDefaultIncomeAccounts(client, {
+    const result = await updateDefaultAccounts(client, {
       ...parsed,
       companyId: "company",
       updatedBy: "user"
@@ -200,7 +198,7 @@ describe("shipping revenue defaults", () => {
 
   it("saves and reloads a valid account selected from the company group", async () => {
     const { client } = database({ ...shipping, id: "custom-shipping" });
-    const result = await updateDefaultIncomeAccounts(
+    const result = await updateDefaultAccounts(
       client,
       payload({ salesShippingRevenueAccount: "custom-shipping" })
     );
@@ -223,7 +221,7 @@ describe("shipping revenue defaults", () => {
       ...shipping,
       ...(invalid as object)
     });
-    const result = await updateDefaultIncomeAccounts(
+    const result = await updateDefaultAccounts(
       client,
       payload({ salesShippingRevenueAccount: "shipping" })
     );
@@ -233,9 +231,9 @@ describe("shipping revenue defaults", () => {
 
   it("rejects the effective Sales account even when shipping was omitted", async () => {
     const { client, writes } = database();
-    const { salesShippingRevenueAccount: _, ...older } = income;
-    const result = await updateDefaultIncomeAccounts(client, {
-      ...defaultIncomeAcountValidator.parse({
+    const { salesShippingRevenueAccount: _, ...older } = allAccounts;
+    const result = await updateDefaultAccounts(client, {
+      ...defaultAccountValidator.parse({
         ...older,
         salesAccount: "shipping"
       }),
@@ -248,7 +246,7 @@ describe("shipping revenue defaults", () => {
 
   it("refuses an unknown company without writing another company's defaults", async () => {
     const { client, writes } = database();
-    const result = await updateDefaultIncomeAccounts(client, {
+    const result = await updateDefaultAccounts(client, {
       ...payload({ salesShippingRevenueAccount: "shipping" }),
       companyId: "other"
     });
@@ -295,12 +293,11 @@ describe("combined defaults action", () => {
     );
   });
 
-  it("leaves both sections unchanged when a balance mapping is rejected", async () => {
-    const { client, rows } = database(shipping, {
-      message: "Invalid receivables account"
-    });
+  it("leaves both sections unchanged when the mapping is rejected", async () => {
+    const { client, writes, rows } = database({ ...shipping, active: false });
     const original = structuredClone(rows.accountDefault);
     await submit(client);
+    expect(writes).not.toHaveBeenCalled();
     expect(rows.accountDefault).toEqual(original);
   });
 

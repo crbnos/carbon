@@ -13423,6 +13423,9 @@ msgstr "Conto ricavi per la spedizione addebitata ai clienti"
 msgid "Revenue and expenses over a period"
 msgstr "Ricavi e spese in un periodo"
 
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Conto contabile ricavi accreditato per le spese di spedizione addebitate ai clienti, registrato su una riga separata; deve essere un conto diverso dal default di Vendite."
+
 msgid "Reverse all inventory adjustments"
 msgstr "Inverti tutte le rettifiche di magazzino"
 
@@ -14653,6 +14656,9 @@ msgstr "Note di spedizione"
 msgid "Shipping Revenue"
 msgstr "Ricavi da spedizioni"
 
+msgid "Shipping Revenue (default)"
+msgstr "Ricavi di Spedizione (predefinito)"
+
 msgid "Shipping Supplier"
 msgstr "Fornitore di spedizione"
 
@@ -15661,6 +15667,9 @@ msgstr "Percentuale Imposta"
 
 msgid "Tax Residual Value %"
 msgstr "Valore residuo fiscale %"
+
+msgid "Tax Status"
+msgstr "Stato dell'Imposta"
 
 msgid "Tax Useful Life (default)"
 msgstr "Vita utile fiscale (impostazione predefinita)"

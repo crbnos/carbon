@@ -9,6 +9,25 @@ ALTER TABLE "invoiceSettlement"
   ALTER COLUMN "fxGainLossAmount" DROP EXPRESSION IF EXISTS;
 ALTER TABLE "invoiceSettlement"
   ALTER COLUMN "fxGainLossAmount" SET DEFAULT 0;
+-- The dropped expression could never yield NULL (all three of its inputs are
+-- NOT NULL), so the column stays NOT NULL now that writers supply it. Without
+-- this the generated Insert type admits null, and every reader sums the column
+-- bare -- SUM("appliedAmount" + "fxGainLossAmount") -- so one null row would
+-- erase that settlement's principal from the tie-outs and the aging reports.
+DO $fx_gain_loss_not_null$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_attribute
+    WHERE attrelid = '"invoiceSettlement"'::regclass
+      AND attname = 'fxGainLossAmount'
+      AND attnum > 0 AND NOT attisdropped AND NOT attnotnull
+  ) THEN
+    UPDATE "invoiceSettlement" SET "fxGainLossAmount" = 0
+      WHERE "fxGainLossAmount" IS NULL;
+    ALTER TABLE "invoiceSettlement" ALTER COLUMN "fxGainLossAmount" SET NOT NULL;
+  END IF;
+END;
+$fx_gain_loss_not_null$;
 ALTER TABLE "invoiceSettlement"
   DROP CONSTRAINT IF EXISTS "invoiceSettlement_anyComponent_check";
 ALTER TABLE "invoiceSettlement"

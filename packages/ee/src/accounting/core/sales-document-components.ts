@@ -1,10 +1,11 @@
 import {
   allocateSalesHeaderShipping,
+  assertExchangeRate,
   calculateSalesPostingAmounts,
+  distributeRoundingResidual,
   EPSILON,
   round,
   SCALE,
-  toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
 import type { Accounting } from "./types";
@@ -61,7 +62,7 @@ export function buildSalesDocumentComponents(
   precision(source.baseCurrencyDecimalPlaces);
   const decimals = source.currencyDecimalPlaces;
   const rate = source.exchangeRate;
-  toBaseAmount(0, rate);
+  assertExchangeRate(rate);
   if (source.currencyCode === source.baseCurrencyCode && rate !== 1) {
     throw new Error("Base-currency invoices require an identity exchange rate");
   }
@@ -205,61 +206,74 @@ export function buildSalesDocumentComponents(
   // The rounded authoritative gross and native tax define the document net.
   // Any one-unit net difference is allocated to an existing component below.
   const subtotal = round(totalAmount - totalTax, decimals);
+  // Rounding each component independently leaves a residual of up to half a
+  // minor unit per component. Spread it one unit at a time (largest remainder)
+  // rather than concentrating it: a component that absorbs the whole residual
+  // stops matching its own taxPercent, and providers that re-derive
+  // `tax = net × percent` reject the document outright.
   const reconcileDocument = (
     key: "netAmount" | "taxAmount",
+    baseKey: "baseNet" | "baseTax",
     target: number
   ) => {
-    const residual = round(
-      target - raw.reduce((sum, row) => sum + row.component[key], 0),
-      decimals
-    );
-    if (residual === 0) return;
-    const envelope =
-      (raw.length + 2) / (2 * 10 ** decimals) + sourceEnvelope * rate;
-    if (Math.abs(residual) > envelope) {
-      throw new Error(`Invoice ${key} exceeds its document rounding envelope`);
-    }
-    const baseKey = key === "netAmount" ? "baseNet" : "baseTax";
-    const recipient = raw
+    // A component with no basis on this axis must stay at zero — a zero-rated
+    // line carrying tax is itself a provider refusal. Order by component id so
+    // an exact tie resolves the same way whatever order the lines arrived in;
+    // the distributor's own tie-break is positional.
+    const participants = raw
       .filter((row) => row[baseKey] !== 0)
-      .sort(
-        (a, b) =>
-          Math.abs(b[baseKey]) - Math.abs(a[baseKey]) ||
-          a.component.id.localeCompare(b.component.id)
-      )[0];
-    if (!recipient)
-      throw new Error(
-        `Invoice ${key} has no source component for its rounding residual`
-      );
-    recipient.component[key] = round(
-      recipient.component[key] + residual,
+      .sort((a, b) => a.component.id.localeCompare(b.component.id));
+    if (participants.length === 0) {
+      if (round(target, decimals) !== 0) {
+        throw new Error(
+          `Invoice ${key} has no source component for its rounding residual`
+        );
+      }
+      return;
+    }
+    const allocated = distributeRoundingResidual(
+      participants.map((row) =>
+        finite(row[baseKey] * rate, `Component document ${key}`)
+      ),
+      target,
       decimals
     );
-    const component = recipient.component;
-    if (
-      key === "netAmount" &&
-      round(component.unitAmount * component.quantity, decimals) !==
-        component.netAmount
-    ) {
-      // Providers can recompute the extended net from quantity and unit price.
-      // Keep the source mirror unless this bounded document residual moved it;
-      // a unit price remains a rate, so do not round it to settlement decimals.
-      component.unitAmount = finite(
-        component.netAmount / component.quantity,
-        "Reconciled document unit price"
-      );
-    }
+    participants.forEach((row, index) => {
+      row.component[key] = allocated[index]!;
+    });
   };
-  reconcileDocument("netAmount", subtotal);
-  reconcileDocument("taxAmount", totalTax);
+  reconcileDocument("netAmount", "baseNet", subtotal);
+  reconcileDocument("taxAmount", "baseTax", totalTax);
   for (const { component } of raw) {
+    // Providers recompute the extended net from quantity × unit price, so the
+    // unit price has to reproduce the reconciled net. The stored
+    // `convertedUnitPrice` mirror and the converted extension are rounded on two
+    // independent float paths and can straddle a half-unit tie, so derive rather
+    // than refuse. A unit price is a rate: it keeps storage scale, not
+    // settlement decimals.
     if (
       round(component.quantity * component.unitAmount, decimals) !==
       component.netAmount
     ) {
-      throw new Error(
-        `Invoice component ${component.id} unit price does not reconcile with its document net`
+      component.unitAmount = round(
+        finite(
+          component.netAmount / component.quantity,
+          "Reconciled document unit price"
+        ),
+        SCALE
       );
+      // Deriving cannot always converge: past roughly 10^SCALE units, one step
+      // of the unit price moves the extension by more than a minor unit, so no
+      // representable price reproduces the net. That is a real contradiction
+      // between the stored quantity and the document total — refuse it.
+      if (
+        round(component.quantity * component.unitAmount, decimals) !==
+        component.netAmount
+      ) {
+        throw new Error(
+          `Invoice component ${component.id} unit price does not reconcile with its document net`
+        );
+      }
     }
   }
   return {

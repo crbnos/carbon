@@ -1374,3 +1374,23 @@ full-screen ERP route.
 - **Problem:** Summing control magnitudes invented FX; recovering document units from rounded base lost valid minor-unit balances; current defaults rewrote original account provenance.
 - **Rule:** Sum signed original control amounts, preserve exact document principal independently of carrying base, and identify original journal roles through the shared exhaustive vocabulary (including intercompany roles). Reject unknown effective principal rather than infer it; retain Draft reservation policy separately from Posted effectiveness.
 - **Applies to:** Invoice/payment/memo posting, open-balance readers, and accounting provider replay.
+
+## Apportion a document total, never concentrate its rounding residual
+
+**Context:** Sales invoices push to QuickBooks/Xero/Rillet as components (merchandise, add-ons, line shipping, header shipping), each rounded at the document currency's precision, and the sum must equal the authoritative document total.
+
+**Problem:** Rounding N components independently leaves a residual of up to N/2 minor units. Assigning that whole residual to one component broke that component's own percent/amount pair — a 20 x $1.99 @ 8.25% invoice gave one line $0.24 tax on $1.99 net (12.06% against a stated 8.25%). QuickBooks re-derives `round(net x percent)` within one minor unit and refused the invoice with `UNMAPPED_TAX_CODES`, a message blaming the customer's QuickBooks configuration, which they cannot act on. A randomised sweep put this at 1.6% of invoices; some cases produced a negative tax on positive revenue, which Xero accepts and posts.
+
+**Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
+
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, and any future provider document mapper.
+
+## Two halves of an intercompany trade must round at the same scale
+
+**Context:** `post-sales-invoice` and `post-purchase-invoice` each write an `intercompanyTransaction` row, and `generate_intercompany_matches` pairs them with `src."amount" = tgt."amount"` — exact NUMERIC equality, no tolerance.
+
+**Problem:** The seller began rounding its half at the document currency's settlement precision (2dp) while the buyer kept internal `SCALE` (5dp). A trade of 3 x 100.005 stored 300.02 against 300.015, so the pair sat `Unmatched` forever and eliminations silently never ran — consolidated income kept the intragroup profit, with no error anywhere.
+
+**Rule:** An amount used as a MATCHING KEY is not a settlement amount. Round both halves at internal `SCALE`. Before changing rounding anywhere, check whether the value is compared for equality by something else — a matcher, a tie-out, or a reconciliation — and change both sides together.
+
+**Applies to:** `calculateSalesIntercompanyAmount`, `post-purchase-invoice`'s IC amount, `generate_intercompany_matches`.

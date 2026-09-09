@@ -70,6 +70,8 @@ function makePushDb(opts: {
   payment?: PaymentRow;
   settlements?: SettlementRow[];
   linkSink: Array<Record<string, unknown>>;
+  /** `currency.decimalPlaces` of the payment currency (USD unless overridden). */
+  currencyDecimals?: number;
 }) {
   const selectChain = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
@@ -90,6 +92,11 @@ function makePushDb(opts: {
         return selectChain(opts.payment ? [opts.payment] : []);
       }
       if (t === "invoiceSettlement") return selectChain(opts.settlements ?? []);
+      // The settlement scale is read from the company's group-scoped currency
+      // row — the same authoritative source the bill syncer uses.
+      if (t === "company") return selectChain([{ companyGroupId: "group-1" }]);
+      if (t === "currency")
+        return selectChain([{ decimalPlaces: opts.currencyDecimals ?? 2 }]);
       return selectChain([]);
     },
     transaction: () => ({
@@ -344,6 +351,53 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     expect(txLinkSink[1]).toMatchObject({
       entityId: "pay_1:pinv-2",
       externalId: "bill:bill-remote-1:rillet-pay-2"
+    });
+  });
+
+  it("serializes a 0-decimal currency (JPY) at its own scale, not at cents", async () => {
+    // JPY settles at 0 decimals: ¥1000 is "1000". Serializing it as "1000.00"
+    // claims a precision the currency does not have.
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, currencyCode: "JPY", totalAmount: 1000 },
+        settlements: [
+          { ...apSettlement, appliedAmount: 1000, sourceAmount: 1000 }
+        ],
+        linkSink: [],
+        currencyDecimals: 0
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "1000", currency: "JPY" }
+    });
+  });
+
+  it("serializes a 3-decimal currency (BHD) without losing its third decimal", async () => {
+    // BHD settles at 3 decimals (1000 fils): 0.563 must survive the wire.
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, currencyCode: "BHD", totalAmount: 0.563 },
+        settlements: [
+          { ...apSettlement, appliedAmount: 0.563, sourceAmount: 0.563 }
+        ],
+        linkSink: [],
+        currencyDecimals: 3
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "0.563", currency: "BHD" }
     });
   });
 
