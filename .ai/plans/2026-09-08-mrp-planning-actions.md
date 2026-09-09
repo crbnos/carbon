@@ -1,0 +1,465 @@
+# MRP Planning Actions (Phase 1) — implementation plan
+
+**Spec:** .ai/specs/2026-08-22-mrp-v2-planned-order-generation.md (§P1 — Phase 1)
+**Research:** .ai/research/mrp-planning-actions.md
+**Run record:** .ai/runs/2026-09-08-mrp-planning-actions.md
+**Branch:** mrp-action-suggestions
+
+Scope = **Phase 1 only**: emit and persist assignable, dismissible planning actions
+(`Order | Make | Expedite | Defer | Cancel | Increase | Decrease`) on a focused
+`planningAction` table, routed to a responsible buyer/planner via an inheritance ladder,
+worked from the two existing planning pages. **Everything in Phases 2+ of the spec
+(plannedOrder cascade + Planned→Firm→Released lifecycle, pegging, continuous regen,
+rough-cut capacity, what-if/CTP, programmable release, §9 calm-by-default) is OUT OF
+SCOPE.** If a task seems to require any of those, STOP and report — do not build them.
+
+## Progress
+- [ ] Task 1: Migration — `planningAction` table, enums, ladder columns, tolerance, RLS
+- [ ] Task 2: `pnpm run generate:types`
+- [ ] Task 3: Shared pure reorder-sizing module (port `calculateOrders`) + parity test
+- [ ] Task 4: Zod models + derived types for `planningAction`
+- [ ] Task 5: `responsibleEmployee` ladder resolver (pure fn + bulk query)
+- [ ] Task 6: `generatePlanningActions` engine step (diff-write) + wire into `runMrp`
+- [ ] Task 7: Read + mutation services (`getPlanningActions`, dismiss, assign, mark-actioned)
+- [ ] Task 8: Apply-action route handling (extend `planning.update` + commitment gate)
+- [ ] Task 9: `responsibleEmployee` field on the item Planning tab (all 4 item types)
+- [ ] Task 10: Ownership settings screen (clone printer `AssignmentsCard`)
+- [ ] Task 11: Worklist columns + "my actions" filter + bulk apply/assign/dismiss on both planning pages
+- [ ] Task 12: Browser verification via /test (satellite dataset)
+
+## Dependencies
+- Task 2 needs Task 1. Tasks 3, 4, 5 need Task 2 (types). Task 6 needs 3+4+5.
+  Task 7 needs 4. Task 8 needs 4+7. Tasks 9 and 10 need 1+2 (independent of each other).
+  Task 11 needs 6+7+8. Task 12 needs everything.
+- Tasks 3, 4, 5 are independent of each other and may run in parallel after Task 2.
+- Tasks 9 and 10 are independent and may run in parallel after Task 2.
+
+---
+
+## Task 1: Migration — `planningAction` table, enums, ladder columns, tolerance, RLS
+
+**Depends on:** none
+**Files:**
+- Create: `packages/database/supabase/migrations/{generated}_mrp-planning-actions.sql`
+- Copy from (precedent): `packages/database/supabase/migrations/20260820215433_sso-connection.sql` (idempotent `CREATE TYPE` guard + composite-PK table + full four-policy RLS); `packages/database/supabase/migrations/20260120171236_process-active-column.sql` (ALTER ADD COLUMN pattern)
+
+**Steps:**
+1. Create the file: `pnpm db:migrate:new mrp-planning-actions` (never hand-pick the timestamp; never `000000` HHMMSS).
+2. Create the two enums idempotently (per the sso precedent's `DO $$ ... EXCEPTION WHEN duplicate_object THEN NULL; END $$;` guard):
+   ```sql
+   DO $$ BEGIN
+     CREATE TYPE "planningActionType" AS ENUM
+       ('Order', 'Make', 'Expedite', 'Defer', 'Cancel', 'Increase', 'Decrease');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+   DO $$ BEGIN
+     CREATE TYPE "planningActionStatus" AS ENUM ('Open', 'Dismissed', 'Actioned');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+   ```
+3. Create the table exactly as spec §P1.2 specifies (bare `NUMERIC`, no precision spec; audit columns; composite PK). Use `CREATE TABLE IF NOT EXISTS`:
+   ```sql
+   CREATE TABLE IF NOT EXISTS "planningAction" (
+       "id" TEXT NOT NULL DEFAULT id('pla'),
+       "companyId" TEXT NOT NULL,
+       "itemId" TEXT NOT NULL,
+       "locationId" TEXT NOT NULL,
+       "periodId" TEXT NOT NULL,
+       "type" "planningActionType" NOT NULL,
+       "status" "planningActionStatus" NOT NULL DEFAULT 'Open',
+       "suggestedQuantity" NUMERIC NOT NULL,
+       "suggestedDate" DATE NOT NULL,
+       "isASAP" BOOLEAN NOT NULL DEFAULT false,
+       "purchaseOrderLineId" TEXT,
+       "jobId" TEXT,
+       "requiresManualAction" BOOLEAN NOT NULL DEFAULT false,
+       "supplierId" TEXT,
+       "policyName" TEXT,
+       "reason" TEXT,
+       "triggerValues" JSONB,
+       "assignee" TEXT REFERENCES "user"("id"),
+       "assigneeOverridden" BOOLEAN NOT NULL DEFAULT false,
+       "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+       "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+       "updatedBy" TEXT REFERENCES "user"("id"),
+       "updatedAt" TIMESTAMP WITH TIME ZONE,
+       PRIMARY KEY ("id", "companyId"),
+       FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+       CONSTRAINT "planningAction_change_target_chk" CHECK (
+         ("type" IN ('Order','Make') AND "purchaseOrderLineId" IS NULL AND "jobId" IS NULL)
+         OR ("type" NOT IN ('Order','Make') AND (("purchaseOrderLineId" IS NOT NULL)::int + ("jobId" IS NOT NULL)::int) = 1)
+       )
+   );
+   ```
+4. Indexes (companyId, assignee, item+loc, status) and the partial-unique natural key, exactly as spec §P1.2:
+   ```sql
+   CREATE INDEX IF NOT EXISTS "planningAction_companyId_idx" ON "planningAction" ("companyId");
+   CREATE INDEX IF NOT EXISTS "planningAction_assignee_idx"  ON "planningAction" ("companyId", "assignee");
+   CREATE INDEX IF NOT EXISTS "planningAction_item_loc_idx"  ON "planningAction" ("companyId", "itemId", "locationId");
+   CREATE INDEX IF NOT EXISTS "planningAction_status_idx"    ON "planningAction" ("companyId", "status");
+   CREATE INDEX IF NOT EXISTS "planningAction_createdBy_idx" ON "planningAction" ("createdBy");
+   CREATE UNIQUE INDEX IF NOT EXISTS "planningAction_natural_key_idx" ON "planningAction"
+     ("companyId", "itemId", "locationId", "type", "periodId",
+      COALESCE("purchaseOrderLineId", "jobId", ''))
+     WHERE "status" <> 'Actioned';
+   ```
+5. RLS: enable + four policies. SELECT = any employee; writes = purchasing OR production update (a buyer or planner may dismiss/assign/apply). The engine writes as service-role and bypasses RLS.
+   ```sql
+   ALTER TABLE "public"."planningAction" ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "SELECT" ON "public"."planningAction" FOR SELECT USING (
+     "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
+   );
+   CREATE POLICY "INSERT" ON "public"."planningAction" FOR INSERT WITH CHECK (
+     "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[])
+     OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
+   );
+   CREATE POLICY "UPDATE" ON "public"."planningAction" FOR UPDATE USING (
+     "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[])
+     OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
+   );
+   CREATE POLICY "DELETE" ON "public"."planningAction" FOR DELETE USING (
+     "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[])
+     OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
+   );
+   ```
+6. Ladder columns + tolerance (idempotent `ADD COLUMN IF NOT EXISTS`). **No view recreation is required** — verified: no `SELECT *` view selects from `location`/`itemPlanning`/`itemPostingGroup` (they appear only in RPC functions selecting explicit columns).
+   ```sql
+   ALTER TABLE "itemPlanning"     ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "itemPostingGroup" ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "location"         ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "companySettings"  ADD COLUMN IF NOT EXISTS "defaultResponsibleEmployee" TEXT REFERENCES "user"("id");
+   ALTER TABLE "companySettings"  ADD COLUMN IF NOT EXISTS "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
+   ```
+7. Apply locally: `pnpm db:migrate`.
+
+**Verify:**
+```bash
+pnpm db:migrate
+# Expected: migration applies cleanly, no errors; regenerates types + swagger.
+```
+If `pnpm db:migrate` fails because the local stack/DB is not up, STOP and report — do not hand-edit the DB or skip the migration.
+
+**Out of scope:** the Phase-2 `plannedOrder`/`plannedOrderPeg`/`planningRun`/`planningState` tables, the `planningTimeFenceDays` columns, and any `companySettings` automation columns — do NOT create them.
+
+---
+
+## Task 2: Regenerate DB types
+
+**Depends on:** Task 1
+**Files:**
+- Modify: `packages/database/src/types.ts` (generated — never hand-edit)
+
+**Steps:**
+1. Run `pnpm run generate:types`.
+2. Commit the regenerated `types.ts` (types regen is normal — do not use casts to avoid it).
+
+**Verify:**
+```bash
+pnpm run generate:types && grep -c "planningAction" packages/database/src/types.ts
+# Expected: generate:types exits 0; grep count > 0 (the table + enums are present).
+```
+
+**Out of scope:** editing generated types by hand.
+
+---
+
+## Task 3: Shared pure reorder-sizing module + parity test
+
+**Depends on:** Task 2
+**Files:**
+- Create: `packages/utils/src/planning-sizing.ts` — pure `computePlanningOrders(input): PlanningOrder[]`
+- Create: `packages/utils/src/planning-sizing.test.ts`
+- Modify: `packages/utils/src/index.ts` — export the new module
+- Modify: `apps/erp/app/modules/items/ui/Item/ItemReorderPolicy.tsx` — refactor `calculateOrders` to delegate to the shared fn
+- Copy from (precedent): the branch logic in `apps/erp/app/modules/items/ui/Item/ItemReorderPolicy.tsx:108-490` (`calculateOrders`) and the SQL `calculate_quantity_to_order` in `packages/database/supabase/migrations/20260324120000_planning-quantity-to-order.sql`
+
+**Steps:**
+1. Port `calculateOrders` (the four policy branches — `Manual Reorder`→[], `Demand-Based Reorder`, `Fixed Reorder Quantity`, `Maximum Quantity` — plus min/max OQ, `orderMultiple`, `lotSize`, lot-size splitting, ASAP detection) into a **pure, dependency-free** function in `@carbon/utils`. It must NOT import React or any app code. Signature:
+   ```ts
+   export function computePlanningOrders(input: {
+     reorderingPolicy: string;
+     periods: { id: string; startDate: string }[];
+     projections: number[];              // per-period projected on-hand (week1..weekN), same order as periods
+     params: {
+       reorderPoint: number; reorderQuantity: number;
+       minimumOrderQuantity: number; maximumOrderQuantity: number;
+       orderMultiple: number; lotSize: number;
+       maximumInventoryQuantity: number;
+       demandAccumulationPeriod: number; demandAccumulationSafetyStock: number;
+       leadTime: number;
+     };
+   }): {
+     periodId: string; startDate: string; dueDate: string; quantity: number;
+     isASAP: boolean; policyName: string;
+     triggerValues: { projectedStock?: number; safetyStock?: number; reorderPoint?: number; reorderQuantity?: number; lotSize?: number; leadTime?: number };
+   }[]
+   ```
+   Use `@internationalized/date` + `@carbon/utils` `formatDate` helpers for all date math — never JS `Date`. Use the numeric-precision helpers (`round(x, 0, Up)` for whole-unit ceils) — no raw `Math.ceil`/`toFixed` on value-bearing numbers (the `no-raw-rounding` check).
+2. Refactor the client `calculateOrders` in `ItemReorderPolicy.tsx` to call `computePlanningOrders` (keep the supersession "Stock Only" branch and the client-side `ordersCache` where they are; only the four-policy math moves). The client output shape (which includes `dueDate`/`startDate`) must be preserved.
+3. Write `planning-sizing.test.ts` with: (a) one fixture per policy asserting the exact orders, and (b) a **parity block** — for a fixture matrix of inputs, assert `computePlanningOrders(...)` total per item equals the SQL `calculate_quantity_to_order` result computed by hand from the same inputs (encode the expected SQL scalar as literals in the test; do not call the DB).
+
+**Verify:**
+```bash
+pnpm --filter @carbon/utils test
+pnpm exec turbo run typecheck --filter=@carbon/utils --filter=erp
+# Expected: sizing tests pass (per-policy + parity); both packages typecheck clean.
+```
+If the ported math diverges from `calculateOrders` in any policy branch (parity fails), STOP and report — do not "adjust" the numbers to make the test pass.
+
+**Out of scope:** Period-of-Supply (POQ) — a Phase-2 fifth policy; do NOT add it. Changing the SQL `calculate_quantity_to_order`.
+
+---
+
+## Task 4: Zod models + derived types for `planningAction`
+
+**Depends on:** Task 2
+**Files:**
+- Modify: `apps/erp/app/modules/production/production.models.ts` — add `planningActionType`/`planningActionStatus` string-tuple constants + `planningActionValidator` (for mutations) and any filter enums
+- Modify: `apps/erp/app/modules/production/types.ts` — derived `PlanningAction` type
+- Copy from (precedent): `apps/erp/app/modules/purchasing/purchasing.models.ts` (validator style, `zfd` usage) and the enum-tuple pattern used for `purchaseOrderStatusType`
+
+**Steps:**
+1. Add exported string tuples mirroring the DB enums:
+   ```ts
+   export const planningActionType = ["Order","Make","Expedite","Defer","Cancel","Increase","Decrease"] as const;
+   export const planningActionStatus = ["Open","Dismissed","Actioned"] as const;
+   ```
+2. Add `planningActionDismissValidator` / `planningActionAssignValidator` (fields: `id`, and for assign `assignee`) using `zfd`. (Apply-action reuses the existing planning.update payload — see Task 8 — so no new validator for apply.)
+3. Add the derived read type `PlanningAction` in `production/types.ts` as `NonNullable<Awaited<ReturnType<typeof getPlanningActions>>["data"]>[number]` (wire once Task 7 exists).
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: clean typecheck.
+```
+
+**Out of scope:** models for any Phase-2 entity.
+
+---
+
+## Task 5: `responsibleEmployee` ladder resolver
+
+**Depends on:** Task 2
+**Files:**
+- Create: `packages/ee/src/planning/mrp/responsible-employee.ts` — pure resolver + a bulk-load query helper
+- Create: `packages/ee/src/planning/mrp/responsible-employee.test.ts`
+- Modify: `packages/ee/src/planning/index.ts` — export the resolver if needed by callers
+
+**Steps:**
+1. Pure resolver:
+   ```ts
+   export function resolveResponsibleEmployee(rungs: {
+     item: string | null;        // itemPlanning.responsibleEmployee for (itemId, locationId)
+     itemGroup: string | null;   // itemPostingGroup.responsibleEmployee via itemCost.itemPostingGroupId
+     location: string | null;    // location.responsibleEmployee
+     company: string | null;     // companySettings.defaultResponsibleEmployee
+   }): string | null {
+     return rungs.item ?? rungs.itemGroup ?? rungs.location ?? rungs.company ?? null;
+   }
+   ```
+2. Bulk-load helper (Kysely) that, for a company, returns per-(itemId, locationId) the four rung values: join `item` → `itemCost` (`itemPostingGroupId`) → `itemPostingGroup`, plus `itemPlanning` (by itemId+locationId), `location`, and the single `companySettings` row. Return a `Map<string, string|null>` keyed `itemId·locationId` of the resolved employee. One query per run — never per-item (no N+1).
+3. Unit test the resolver: item wins over group wins over location wins over company; all null → null.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/ee test
+# Expected: resolver precedence tests pass.
+```
+
+**Out of scope:** any (location × item-group) matrix — it is a single-value ladder per rung.
+
+---
+
+## Task 6: `generatePlanningActions` engine step + wire into `runMrp`
+
+**Depends on:** Tasks 3, 4, 5
+**Files:**
+- Create: `packages/ee/src/planning/mrp/planning-actions.ts` — `generatePlanningActions(client, db, { companyId, userId })`
+- Create: `packages/ee/src/planning/mrp/planning-actions.test.ts`
+- Modify: `packages/ee/src/planning/mrp/mrp.ts` — call `generatePlanningActions` after the Phase-7 transaction commits (`mrp.ts:937` block)
+- Copy from (precedent): the batched-write + Kysely-transaction style already in `mrp.ts` (Phase 7, `BATCH_SIZE = 500`); the RPC read style in `apps/erp/app/modules/purchasing/purchasing.service.ts:460` (`getPurchasingPlanning`)
+
+**Steps:**
+1. `generatePlanningActions` runs **after** `runMrp`'s forecast/actual transaction commits (so the planning RPCs read fresh data). For each location:
+   - Get/create periods (reuse the same period helper the planning routes use).
+   - Call the RPCs `get_purchasing_planning` and `get_production_planning` (via `client.rpc(...)`) → per-item rows with `reorderingPolicy`, reorder params, `week1..weekN` projections, `quantityToOrder`, `preferredSupplierId`, `suppliers`.
+   - **Order/Make actions:** run `computePlanningOrders` (Task 3) per item from its projections+params → dated suggestions. Buy items (`replenishmentSystem != 'Make'`) → `Order` (+ `supplierId` = preferred); Make items → `Make`. Carry `policyName`/`triggerValues`/`isASAP`.
+   - **Change actions:** query the `openPurchaseOrderLines` and `openProductionOrders` views for the company/location. Per (itemId, locationId), match open orders to net requirements greedily by date:
+     - an open order whose matched requirement date is earlier than its own date by > `rescheduleToleranceDays` → **Expedite** (`suggestedDate` = requirement date, target = the PO line / job);
+     - later by > tolerance → **Defer**;
+     - open order quantity < requirement (after order-multiple rounding) → **Increase**; > requirement → **Decrease**;
+     - open order with no remaining requirement → **Cancel**.
+     - Set `requiresManualAction`: for a PO line, true when `isPurchaseOrderLocked(status)` / `orderDate IS NOT NULL` (`purchasing.models.ts` `PURCHASE_ORDER_LOCKED_STATUSES`); for a job, true when `status = 'Ready'` or later (`ACTIVE_JOB_STATUSES` beyond Planned — treat `Ready`/`In Progress`/`Paused` as committed).
+   - Resolve `assignee` via the Task 5 bulk resolver.
+2. **Diff-write** in a Kysely transaction on the natural key `(companyId, itemId, locationId, type, periodId, COALESCE(poLineId, jobId, ''))`:
+   - matched `Open` row → UPDATE in place (suggested qty/date/reason/isASAP/requiresManualAction refreshed; `assignee` re-resolved ONLY when `assigneeOverridden = false`; bump `updatedAt`/`updatedBy` only on real change);
+   - matched `Dismissed` row → leave dismissed UNLESS suggestion changed materially (qty beyond order-multiple rounding, or date beyond `rescheduleToleranceDays`) → set back to `Open`;
+   - `Open` row with no matching computed action → delete;
+   - `Actioned` rows → ignore (excluded by the partial-unique predicate).
+   - Batch 500/statement.
+3. Wire into `runMrp` (`mrp.ts`): after the existing `db.transaction().execute(...)` at line 937 returns, call `await generatePlanningActions(client, db, { companyId, userId })` inside a try/catch that logs and swallows (forecast/actuals are already committed; actions regenerate next run). `userId` is the payload's `userId`.
+4. Test `planning-actions.test.ts`: (a) an item short of coverage with no open order → one `Order`/`Make`; (b) an open PO due > tolerance late → `Expedite` referencing the PO line; (c) date mismatch within tolerance → no change action; (d) two consecutive runs on identical inputs → identical rows (diff-write idempotency); (e) a `Dismissed` row survives an unchanged run; (f) a locked/sent PO → `requiresManualAction = true`. Use injected fixtures / a test DB per the package's existing test setup.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/ee test
+pnpm exec turbo run typecheck --filter=@carbon/ee
+# Expected: generation + diff-write + idempotency tests pass; clean typecheck.
+```
+If the open-order-to-requirement matching cannot be made deterministic from the available data (no pegging exists in Phase 1), use the documented greedy date-match heuristic above and note its limits in a code comment — do NOT introduce a `plannedOrderPeg` table (Phase 2).
+
+**Out of scope:** removing the `supplyForecast` delete (Phase 2); any planned-order cascade; capacity/what-if.
+
+---
+
+## Task 7: `planningAction` read + mutation services
+
+**Depends on:** Task 4
+**Files:**
+- Modify: `apps/erp/app/modules/production/production.service.ts` — `getPlanningActions`, `dismissPlanningAction`, `markPlanningActionActioned`
+- Modify: `apps/erp/app/modules/production/production.models.ts` — (validators from Task 4)
+- Copy from (precedent): `getPurchasingPlanning` (`purchasing.service.ts:460`) for the `GenericQueryFilters` + `client.from(...)`/`client.rpc(...)` shape; `assign()` in `apps/erp/app/modules/shared/shared.server.ts` for assignment
+
+**Steps:**
+1. `getPlanningActions(client, { companyId, locationId, replenishmentSystem: "Buy" | "Make", filters })` — selects `planningAction` joined to item (readable id, name) for the location, filtered to `status <> 'Actioned'` by default, honoring `GenericQueryFilters` (assignee, type, status, search, sorts, pagination). Buy page passes the Buy set (`type IN ('Order','Expedite','Defer','Cancel','Increase','Decrease')` for items whose `replenishmentSystem != 'Make'`); Make page the Make set. Returns raw `{ data, error }`.
+2. `dismissPlanningAction(client, { ids, userId })` — set `status = 'Dismissed'`, `updatedBy`, `updatedAt` for the ids (bulk).
+3. `markPlanningActionActioned(client, { ids, userId })` — set `status = 'Actioned'` (called by the apply route after a successful apply — Task 8).
+4. Assignment reuses the shared **`assign()`** service against `table: "planningAction"` (the column is named `assignee`), and additionally sets `assigneeOverridden = true`. Add a small `assignPlanningAction(client, { id, assignee, userId })` that does both in one update (do NOT route through `api/assign`, because that path also fires table→NotificationEvent mapping we don't want here; a dedicated fn keeps it quiet). Confirm no `NotificationEvent` is wired for `planningAction` in `api+/assign.ts`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: clean typecheck; services return {data,error} and scope by companyId.
+```
+
+**Out of scope:** notifications/digests (Phase 2 `PlanningExceptions`).
+
+---
+
+## Task 8: Apply-action route handling + commitment gate
+
+**Depends on:** Tasks 4, 7
+**Files:**
+- Modify: `apps/erp/app/routes/x+/purchasing+/planning.update.tsx` — accept the new action types + a `planningActionId`
+- Modify: `apps/erp/app/routes/x+/production+/planning.update.tsx` — same
+- Modify: `apps/erp/app/modules/purchasing/purchasing.service.ts` — add `updatePurchaseOrderLineSchedule(client, { lineId, requiredDate?, purchaseQuantity?, userId })` (thin wrapper over the inline `client.from("purchaseOrderLine").update(...)` pattern already at `planning.update.tsx:244`)
+- Copy from (precedent): the existing `action === "order"` branch in each `planning.update.tsx`; `shortClosePurchaseOrderLine` / `updateJobStatus` / `updateJobOperationDueDate` / `notifyScheduleInputsChanged` for change execution
+
+**Steps:**
+1. Extend each `planning.update` action switch beyond `"order"`. Keep `"order"` (Order/Make create) exactly as-is. Add branches for `"expedite" | "defer" | "increase" | "decrease" | "cancel"`, each carrying the `planningActionId` and the target ref.
+2. **Commitment gate in the route** (defense-in-depth; the engine already flagged it): before mutating, re-read the target document's status. If the PO is locked (`isPurchaseOrderLocked`) / `orderDate` set, or the job status is `Ready`+, **refuse the auto-apply** and return `{ requiresManualAction: true }` (the UI navigates instead — Task 11). Otherwise:
+   - Expedite/Defer on a PO line → `updatePurchaseOrderLineSchedule({ lineId, requiredDate: suggestedDate })`.
+   - Increase/Decrease on a PO line → `updatePurchaseOrderLineSchedule({ lineId, purchaseQuantity: suggestedQuantity })`.
+   - Cancel on a PO line → `shortClosePurchaseOrderLine(db, { lineId, purchaseOrderId, companyId, userId, intent: "close" })`.
+   - Expedite/Defer on a job → `updateJobOperationDueDate` for the driving op and/or `updateJob({ dueDate })`, then `notifyScheduleInputsChanged(companyId, "reorder", reason, jobId)` (there is no `"job"` kind — use `"reorder"`).
+   - Increase/Decrease on a job → `updateJob({ quantity })` then `recalculateJobRequirements`.
+   - Cancel on a job → `updateJobStatus({ id, companyId, status: "Cancelled", updatedBy })`.
+3. On success, call `markPlanningActionActioned(client, { ids: [planningActionId], userId })`.
+4. Preserve the JSON-body + `action`-discriminator contract and the plain-object return shape (no redirect) both routes use today.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: clean typecheck; unknown-action default branch still errors.
+```
+If a job-side reschedule cannot be expressed through `notifyScheduleInputsChanged` + `updateJobOperationDueDate` without touching scheduler internals, STOP and report — do not write `jobOperation` dates directly.
+
+**Out of scope:** the automated reopen + supplier-notification / change-order flow for committed POs (deferred — the gate just navigates).
+
+---
+
+## Task 9: `responsibleEmployee` field on the item Planning tab
+
+**Depends on:** Tasks 1, 2
+**Files:**
+- Modify: `apps/erp/app/modules/items/items.models.ts` — add `responsibleEmployee` to `itemPlanningValidator` (`:612`)
+- Modify: `apps/erp/app/modules/items/ui/Item/ItemPlanningForm.tsx` — render an `Employee` field
+- Modify: `apps/erp/app/modules/items/items.service.ts` — `upsertItemPlanning` (`:3719`) passes the field through (it spreads validated data, so likely no change beyond the validator)
+- Copy from (precedent): any existing `Employee` field usage in a `ValidatedForm` (`apps/erp/app/components/Form/Employee.tsx`)
+
+**Steps:**
+1. Add `responsibleEmployee: zfd.text(z.string().optional())` to `itemPlanningValidator`.
+2. In `ItemPlanningForm`, import `Employee` from `~/components/Form` and render `<Employee name="responsibleEmployee" label={t\`Responsible\`} />`. This single form serves Part/Material/Tool/Consumable, so all four item Planning tabs get the field at once.
+3. Confirm `upsertItemPlanning` persists it (it spreads `validation.data`; the new column exists after Task 1).
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: clean typecheck.
+```
+
+**Out of scope:** the item-group/location/company rungs (Task 10).
+
+---
+
+## Task 10: Ownership settings screen (clone printer `AssignmentsCard`)
+
+**Depends on:** Tasks 1, 2
+**Files:**
+- Create: `apps/erp/app/modules/settings/ui/Planning/ResponsibleEmployeeCard.tsx`
+- Create/modify route: `apps/erp/app/routes/x+/settings+/planning.tsx` (new settings route) — loader + `intent`-switched action
+- Modify: `apps/erp/app/utils/path.ts` — add `settingsPlanning: \`${x}/settings/planning\``
+- Modify: settings navigation config to add the new settings link (find where `printing` settings link is registered and mirror it)
+- Modify: `apps/erp/app/modules/settings/settings.service.ts` (or the appropriate settings service) — `setResponsibleEmployee` writers for company default / per-location / per-item-group
+- Copy from (precedent): `apps/erp/app/modules/settings/ui/Printing/AssignmentsCard.tsx` + `apps/erp/app/routes/x+/settings+/printing.tsx` (fetcher + `intent` action returning `{success,message}`, Combobox-per-row, no ValidatedForm)
+
+**Steps:**
+1. Clone the `AssignmentsCard` structure into `ResponsibleEmployeeCard`: three sections — a **company default** row (writes `companySettings.defaultResponsibleEmployee`), a list of all **locations** (writes `location.responsibleEmployee`), and a list of all **item groups** (writes `itemPostingGroup.responsibleEmployee`). Each row = an `Employee`/`Combobox` picker; unset rows show an **inherited-placeholder** ("inherits {company default}") the way `AssignmentRow` shows `inherits {defaultName}`.
+2. Loader: `requirePermissions(request, { view: "settings" })`; load `companySettings`, `getLocationsList`, and all `itemPostingGroup` rows + the people list (`getPeople`/`usePeople` source).
+3. Action: `requirePermissions(request, { update: "settings" })`; `intent`-switch (`setCompanyDefault` | `setLocation` | `setItemGroup`), each validating an id+employee and calling the matching writer, returning `{ success, message }` (no redirect; fetcher + toast).
+4. Register the settings link + `path.to.settingsPlanning`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: clean typecheck. (Browser check happens in Task 12.)
+```
+
+**Out of scope:** a (location × item-group) grid — three independent flat lists only.
+
+---
+
+## Task 11: Worklist columns + "my actions" filter + bulk actions on both planning pages
+
+**Depends on:** Tasks 6, 7, 8
+**Files:**
+- Modify: `apps/erp/app/routes/x+/purchasing+/planning.tsx` + `apps/erp/app/routes/x+/production+/planning.tsx` — loaders also call `getPlanningActions`
+- Modify: `apps/erp/app/modules/purchasing/ui/Planning/PurchasingPlanningTable.tsx` + `apps/erp/app/modules/production/ui/Planning/ProductionPlanningTable.tsx` — new columns, filters, bulk actions
+- Copy from (precedent): the existing `columns` `useMemo`, `withSelectableRows`, `renderActions`, and `onBulkUpdate` in `PurchasingPlanningTable.tsx`; the `Assignee` inline control (`apps/erp/app/components/Assignee.tsx`)
+
+**Steps:**
+1. Loader: alongside the existing `getPurchasingPlanning`/`getProductionPlanning` projection query, call `getPlanningActions(...)` for the location + replenishment set and pass the rows to the table.
+2. Columns: add **action type**, **suggested date**, **suggested qty**, **reason** (rendered from `triggerValues`/`policyName`), **assignee** (render the `Assignee` inline control with `table="planningAction"` — but wire its onChange to the quiet `assignPlanningAction` route, not the notification-firing `api/assign`; simplest: a dedicated fetcher POST), **status**, and an urgency flag from `isASAP`. Give the type and status columns `meta.filter` static options; give assignee a static filter of people so **"my actions"** is a filter value (default the page to the current user via the initial filter/search params).
+3. Row primary control: **Apply** (submits to the extended `planning.update` route with the row's `type`, target ref, and `planningActionId`) — EXCEPT when `requiresManualAction`, where the control is **"Review on PO/Job"** and links to `path.to.purchaseOrder(id)` / `path.to.job(id)`.
+4. Bulk (reuse `withSelectableRows` + `renderActions`): **Apply selected**, **Assign selected**, **Dismiss selected** (the latter two POST to the new services). Keep the existing "Recalculate" MRP button.
+5. Keep the live 48-week projection columns exactly as they are.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp && pnpm run lint
+# Expected: clean typecheck + lint.
+```
+
+**Out of scope:** a unified cross-module cockpit; the diff/live banners and capacity strip (Phase 2).
+
+---
+
+## Task 12: Browser verification (/test) on the satellite dataset
+
+**Depends on:** Tasks 1–11
+**Files:** none (verification only)
+
+**Steps:**
+1. Boot the stack (`crbn up`) and run `/test` for the planning-actions feature:
+   - Trigger an MRP run (the planning page "Recalculate"), then confirm the worklist shows `Order`/`Make` rows with suggested qty/date/reason and a resolved assignee.
+   - Set an item group's `responsibleEmployee` in the new settings screen; recalc; confirm that group's actions route to that person; set a per-item override on the Planning tab and confirm it wins.
+   - Filter to "my actions"; apply an Order on an uncommitted plan → PO created, row goes Actioned; apply Expedite on a Draft/Planned PO line → date changes.
+   - Confirm a sent/locked PO's change action shows "Review on PO" and navigates instead of editing.
+   - Dismiss an action; recalc; confirm it stays dismissed.
+2. Capture screenshots of the worklist + settings screen for the PR (net-new UI).
+
+**Verify:**
+```bash
+# /test playbook passes for each flow above; screenshots saved for the PR.
+```
+If the stack cannot boot, the feature is BLOCKED (not done) — report it.
+
+**Out of scope:** everything in Phases 2+.
