@@ -152,6 +152,13 @@ export interface AllowlistEntry {
  * 13. Vendors declare prose as `ShortText` (Gmail's `body`) and the builder rendered
  *     a one-line box. `LongText` maps to `template: true` automatically; a
  *     `ShortText` that is really prose needs `template: true` in `props` here.
+ * 14. Google's OAuth verification does a STRING MATCH between the scopes an app
+ *     actually sends in `scope=` and the ones registered on the Cloud Console's Data
+ *     Access screen — and rejects any scope broader than the calls the app makes.
+ *     Editing `oauth.scope` for a Google piece is therefore never a code-only change:
+ *     the Console list must be edited to match exactly, and a scope not demonstrated
+ *     on video is refused. Pick the narrowest scope that covers each endpoint, and
+ *     name the endpoint next to it — Calendar's row below does. Sept 2026.
  */
 // Keyed by the shared piece-name union rather than string, and NOT Partial:
 // a name added to `ActivepiecesPiece` without an entry here refuses to compile,
@@ -170,10 +177,18 @@ export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
       // The piece's own list ends in the alias `email`. Google grants it as
       // `…/auth/userinfo.email`, so a connection made with the alias in the
       // required list reads as "Reconnect needed" forever (pitfall 2 above).
-      // Same three scopes, canonical spelling.
+      // Canonical spelling, and the NARROWEST scope per call the two allowlisted
+      // actions actually make — Google's OAuth review rejects anything broader
+      // (pitfall 14 below):
+      //   • calendar.events           create + list events on ONE calendar
+      //                                (POST/GET /calendars/{id}/events — both actions)
+      //   • calendar.calendarlist.readonly  name the calendars in the picker
+      //                                (GET /users/me/calendarList — the dropdown only).
+      // NOT calendar.readonly: that reads every event on every calendar, and the
+      // picker only needs their names.
       scope: [
         "https://www.googleapis.com/auth/calendar.events",
-        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
         "https://www.googleapis.com/auth/userinfo.email"
       ]
     },

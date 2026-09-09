@@ -199,16 +199,27 @@ describe("requiredScopesFor", () => {
     expect(scopes).toContain("channels:read");
   });
 
-  // Google's pieces end their lists in the alias `email`; Google grants it as
-  // `…/auth/userinfo.email`. The row spells it canonically so granted-vs-required
-  // matches; the SET of permissions asked for is unchanged.
-  it("spells Calendar's scopes canonically, asking for nothing the piece does not", async () => {
-    const canonical = (scope: string) =>
-      scope === "email"
-        ? "https://www.googleapis.com/auth/userinfo.email"
-        : scope;
-    expect([...(await requiredScopesFor("google-calendar"))].sort()).toEqual(
-      (await getPieceOAuth2Auth("google-calendar")).scope.map(canonical).sort()
+  // Pitfall 14: Google's OAuth review refuses a scope broader than the calls the
+  // app makes, so Calendar asks for LESS than its piece does — the exact three, and
+  // canonically spelled (pitfall 2) so granted-vs-required matches.
+  it("asks for Calendar's three narrowest scopes, not the piece's broader list", async () => {
+    expect([...(await requiredScopesFor("google-calendar"))].sort()).toEqual([
+      "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]);
+  });
+
+  // The piece asks for `calendar.readonly` — every event on every calendar — where
+  // the only call we make it for is the picker's `calendarList`. Requesting it would
+  // fail verification, so the override must stay strictly narrower.
+  it("never inherits the piece's calendar.readonly", async () => {
+    const pieceScopes = (await getPieceOAuth2Auth("google-calendar")).scope;
+    expect(pieceScopes).toContain(
+      "https://www.googleapis.com/auth/calendar.readonly"
+    );
+    expect(await requiredScopesFor("google-calendar")).not.toContain(
+      "https://www.googleapis.com/auth/calendar.readonly"
     );
   });
 

@@ -167,6 +167,15 @@ checked in erp because ee cannot see the allowlist), and the step runner (fails 
 vendor call with copy naming Settings → Integrations → App → Accounts → Reconnect, and maps a
 vendor `missing_scope` to the same words).
 
+**Google verification does a string match.** An app's registered scopes (Cloud Console → Data
+Access) must equal what it actually sends in `scope=`, and any scope broader than the calls the
+app makes is refused. So a Google row's `oauth.scope` is the narrowest scope per endpoint, and
+changing it is never code-only: the Console list changes with it and a new consent-flow video
+has to demonstrate every scope. Calendar asks for `calendar.events` (create + list events on the
+chosen calendar) and `calendar.calendarlist.readonly` (name the calendars in the picker) — NOT
+the piece's `calendar.readonly`, which reads every event on every calendar. Verification bounced
+on exactly that in Sept 2026.
+
 Gmail is deliberately **send-only** (`gmail.send` + `email`, an allowlist `oauth.scope`
 override). The piece's own list adds `gmail.readonly` and `gmail.compose`, which Google
 classes as *restricted*: an app holding them must pass an annual third-party CASA security
