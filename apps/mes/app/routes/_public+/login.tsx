@@ -1,17 +1,21 @@
 import {
   assertIsPost,
   CarbonEdition,
+  CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT
+  RATE_LIMIT,
+  SUPABASE_AUTH_CAPTCHA_ENABLED
 } from "@carbon/auth";
 import {
+  getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
-  verifyAuthSession
+  verifyAuthSession,
+  verifyTurnstileToken
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -32,11 +36,13 @@ import {
   ItarLoginDisclaimer,
   Separator,
   toast,
+  useMode,
   useMount,
   VStack
 } from "@carbon/react";
 import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Turnstile } from "@marsidev/react-turnstile";
 import {
   browserSupportsWebAuthn,
   startAuthentication
@@ -108,7 +114,28 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email } = validation.data;
+  const { email, turnstileToken } = validation.data;
+
+  const requiresTurnstile =
+    CarbonEdition === Edition.Cloud &&
+    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA";
+
+  // Turnstile tokens are single-use, so exactly one side may verify them. With
+  // Supabase Auth captcha enabled, GoTrue verifies the token on the /otp call
+  // itself; without it, verify in-app (MES has no signup branch, so this is
+  // the only verification site).
+  if (requiresTurnstile && !SUPABASE_AUTH_CAPTCHA_ENABLED) {
+    const passed = await verifyTurnstileToken(turnstileToken, ip);
+    if (!passed) {
+      return data(
+        error(null, "Bot verification failed. Please try again."),
+        await flash(
+          request,
+          error(null, "Bot verification failed. Please try again.")
+        )
+      );
+    }
+  }
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
   // above, keyed by the normalized email. Rejects with a GENERIC message that
@@ -164,14 +191,24 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    const magicLink = await sendMagicLink(
+      email,
+      SUPABASE_AUTH_CAPTCHA_ENABLED ? turnstileToken : undefined
+    );
 
-    if (!magicLink) {
+    if (magicLink.error) {
+      logAuthEvent("login_failed", {
+        actor: email,
+        ip,
+        reason: "magic link send failed"
+      });
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
+    logAuthEvent("magic_link_sent", { actor: email, ip });
   } else {
     return data(
       { success: false, message: "Invalid email/password combination" },
@@ -195,11 +232,13 @@ export default function LoginRoute() {
     { success: true } | { success: false; message: string }
   >();
 
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
+  const theme = useMode();
 
   // Detect passkey support and start conditional UI (autofill) on mount
   useMount(() => {
@@ -439,6 +478,7 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -513,7 +553,11 @@ export default function LoginRoute() {
               />
 
               <Submit
-                isDisabled={fetcher.state !== "idle" || ssoLoading}
+                isDisabled={
+                  fetcher.state !== "idle" ||
+                  ssoLoading ||
+                  (!!CLOUDFLARE_TURNSTILE_SITE_KEY && !turnstileToken)
+                }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
                 size="lg"
@@ -523,6 +567,19 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
+              {!!CLOUDFLARE_TURNSTILE_SITE_KEY && (
+                <div className="w-full flex justify-center">
+                  <Turnstile
+                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onError={() => setTurnstileToken("")}
+                    onExpire={() => setTurnstileToken("")}
+                    options={{
+                      theme: theme === "dark" ? "dark" : "light"
+                    }}
+                  />
+                </div>
+              )}
             </VStack>
           </ValidatedForm>
         )}

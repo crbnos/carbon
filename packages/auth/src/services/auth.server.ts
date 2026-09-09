@@ -15,6 +15,7 @@ import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
+  CLOUDFLARE_TURNSTILE_SECRET_KEY,
   CONTROLLED_ENVIRONMENT,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_IDLE_LOCK_MS,
@@ -455,13 +456,53 @@ export async function sendInviteByEmail(
   });
 }
 
-export async function sendMagicLink(email: string) {
+export async function sendMagicLink(email: string, captchaToken?: string) {
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${VERCEL_URL}/callback`
+      emailRedirectTo: `${VERCEL_URL}/callback`,
+      ...(captchaToken ? { captchaToken } : {})
     }
   });
+}
+
+export function getMagicLinkErrorMessage(error: { code?: string }): string {
+  switch (error.code) {
+    case "captcha_failed":
+      return "Bot verification failed. Please try again.";
+    case "over_email_send_rate_limit":
+    case "over_request_rate_limit":
+      return "Too many sign-in attempts. Please try again later.";
+    default:
+      return "Failed to send magic link";
+  }
+}
+
+export async function verifyTurnstileToken(
+  token: string | undefined,
+  remoteip: string
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          secret: CLOUDFLARE_TURNSTILE_SECRET_KEY ?? "",
+          response: token ?? "",
+          remoteip
+        })
+      }
+    );
+    const result = await response.json();
+    return Boolean(result.success);
+  } catch (e) {
+    log.error("Turnstile siteverify request failed", { error: e });
+    return false;
+  }
 }
 
 export async function signInWithBypassEmail(

@@ -1,20 +1,22 @@
 import {
   assertIsPost,
   CarbonEdition,
-  CLOUDFLARE_TURNSTILE_SECRET_KEY,
   CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT
+  RATE_LIMIT,
+  SUPABASE_AUTH_CAPTCHA_ENABLED
 } from "@carbon/auth";
 import {
+  getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
-  verifyAuthSession
+  verifyAuthSession,
+  verifyTurnstileToken
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -146,27 +148,18 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  if (
+  const requiresTurnstile =
     CarbonEdition === Edition.Cloud &&
-    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA"
-  ) {
-    const verifyResponse = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: new URLSearchParams({
-          secret: CLOUDFLARE_TURNSTILE_SECRET_KEY ?? "",
-          response: turnstileToken ?? "",
-          remoteip: ip
-        })
-      }
-    );
+    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA";
 
-    const verifyData = await verifyResponse.json();
-    if (!verifyData.success) {
+  // Turnstile tokens are single-use, so exactly one side may verify them. With
+  // Supabase Auth captcha enabled, GoTrue verifies the token on the /otp call
+  // itself (which also protects direct-to-API abuse); the token is forwarded
+  // there and only branches that never reach GoTrue — the signup verification
+  // code — verify in-app, at the branch. Without it, verify up front as before.
+  if (requiresTurnstile && !SUPABASE_AUTH_CAPTCHA_ENABLED) {
+    const passed = await verifyTurnstileToken(turnstileToken, ip);
+    if (!passed) {
       return data(
         error(null, "Bot verification failed. Please try again."),
         await flash(
@@ -233,7 +226,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    const magicLink = await sendMagicLink(
+      email,
+      SUPABASE_AUTH_CAPTCHA_ENABLED ? turnstileToken : undefined
+    );
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -241,9 +237,10 @@ export async function action({ request }: ActionFunctionArgs) {
         ip,
         reason: "magic link send failed"
       });
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
     logAuthEvent("magic_link_sent", { actor: email, ip });
@@ -259,6 +256,21 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, "Failed to sign in"))
     );
   } else {
+    // The signup verification code goes out via Resend, never GoTrue — so when
+    // GoTrue owns captcha verification, this branch still verifies in-app.
+    if (requiresTurnstile && SUPABASE_AUTH_CAPTCHA_ENABLED) {
+      const passed = await verifyTurnstileToken(turnstileToken, ip);
+      if (!passed) {
+        return data(
+          error(null, "Bot verification failed. Please try again."),
+          await flash(
+            request,
+            error(null, "Bot verification failed. Please try again.")
+          )
+        );
+      }
+    }
+
     // User doesn't exist, send verification code for signup
     const verificationSent = await sendVerificationCode(email);
 
