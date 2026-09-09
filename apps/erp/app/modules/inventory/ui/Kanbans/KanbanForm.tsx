@@ -96,7 +96,11 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
       toast.error(t`Failed to load item details`);
       return;
     }
-    setSelectedReplenishmentSystem(item.data?.replenishmentSystem || "Buy");
+    // The item-level enum can be "Buy and Make", which a kanban cannot be —
+    // map anything other than "Make" (incl. "Buy and Make"/null) to "Buy".
+    setSelectedReplenishmentSystem(
+      item.data?.replenishmentSystem === "Make" ? "Make" : "Buy"
+    );
     if (storageUnit.data?.defaultStorageUnitId) {
       setStorageUnitId(storageUnit.data.defaultStorageUnitId);
     }
@@ -292,9 +296,9 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     label={t`From Storage Unit`}
                     locationId={locationId}
                     value={fromStorageUnitId ?? undefined}
-                    onChange={(value) => {
-                      if (value) setFromStorageUnitId(value?.id ?? null);
-                    }}
+                    onChange={(value) =>
+                      setFromStorageUnitId(value?.id ?? null)
+                    }
                   />
                 )}
 
@@ -303,9 +307,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   label={isTransfer ? t`To Storage Unit` : t`Storage Unit`}
                   locationId={locationId}
                   value={storageUnitId ?? undefined}
-                  onChange={(value) => {
-                    if (value) setStorageUnitId(value?.id ?? null);
-                  }}
+                  onChange={(value) => setStorageUnitId(value?.id ?? null)}
                 />
 
                 {selectedReplenishmentSystem === "Make" && (

@@ -188,9 +188,11 @@ const KanbanLabelPDF = ({
                           )}
                         >
                           {label.fromStorageUnitName ? (
-                            // Transfer kanban: show the source → destination bins.
+                            // Transfer kanban: show the source -> destination bins.
+                            // Use ASCII "->": the built-in Helvetica font has no
+                            // U+2192 glyph, so an arrow renders as a missing box.
                             <Text>
-                              {label.fromStorageUnitName} →{" "}
+                              {label.fromStorageUnitName} {"->"}{" "}
                               {label.storageUnitName || label.locationName}
                             </Text>
                           ) : label.storageUnitName ? (

@@ -249,7 +249,7 @@ export const kanbanValidator = z
     id: zfd.text(z.string().optional()),
     itemId: z.string().min(1, { message: "Item is required" }),
     replenishmentSystem: z.enum(kanbanReplenishmentSystemTypes, {
-      errorMap: () => ({ message: "Replenishment system is required" })
+      error: "Replenishment system is required"
     }),
     autoRelease: zfd.checkbox(),
     autoStartJob: zfd.checkbox(),

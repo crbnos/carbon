@@ -17,6 +17,14 @@ CREATE TYPE "kanbanReplenishmentSystem" AS ENUM ('Buy', 'Make', 'Transfer');
 DROP VIEW IF EXISTS "kanbans";
 
 ALTER TABLE "kanban" ALTER COLUMN "replenishmentSystem" DROP DEFAULT;
+
+-- The old enum (itemReplenishmentSystem) allowed 'Buy and Make', which the new
+-- kanban-specific enum does not. Map any such rows to 'Buy' before the cast so
+-- the type change cannot abort. (The kanban form never offered 'Buy and Make',
+-- so in practice this is a no-op guard against direct DB/API/import writes.)
+UPDATE "kanban" SET "replenishmentSystem" = 'Buy'
+WHERE "replenishmentSystem" = 'Buy and Make';
+
 ALTER TABLE "kanban"
   ALTER COLUMN "replenishmentSystem" TYPE "kanbanReplenishmentSystem"
   USING "replenishmentSystem"::text::"kanbanReplenishmentSystem";

@@ -363,6 +363,28 @@ async function handleKanban({
       };
     }
 
+    // Defense in depth: confirm BOTH storage units belong to this company and
+    // this kanban's location before moving stock. A stock transfer is
+    // intra-location, and the ids could have been set to another location's (or
+    // company's) bin — validate rather than trust the stored ids (CWE-639).
+    const storageUnits = await client
+      .from("storageUnit")
+      .select("id")
+      .in("id", [kanban.data.fromStorageUnitId, kanban.data.storageUnitId])
+      .eq("companyId", companyId)
+      .eq("locationId", kanban.data.locationId!);
+
+    const validIds = new Set((storageUnits.data ?? []).map((s) => s.id));
+    if (
+      !validIds.has(kanban.data.fromStorageUnitId) ||
+      !validIds.has(kanban.data.storageUnitId)
+    ) {
+      return {
+        data: null,
+        error: "Storage unit does not belong to the kanban location"
+      };
+    }
+
     // Derive tracking from the item so the transfer line demands the right
     // serial/batch handling at pick time. insertStockTransfer expands a
     // serial-tracked line of qty > 1 into individual qty-1 lines.
