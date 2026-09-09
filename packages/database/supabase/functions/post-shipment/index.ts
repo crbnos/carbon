@@ -3790,6 +3790,26 @@ serve(async (req: Request) => {
               throw new Error("Shipment has no sourceDocumentId");
             const purchaseReturnOrderId = shipment.data.sourceDocumentId;
 
+            // Mirror of the sales-side guard in post-receipt: voiding after a
+            // debit memo exists would leave quantityCredited > quantityShipped
+            // with no path to reconcile. Worse here than on the sales side —
+            // post-memo recovers the GRNI clearing amount from THIS shipment's
+            // costLedger rows, so a void afterwards strands that clearing and
+            // leaves GRNI permanently out by the carried cost.
+            const debitMemos = await client
+              .from("memo")
+              .select("id, status")
+              .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+              .eq("companyId", companyId)
+              .neq("status", "Voided");
+            if (debitMemos.error)
+              throw new Error("Failed to check for debit memos");
+            if ((debitMemos.data ?? []).length > 0) {
+              throw new Error(
+                "Cannot void: a debit memo exists for this return order. Void it first."
+              );
+            }
+
             const accountingSettings = await client
               .from("companySettings")
               .select("accountingEnabled")
