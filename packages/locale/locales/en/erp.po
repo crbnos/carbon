@@ -1850,6 +1850,9 @@ msgstr "Applied"
 msgid "Applied amount for {0}"
 msgstr "Applied amount for {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Applied amounts are in company base currency ({baseCurrency})."
+
 msgid "Applied Date"
 msgstr "Applied Date"
 
@@ -10860,6 +10863,9 @@ msgstr "No one to assign"
 msgid "No open invoices"
 msgstr "No open invoices"
 
+msgid "No open memos"
+msgstr "No open memos"
+
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
 
@@ -11968,6 +11974,9 @@ msgstr "Payment Applications"
 msgid "Payment Date"
 msgstr "Payment Date"
 
+msgid "Payment from Customer"
+msgstr "Payment from Customer"
+
 msgid "Payment ID"
 msgstr "Payment ID"
 
@@ -11988,6 +11997,9 @@ msgstr "Payment Terms"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Payment terms like Net 30 or due on receipt"
+
+msgid "Payment to Supplier"
+msgstr "Payment to Supplier"
 
 msgid "Payments"
 msgstr "Payments"
@@ -13283,8 +13295,8 @@ msgstr "Record"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 
 msgid "Record deleted"
 msgstr "Record deleted"
@@ -13327,6 +13339,15 @@ msgstr "Refresh"
 
 msgid "Refresh exchange rate"
 msgstr "Refresh exchange rate"
+
+msgid "Refund from Supplier"
+msgstr "Refund from Supplier"
+
+msgid "Refund memos"
+msgstr "Refund memos"
+
+msgid "Refund to Customer"
+msgstr "Refund to Customer"
 
 msgid "Regenerate"
 msgstr "Regenerate"

@@ -264,9 +264,9 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
     });
 
     expect(payload.exchange_rate).toEqual({
-      base: "USD",
-      target: "EUR",
-      rate: "0.8",
+      base: "EUR",
+      target: "USD",
+      rate: "1.25",
       date: "2026-09-07"
     });
     expect(payload.items.map((i) => [i.account_code, i.amount])).toEqual([
@@ -385,9 +385,9 @@ describe("Rillet bill currency contract", () => {
       date: "2026-09-07"
     });
     expect(Rillet.ExchangeRateSchema.parse(rate)).toEqual({
-      base: "USD",
-      target: "EUR",
-      rate: "0.8",
+      base: "EUR",
+      target: "USD",
+      rate: "1.25",
       date: "2026-09-07"
     });
     expect(
@@ -406,6 +406,18 @@ describe("Rillet bill currency contract", () => {
         date: "2026-09-07"
       })
     ).toThrow();
+  });
+  it.each([
+    0.8, 1.2, 1
+  ])("preserves USD base principal at foreign rate %s", (rate) => {
+    const result = toRilletExchangeRate({
+      baseCurrencyCode: "USD",
+      documentCurrencyCode: "EUR",
+      foreignPerBaseRate: rate,
+      date: "2026-09-09"
+    });
+    expect(result).toMatchObject({ base: "EUR", target: "USD" });
+    expect(100 * rate * Number(result?.rate)).toBeCloseTo(100, 12);
   });
   it.each([
     [0, "80"],

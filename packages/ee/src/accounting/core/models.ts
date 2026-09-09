@@ -998,6 +998,7 @@ export const SalesInvoiceSchema = z.object({
   /** Original posted shipping account; null before posting or when no shipping. */
   shippingRevenueAccountId: z.string().nullable(),
   exchangeRate: z.number(),
+  postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),
   dateDue: withNullable(z.string()),
   datePaid: withNullable(z.string()),

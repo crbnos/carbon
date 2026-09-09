@@ -100,6 +100,11 @@ const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
   accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
   account_upsertNotificationPreference: ["companyId"],
+  // Both operations replace settlement rows in a transaction. Their verbs do
+  // not imply INSERT to the name-based rule, but the service requires the
+  // authenticated creator for every replacement row.
+  invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
+  invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`

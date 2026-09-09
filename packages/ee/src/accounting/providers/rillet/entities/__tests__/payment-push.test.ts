@@ -27,7 +27,7 @@ vi.mock("../../../../core/utils", async (importOriginal) => {
     ) => {
       const insertBuilder: Record<string, unknown> = {};
       insertBuilder.values = (v: Record<string, unknown>) => {
-        txLinkSink.push(v);
+        txLinkSink.push(...(Array.isArray(v) ? v : [v]));
         return insertBuilder;
       };
       insertBuilder.onConflict = () => insertBuilder;
@@ -67,6 +67,7 @@ type SettlementRow = {
 
 function makePushDb(opts: {
   metadata?: unknown;
+  mappings?: Array<Record<string, unknown>>;
   payment?: PaymentRow;
   settlements?: SettlementRow[];
   linkSink: Array<Record<string, unknown>>;
@@ -88,6 +89,8 @@ function makePushDb(opts: {
           opts.metadata === undefined ? [] : [{ metadata: opts.metadata }]
         );
       }
+      if (t === "externalIntegrationMapping")
+        return selectChain(opts.mappings ?? []);
       if (t === "payment") {
         return selectChain(opts.payment ? [opts.payment] : []);
       }
@@ -126,6 +129,8 @@ function makeSyncer(opts: {
   enabled?: boolean;
   createInvoicePayment?: ReturnType<typeof vi.fn>;
   createBillPayment?: ReturnType<typeof vi.fn>;
+  deleteInvoicePayment?: ReturnType<typeof vi.fn>;
+  deleteBillPayment?: ReturnType<typeof vi.fn>;
 }) {
   const createInvoicePayment =
     opts.createInvoicePayment ??
@@ -134,13 +139,18 @@ function makeSyncer(opts: {
     opts.createBillPayment ??
     vi.fn(async () => ({ id: "rillet-pay-1", status: "SUCCESSFUL" }));
 
+  const deleteInvoicePayment =
+    opts.deleteInvoicePayment ?? vi.fn(async () => {});
+  const deleteBillPayment = opts.deleteBillPayment ?? vi.fn(async () => {});
   const syncer = new RilletPaymentSyncer({
     database: opts.db,
     companyId: "company-1",
     provider: {
       id: "rillet",
       createInvoicePayment,
-      createBillPayment
+      createBillPayment,
+      deleteInvoicePayment,
+      deleteBillPayment
     } as never,
     config: {
       enabled: opts.enabled ?? true,
@@ -160,7 +170,13 @@ function makeSyncer(opts: {
     opts.accountCodes ?? new Map([["bank-1", "1000"]])
   );
 
-  return { syncer, createInvoicePayment, createBillPayment };
+  return {
+    syncer,
+    createInvoicePayment,
+    createBillPayment,
+    deleteInvoicePayment,
+    deleteBillPayment
+  };
 }
 
 const apPayment: PaymentRow = {
@@ -449,19 +465,89 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
 });
 
 describe("RilletPaymentSyncer push — void routing", () => {
-  it("skips (not supported) a voided Carbon-originated payment", async () => {
-    const { syncer } = makeSyncer({
+  it.each([
+    "ar",
+    "ap"
+  ])("voids every Carbon-originated %s settlement and retains idempotent tombstones", async (family) => {
+    const remote = (n: number) =>
+      `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
+    const mappings = [1, 2].map((n) => ({
+      entityId: `pay_1:doc-${n}`,
+      externalId: remote(n),
+      metadata: { origin: "carbon", other: "preserved" }
+    }));
+    const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
       db: makePushDb({
         payment: { ...apPayment, status: "Voided" },
         settlements: [apSettlement],
+        mappings,
         linkSink: []
-      }),
-      mapping: { metadata: { origin: "carbon" } }
+      })
     });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "success",
+      action: "deleted"
+    });
+    const deletion = family === "ar" ? deleteInvoicePayment : deleteBillPayment;
+    expect(deletion.mock.calls).toEqual([
+      ["doc-1", "pay-1"],
+      ["doc-2", "pay-2"]
+    ]);
+    expect(txLinkSink).toHaveLength(2);
+    expect(
+      txLinkSink.every(
+        (row) =>
+          (row.metadata as any)?.voided === true &&
+          (row.metadata as any)?.other === "preserved"
+      )
+    ).toBe(true);
+  });
 
-    const result = await syncer.pushToAccounting("pay_1");
-    expect(result.status).toBe("skipped");
-    expect(result.error).toContain("not supported");
+  it("retains all mappings on partial delete failure so retry is safe", async () => {
+    const deletion = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("cleared payment"));
+    const { syncer } = makeSyncer({
+      deleteBillPayment: deletion,
+      db: makePushDb({
+        payment: { ...apPayment, status: "Voided" },
+        settlements: [apSettlement],
+        linkSink: [],
+        mappings: [1, 2].map((n) => ({
+          entityId: `pay_1:doc-${n}`,
+          externalId: `bill:doc-${n}:pay-${n}`,
+          metadata: { origin: "carbon" }
+        }))
+      })
+    });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "error",
+      error: "cleared payment"
+    });
+    expect(txLinkSink).toHaveLength(0);
+  });
+
+  it("does not delete an already voided mapping again", async () => {
+    const { syncer, deleteBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, status: "Voided" },
+        settlements: [],
+        linkSink: [],
+        mappings: [
+          {
+            entityId: "pay_1",
+            externalId: "bill:doc-1:pay-1",
+            metadata: { origin: "carbon", voided: true }
+          }
+        ]
+      })
+    });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "success",
+      action: "deleted"
+    });
+    expect(deleteBillPayment).not.toHaveBeenCalled();
   });
 
   it("skips a voided pulled payment (no Carbon-originated provider payment to reverse)", async () => {

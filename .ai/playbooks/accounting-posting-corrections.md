@@ -1,6 +1,6 @@
 # Accounting posting corrections
 
-Last verified: 2026-09-08. Result: PASS on the existing local stack.
+Last verified: 2026-09-09. The sales, ordinary credit-payment and discount/write-off workflows below passed on the existing local stack. Memo residual, refund, report and Rillet failures found during the expanded run were corrected and reverified; see [the correction run](../runs/2026-09-09-accounting-e2e-fixes.md).
 
 Tracking plan: [Accounting Posting Corrections](../plans/2026-09-07-accounting-posting-corrections.md).
 
@@ -19,8 +19,8 @@ after the report workflow, then switched to this company.
 
 ## A. Shipping, sales posting, cash and reversals
 
-1. Open `/x/accounting/defaults`. Save and reload Shipping Revenue, seeded as
-   account 4040 under Revenue. The actual column is
+1. Open `/x/accounting/defaults`. Save and reload Shipping Revenue under Revenue (4050 on a fresh
+   company in the September 9 run; older fixtures may use 4040). The actual column is
    `accountDefault.salesShippingRevenueAccount`.
 2. Prepare a USD-base/EUR invoice at rate 0.8 with merchandise 100, taxable add-on
    20, non-taxable add-on 3, line shipping 10, tax 10%, and header shipping 5.
@@ -102,8 +102,70 @@ All 54 exported account rows matched both monthly report columns.
   preserved volumes and resynchronized clocks. A bounded keep-awake process
   prevented further drift. Notes/storage also timed out on the invoice page;
   this was captured separately and did not prevent monetary route verification.
-- No live provider API writes were made. Confirm Rillet bill rate direction and
-  QBO US tax-catalog compatibility independently before enabling those paths.
-  Rillet AR_ONLY base FX remains provider-owned.
+- The September 9 run exercised live Rillet sandbox documents and its independent
+  journal report. See the current run for confirmed FX, mapping and reversal gaps.
+  Xero and QBO were not configured for live testing.
 - Direct fixed-asset invoice void reverses its GL but leaves acquisition state
   Active. This separate lifecycle gap is recorded in the spec, outside this fix.
+
+## September 9 repeat and signed-line/discount coverage
+
+Fresh owned fixtures and database assertions are in
+`.context/accounting/e2e-20260909/`. The original-account test changed receivables,
+sales, shipping and tax defaults before voiding, proved each original account
+netted to zero, then restored the defaults.
+
+- Sales: open `/x/payments/new?customerId={customerId}&invoiceId={invoiceId}`.
+  Verify hidden `totalAmount=120.8` and `exchangeRate=0.8`; requestSubmit Save.
+  The created payment stages base 151/document 120.80. Post and verify Paid/FX 0.
+- Mixed signs: post a service line of 100 plus shipping 10 at 10% tax, a quantity −1
+  line at 25 plus shipping −2 at 10% tax, and header shipping 5. Expected base AR 96.30,
+  sales 75, shipping 13 and tax 8.30. At rate 1.2, Auto apply document 115.56; Save
+  applications and Post. Both payment and invoice void exactly by original account.
+- Customer discount/write-off: post base 1000 at EUR rate 1.1; create cash EUR 1072.50.
+  Auto apply base 975. Enter discount 20 and write-off 5, blur and verify the inputs.
+  Save applications and Post. Invoice becomes Paid; discount debits contra-revenue 20,
+  write-off debits Expense 5, and FX is 0. Void reopens base 1000 and reverses each account.
+- Prior credit and high-rate ordinary payments: repeat Workflow B. Check the row
+  before editing the applied amount; explicitly change the visible amount through
+  zero before re-entering 0.01 if it already displays 0.01. The displayed document
+  preview must be 160.00 before Save, then final Auto apply consumes 0.01.
+
+Post, Void, Auto apply, Save applications and Apply credits are React fetcher
+buttons with click handlers, not ValidatedForm submit buttons. Wait for the
+request and route revalidation before reading the database. A success toast alone
+is insufficient. Native input setters plus bubbling input/change and blur events
+were necessary when this CLI's fill command changed the DOM without committing
+React state; the real UI preview and persisted source principal were checked.
+
+Verification commands used (against owned fixtures, not safe to reuse against
+arbitrary IDs): `pnpm exec tsx .context/accounting/e2e-20260909/payments-assert.ts
+{normal-posted,normal-voided,high-first,high-final,high-restored}` and
+`customer-check.ts {sales-posted,discount-posted}`; `sales-void.ts` and
+`customer-finish.ts` checked exact reversal and AR tie-out 0.
+
+## D. Customer refund with FX
+
+1. Post an owned customer credit memo for EUR 55 at rate 1.1 (USD 50 carrying).
+2. Open `/x/payments/new?customerId={customerId}&amount=55`. The Type initially
+   reads Payment from Customer. Select Refund to Customer; the Customer selector
+   remains visible. Select Euro and enter exchange rate 1.25, then blur.
+3. Check native form values: `paymentType=Disbursement`, `supplierId` empty,
+   `customerId` selected, `currencyCode=EUR`, `exchangeRate=1.25`, `totalAmount=55`.
+   Use `requestSubmit` on Save. The created draft retains Refund to Customer.
+4. Refund memos lists the posted memo with USD 50 / EUR 55 open. Auto apply and
+   Save applications. Verify stored `targetMemoId`, source55, applied50, FXgain6.
+   The payment history links the memo and shows Unapplied EUR0.
+5. Post with the actual button. Verify cash credit44, AR debit50 and FX gain
+   credit6; AR tie-out variance0 and the memo absent from open balances.
+6. Void with the actual button. Every account nets0 with its reversal, memo
+   principal EUR55 / base50 is restored, and AR tie-out remains0. Void the owned
+   memo for cleanup. The corresponding supplier refund is covered in the
+   [purchase playbook](accounting-purchase-intercompany.md).
+
+Verified browser payment `dagpujaqu0h3tdpb7h7g`, memo `dagprm2qu0h3ob1b7h60`.
+Evidence: `.context/accounting/e2e-20260909/fix-customer-refund-{fixtures.json,posted.png,voided.png}`.
+Journal storage uses each account's natural balance: convert Revenue/Liability/
+Equity signs before checking a debit-signed total. The initial verification
+script's raw sum incorrectly counted the positive stored FX gain as a debit;
+the corrected class-aware check and the real posting balance assertion passed.

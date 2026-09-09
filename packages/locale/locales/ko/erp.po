@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "자재 섹션을 추가하여 자재 명세서의 각 항목과 수량을 나열합니다."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "절차서 탐색기에서 파라미터 추가"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "단계 추가"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "절차서 및 교육 탐색기에서 단계 또는 질문 추가"
 
 msgid "Add Ability"
 msgstr "능력 추가"
@@ -1849,6 +1849,9 @@ msgstr "적용됨"
 #. placeholder {0}: r.invoiceId
 msgid "Applied amount for {0}"
 msgstr "{0}에 적용된 금액"
+
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "적용 금액은 회사 기본 통화({baseCurrency})입니다."
 
 msgid "Applied Date"
 msgstr "적용일"
@@ -4262,7 +4265,7 @@ msgstr "문서를 읽을 수 없습니다: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "릴리스 실패: {0}: {1}"
 
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
@@ -8962,7 +8965,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "이 날짜 또는 이전 날짜의 전표는 잠김으로 처리됩니다. 둘 다 존재할 때 공급자 보고 잠금 날짜와 병합됩니다."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "상세 페이지의 섹션으로 이동(같은 한정자 + 섹션의 문자)"
 
 msgid "Just one"
 msgstr "정확히 하나"
@@ -10860,6 +10863,9 @@ msgstr "배정할 사람이 없습니다"
 msgid "No open invoices"
 msgstr "미결 송장이 없습니다."
 
+msgid "No open memos"
+msgstr "미결 메모 없음"
+
 msgid "No open orders for this item are available to link."
 msgstr "이 품목의 연결 가능한 미결 주문이 없습니다."
 
@@ -11968,6 +11974,9 @@ msgstr "지불 적용"
 msgid "Payment Date"
 msgstr "지불 날짜"
 
+msgid "Payment from Customer"
+msgstr "고객 지불"
+
 msgid "Payment ID"
 msgstr "지불 ID"
 
@@ -11988,6 +11997,9 @@ msgstr "지불 조건"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30 또는 입고 시 만기와 같은 지불 조건"
+
+msgid "Payment to Supplier"
+msgstr "공급업체 지불"
 
 msgid "Payments"
 msgstr "지불"
@@ -13283,8 +13295,8 @@ msgstr "기록"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "고객 또는 공급업체에 대해 신용증 또는 차감증을 기록하세요. 특정 송장에 대한 적용은 메모가 생성된 후에 추가됩니다."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "고객으로부터 수령한 현금 또는 공급업체에 지급한 현금을 기록하세요. 특정 송장에 대한 적용은 지불이 생성된 후에 추가됩니다."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "고객 지불, 공급업체 지불 또는 환불을 기록합니다. 지불 생성 후 송장 또는 메모에 대한 적용이 추가됩니다."
 
 msgid "Record deleted"
 msgstr "레코드가 삭제됨"
@@ -13327,6 +13339,15 @@ msgstr "새로고침"
 
 msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
+
+msgid "Refund from Supplier"
+msgstr "공급업체 환불"
+
+msgid "Refund memos"
+msgstr "환불 메모"
+
+msgid "Refund to Customer"
+msgstr "고객 환불"
 
 msgid "Regenerate"
 msgstr "재생성"
@@ -13387,7 +13408,7 @@ msgstr "릴리스"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "{0}개 배치 릴리스"
 
 msgid "Release Batch"
 msgstr "배치 릴리스"
@@ -13409,7 +13430,7 @@ msgstr "릴리즈됨"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "{0}개 배치 릴리스됨"
 
 msgid "Released date"
 msgstr "출시일"

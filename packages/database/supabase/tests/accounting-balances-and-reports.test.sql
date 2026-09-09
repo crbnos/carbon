@@ -173,6 +173,58 @@ BEGIN
 END;
 $fn$;
 
+-- Refund cash belongs to its party's subledger, with the opposite cash sign.
+-- Its target memo uses exact document principal independently of carrying base.
+DO $refund_cases$
+DECLARE f pg_temp.report_fixture; is_ar boolean; m text; p text; application text; j text; actual numeric; phase text;
+BEGIN
+  FOREACH is_ar IN ARRAY ARRAY[true,false] LOOP
+    BEGIN
+      f:=pg_temp.seed_report_company();
+      p:=pg_temp.seed_crossparty_payment(f,NOT is_ar,55,1.1,'2026-02-01');
+      PERFORM pg_temp.book_control(f,is_ar,50,'2026-02-01',NULL,'Payment',p);
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-02-01',0,50,50,'unallocated refund');
+      PERFORM pg_temp.assert_reports(f,NOT is_ar,'2026-02-01',0,0,0,'refund excluded from other party subledger');
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-01-31',0,0,0,'future refund excluded');
+      UPDATE payment SET status='Voided' WHERE id=p AND "companyId"=f.company_id;
+      PERFORM pg_temp.book_control(f,is_ar,-50,'2026-02-02',NULL,'Payment',p);
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-02-02',0,0,0,'voided unallocated refund');
+      RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
+    EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+
+    BEGIN
+      f:=pg_temp.seed_report_company();
+      m:=pg_temp.seed_memo(f,is_ar,55.01,1.1,'2026-02-01');
+      PERFORM pg_temp.book_control(f,is_ar,-50.00909,'2026-02-01',NULL,CASE WHEN is_ar THEN 'Credit Memo' ELSE 'Debit Memo' END,m);
+      p:=pg_temp.seed_crossparty_payment(f,NOT is_ar,55.01,1.25,'2026-02-02','Draft');
+      INSERT INTO "invoiceSettlement" ("paymentId","targetMemoId","sourceAmount","appliedAmount","sourceExchangeRate","targetExchangeRate","fxGainLossAmount","appliedDate","companyId","createdBy")
+        VALUES (p,m,27.50,25,1.25,1.1,CASE WHEN is_ar THEN 3 ELSE -3 END,'2026-02-02',f.company_id,'system') RETURNING id INTO application;
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-02-02',-50.00909,0,-50.00909,'draft memo refund excluded');
+      UPDATE payment SET status='Posted' WHERE id=p AND "companyId"=f.company_id;
+      PERFORM pg_temp.book_control(f,is_ar,25,'2026-02-02',NULL,'Payment',p);
+      -- Only 27.50/1.25=22 of cash is applied; the remaining 22.008 is an unallocated refund.
+      PERFORM pg_temp.book_control(f,is_ar,22.008,'2026-02-02',NULL,'Payment',p,' (on-account credit)');
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-02-02',-25.00909,22.008,-3.00109,'partial FX memo refund');
+      IF is_ar THEN SELECT "openInCurrency" INTO actual FROM get_ar_open_by_customer(f.company_id,'2026-02-02') WHERE "documentId"=m;
+      ELSE SELECT "openInCurrency" INTO actual FROM get_ap_open_by_supplier(f.company_id,'2026-02-02') WHERE "documentId"=m; END IF;
+      ASSERT actual=-27.51,'Partial refund must preserve exact memo principal';
+      UPDATE "invoiceSettlement" SET "sourceAmount"=55.01,"appliedAmount"=50.00909,
+        "fxGainLossAmount"=CASE WHEN is_ar THEN 6.00109 ELSE -6.00109 END WHERE id=application AND "companyId"=f.company_id;
+      PERFORM pg_temp.book_control(f,is_ar,3.00109,'2026-02-03',NULL,'Payment',p);
+      PERFORM pg_temp.assert_reports(f,is_ar,'2026-02-03',0,0,0,'full FX memo refund');
+      IF is_ar THEN SELECT count(*) INTO actual FROM get_ar_open_by_customer(f.company_id,'2026-02-03') WHERE "documentId"=m;
+      ELSE SELECT count(*) INTO actual FROM get_ap_open_by_supplier(f.company_id,'2026-02-03') WHERE "documentId"=m; END IF;
+      ASSERT actual=0,'Fully refunded memo must have no reconstructed fractional principal';
+      UPDATE "invoiceSettlement" SET "sourceAmount"=NULL,"appliedAmount"=25 WHERE id=application AND "companyId"=f.company_id;
+      IF is_ar THEN SELECT count(*) INTO actual FROM get_ar_open_by_customer(f.company_id,'2026-02-03') WHERE "documentId"=m;
+      ELSE SELECT count(*) INTO actual FROM get_ap_open_by_supplier(f.company_id,'2026-02-03') WHERE "documentId"=m; END IF;
+      ASSERT actual=0,'Unknown target memo principal must fail closed';
+      RAISE EXCEPTION USING ERRCODE='P9001',MESSAGE='fixture cleanup';
+    EXCEPTION WHEN SQLSTATE 'P9001' THEN NULL; END;
+  END LOOP;
+END;
+$refund_cases$;
+
 DO $cases$
 DECLARE f pg_temp.report_fixture; other_fixture pg_temp.report_fixture; is_ar boolean; doc text; p1 text; p2 text; m text; s text; row_value record; open_sum numeric; n integer; excluded_status text; new_account text;
 BEGIN

@@ -160,8 +160,13 @@ a later pull no-ops. `supportsPaymentPush` gates the whole thing — **Rillet, X
 AND QBO all set it true** (2026-08-14 parity). The capability set
 `PAYMENT_PUSH_PROVIDERS` (`core/payment-syncer.ts`, must stay in sync with the
 syncer flags) is what the reconcile executor and outbound sweep read instead of the
-old `providerId === "rillet"` literal. v1 is single-settlement, base-currency, no
-discount, no void-echo — everything else parks as Skipped. The paid date goes
+old `providerId === "rillet"` literal. Push validation controls supported
+currency, funding and discount shapes; unsupported payments park as Skipped.
+Rillet supports native voids for Carbon-origin payments: every persisted mapping
+under the payment's single/fan-out identity is deleted remotely, then marked
+`metadata.voided=true` in one local transaction. Mapping identities survive;
+404 means the desired deletion already happened, while provider refusals remain
+visible failures. Pulled/provider-origin payments never echo deletion. The paid date goes
 through `toPostingDateString` (Kysely's pg driver returns DATE columns as JS
 `Date`s; a bare `.slice` crashed the push). Provider adapters (`pushRemotePayment`):
 **Rillet** `createInvoicePayment`/`createBillPayment` (`POST /{invoices,bills}/{id}/payments`,
@@ -182,8 +187,10 @@ removed v2 engine spec; the behavior is documented in this section — see git f
 ## Document representation model (bills, invoices, items)
 
 AR/AP **documents** preserve Carbon's component amounts and account effects.
-Base-currency GL parity also requires the provider to accept Carbon's FX snapshot;
-Rillet AR_ONLY retains the provider-owned translation limitation described below. Spec:
+Base-currency GL parity also requires the provider to accept Carbon's FX snapshot.
+Rillet uses REVENUE_RECOGNITION_ONLY invoices with a fixed rate and same-day
+recognition; AR_ONLY ignores the invoice rate and initially credits deferred
+revenue, so it cannot mirror Carbon's posting. Spec:
 `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`.
 
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
@@ -205,8 +212,9 @@ Rillet AR_ONLY retains the provider-owned translation limitation described below
   `TxnTaxDetail`, Xero `TaxType: "NONE"`. FX bills pin the provider rate
   (Rillet named `exchange_rate` object, QBO `CurrencyRef` + reciprocal
   `ExchangeRate = 1/r`, Xero `CurrencyRate = r`, including foreign 1:1 snapshots).
-  Rillet's directed-pair request shape is schema-backed; returned economic
-  translation still requires connected-provider acceptance.
+  Rillet's directed pair is document currency → subsidiary base currency at
+  `1/r`, not Carbon's base → document convention. Foreign1:1 must stay explicit.
+  This direction is verified against the sandbox's independent journal report.
   Every bill syncer has a posted-status `shouldSync` (Draft excluded — no
   journal to replay). Missing original journal/control/account metadata throws
   the structured `UNMAPPED_ACCOUNTS` Warning before numeric reconciliation.
@@ -261,11 +269,16 @@ Rillet AR_ONLY retains the provider-owned translation limitation described below
     real active catalog; missing/ambiguous configuration raises
     `UNMAPPED_TAX_CODES` before dependencies. Failed catalog reads evict the
     cached promise so another invoice can retry. [Intuit SDK tax contract](https://intuit.github.io/QuickBooks-V3-PHP-SDK/quickstart.html#constructing-entities-with-tax).
-  - Rillet AR_ONLY has no documented invoice request rate field, so its base
-    translation remains provider-owned. Its bill rate object is confirmed by
-    [the request schema](https://docs.api.rillet.com/v2.0/reference/create-a-bill-1);
-    directed arithmetic has not been independently verified against a provider
-    ledger. Keep this limitation in connected-provider acceptance.
+  - Rillet REVENUE_RECOGNITION_ONLY accepts the same directed fixed rate as bills.
+    Each item has a DAILY revenue period beginning and ending on Carbon's
+    posting date, also used as the remote invoice/FX date. The interim
+    deferred-revenue entries net to zero and recognition
+    credits the mapped revenue account; shipping retains its original-account
+    override. Native invoice/bill DELETE handles Carbon Voided status before
+    the mapped-create idempotency shortcut. Reconciliation and the outbound
+    sweep include mapped voided documents/payments, and mapping tombstones stop
+    repeated deletes. Compare independent remote GL, including recognition
+    and reversal, instead of treating create HTTP200 as accounting parity.
 - **Provider items are non-tracked** so the provider never posts inventory
   (bills) or COGS (invoices): Xero pushes `IsTrackedAsInventory: false` on
   create and OMITS the flag on update (Xero rejects untracking an item with

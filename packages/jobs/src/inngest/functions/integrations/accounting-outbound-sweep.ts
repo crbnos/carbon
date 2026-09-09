@@ -229,7 +229,10 @@ async function sweepCompanyProvider(args: {
     const billIds = await pageIds({
       ctx,
       table: "purchaseInvoice",
-      statuses: SWEPT_BILL_STATUSES,
+      statuses:
+        providerId === "rillet"
+          ? [...SWEPT_BILL_STATUSES, "Voided"]
+          : SWEPT_BILL_STATUSES,
       dateColumn: "postingDate",
       floor
     });
@@ -258,7 +261,10 @@ async function sweepCompanyProvider(args: {
     const invoiceIds = await pageIds({
       ctx,
       table: "salesInvoice",
-      statuses: SWEPT_INVOICE_STATUSES,
+      statuses:
+        providerId === "rillet"
+          ? [...SWEPT_INVOICE_STATUSES, "Voided"]
+          : SWEPT_INVOICE_STATUSES,
       dateColumn: "postingDate",
       floor
     });

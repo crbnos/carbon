@@ -72,32 +72,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       Awaited<ReturnType<typeof getStagedCreditsForPayment>>["data"]
     > = [];
     if (payment.data.status === "Draft") {
-      const isAR = payment.data.paymentType === "Receipt";
+      const isAR = Boolean(payment.data.customerId);
+      const isRefund = isAR !== (payment.data.paymentType === "Receipt");
       const partyId = isAR ? payment.data.customerId : payment.data.supplierId;
-      if (!partyId) throw new Error("Payment party is required");
-      const [invoices, credit, credits, staged] = await Promise.all([
-        isAR
-          ? getOpenSalesInvoicesForCustomer(
-              client,
-              companyId,
-              partyId,
-              payment.data.currencyCode
-            )
-          : getOpenPurchaseInvoicesForSupplier(
-              client,
-              companyId,
-              partyId,
-              payment.data.currencyCode
-            ),
-        getAvailableOnAccountCreditSources(
-          client,
-          companyId,
-          isAR
-            ? { paymentType: "Receipt", customerId: partyId }
-            : { paymentType: "Disbursement", supplierId: partyId },
-          payment.data.currencyCode
-        ),
-        getAvailableCreditsForParty(
+      if (
+        !partyId ||
+        Boolean(payment.data.customerId) === Boolean(payment.data.supplierId)
+      )
+        throw new Error("Payment requires exactly one customer or supplier");
+      if (isRefund) {
+        const memos = await getAvailableCreditsForParty(
           client,
           companyId,
           isAR
@@ -105,22 +89,69 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             : { side: "purchase", supplierId: partyId },
           paymentId,
           payment.data.currencyCode
-        ),
-        getStagedCreditsForPayment(
-          client,
-          paymentId,
-          isAR ? "sales" : "purchase",
-          companyId
-        )
-      ]);
-      const loadError =
-        invoices.error ?? credit.error ?? credits.error ?? staged.error;
-      if (loadError) throw loadError;
-      if (!credit.data) throw new Error("Unable to load payment funding");
-      openInvoices = invoices.data ?? [];
-      funding = credit.data;
-      availableCredits = credits.data ?? [];
-      stagedCredits = staged.data ?? [];
+        );
+        if (memos.error) throw memos.error;
+        openInvoices = (memos.data ?? []).map((memo) => ({
+          id: memo.id,
+          invoiceId: memo.memoId,
+          dateDue: null,
+          dateIssued: null,
+          paymentTermId: null,
+          currencyCode: memo.currencyCode,
+          exchangeRate: memo.exchangeRate,
+          totalAmount: memo.amount,
+          balance: memo.remaining,
+          remainingDocument: memo.remainingDocument,
+          status: "Posted"
+        }));
+      } else {
+        const [invoices, credit, credits, staged] = await Promise.all([
+          isAR
+            ? getOpenSalesInvoicesForCustomer(
+                client,
+                companyId,
+                partyId,
+                payment.data.currencyCode
+              )
+            : getOpenPurchaseInvoicesForSupplier(
+                client,
+                companyId,
+                partyId,
+                payment.data.currencyCode
+              ),
+          getAvailableOnAccountCreditSources(
+            client,
+            companyId,
+            isAR
+              ? { paymentType: "Receipt", customerId: partyId }
+              : { paymentType: "Disbursement", supplierId: partyId },
+            payment.data.currencyCode
+          ),
+          getAvailableCreditsForParty(
+            client,
+            companyId,
+            isAR
+              ? { side: "sales", customerId: partyId }
+              : { side: "purchase", supplierId: partyId },
+            paymentId,
+            payment.data.currencyCode
+          ),
+          getStagedCreditsForPayment(
+            client,
+            paymentId,
+            isAR ? "sales" : "purchase",
+            companyId
+          )
+        ]);
+        const loadError =
+          invoices.error ?? credit.error ?? credits.error ?? staged.error;
+        if (loadError) throw loadError;
+        if (!credit.data) throw new Error("Unable to load payment funding");
+        openInvoices = invoices.data ?? [];
+        funding = credit.data;
+        availableCredits = credits.data ?? [];
+        stagedCredits = staged.data ?? [];
+      }
     }
     return {
       payment: payment.data,
@@ -226,6 +257,7 @@ export default function PaymentDetailRoute() {
   } = useLoaderData<typeof loader>();
   const locked = isPaymentLocked(payment.status);
   const side: "sales" | "purchase" = payment.customerId ? "sales" : "purchase";
+  const isRefund = (side === "sales") !== (payment.paymentType === "Receipt");
 
   const initialValues = {
     id: payment.id,
@@ -245,16 +277,19 @@ export default function PaymentDetailRoute() {
 
   return (
     <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <PaymentForm initialValues={initialValues} />
+      <PaymentForm key={payment.id} initialValues={initialValues} />
       <PaymentApplications
         applications={applications}
         paymentTotal={Number(payment.totalAmount)}
         paymentCurrency={payment.currencyCode}
         baseCurrency={baseCurrencyCode}
+        isRefund={isRefund}
       />
 
       {!locked && (
         <PaymentApplyTable
+          key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId}:${payment.currencyCode}:${payment.paymentType}`}
+          isRefund={isRefund}
           paymentId={payment.id}
           paymentType={payment.paymentType}
           paymentCurrency={payment.currencyCode}
@@ -278,6 +313,7 @@ export default function PaymentDetailRoute() {
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,
             targetPurchaseInvoiceId: a.targetPurchaseInvoiceId,
+            targetMemoId: a.targetMemoId,
             sourceAmount: a.sourceAmount,
             sourcePaymentId: a.sourcePaymentId,
             appliedAmount: Number(a.appliedAmount),
@@ -290,7 +326,7 @@ export default function PaymentDetailRoute() {
         />
       )}
 
-      {!locked && availableCredits.length > 0 && (
+      {!locked && !isRefund && availableCredits.length > 0 && (
         <AvailableCreditsTable
           paymentId={payment.id}
           side={side}

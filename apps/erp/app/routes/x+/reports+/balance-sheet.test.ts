@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getCompaniesInGroup,
+  getFinancialStatementBalances,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
@@ -14,6 +15,8 @@ import type { ChartPeriodSeries } from "~/modules/accounting/types";
 import { NET_INCOME_ACCOUNT_ID } from "~/modules/accounting/types";
 import { exportPeriodReport } from "~/modules/accounting/ui/Reports/exportReport";
 import { loader } from "./balance-sheet";
+import { loader as incomeStatementLoader } from "./income-statement";
+import { loader as trialBalanceLoader } from "./trial-balance";
 
 vi.mock("@carbon/auth", () => ({
   error: (cause: unknown, message: string) => ({
@@ -69,6 +72,7 @@ vi.mock("~/modules/accounting", async () => ({
   ...(await import("~/modules/accounting/accounting.models")),
   getCompaniesInGroup: vi.fn(),
   getFinancialStatementPeriodSeries: vi.fn(),
+  getFinancialStatementBalances: vi.fn(),
   getFiscalYearSettings: vi.fn()
 }));
 vi.mock("~/modules/accounting/accounting.ee.server", async () => ({
@@ -274,6 +278,10 @@ beforeEach(() => {
     data: { startMonth: "January" },
     error: null
   } as Awaited<ReturnType<typeof getFiscalYearSettings>>);
+  vi.mocked(getFinancialStatementBalances).mockResolvedValue({
+    data: [],
+    error: null
+  });
   vi.mocked(getFinancialStatementPeriodSeries).mockImplementation(async () => ({
     data: sourceChart,
     ctaByBucket: { "2026-07": 40, "2026-08": 20 },
@@ -537,5 +545,42 @@ describe("balance sheet configured CTA", () => {
     expect(csv).toContain(",reserves,40,20");
     expect(csv).toContain(",equity,160,80");
     expect(csv).toContain(",balance-sheet,0,0");
+  });
+});
+
+describe.each([
+  ["balance sheet", loader],
+  ["income statement", incomeStatementLoader],
+  ["trial balance", trialBalanceLoader]
+] as const)("%s company selection", (_name, reportLoader) => {
+  it("rejects an unrelated company before reading ledger balances", async () => {
+    const request = new Request(
+      "http://localhost/x/reports/balance-sheet?companies=unrelated&startDate=2026-07-01&endDate=2026-08-31"
+    );
+    await expect(
+      reportLoader({ request, params: {}, context: {} } as Parameters<
+        typeof reportLoader
+      >[0])
+    ).rejects.toMatchObject({ status: 404 });
+    expect(getFinancialStatementPeriodSeries).not.toHaveBeenCalled();
+    expect(getConsolidatedPeriodSeriesForReport).not.toHaveBeenCalled();
+    expect(reads).toEqual([]);
+  });
+
+  it("refuses a company-list lookup failure instead of reporting empty balances", async () => {
+    vi.mocked(getCompaniesInGroup).mockResolvedValue({
+      data: null,
+      error: { message: "Company lookup failed" }
+    } as unknown as Awaited<ReturnType<typeof getCompaniesInGroup>>);
+    const request = new Request(
+      "http://localhost/x/reports/balance-sheet?companies=all&startDate=2026-07-01&endDate=2026-08-31"
+    );
+    await expect(
+      reportLoader({ request, params: {}, context: {} } as Parameters<
+        typeof reportLoader
+      >[0])
+    ).rejects.toMatchObject({ status: 302 });
+    expect(getFinancialStatementPeriodSeries).not.toHaveBeenCalled();
+    expect(getConsolidatedPeriodSeriesForReport).not.toHaveBeenCalled();
   });
 });

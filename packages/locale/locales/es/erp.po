@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Agregue una sección de materiales que enumere cada artículo en la lista de materiales con su cantidad."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "Agregar un parámetro (en el explorador de procedimientos)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Agregue una impresora en la configuración de impresión para imprimir etiquetas directamente."
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "Agregar un paso"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "Agregar un paso o pregunta (en los exploradores de procedimientos y capacitación)"
 
 msgid "Add Ability"
 msgstr "Agregar capacidad"
@@ -1849,6 +1849,9 @@ msgstr "Aplicado"
 #. placeholder {0}: r.invoiceId
 msgid "Applied amount for {0}"
 msgstr "Importe aplicado para {0}"
+
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Los montos aplicados están en la moneda base de la empresa ({baseCurrency})."
 
 msgid "Applied Date"
 msgstr "Fecha de Aplicación"
@@ -4262,7 +4265,7 @@ msgstr "No se pudo leer el documento: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "No se pudo liberar {0}: {1}"
 
 msgid "Could not save"
 msgstr "No se pudo guardar"
@@ -8962,7 +8965,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Los asientos fechados en o antes de esta fecha se tratan como bloqueados. Se combinan con la fecha de bloqueo reportada por el proveedor cuando ambas existen."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "Ir a una sección en las páginas de detalle (los mismos modificadores + la letra de la sección)"
 
 msgid "Just one"
 msgstr "Solo uno"
@@ -10860,6 +10863,9 @@ msgstr "Nadie para asignar"
 msgid "No open invoices"
 msgstr "Sin facturas abiertas"
 
+msgid "No open memos"
+msgstr "Sin memorandos abiertos"
+
 msgid "No open orders for this item are available to link."
 msgstr "No hay pedidos abiertos disponibles para este artículo."
 
@@ -11968,6 +11974,9 @@ msgstr "Aplicaciones de Pago"
 msgid "Payment Date"
 msgstr "Fecha de Pago"
 
+msgid "Payment from Customer"
+msgstr "Pago del Cliente"
+
 msgid "Payment ID"
 msgstr "ID de Pago"
 
@@ -11988,6 +11997,9 @@ msgstr "Condiciones de pago"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Condiciones de pago como Neto 30 o pagadero a la recepción"
+
+msgid "Payment to Supplier"
+msgstr "Pago al Proveedor"
 
 msgid "Payments"
 msgstr "Pagos"
@@ -13283,8 +13295,8 @@ msgstr "Registro"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Registrar una nota de crédito o débito contra un cliente o proveedor. Las aplicaciones a facturas específicas se agregan después de que se crea la nota."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Registre el efectivo recibido de un cliente (Recepción) o pagado a un proveedor (Desembolso). Las aplicaciones a facturas específicas se agregan después de que se crea el pago."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Registre un pago del cliente, un pago al proveedor, o un reembolso. Las aplicaciones a facturas o memorandos se agregan después de que se crea el pago."
 
 msgid "Record deleted"
 msgstr "Registro eliminado"
@@ -13327,6 +13339,15 @@ msgstr "Actualizar"
 
 msgid "Refresh exchange rate"
 msgstr "Actualizar tipo de cambio"
+
+msgid "Refund from Supplier"
+msgstr "Reembolso del Proveedor"
+
+msgid "Refund memos"
+msgstr "Memorandos de Reembolso"
+
+msgid "Refund to Customer"
+msgstr "Reembolso al Cliente"
 
 msgid "Regenerate"
 msgstr "Regenerar"
@@ -13387,7 +13408,7 @@ msgstr "Liberar"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "Liberar {0} lotes de producción"
 
 msgid "Release Batch"
 msgstr "Liberar lote de producción"
@@ -13409,7 +13430,7 @@ msgstr "Liberado"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "Se liberaron {0} lotes de producción"
 
 msgid "Released date"
 msgstr "Fecha de liberación"

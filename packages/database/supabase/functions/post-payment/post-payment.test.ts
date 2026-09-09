@@ -103,8 +103,9 @@ for (const isAR of [true, false]) {
       exchangeRate: 1,
       applications: [
         app({
-          targetSalesInvoiceId: isAR ? "invoice" : null,
-          targetPurchaseInvoiceId: isAR ? null : "invoice",
+          targetSalesInvoiceId: null,
+          targetPurchaseInvoiceId: null,
+          targetMemoId: "memo",
           sourceExchangeRate: 1,
           fxGainLossAmount: isAR ? -10 : 10,
         }),

@@ -191,6 +191,35 @@ beforeEach(() => {
   harness.submit.mockClear();
 });
 describe("payment composer document funding", () => {
+  it.each([
+    "Receipt",
+    "Disbursement"
+  ])("applies %s refunds to memos and reopens exact principal", (paymentType) => {
+    const overrides = {
+      paymentType,
+      isRefund: true,
+      paymentTotal: 110,
+      openInvoices: [props.openInvoices[0]]
+    };
+    const html = render(overrides);
+    expect(html).toContain("Refund memos");
+    expect(harness.amounts).toHaveLength(1);
+    click("Auto apply");
+    render(overrides);
+    const apps = savedApplications();
+    expect(apps).toEqual([
+      expect.objectContaining({
+        targetMemoId: "one",
+        appliedAmount: 100,
+        sourceAmount: 110
+      })
+    ]);
+    expect(apps[0]).not.toHaveProperty("targetSalesInvoiceId");
+    expect(apps[0]).not.toHaveProperty("targetPurchaseInvoiceId");
+    harness.state = undefined;
+    render({ ...overrides, existingApplications: apps });
+    expect(savedApplications()).toEqual(apps);
+  });
   const highRate = {
     paymentTotal: 0,
     paymentExchangeRate: 16000,

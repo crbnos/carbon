@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "Добавить параметр (в обозревателе процедур)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати для прямой печати этикеток."
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "Добавить шаг"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "Добавить шаг или вопрос (в обозревателях процедур и обучения)"
 
 msgid "Add Ability"
 msgstr "Добавить способность"
@@ -1849,6 +1849,9 @@ msgstr "Применено"
 #. placeholder {0}: r.invoiceId
 msgid "Applied amount for {0}"
 msgstr "Примененная сумма для {0}"
+
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
 
 msgid "Applied Date"
 msgstr "Дата применения"
@@ -4262,7 +4265,7 @@ msgstr "Не удалось прочитать документ: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "Не удалось запустить {0}: {1}"
 
 msgid "Could not save"
 msgstr "Не удалось сохранить"
@@ -8962,7 +8965,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Операции, датированные в эту дату или ранее, считаются заблокированными. Объединены с датой блокировки, указанной поставщиком, если обе существуют."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "Перейти к разделу на странице деталей (те же модификаторы + буква раздела)"
 
 msgid "Just one"
 msgstr "Только один"
@@ -10860,6 +10863,9 @@ msgstr "Некого назначать"
 msgid "No open invoices"
 msgstr "Нет открытых счетов-фактур"
 
+msgid "No open memos"
+msgstr "Нет открытых служебных записок"
+
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
@@ -11968,6 +11974,9 @@ msgstr "Применение платежей"
 msgid "Payment Date"
 msgstr "Дата платежа"
 
+msgid "Payment from Customer"
+msgstr "Платеж от Покупателя"
+
 msgid "Payment ID"
 msgstr "ID платежа"
 
@@ -11988,6 +11997,9 @@ msgstr "Условия оплаты"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Условия оплаты, такие как Net 30 или оплата при получении"
+
+msgid "Payment to Supplier"
+msgstr "Платеж Поставщику"
 
 msgid "Payments"
 msgstr "Платежи"
@@ -13283,8 +13295,8 @@ msgstr "Записать"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Зарегистрируйте кредит-ноту или дебет-ноту для покупателя или поставщика. Применения к конкретным счетам-фактурам добавляются после создания документа."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Зарегистрируйте денежные средства, полученные от покупателя (Поступление) или выплаченные поставщику (Выплата). Применения к конкретным счетам-фактурам добавляются после создания платежа."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Зафиксируйте платеж от покупателя, платеж поставщику или возврат. Применения на счета-фактуры или служебные записки добавляются после создания платежа."
 
 msgid "Record deleted"
 msgstr "Запись удалена"
@@ -13327,6 +13339,15 @@ msgstr "Обновить"
 
 msgid "Refresh exchange rate"
 msgstr "Обновить валютный курс"
+
+msgid "Refund from Supplier"
+msgstr "Возврат от Поставщика"
+
+msgid "Refund memos"
+msgstr "Служебные записки о возврате"
+
+msgid "Refund to Customer"
+msgstr "Возврат Покупателю"
 
 msgid "Regenerate"
 msgstr "Пересчитать"
@@ -13387,7 +13408,7 @@ msgstr "Запустить в работу"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "Запустить {0} серий"
 
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
@@ -13409,7 +13430,7 @@ msgstr "Выпущено"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "Запущено {0} серий"
 
 msgid "Released date"
 msgstr "Дата выпуска"

@@ -150,8 +150,7 @@ for (const isAR of [true, false]) {
       journalLineReference: "reference",
       applications: [
         {
-          targetSalesInvoiceId: isAR ? "memo-a" : null,
-          targetPurchaseInvoiceId: isAR ? null : "memo-a",
+          targetMemoId: "memo-a",
           targetControlAccountId: "original-control",
           targetExchangeRate: 1,
           sourceExchangeRate: 1,

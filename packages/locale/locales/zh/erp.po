@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "添加参数（在程序文件浏览器中）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "添加步骤"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "添加步骤或问题（在程序文件和培训浏览器中）"
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -1849,6 +1849,9 @@ msgstr "已应用"
 #. placeholder {0}: r.invoiceId
 msgid "Applied amount for {0}"
 msgstr "已应用金额 {0}"
+
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
 
 msgid "Applied Date"
 msgstr "应用日期"
@@ -4262,7 +4265,7 @@ msgstr "无法读取文件：{0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "无法下达{0}：{1}"
 
 msgid "Could not save"
 msgstr "无法保存"
@@ -8962,7 +8965,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "跳转到详情页面上的某个部分（使用相同的修饰符 + 该部分的字母）"
 
 msgid "Just one"
 msgstr "仅一个"
@@ -10860,6 +10863,9 @@ msgstr "没有人员可分配"
 msgid "No open invoices"
 msgstr "没有未结发票"
 
+msgid "No open memos"
+msgstr "无未结单据"
+
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
 
@@ -11968,6 +11974,9 @@ msgstr "付款应用"
 msgid "Payment Date"
 msgstr "付款日期"
 
+msgid "Payment from Customer"
+msgstr "来自客户的付款"
+
 msgid "Payment ID"
 msgstr "付款ID"
 
@@ -11988,6 +11997,9 @@ msgstr "付款条件"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "付款条件，如净30天或收货即付"
+
+msgid "Payment to Supplier"
+msgstr "向供应商付款"
 
 msgid "Payments"
 msgstr "付款"
@@ -13283,8 +13295,8 @@ msgstr "录音"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "针对客户或供应商记录贷方或借方备忘录。对特定发票的应用在创建备忘录后添加。"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "记录从客户收到的现金（收据）或支付给供应商的现金（支付）。对特定发票的应用在创建付款后添加。"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "记录客户付款、供应商付款或退款。付款创建后，可以添加对发票或单据的应用。"
 
 msgid "Record deleted"
 msgstr "记录已删除"
@@ -13327,6 +13339,15 @@ msgstr "刷新"
 
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
+
+msgid "Refund from Supplier"
+msgstr "来自供应商的退款"
+
+msgid "Refund memos"
+msgstr "退款单据"
+
+msgid "Refund to Customer"
+msgstr "向客户退款"
 
 msgid "Regenerate"
 msgstr "重新生成"
@@ -13387,7 +13408,7 @@ msgstr "下达"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "下达{0}个生产批次"
 
 msgid "Release Batch"
 msgstr "下达生产批次"
@@ -13409,7 +13430,7 @@ msgstr "已下达"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "已下达{0}个生产批次"
 
 msgid "Released date"
 msgstr "下达日期"

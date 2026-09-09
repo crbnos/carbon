@@ -284,6 +284,14 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
   // 1. LOCAL FETCH (Single + Batch)
   // =================================================================
 
+  protected isVoided(local: Accounting.Bill): boolean {
+    return local.status === "Voided";
+  }
+
+  protected async deleteRemote(remoteId: string): Promise<void> {
+    await this.rilletProvider.deleteBill(remoteId);
+  }
+
   async fetchLocal(id: string): Promise<Accounting.Bill | null> {
     const bills = await this.fetchBillsByIds([id]);
     return bills.get(id) ?? null;

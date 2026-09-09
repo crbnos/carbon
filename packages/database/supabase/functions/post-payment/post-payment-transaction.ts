@@ -1,4 +1,4 @@
-import { sql, type Kysely, type Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DB } from "../lib/database.ts";
@@ -12,10 +12,10 @@ import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
   allocatePaymentFunding,
-  isEffectiveSettlement,
-  invoiceRemainingAmounts,
-  remainingFundingSources,
   type FundingRequest,
+  invoiceRemainingAmounts,
+  isEffectiveSettlement,
+  remainingFundingSources,
 } from "../shared/payment-funding.ts";
 import {
   assertCurrencyDecimals,
@@ -231,13 +231,8 @@ export function postPaymentTransaction(
     if (
       !partyId || Boolean(payment.customerId) === Boolean(payment.supplierId)
     ) throw new Error("Payment must have exactly one customer or supplier");
-    // Direction of cash and ledger side are deliberately independent: a
-    // Disbursement to a CUSTOMER is an AR refund and a Receipt from a SUPPLIER
-    // is an AP refund. `isAR` picks the ledger, its control accounts and which
-    // prior payments can fund it (a refund consumes on-account credit, so the
-    // source query below stays on the ledger side, never this payment's type);
-    // `cashIn` picks the debit/credit side of each line in the journal builder.
     const cashIn = payment.paymentType === "Receipt";
+    const isRefund = cashIn !== isAR;
     assertExchangeRate(Number(payment.exchangeRate));
     const company = await trx.selectFrom("company").select([
       "companyGroupId",
@@ -273,13 +268,21 @@ export function postPaymentTransaction(
           eb("appliedViaPaymentId", "=", paymentId),
         ])
       ).orderBy("id").execute();
-    const targetColumn = isAR
+    const targetColumn = isRefund
+      ? "targetMemoId"
+      : isAR
       ? "targetSalesInvoiceId"
       : "targetPurchaseInvoiceId";
     for (const draft of drafts) {
       if (
-        !draft[targetColumn] || draft.targetMemoId ||
-        (isAR ? draft.targetPurchaseInvoiceId : draft.targetSalesInvoiceId)
+        !draft[targetColumn] ||
+        (isRefund
+          ? draft.targetSalesInvoiceId || draft.targetPurchaseInvoiceId ||
+            draft.memoId ||
+            draft.sourcePaymentId || Number(draft.discountAmount) !== 0 ||
+            Number(draft.writeOffAmount) !== 0
+          : draft.targetMemoId ||
+            (isAR ? draft.targetPurchaseInvoiceId : draft.targetSalesInvoiceId))
       ) throw new Error("Unsupported payment settlement target");
     }
     const targetIds = [...new Set(drafts.map((draft) => draft[targetColumn]!))]
@@ -287,7 +290,20 @@ export function postPaymentTransaction(
     const memoIds = [
       ...new Set(drafts.flatMap((draft) => draft.memoId ? [draft.memoId] : [])),
     ].sort();
-    const invoices = targetIds.length
+    const refundMemos = isRefund && targetIds.length
+      ? await trx.selectFrom("memo").selectAll().where(
+        "companyId",
+        "=",
+        companyId,
+      )
+        .where("id", "in", targetIds).orderBy("id").forUpdate().execute()
+      : [];
+    const invoices = isRefund
+      ? refundMemos.map((memo) => ({
+        ...memo,
+        partyId: isAR ? memo.customerId : memo.supplierId,
+      }))
+      : targetIds.length
       ? await (isAR
         ? trx.selectFrom("salesInvoice").select([
           "id",
@@ -306,7 +322,15 @@ export function postPaymentTransaction(
         ]).where("companyId", "=", companyId).where("id", "in", targetIds)
           .orderBy("id").forUpdate().execute())
       : [];
-    const totals = targetIds.length
+    const totals = isRefund
+      ? refundMemos.map((memo) => ({
+        id: memo.id,
+        totalAmount: toBaseAmount(
+          Number(memo.amount),
+          Number(memo.exchangeRate),
+        ),
+      }))
+      : targetIds.length
       ? await (isAR
         ? trx.selectFrom("salesInvoices").select(["id", "totalAmount"]).where(
           "companyId",
@@ -324,10 +348,13 @@ export function postPaymentTransaction(
       totals.map((row) => [row.id, Number(row.totalAmount)]),
     );
     const priorTargetRows = targetIds.length
-      ? (await settlementQuery(trx, companyId).where(
-        `s.${targetColumn}`,
-        "in",
-        targetIds,
+      ? (await settlementQuery(trx, companyId).where((eb) =>
+        isRefund
+          ? eb.or([
+            eb("s.targetMemoId", "in", targetIds),
+            eb("s.memoId", "in", targetIds),
+          ])
+          : eb(`s.${targetColumn}`, "in", targetIds)
       ).execute()).filter(isEffectiveSettlement)
       : [];
     const controls = targetIds.length
@@ -345,7 +372,7 @@ export function postPaymentTransaction(
           "line.companyId",
           "=",
           companyId,
-        ).where("line.documentType", "=", "Invoice")
+        ).where("line.documentType", "=", isRefund ? "Memo" : "Invoice")
         .where("line.documentId", "in", targetIds).where(
           "line.description",
           "in",
@@ -354,7 +381,9 @@ export function postPaymentTransaction(
         .where(
           "journal.sourceType",
           "=",
-          isAR ? "Sales Invoice" : "Purchase Invoice",
+          isRefund
+            ? (isAR ? "Credit Memo" : "Debit Memo")
+            : (isAR ? "Sales Invoice" : "Purchase Invoice"),
         ).where("journal.status", "=", "Posted").execute()
       : [];
     const carryingById = new Map<string, number>();
@@ -387,16 +416,49 @@ export function postPaymentTransaction(
         invoice.partyId !== partyId ||
         invoice.currencyCode !== payment.currencyCode
       ) throw new Error("Invoice party/currency does not match payment");
-      if (invoice.status !== (isAR ? "Submitted" : "Open")) {
+      if (
+        invoice.status !== (isRefund ? "Posted" : isAR ? "Submitted" : "Open")
+      ) {
         throw new Error(
           `Cannot settle invoice ${invoice.id} in status ${invoice.status}`,
         );
       }
       const rate = Number(invoice.exchangeRate);
       const total = totalById.get(invoice.id)!;
-      const { remainingDocument, remainingBase } = invoiceRemainingAmounts(
-        { ...invoice, totalAmount: total }, priorTargetRows, carryingById, decimals, isAR
+      const refundMemo = refundMemos.find((memo) => memo.id === invoice.id);
+      if (refundMemo && refundMemo.direction !== (isAR ? "Credit" : "Debit")) {
+        throw new Error("Refund target must be a balance-reducing memo");
+      }
+      const used = priorTargetRows.filter((row) =>
+        row.memoId === invoice.id || row.targetMemoId === invoice.id
       );
+      const { remainingDocument, remainingBase } = isRefund
+        ? {
+          remainingDocument: toDocumentAmount(
+            Number(refundMemo!.amount) - used.reduce((sum, row) =>
+              sum + principal(row.sourceAmount, row.id), 0),
+            1,
+            decimals,
+          ),
+          remainingBase: round(
+            -(carryingById.get(invoice.id) ?? -total) -
+              used.reduce((sum, row) =>
+                sum + Number(row.appliedAmount), 0),
+          ),
+        }
+        : invoiceRemainingAmounts(
+          { ...invoice, totalAmount: total },
+          priorTargetRows,
+          carryingById,
+          decimals,
+          isAR,
+        );
+      if (remainingDocument < 0 || remainingBase < 0) {
+        throw new Error("Target memo is over-applied");
+      }
+      if (accountingEnabled && !targetControlById.has(invoice.id)) {
+        throw new Error("Target is missing its original control account");
+      }
       targets.set(invoice.id, { rate, remainingDocument, remainingBase });
     }
 
@@ -412,8 +474,12 @@ export function postPaymentTransaction(
       throw new Error("Staged memo not found in this company");
     }
     const memoConsumption = memoIds.length
-      ? (await settlementQuery(trx, companyId).where("s.memoId", "in", memoIds)
-        .execute()).filter(isEffectiveSettlement)
+      ? (await settlementQuery(trx, companyId).where((eb) =>
+        eb.or([
+          eb("s.memoId", "in", memoIds),
+          eb("s.targetMemoId", "in", memoIds),
+        ])
+      ).execute()).filter(isEffectiveSettlement)
       : [];
     const memoRemaining = new Map(memos.map((memo) => {
       if (
@@ -429,11 +495,17 @@ export function postPaymentTransaction(
       assertExchangeRate(Number(memo.exchangeRate));
       return [memo.id, {
         memo,
-        document: toDocumentAmount(Number(memo.amount), 1, decimals) -
-          memoConsumption.filter((row) => row.memoId === memo.id).reduce(
-            (sum, row) => sum + principal(row.sourceAmount, row.id),
-            0,
-          ),
+        document: toDocumentAmount(
+          Number(memo.amount) -
+            memoConsumption.filter((row) =>
+              row.memoId === memo.id || row.targetMemoId === memo.id
+            ).reduce(
+              (sum, row) => sum + principal(row.sourceAmount, row.id),
+              0,
+            ),
+          1,
+          decimals,
+        ),
       }] as [string, { memo: typeof memo; document: number }];
     }));
     const normalizedMemos: Array<
@@ -493,22 +565,24 @@ export function postPaymentTransaction(
       });
     }
 
-    const sources = await trx.selectFrom("payment").selectAll().where(
-      "companyId",
-      "=",
-      companyId,
-    )
-      .where("status", "=", "Posted").where(
-        "paymentType",
+    const sources = isRefund
+      ? []
+      : await trx.selectFrom("payment").selectAll().where(
+        "companyId",
         "=",
-        isAR ? "Receipt" : "Disbursement",
+        companyId,
       )
-      .where(isAR ? "customerId" : "supplierId", "=", partyId).where(
-        "currencyCode",
-        "=",
-        payment.currencyCode,
-      )
-      .where("id", "!=", paymentId).orderBy("id").forUpdate().execute();
+        .where("status", "=", "Posted").where(
+          "paymentType",
+          "=",
+          isAR ? "Receipt" : "Disbursement",
+        )
+        .where(isAR ? "customerId" : "supplierId", "=", partyId).where(
+          "currencyCode",
+          "=",
+          payment.currencyCode,
+        )
+        .where("id", "!=", paymentId).orderBy("id").forUpdate().execute();
     const sourceIds = sources.map((source) => source.id);
     const sourceControls = sourceIds.length
       ? await trx.selectFrom("journalLine as line")
@@ -567,7 +641,10 @@ export function postPaymentTransaction(
       ).execute()).filter(isEffectiveSettlement)
       : [];
     const priorSources = remainingFundingSources(
-      sources, consumed, new Map([[payment.currencyCode, decimals]]), isAR
+      sources,
+      consumed,
+      new Map([[payment.currencyCode, decimals]]),
+      isAR,
     );
     const requestByTarget = new Map<string, FundingRequest>();
     for (const draft of drafts.filter((row) => row.paymentId === paymentId)) {
@@ -627,7 +704,7 @@ export function postPaymentTransaction(
         a.targetId.localeCompare(b.targetId)
       ),
       currencyDecimals: decimals,
-      isAR,
+      isAR: cashIn,
     });
 
     const defaults = await trx.selectFrom("accountDefault").selectAll().where(
@@ -649,8 +726,9 @@ export function postPaymentTransaction(
     if (!party) throw new Error("Payment counterparty not found");
     const normalized = allocation.applications.map((application) => ({
       ...application,
-      targetSalesInvoiceId: isAR ? application.targetId : null,
-      targetPurchaseInvoiceId: isAR ? null : application.targetId,
+      targetSalesInvoiceId: !isRefund && isAR ? application.targetId : null,
+      targetPurchaseInvoiceId: !isRefund && !isAR ? application.targetId : null,
+      targetMemoId: isRefund ? application.targetId : null,
     }));
     let journalLines: ReturnType<typeof buildPaymentJournal>["lines"] = [];
     const expectedAccountClasses: Array<[string | null | undefined, string]> = [

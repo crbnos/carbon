@@ -22,6 +22,7 @@ export interface PaymentJournalLine {
 }
 
 export interface PaymentJournalApplicationInput {
+  targetMemoId?: string | null;
   targetSalesInvoiceId?: string | null;
   targetPurchaseInvoiceId?: string | null;
   sourceAmount: number;
@@ -185,12 +186,23 @@ export function buildPaymentJournal(
   let currentDocumentReleased = 0;
   const priorCreditReleased = new Map<string, number>();
   for (const app of applications) {
-    const target = isAR
+    const isRefund = cashIn !== isAR;
+    const target = isRefund
+      ? app.targetMemoId
+      : isAR
       ? app.targetSalesInvoiceId
       : app.targetPurchaseInvoiceId;
     if (
-      !target || (isAR ? app.targetPurchaseInvoiceId : app.targetSalesInvoiceId)
-    ) throw new Error("Invalid payment application target");
+      !target ||
+      (isRefund
+        ? app.targetSalesInvoiceId || app.targetPurchaseInvoiceId ||
+          app.sourcePaymentId || app.discountAmount !== 0 ||
+          app.writeOffAmount !== 0
+        : app.targetMemoId ||
+          (isAR ? app.targetPurchaseInvoiceId : app.targetSalesInvoiceId))
+    ) {
+      throw new Error("Invalid payment application target");
+    }
     assertExchangeRate(app.targetExchangeRate);
     assertExchangeRate(app.sourceExchangeRate);
     const applied = nonnegative(app.appliedAmount, "Applied amount");

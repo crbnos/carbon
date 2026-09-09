@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "एक पैरामीटर जोड़ें (कार्यविधि खोजकर्ता में)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "लेबल सीधे प्रिंट करने के लिए प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें।"
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "एक चरण या प्रश्न जोड़ें (कार्यविधि और प्रशिक्षण खोजकर्ता में)"
 
 msgid "Add Ability"
 msgstr "क्षमता जोड़ें"
@@ -1849,6 +1849,9 @@ msgstr "लागू"
 #. placeholder {0}: r.invoiceId
 msgid "Applied amount for {0}"
 msgstr "{0} के लिए लागू राशि"
+
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "लागू की गई राशि कंपनी की आधार मुद्रा ({baseCurrency}) में है।"
 
 msgid "Applied Date"
 msgstr "लागू तारीख"
@@ -4262,7 +4265,7 @@ msgstr "दस्तावेज़ नहीं पढ़ा जा सका: 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "जारी नहीं कर सके {0}: {1}"
 
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
@@ -8962,7 +8965,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "इस तारीख को या इससे पहले दिनांकित जर्नल को लॉक माना जाता है। दोनों मौजूद होने पर प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ मर्ज किया जाता है।"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "विवरण पृष्ठों पर किसी अनुभाग पर जाएं (समान संशोधक + अनुभाग का अक्षर)"
 
 msgid "Just one"
 msgstr "बस एक"
@@ -10860,6 +10863,9 @@ msgstr "असाइन करने के लिए कोई नहीं"
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
+msgid "No open memos"
+msgstr "कोई खुला ज्ञापन नहीं"
+
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
 
@@ -11968,6 +11974,9 @@ msgstr "भुगतान अनुप्रयोग"
 msgid "Payment Date"
 msgstr "भुगतान तारीख"
 
+msgid "Payment from Customer"
+msgstr "ग्राहक से भुगतान"
+
 msgid "Payment ID"
 msgstr "भुगतान ID"
 
@@ -11988,6 +11997,9 @@ msgstr "भुगतान शर्तें"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30 जैसी भुगतान शर्तें या प्राप्ति पर देय"
+
+msgid "Payment to Supplier"
+msgstr "आपूर्तिकर्ता को भुगतान"
 
 msgid "Payments"
 msgstr "भुगतान"
@@ -13283,8 +13295,8 @@ msgstr "रिकॉर्ड करें"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "एक ग्राहक या आपूर्तिकर्ता के विरुद्ध एक जमा या नामे ज्ञापन दर्ज करें। विशिष्ट चालान के लिए आवेदन ज्ञापन बनाए जाने के बाद जोड़े जाते हैं।"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "एक ग्राहक से प्राप्त नकद (प्राप्ति) या एक आपूर्तिकर्ता को भुगतान की गई नकद (संवितरण) को दर्ज करें। विशिष्ट चालान के लिए आवेदन भुगतान बनाए जाने के बाद जोड़े जाते हैं।"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "एक ग्राहक भुगतान, आपूर्तिकर्ता भुगतान, या धनवापसी दर्ज करें। भुगतान बनाने के बाद चालान या ज्ञापन में आवेदन जोड़े जाते हैं।"
 
 msgid "Record deleted"
 msgstr "रिकॉर्ड हटाया गया"
@@ -13327,6 +13339,15 @@ msgstr "ताज़ा करें"
 
 msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
+
+msgid "Refund from Supplier"
+msgstr "आपूर्तिकर्ता से धनवापसी"
+
+msgid "Refund memos"
+msgstr "धनवापसी ज्ञापन"
+
+msgid "Refund to Customer"
+msgstr "ग्राहक को धनवापसी"
 
 msgid "Regenerate"
 msgstr "पुनर्जीवित करें"
@@ -13387,7 +13408,7 @@ msgstr "जारी करें"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "{0} बैच जारी करें"
 
 msgid "Release Batch"
 msgstr "बैच जारी करें"
@@ -13409,7 +13430,7 @@ msgstr "जारी किया गया"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "{0} बैच जारी किए गए"
 
 msgid "Released date"
 msgstr "जारी की गई तारीख"

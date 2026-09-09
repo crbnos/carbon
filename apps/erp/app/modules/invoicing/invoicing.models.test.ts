@@ -31,6 +31,38 @@ describe("paymentValidator", () => {
     expect(r.success).toBe(true);
   });
 
+  it("accepts a customer refund disbursement", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType: "Disbursement"
+      }).success
+    ).toBe(true);
+  });
+
+  it("accepts a supplier refund receipt", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        customerId: undefined,
+        supplierId: "supp1"
+      }).success
+    ).toBe(true);
+  });
+
+  it.each([
+    "Receipt",
+    "Disbursement"
+  ])("rejects ambiguous %s counterparty", (paymentType) => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType,
+        supplierId: "supp1"
+      }).success
+    ).toBe(false);
+  });
+
   it("rejects a Receipt missing customer", () => {
     const r = paymentValidator.safeParse({
       ...validReceipt,

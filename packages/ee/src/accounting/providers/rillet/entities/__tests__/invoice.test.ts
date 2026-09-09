@@ -130,7 +130,7 @@ function mapArguments(source = charges()) {
     documentUrl: "https://erp.example.test/x/sales-invoice/si_1"
   };
 }
-describe("Rillet AR_ONLY native sales components", () => {
+describe("Rillet revenue recognition native sales components", () => {
   it("exports the document currency components with shipping revenue override and native header tax exactly once", () => {
     const payload = mapSalesInvoiceToRilletInvoice(mapArguments());
     expect(
@@ -151,8 +151,21 @@ describe("Rillet AR_ONLY native sales components", () => {
     expect(
       payload.items.every((line) => line.total_amount.currency === "EUR")
     ).toBe(true);
-    expect(payload).not.toHaveProperty("exchange_rate");
-    expect(payload.scope).toBe("AR_ONLY");
+    expect(payload.scope).toBe("REVENUE_RECOGNITION_ONLY");
+    expect(payload.exchange_rate).toEqual({
+      base: "EUR",
+      target: "USD",
+      rate: "1.25",
+      date: "2026-08-12"
+    });
+    expect(
+      payload.items.every(
+        (item) =>
+          item.revenue?.period?.start === "2026-08-12" &&
+          item.revenue?.period?.end === "2026-08-12" &&
+          item.revenue?.pattern === "DAILY"
+      )
+    ).toBe(true);
     expect(
       Rillet.InvoiceSchema.parse({ ...payload, id: "remote" }).items[3]?.revenue
         ?.account_code
@@ -311,4 +324,18 @@ describe("Rillet actual invoice preflight", () => {
     expect(test.factory).not.toHaveBeenCalled();
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
   });
+});
+
+it("recognizes revenue and FX on the actual posting date when issue date differs", () => {
+  const source = { ...charges(), postingDate: "2026-09-09" };
+  const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
+  expect(payload.invoice_date).toBe("2026-09-09");
+  expect(payload.exchange_rate?.date).toBe("2026-09-09");
+  expect(
+    payload.items.every(
+      (item) =>
+        item.revenue?.period?.start === "2026-09-09" &&
+        item.revenue?.period?.end === "2026-09-09"
+    )
+  ).toBe(true);
 });

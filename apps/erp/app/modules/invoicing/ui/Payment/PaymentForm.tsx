@@ -29,7 +29,7 @@ import {
   Hidden,
   Input,
   Number,
-  Select,
+  SelectControlled,
   SequenceOrCustomId,
   Submit,
   Supplier,
@@ -37,11 +37,7 @@ import {
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import {
-  isPaymentLocked,
-  paymentType,
-  paymentValidator
-} from "~/modules/invoicing";
+import { isPaymentLocked, paymentValidator } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import PaymentStatus from "./PaymentStatus";
 
@@ -109,23 +105,34 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const canDelete = permissions.can("delete", "invoicing");
   const deleteModal = useDisclosure();
 
-  // The counterparty selector visibility tracks paymentType so users
-  // see Customer for Receipts and Supplier for Disbursements.
-  const [currentType, setCurrentType] = useState<"Receipt" | "Disbursement">(
-    initialValues.paymentType ?? "Receipt"
-  );
-
-  const typeOptions = paymentType.map((t) => ({
-    label: t === "Receipt" ? "Payment from Customer" : "Payment to Supplier",
-    value: t
-  }));
+  // Cash direction and subledger party are independent for refunds.
+  const initialKind = initialValues.supplierId
+    ? initialValues.paymentType === "Receipt"
+      ? "supplier-refund"
+      : "supplier-payment"
+    : initialValues.paymentType === "Disbursement"
+      ? "customer-refund"
+      : "customer-payment";
+  const [paymentKind, setPaymentKind] = useState(initialKind);
+  const defaultValues = { ...initialValues, paymentKind: initialKind };
+  const isCustomer = paymentKind.startsWith("customer-");
+  const currentType =
+    paymentKind === "customer-payment" || paymentKind === "supplier-refund"
+      ? "Receipt"
+      : "Disbursement";
+  const typeOptions = [
+    { label: t`Payment from Customer`, value: "customer-payment" },
+    { label: t`Payment to Supplier`, value: "supplier-payment" },
+    { label: t`Refund to Customer`, value: "customer-refund" },
+    { label: t`Refund from Supplier`, value: "supplier-refund" }
+  ];
 
   return (
     <>
       <ValidatedForm
         method="post"
         validator={paymentValidator}
-        defaultValues={initialValues}
+        defaultValues={defaultValues}
         isDisabled={isEditing && isLocked}
         className="w-full"
       >
@@ -188,15 +195,17 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Record cash received from a customer (Receipt) or paid to a
-                  supplier (Disbursement). Applications to specific invoices are
-                  added after the payment is created.
+                  Record a customer payment, supplier payment, or refund.
+                  Applications to invoices or memos are added after the payment
+                  is created.
                 </Trans>
               </CardDescription>
             </CardHeader>
           )}
           <CardContent>
             <Hidden name="id" />
+            <Hidden name="paymentType" value={currentType} />
+            <Hidden name={isCustomer ? "supplierId" : "customerId"} value="" />
             {isEditing && <Hidden name="paymentId" />}
             {seedInvoiceIds && seedInvoiceIds.length > 0 && (
               <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
@@ -210,20 +219,16 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                     table="payment"
                   />
                 )}
-                <Select
-                  name="paymentType"
+                <SelectControlled
+                  name="paymentKind"
                   label={t`Type`}
                   options={typeOptions}
+                  value={paymentKind}
                   onChange={(opt) => {
-                    if (
-                      opt?.value === "Receipt" ||
-                      opt?.value === "Disbursement"
-                    ) {
-                      setCurrentType(opt.value);
-                    }
+                    if (opt) setPaymentKind(opt.value);
                   }}
                 />
-                {currentType === "Receipt" ? (
+                {isCustomer ? (
                   <Customer name="customerId" label={t`Customer`} />
                 ) : (
                   <Supplier name="supplierId" label={t`Supplier`} />

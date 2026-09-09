@@ -1239,7 +1239,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "パラメータを追加（手順書エクスプローラー内）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -1254,7 +1254,7 @@ msgid "Add a step"
 msgstr "ステップを追加"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "ステップまたは質問を追加（手順書と教育訓練エクスプローラー内）"
 
 msgid "Add Ability"
 msgstr "能力を追加"
@@ -1849,6 +1849,9 @@ msgstr "適用"
 #. placeholder {0}: r.invoiceId
 msgid "Applied amount for {0}"
 msgstr "{0}の適用額"
+
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
 
 msgid "Applied Date"
 msgstr "適用日"
@@ -4262,7 +4265,7 @@ msgstr "文書が読み込めません: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "{0}をリリースできませんでした：{1}"
 
 msgid "Could not save"
 msgstr "保存できませんでした"
@@ -8962,7 +8965,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "詳細ページのセクションへジャンプ（同じ修飾子+セクション文字）"
 
 msgid "Just one"
 msgstr "1つだけ"
@@ -10860,6 +10863,9 @@ msgstr "配置する人がいません"
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
+msgid "No open memos"
+msgstr "オープンなメモはありません"
+
 msgid "No open orders for this item are available to link."
 msgstr "この品目にリンク可能なオープンな注文はありません"
 
@@ -11968,6 +11974,9 @@ msgstr "支払い適用"
 msgid "Payment Date"
 msgstr "支払日"
 
+msgid "Payment from Customer"
+msgstr "得意先からの支払"
+
 msgid "Payment ID"
 msgstr "支払いID"
 
@@ -11988,6 +11997,9 @@ msgstr "支払条件"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30のような支払条件または領収時に支払い"
+
+msgid "Payment to Supplier"
+msgstr "仕入先への支払"
 
 msgid "Payments"
 msgstr "支払い"
@@ -13283,8 +13295,8 @@ msgstr "記録"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "得意先または仕入先に対して貸方メモまたは借方メモを記録する。特定の請求書への適用はメモ作成後に追加される。"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "得意先から受け取った現金（受取）または仕入先に支払った現金（出金）を記録する。特定の請求書への適用は支払作成後に追加される。"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "得意先支払、仕入先支払、または返金を記録します。請求書またはメモへの適用は、支払が作成された後に追加されます。"
 
 msgid "Record deleted"
 msgstr "レコード削除済み"
@@ -13327,6 +13339,15 @@ msgstr "更新"
 
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
+
+msgid "Refund from Supplier"
+msgstr "仕入先からの返金"
+
+msgid "Refund memos"
+msgstr "返金メモ"
+
+msgid "Refund to Customer"
+msgstr "得意先への返金"
 
 msgid "Regenerate"
 msgstr "再生成"
@@ -13387,7 +13408,7 @@ msgstr "リリース"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "{0}個のバッチをリリース"
 
 msgid "Release Batch"
 msgstr "バッチをリリース"
@@ -13409,7 +13430,7 @@ msgstr "リリース済み"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "{0}個のバッチをリリース済"
 
 msgid "Released date"
 msgstr "リリース日"

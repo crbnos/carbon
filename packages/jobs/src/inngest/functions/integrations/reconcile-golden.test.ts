@@ -18,9 +18,8 @@
  *  FIX-3  Master data uses updatedAt vs lastSyncedAt instead of the 60s
  *         completed-row cooldown (no window to swallow a real change, no
  *         window to wait out for a no-op).
- *  FIX-4  A Voided payment with prior operations records nothing (v1 has no
- *         void echo — the legacy transition enqueue only produced a Skipped
- *         park).
+ *  FIX-4  Native Rillet voids reconcile from durable active mapping state;
+ *         unsupported providers preserve their prior disposition behavior.
  *
  * The journal POLICY routing itself (push vs Excluded vs Warning, metadata,
  * granularity) is shared by construction — both the legacy path and the
@@ -542,7 +541,7 @@ describe("golden: payments", () => {
     ).toEqual(["nothing"]);
   });
 
-  it("FIX-4: a Voided payment with prior ops records nothing (no void echo in v1)", () => {
+  it("unsupported native-void adapter preserves the prior payment disposition", () => {
     expect(
       kinds(
         computeReconcileDecision(
@@ -617,5 +616,52 @@ describe("golden: master data", () => {
         )
       )
     ).toEqual(["nothing"]);
+  });
+});
+
+describe("Rillet mapped void reconciliation", () => {
+  it.each([
+    "invoice",
+    "bill",
+    "payment"
+  ] as const)("enqueues %s void after Completed creation until all native mappings are voided", (entityType) => {
+    const source = input({
+      entityType,
+      snapshot: { status: "Voided" },
+      hasUnvoidedPushMapping: true,
+      context: { ...baseContext, providerSupportsNativeVoid: true },
+      latestOperation: {
+        id: "op-post",
+        status: "Completed",
+        errorCode: null,
+        attemptCount: 1,
+        createdAt: "2026-09-09T10:00:00Z"
+      }
+    });
+    expect(kinds(computeReconcileDecision(source))).toEqual(["enqueue"]);
+    expect(
+      kinds(computeReconcileDecision({ ...source, hasLiveOperation: true }))
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision({ ...source, hasUnvoidedPushMapping: false })
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision({
+          ...source,
+          context: { ...source.context, providerSupportsNativeVoid: false }
+        })
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision({
+          ...source,
+          latestOperation: { ...source.latestOperation!, status: "Failed" }
+        })
+      )
+    ).toEqual(["re-drive"]);
   });
 });

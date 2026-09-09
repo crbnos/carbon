@@ -24,6 +24,7 @@ type PaymentApplication = NonNullable<
 >[number];
 
 type PaymentApplicationsProps = {
+  isRefund?: boolean;
   applications: PaymentApplication[];
   paymentTotal: number;
   paymentCurrency: string;
@@ -45,18 +46,28 @@ function invoiceLabel(a: PaymentApplication) {
       | null;
     targetSalesInvoiceId?: string | null;
     targetPurchaseInvoiceId?: string | null;
+    targetMemoId?: string | null;
+    targetMemo?:
+      | { memoId?: string | null }
+      | { memoId?: string | null }[]
+      | null;
   };
   const pick = (x: typeof rec.salesInvoice) =>
     Array.isArray(x) ? x[0]?.invoiceId : x?.invoiceId;
   return (
     pick(rec.salesInvoice) ??
     pick(rec.purchaseInvoice) ??
+    (Array.isArray(rec.targetMemo)
+      ? rec.targetMemo[0]?.memoId
+      : rec.targetMemo?.memoId) ??
     rec.targetSalesInvoiceId ??
-    rec.targetPurchaseInvoiceId
+    rec.targetPurchaseInvoiceId ??
+    rec.targetMemoId
   );
 }
 
 const PaymentApplications = ({
+  isRefund = false,
   applications: splits,
   paymentCurrency,
   baseCurrency,
@@ -69,7 +80,11 @@ const PaymentApplications = ({
     PaymentApplication & { sourceRates: number[] }
   >();
   for (const a of splits) {
-    const id = a.targetSalesInvoiceId ?? a.targetPurchaseInvoiceId ?? a.id;
+    const id =
+      a.targetSalesInvoiceId ??
+      a.targetPurchaseInvoiceId ??
+      a.targetMemoId ??
+      a.id;
     const existing = byInvoice.get(id);
     if (!existing) {
       byInvoice.set(id, { ...a, sourceRates: [Number(a.sourceExchangeRate)] });
@@ -122,9 +137,7 @@ const PaymentApplications = ({
         <Table>
           <Thead>
             <Tr>
-              <Th>
-                <Trans>Invoice</Trans>
-              </Th>
+              <Th>{isRefund ? <Trans>Memo</Trans> : <Trans>Invoice</Trans>}</Th>
               <Th className="text-right">
                 <Trans>Applied</Trans>
               </Th>
@@ -169,6 +182,10 @@ const PaymentApplications = ({
                       <Hyperlink
                         to={path.to.purchaseInvoice(a.targetPurchaseInvoiceId)}
                       >
+                        {invoiceLabel(a)}
+                      </Hyperlink>
+                    ) : a.targetMemoId ? (
+                      <Hyperlink to={path.to.memo(a.targetMemoId)}>
                         {invoiceLabel(a)}
                       </Hyperlink>
                     ) : (

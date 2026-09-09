@@ -7,6 +7,9 @@ const harness = vi.hoisted(() => ({
   states: [] as unknown[],
   stateIndex: 0,
   values: {} as Record<string, unknown>,
+  typeChange: undefined as
+    | ((option: { value: string; label: string }) => void)
+    | undefined,
   currencyChange: undefined as
     | ((option: { value: string; label: string }) => void)
     | undefined,
@@ -73,15 +76,32 @@ vi.mock("~/components/Form", () => {
   const Field = () => null;
   return {
     Account: Field,
-    Customer: Field,
+    Customer: () => createElement("input", { name: "customerId" }),
     CustomFormFields: Field,
     DatePicker: Field,
-    Hidden: Field,
+    Hidden: ({ name, value }: { name: string; value?: string }) =>
+      createElement("input", { type: "hidden", name, value, readOnly: true }),
     Input: Field,
     Select: Field,
+    SelectControlled: ({
+      options,
+      onChange
+    }: {
+      options: { label: string; value: string }[];
+      onChange: typeof harness.typeChange;
+    }) => {
+      harness.typeChange = onChange;
+      return createElement(
+        "select",
+        null,
+        options.map((o) =>
+          createElement("option", { key: o.value, value: o.value }, o.label)
+        )
+      );
+    },
     SequenceOrCustomId: Field,
     Submit: Field,
-    Supplier: Field,
+    Supplier: () => createElement("input", { name: "supplierId" }),
     TextArea: Field,
     Currency: ({ onChange }: { onChange?: typeof harness.currencyChange }) => {
       harness.currencyChange = onChange;
@@ -159,6 +179,29 @@ beforeEach(() => {
   harness.states = [];
   harness.stateIndex = 0;
   harness.currencyChange = undefined;
+  harness.typeChange = undefined;
+});
+
+describe("PaymentForm refund directions", () => {
+  it("seeds the visible payment kind in the form's registered defaults", () => {
+    render();
+    expect(harness.values.paymentKind).toBe("customer-payment");
+  });
+  it.each([
+    ["customer-refund", "Disbursement", "customerId", "supplierId"],
+    ["supplier-refund", "Receipt", "supplierId", "customerId"]
+  ])("offers %s and submits its cash direction with one party", (kind, direction, party, otherParty) => {
+    const html = render();
+    expect(html).toContain("Refund to Customer");
+    expect(html).toContain("Refund from Supplier");
+    harness.typeChange?.({ value: kind, label: kind });
+    const next = render();
+    expect(next).toContain(
+      `name="paymentType" readonly="" value="${direction}"`
+    );
+    expect(next).toContain(`name="${party}"`);
+    expect(next).toContain(`name="${otherParty}" readonly="" value=""`);
+  });
 });
 
 describe("PaymentForm document currency", () => {

@@ -72,19 +72,36 @@ export function postMemoTransaction(
       // Posting a consuming payment takes this same memo lock. A void cannot
       // erase its source while that payment still carries the application.
       const consumption = await trx.selectFrom("invoiceSettlement as s")
-        .leftJoin("payment as applying", (join) => join
-          .onRef("applying.id", "=", "s.appliedViaPaymentId")
-          .onRef("applying.companyId", "=", "s.companyId"))
+        .leftJoin("payment as applying", (join) =>
+          join
+            .onRef("applying.id", "=", "s.appliedViaPaymentId")
+            .onRef("applying.companyId", "=", "s.companyId"))
+        .leftJoin("payment as refund", (join) =>
+          join
+            .onRef("refund.id", "=", "s.paymentId")
+            .onRef("refund.companyId", "=", "s.companyId"))
         .select("s.id")
         .where("s.companyId", "=", companyId)
-        .where("s.memoId", "=", memoId)
-        .where((eb) => eb.or([
-          eb("s.appliedViaPaymentId", "is", null),
-          eb("applying.status", "=", "Posted"),
-        ]))
+        .where((eb) =>
+          eb.or([
+            eb.and([
+              eb("s.memoId", "=", memoId),
+              eb.or([
+                eb("s.appliedViaPaymentId", "is", null),
+                eb("applying.status", "=", "Posted"),
+              ]),
+            ]),
+            eb.and([
+              eb("s.targetMemoId", "=", memoId),
+              eb("refund.status", "=", "Posted"),
+            ]),
+          ])
+        )
         .limit(1).executeTakeFirst();
       if (consumption) {
-        throw new Error("Cannot void a consumed memo; void its applying payment or remove its direct application first");
+        throw new Error(
+          "Cannot void a consumed memo; void its applying payment or remove its direct application first",
+        );
       }
       let journalId: string | null = null;
       if (memo.journalId) {

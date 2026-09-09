@@ -73,6 +73,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
+  if (companies.error) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(companies.error, "Failed to load report companies")
+      )
+    );
+  }
   const companiesList = companies.data ?? [];
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
@@ -83,6 +92,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : companiesParam
         ? [companiesParam]
         : [companyId];
+  if (
+    selectedCompanyIds.length === 0 ||
+    selectedCompanyIds.some(
+      (id) => !companiesList.some((company) => company.id === id)
+    )
+  ) {
+    throw new Response("Company not found", { status: 404 });
+  }
   const isMultiCompany = selectedCompanyIds.length > 1;
 
   // Default range: last 6 months to date (in the company's business timezone) —

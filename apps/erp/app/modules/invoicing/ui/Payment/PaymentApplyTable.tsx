@@ -51,6 +51,7 @@ type OpenInvoice = {
 };
 
 type ExistingApplication = {
+  targetMemoId?: string | null;
   sourceAmount: number | null;
   sourcePaymentId?: string | null;
   targetSalesInvoiceId: string | null;
@@ -82,6 +83,7 @@ type ApplyRow = {
 type AmountField = "appliedAmount" | "discountAmount" | "writeOffAmount";
 
 type PaymentApplyTableProps = {
+  isRefund?: boolean;
   paymentId: string;
   paymentType: "Receipt" | "Disbursement";
   paymentCurrency: string;
@@ -100,6 +102,7 @@ type PaymentApplyTableProps = {
 // Shared grid template so the header labels stay aligned with the rows. Wide
 // enough to scroll horizontally on small screens rather than cramp the inputs.
 const GRID = "grid grid-cols-[2rem_minmax(9rem,1fr)_7rem_8rem_8rem_8rem] gap-3";
+const REFUND_GRID = "grid grid-cols-[2rem_minmax(9rem,1fr)_7rem_8rem] gap-3";
 
 // Compact, right-aligned numeric input for the editable amount cells.
 const AmountInput = ({
@@ -132,6 +135,7 @@ const AmountInput = ({
 );
 
 const PaymentApplyTable = ({
+  isRefund = false,
   paymentId,
   paymentType,
   paymentCurrency,
@@ -152,6 +156,7 @@ const PaymentApplyTable = ({
   const baseDecimals = useCurrencyDecimals(baseCurrency);
   const today = useCompanyToday().toString();
   const isReceipt = paymentType === "Receipt";
+  const grid = isRefund ? REFUND_GRID : GRID;
   const canEdit = permissions.can("update", "invoicing");
   const seed = useMemo<ApplyRow[]>(() => {
     const byInvoice = new Map<
@@ -164,7 +169,11 @@ const PaymentApplyTable = ({
       }
     >();
     for (const a of existingApplications) {
-      const id = isReceipt ? a.targetSalesInvoiceId : a.targetPurchaseInvoiceId;
+      const id = isRefund
+        ? a.targetMemoId
+        : isReceipt
+          ? a.targetSalesInvoiceId
+          : a.targetPurchaseInvoiceId;
       if (!id) continue;
       const existing = byInvoice.get(id) ?? {
         appliedAmount: 0,
@@ -210,6 +219,7 @@ const PaymentApplyTable = ({
     openInvoices,
     existingApplications,
     isReceipt,
+    isRefund,
     paymentCurrency,
     currencyDecimals
   ]);
@@ -461,8 +471,9 @@ const PaymentApplyTable = ({
           r.checked && r.sourceAmount + r.discountAmount + r.writeOffAmount > 0
       )
       .map((r) => ({
-        targetSalesInvoiceId: isReceipt ? r.id : undefined,
-        targetPurchaseInvoiceId: isReceipt ? undefined : r.id,
+        targetSalesInvoiceId: !isRefund && isReceipt ? r.id : undefined,
+        targetPurchaseInvoiceId: !isRefund && !isReceipt ? r.id : undefined,
+        targetMemoId: isRefund ? r.id : undefined,
         appliedAmount: r.appliedAmount,
         sourceAmount: r.sourceAmount,
         discountAmount: r.discountAmount,
@@ -487,13 +498,23 @@ const PaymentApplyTable = ({
         <HStack className="justify-between w-full">
           <div>
             <CardTitle>
-              <Trans>Apply to invoices</Trans>
+              {isRefund ? (
+                <Trans>Refund memos</Trans>
+              ) : (
+                <Trans>Apply to invoices</Trans>
+              )}
             </CardTitle>
             <CardDescription>
-              <Trans>
-                Applied, discount and write-off amounts are in company base
-                currency ({baseCurrency}).
-              </Trans>
+              {isRefund ? (
+                <Trans>
+                  Applied amounts are in company base currency ({baseCurrency}).
+                </Trans>
+              ) : (
+                <Trans>
+                  Applied, discount and write-off amounts are in company base
+                  currency ({baseCurrency}).
+                </Trans>
+              )}
             </CardDescription>
           </div>
           <HStack>
@@ -522,7 +543,11 @@ const PaymentApplyTable = ({
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 px-6 text-center">
             <p className="text-sm font-medium text-foreground">
-              <Trans>No open invoices</Trans>
+              {isRefund ? (
+                <Trans>No open memos</Trans>
+              ) : (
+                <Trans>No open invoices</Trans>
+              )}
             </p>
             <p className="text-sm text-muted-foreground mt-1 text-pretty">
               <Trans>
@@ -535,11 +560,11 @@ const PaymentApplyTable = ({
           <div className="overflow-x-auto">
             <div className="min-w-[44rem]">
               <div
-                className={cn(GRID, "px-2 pb-2 text-xs text-muted-foreground")}
+                className={cn(grid, "px-2 pb-2 text-xs text-muted-foreground")}
               >
                 <span aria-hidden />
                 <span>
-                  <Trans>Invoice</Trans>
+                  {isRefund ? <Trans>Memo</Trans> : <Trans>Invoice</Trans>}
                 </span>
                 <span className="text-right">
                   <Trans>Open</Trans>
@@ -547,19 +572,23 @@ const PaymentApplyTable = ({
                 <span className="text-right">
                   <Trans>Applied</Trans>
                 </span>
-                <span className="text-right">
-                  <Trans>Discount</Trans>
-                </span>
-                <span className="text-right">
-                  <Trans>Write-off</Trans>
-                </span>
+                {!isRefund && (
+                  <>
+                    <span className="text-right">
+                      <Trans>Discount</Trans>
+                    </span>
+                    <span className="text-right">
+                      <Trans>Write-off</Trans>
+                    </span>
+                  </>
+                )}
               </div>
               <div className="border-t border-border/70 divide-y divide-border/70">
                 {rows.map((r) => (
                   <div
                     key={r.id}
                     className={cn(
-                      GRID,
+                      grid,
                       "items-center px-2 py-2 transition-colors",
                       r.checked ? "bg-muted/50" : "hover:bg-muted/30"
                     )}
@@ -601,22 +630,30 @@ const PaymentApplyTable = ({
                       currencyDecimals={baseDecimals}
                       onChange={(v) => updateAmount(r.id, "appliedAmount", v)}
                     />
-                    <AmountInput
-                      label={t`Discount for ${r.invoiceId}`}
-                      value={r.discountAmount}
-                      isDisabled={!canEdit}
-                      currency={baseCurrency}
-                      currencyDecimals={baseDecimals}
-                      onChange={(v) => updateAmount(r.id, "discountAmount", v)}
-                    />
-                    <AmountInput
-                      label={t`Write-off for ${r.invoiceId}`}
-                      value={r.writeOffAmount}
-                      isDisabled={!canEdit}
-                      currency={baseCurrency}
-                      currencyDecimals={baseDecimals}
-                      onChange={(v) => updateAmount(r.id, "writeOffAmount", v)}
-                    />
+                    {!isRefund && (
+                      <>
+                        <AmountInput
+                          label={t`Discount for ${r.invoiceId}`}
+                          value={r.discountAmount}
+                          isDisabled={!canEdit}
+                          currency={baseCurrency}
+                          currencyDecimals={baseDecimals}
+                          onChange={(v) =>
+                            updateAmount(r.id, "discountAmount", v)
+                          }
+                        />
+                        <AmountInput
+                          label={t`Write-off for ${r.invoiceId}`}
+                          value={r.writeOffAmount}
+                          isDisabled={!canEdit}
+                          currency={baseCurrency}
+                          currencyDecimals={baseDecimals}
+                          onChange={(v) =>
+                            updateAmount(r.id, "writeOffAmount", v)
+                          }
+                        />
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

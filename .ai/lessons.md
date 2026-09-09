@@ -1454,3 +1454,23 @@ full-screen ERP route.
 **Rule:** An amount used as a MATCHING KEY is not a settlement amount. Round both halves at internal `SCALE`. Before changing rounding anywhere, check whether the value is compared for equality by something else — a matcher, a tie-out, or a reconciliation — and change both sides together.
 
 **Applies to:** `calculateSalesIntercompanyAmount`, `post-purchase-invoice`'s IC amount, `generate_intercompany_matches`.
+
+## Prove provider accounting against its independent journal
+
+**Context:** The live Rillet E2E run accepted invoice payloads while ignoring their FX override and crediting deferred revenue.
+
+**Problem:** Request shape and HTTP success did not prove economic parity. AR_ONLY used provider FX; the supported REVENUE_RECOGNITION_ONLY scope accepted fixed document-to-base rates and same-day recognition.
+
+**Rule:** Verify returned account effects in the provider's independent GL, including recognition and voids. Treat Carbon's rate as document units per base unit, invert it for Rillet, and align recognition and FX dates with Carbon's posting date. Check voided mappings before create-idempotency shortcuts and retain durable deletion markers.
+
+**Applies to:** Rillet invoice/bill/payment adapters, native-void reconciliation, and future provider acceptance tests.
+
+## Seed UI-only controlled fields through the form defaults
+
+**Context:** Payment type choices combine counterparty and cash direction while the persisted paymentType remains Receipt or Disbursement.
+
+**Problem:** Passing only SelectControlled.value left the initial registered paymentKind empty in the real browser; unit mocks did not model form initialization. A composer also retained old targets after a saved header identity changed.
+
+**Rule:** Include a UI-only field's initial value in ValidatedForm defaults, and key stateful composers by the document/party/currency/direction identity whose data they hold. Verify the initial label and actual submitted fields in the browser.
+
+**Applies to:** PaymentForm, PaymentApplyTable, and other forms using derived presentation choices.

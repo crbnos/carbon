@@ -419,16 +419,10 @@ export const paymentValidator = z
     reference: zfd.text(z.string().optional()),
     memo: zfd.text(z.string().optional())
   })
-  .refine(
-    (d) =>
-      d.paymentType === "Receipt"
-        ? Boolean(d.customerId)
-        : Boolean(d.supplierId),
-    {
-      message: "Receipt requires a customer; Disbursement requires a supplier",
-      path: ["customerId"]
-    }
-  );
+  .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
+    message: "A payment requires exactly one customer or supplier",
+    path: ["customerId"]
+  });
 
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off

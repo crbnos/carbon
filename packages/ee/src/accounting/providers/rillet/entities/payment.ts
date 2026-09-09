@@ -20,10 +20,10 @@ import {
 
 /**
  * RilletPaymentSyncer — the AR payment syncer for Rillet, on the shared
- * `PaymentSyncerBase`. Rillet invoice payments (recorded against pushed AR_ONLY
+ * `PaymentSyncerBase`. Rillet invoice payments (recorded against pushed native
  * invoices) settle Carbon sales invoices; the base writes a Draft `payment` +
  * `invoiceSettlement` and then invokes the native `post-payment` edge function
- * (GL journal + Posted/Voided status). Pushing is a rejection stub.
+ * (GL journal + Posted/Voided status). Carbon-originated payments push and void through native payment endpoints.
  *
  * Entity-id contract: the sync operation's entityId is a COMPOSITE. AR keeps
  * the prefix-less `"<invoiceRemoteId>:<paymentRemoteId>"` form (back-compat with
@@ -36,7 +36,7 @@ import {
  * branches on (and the shape later QBO/Xero payment syncers mirror).
  *
  * v1 simplification (documented): exchange rates are recorded as 1 (Rillet
- * payments settle same-currency AR_ONLY invoices / AP bills).
+ * payments settle same-currency native invoices / AP bills).
  */
 
 const SYNC_ID_SEPARATOR = ":";
@@ -151,6 +151,23 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
 
   /** Rillet accepts Carbon-born payments back out (Phase G). */
   protected supportsPaymentPush = true;
+  protected supportsPaymentVoidPush = true;
+
+  protected async voidRemotePayment(compositeId: string): Promise<void> {
+    const { family, documentRemoteId, paymentRemoteId } =
+      parseRilletPaymentSyncEntityId(compositeId);
+    if (family === "ap") {
+      await this.rilletProvider.deleteBillPayment(
+        documentRemoteId,
+        paymentRemoteId
+      );
+    } else {
+      await this.rilletProvider.deleteInvoicePayment(
+        documentRemoteId,
+        paymentRemoteId
+      );
+    }
+  }
 
   /** company.baseCurrencyCode, read once per syncer instance (FX gate). */
   private baseCurrencyPromise?: Promise<string>;

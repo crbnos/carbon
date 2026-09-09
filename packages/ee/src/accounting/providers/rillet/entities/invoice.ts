@@ -30,28 +30,27 @@ import {
   RILLET_CARBON_COMPANY_REFERENCE_TYPE,
   RILLET_CARBON_REFERENCE_TYPE,
   RilletTransactionSyncer,
+  toRilletExchangeRate,
   toRilletMoney
 } from "./shared";
 
 /**
- * RilletSalesInvoiceSyncer — Carbon sales invoices → Rillet AR_ONLY
- * invoices (push-only, create-only; entityType "invoice").
+ * RilletSalesInvoiceSyncer — Carbon sales invoices → Rillet revenue recognition
+ * invoices (push-only; entityType "invoice").
  *
- * AR_ONLY is Rillet's external-ERP scope: Carbon keeps generating and
- * sending the invoice; Rillet carries the receivable (and reports
- * payments back through the invoice-payment-updated webhook → the payment
- * syncer). `invoice_number` is Carbon's readable invoice id.
+ * REVENUE_RECOGNITION_ONLY keeps Carbon as the invoice issuer while Rillet
+ * carries receivables and recognizes net revenue on the posting date. Unlike
+ * AR_ONLY, the v4 scope honors the fixed document-to-subsidiary exchange rate.
  *
  * Customer and line items are JIT-synced via ensureDependencySynced
- * before the document. Rillet AR_ONLY items REQUIRE a product_id, so a
+ * before the document. Rillet revenue recognition items REQUIRE a product_id, so a
  * line without a Carbon item cannot be represented — it fails with a
  * structured Warning listing the lines (UNMAPPED_ACCOUNTS envelope: the
  * closest user-fixable code available; the core error-code list has no
  * missing-item code yet).
  *
- * Create-only: pushed invoices are never updated from Carbon in v1 —
- * RilletTransactionSyncer hard-skips already-mapped ids (updates are a
- * follow-up).
+ * Posted amounts stay immutable. A local void deletes the native invoice;
+ * its retained mapping prevents duplicate creation or deletion on retries.
  */
 
 // Only posted invoices are pushed (same status gate as the Xero/QBO
@@ -65,12 +64,12 @@ const SYNCABLE_STATUSES: Accounting.SalesInvoice["status"][] = [
 ];
 
 /**
- * Map a Carbon sales invoice to the Rillet AR_ONLY create payload. Pure —
+ * Map a Carbon sales invoice to the Rillet revenue recognition create payload. Pure —
  * exported for tests. `itemRemoteIds` maps Carbon itemId → Rillet product
  * id (resolved by ensureDependencySynced before mapping).
  *
  * Throws the structured UNMAPPED_ACCOUNTS Warning when any line has no
- * item (AR_ONLY items require product_id), and a plain Error when a
+ * item (REVENUE_RECOGNITION_ONLY items require product_id), and a plain Error when a
  * line's item was not resolved to a product (a dependency-sync bug, not
  * user-fixable).
  */
@@ -87,7 +86,7 @@ function preflightRilletComponents(document: SalesDocumentComponents): void {
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync invoice: Rillet AR_ONLY lines require a product and positive quantity; some components have no item or unsupported quantities",
+        "Cannot sync invoice: Rillet revenue recognition lines require a product and positive quantity; some components have no item or unsupported quantities",
       metadata: {
         invoiceId: document.invoiceId,
         componentIds: unsupported.map((line) => line.id)
@@ -112,6 +111,9 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   const document = args.document;
   const currency = document.currencyCode;
   preflightRilletComponents(document);
+  const invoiceDate = toPostingDateString(
+    invoice.postingDate ?? invoice.dateIssued ?? datetime.timestamp()
+  );
   const items: Rillet.InvoiceItem[] = document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
@@ -134,21 +136,25 @@ export function mapSalesInvoiceToRilletInvoice(args: {
         currency,
         document.decimalPlaces
       ),
-      ...(shipping
-        ? { revenue: { account_code: args.shippingAccountCode! } }
-        : {}),
+      revenue: {
+        period: { start: invoiceDate, end: invoiceDate },
+        pattern: "DAILY",
+        ...(shipping ? { account_code: args.shippingAccountCode! } : {})
+      },
       external_references: [
         customerCustomExternalReference(component.id, args.documentUrl)
       ]
     };
   });
 
-  const invoiceDate = toPostingDateString(
-    invoice.dateIssued ?? datetime.timestamp()
-  );
-
   return {
-    scope: "AR_ONLY",
+    scope: "REVENUE_RECOGNITION_ONLY",
+    exchange_rate: toRilletExchangeRate({
+      baseCurrencyCode: invoice.baseCurrencyCode,
+      documentCurrencyCode: currency,
+      foreignPerBaseRate: invoice.exchangeRate,
+      date: invoiceDate
+    }),
     customer_id: args.customerRemoteId,
     invoice_number: invoice.invoiceId,
     invoice_date: invoiceDate,
@@ -243,6 +249,14 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
   // =================================================================
   // 1. LOCAL FETCH (Single + Batch)
   // =================================================================
+
+  protected isVoided(local: Accounting.SalesInvoice): boolean {
+    return local.status === "Voided";
+  }
+
+  protected async deleteRemote(remoteId: string): Promise<void> {
+    await this.rilletProvider.deleteInvoice(remoteId);
+  }
 
   async fetchLocal(id: string): Promise<Accounting.SalesInvoice | null> {
     const invoices = await this.fetchInvoicesByIds([id]);
@@ -383,13 +397,13 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       );
       return created.id;
     } catch (error) {
-      // AR_ONLY invoices REQUIRE external_references, so the optional-
+      // REVENUE_RECOGNITION_ONLY invoices REQUIRE external_references, so the optional-
       // reference strip fallback the master-data syncers use cannot apply —
       // registering the slugs in the Rillet dashboard is the only fix.
       if (isRilletUnknownExternalReferenceTypeError(error)) {
         throw new JournalEntrySyncError({
           errorCode: "EXTERNAL_REFERENCE_TYPE_MISSING",
-          message: `Cannot sync invoice: Rillet requires external references on AR_ONLY invoices, and this organization has no "${RILLET_CARBON_REFERENCE_TYPE}" / "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}" reference types registered. Add them under Rillet Settings → External References, then retry.`,
+          message: `Cannot sync invoice: Rillet requires external references on REVENUE_RECOGNITION_ONLY invoices, and this organization has no "${RILLET_CARBON_REFERENCE_TYPE}" / "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}" reference types registered. Add them under Rillet Settings → External References, then retry.`,
           warning: true,
           metadata: { invoiceId: localId }
         });
