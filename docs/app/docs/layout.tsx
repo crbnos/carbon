@@ -68,7 +68,10 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     ],
   },
   { label: "Planning", slugs: ["planning", "forecast", "reordering"] },
-  { label: "Sales", slugs: ["quotes", "pricing", "sales-orders"] },
+  {
+    label: "Sales",
+    slugs: ["quotes", "pricing", "sales-orders", "customer-portal"],
+  },
   {
     label: "Purchasing",
     slugs: ["purchase-orders", "supplier-quotes", "suppliers-and-customers"],
@@ -123,11 +126,15 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
   },
   {
     label: "People & access",
-    slugs: ["people", "training", "permissions", "account"],
+    slugs: ["people", "training", "permissions", "two-factor", "account"],
+  },
+  {
+    label: "Automation",
+    slugs: ["workflows", "workflow-runs", "approvals"],
   },
   {
     label: "System",
-    slugs: ["onboarding", "sharing", "agent", "approvals", "notifications"],
+    slugs: ["onboarding", "sharing", "agent", "notifications"],
   },
 ];
 

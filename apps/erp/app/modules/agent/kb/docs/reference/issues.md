@@ -56,6 +56,8 @@ The `issues` view computes a **containment status** from the action tasks. It re
 
 Action tasks run their own small lifecycle: **"Pending"** → **"In Progress"** → **"Completed"**, with **"Skipped"** as an off-path exit. Tasks start Pending and do *not* auto-start. Completing a task stamps its completed date. A completed or skipped task can be reopened back to Pending. Tasks can be reordered, given due dates, and tied to specific processes, and a supplier-facing action task can be shared externally as a **SCAR** (Supplier Corrective Action Request) report.
 
+The SCAR is a private, login-free link the supplier opens to respond. They see the non-conformance details, the current status, and the action tasks assigned to them — not the rest of the issue: dispositions, approvals, and closure stay internal. For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
+
 ## Approvals and the Material Review Board
 
 Beyond actions, an issue can require **approvals**. The only approval requirement Carbon ships is MRB (Material Review Board). Adding it materializes an approval task and, when MRB is newly required, seeds two **reviewers** with titles **"Engineering"** and **"Quality"**. Remove MRB and those seeded reviewers are cleared; reviewers you added by hand are left alone. A reviewer is just a title on the issue. You manage the list inline on the issue.
@@ -118,3 +120,6 @@ When an issue requires **MRB** approval, an approval task and reviewer rows (Eng
 
 ### Permission-gated: you can't create, edit, close, or delete an issue
 Listing issues needs `quality` **view**; creating needs `quality` **create**; editing, closing, splitting, and moving entities all need `quality` **update**; deleting needs `quality` **delete**. If an action is blocked, your role is missing the corresponding quality permission (Settings → Roles).
+
+### "Issue has been closed already. Unable to make changes" (SCAR)
+A supplier tried to update a SCAR action task after the parent issue was set to `Closed`. Once the issue is Closed the SCAR is read-only. Reopen the issue internally if further supplier action is needed.

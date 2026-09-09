@@ -1,0 +1,33 @@
+---
+title: Customer portal
+description: A standing, read-only link where a customer watches their open orders and shop-floor progress, no Carbon account needed.
+plan: Business
+---
+
+The customer portal is a **standing, read-only window** into one customer's work. Where a [digital quote](/docs/reference/quotes#digital-quotes) closes a deal, the portal is what the buyer watches afterward: their sales order lines with status, the buyer and engineer contacts, order and due dates, part number and revision, quantity complete, quantity shipped, and per-operation job progress. There are no forms — the customer can look, not act.
+
+## Creating a portal
+
+Open **Sales → Portals** and create a portal for the customer. Each row carries the portal's private URL with a copy control; send that link to your customer contact. The link needs no login, so whoever holds the URL can open it — treat it like a password and send it only to the right person.
+
+<Callout type="note" title="One portal, one customer">
+A portal is scoped to a single customer record: it lists that customer's orders and nothing else. Files attached to their job operations can be downloaded from the portal, limited to the customer's own jobs and rate-limited per visitor.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Digital quotes" href="/docs/reference/quotes#digital-quotes">The customer-facing bookend before the order: accept or reject a sent quote.</Card>
+  <Card title="Sales orders" href="/docs/reference/sales-orders">The orders and statuses the portal reflects.</Card>
+  <Card title="External sharing" href="/docs/reference/sharing">How Carbon's private links work across quotes, supplier requests, and SCARs.</Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### Why does the customer portal link show "Not found" / a 404?
+The customer portal is gated behind the `CUSTOMER_PORTALS` plan feature (Business plan). A company without it gets a 404 on the portal URL (and a 403 on file downloads). Upgrade the plan to enable the portal.
+
+### Why did downloads from the portal start failing (HTTP 429)?
+File downloads on the portal are rate-limited to ten per minute per IP. Wait a minute and retry; the limit is per requesting IP address, not per file.
+</AgentContext>

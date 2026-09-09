@@ -11,7 +11,7 @@ An issue opens several ways: by hand from the issues list, from the shop floor i
 
 A `nonConformanceStatus` has three values. A new issue defaults to **"Registered"**; **"Closed"** is terminal and locks the record.
 
-<StatusFlow>
+<StatusFlow entity="issue">
   <Status name="Registered">The issue exists but no one has picked it up. The DB default for a new `nonConformance`. Editable.</Status>
   <Status name="In Progress" accent>Someone is working it. An issue auto-advances here the first time a user types into a task note while still Registered, or when you click **"Start"** in the header.</Status>
   <Status name="Closed" terminal>Resolved and locked. `isIssueLocked(status)` is true only for Closed, which blocks edits to the issue and its task assignments. Closing clears the assignee and stamps `closeDate`. **"Reopen"** sends it back to Registered.</Status>
@@ -66,6 +66,8 @@ The `issues` view computes a **containment status** from the action tasks. It re
 ### Working the tasks
 
 Action tasks run their own small lifecycle: **"Pending"** → **"In Progress"** → **"Completed"**, with **"Skipped"** as an off-path exit. Tasks start Pending and do *not* auto-start. Completing a task stamps its completed date. A completed or skipped task can be reopened back to Pending. Tasks can be reordered, given due dates, and tied to specific processes, and a supplier-facing action task can be shared externally as a **SCAR** (Supplier Corrective Action Request) report.
+
+The SCAR is a private, login-free link the supplier opens to respond. They see the non-conformance details, the current status, and the action tasks assigned to them — not the rest of the issue: dispositions, approvals, and closure stay internal. For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
 
 ## Approvals and the Material Review Board
 
@@ -144,4 +146,7 @@ When an issue requires **MRB** approval, an approval task and reviewer rows (Eng
 
 ### Permission-gated: you can't create, edit, close, or delete an issue
 Listing issues needs `quality` **view**; creating needs `quality` **create**; editing, closing, splitting, and moving entities all need `quality` **update**; deleting needs `quality` **delete**. If an action is blocked, your role is missing the corresponding quality permission (Settings → Roles).
+
+### "Issue has been closed already. Unable to make changes" (SCAR)
+A supplier tried to update a SCAR action task after the parent issue was set to `Closed`. Once the issue is Closed the SCAR is read-only. Reopen the issue internally if further supplier action is needed.
 </AgentContext>

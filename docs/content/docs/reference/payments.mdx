@@ -62,7 +62,7 @@ Settlements are **staged while their source is Draft** and only go live when it 
 
 Payments and memos share one lifecycle. Draft is freely editable; posting books the GL entries and freezes the applications; voiding reverses. Voided is terminal.
 
-<StatusFlow>
+<StatusFlow entity="payment">
   <Status name="Draft">The document is being composed. You edit the amount, party, and staged applications, and you can delete it outright. Nothing has hit the ledger.</Status>
   <Status name="Posted" accent>The GL journal is written and the settlements go live. Applications are frozen — to change how a posted payment lands, void it and re-enter it.</Status>
   <Status name="Voided" terminal>A reversing (mirror-image) journal is written and the document is closed. It can't be edited or reused.</Status>
