@@ -635,17 +635,6 @@ const PurchaseOrderHeader = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={`${path.to.newPurchaseReturnOrder}?supplierId=${
-                        routeData?.purchaseOrder?.supplierId ?? ""
-                      }&purchaseOrderId=${orderId}`}
-                    >
-                      <DropdownMenuIcon icon={<LuCirclePlus />} />
-                      <Trans>New Supplier Return</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   {returnOrders.map((returnOrder) => (
                     <DropdownMenuItem key={returnOrder.id} asChild>
                       <Link to={path.to.purchaseReturnOrder(returnOrder.id)}>

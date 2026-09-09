@@ -614,17 +614,6 @@ const SalesOrderHeader = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link
-                                to={`${path.to.newSalesReturnOrder}?customerId=${
-                                  routeData?.salesOrder?.customerId ?? ""
-                                }&salesOrderId=${orderId}`}
-                              >
-                                <DropdownMenuIcon icon={<LuCirclePlus />} />
-                                <Trans>New RMA</Trans>
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             {salesReturnOrders.map((returnOrder) => (
                               <DropdownMenuItem key={returnOrder.id} asChild>
                                 <Link
