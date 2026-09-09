@@ -195,6 +195,14 @@ Idempotent: matched by the OLD number, so once renumbered the `WHERE` no-ops. Ve
 live schema: `account.number`, `class` (enum `glAccountClass`), `accountType` (enum `accountType`,
 includes `Income`/`Cost of Goods Sold`), `parentId` (FK → `account.id`), `isGroup`, `companyGroupId`.
 
+**Collision safety** (CodeRabbit review): `number` is UNIQUE per `companyGroupId`, and a company
+group could already hold a custom `4040`/`5080` account. So the reclassification (class /
+accountType / incomeBalance / parent — none unique-constrained) is applied UNCONDITIONALLY by the
+old number, and the **renumber is a separate `UPDATE` guarded by `NOT EXISTS (… target number in
+this group)`**. A group with a conflicting custom account keeps its `7030`/`7020` number but is
+still correctly reclassified, instead of the whole migration aborting on the unique constraint and
+leaving every tenant unmigrated (the deploy runner would retry-fail forever).
+
 **`accountDefault` is not touched** — the reclassified rows keep their ids, so the existing
 `customerPaymentDiscountAccount` / `supplierPaymentDiscountAccount` FKs remain valid.
 
