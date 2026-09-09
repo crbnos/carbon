@@ -396,6 +396,26 @@ serve(async (req: Request) => {
         }
       }
 
+      // Resolve the discount account's class so buildPaymentJournal signs the
+      // discount line by the account's real natural balance (customer discount
+      // → Revenue/contra-revenue; supplier discount → Expense/contra-COGS),
+      // mirroring how post-memo resolves its reason account's class.
+      const discountAccountId = isAR
+        ? ad.customerPaymentDiscountAccount
+        : ad.supplierPaymentDiscountAccount;
+      let discountAccountClass: string | null = null;
+      if (discountAccountId) {
+        const discountAccount = await client
+          .from("account")
+          .select("class")
+          .eq("id", discountAccountId)
+          .single();
+        if (discountAccount.error || !discountAccount.data) {
+          throw new Error("Failed to fetch the payment discount account class");
+        }
+        discountAccountClass = discountAccount.data.class as string;
+      }
+
       // Build the balanced double-entry. Account-id resolution, the per-
       // application control/discount/write-off lines, the on-account-credit
       // line, the single FX plug, and the balance self-check all live in the
@@ -420,9 +440,8 @@ serve(async (req: Request) => {
         })),
         accounts: {
           controlAccountId,
-          discountAccountId: isAR
-            ? ad.customerPaymentDiscountAccount
-            : ad.supplierPaymentDiscountAccount,
+          discountAccountId,
+          discountAccountClass,
           writeOffAccountId: isAR
             ? ad.customerWriteOffAccount
             : ad.supplierWriteOffAccount,

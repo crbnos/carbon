@@ -624,6 +624,9 @@ msgstr "İş emrinin başlangıç tarihi değişiyor"
 msgid "A job's status changes"
 msgstr "Bir işin durumu değiştirildi"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "Bir satır, faturasının açık bakiyesinden fazlasını kapatıyor"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Bir liste {0} öğesine bağlandı, bu nedenle bu adım her öğe için bir kez çalışır ve sonuçların listesini döndürür."
@@ -1246,8 +1249,14 @@ msgstr "Miktarı, fiyatı, nakliyeyi, tedarik süresini ve vergiyi geçersiz kı
 msgid "Add a domain"
 msgstr "Alan adı ekle"
 
+msgid "Add a line (in document explorers)"
+msgstr "Satır ekle (belge tarayıcılarında)"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
@@ -1260,6 +1269,9 @@ msgstr "Bir satır ekle"
 
 msgid "Add a step"
 msgstr "Bir adım ekle"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "Yetenek Ekle"
@@ -3833,6 +3845,9 @@ msgstr "Onayla {0}"
 msgid "Confirm & release"
 msgstr "Teyit et ve Serbest bırak"
 
+msgid "Confirm a dialog"
+msgstr "İletişim kutusunu onayla"
+
 msgid "Confirm all"
 msgstr "Tümünü onayla"
 
@@ -4337,6 +4352,11 @@ msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "Kaydedilemedi"
@@ -5752,6 +5772,12 @@ msgstr "Devre Dışı"
 
 msgid "Discard"
 msgstr "Atıkla"
+
+msgid "Discard import"
+msgstr "İçe aktarmadan vazgeç"
+
+msgid "Discard this import?"
+msgstr "Bu içe aktarmadan vazgeçilsin mi?"
 
 msgid "Discarded"
 msgstr "İptal edildi"
@@ -7994,6 +8020,9 @@ msgstr "Şuraya git: {0}"
 msgid "Go to implementation hub"
 msgstr "Uygulama merkezine git"
 
+msgid "Go to module"
+msgstr "Modüle git"
+
 msgid "Go to that week"
 msgstr "O haftaya git"
 
@@ -9028,7 +9057,7 @@ msgid "Job Operation"
 msgstr "İş emri operasyonu"
 
 msgid "Job operation batch"
-msgstr ""
+msgstr "İş emri operasyonu partisi"
 
 msgid "Job Operations"
 msgstr "İş emri operasyonları"
@@ -9076,6 +9105,9 @@ msgstr "Yevmiye satırları"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Bu tarihte veya öncesinde tarihlendirilen muhasebe fişleri kilitli olarak değerlendirilir. Her ikisi de mevcutsa sağlayıcı tarafından rapor edilen kilit tarihi ile birleştirilir."
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "Sadece bir"
 
@@ -9096,6 +9128,9 @@ msgstr "Tut"
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
+
+msgid "Keep editing"
+msgstr "Düzenlemeye devam et"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
@@ -9118,6 +9153,9 @@ msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında t
 msgid "Key"
 msgstr "Anahtar"
 
+msgid "Keyboard shortcuts"
+msgstr "Klavye kısayolları"
+
 msgid "Kind of record"
 msgstr "Kayıt türü"
 
@@ -9130,7 +9168,7 @@ msgstr "Etiket"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Bu kanban için mevcut işlemi tamamlamak üzere etiket"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için"
 
@@ -9343,6 +9381,9 @@ msgstr "Aydınlık"
 
 msgid "Light Mode"
 msgstr "Aydınlık Mod"
+
+msgid "Light or dark mode"
+msgstr "Açık veya koyu mod"
 
 msgid "Lights Out (24×7)"
 msgstr "Işıklar Kapalı (24×7)"
@@ -10579,6 +10620,9 @@ msgstr "Yeni Teklif Satırı"
 msgid "New Receipt"
 msgstr "Yeni Alış"
 
+msgid "New record (on list pages)"
+msgstr "Yeni kayıt (liste sayfalarında)"
+
 msgid "New record created"
 msgstr "Yeni kayıt oluşturuldu"
 
@@ -10707,6 +10751,9 @@ msgstr "Sonraki Vade Tarihi"
 
 msgid "Next page"
 msgstr "Sonraki sayfa"
+
+msgid "Next page (in tables)"
+msgstr "Sonraki sayfa (tablolarda)"
 
 msgid "Next Sequence"
 msgstr "Sonraki numaralandırma"
@@ -11144,6 +11191,9 @@ msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
 msgid "No shipments yet"
 msgstr "Henüz sevkiyat yok"
 
+msgid "No shortcuts available on this page."
+msgstr "Bu sayfada kullanılabilir kısayol yok."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Envanter veya iş durumu için tek bir güvenilir sayı yok"
 
@@ -11212,6 +11262,9 @@ msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden d
 
 msgid "No work center utilization data within range"
 msgstr "Belirlenen aralıkta iş merkezi kullanım verisi yok"
+
+msgid "No work centers at this location"
+msgstr "Bu lokasyonda İş merkezi yok"
 
 msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
@@ -12557,6 +12610,9 @@ msgstr "Önceki Gün"
 msgid "Previous page"
 msgstr "Önceki sayfa"
 
+msgid "Previous page (in tables)"
+msgstr "Önceki sayfa (tablolarda)"
+
 msgid "Previous step"
 msgstr "Önceki adım"
 
@@ -13021,7 +13077,7 @@ msgstr "Muhasebede gönder"
 msgid "Putting your data back"
 msgstr "Verileriniz geri konuluyor"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"
 
@@ -13540,6 +13596,10 @@ msgstr "Göreceli zaman çizelgesi · tarihler onaylanacak"
 msgid "Release"
 msgstr "Serbest Bırakma"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Partiyi Serbest Bırak"
 
@@ -13557,6 +13617,10 @@ msgstr "İş emrini serbest bırak"
 
 msgid "Released"
 msgstr "Yayınlandı"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Yayın tarihi"
@@ -14488,6 +14552,9 @@ msgstr "Yöntemi Kaydet"
 msgid "Save Rate"
 msgstr "Kuru kaydet"
 
+msgid "Save the form you're editing"
+msgstr "Düzenlemekte olduğunuz formu kaydet"
+
 msgid "Save view"
 msgstr "Görünümü kaydet"
 
@@ -15404,6 +15471,9 @@ msgstr "Tedarikçi Kimliklerini Göster"
 
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
+
+msgid "Show this overlay"
+msgstr "Bu katmanı göster"
 
 msgid "Show Trailing Zeros"
 msgstr "Sondaki Sıfırları Göster"
@@ -16683,6 +16753,9 @@ msgstr "Bu stok kartının üretim sırasında kaybettiği beklenen yüzde; plan
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı satırlar hesabı türetmek için bir envanter defter girişine sahip olmadığından gereklidir."
 
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
+
 msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"
 
@@ -17719,6 +17792,9 @@ msgstr "Seviye değiştir"
 
 msgid "Toggle Properties"
 msgstr "Özellikleri Aç/Kapat"
+
+msgid "Toggle the sidebar"
+msgstr "Kenar çubuğunu aç/kapat"
 
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"

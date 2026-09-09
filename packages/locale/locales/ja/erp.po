@@ -624,6 +624,9 @@ msgstr "ジョブの開始日が変更されました"
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "明細が請求書の未払い残高を超えて消込しています"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "リストが{0}に接続されているため、このステップは各項目ごとに1回実行され、結果のリストを返します。"
@@ -1246,8 +1249,14 @@ msgstr "数量、価格、配送、リードタイム、および税を上書き
 msgid "Add a domain"
 msgstr "ドメインを追加"
 
+msgid "Add a line (in document explorers)"
+msgstr "行を追加（文書エクスプローラーで）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -1260,6 +1269,9 @@ msgstr "行を追加"
 
 msgid "Add a step"
 msgstr "ステップを追加"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "能力を追加"
@@ -3833,6 +3845,9 @@ msgstr "{0}を確認"
 msgid "Confirm & release"
 msgstr "確認してリリース"
 
+msgid "Confirm a dialog"
+msgstr "ダイアログを確認"
+
 msgid "Confirm all"
 msgstr "すべて確認"
 
@@ -4337,6 +4352,11 @@ msgstr "分析用の領域画像を準備できませんでした"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "保存できませんでした"
@@ -5752,6 +5772,12 @@ msgstr "無効"
 
 msgid "Discard"
 msgstr "破棄"
+
+msgid "Discard import"
+msgstr "インポートを破棄"
+
+msgid "Discard this import?"
+msgstr "このインポートを破棄しますか?"
 
 msgid "Discarded"
 msgstr "破棄されました"
@@ -7994,6 +8020,9 @@ msgstr "{0}に移動"
 msgid "Go to implementation hub"
 msgstr "実施ハブに移動"
 
+msgid "Go to module"
+msgstr "モジュールに移動"
+
 msgid "Go to that week"
 msgstr "その週に移動"
 
@@ -9028,7 +9057,7 @@ msgid "Job Operation"
 msgstr "指図工程"
 
 msgid "Job operation batch"
-msgstr ""
+msgstr "指図工程バッチ"
 
 msgid "Job Operations"
 msgstr "指図工程"
@@ -9076,6 +9105,9 @@ msgstr "仕訳明細"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "1つだけ"
 
@@ -9096,6 +9128,9 @@ msgstr "保持"
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
+
+msgid "Keep editing"
+msgstr "編集を続ける"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格設定を保持し、新しい品目のみを追加"
@@ -9118,6 +9153,9 @@ msgstr "注文、見積、設定を2段階認証で保護します"
 msgid "Key"
 msgstr "キー"
 
+msgid "Keyboard shortcuts"
+msgstr "キーボードショートカット"
+
 msgid "Kind of record"
 msgstr "レコード種別"
 
@@ -9130,7 +9168,7 @@ msgstr "ラベル"
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのラベル"
 
@@ -9343,6 +9381,9 @@ msgstr "ライト"
 
 msgid "Light Mode"
 msgstr "ライトモード"
+
+msgid "Light or dark mode"
+msgstr "ライト/ダークモード"
 
 msgid "Lights Out (24×7)"
 msgstr "ライツアウト（24×7）"
@@ -10579,6 +10620,9 @@ msgstr "新規見積明細"
 msgid "New Receipt"
 msgstr "新しい領収書"
 
+msgid "New record (on list pages)"
+msgstr "新規記録（リストページで）"
+
 msgid "New record created"
 msgstr "新しいレコードが作成されました"
 
@@ -10707,6 +10751,9 @@ msgstr "次の期日"
 
 msgid "Next page"
 msgstr "次のページ"
+
+msgid "Next page (in tables)"
+msgstr "次ページ（テーブルで）"
 
 msgid "Next Sequence"
 msgstr "次の採番"
@@ -11144,6 +11191,9 @@ msgstr "シフトが構成されていません — 月～金、8時間営業を
 msgid "No shipments yet"
 msgstr "出荷がまだありません"
 
+msgid "No shortcuts available on this page."
+msgstr "このページではショートカットはありません。"
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
 
@@ -11212,6 +11262,9 @@ msgstr "このアイテムの倉庫在庫は記録されていません。それ
 
 msgid "No work center utilization data within range"
 msgstr "範囲内の作業区の稼働率データがありません"
+
+msgid "No work centers at this location"
+msgstr "この拠点には作業区がありません"
 
 msgid "No work centers exist"
 msgstr "作業区がありません"
@@ -12557,6 +12610,9 @@ msgstr "前の日"
 msgid "Previous page"
 msgstr "前のページ"
 
+msgid "Previous page (in tables)"
+msgstr "前ページ（テーブルで）"
+
 msgid "Previous step"
 msgstr "前のステップ"
 
@@ -13021,7 +13077,7 @@ msgstr "会計にプッシュ"
 msgid "Putting your data back"
 msgstr "データを復元中"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
 
@@ -13540,6 +13596,10 @@ msgstr "相対的なタイムライン · 確認待ちの日付"
 msgid "Release"
 msgstr "リリース"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "バッチをリリース"
 
@@ -13557,6 +13617,10 @@ msgstr "ジョブをリリース"
 
 msgid "Released"
 msgstr "リリース済み"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "リリース日"
@@ -14488,6 +14552,9 @@ msgstr "メソッドを保存"
 msgid "Save Rate"
 msgstr "レートを保存"
 
+msgid "Save the form you're editing"
+msgstr "編集中のフォームを保存"
+
 msgid "Save view"
 msgstr "ビューを保存"
 
@@ -15404,6 +15471,9 @@ msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
+
+msgid "Show this overlay"
+msgstr "このオーバーレイを表示"
 
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
@@ -16683,6 +16753,9 @@ msgstr "生産中にこの品目の出力の失われると予想される割合
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
 
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "アップロードしたファイルと設定したマッピングは失われます。"
+
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
 
@@ -17719,6 +17792,9 @@ msgstr "レベルを切り替え"
 
 msgid "Toggle Properties"
 msgstr "プロパティを切り替え"
+
+msgid "Toggle the sidebar"
+msgstr "サイドバーの表示/非表示を切り替える"
 
 msgid "Toggle views"
 msgstr "ビューを切り替える"

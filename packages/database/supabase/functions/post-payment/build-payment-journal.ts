@@ -41,7 +41,7 @@
 // `invoiceSettlement.fxGainLossAmount` captures, so the subledger reconciles.
 
 import { assertBalanced, EPSILON, round } from "../shared/precision.ts";
-import { credit, debit } from "../lib/utils.ts";
+import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 // A journal line this builder emits. Deliberately self-contained — a pure unit
 // shouldn't depend on the generated DB types, and `journalLine.documentType`'s
@@ -73,6 +73,12 @@ export interface PaymentJournalApplicationInput {
 export interface PaymentJournalAccounts {
   controlAccountId: string | null;
   discountAccountId: string | null;
+  // The discount account's glAccountClass. Drives the discount line's natural-
+  // balance sign so a customer discount (Revenue) debits contra-revenue and a
+  // supplier discount (Expense/COGS) credits contra-cost. Resolved by index.ts;
+  // optional so callers without a discount need not supply it (falls back to
+  // "expense" for back-compat).
+  discountAccountClass?: string | null;
   writeOffAccountId: string | null;
   fxGainAccountId: string | null;
   fxLossAccountId: string | null;
@@ -139,6 +145,7 @@ export function buildPaymentJournal(
   const {
     controlAccountId,
     discountAccountId,
+    discountAccountClass,
     writeOffAccountId,
     fxGainAccountId,
     fxLossAccountId,
@@ -238,13 +245,18 @@ export function buildPaymentJournal(
           `Missing ${isAR ? "customer" : "supplier"} payment discount account default`
         );
       }
-      pushLine(cashIn ? "debit" : "credit", "expense", round(discount * invRate), {
-        accountId: discountAccountId,
-        description: isAR
-          ? "Customer Payment Discount"
-          : "Supplier Payment Discount",
-        documentLineReference: invId,
-      });
+      pushLine(
+        cashIn ? "debit" : "credit",
+        discountAccountClass ? accountTypeFromClass(discountAccountClass) : "expense",
+        round(discount * invRate),
+        {
+          accountId: discountAccountId,
+          description: isAR
+            ? "Customer Payment Discount"
+            : "Supplier Payment Discount",
+          documentLineReference: invId,
+        }
+      );
     }
 
     // Write-off: at TARGET rate (an invoice-currency relief, not cash, so it

@@ -401,6 +401,7 @@ export default function Invite() {
             transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
             size="lg"
             type="submit"
+            autoFocus
           >
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>

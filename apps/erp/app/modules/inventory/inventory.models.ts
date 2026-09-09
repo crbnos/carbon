@@ -69,6 +69,14 @@ export const replenishmentSystemTypes = [
   "Buy and Make"
 ] as const;
 
+// Kanban-specific replenishment systems. Distinct from `replenishmentSystemTypes`
+// (an item-level enum used by planning/MRP): a kanban can Buy, Make, or Transfer.
+export const kanbanReplenishmentSystemTypes = [
+  "Buy",
+  "Make",
+  "Transfer"
+] as const;
+
 export const receiptSourceDocumentType = [
   // "Sales Order",
   // "Sales Invoice",
@@ -240,7 +248,9 @@ export const kanbanValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     itemId: z.string().min(1, { message: "Item is required" }),
-    replenishmentSystem: z.enum(replenishmentSystemTypes).default("Buy"),
+    replenishmentSystem: z.enum(kanbanReplenishmentSystemTypes, {
+      error: "Replenishment system is required"
+    }),
     autoRelease: zfd.checkbox(),
     autoStartJob: zfd.checkbox(),
     completedBarcodeOverride: zfd.text(z.string().optional()),
@@ -249,6 +259,7 @@ export const kanbanValidator = z
     ),
     locationId: z.string().min(1, { message: "Location is required" }),
     storageUnitId: zfd.text(z.string().optional()),
+    fromStorageUnitId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().min(0).default(1))
@@ -258,6 +269,34 @@ export const kanbanValidator = z
     {
       message: "Supplier is required",
       path: ["supplierId"]
+    }
+  )
+  // A Transfer moves stock between two storage units, so it needs a source
+  // (fromStorageUnitId) and a destination (storageUnitId).
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ? !!data.fromStorageUnitId : true,
+    {
+      message: "From storage unit is required",
+      path: ["fromStorageUnitId"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ? !!data.storageUnitId : true,
+    {
+      message: "To storage unit is required",
+      path: ["storageUnitId"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer"
+        ? data.fromStorageUnitId !== data.storageUnitId
+        : true,
+    {
+      message: "From and to storage units must be different",
+      path: ["storageUnitId"]
     }
   );
 

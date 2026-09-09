@@ -145,6 +145,9 @@ msgstr "Вы уверены, что хотите завершить эту оп�
 msgid "Are you sure you want to leave this page?"
 msgstr "Вы уверены, что хотите покинуть эту страницу?"
 
+msgid "Assembly steps"
+msgstr "Этапы сборки"
+
 msgid "Assigned"
 msgstr "Назначенные"
 
@@ -552,6 +555,9 @@ msgstr "Завершить с неподобранным материалом?"
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
 
+msgid "General"
+msgstr "Общие"
+
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
 
@@ -649,6 +655,9 @@ msgstr "Производственные заказы"
 msgid "Keep picking"
 msgstr "Продолжить отбор"
 
+msgid "Keyboard shortcuts"
+msgstr "Клавиатурные сокращения"
+
 msgid "Kit"
 msgstr "Комплект"
 
@@ -742,6 +751,9 @@ msgstr "Вручную убрать позиции из запасов"
 msgid "Mark Short"
 msgstr "Отметить как недостача"
 
+msgid "Mark the step done / record"
+msgstr "Отметить этап как завершённый / записать"
+
 msgid "matches"
 msgstr "соответствует"
 
@@ -785,6 +797,9 @@ msgstr "Мои часы"
 msgid "Name"
 msgstr "Имя"
 
+msgid "Navigation"
+msgstr "Навигация"
+
 msgid "New"
 msgstr "Новое"
 
@@ -796,6 +811,9 @@ msgstr "Новые в первую очередь"
 
 msgid "Next"
 msgstr "Далее"
+
+msgid "Next step"
+msgstr "Следующий шаг"
 
 msgid "No"
 msgstr "Нет"
@@ -892,6 +910,9 @@ msgstr "Нет серийных номеров"
 
 msgid "No serial numbers found"
 msgstr "Серийные номера не найдены"
+
+msgid "No shortcuts available on this page."
+msgstr "На этой странице нет доступных сокращений."
 
 msgid "No spare parts added yet"
 msgstr "Запасные части ещё не добавлены"
@@ -1044,6 +1065,9 @@ msgstr "Назад"
 msgid "Preventive"
 msgstr "Предупреждающее"
 
+msgid "Previous step"
+msgstr "Предыдущий шаг"
+
 msgid "Print"
 msgstr "Печать"
 
@@ -1154,6 +1178,9 @@ msgstr "Заказ покупателя"
 
 msgid "Save"
 msgstr "Сохранить"
+
+msgid "Save the form you're editing"
+msgstr "Сохранить редактируемую форму"
 
 msgid "Scan"
 msgstr "Сканировать"
@@ -1311,6 +1338,9 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+msgid "Show this overlay"
+msgstr "Показать это окно"
+
 msgid "Sign in with Google"
 msgstr "Войти через Google"
 
@@ -1346,6 +1376,9 @@ msgstr "Использованные запасные части"
 
 msgid "Start"
 msgstr "Старт"
+
+msgid "Start or pause the operation"
+msgstr "Запустить или приостановить операцию"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -1435,6 +1468,9 @@ msgstr "Отработанное время: {0}"
 
 msgid "Today"
 msgstr "Сегодня"
+
+msgid "Toggle the sidebar"
+msgstr "Открыть/закрыть боковую панель"
 
 msgid "Tools"
 msgstr "Инструменты"

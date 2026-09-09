@@ -32,28 +32,9 @@
 // the cost never reconcile and GRNI keeps a permanent residual.
 
 import { assertBalanced, round } from "../shared/precision.ts";
-import { credit, debit } from "../lib/utils.ts";
+import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
-
-// glAccountClass (Asset|Liability|Equity|Revenue|Expense) → the lowercase
-// AccountType the debit/credit helpers expect.
-export function accountTypeFromClass(glClass: string): AccountType {
-  switch (glClass) {
-    case "Asset":
-      return "asset";
-    case "Liability":
-      return "liability";
-    case "Equity":
-      return "equity";
-    case "Revenue":
-      return "revenue";
-    case "Expense":
-      return "expense";
-    default:
-      throw new Error(`Unknown GL account class: ${glClass}`);
-  }
-}
 
 // A journal line this builder emits. Self-contained — a pure unit shouldn't
 // depend on the generated DB types, and `journalLine.documentType`'s "Memo" enum

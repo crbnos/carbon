@@ -568,7 +568,7 @@ export function BatchDetailDrawer({
           </div>
         </DrawerBody>
 
-        <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-end items-center">
+        <DrawerFooter className="flex-shrink-0">
           {/* Primary lifecycle actions only — secondary actions (print, view on
               board) and the destructive Dissolve live in the header's ⋯ menu. */}
           <HStack spacing={2}>

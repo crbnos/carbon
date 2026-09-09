@@ -145,6 +145,9 @@ msgstr "Êtes-vous sûr de vouloir terminer cette opération ? Cela mettra fin �
 msgid "Are you sure you want to leave this page?"
 msgstr "Êtes-vous sûr de vouloir quitter cette page ?"
 
+msgid "Assembly steps"
+msgstr "Étapes d'assemblage"
+
 msgid "Assigned"
 msgstr "Assigné"
 
@@ -552,6 +555,9 @@ msgstr "Terminer avec du matériel non prélevé?"
 msgid "Forgot to Clock Out?"
 msgstr "Avez-vous oublié le pointage fin ?"
 
+msgid "General"
+msgstr "Général"
+
 msgid "Go back to operation"
 msgstr "Revenir à l'opération"
 
@@ -649,6 +655,9 @@ msgstr "Ordres de fabrication"
 msgid "Keep picking"
 msgstr "Continuer le prélèvement"
 
+msgid "Keyboard shortcuts"
+msgstr "Raccourcis clavier"
+
 msgid "Kit"
 msgstr "Kit"
 
@@ -742,6 +751,9 @@ msgstr "Retirer manuellement des articles du stock"
 msgid "Mark Short"
 msgstr "Marquer comme manquant"
 
+msgid "Mark the step done / record"
+msgstr "Marquer l'étape comme faite / enregistrer"
+
 msgid "matches"
 msgstr "correspond à"
 
@@ -785,6 +797,9 @@ msgstr "Mes heures"
 msgid "Name"
 msgstr "Nom"
 
+msgid "Navigation"
+msgstr "Navigation"
+
 msgid "New"
 msgstr "Nouveau"
 
@@ -796,6 +811,9 @@ msgstr "Plus récent d'abord"
 
 msgid "Next"
 msgstr "Suivant"
+
+msgid "Next step"
+msgstr "Étape suivante"
 
 msgid "No"
 msgstr "Non"
@@ -892,6 +910,9 @@ msgstr "Aucun numéro de série"
 
 msgid "No serial numbers found"
 msgstr "Aucun numéro de série trouvé"
+
+msgid "No shortcuts available on this page."
+msgstr "Aucun raccourci disponible sur cette page."
 
 msgid "No spare parts added yet"
 msgstr "Aucune pièce de rechange ajoutée"
@@ -1044,6 +1065,9 @@ msgstr "Précédent"
 msgid "Preventive"
 msgstr "Préventif"
 
+msgid "Previous step"
+msgstr "Étape précédente"
+
 msgid "Print"
 msgstr "Imprimer"
 
@@ -1154,6 +1178,9 @@ msgstr "Commande client"
 
 msgid "Save"
 msgstr "Enregistrer"
+
+msgid "Save the form you're editing"
+msgstr "Enregistrer le formulaire que vous modifiez"
 
 msgid "Scan"
 msgstr "Scanner"
@@ -1311,6 +1338,9 @@ msgstr "Manquant"
 msgid "Short pick {itemName}"
 msgstr "Prélèvement court {itemName}"
 
+msgid "Show this overlay"
+msgstr "Afficher cette superposition"
+
 msgid "Sign in with Google"
 msgstr "Se connecter avec Google"
 
@@ -1346,6 +1376,9 @@ msgstr "Pièces de rechange utilisées"
 
 msgid "Start"
 msgstr "Démarrer"
+
+msgid "Start or pause the operation"
+msgstr "Démarrer ou mettre en pause l'opération"
 
 msgid "Station User"
 msgstr "Utilisateur du poste"
@@ -1435,6 +1468,9 @@ msgstr "Temps travaillé : {0}"
 
 msgid "Today"
 msgstr "Aujourd'hui"
+
+msgid "Toggle the sidebar"
+msgstr "Afficher/masquer la barre latérale"
 
 msgid "Tools"
 msgstr "Outils"

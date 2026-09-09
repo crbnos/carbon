@@ -162,6 +162,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "operation")
   ]);
 
+  // The empty state must tell "no work centers at THIS location" apart from
+  // "none exist anywhere" — after a restore left work centers on another (or
+  // no) location, the create-work-center prompt here misread the situation.
+  let companyHasWorkCenters = (workCenters.data?.length ?? 0) > 0;
+  if (!companyHasWorkCenters) {
+    const anywhere = await client
+      .from("workCenter")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId);
+    companyHasWorkCenters = (anywhere.count ?? 0) > 0;
+  }
+
   const processNameById = new Map(
     (processes.data ?? []).map((p) => [p.id, p.name])
   );
@@ -519,7 +531,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     ).map(([tag]) => tag),
     tags: tags.data ?? [],
-    locationId
+    locationId,
+    companyHasWorkCenters
   };
 }
 
@@ -553,7 +566,8 @@ function KanbanSchedule() {
     salesOrders,
     availableTags,
     tags,
-    locationId
+    locationId,
+    companyHasWorkCenters
   } = useLoaderData<typeof loader>();
 
   const locations = useLocations();
@@ -842,6 +856,26 @@ function KanbanSchedule() {
               <Button onClick={clearFilters}>
                 <Trans>Clear Filters</Trans>
               </Button>
+            </div>
+          ) : companyHasWorkCenters ? (
+            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                <LuTriangleAlert className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-mono font-light text-foreground uppercase">
+                <Trans>No work centers at this location</Trans>
+              </span>
+              <div className="w-64">
+                <Combobox
+                  asButton
+                  size="sm"
+                  value={locationId}
+                  options={locations}
+                  onChange={(selected) => {
+                    window.location.href = getLocationPath(selected);
+                  }}
+                />
+              </div>
             </div>
           ) : (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">

@@ -20,9 +20,9 @@ import { cn } from "./utils/cn";
 
 export const shortcutKeyVariants = {
   small:
-    "flex h-4 min-w-4 items-center justify-center gap-0.5 rounded-[3px] border border-current/25 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.65rem] font-medium uppercase text-current/80 shadow-sm backdrop-blur-sm",
+    "flex h-4.5 min-w-4.5 items-center justify-center gap-0.5 rounded-[3px] border border-current/10 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.65rem] font-medium uppercase text-current/80 shadow-xs backdrop-blur-sm",
   medium:
-    "flex h-4.5 min-w-4.5 items-center justify-center gap-0.5 rounded-[3px] border border-current/25 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.75rem] font-medium uppercase text-current/80 shadow-sm backdrop-blur-sm"
+    "flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-[3px] border border-current/10 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.75rem] font-medium uppercase text-current/80 shadow-xs backdrop-blur-sm"
 };
 
 export type ShortcutKeyVariant = keyof typeof shortcutKeyVariants;
@@ -39,7 +39,8 @@ export const SHORTCUT_KEY_ICON_MAP: Partial<Record<string, IconType>> = {
   arrowup: LuChevronUp,
   arrowdown: LuChevronDown,
   arrowleft: LuChevronLeft,
-  arrowright: LuChevronRight
+  arrowright: LuChevronRight,
+  command: LuCommand
 };
 
 type ShortcutKeyProps = {

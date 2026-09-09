@@ -624,6 +624,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "某行结算金额超过其发票的未结余额"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "列表被接入到 {0}，所以此步骤为每个项目运行一次并返回结果列表。"
@@ -1246,8 +1249,14 @@ msgstr "添加自定义定价行以覆盖数量、价格、运费、提前期和
 msgid "Add a domain"
 msgstr "添加一个域"
 
+msgid "Add a line (in document explorers)"
+msgstr "添加一行（在文件浏览器中）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
@@ -1260,6 +1269,9 @@ msgstr "添加一行"
 
 msgid "Add a step"
 msgstr "添加步骤"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -3833,6 +3845,9 @@ msgstr "确认 {0}"
 msgid "Confirm & release"
 msgstr "确认并下达"
 
+msgid "Confirm a dialog"
+msgstr "确认对话框"
+
 msgid "Confirm all"
 msgstr "全部确认"
 
@@ -4337,6 +4352,11 @@ msgstr "无法准备区域图像以进行分析"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "无法保存"
@@ -5752,6 +5772,12 @@ msgstr "已禁用"
 
 msgid "Discard"
 msgstr "丢弃"
+
+msgid "Discard import"
+msgstr "丢弃导入"
+
+msgid "Discard this import?"
+msgstr "丢弃此次导入？"
 
 msgid "Discarded"
 msgstr "已放弃"
@@ -7994,6 +8020,9 @@ msgstr "前往 {0}"
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
+msgid "Go to module"
+msgstr "转到模块"
+
 msgid "Go to that week"
 msgstr "跳转到该周"
 
@@ -9028,7 +9057,7 @@ msgid "Job Operation"
 msgstr "工单工序"
 
 msgid "Job operation batch"
-msgstr ""
+msgstr "工单工序批次"
 
 msgid "Job Operations"
 msgstr "工单工序"
@@ -9076,6 +9105,9 @@ msgstr "日记账行"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "仅一个"
 
@@ -9096,6 +9128,9 @@ msgstr "保留"
 
 msgid "Keep Current"
 msgstr "保持当前"
+
+msgid "Keep editing"
+msgstr "继续编辑"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新物料"
@@ -9118,6 +9153,9 @@ msgstr "让订单、报价单和设置受到第二道检查的保护"
 msgid "Key"
 msgstr "钥匙"
 
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
 msgid "Kind of record"
 msgstr "记录类型"
 
@@ -9130,7 +9168,7 @@ msgstr "标签"
 msgid "Label to complete the current operation for this kanban"
 msgstr "用于完成此看板当前操作的标签"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "用于为此看板创建 {0} 的标签"
 
@@ -9343,6 +9381,9 @@ msgstr "浅色"
 
 msgid "Light Mode"
 msgstr "浅色模式"
+
+msgid "Light or dark mode"
+msgstr "亮色或深色模式"
 
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
@@ -10579,6 +10620,9 @@ msgstr "新报价行"
 msgid "New Receipt"
 msgstr "新收据"
 
+msgid "New record (on list pages)"
+msgstr "新建记录（在列表页面）"
+
 msgid "New record created"
 msgstr "新记录已创建"
 
@@ -10707,6 +10751,9 @@ msgstr "下次到期日期"
 
 msgid "Next page"
 msgstr "下一页"
+
+msgid "Next page (in tables)"
+msgstr "下一页（在表格中）"
 
 msgid "Next Sequence"
 msgstr "下一个编号规则"
@@ -11144,6 +11191,9 @@ msgstr "未配置班次——假定周一至周五，每天8小时"
 msgid "No shipments yet"
 msgstr "尚无发货"
 
+msgid "No shortcuts available on this page."
+msgstr "此页面没有可用的快捷键。"
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "库存管理或工单状态没有单一的可信数字"
 
@@ -11212,6 +11262,9 @@ msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库�
 
 msgid "No work center utilization data within range"
 msgstr "范围内没有工作中心利用率数据"
+
+msgid "No work centers at this location"
+msgstr "此地点没有工作中心"
 
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
@@ -12557,6 +12610,9 @@ msgstr "前一天"
 msgid "Previous page"
 msgstr "上一页"
 
+msgid "Previous page (in tables)"
+msgstr "上一页（在表格中）"
+
 msgid "Previous step"
 msgstr "上一步骤"
 
@@ -13021,7 +13077,7 @@ msgstr "推送到会计系统"
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
 
@@ -13540,6 +13596,10 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "下达生产批次"
 
@@ -13557,6 +13617,10 @@ msgstr "下达工单"
 
 msgid "Released"
 msgstr "已下达"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "下达日期"
@@ -14488,6 +14552,9 @@ msgstr "保存方法"
 msgid "Save Rate"
 msgstr "保存汇率"
 
+msgid "Save the form you're editing"
+msgstr "保存您正在编辑的表单"
+
 msgid "Save view"
 msgstr "保存视图"
 
@@ -15404,6 +15471,9 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+msgid "Show this overlay"
+msgstr "显示此覆盖层"
 
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
@@ -16683,6 +16753,9 @@ msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "此间接支出行过账至的费用科目；因为间接行没有物料分类账条目来推导科目，所以这是必需的。"
 
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "您上传的文件和已完成的映射将会丢失。"
+
 msgid "the first 3 to 4 weeks"
 msgstr "前3到4周"
 
@@ -17719,6 +17792,9 @@ msgstr "切换级别"
 
 msgid "Toggle Properties"
 msgstr "切换属性"
+
+msgid "Toggle the sidebar"
+msgstr "切换侧边栏"
 
 msgid "Toggle views"
 msgstr "切换视图"

@@ -26,8 +26,28 @@ Routes: `/x/payment`, `/x/payment/new`, `/x/payment/$paymentId`
 ### 2. Fill the New Payment form
 - Type / Customer-or-Supplier / Currency / Exchange Rate / Total Amount are pre-filled.
 - **Bank / Cash Account** (required) — select an Asset account (e.g. "1010 Bank - Cash").
-- Submit "Save". On submit the action auto-creates a starter `paymentApplication`
-  against the seed invoice for the full amount, then redirects to the payment detail.
+- Submit "Save". On submit the action seeds one `paymentApplication` per invoice; each
+  is `appliedAmount = balance − earlyPaymentDiscount`, `discountAmount = discount`, so
+  `applied + discount = balance` (settles the invoice without over-settling).
+  Redirects to the payment detail.
+
+### 2a. Early-payment discount (auto-seeded from payment terms)
+- If the invoice's payment term has `discountPercentage > 0` AND the payment date is
+  within the discount window (`daysDiscount` from the issue date, per `calculationMethod`),
+  the seeded **Total Amount** is NET of the discount (e.g. a 1000 invoice on "1% 10 Net 30"
+  paid within 10 days pre-fills **990**), and the seeded application carries
+  `discountAmount` (10) with `appliedAmount` (990).
+- Past the window, or a 0% term → discount 0, full balance (unchanged behavior).
+- Verified 2026-09-09: `si_EvjaoySwgfqMtHn6JamGBy` ("1% 10 Net 30", issued today) → payment
+  total 990, application applied 990 / discount 10; posts to a GL journal:
+  `DR Bank 990 / DR Customer Payment Discount (4040 contra-revenue) −10 / CR AR −1000`;
+  invoice → Paid. The discount line signs by the account's `class` (post-payment resolves it).
+- Logic: `computeEarlyPaymentDiscounts` (`invoicing.service.ts`), called from
+  `payments/new.tsx` loader (total) and action (applications).
+- The apply table (`PaymentApplyTable`) disables **Save applications** when any row's
+  `applied + discount + write-off > balance` ("A line settles more than its invoice's open
+  balance") — mirrors the authoritative cap in `post-payment`, so a manual over-settling
+  discount is caught before Post instead of erroring server-side.
 
 ### 3. Post the payment
 - On `/x/payment/$paymentId`, click **Post** (Draft only). Calls the `post-payment`

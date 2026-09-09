@@ -55,6 +55,7 @@ import {
   getOnboardingDraft,
   type OnboardingDraft
 } from "~/services/onboarding-draft.server";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
 type DataChoice = "template" | "import" | "none";
@@ -307,7 +308,8 @@ export default function OnboardingIndustry() {
             <label
               className={cn(
                 "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors",
-                "border-border hover:border-primary/50 hover:bg-accent/50"
+                "border-border hover:border-primary/50 hover:bg-accent/50",
+                "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
               )}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
@@ -351,6 +353,7 @@ export default function OnboardingIndustry() {
                 variant="primary"
                 size="md"
                 type="submit"
+                shortcut={ONBOARDING_SHORTCUTS.continue}
                 isLoading={isSubmitting}
                 isDisabled={!importFile || isSubmitting}
               >
@@ -387,6 +390,7 @@ export default function OnboardingIndustry() {
                 value={dataChoice}
                 onChange={setDataChoice}
                 options={dataChoiceOptions}
+                autoFocus
               />
             </OnboardingCardContent>
 
@@ -404,12 +408,13 @@ export default function OnboardingIndustry() {
                   </Link>
                 </Button>
                 {dataChoice === "none" ? (
-                  <Submit>Next</Submit>
+                  <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>
                 ) : (
                   <Button
                     variant="primary"
                     size="md"
                     type="button"
+                    shortcut={ONBOARDING_SHORTCUTS.continue}
                     onClick={handleNext}
                   >
                     Next
@@ -434,6 +439,7 @@ export default function OnboardingIndustry() {
                 value={selectedIndustryId}
                 onChange={setSelectedIndustryId}
                 options={industryOptions}
+                autoFocus
               />
             </OnboardingCardContent>
 
@@ -447,7 +453,12 @@ export default function OnboardingIndustry() {
                 >
                   Previous
                 </Button>
-                <Submit isDisabled={!selectedIndustryId}>Next</Submit>
+                <Submit
+                  isDisabled={!selectedIndustryId}
+                  shortcut={ONBOARDING_SHORTCUTS.continue}
+                >
+                  Next
+                </Submit>
               </HStack>
             </CardFooter>
           </>

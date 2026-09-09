@@ -66,6 +66,54 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
+  if (intent === "reprioritize") {
+    // Within-column reorder of a batch card. The card's board position is
+    // min(member priority), so moving the batch means writing every member's
+    // priority to the batch's new dispatch slot. Like operations.update, this
+    // only re-sequences the manual dispatch order — it does NOT reschedule.
+    const batchId = String(formData.get("batchId") ?? "");
+    const priority = Number(formData.get("priority"));
+
+    if (!batchId || !Number.isFinite(priority)) {
+      return { success: false, message: "Invalid batch reprioritize request" };
+    }
+
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("id, companyId, status")
+      .eq("id", batchId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+
+    if (
+      batch.error ||
+      batch.data === null ||
+      batch.data.companyId !== companyId ||
+      // Completing/Completed batches are read-only on the board.
+      batch.data.status === "Completing" ||
+      batch.data.status === "Completed"
+    ) {
+      return { success: false, message: "Batch unavailable" };
+    }
+
+    const { error } = await client
+      .from("jobOperation")
+      .update({
+        priority,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("jobOperationBatchId", batchId)
+      .eq("companyId", companyId)
+      .not("status", "in", "(Done,Canceled)");
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true };
+  }
+
   if (intent === "create") {
     const validation = await validator(
       createJobOperationBatchValidator

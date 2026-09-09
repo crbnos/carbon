@@ -139,7 +139,9 @@ describe("requestIdMiddleware body logging", () => {
   });
 
   it("captures a form-urlencoded body and redacts sensitive fields", async () => {
-    const body = "email=a%40b.com&note=hi";
+    // email/phone/address are ordinary ERP business data and stay visible —
+    // hiding them made real request payloads unreconstructable from logs.
+    const body = "email=a%40b.com&apiToken=t0p&note=hi";
     const request = new Request("http://x/action", {
       method: "POST",
       body,
@@ -153,7 +155,8 @@ describe("requestIdMiddleware body logging", () => {
       async () => new Response("ok")
     );
     const captured = httpRecord()?.properties.body as Record<string, unknown>;
-    expect(captured.email).toBe("[REDACTED]");
+    expect(captured.email).toBe("a@b.com");
+    expect(captured.apiToken).toBe("[REDACTED]");
     expect(captured.note).toBe("hi");
   });
 

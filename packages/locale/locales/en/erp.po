@@ -624,6 +624,9 @@ msgstr "A job's start date changes"
 msgid "A job's status changes"
 msgstr "A job's status changes"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "A line settles more than its invoice's open balance"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "A list is wired into {0}, so this step runs once for each item and returns a list of results."
@@ -1246,8 +1249,14 @@ msgstr "Add a custom pricing row to override quantity, price, shipping, lead tim
 msgid "Add a domain"
 msgstr "Add a domain"
 
+msgid "Add a line (in document explorers)"
+msgstr "Add a line (in document explorers)"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Add a materials section that lists each item on the bill of materials with its quantity."
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr "Add a parameter (in the procedure explorer)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
@@ -1260,6 +1269,9 @@ msgstr "Add a row"
 
 msgid "Add a step"
 msgstr "Add a step"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr "Add a step or question (in procedure and training explorers)"
 
 msgid "Add Ability"
 msgstr "Add Ability"
@@ -3833,6 +3845,9 @@ msgstr "Confirm {0}"
 msgid "Confirm & release"
 msgstr "Confirm & release"
 
+msgid "Confirm a dialog"
+msgstr "Confirm a dialog"
+
 msgid "Confirm all"
 msgstr "Confirm all"
 
@@ -4337,6 +4352,11 @@ msgstr "Could not prepare region image for analysis"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "Could not read the document: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr "Could not release {0}: {1}"
 
 msgid "Could not save"
 msgstr "Could not save"
@@ -5752,6 +5772,12 @@ msgstr "Disabled"
 
 msgid "Discard"
 msgstr "Discard"
+
+msgid "Discard import"
+msgstr "Discard import"
+
+msgid "Discard this import?"
+msgstr "Discard this import?"
 
 msgid "Discarded"
 msgstr "Discarded"
@@ -7994,6 +8020,9 @@ msgstr "Go to {0}"
 msgid "Go to implementation hub"
 msgstr "Go to implementation hub"
 
+msgid "Go to module"
+msgstr "Go to module"
+
 msgid "Go to that week"
 msgstr "Go to that week"
 
@@ -9076,6 +9105,9 @@ msgstr "Journal lines"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr "Jump to a section on detail pages (same modifiers + the section's letter)"
+
 msgid "Just one"
 msgstr "Just one"
 
@@ -9096,6 +9128,9 @@ msgstr "Keep"
 
 msgid "Keep Current"
 msgstr "Keep Current"
+
+msgid "Keep editing"
+msgstr "Keep editing"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Keep existing pricing, only add new items"
@@ -9118,6 +9153,9 @@ msgstr "Keeps orders, quotes, and settings behind a second check"
 msgid "Key"
 msgstr "Key"
 
+msgid "Keyboard shortcuts"
+msgstr "Keyboard shortcuts"
+
 msgid "Kind of record"
 msgstr "Kind of record"
 
@@ -9130,7 +9168,7 @@ msgstr "Label"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Label to complete the current operation for this kanban"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Label to create a {0} for this kanban"
 
@@ -9343,6 +9381,9 @@ msgstr "Light"
 
 msgid "Light Mode"
 msgstr "Light Mode"
+
+msgid "Light or dark mode"
+msgstr "Light or dark mode"
 
 msgid "Lights Out (24×7)"
 msgstr "Lights Out (24×7)"
@@ -10579,6 +10620,9 @@ msgstr "New Quote Line"
 msgid "New Receipt"
 msgstr "New Receipt"
 
+msgid "New record (on list pages)"
+msgstr "New record (on list pages)"
+
 msgid "New record created"
 msgstr "New record created"
 
@@ -10707,6 +10751,9 @@ msgstr "Next Due Date"
 
 msgid "Next page"
 msgstr "Next page"
+
+msgid "Next page (in tables)"
+msgstr "Next page (in tables)"
 
 msgid "Next Sequence"
 msgstr "Next Sequence"
@@ -11144,6 +11191,9 @@ msgstr "No shifts configured — assuming Mon–Fri, 8h days"
 msgid "No shipments yet"
 msgstr "No shipments yet"
 
+msgid "No shortcuts available on this page."
+msgstr "No shortcuts available on this page."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
 
@@ -11212,6 +11262,9 @@ msgstr "No warehouse stock is on record for this item. You can still pick it —
 
 msgid "No work center utilization data within range"
 msgstr "No work center utilization data within range"
+
+msgid "No work centers at this location"
+msgstr "No work centers at this location"
 
 msgid "No work centers exist"
 msgstr "No work centers exist"
@@ -12557,6 +12610,9 @@ msgstr "Previous Day"
 msgid "Previous page"
 msgstr "Previous page"
 
+msgid "Previous page (in tables)"
+msgstr "Previous page (in tables)"
+
 msgid "Previous step"
 msgstr "Previous step"
 
@@ -13021,7 +13077,7 @@ msgstr "Push to accounting"
 msgid "Putting your data back"
 msgstr "Putting your data back"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR Code to create a {0} for this kanban"
 
@@ -13540,6 +13596,10 @@ msgstr "Relative timeline · dates to be confirmed"
 msgid "Release"
 msgstr "Release"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr "Release {0} batches"
+
 msgid "Release Batch"
 msgstr "Release Batch"
 
@@ -13557,6 +13617,10 @@ msgstr "Release Job"
 
 msgid "Released"
 msgstr "Released"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr "Released {0} batches"
 
 msgid "Released date"
 msgstr "Released date"
@@ -14488,6 +14552,9 @@ msgstr "Save Method"
 msgid "Save Rate"
 msgstr "Save Rate"
 
+msgid "Save the form you're editing"
+msgstr "Save the form you're editing"
+
 msgid "Save view"
 msgstr "Save view"
 
@@ -15404,6 +15471,9 @@ msgstr "Show Supplier IDs"
 
 msgid "Show sync options"
 msgstr "Show sync options"
+
+msgid "Show this overlay"
+msgstr "Show this overlay"
 
 msgid "Show Trailing Zeros"
 msgstr "Show Trailing Zeros"
@@ -16683,6 +16753,9 @@ msgstr "The expected percentage of this item's output lost during production; pl
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "The file you uploaded and the mappings you've made will be lost."
+
 msgid "the first 3 to 4 weeks"
 msgstr "the first 3 to 4 weeks"
 
@@ -17719,6 +17792,9 @@ msgstr "Toggle level"
 
 msgid "Toggle Properties"
 msgstr "Toggle Properties"
+
+msgid "Toggle the sidebar"
+msgstr "Toggle the sidebar"
 
 msgid "Toggle views"
 msgstr "Toggle views"

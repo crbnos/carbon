@@ -6,7 +6,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
@@ -76,6 +77,11 @@ const ConfirmDelete = ({
             action={action}
             onSubmit={() => (submitted.current = true)}
           >
+            {/* Drawer and Modal are both z-50 (Drawer.tsx:23, Modal.tsx:35), so
+                when this modal stacks over a drawer form the topmost-dialog
+                guard resolves by "later-mounted wins" (utils/dialog.ts). If
+                either z-index ever changes, re-verify ⌘Enter targets this
+                modal, not the drawer's Submit. */}
             {fields &&
               Object.entries(fields).flatMap(([key, value]) =>
                 (Array.isArray(value) ? value : [value]).map((v, i) => (
@@ -92,6 +98,7 @@ const ConfirmDelete = ({
               isLoading={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               type="submit"
+              shortcut={SHORTCUTS.confirm}
             >
               {deleteText}
             </Button>

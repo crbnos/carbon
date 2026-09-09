@@ -624,6 +624,9 @@ msgstr "Дата начала работы изменяется"
 msgid "A job's status changes"
 msgstr "Статус работы изменяется"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "Строка погашает больше, чем непогашенный остаток по счёту"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Список подключен к {0}, поэтому этот шаг выполняется один раз для каждого элемента и возвращает список результатов."
@@ -1246,8 +1249,14 @@ msgstr "Добавить пользовательскую строку цено�
 msgid "Add a domain"
 msgstr "Добавить домен"
 
+msgid "Add a line (in document explorers)"
+msgstr "Добавить строку (в обозревателях документов)"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати для прямой печати этикеток."
@@ -1260,6 +1269,9 @@ msgstr "Добавить строку"
 
 msgid "Add a step"
 msgstr "Добавить шаг"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "Добавить способность"
@@ -3833,6 +3845,9 @@ msgstr "Подтвердить {0}"
 msgid "Confirm & release"
 msgstr "Подтвердить и запустить в работу"
 
+msgid "Confirm a dialog"
+msgstr "Подтвердить диалоговое окно"
+
 msgid "Confirm all"
 msgstr "Подтвердить все"
 
@@ -4337,6 +4352,11 @@ msgstr "Не удалось подготовить изображение рег
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "Не удалось сохранить"
@@ -5752,6 +5772,12 @@ msgstr "Отключено"
 
 msgid "Discard"
 msgstr "Отклонить"
+
+msgid "Discard import"
+msgstr "Отклонить импорт"
+
+msgid "Discard this import?"
+msgstr "Отклонить этот импорт?"
 
 msgid "Discarded"
 msgstr "Отклонено"
@@ -7994,6 +8020,9 @@ msgstr "Перейти к {0}"
 msgid "Go to implementation hub"
 msgstr "Перейти в центр внедрения"
 
+msgid "Go to module"
+msgstr "Перейти в модуль"
+
 msgid "Go to that week"
 msgstr "Перейти на эту неделю"
 
@@ -9028,7 +9057,7 @@ msgid "Job Operation"
 msgstr "Операция заказа"
 
 msgid "Job operation batch"
-msgstr ""
+msgstr "Серия операции заказа"
 
 msgid "Job Operations"
 msgstr "Операции заказа"
@@ -9076,6 +9105,9 @@ msgstr "Строки журнала"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Операции, датированные в эту дату или ранее, считаются заблокированными. Объединены с датой блокировки, указанной поставщиком, если обе существуют."
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "Только один"
 
@@ -9096,6 +9128,9 @@ msgstr "Сохранить"
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
+
+msgid "Keep editing"
+msgstr "Продолжить редактирование"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Сохранить существующее ценообразование, добавить только новую номенклатуру"
@@ -9118,6 +9153,9 @@ msgstr "Требует дополнительную проверку для за
 msgid "Key"
 msgstr "Ключ"
 
+msgid "Keyboard shortcuts"
+msgstr "Сочетания клавиш"
+
 msgid "Kind of record"
 msgstr "Тип записи"
 
@@ -9130,7 +9168,7 @@ msgstr "Метка"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Этикетка для завершения текущей операции для этого канбана"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Этикетка для создания {0} для этого канбана"
 
@@ -9343,6 +9381,9 @@ msgstr "Светлая"
 
 msgid "Light Mode"
 msgstr "Светлый режим"
+
+msgid "Light or dark mode"
+msgstr "Светлая или тёмная тема"
 
 msgid "Lights Out (24×7)"
 msgstr "Темное производство (24×7)"
@@ -10579,6 +10620,9 @@ msgstr "Новая строка предложения"
 msgid "New Receipt"
 msgstr "Новая квитанция"
 
+msgid "New record (on list pages)"
+msgstr "Новая запись (на страницах списков)"
+
 msgid "New record created"
 msgstr "Создана новая запись"
 
@@ -10707,6 +10751,9 @@ msgstr "Следующий Срок выполнения"
 
 msgid "Next page"
 msgstr "Следующая страница"
+
+msgid "Next page (in tables)"
+msgstr "Следующая страница (в таблицах)"
 
 msgid "Next Sequence"
 msgstr "Следующая Нумерация"
@@ -11144,6 +11191,9 @@ msgstr "Смены не настроены — предполагается Пн
 msgid "No shipments yet"
 msgstr "Никаких отправок пока нет"
 
+msgid "No shortcuts available on this page."
+msgstr "На этой странице сочетания клавиш недоступны."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
 
@@ -11212,6 +11262,9 @@ msgstr "На складе нет записей о наличии этого т�
 
 msgid "No work center utilization data within range"
 msgstr "Нет данных об использовании рабочего центра в указанном диапазоне"
+
+msgid "No work centers at this location"
+msgstr "На этой площадке нет рабочих центров"
 
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
@@ -12557,6 +12610,9 @@ msgstr "Предыдущий день"
 msgid "Previous page"
 msgstr "Предыдущая страница"
 
+msgid "Previous page (in tables)"
+msgstr "Предыдущая страница (в таблицах)"
+
 msgid "Previous step"
 msgstr "Предыдущий шаг"
 
@@ -13021,7 +13077,7 @@ msgstr "Отправить в бухгалтерию"
 msgid "Putting your data back"
 msgstr "Восстановление ваших данных"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-код для создания {0} для этого канбана"
 
@@ -13540,6 +13596,10 @@ msgstr "Относительная шкала времени · даты буд�
 msgid "Release"
 msgstr "Запустить в работу"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
@@ -13557,6 +13617,10 @@ msgstr "Запустить производственный заказ в раб
 
 msgid "Released"
 msgstr "Выпущено"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Дата выпуска"
@@ -14488,6 +14552,9 @@ msgstr "Сохранить метод"
 msgid "Save Rate"
 msgstr "Сохранить курс"
 
+msgid "Save the form you're editing"
+msgstr "Сохранить редактируемую форму"
+
 msgid "Save view"
 msgstr "Сохранить представление"
 
@@ -15404,6 +15471,9 @@ msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
+
+msgid "Show this overlay"
+msgstr "Показать это наложение"
 
 msgid "Show Trailing Zeros"
 msgstr "Показывать завершающие нули"
@@ -16683,6 +16753,9 @@ msgstr "Ожидаемый процент выпуска этой номенкл
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Счет расходов, на который относится эта строка косвенных расходов; требуется, так как косвенные строки не имеют записи в книге товаров, из которой можно вывести счет."
 
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "Загруженный файл и созданные сопоставления будут потеряны."
+
 msgid "the first 3 to 4 weeks"
 msgstr "первые 3–4 недели"
 
@@ -17719,6 +17792,9 @@ msgstr "Переключить уровень"
 
 msgid "Toggle Properties"
 msgstr "Переключить свойства"
+
+msgid "Toggle the sidebar"
+msgstr "Переключить боковую панель"
 
 msgid "Toggle views"
 msgstr "Переключить представления"

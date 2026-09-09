@@ -624,6 +624,9 @@ msgstr "La fecha de inicio de un trabajo cambia"
 msgid "A job's status changes"
 msgstr "El estado de un trabajo cambia"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "Una línea liquida más que el saldo pendiente de su factura"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Una lista está conectada a {0}, por lo que este paso se ejecuta una vez para cada elemento y devuelve una lista de resultados."
@@ -1246,8 +1249,14 @@ msgstr "Agregue una fila de fijación de precios personalizada para sobrescribir
 msgid "Add a domain"
 msgstr "Añadir un dominio"
 
+msgid "Add a line (in document explorers)"
+msgstr "Agregar una línea (en exploradores de documentos)"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Agregue una sección de materiales que enumere cada artículo en la lista de materiales con su cantidad."
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr ""
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Agregue una impresora en la configuración de impresión para imprimir etiquetas directamente."
@@ -1260,6 +1269,9 @@ msgstr "Agregar una fila"
 
 msgid "Add a step"
 msgstr "Agregar un paso"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr ""
 
 msgid "Add Ability"
 msgstr "Agregar capacidad"
@@ -3833,6 +3845,9 @@ msgstr "Confirmar {0}"
 msgid "Confirm & release"
 msgstr "Confirmar y liberar"
 
+msgid "Confirm a dialog"
+msgstr "Confirmar un diálogo"
+
 msgid "Confirm all"
 msgstr "Confirmar todo"
 
@@ -4337,6 +4352,11 @@ msgstr "No se pudo preparar la imagen de la región para el análisis"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "No se pudo leer el documento: {0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr ""
 
 msgid "Could not save"
 msgstr "No se pudo guardar"
@@ -5752,6 +5772,12 @@ msgstr "Deshabilitado"
 
 msgid "Discard"
 msgstr "Descartar"
+
+msgid "Discard import"
+msgstr "Descartar importación"
+
+msgid "Discard this import?"
+msgstr "¿Descartar esta importación?"
 
 msgid "Discarded"
 msgstr "Descartado"
@@ -7994,6 +8020,9 @@ msgstr "Ir a {0}"
 msgid "Go to implementation hub"
 msgstr "Ir al centro de implementación"
 
+msgid "Go to module"
+msgstr "Ir al módulo"
+
 msgid "Go to that week"
 msgstr "Ir a esa semana"
 
@@ -9028,7 +9057,7 @@ msgid "Job Operation"
 msgstr "Operación de la Orden"
 
 msgid "Job operation batch"
-msgstr ""
+msgstr "Lote de la operación de la orden"
 
 msgid "Job Operations"
 msgstr "Operaciones de la Orden"
@@ -9076,6 +9105,9 @@ msgstr "Líneas de asiento"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Los asientos fechados en o antes de esta fecha se tratan como bloqueados. Se combinan con la fecha de bloqueo reportada por el proveedor cuando ambas existen."
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr ""
+
 msgid "Just one"
 msgstr "Solo uno"
 
@@ -9096,6 +9128,9 @@ msgstr "Mantener"
 
 msgid "Keep Current"
 msgstr "Mantener Actual"
+
+msgid "Keep editing"
+msgstr "Seguir editando"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Mantener fijación de precios existente, solo agregar artículos nuevos"
@@ -9118,6 +9153,9 @@ msgstr "Mantiene órdenes, cotizaciones y configuración tras una segunda verifi
 msgid "Key"
 msgstr "Clave"
 
+msgid "Keyboard shortcuts"
+msgstr "Atajos de teclado"
+
 msgid "Kind of record"
 msgstr "Tipo de registro"
 
@@ -9130,7 +9168,7 @@ msgstr "Etiqueta"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etiqueta para completar la operación actual de este kanban"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etiqueta para crear un {0} para este kanban"
 
@@ -9343,6 +9381,9 @@ msgstr "Claro"
 
 msgid "Light Mode"
 msgstr "Modo Claro"
+
+msgid "Light or dark mode"
+msgstr "Modo claro u oscuro"
 
 msgid "Lights Out (24×7)"
 msgstr "Sin luces (24×7)"
@@ -10579,6 +10620,9 @@ msgstr "Nueva Línea de Cotización"
 msgid "New Receipt"
 msgstr "Nuevo Recibo"
 
+msgid "New record (on list pages)"
+msgstr "Nuevo registro (en páginas de lista)"
+
 msgid "New record created"
 msgstr "Nuevo registro creado"
 
@@ -10707,6 +10751,9 @@ msgstr "Próxima fecha de vencimiento"
 
 msgid "Next page"
 msgstr "Página siguiente"
+
+msgid "Next page (in tables)"
+msgstr "Página siguiente (en tablas)"
 
 msgid "Next Sequence"
 msgstr "Siguiente Secuencia"
@@ -11144,6 +11191,9 @@ msgstr "Sin turnos configurados — asumiendo lun–vie, días de 8h"
 msgid "No shipments yet"
 msgstr "Sin envíos aún"
 
+msgid "No shortcuts available on this page."
+msgstr "No hay atajos disponibles en esta página."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Sin un único número confiable para inventario o estado del trabajo"
 
@@ -11212,6 +11262,9 @@ msgstr "No hay stock de almacén registrado para este artículo. Aún puedes rec
 
 msgid "No work center utilization data within range"
 msgstr "No hay datos de utilización del centro de trabajo dentro del rango"
+
+msgid "No work centers at this location"
+msgstr "No hay centros de trabajo en esta ubicación"
 
 msgid "No work centers exist"
 msgstr "No existen centros de trabajo"
@@ -12557,6 +12610,9 @@ msgstr "Día Anterior"
 msgid "Previous page"
 msgstr "Página anterior"
 
+msgid "Previous page (in tables)"
+msgstr "Página anterior (en tablas)"
+
 msgid "Previous step"
 msgstr "Paso anterior"
 
@@ -13021,7 +13077,7 @@ msgstr "Enviar a contabilidad"
 msgid "Putting your data back"
 msgstr "Restaurando tus datos"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Código QR para crear un {0} para este kanban"
 
@@ -13540,6 +13596,10 @@ msgstr "Cronograma relativo · fechas por confirmar"
 msgid "Release"
 msgstr "Liberar"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr ""
+
 msgid "Release Batch"
 msgstr "Liberar lote de producción"
 
@@ -13557,6 +13617,10 @@ msgstr "Liberar Trabajo"
 
 msgid "Released"
 msgstr "Liberado"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr ""
 
 msgid "Released date"
 msgstr "Fecha de liberación"
@@ -14488,6 +14552,9 @@ msgstr "Guardar Método"
 msgid "Save Rate"
 msgstr "Guardar tipo de cambio"
 
+msgid "Save the form you're editing"
+msgstr "Guardar el formulario que estás editando"
+
 msgid "Save view"
 msgstr "Guardar vista"
 
@@ -15404,6 +15471,9 @@ msgstr "Mostrar IDs de Proveedores"
 
 msgid "Show sync options"
 msgstr "Mostrar opciones de sincronización"
+
+msgid "Show this overlay"
+msgstr "Mostrar esta superposición"
 
 msgid "Show Trailing Zeros"
 msgstr "Mostrar Ceros Finales"
@@ -16683,6 +16753,9 @@ msgstr "El porcentaje esperado de la producción de este artículo perdido duran
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "La cuenta de gastos en la que se contabiliza esta línea de gasto indirecto; es obligatoria porque las líneas indirectas no tienen un asiento de mayor de inventario del cual derivar la cuenta."
 
+msgid "The file you uploaded and the mappings you've made will be lost."
+msgstr "Se perderán el archivo que subiste y las asignaciones que hiciste."
+
 msgid "the first 3 to 4 weeks"
 msgstr "las primeras 3 a 4 semanas"
 
@@ -17719,6 +17792,9 @@ msgstr "Alternar nivel"
 
 msgid "Toggle Properties"
 msgstr "Alternar Propiedades"
+
+msgid "Toggle the sidebar"
+msgstr "Alternar la barra lateral"
 
 msgid "Toggle views"
 msgstr "Alternar vistas"

@@ -9,13 +9,12 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDisclosure,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -31,6 +30,7 @@ import { useNavigate, useParams } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isPurchaseReturnOrderLocked } from "../../purchasing.models";
 import PurchaseReturnOrderLineForm from "./PurchaseReturnOrderLineForm";
@@ -47,7 +47,6 @@ export default function PurchaseReturnOrderExplorer() {
     lines: PurchaseReturnOrderLine[];
   }>(path.to.purchaseReturnOrder(orderId));
   const permissions = usePermissions();
-  const prettifyShortcut = usePrettifyShortcut();
 
   const newLineDisclosure = useDisclosure();
   const fromDocumentDisclosure = useDisclosure();
@@ -81,12 +80,15 @@ export default function PurchaseReturnOrderExplorer() {
   };
 
   const newButtonRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+l": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      newButtonRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addLine,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        newButtonRef.current?.click();
+      }
     }
-  });
+  ]);
 
   const lines = routeData?.lines ?? [];
 
@@ -140,7 +142,10 @@ export default function PurchaseReturnOrderExplorer() {
                 <span>
                   <Trans>New Line Item</Trans>
                 </span>
-                <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
+                <ShortcutKey
+                  shortcut={EXPLORER_SHORTCUTS.addLine}
+                  variant="small"
+                />
               </HStack>
             </TooltipContent>
           </Tooltip>
