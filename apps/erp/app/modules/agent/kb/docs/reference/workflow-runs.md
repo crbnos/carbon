@@ -1,6 +1,6 @@
 # Workflow runs
 
-> Every firing of a workflow is recorded step by step. What the run list and run detail show, what each status means, how repeating steps are summarised, and how long history is kept.
+> Every firing of a workflow, recorded step by step: the run list, run detail, statuses, repeating steps, and how long history is kept.
 
 Every time a workflow fires, Carbon records a workflow run: one row for the run and one row for each step it took, with the values that went in, the values that came out, and why it ended the way it did. Open **Automate → Runs** to see them all, or click the **"Last Run"** cell on the workflow list to jump straight to the most recent one.
 

@@ -5,7 +5,7 @@ import { guideSource, source } from "@/lib/source";
 import { allToolParams } from "@/lib/tools-data";
 
 /** Every canonical, indexable URL on the docs site. `/` is intentionally omitted —
- *  it rewrites to /guides/order, which is listed as its own canonical entry. */
+ *  it rewrites to /docs, which is listed as its own canonical entry. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const abs = (path: string) => `${SITE.url}${path}`;
   const out: MetadataRoute.Sitemap = [];

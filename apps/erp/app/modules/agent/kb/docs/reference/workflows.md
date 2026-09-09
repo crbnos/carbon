@@ -1,6 +1,6 @@
 # Workflows
 
-> Build an automation on a canvas — one trigger, conditions, and steps that notify people, update records, or call an outside service. Triggers, values, publishing, and versions.
+> Build an automation on a canvas: one trigger, conditions, and steps that notify people, update records, or call an outside service.
 
 A workflow watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted. You build one on a canvas under **Automate → Workflows**, wire the steps together, and press **"Publish"**.
 

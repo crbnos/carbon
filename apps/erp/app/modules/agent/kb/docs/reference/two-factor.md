@@ -14,7 +14,7 @@ Type the current code into the six-box field and press **"Verify"**. Nothing is 
 
 Carbon emails you a receipt the moment it's on; if one arrives that you didn't cause, remove the factor and tell an admin. To remove it yourself, press the trash icon next to the factor and enter a current code.
 
-Once verified, every sign-in asks for a code — magic link, Google, Outlook, and passkey alike. `docs/platform/single-sign-on` is the one exception: an SSO session arrives with your identity provider's MFA already enforced, so Carbon skips its own code screen.
+Once verified, every sign-in asks for a code — magic link, Google, Outlook, and passkey alike. `docs/reference/single-sign-on` is the one exception: an SSO session arrives with your identity provider's MFA already enforced, so Carbon skips its own code screen.
 
 ## Require it for everyone
 
