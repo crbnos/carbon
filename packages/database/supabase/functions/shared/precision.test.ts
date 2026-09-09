@@ -74,3 +74,27 @@ Deno.test("defaults to internal scale", () => {
   const allocated = distributeRoundingResidual([0.000005, 0.000005], 0.00002);
   assertEquals(sum(allocated), 0.00002);
 });
+
+Deno.test("never reverses a part's sign to place the residual", () => {
+  // Reported on PR #1599: mixed-sign tax components. The deficit unit used to
+  // land on the only positive part (it had the smallest rounding error),
+  // turning a +0.001 tax into -0.01 against positive revenue — the exact shape
+  // this helper exists to prevent.
+  const exact = [-0.028, -0.028, 0.001];
+  const allocated = distributeRoundingResidual(exact, -0.07, 2);
+  assertEquals(sum(allocated), -0.07);
+  assertEquals(allocated, [-0.04, -0.03, 0]);
+  for (const [index, value] of allocated.entries()) {
+    if (value !== 0 && exact[index] !== 0) {
+      assertEquals(Math.sign(value), Math.sign(exact[index]!));
+    }
+  }
+});
+
+Deno.test("refuses a target that can only be met by reversing a sign", () => {
+  assertThrows(
+    () => distributeRoundingResidual([0.001, 0.001], -0.02, 2),
+    Error,
+    "reversing",
+  );
+});

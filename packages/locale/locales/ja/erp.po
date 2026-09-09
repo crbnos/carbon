@@ -2386,6 +2386,12 @@ msgstr "これらのユーザーに招待を送信してもよろしいですか
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "このユーザーに招待を送信してもよろしいですか?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "このメモを取消しますか？会計エントリと適用が反転されます。この操作は元に戻すことができません。"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "この支払を取消しますか？会計エントリと適用が反転されます。この操作は元に戻すことができません。"
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "この仕入先請求書を取消してもよろしいですか？この操作はすべての財務取引を取消し、取り消せません。"
 
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "配送売上高"
 
 msgid "Shipping Revenue (default)"
-msgstr "送料売上高(デフォルト)"
+msgstr "配送売上高(デフォルト)"
 
 msgid "Shipping Supplier"
 msgstr "配送仕入先"
@@ -18513,6 +18519,11 @@ msgstr "ユーザーの公開プロフィールに表示されます"
 
 msgid "Void"
 msgstr "取消"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "取消 {0}"
 
 msgid "Void Invoice"
 msgstr "請求書を取消"

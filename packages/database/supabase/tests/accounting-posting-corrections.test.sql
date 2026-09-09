@@ -214,10 +214,29 @@ BEGIN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
     ASSERT constraint_name = 'invoiceSettlement_anyComponent_check', 'Expected empty-allocation constraint';
   END;
+  -- A source-linked row without its document principal is UNREADABLE, not just
+  -- imprecise: remainingFundingSources throws "Settlement is missing its
+  -- document principal" and the party's remaining credit cannot be computed.
+  BEGIN
+    UPDATE "invoiceSettlement"
+      SET "sourcePaymentId" = source_id, "appliedAmount" = 1, "sourceAmount" = NULL
+      WHERE id = settlement_id;
+    ASSERT false, 'A source-linked settlement was accepted without its document principal';
+  EXCEPTION WHEN check_violation THEN
+    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
+    ASSERT constraint_name = 'invoiceSettlement_sourcePaymentId_check',
+      'Expected the source-principal constraint';
+  END;
   UPDATE "invoiceSettlement" SET "sourcePaymentId" = NULL WHERE id = settlement_id;
+  -- Legacy rows stay valid: no source link, so a NULL principal is permitted.
+  UPDATE "invoiceSettlement" SET "sourceAmount" = NULL, "appliedAmount" = 1 WHERE id = settlement_id;
+  ASSERT (SELECT "sourceAmount" IS NULL FROM "invoiceSettlement" WHERE id = settlement_id),
+    'A legacy settlement with no funding source may keep a NULL principal';
+  UPDATE "invoiceSettlement" SET "sourceAmount" = 0.01 WHERE id = settlement_id;
   ASSERT (SELECT "sourcePaymentId" IS NULL AND "sourceAmount" = 0.01 FROM "invoiceSettlement" WHERE id = settlement_id),
     'Current cash may supply a source-only minor-unit allocation';
   RAISE NOTICE 'PASS finite/nonnegative source amounts, empty allocation refusal, and current-cash source';
+  RAISE NOTICE 'PASS source-linked rows require a document principal; legacy rows may not';
   RAISE NOTICE 'ALL SCENARIOS PASSED';
 END;
 $settlement_cases$;

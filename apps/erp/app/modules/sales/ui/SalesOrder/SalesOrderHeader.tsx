@@ -14,7 +14,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -122,16 +121,16 @@ const SalesOrderConfirmModal = ({
         >
           <ModalHeader>
             <ModalTitle>{t`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Are you sure you want to confirm this sales order? Confirming
-                the order will affect on order quantities used to calculate
-                supply and demand.
-              </Trans>
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  Are you sure you want to confirm this sales order? Confirming
+                  the order will affect on order quantities used to calculate
+                  supply and demand.
+                </Trans>
+              </p>
               {canEmail && (
                 <SelectControlled
                   label={t`Send Via`}

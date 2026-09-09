@@ -93,7 +93,6 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const permissions = usePermissions();
   const post = useFetcher();
-  const voidFetcher = useFetcher();
   const isEditing = Boolean(initialValues.id);
   const status = initialValues.status as
     | "Draft"
@@ -104,6 +103,7 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const canMutate = permissions.can("update", "invoicing");
   const canDelete = permissions.can("delete", "invoicing");
   const deleteModal = useDisclosure();
+  const voidModal = useDisclosure();
 
   // Cash direction and subledger party are independent for refunds.
   const initialKind = initialValues.supplierId
@@ -174,14 +174,9 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                   <Button
                     leftIcon={<LuTicketX />}
                     variant="destructive"
-                    isLoading={voidFetcher.state !== "idle"}
+                    type="button"
                     isDisabled={!canMutate}
-                    onClick={() =>
-                      voidFetcher.submit(null, {
-                        method: "post",
-                        action: path.to.paymentVoid(initialValues.id!)
-                      })
-                    }
+                    onClick={voidModal.onOpen}
                   >
                     <Trans>Void</Trans>
                   </Button>
@@ -281,6 +276,17 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
           </CardFooter>
         </Card>
       </ValidatedForm>
+      {voidModal.isOpen && (
+        <ConfirmDelete
+          action={path.to.paymentVoid(initialValues.id!)}
+          name={initialValues.paymentId ?? ""}
+          title={t`Void ${initialValues.paymentId}`}
+          text={t`Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone.`}
+          deleteText={t`Void`}
+          onCancel={voidModal.onClose}
+          onSubmit={voidModal.onClose}
+        />
+      )}
       {deleteModal.isOpen && (
         <ConfirmDelete
           action={path.to.paymentDelete(initialValues.id!)}

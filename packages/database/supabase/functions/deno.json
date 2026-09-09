@@ -1,7 +1,8 @@
 {
   "lock": false,
   "tasks": {
-    "test": "deno test --no-lock --no-check --allow-all",
+    "test": "deno test --no-lock --no-check",
+    "test:db": "deno test --no-lock --no-check --allow-env --allow-net --allow-read --allow-sys",
     "check:response": "deno check --no-lock lib/response.ts lib/response.test.ts"
   },
   "imports": {

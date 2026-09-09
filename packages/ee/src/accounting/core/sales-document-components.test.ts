@@ -759,4 +759,56 @@ describe("document rounding residual distribution", () => {
       ).toBe(component.netAmount);
     }
   });
+
+  // Mixed-sign invariant guard (CodeRabbit, #1599). The distributor could place
+  // a residual unit on a component whose sign it then reversed — a negative tax
+  // against positive revenue. That is pinned directly, red-to-green, by
+  // "never reverses a part's sign" in shared/precision.test.ts. This case is the
+  // integration guard: it does NOT by itself reproduce the flip (these numbers
+  // yield a surplus, not the deficit the flip needs), it asserts the invariant
+  // holds for a credit line sitting alongside a positive one.
+  it("never emits a tax whose sign contradicts its own net", () => {
+    const source = {
+      ...fixture(),
+      currencyCode: "USD",
+      exchangeRate: 1,
+      headerShippingCost: 0,
+      lines: [{ credit: -0.4 }, { credit: -0.4 }, { credit: 0.0143 }].map(
+        (row, index) => ({
+          ...fixture().lines[0]!,
+          id: `l${index}`,
+          quantity: 1,
+          unitPrice: row.credit,
+          convertedUnitPrice: row.credit,
+          shippingCost: 0,
+          addOnCost: 0,
+          nonTaxableAddOnCost: 0,
+          taxPercent: 0.07
+        })
+      )
+    };
+    const subtotal = round(-0.4 - 0.4 + 0.0143);
+    const totalTax = round(subtotal * 0.07);
+    const document = build({
+      ...source,
+      subtotal,
+      totalTax,
+      totalAmount: round(subtotal + totalTax),
+      balance: round(subtotal + totalTax)
+    } as ReturnType<typeof fixture>);
+
+    for (const component of document.components) {
+      if (component.taxAmount !== 0 && component.netAmount !== 0) {
+        expect(Math.sign(component.taxAmount)).toBe(
+          Math.sign(component.netAmount)
+        );
+      }
+    }
+    expect(
+      round(
+        document.components.reduce((sum, c) => sum + c.taxAmount, 0),
+        document.decimalPlaces
+      )
+    ).toBe(document.totalTax);
+  });
 });

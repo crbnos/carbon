@@ -2386,6 +2386,12 @@ msgstr "Bu kullanıcılara daveti göndermek istediğinizden emin misiniz?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Bu kullanıcıya daveti göndermek istediğinizden emin misiniz?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Bu notu hükümsüz kılmak istediğinizden emin misiniz? Bu, muhasebe girişlerini ve uygulamalarını tersine çevirecektir. Bu geri alınamaz."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Bu ödemeyi hükümsüz kılmak istediğinizden emin misiniz? Bu, muhasebe girişlerini ve uygulamalarını tersine çevirecektir. Bu geri alınamaz."
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Bu alış faturasını hükümsüz kılmak istediğinizden emin misiniz? Bu işlem tüm mali işlemleri tersine çevirecek ve geri alınamaz."
 
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "Kargo hasılatı"
 
 msgid "Shipping Revenue (default)"
-msgstr "Kargo Hasılat (varsayılan)"
+msgstr "Kargo hasılatı (varsayılan)"
 
 msgid "Shipping Supplier"
 msgstr "Nakliye Tedarikçisi"
@@ -18513,6 +18519,11 @@ msgstr "Kullanıcının herkese açık profilinde görünür"
 
 msgid "Void"
 msgstr "Hükümsüz kıl"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "Hükümsüz Kıl {0}"
 
 msgid "Void Invoice"
 msgstr "Faturayı hükümsüz kıl"

@@ -71,9 +71,29 @@ export function distributeRoundingResidual(
     // Surplus goes to the most under-rounded part; a deficit is taken from the
     // most over-rounded one.
     .sort((a, b) => direction * (b.error - a.error) || a.index - b.index);
-  for (let i = 0; i < Math.abs(residualUnits); i++) {
-    const { index } = order[i]!;
-    rounded[index] = round(rounded[index]! + direction * unit, scale);
+  let placed = 0;
+  for (const { index } of order) {
+    if (placed === Math.abs(residualUnits)) break;
+    const next = round(rounded[index]! + direction * unit, scale);
+    // A part may not cross zero. One minor unit is a rounding correction on a
+    // part that is nearly its rounded value; on a part that rounds to ~0 it
+    // would instead REVERSE the part's economic direction — a +0.001 tax
+    // becoming -0.01 against positive revenue, which is the negative-tax-on-
+    // positive-revenue shape this whole helper exists to prevent. Skip such a
+    // part and give the unit to the next-most-deserving one.
+    if (exactValues[index]! !== 0 && next !== 0 && Math.sign(next) !== Math.sign(exactValues[index]!)) {
+      continue;
+    }
+    rounded[index] = next;
+    placed += 1;
+  }
+  if (placed !== Math.abs(residualUnits)) {
+    // Every remaining candidate would have to flip sign, so the target
+    // genuinely disagrees with the parts rather than merely rounding away
+    // from them.
+    throw new Error(
+      `Rounding residual of ${residualUnits} unit(s) cannot be placed without reversing a part's sign`
+    );
   }
   return rounded;
 }

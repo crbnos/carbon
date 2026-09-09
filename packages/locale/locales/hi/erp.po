@@ -2386,6 +2386,12 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस उपयोगकर्ता को आमंत्रण भेजना चाहते हैं?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस ज्ञापन को अमान्य करना चाहते हैं? यह इसकी लेखांकन प्रविष्टियों और आवेदनों को उलट देगा। इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस भुगतान को अमान्य करना चाहते हैं? यह इसकी लेखांकन प्रविष्टियों और आवेदनों को उलट देगा। इसे पूर्ववत नहीं किया जा सकता।"
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "क्या आप इस क्रय चालान को अमान्य करना चाहते हैं? यह क्रिया सभी वित्तीय लेनदेन को उलट देगी और वापस नहीं की जा सकती।"
 
@@ -18513,6 +18519,11 @@ msgstr "उपयोगकर्ता की सार्वजनिक प्
 
 msgid "Void"
 msgstr "अमान्य करें"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "अमान्य करें {0}"
 
 msgid "Void Invoice"
 msgstr "चालान अमान्य करें"

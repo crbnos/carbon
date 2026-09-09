@@ -2386,6 +2386,12 @@ msgstr "Czy na pewno chcesz wysłać zaproszenie do tych użytkowników?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Czy na pewno chcesz wysłać zaproszenie temu użytkownikowi?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Czy na pewno chcesz unieważnić to memo? Spowoduje to wycofanie jego wpisów księgowych i zastosowań. Nie można tego cofnąć."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Czy na pewno chcesz unieważnić tę płatność? Spowoduje to wycofanie jej wpisów księgowych i zastosowań. Nie można tego cofnąć."
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Czy chcesz unieważnić tę fakturę zakupu? Ta czynność odwróci wszystkie transakcje finansowe i nie można jej cofnąć."
 
@@ -13296,7 +13302,7 @@ msgid "Record a credit or debit memo against a customer or supplier. Application
 msgstr "Zarejestruj notę kredytową lub debetową dla klienta lub dostawcy. Zastosowania do konkretnych faktur są dodawane po utworzeniu noty."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Zarejestruj płatność od klienta, płatność dla dostawcy lub zwrot. Aplikacje do faktur lub notatek są dodawane po utworzeniu płatności."
+msgstr "Zarejestruj płatność od klienta, płatność dla dostawcy lub zwrot. Zastosowania do faktur lub not są dodawane po utworzeniu płatności."
 
 msgid "Record deleted"
 msgstr "Rekord usunięty"
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "Przychody z opłat za wysyłkę"
 
 msgid "Shipping Revenue (default)"
-msgstr "Przychody ze wysyłki (domyślne)"
+msgstr "Przychody z opłat za wysyłkę (domyślne)"
 
 msgid "Shipping Supplier"
 msgstr "Dostawca wysyłki"
@@ -18513,6 +18519,11 @@ msgstr "Widoczne w publicznym profilu użytkownika"
 
 msgid "Void"
 msgstr "Unieważnij"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "Unieważnij {0}"
 
 msgid "Void Invoice"
 msgstr "Unieważnij fakturę"

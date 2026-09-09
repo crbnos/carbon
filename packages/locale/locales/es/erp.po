@@ -2386,6 +2386,12 @@ msgstr "¿Estás seguro de que deseas enviar una invitación a estos usuarios?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "¿Estás seguro de que deseas enviar una invitación a este usuario?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "¿Está seguro de que desea anular este memorándum? Esto invertirá sus asientos contables y aplicaciones. No se puede deshacer."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "¿Está seguro de que desea anular este pago? Esto invertirá sus asientos contables y aplicaciones. No se puede deshacer."
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "¿Está seguro de que desea anular esta factura de compra? Esta acción revertirá todas las transacciones financieras y no se puede deshacer."
 
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "Ingresos por gastos de envío"
 
 msgid "Shipping Revenue (default)"
-msgstr "Ingresos por Envío (predeterminado)"
+msgstr "Ingresos por gastos de envío (predeterminado)"
 
 msgid "Shipping Supplier"
 msgstr "Proveedor de Envío"
@@ -18513,6 +18519,11 @@ msgstr "Visible en el perfil público de un usuario"
 
 msgid "Void"
 msgstr "Anular"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "Anular {0}"
 
 msgid "Void Invoice"
 msgstr "Anular Factura"

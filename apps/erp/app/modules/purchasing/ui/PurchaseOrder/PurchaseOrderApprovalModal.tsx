@@ -4,7 +4,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -83,16 +82,16 @@ const PurchaseOrderApprovalModal = ({
               {isApproving ? "Approve" : "Reject"}{" "}
               {purchaseOrder?.purchaseOrderId}
             </ModalTitle>
-            <ModalDescription>
-              {isApproving
-                ? "Are you sure you want to approve this purchase order? This will allow the order to proceed."
-                : "Are you sure you want to reject this purchase order? The requester will be notified."}
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="approvalRequestId" />
             <Hidden name="decision" />
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                {isApproving
+                  ? "Are you sure you want to approve this purchase order? This will allow the order to proceed."
+                  : "Are you sure you want to reject this purchase order? The requester will be notified."}
+              </p>
               {isApproving && canEmail && (
                 <SelectControlled
                   label={t`Send Via`}

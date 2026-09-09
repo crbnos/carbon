@@ -9,7 +9,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
@@ -247,11 +246,11 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           <ModalTitle>
             <Trans>Post Shipment</Trans>
           </ModalTitle>
-          <ModalDescription>
-            <Trans>Are you sure you want to post this shipment?</Trans>
-          </ModalDescription>
         </ModalHeader>
         <ModalBody>
+          <p className="text-sm text-muted-foreground mb-4">
+            <Trans>Are you sure you want to post this shipment?</Trans>
+          </p>
           {validationErrors.length > 0 && (
             <Alert variant="destructive">
               <LuTriangleAlert className="h-4 w-4" />

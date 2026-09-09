@@ -2386,6 +2386,12 @@ msgstr "이 사용자들에게 초대를 보내시겠습니까?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "이 사용자에게 초대를 보내시겠습니까?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "이 메모를 무효 처리하시겠습니까? 회계 항목 및 적용 내역이 역변환됩니다. 이 작업은 되돌릴 수 없습니다."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "이 지불을 무효 처리하시겠습니까? 회계 항목 및 적용 내역이 역변환됩니다. 이 작업은 되돌릴 수 없습니다."
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "이 매입 송장을 무효 처리하시겠습니까? 이 작업은 모든 재무 거래를 역입금하며 취소할 수 없습니다."
 
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "배송 매출"
 
 msgid "Shipping Revenue (default)"
-msgstr "배송료 매출 (기본값)"
+msgstr "배송 매출 (기본값)"
 
 msgid "Shipping Supplier"
 msgstr "배송 공급업체"
@@ -18513,6 +18519,11 @@ msgstr "사용자의 공개 프로필에 표시됩니다"
 
 msgid "Void"
 msgstr "무효 처리"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "{0} 무효 처리"
 
 msgid "Void Invoice"
 msgstr "송장 무효 처리"

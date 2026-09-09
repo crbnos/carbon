@@ -2386,6 +2386,12 @@ msgstr "Sind Sie sicher, dass Sie eine Einladung an diese Benutzer senden möcht
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Sind Sie sicher, dass Sie eine Einladung an diesen Benutzer senden möchten?"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie diese Notiz stornieren möchten? Dies wird ihre Buchhaltungseinträge und Zuordnungen stornieren. Dies kann nicht rückgängig gemacht werden."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie diese Zahlung stornieren möchten? Dies wird ihre Buchhaltungseinträge und Zuordnungen stornieren. Dies kann nicht rückgängig gemacht werden."
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Sind Sie sicher, dass Sie diese Eingangsrechnung stornieren möchten? Diese Aktion kehrt alle Finanztransaktionen um und kann nicht rückgängig gemacht werden."
 
@@ -13860,7 +13866,7 @@ msgid "Revenue and expenses over a period"
 msgstr "Umsatzerlöse und Aufwand über einen Zeitraum"
 
 msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
-msgstr "Sachkonto für Umsatzerlöse, das für an Kunden berechneten Versand gutgeschrieben wird, gebucht auf seiner eigenen Position; es muss sich vom Standardkonto des Vertriebs unterscheiden."
+msgstr "Sachkonto für Umsatzerlöse, das für die den Kunden berechneten Versandkosten gutgeschrieben und auf einer eigenen Position gebucht wird; es muss sich vom Standardkonto „Vertrieb“ unterscheiden."
 
 msgid "Reverse all inventory adjustments"
 msgstr "Alle Bestandskorrektionen rückgängig machen"
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "Umsatzerlöse aus Versand"
 
 msgid "Shipping Revenue (default)"
-msgstr "Versand-Umsatzerlöse (Standard)"
+msgstr "Umsatzerlöse aus Versand (Standard)"
 
 msgid "Shipping Supplier"
 msgstr "Versandlieferant"
@@ -18513,6 +18519,11 @@ msgstr "Sichtbar im öffentlichen Profil eines Benutzers"
 
 msgid "Void"
 msgstr "Stornieren"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "Stornieren {0}"
 
 msgid "Void Invoice"
 msgstr "Rechnung stornieren"

@@ -2386,6 +2386,12 @@ msgstr "你确定要向这些用户发送邀请吗？"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "你确定要向此用户发送邀请吗？"
 
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "你确定要作废此备忘录吗？这将反转其会计分录和应用。此操作无法撤销。"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "你确定要作废此付款吗？这将反转其会计分录和应用。此操作无法撤销。"
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "您确定要作废此采购发票吗？此操作将反转所有财务交易，无法撤销。"
 
@@ -15126,7 +15132,7 @@ msgid "Shipping Revenue"
 msgstr "运输收入"
 
 msgid "Shipping Revenue (default)"
-msgstr "运费收入（默认）"
+msgstr "运输收入（默认）"
 
 msgid "Shipping Supplier"
 msgstr "运输供应商"
@@ -18513,6 +18519,11 @@ msgstr "在用户的公开资料中可见"
 
 msgid "Void"
 msgstr "作废"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "作废 {0}"
 
 msgid "Void Invoice"
 msgstr "作废发票"

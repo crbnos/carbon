@@ -51,12 +51,22 @@ BEGIN
       FOREIGN KEY ("sourcePaymentId", "companyId") REFERENCES "payment"(id, "companyId")
       ON DELETE RESTRICT ON UPDATE CASCADE;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='"invoiceSettlement"'::regclass AND conname='invoiceSettlement_sourcePaymentId_check') THEN
-    ALTER TABLE "invoiceSettlement" ADD CONSTRAINT "invoiceSettlement_sourcePaymentId_check"
-      CHECK ("sourcePaymentId" IS NULL OR (
-        "paymentId" IS NOT NULL AND "memoId" IS NULL AND "sourcePaymentId" <> "paymentId"
-      ));
-  END IF;
+  -- Dropped and re-added rather than guarded on existence: the predicate below
+  -- was strengthened after the first cut of this migration, and an IF NOT EXISTS
+  -- guard would leave the weaker version in place on any database that already
+  -- ran it.
+  ALTER TABLE "invoiceSettlement"
+    DROP CONSTRAINT IF EXISTS "invoiceSettlement_sourcePaymentId_check";
+  ALTER TABLE "invoiceSettlement" ADD CONSTRAINT "invoiceSettlement_sourcePaymentId_check"
+    CHECK ("sourcePaymentId" IS NULL OR (
+      "paymentId" IS NOT NULL AND "memoId" IS NULL AND "sourcePaymentId" <> "paymentId"
+      -- A source-linked row MUST carry its document principal. Without it
+      -- `remainingFundingSources` throws "Settlement is missing its document
+      -- principal" and the party's remaining credit becomes uncomputable —
+      -- the row is unreadable rather than merely imprecise. Legacy rows
+      -- (sourcePaymentId IS NULL) keep a NULL sourceAmount and stay valid.
+      AND "sourceAmount" IS NOT NULL
+    ));
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='"invoiceSettlement"'::regclass AND conname='invoiceSettlement_sourceAmount_check') THEN
     ALTER TABLE "invoiceSettlement" ADD CONSTRAINT "invoiceSettlement_sourceAmount_check"
       CHECK ("sourceAmount" IS NULL OR (
