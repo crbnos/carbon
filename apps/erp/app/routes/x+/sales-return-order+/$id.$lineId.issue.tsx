@@ -151,6 +151,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const itemReadableId = item.data?.readableIdWithRevision ?? line.data.itemId;
   const returnReasonName = returnReason.data?.name ?? null;
 
+  // Idempotency: the disposition select posts here on every change, so
+  // Scrap -> Rework -> Scrap would otherwise leave two or three open Issues
+  // each carrying the FULL received quantity — and post-nonconformance would
+  // write the same goods off once per Issue. Mirrors the purchase bridge's
+  // "re-invoking returns the existing draft" rule (spec, Quality bridge).
+  const existingLink = await serviceRole
+    .from("nonConformanceSalesReturnOrderLine")
+    .select("nonConformanceId, nonConformance(id, nonConformanceId, status)")
+    .eq("salesReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (existingLink.error) {
+    throw await failWith(
+      existingLink.error,
+      "Failed to check for an existing Issue"
+    );
+  }
+  const openLink = (existingLink.data ?? []).find((row) => {
+    const nc = row.nonConformance as { status?: string | null } | null;
+    return nc && nc.status !== "Closed";
+  });
+  if (openLink) {
+    // Record the newly requested disposition on the RMA line, then hand the
+    // user back to the Issue that already owns this quantity.
+    await serviceRole
+      .from("salesReturnOrderLine")
+      .update({
+        disposition,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", lineId)
+      .eq("companyId", companyId);
+    throw redirect(path.to.issue(openLink.nonConformanceId));
+  }
+
   const issueTitle = [
     "Returned goods",
     rmaReadableId,
