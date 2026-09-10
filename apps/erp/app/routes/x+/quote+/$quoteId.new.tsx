@@ -2,6 +2,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -16,6 +21,7 @@ import {
   upsertQuoteLine,
   upsertQuoteLineMethod
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -61,6 +67,46 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+
+  // Sales-rule enforcement: evaluate before the line is written. Blocked
+  // submissions return violations for the form's violation modal;
+  // acknowledged warns pass through on re-submit.
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateSalesRuleLines({
+    client: serviceRole,
+    companyId,
+    userId,
+    surface: "quoteLine",
+    // Quote lines carry a quantity-break array rather than a single
+    // transaction quantity. Evaluate the largest break — it is the one most
+    // likely to trip a `gt` threshold, so it is the conservative choice.
+    lines: [
+      {
+        lineId: "new",
+        itemId: d.itemId ?? null,
+        quantity: Math.max(1, ...(d.quantity ?? [1]))
+      }
+    ],
+    customerId: quote.data?.customerId ?? null,
+    customerLocationId: quote.data?.customerLocationId ?? null
+  });
+  const deduped = dedupeViolations(violations);
+  const blocked = deduped.length > 0 && isBlocked(deduped, acknowledged);
+  if (blocked) {
+    // No line exists on a blocked create, so documentLineId stays null.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      itemId: d.itemId ?? null,
+      outcome: "blocked",
+      violations: deduped,
+      ruleNames
+    });
+    return { error: null, data: null, violations: deduped, ruleNames };
+  }
+
   const createQuotationLine = await upsertQuoteLine(serviceRole, {
     ...d,
     companyId,
@@ -83,6 +129,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const quoteLineId = createQuotationLine.data.id;
+
+  // Acknowledged proceed: persist override evidence now that the line exists
+  // so documentLineId captures the created line (and the notification only
+  // fires for a line that actually landed).
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: quoteLineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
+  }
 
   if (d.methodType === "Purchase to Order") {
     const quantities = d.quantity ?? [1];

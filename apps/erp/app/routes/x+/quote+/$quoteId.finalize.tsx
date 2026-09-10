@@ -1,8 +1,14 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { datetime } from "@carbon/utils";
@@ -17,6 +23,7 @@ import {
   getQuote,
   quoteFinalizeValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany, getCompanySettings } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
@@ -47,6 +54,39 @@ export async function action(args: ActionFunctionArgs) {
       path.to.quote(quoteId),
       await flash(request, error(quote.error, "Failed to get quote"))
     );
+  }
+
+  // Terminal gate: re-evaluate every line before the quote leaves for the
+  // customer. Lines can arrive here from paths the per-line check never saw
+  // (RFQ conversion, duplication, integrations, the API), and a line that
+  // passed earlier may violate a rule authored since or a ship-to that changed.
+  // Runs before the external link + PDF so a blocked quote produces neither.
+  const formData = await request.clone().formData();
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+    client,
+    companyId,
+    userId,
+    documentType: "quote",
+    documentId: quoteId
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0) {
+    const blocked = isBlocked(deduped, acknowledged);
+    // The strongest overrides happen at gates like this one — record the
+    // same evidence + notification the per-line checks write.
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      outcome: blocked ? "blocked" : "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
+    if (blocked) {
+      return { violations: deduped, ruleNames };
+    }
   }
 
   const externalLink = await upsertExternalLink(client, {

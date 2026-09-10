@@ -92,7 +92,6 @@ const QuoteHeader = () => {
   const deleteQuoteModal = useDisclosure();
   const [asRevision, setAsRevision] = useState(false);
 
-  const finalizeFetcher = useFetcher<{}>();
   const statusFetcher = useFetcher<{}>();
 
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
@@ -241,10 +240,8 @@ const QuoteHeader = () => {
 
             <Button
               onClick={finalizeModal.onOpen}
-              isLoading={finalizeFetcher.state !== "idle"}
               isDisabled={
                 routeData?.quote?.status !== "Draft" ||
-                finalizeFetcher.state !== "idle" ||
                 !permissions.can("update", "sales") ||
                 !eligibleLines?.length
               }
@@ -339,7 +336,6 @@ const QuoteHeader = () => {
           quote={routeData?.quote}
           shipment={routeData?.shipment ?? null}
           onClose={finalizeModal.onClose}
-          fetcher={finalizeFetcher}
           // @ts-expect-error TS2339 - TODO: fix type
           defaultCc={routeData?.defaultCc ?? []}
         />

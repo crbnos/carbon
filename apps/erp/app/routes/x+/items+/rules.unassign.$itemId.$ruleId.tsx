@@ -2,12 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
+import { unassignStorageRule } from "@carbon/ee/rules";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { unassignStorageRule } from "~/modules/storage-rules";
 import { path } from "~/utils/path";
 import { getCompanyId, storageRuleAssignmentsQuery } from "~/utils/react-query";
 

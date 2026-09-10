@@ -2,6 +2,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
@@ -44,7 +49,10 @@ import {
   quoteLineValidator,
   reconcileQuantityBreaks
 } from "~/modules/sales";
-import { saveQuoteLineWithPrices } from "~/modules/sales/sales.server";
+import {
+  recordSalesRuleOutcome,
+  saveQuoteLineWithPrices
+} from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -191,6 +199,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // transaction. Previously the line update committed on its own, and a
   // resolver failure left it saved with its new breaks unpriced.
   const serviceRole = getCarbonServiceRole();
+
+  // Sales-rule enforcement: evaluate before the line is written. Blocked
+  // submissions return violations for the form's violation modal;
+  // acknowledged warns pass through on re-submit.
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateSalesRuleLines({
+    client: serviceRole,
+    companyId,
+    userId,
+    surface: "quoteLine",
+    // Quote lines carry a quantity-break array rather than a single
+    // transaction quantity. Evaluate the largest break — it is the one most
+    // likely to trip a `gt` threshold, so it is the conservative choice.
+    lines: [
+      {
+        lineId,
+        itemId: d.itemId ?? null,
+        quantity: Math.max(1, ...(d.quantity ?? [1]))
+      }
+    ],
+    customerId: quote.data?.customerId ?? null,
+    customerLocationId: quote.data?.customerLocationId ?? null
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "blocked",
+      violations: deduped,
+      ruleNames
+    });
+    return { error: null, data: null, violations: deduped, ruleNames };
+  }
   const existingPrices = await serviceRole
     .from("quoteLinePrice")
     .select("quantity")
@@ -289,6 +335,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.quoteLine(quoteId, lineId),
       await flash(request, error(err, "Failed to update quote line"))
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
   }
 
   throw redirect(path.to.quoteLine(quoteId, lineId));

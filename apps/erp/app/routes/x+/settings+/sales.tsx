@@ -43,12 +43,14 @@ import {
   getCompanySettings,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
+  salesRuleNotificationValidator,
   updateAccountsReceivableAddressSetting,
   updateAccountsReceivableBillingAddress,
   updateDefaultCustomerCc,
   updateDigitalQuoteSetting,
   updateQuoteLineCategoryMarkups,
   updateRfqReadySetting,
+  updateSalesRuleNotificationSetting,
   updateShowCustomerReadableIdSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -164,6 +166,29 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: rfqSettings.error.message };
 
       return { success: true, message: "RFQ setting updated" };
+
+    case "salesRuleViolations":
+      const salesRuleValidation = await validator(
+        salesRuleNotificationValidator
+      ).validate(formData);
+
+      if (salesRuleValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const salesRuleSettings = await updateSalesRuleNotificationSetting(
+        client,
+        companyId,
+        salesRuleValidation.data.salesRuleNotificationGroup ?? []
+      );
+
+      if (salesRuleSettings.error)
+        return { success: false, message: salesRuleSettings.error.message };
+
+      return {
+        success: true,
+        message: "Sales rule notification settings updated"
+      };
 
     case "categoryMarkups":
       const categoryMarkupsValidation = await validator(
@@ -593,6 +618,55 @@ export default function SalesSettingsRoute() {
                 isLoading={
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") === "rfq"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={salesRuleNotificationValidator}
+            defaultValues={{
+              salesRuleNotificationGroup:
+                companySettings.salesRuleNotificationGroup ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="salesRuleViolations" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Sales Rule Violations</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Enable notifications when a sales rule violation is blocked or
+                  acknowledged on a quote or sales order line.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>
+                    <Trans>Notifications</Trans>
+                  </Label>
+                  <Users
+                    name="salesRuleNotificationGroup"
+                    label={t`Who should receive notifications when a sales rule violation is blocked or acknowledged?`}
+                    type="employee"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "salesRuleViolations"
                 }
               >
                 <Trans>Save</Trans>

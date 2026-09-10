@@ -68,7 +68,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 
 ## Posting flow (`$id.post.tsx` → edge fn)
 
-The route action: evaluates storage/item rules (`@carbon/ee/storage-rules.server`) over the
+The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
 relevant surfaces, optimistically sets `status: "Pending"`, then
 `serviceRole.functions.invoke("post-shipment" | "post-receipt", { body: { type: "post", id, userId, companyId } })`.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing

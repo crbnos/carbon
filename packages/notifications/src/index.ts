@@ -41,6 +41,7 @@ export enum NotificationEvent {
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
   SalesRfqReady = "sales-rfq-ready",
+  SalesRuleViolation = "sales-rule-violation",
   StockTransferAssignment = "stock-transfer-assignment",
   SuggestionResponse = "suggestion-response",
   // Weekly digest reminder for outstanding trainings (documentIds-shaped).
@@ -142,6 +143,7 @@ export function getNotificationTopic(
     case NotificationEvent.SupplierQuoteAssignment:
     case NotificationEvent.SupplierQuoteResponse:
       return NotificationTopic.Quote;
+    case NotificationEvent.SalesRuleViolation:
     case NotificationEvent.SalesOrderAssignment:
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
@@ -225,6 +227,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "New maintenance dispatch";
     case NotificationEvent.GaugeCalibrationExpired:
       return "Gauge calibration expired";
+    case NotificationEvent.SalesRuleViolation:
+      return "Sales rule violation";
     case NotificationEvent.NonConformanceAssignment:
       return "Issue assigned to you";
     case NotificationEvent.RiskAssignment:
@@ -284,6 +288,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View suggestion";
     case NotificationEvent.GaugeCalibrationExpired:
       return "View gauge";
+    case NotificationEvent.SalesRuleViolation:
+      return "View document";
     case NotificationEvent.QuoteExpired:
       return "View quote";
     case NotificationEvent.TrainingReminder:

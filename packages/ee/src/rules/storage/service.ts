@@ -1,0 +1,499 @@
+// Cross-app DB queries for Storage Rules. Both ERP (admin UI, item/storage
+// surfaces) and MES (workCenter surfaces) import from here.
+//
+// ERP-only admin CRUD (list/upsert/delete) stays in the ERP module — it
+// depends on ERP request-utils (GenericQueryFilters, sanitize) that don't
+// belong in the EE package.
+
+import type { Database } from "@carbon/database";
+import { fetchAllFromTable } from "@carbon/database";
+import {
+  type ItemFilter,
+  ruleAppliesToItem,
+  type Severity,
+  type StorageRuleRow,
+  type TargetType,
+  type TransactionSurface,
+  toItemFilter
+} from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { itemPostingGroupIdFromEmbed } from "./context";
+
+// Nullable filter columns appended to broadcast selects for item-target rules.
+const ITEM_FILTER_COLUMNS =
+  "filteredItemTypes, filteredItemGroupIds, filteredItemMatchAll";
+
+// Filter columns carried on broadcast rules. PostgREST's typed-select
+// parser can't narrow our dynamically-built select string, so broadcast queries
+// type their rows explicitly via this shape rather than the generated Row type.
+type ItemFilterColumns = {
+  filteredItemTypes?: string[] | null;
+  filteredItemGroupIds?: string[] | null;
+  filteredItemMatchAll?: boolean | null;
+};
+
+const assignmentTableFor = (
+  targetType: TargetType
+): "enforcementRuleItemAssignment" | "enforcementRuleWorkCenterAssignment" => {
+  switch (targetType) {
+    case "item":
+      return "enforcementRuleItemAssignment";
+    case "workCenter":
+      return "enforcementRuleWorkCenterAssignment";
+  }
+};
+
+const targetIdColumnFor = (
+  targetType: TargetType
+): "itemId" | "workCenterId" => {
+  switch (targetType) {
+    case "item":
+      return "itemId";
+    case "workCenter":
+      return "workCenterId";
+  }
+};
+
+type RuleRowSelect = Pick<
+  StorageRuleRow,
+  | "id"
+  | "targetType"
+  | "severity"
+  | "message"
+  | "conditionAst"
+  | "surfaces"
+  | "updatedAt"
+  | "active"
+>;
+
+/**
+ * Loads active rules applicable to a set of targets of one targetType.
+ *
+ * `data` keys are targetIds (explicit-assignment rules only).
+ * `broadcasts` carries rules that fire beyond explicit assignments — caller
+ * merges them into every line:
+ *   - item targets: EVERY active storage rule broadcasts, then the caller gates it
+ *     per line via the rule's `filteredItem*` filters (see `broadcastFilters`);
+ *     empty filters = every item.
+ *   - workCenter targets: rules with `appliesToAll = TRUE` only.
+ *
+ * `broadcastFilters` maps ruleId → item type/group filter (item targets only).
+ *
+ * Two round-trips: explicit-assignments + broadcast. Broadcast fetch always
+ * runs, even when `targetIds` is empty, so a request with no explicit target
+ * still sees broadcasts.
+ */
+export async function getActiveRulesForTargets(
+  client: SupabaseClient<Database>,
+  args: {
+    targetType: TargetType;
+    targetIds: string[];
+    companyId: string;
+  }
+): Promise<{
+  data: Map<string, StorageRuleRow[]>;
+  broadcasts: StorageRuleRow[];
+  broadcastFilters: Map<string, ItemFilter>;
+  error: unknown;
+}> {
+  const out = new Map<string, StorageRuleRow[]>();
+  const broadcastFilters = new Map<string, ItemFilter>();
+
+  const ruleCols =
+    "id, targetType, severity, message, conditionAst, surfaces, updatedAt, active";
+  const isItem = args.targetType === "item";
+  // Item broadcasts carry their filters so the caller can gate per item.
+  // Annotated `string` so PostgREST yields generically-typed rows (the dynamic
+  // select string can't be statically parsed); rows are cast explicitly below.
+  const broadcastCols: string = isItem
+    ? `${ruleCols}, ${ITEM_FILTER_COLUMNS}`
+    : ruleCols;
+
+  const table = assignmentTableFor(args.targetType);
+  const idCol = targetIdColumnFor(args.targetType);
+
+  const broadcastBase = client
+    .from("enforcementRule")
+    .select(broadcastCols)
+    .eq("companyId", args.companyId)
+    .eq("family", "storage")
+    .eq("targetType", args.targetType)
+    .eq("active", true);
+
+  const [assignments, broadcast] = await Promise.all([
+    args.targetIds.length > 0
+      ? (client as SupabaseClient<Database>)
+          .from(table)
+          .select(`${idCol}, ruleId`)
+          .in(idCol, args.targetIds)
+          .eq("companyId", args.companyId)
+      : Promise.resolve({ data: [], error: null }),
+    // Item-target rules all broadcast (filtered per item); non-item only when appliesToAll.
+    isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true)
+  ]);
+
+  if (assignments.error)
+    return {
+      data: out,
+      broadcasts: [],
+      broadcastFilters,
+      error: assignments.error
+    };
+  if (broadcast.error)
+    return {
+      data: out,
+      broadcasts: [],
+      broadcastFilters,
+      error: broadcast.error
+    };
+
+  // The pin table is shared with the sales family, so the rules are fetched in
+  // a second pass filtered to this family rather than embedded — an embed would
+  // happily return a sales rule pinned to the same item.
+  const assignmentRows = (assignments.data ?? []) as unknown as {
+    [k: string]: unknown;
+    ruleId: string;
+  }[];
+  const assignedRuleIds = [...new Set(assignmentRows.map((r) => r.ruleId))];
+
+  if (assignedRuleIds.length > 0) {
+    const explicit = await client
+      .from("enforcementRule")
+      .select(ruleCols)
+      .in("id", assignedRuleIds)
+      .eq("companyId", args.companyId)
+      .eq("family", "storage")
+      .eq("targetType", args.targetType)
+      .eq("active", true);
+
+    if (explicit.error)
+      return {
+        data: out,
+        broadcasts: [],
+        broadcastFilters,
+        error: explicit.error
+      };
+
+    const ruleById = new Map<string, RuleRowSelect>(
+      ((explicit.data ?? []) as unknown as RuleRowSelect[]).map((r) => [
+        r.id,
+        r
+      ])
+    );
+
+    for (const row of assignmentRows) {
+      const node = ruleById.get(row.ruleId);
+      if (!node) continue;
+      const targetId = row[idCol] as string;
+      const bucket = out.get(targetId);
+      if (bucket) bucket.push(node as StorageRuleRow);
+      else out.set(targetId, [node as StorageRuleRow]);
+    }
+  }
+
+  // `as unknown as` is required: a dynamic select string degrades PostgREST's
+  // row type to `GenericStringError`, which doesn't overlap our explicit shape.
+  const broadcasts = (broadcast.data ?? []) as unknown as (StorageRuleRow &
+    ItemFilterColumns)[];
+
+  if (isItem) {
+    for (const row of broadcasts) {
+      broadcastFilters.set(row.id, toItemFilter(row));
+    }
+  }
+
+  return { data: out, broadcasts, broadcastFilters, error: null };
+}
+
+/**
+ * Loader-style row returned from `getRuleAssignmentsForTarget`. Direct
+ * assignments leave `inheritedFromId` / `inheritedFromName` null; broadcast
+ * rules use the `__all__` sentinel so the UI can render an "Applies to all"
+ * badge and suppress unassign.
+ */
+export type RuleAssignmentRow = {
+  /** Owner of the assignment row (this target id, or an ancestor unit id). */
+  ownerId: string;
+  ruleId: string;
+  createdAt: string | null;
+  storageRule: {
+    id: string;
+    name: string;
+    targetType: TargetType;
+    severity: Severity;
+    message: string;
+    active: boolean;
+    surfaces?: TransactionSurface[];
+    appliesToAll?: boolean;
+  };
+  /** null when the assignment is direct on `args.targetId`. */
+  inheritedFromId: string | null;
+  inheritedFromName: string | null;
+};
+
+export async function getRuleAssignmentsForTarget(
+  client: SupabaseClient<Database>,
+  args: { targetType: TargetType; targetId: string; companyId: string }
+): Promise<{ data: RuleAssignmentRow[]; error: unknown }> {
+  const table = assignmentTableFor(args.targetType);
+  const idCol = targetIdColumnFor(args.targetType);
+
+  // Item / workCenter targets are flat — a direct query on the target id.
+  const lookupIds = [args.targetId];
+
+  // Broadcast rules govern targets beyond explicit assignments. Surface them
+  // alongside explicit + inherited rows so the drawer shows the full set the
+  // evaluator will fire (was previously hidden — drawer showed "0 assignments"
+  // while broadcasts still triggered).
+  //   - item: EVERY active storage rule broadcasts, gated per item by its
+  //     type/group filters (empty = all items) — mirrors the evaluator.
+  //   - workCenter: rules with `appliesToAll = TRUE`.
+  const isItem = args.targetType === "item";
+  const baseBroadcastCols =
+    "id, name, targetType, severity, message, active, surfaces, appliesToAll, createdAt";
+  // `string` so PostgREST yields generic rows; cast explicitly at the loop.
+  const broadcastCols: string = isItem
+    ? `${baseBroadcastCols}, ${ITEM_FILTER_COLUMNS}`
+    : baseBroadcastCols;
+  const broadcastBase = client
+    .from("enforcementRule")
+    .select(broadcastCols)
+    .eq("companyId", args.companyId)
+    .eq("family", "storage")
+    .eq("targetType", args.targetType);
+
+  const [res, broadcastsRes, itemCtxRes] = await Promise.all([
+    (client as SupabaseClient<Database>)
+      .from(table)
+      .select(`${idCol}, ruleId, createdAt`)
+      .in(idCol, lookupIds)
+      .eq("companyId", args.companyId),
+    isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true),
+    // Item type/group for this target so we can gate item broadcasts the same
+    // way the evaluator does.
+    isItem
+      ? client
+          .from("item")
+          .select("type, itemCost(itemPostingGroupId)")
+          .eq("id", args.targetId)
+          .eq("companyId", args.companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+
+  if (res.error) return { data: [], error: res.error };
+  if (broadcastsRes.error) return { data: [], error: broadcastsRes.error };
+  if (itemCtxRes.error) return { data: [], error: itemCtxRes.error };
+
+  // Flatten itemPostingGroupId off the 1:1 itemCost embed for filter matching.
+  const itemCtx = (() => {
+    const row = itemCtxRes.data as {
+      type?: unknown;
+      itemCost?: unknown;
+    } | null;
+    if (!row) return null;
+    return {
+      type: row.type,
+      itemPostingGroupId: itemPostingGroupIdFromEmbed(row.itemCost)
+    };
+  })();
+
+  // Item / workCenter assignments are always direct (no inheritance), so every
+  // row's owner is the target itself.
+  const byRuleId = new Map<string, RuleAssignmentRow>();
+
+  // Second pass rather than an embed: the pin table is shared with the sales
+  // family, so the rules must be filtered to this family explicitly.
+  const assignmentRows = (res.data ?? []) as unknown as {
+    [k: string]: unknown;
+    ruleId: string;
+    createdAt: string | null;
+  }[];
+  const assignedRuleIds = [...new Set(assignmentRows.map((r) => r.ruleId))];
+
+  if (assignedRuleIds.length > 0) {
+    const rulesRes = await client
+      .from("enforcementRule")
+      .select(
+        "id, name, targetType, severity, message, active, surfaces, appliesToAll"
+      )
+      .in("id", assignedRuleIds)
+      .eq("companyId", args.companyId)
+      .eq("family", "storage");
+
+    if (rulesRes.error) return { data: [], error: rulesRes.error };
+
+    const ruleById = new Map(
+      (
+        (rulesRes.data ?? []) as unknown as RuleAssignmentRow["storageRule"][]
+      ).map((r) => [r.id, r])
+    );
+
+    for (const row of assignmentRows) {
+      const node = ruleById.get(row.ruleId);
+      if (!node) continue;
+
+      const candidate: RuleAssignmentRow = {
+        ownerId: row[idCol] as string,
+        ruleId: row.ruleId,
+        createdAt: row.createdAt ?? null,
+        storageRule: node,
+        inheritedFromId: null,
+        inheritedFromName: null
+      };
+
+      if (!byRuleId.has(candidate.ruleId)) {
+        byRuleId.set(candidate.ruleId, candidate);
+      }
+    }
+  }
+
+  // Append broadcasts as synthetic rows. Sentinel `__all__` ownerId distinguishes
+  // them from real assignment rows; UI keys off `inheritedFromId === "__all__"`
+  // or the rule's `appliesToAll` flag to render the "Applies to all" badge and
+  // suppress unassign. Skip when already present as an explicit row (shouldn't
+  // happen in practice — broadcast rules can't be assigned — but be defensive).
+  // `as unknown as`: dynamic select → PostgREST `GenericStringError` row type.
+  for (const b of (broadcastsRes.data ?? []) as unknown as Array<
+    {
+      id: string;
+      name: string;
+      targetType: TargetType;
+      severity: Severity;
+      message: string;
+      active: boolean;
+      surfaces: TransactionSurface[];
+      appliesToAll: boolean;
+      createdAt: string | null;
+    } & ItemFilterColumns
+  >) {
+    if (b.active === false) continue;
+    if (byRuleId.has(b.id)) continue;
+
+    // Sales rules: only surface those whose filter matches this item. Label by
+    // reach so the drawer reads "All items" vs a filtered match.
+    let label = "Applies to all";
+    if (isItem) {
+      const filter = toItemFilter(b);
+      if (itemCtx && !ruleAppliesToItem(itemCtx, filter)) continue;
+      const filterless =
+        (filter.filteredItemTypes?.length ?? 0) === 0 &&
+        (filter.filteredItemGroupIds?.length ?? 0) === 0;
+      label = filterless ? "All items" : "Matches item filters";
+    }
+
+    byRuleId.set(b.id, {
+      ownerId: "__all__",
+      ruleId: b.id,
+      createdAt: b.createdAt,
+      storageRule: {
+        id: b.id,
+        name: b.name,
+        targetType: b.targetType,
+        severity: b.severity,
+        message: b.message,
+        active: b.active,
+        surfaces: b.surfaces,
+        appliesToAll: b.appliesToAll
+      },
+      inheritedFromId: "__all__",
+      inheritedFromName: label
+    });
+  }
+
+  return { data: Array.from(byRuleId.values()), error: null };
+}
+
+export async function getStorageRulesList(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  targetType?: TargetType
+) {
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    targetType: TargetType;
+    severity: Severity;
+    active: boolean;
+    appliesToAll: boolean;
+    surfaces: TransactionSurface[];
+  }>(
+    client,
+    "enforcementRule",
+    "id, name, targetType, severity, active, appliesToAll, surfaces",
+    (query) => {
+      let q = query
+        .eq("companyId", companyId)
+        .eq("family", "storage")
+        .order("name");
+      if (targetType) q = q.eq("targetType", targetType);
+      return q;
+    }
+  );
+}
+
+export async function assignStorageRule(
+  client: SupabaseClient<Database>,
+  args: {
+    targetType: TargetType;
+    targetId: string;
+    ruleId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const table = assignmentTableFor(args.targetType);
+  const idCol = targetIdColumnFor(args.targetType);
+
+  // Preflight: rule must exist in this company, belong to the storage family,
+  // and its targetType must match the assignment table. Without this, callers
+  // could pin a sales rule (or a work-center rule) through the item-assignment
+  // table; the evaluator filters defensively but the orphan row still inflates
+  // getRuleAssignmentCounts.
+  const ruleRes = await client
+    .from("enforcementRule")
+    .select("id, targetType")
+    .eq("id", args.ruleId)
+    .eq("companyId", args.companyId)
+    .eq("family", "storage")
+    .single();
+  if (ruleRes.error || !ruleRes.data) {
+    return {
+      data: null,
+      error: ruleRes.error ?? new Error("Rule not found")
+    };
+  }
+  if (ruleRes.data.targetType !== args.targetType) {
+    return {
+      data: null,
+      error: new Error(
+        `Rule targetType "${ruleRes.data.targetType}" does not match "${args.targetType}"`
+      )
+    };
+  }
+
+  return (client as SupabaseClient<Database>)
+    .from(table)
+    .insert({
+      [idCol]: args.targetId,
+      ruleId: args.ruleId,
+      companyId: args.companyId,
+      createdBy: args.userId
+    } as never)
+    .select(`${idCol}, ruleId`)
+    .single();
+}
+
+export async function unassignStorageRule(
+  client: SupabaseClient<Database>,
+  args: { targetType: TargetType; targetId: string; ruleId: string }
+) {
+  const table = assignmentTableFor(args.targetType);
+  const idCol = targetIdColumnFor(args.targetType);
+
+  return (client as SupabaseClient<Database>)
+    .from(table)
+    .delete()
+    .eq(idCol, args.targetId)
+    .eq("ruleId", args.ruleId);
+}

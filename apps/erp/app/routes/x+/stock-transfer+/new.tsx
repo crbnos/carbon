@@ -2,10 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -38,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { locationId, lines } = validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Item Rule pre-flight. Create-Transfer auto-releases (insert sets
+  // Storage Rule pre-flight. Create-Transfer auto-releases (insert sets
   // status="Released"), so this is the gate where rules must fire before
   // any stock-moving is started. Evaluate against the destination side
   // (`toStorageUnitId`) — that's where stock will land.

@@ -76,6 +76,9 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
+  // Deliberately email-only (no Slack): a compliance heads-up for the sales
+  // group, not an actionable assignment.
+  [NotificationEvent.SalesRuleViolation]: [NotificationDestination.Email],
   [NotificationEvent.JobAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack

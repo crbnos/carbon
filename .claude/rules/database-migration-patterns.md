@@ -153,7 +153,7 @@ inside a transaction block with other statements that use the value).
 ## Gotchas
 
 - Read the **newest** migration touching a table/function — renames (`shelf`→`storageUnit`,
-  `customRule`→`storageRule`) and revised RPCs are common.
+  `customRule`→`storageRule`→`enforcementRule`) and revised RPCs are common.
 - Schema-qualify (`"public"."t"`) on RLS statements; cast helper results `::text[]`.
 - After adding a migration, regenerate types (`pnpm db:types`) or typecheck breaks with
   `SelectQueryError` / "excessively deep" errors.

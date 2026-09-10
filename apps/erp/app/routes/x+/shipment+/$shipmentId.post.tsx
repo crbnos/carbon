@@ -5,8 +5,9 @@ import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
   evaluateLinesForSurface,
+  evaluateSalesRulesForSalesDocument,
   isBlocked
-} from "@carbon/ee/storage-rules.server";
+} from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -17,6 +18,7 @@ import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
@@ -40,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Item Rule evaluation across every line on this shipment before posting.
+  // Storage Rule evaluation across every line on this shipment before posting.
   const serviceRole = getCarbonServiceRole();
   const { data: lines } = await serviceRole
     .from("shipmentLine")
@@ -56,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fire here too.
   const { data: shipmentForSurface } = await serviceRole
     .from("shipment")
-    .select("sourceDocument, locationId")
+    .select("sourceDocument, sourceDocumentId, locationId")
     .eq("id", shipmentId)
     .single();
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
@@ -88,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Pick pass — the bin side of the shipment. Same lines, same item target;
-  // item rules own the `pick` surface. Transfers double-up via the
+  // storage rules own the `pick` surface. Transfers double-up via the
   // warehouseTransfer surface (dedupe collapses the overlap).
   const pickSurfaces: ("pick" | "warehouseTransfer")[] = ["pick"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
@@ -107,14 +109,57 @@ export async function action({ request, params }: ActionFunctionArgs) {
     Object.assign(allRuleNames, ruleNames);
   }
 
+  // Sales rules on the originating sales order — the last physical checkpoint.
+  // Sales rules have no `shipment` surface (their enum is sales-document only),
+  // so this re-evaluates the SO under `salesOrderLine` rather than inventing a
+  // surface. It is what catches an order confirmed BEFORE a rule was authored,
+  // and it is the first moment a real shipped quantity exists.
+  let salesRuleViolations: ReturnType<typeof dedupeViolations> = [];
+  if (
+    shipmentForSurface?.sourceDocument === "Sales Order" &&
+    shipmentForSurface.sourceDocumentId
+  ) {
+    const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: shipmentForSurface.sourceDocumentId
+    });
+    salesRuleViolations = violations;
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
+  }
+
   const deduped = dedupeViolations(allViolations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    return {
-      error: null,
-      data: null,
-      violations: deduped,
-      ruleNames: allRuleNames
-    };
+  if (deduped.length > 0) {
+    const blocked = isBlocked(deduped, acknowledged);
+    // Evidence covers only the SALES violations (the acknowledgment table is
+    // sales-family evidence, attributed to the source order); storage
+    // violations on the same post carry no evidence, as on every other
+    // storage surface. The outcome reflects the submission's overall fate —
+    // a post blocked by any violation records its sales violations as
+    // blocked too.
+    const salesDeduped = dedupeViolations(salesRuleViolations);
+    if (salesDeduped.length > 0 && shipmentForSurface?.sourceDocumentId) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: shipmentForSurface.sourceDocumentId,
+        outcome: blocked ? "blocked" : "acknowledged",
+        violations: salesDeduped,
+        ruleNames: allRuleNames
+      });
+    }
+    if (blocked) {
+      return {
+        error: null,
+        data: null,
+        violations: deduped,
+        ruleNames: allRuleNames
+      };
+    }
   }
 
   // Expired-batch policy check. Mirrors post-stock-transfer / issue edge
