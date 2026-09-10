@@ -2,6 +2,7 @@ import { getLogger } from "@carbon/logger";
 import { getClientIp } from "@carbon/utils";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import { logAuthEvent } from "./auth-events.server";
+import { getDeviceId } from "./device.server";
 
 const log = getLogger("auth", "login-history");
 
@@ -113,7 +114,9 @@ export async function recordLogin(params: {
   accessToken: string;
   method: LoginMethod;
   app: "erp" | "mes";
-}): Promise<void> {
+  /** From `ensureDeviceId`; read from the cookie when the caller omits it. */
+  deviceId?: string | null;
+}): Promise<{ isNewDevice: boolean }> {
   const { request, userId, email, accessToken, method, app } = params;
   try {
     // Right-to-left walk past our own proxies. The leftmost hop is whatever
@@ -136,6 +139,19 @@ export async function recordLogin(params: {
     const userAgent = request.headers.get("user-agent") || null;
 
     const serviceRole = getCarbonServiceRole();
+    const deviceId = params.deviceId ?? (await getDeviceId(request));
+
+    // Checked BEFORE the insert: this login's own row must not count as a
+    // previous sighting of the device.
+    let isNewDevice = false;
+    if (deviceId) {
+      const { count } = await serviceRole
+        .from("userLogin")
+        .select("id", { count: "exact", head: true })
+        .eq("userId", userId)
+        .eq("deviceId", deviceId);
+      isNewDevice = (count ?? 0) === 0;
+    }
 
     const { error } = await serviceRole.from("userLogin").insert({
       userId,
@@ -145,7 +161,8 @@ export async function recordLogin(params: {
       ipAddress,
       city,
       country,
-      userAgent
+      userAgent,
+      deviceId
     });
     if (error) {
       log.warn("Failed to record login history", { error, userId, app });
@@ -173,8 +190,13 @@ export async function recordLogin(params: {
       method,
       app
     });
+
+    return { isNewDevice };
   } catch (error) {
     log.warn("Failed to record login history", { error, userId, app });
+    // Report "not new" on failure: a spurious alert is worse than a missed one,
+    // and we genuinely do not know.
+    return { isNewDevice: false };
   }
 }
 

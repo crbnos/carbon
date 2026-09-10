@@ -12,8 +12,8 @@ challenge exists anywhere in this design.
 - [x] Task 2: Point `recordLogin` at `getClientIp`
 - [x] Task 3: Migration — `deviceId` column + index
 - [x] Task 4: Regenerate database types
-- [ ] Task 5: `device.server.ts` — signed device cookie
-- [ ] Task 6: Store `deviceId` on login; report first-sighting
+- [x] Task 5: `device.server.ts` — signed device cookie
+- [x] Task 6: Store `deviceId` on login; report first-sighting
 - [ ] Task 7: Thread the device cookie through all six login call sites
 - [ ] Task 8: `getDeviceFirstSeenAt` service function
 - [ ] Task 9: Enforce the gate in the `security.tsx` action

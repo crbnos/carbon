@@ -10,13 +10,34 @@ const mocks = vi.hoisted(() => {
   const lt = vi.fn();
   const eq = vi.fn(() => ({ lt }));
   const del = vi.fn(() => ({ eq }));
-  const from = vi.fn(() => ({ insert, delete: del }));
+  // The device-novelty probe: .select(...).eq(...).eq(...) resolving to a count.
+  const countEq2 = vi.fn().mockResolvedValue({ count: 0 });
+  const countEq1 = vi.fn(() => ({ eq: countEq2 }));
+  const select = vi.fn(() => ({ eq: countEq1 }));
+  const from = vi.fn(() => ({ insert, delete: del, select }));
   const getCarbonServiceRole = vi.fn(() => ({ from }));
-  return { insert, lt, eq, del, from, getCarbonServiceRole };
+  return {
+    insert,
+    lt,
+    eq,
+    del,
+    select,
+    countEq2,
+    from,
+    getCarbonServiceRole
+  };
 });
 
 vi.mock("../lib/supabase/client.server", () => ({
   getCarbonServiceRole: mocks.getCarbonServiceRole
+}));
+
+// device.server imports ../config/env, which validates EVERY required var at
+// module load — stub it so this suite does not depend on unrelated config.
+vi.mock("../config/env", () => ({
+  DOMAIN: "localhost",
+  CarbonEdition: "Community",
+  SESSION_SECRET: "test-session-secret"
 }));
 
 vi.mock("@carbon/logger", () => ({
@@ -140,8 +161,39 @@ describe("recordLogin", () => {
       ipAddress: "10.0.0.1",
       city: "São Paulo",
       country: "BR",
-      userAgent: "Mozilla/5.0 test"
+      userAgent: "Mozilla/5.0 test",
+      deviceId: null
     });
+  });
+
+  it("reports a device as new when it has no prior rows", async () => {
+    mocks.countEq2.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      recordLogin({
+        request: makeRequest({}),
+        userId: "user_1",
+        email: "u@example.com",
+        accessToken: TOKEN,
+        method: "magic_link",
+        app: "erp",
+        deviceId: "device-1"
+      })
+    ).resolves.toEqual({ isNewDevice: true });
+  });
+
+  it("reports a device as known when prior rows exist", async () => {
+    mocks.countEq2.mockResolvedValueOnce({ count: 3 });
+    await expect(
+      recordLogin({
+        request: makeRequest({}),
+        userId: "user_1",
+        email: "u@example.com",
+        accessToken: TOKEN,
+        method: "magic_link",
+        app: "erp",
+        deviceId: "device-1"
+      })
+    ).resolves.toEqual({ isNewDevice: false });
   });
 
   it("normalizes IPv4-mapped IPv6 addresses from local proxies", async () => {
@@ -226,7 +278,7 @@ describe("recordLogin", () => {
         method: "magic_link",
         app: "erp"
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ isNewDevice: false });
   });
 
   it("never throws when the insert rejects outright", async () => {
@@ -240,7 +292,7 @@ describe("recordLogin", () => {
         method: "magic_link",
         app: "erp"
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ isNewDevice: false });
   });
 
   it("never throws when the service role client cannot be constructed", async () => {
@@ -256,6 +308,6 @@ describe("recordLogin", () => {
         method: "magic_link",
         app: "erp"
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ isNewDevice: false });
   });
 });
