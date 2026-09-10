@@ -6012,7 +6012,7 @@ export async function getJobOperationBatchWithMembers(
 ) {
   const batch = await client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name), location(name)")
+    .select("*, process(name, batchType), workCenter(name), location(name)")
     .eq("id", batchId)
     .eq("companyId", companyId)
     .single();

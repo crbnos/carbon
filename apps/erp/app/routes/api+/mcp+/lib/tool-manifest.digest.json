@@ -706,7 +706,7 @@
     {"name":"production_getJobOperationBatchEvents","classification":"READ","paramCount":1,"schema":"979f64cb9229","response":"8feaefdf02c8","injectAuth":"companyId","permission":"production:view"},
     {"name":"production_getJobOperationBatchMembers","classification":"READ","paramCount":1,"schema":"9bbe23a57535","response":"66bcdc105c00","injectAuth":"companyId","permission":"production:view"},
     {"name":"production_getJobOperationBatchMemberStats","classification":"READ","paramCount":1,"schema":"9bbe23a57535","response":"03aaee65a70b","injectAuth":"companyId","permission":"production:view"},
-    {"name":"production_getJobOperationBatchWithMembers","classification":"READ","paramCount":1,"schema":"979f64cb9229","response":"1a2d1220c351","injectAuth":"companyId","permission":"production:view"},
+    {"name":"production_getJobOperationBatchWithMembers","classification":"READ","paramCount":1,"schema":"979f64cb9229","response":"a6494db9c633","injectAuth":"companyId","permission":"production:view"},
     {"name":"production_getJobOperationDependencies","classification":"READ","paramCount":1,"schema":"4999bd4be598","response":"9214ed6d51dd","injectAuth":"companyId","permission":"production:view"},
     {"name":"production_getJobOperations","classification":"READ","paramCount":2,"schema":"d772b12a956e","response":"720a58fe2501","injectAuth":"companyId","permission":"production:view"},
     {"name":"production_getJobOperationsAssignedToEmployee","classification":"READ","paramCount":1,"schema":"3d90cb5d0437","response":"20f7748935c7","injectAuth":"companyId","permission":"production:view"},

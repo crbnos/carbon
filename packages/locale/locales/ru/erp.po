@@ -11368,11 +11368,11 @@ msgstr "Один набор цифр"
 msgid "One shared setup instead of one per operation"
 msgstr "Одна общая наладка вместо наладки на каждую операцию"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "Одна общая наладка плюс наибольший труд и машинное время — все детали выполняются вместе"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr ""
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr ""
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."

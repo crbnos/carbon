@@ -2211,10 +2211,12 @@ function ReviewPanel({
   const { t } = useLingui();
 
   // Planned durations for the batch, by type: one shared setup (the largest
-  // member) plus labor/machine per the process's batch type — summed for
-  // Sequential, the largest member for Simultaneous. The estimate is their sum.
+  // member) plus per-type labor/machine buckets. `total` is the wall-clock run
+  // time — one shared setup plus each member's run (the longer of its labor and
+  // machine), combined per the process's batch type — which is what the estimate
+  // shows.
   const plan = batchPlanBreakdown(selected, undefined, batchType);
-  const estimateMs = plan.setup + plan.labor + plan.machine;
+  const estimateMs = plan.total;
 
   // Setup saving: one shared setup (the largest member) instead of the sum.
   const setupMax = plan.setup;
@@ -2285,8 +2287,8 @@ function ReviewPanel({
                   <span
                     title={
                       batchType === "Simultaneous"
-                        ? t`One shared setup plus the longest labor and machine time — the members run together`
-                        : t`One shared setup plus the summed labor and machine time`
+                        ? t`One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together`
+                        : t`One shared setup plus each member's run time — the greater of its labor and machine — in sequence`
                     }
                   >
                     {t`≈ ${formatDurationMilliseconds(estimateMs, {
