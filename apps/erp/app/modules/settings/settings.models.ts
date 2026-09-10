@@ -35,7 +35,7 @@ export const purchasePriceUpdateTimingTypes = [
 
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update"],
+  accounting: ["view", "create", "update", "delete"],
   documents: ["view", "create", "update", "delete"],
   inventory: ["view", "create", "update", "delete"],
   invoicing: ["view", "create", "update", "delete"],
@@ -52,6 +52,14 @@ export const apiKeyPermissionModules = {
 
 export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
+/**
+ * Permission keys (`${module}_${action}`) that are opt-in only: they must be
+ * enabled by clicking their own cell and are never turned on by the "all
+ * modules" or per-row select-all checkboxes. Deleting accounting data via the
+ * API is high-risk, so it stays deselected unless explicitly chosen.
+ */
+export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
+
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
@@ -64,6 +72,85 @@ export const apiKeyValidator = z.object({
         message: "Expiration date must be in the future"
       })
   )
+});
+
+const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+
+/**
+ * Consumer email providers no company can own. The DNS TXT challenge is the
+ * real gate (nobody can publish a record under gmail.com), but refusing these
+ * at validation gives an instant, honest error instead of a claim that can
+ * never verify. ASCII, lowercase — compared after normalization.
+ */
+export const PUBLIC_EMAIL_DOMAINS = [
+  "gmail.com",
+  "googlemail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "msn.com",
+  "yahoo.com",
+  "ymail.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
+  "pm.me",
+  "gmx.com",
+  "gmx.net",
+  "mail.com",
+  "zoho.com",
+  "yandex.com",
+  "qq.com",
+  "163.com",
+  "126.com"
+] as const;
+
+/**
+ * SAML SSO connection form. The IdP metadata comes in as EITHER a metadata URL
+ * or raw metadata XML (exactly one — GoTrue takes one or the other). Email
+ * domains are managed separately per-domain with a DNS ownership challenge
+ * (ssoDomainValidator), not on this form.
+ */
+export const ssoConnectionValidator = z
+  .object({
+    metadataUrl: zfd.text(
+      z.string().url({ message: "Must be a valid URL" }).optional()
+    ),
+    metadataXml: zfd.text(z.string().optional())
+  })
+  .refine(
+    (input) => Boolean(input.metadataUrl) !== Boolean(input.metadataXml),
+    {
+      message: "Provide either a metadata URL or metadata XML (exactly one)",
+      path: ["metadataUrl"]
+    }
+  );
+
+/**
+ * A single SSO email domain claim. Lowercased ASCII hostname (enter
+ * internationalized domains in punycode `xn--` form); public email providers
+ * are refused outright.
+ */
+export const ssoDomainValidator = z.object({
+  domain: zfd
+    .text(z.string().min(1, { message: "Domain is required" }))
+    .transform((value) => value.trim().toLowerCase())
+    .refine((domain) => ssoDomainRegex.test(domain) && !domain.includes("@"), {
+      message: "Must be a valid hostname like example.com (no @ or spaces)"
+    })
+    .refine(
+      (domain) =>
+        !PUBLIC_EMAIL_DOMAINS.includes(
+          domain as (typeof PUBLIC_EMAIL_DOMAINS)[number]
+        ),
+      {
+        message:
+          "Public email providers cannot be registered for single sign-on"
+      }
+    )
 });
 
 const companyAddress = {
@@ -342,7 +429,7 @@ export type Theme = (typeof themes)[number];
 export const themeValidator = z.object({
   next: zfd.text(z.string().optional()),
   theme: z.enum(themes, {
-    errorMap: (issue, ctx) => ({ message: "Theme is required" })
+    error: "Theme is required"
   })
 });
 

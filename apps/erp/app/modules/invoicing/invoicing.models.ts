@@ -109,9 +109,7 @@ export const purchaseInvoiceLineValidator = z
       [...itemType, "Fixture", "G/L Account", "Fixed Asset", "Comment"],
 
       {
-        errorMap: (issue, ctx) => ({
-          message: "Type is required"
-        })
+        error: "Type is required"
       }
     ),
     purchaseOrderId: zfd.text(z.string().optional()),
@@ -271,9 +269,7 @@ export const salesInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset"], {
-      errorMap: (issue, ctx) => ({
-        message: "Type is required"
-      })
+      error: "Type is required"
     }),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
@@ -282,9 +278,7 @@ export const salesInvoiceLineValidator = z
     methodType: zfd.text(
       z
         .enum(methodType, {
-          errorMap: (issue, ctx) => ({
-            message: "Method is required"
-          })
+          error: "Method is required"
         })
         .optional()
     ),
@@ -374,7 +368,7 @@ export const memoValidator = z
     id: zfd.text(z.string().optional()),
     memoId: zfd.text(z.string().optional()),
     direction: z.enum(memoDirection, {
-      errorMap: () => ({ message: "Direction is required" })
+      error: "Direction is required"
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -409,7 +403,7 @@ export const paymentValidator = z
     id: zfd.text(z.string().optional()),
     paymentId: zfd.text(z.string().optional()),
     paymentType: z.enum(paymentType, {
-      errorMap: () => ({ message: "Payment type is required" })
+      error: "Payment type is required"
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -425,16 +419,10 @@ export const paymentValidator = z
     reference: zfd.text(z.string().optional()),
     memo: zfd.text(z.string().optional())
   })
-  .refine(
-    (d) =>
-      d.paymentType === "Receipt"
-        ? Boolean(d.customerId)
-        : Boolean(d.supplierId),
-    {
-      message: "Receipt requires a customer; Disbursement requires a supplier",
-      path: ["customerId"]
-    }
-  );
+  .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
+    message: "A payment requires exactly one customer or supplier",
+    path: ["customerId"]
+  });
 
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off
@@ -449,7 +437,8 @@ export const invoiceSettlementBase = z.object({
   targetSalesInvoiceId: zfd.text(z.string().optional()),
   targetPurchaseInvoiceId: zfd.text(z.string().optional()),
   targetMemoId: zfd.text(z.string().optional()),
-  appliedAmount: zfd.numeric(z.number().nonnegative().default(0)),
+  sourceAmount: zfd.numeric(z.number().finite().nonnegative().optional()),
+  appliedAmount: zfd.numeric(z.number().finite().nonnegative().default(0)),
   discountAmount: zfd.numeric(z.number().nonnegative().default(0)),
   writeOffAmount: zfd.numeric(z.number().nonnegative().default(0)),
   targetExchangeRate: zfd.numeric(
@@ -483,7 +472,8 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     (d) =>
       Number(d.appliedAmount) +
         Number(d.discountAmount) +
-        Number(d.writeOffAmount) >
+        Number(d.writeOffAmount) +
+        Number(d.sourceAmount ?? 0) >
       0,
     {
       message: "At least one of applied / discount / write-off must be > 0",
@@ -491,22 +481,15 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     }
   );
 
-// Sub-cent balances are forgiven as dust: an outstanding amount below one cent
-// (the smallest representable currency unit) can't be collected and is treated
-// as paid. Kept in sync with the SQL view forgiveness in
-// 20260630151500_invoice-dust-forgiveness.sql.
-export const INVOICE_DUST_THRESHOLD = 0.01;
-
-// An invoice is payable when it's posted with an outstanding balance of at least
-// one cent — i.e. not draft/pending, voided, already fully paid, or down to dust.
-// Shared by the sales (AR) and purchase (AP) invoice headers; the caller AND-s in
-// the permission check.
+// The balance views preserve any remaining document minor unit, even when its
+// base equivalent is smaller than a base currency cent.
 export function isInvoicePayable(
   status: string | null | undefined,
   balance: number | null | undefined
 ): boolean {
   return (
     !["Voided", "Draft", "Pending", "Paid"].includes(status ?? "") &&
-    Number(balance ?? 0) >= INVOICE_DUST_THRESHOLD
+    Number.isFinite(Number(balance)) &&
+    Number(balance ?? 0) > 0
   );
 }

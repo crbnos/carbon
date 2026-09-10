@@ -91,6 +91,7 @@ export default function NewMaintenanceScheduleRoute() {
     frequency: "Weekly" as const,
     priority: "Medium" as const,
     estimatedDuration: undefined,
+    takesWorkCenterOffline: false,
     nextDueAt: undefined,
     active: true,
     // Day-of-week defaults (all days enabled by default)

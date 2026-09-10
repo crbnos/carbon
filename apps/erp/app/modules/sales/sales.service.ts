@@ -18,7 +18,7 @@ import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting";
+import { getExchangeRate } from "../accounting";
 import type {
   operationParameterValidator,
   operationStepValidator,
@@ -28,6 +28,7 @@ import { normalizeOperationSourceIds } from "../shared";
 import {
   getModelByItemId,
   lookupBuyPriceFromMap,
+  resolveBuyUnitCost,
   upsertExternalLink
 } from "../shared/shared.service";
 import type {
@@ -61,7 +62,12 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
-import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
+import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
+import {
+  decideRecalcPricing,
+  getEffectiveDefaultMarkups,
+  resolvePreservedQuoteLinePriceFields
+} from "./sales.utils";
 import type {
   MatchedRule,
   OverrideEntry,
@@ -1163,18 +1169,6 @@ export async function getQuote(
   return client.from("quotes").select("*").eq("id", quoteId).single();
 }
 
-export async function getQuoteFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("quoteFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
 export async function getQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1611,18 +1605,6 @@ export async function getSalesOrderCustomerDetails(
     .single();
 }
 
-export async function getSalesOrderFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrderFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
 export async function getSalesOrderRelatedItems(
   client: SupabaseClient<Database>,
   salesOrderId: string,
@@ -1836,18 +1818,6 @@ export async function getSalesRFQ(
   id: string
 ) {
   return client.from("salesRfqs").select("*").eq("id", id).single();
-}
-
-export async function getSalesRFQFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("salesRfqFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
 }
 
 export async function getSalesRFQs(
@@ -3510,15 +3480,16 @@ export async function insertQuote(
   let exchangeRate = 1;
   let exchangeRateUpdatedAt = new Date().toISOString();
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const exchangeRateResult = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
     }
+    exchangeRate = exchangeRateResult.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const locationId = input.locationId ?? seller?.data?.locationId ?? null;
@@ -3618,8 +3589,7 @@ export async function updateQuote(
     digitalQuoteAcceptedByEmail?: string | null;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -3631,7 +3601,7 @@ export async function updateQuote(
 
   const existing = await client
     .from("quote")
-    .select("currencyCode, opportunityId")
+    .select("companyId, currencyCode, opportunityId")
     .eq("id", id)
     .single();
 
@@ -3639,18 +3609,18 @@ export async function updateQuote(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
-    const currency = await getCurrencyByCode(
+    const exchangeRateResult = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
     }
+    exchangeRate = exchangeRateResult.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   if (updates.customerId && existing.data.opportunityId) {
@@ -3723,15 +3693,16 @@ export async function upsertQuote(
       customerShipping.data;
 
     if (quote.currencyCode) {
-      const currency = await getCurrencyByCode(
+      const exchangeRateResult = await getExchangeRate(
         client,
-        quote.companyGroupId,
+        quote.companyId,
         quote.currencyCode
       );
-      if (currency.data) {
-        quote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      if (exchangeRateResult.error) {
+        return { data: null, error: exchangeRateResult.error };
       }
+      quote.exchangeRate = exchangeRateResult.data;
+      quote.exchangeRateUpdatedAt = new Date().toISOString();
     } else {
       quote.exchangeRate = 1;
       quote.exchangeRateUpdatedAt = new Date().toISOString();
@@ -3819,15 +3790,16 @@ export async function upsertQuote(
     const { currencyCode, opportunityId } = existingQuote.data;
 
     if (quote.currencyCode && currencyCode !== quote.currencyCode) {
-      const currency = await getCurrencyByCode(
+      const exchangeRateResult = await getExchangeRate(
         client,
-        quote.companyGroupId,
+        existingQuote.data.companyId,
         quote.currencyCode
       );
-      if (currency.data) {
-        quote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      if (exchangeRateResult.error) {
+        return { data: null, error: exchangeRateResult.error };
       }
+      quote.exchangeRate = exchangeRateResult.data;
+      quote.exchangeRateUpdatedAt = new Date().toISOString();
     }
 
     // If customerId is being updated, also update the opportunity's customerId
@@ -3918,10 +3890,13 @@ export async function upsertQuoteLineAdditionalCharges(
 type QuoteLinePriceInput = {
   quoteLineId: string;
   unitPrice: number;
-  leadTime: number;
-  discountPercent: number;
   quantity: number;
   createdBy: string;
+  // Optional: an explicit value wins, an omitted one preserves the stored value
+  // for that quantity (so a cost recalc can leave user-entered fields alone).
+  leadTime?: number;
+  discountPercent?: number;
+  shippingCost?: number;
   categoryMarkups?: Record<string, number>;
   priceSource?: "system" | "manual";
 };
@@ -3934,10 +3909,11 @@ export async function upsertQuoteLinePrices(
   quoteLinePrices: {
     quoteLineId: string;
     unitPrice: number;
-    leadTime: number;
-    discountPercent: number;
     quantity: number;
     createdBy: string;
+    leadTime?: number;
+    discountPercent?: number;
+    shippingCost?: number;
     categoryMarkups?: Record<string, number>;
     priceSource?: "system" | "manual";
   }[]
@@ -3996,6 +3972,13 @@ async function rewriteQuoteLinePrices(
     );
   }
 
+  const exchangeRate = quote.exchangeRate;
+  if (exchangeRate === null) {
+    throw new Error(
+      `Quote ${quoteId} has no exchange rate for company ${companyId}`
+    );
+  }
+
   await trx
     .deleteFrom("quoteLinePrice")
     .where("quoteLineId", "=", lineId)
@@ -4018,16 +4001,40 @@ async function rewriteQuoteLinePrices(
           companyId,
           quoteId,
           unitPrice: round(p.unitPrice, quoteLine.unitPricePrecision),
-          discountPercent: existing?.discountPercent ?? p.discountPercent,
-          leadTime: existing?.leadTime ?? p.leadTime,
-          shippingCost: existing?.shippingCost ?? 0,
-          categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
-          priceSource: p.priceSource ?? existing?.priceSource ?? "system",
-          exchangeRate: quote.exchangeRate ?? 1
+          // Explicit value wins, omitted value is preserved from the stored row.
+          ...resolvePreservedQuoteLinePriceFields(p, {
+            leadTime: existing ? Number(existing.leadTime) : undefined,
+            discountPercent: existing
+              ? Number(existing.discountPercent)
+              : undefined,
+            shippingCost: existing ? Number(existing.shippingCost) : undefined,
+            categoryMarkups:
+              (existing?.categoryMarkups as CategoryMarkups | null) ??
+              undefined,
+            priceSource:
+              (existing?.priceSource as QuoteLinePriceSource | null) ??
+              undefined
+          }),
+          exchangeRate
         };
       })
     )
     .execute();
+
+  // Keep quoteLine.quantity in step with the rows that now exist, but only when
+  // the caller supplied an explicit price set — the precision rebuild
+  // (quoteLinePrices omitted) must not touch the line's quantity breaks.
+  if (quoteLinePrices) {
+    const quantities = [
+      ...new Set(replacements.map((p) => Number(p.quantity)))
+    ].sort((a, b) => a - b);
+    await trx
+      .updateTable("quoteLine")
+      .set({ quantity: quantities })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
 }
 
 async function buildCostEffects(
@@ -4041,10 +4048,11 @@ async function buildCostEffects(
 
   const operations = operationsResult.data ?? [];
 
-  // Fix Buy material costs
+  // Refresh Buy material costs from supplier price breaks; resolveBuyUnitCost
+  // leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
-    .select("id, itemId, unitCost")
+    .select("id, itemId, unitCost, unitCostSource")
     .eq("quoteLineId", quoteLineId)
     .eq("methodType", "Purchase to Order");
 
@@ -4054,7 +4062,8 @@ async function buildCostEffects(
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
   for (const mat of buyMaterials.data ?? []) {
-    const price = lookupBuyPriceFromMap(mat.itemId, 1, priceMap, mat.unitCost);
+    if (mat.unitCostSource === "manual") continue;
+    const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
       await client
         .from("quoteMaterial")
@@ -4170,13 +4179,17 @@ async function buildCostEffects(
     itemId: string,
     itemType: string,
     quantity: number,
-    unitCost: number
+    unitCost: number,
+    unitCostSource: string | null
   ) {
     const costFn = (outerQty: number) => {
       const requestedQty = quantity * outerQty;
       return (
-        lookupBuyPriceFromMap(itemId, requestedQty, priceMap, unitCost) *
-        requestedQty
+        resolveBuyUnitCost(
+          { itemId, unitCost, unitCostSource },
+          requestedQty,
+          priceMap
+        ) * requestedQty
       );
     };
     const key =
@@ -4199,7 +4212,13 @@ async function buildCostEffects(
     const qty = d.quantity * parentQuantity;
 
     if (d.methodType === "Purchase to Order") {
-      pushBuyCostEffect(d.itemId, d.itemType, qty, d.unitCost);
+      pushBuyCostEffect(
+        d.itemId,
+        d.itemType,
+        qty,
+        d.unitCost,
+        d.unitCostSource
+      );
     } else if (d.methodType === "Pull from Inventory") {
       const costFn = (outerQty: number) => d.unitCost * qty * outerQty;
       const key =
@@ -4376,7 +4395,13 @@ export async function buildMakeToOrderPriceRows(
     itemIdOverride === undefined
       ? (lineResult.data.itemId ?? undefined)
       : (itemIdOverride ?? undefined);
-  const exchangeRate = quoteResult.data.exchangeRate ?? 1;
+  const exchangeRate = quoteResult.data.exchangeRate;
+  if (exchangeRate === null) {
+    return {
+      rows: [],
+      error: new Error(`Quote ${quoteId} has no exchange rate`)
+    };
+  }
   const precision = lineResult.data.unitPricePrecision ?? 2;
 
   // Parse default markups (settings stores decimals, convert to whole numbers)
@@ -4500,7 +4525,13 @@ export async function buildPullFromInventoryPriceRows(
   // Missing itemId is a benign draft state, not an error.
   if (!itemId) return { rows: [], error: null };
 
-  const exchangeRate = quoteResult.data.exchangeRate ?? 1;
+  const exchangeRate = quoteResult.data.exchangeRate;
+  if (exchangeRate === null) {
+    return {
+      rows: [],
+      error: new Error(`Quote ${quoteId} has no exchange rate`)
+    };
+  }
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
@@ -4589,7 +4620,13 @@ export async function buildPurchaseToOrderPriceRows(
     itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
   if (!itemId) return { rows: [], error: null };
 
-  const exchangeRate = quoteResult.data.exchangeRate ?? 1;
+  const exchangeRate = quoteResult.data.exchangeRate;
+  if (exchangeRate === null) {
+    return {
+      rows: [],
+      error: new Error(`Quote ${quoteId} has no exchange rate`)
+    };
+  }
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
@@ -5278,15 +5315,16 @@ export async function insertSalesOrder(
   let exchangeRate = 1;
   let exchangeRateUpdatedAt = new Date().toISOString();
   if (currencyCode) {
-    const currency = await getCurrencyByCode(
+    const exchangeRateResult = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
     }
+    exchangeRate = exchangeRateResult.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const locationId = input.locationId ?? seller?.data?.locationId ?? null;
@@ -5368,8 +5406,7 @@ export async function updateSalesOrder(
     customerId?: string;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -5381,7 +5418,7 @@ export async function updateSalesOrder(
 
   const existing = await client
     .from("salesOrder")
-    .select("currencyCode, opportunityId")
+    .select("companyId, currencyCode, opportunityId")
     .eq("id", id)
     .single();
 
@@ -5389,18 +5426,18 @@ export async function updateSalesOrder(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
-    const currency = await getCurrencyByCode(
+    const exchangeRateResult = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
     }
+    exchangeRate = exchangeRateResult.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   if (updates.customerId && existing.data.opportunityId) {
@@ -5551,15 +5588,16 @@ export async function upsertSalesOrder(
     const { currencyCode, opportunityId } = existingSalesOrder.data;
 
     if (salesOrder.currencyCode && currencyCode !== salesOrder.currencyCode) {
-      const currency = await getCurrencyByCode(
+      const exchangeRateResult = await getExchangeRate(
         client,
-        salesOrder.companyGroupId,
+        existingSalesOrder.data.companyId,
         salesOrder.currencyCode
       );
-      if (currency.data) {
-        salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
-        salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
+      if (exchangeRateResult.error) {
+        return { data: null, error: exchangeRateResult.error };
       }
+      salesOrder.exchangeRate = exchangeRateResult.data;
+      salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
     }
 
     // If customerId is being updated, also update the opportunity's customerId
@@ -5611,15 +5649,16 @@ export async function upsertSalesOrder(
   const locationId = employee?.data?.locationId ?? null;
 
   if (salesOrder.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const exchangeRateResult = await getExchangeRate(
       client,
-      salesOrder.companyGroupId,
+      salesOrder.companyId,
       salesOrder.currencyCode
     );
-    if (currency.data) {
-      salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
-      salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
     }
+    salesOrder.exchangeRate = exchangeRateResult.data;
+    salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
   } else {
     salesOrder.exchangeRate = 1;
     salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
@@ -5750,6 +5789,16 @@ export async function upsertSalesOrderLine(
   const salesOrder = await getSalesOrder(client, salesOrderLine.salesOrderId);
   if (salesOrder.error) return salesOrder;
 
+  const exchangeRate = salesOrder.data.exchangeRate;
+  if (exchangeRate === null) {
+    return {
+      data: null,
+      error: new Error(
+        `Sales order ${salesOrderLine.salesOrderId} has no exchange rate`
+      )
+    };
+  }
+
   const existing = await client
     .from("salesOrderLine")
     .select("sortOrder")
@@ -5777,7 +5826,7 @@ export async function upsertSalesOrderLine(
         addOnCost: salesOrderLine.addOnCost ?? 0,
         nonTaxableAddOnCost: salesOrderLine.nonTaxableAddOnCost ?? 0,
         taxPercent: salesOrderLine.taxPercent ?? 0,
-        exchangeRate: salesOrder.data?.exchangeRate ?? 1,
+        exchangeRate,
         sortOrder: maxSortOrder + 1
       }
     ])

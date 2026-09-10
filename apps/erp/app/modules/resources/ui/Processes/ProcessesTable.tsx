@@ -13,13 +13,15 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuAward,
   LuBuilding2,
   LuCheck,
-  LuCog,
   LuFactory,
+  LuLayers,
   LuPencil,
   LuPower,
   LuQrCode,
+  LuRedoDot,
   LuRuler,
   LuTrash,
   LuTriangleAlert,
@@ -91,7 +93,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             </Hyperlink>
           ),
         meta: {
-          icon: <LuCog />
+          icon: <LuRedoDot />
         }
       },
       {
@@ -218,6 +220,44 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         ),
         meta: {
           icon: <LuQrCode />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" }
+            ]
+          }
+        }
+      },
+      {
+        accessorKey: "batchable",
+        header: t`Batchable`,
+        cell: ({ row }) => (
+          <div className="flex w-full items-center justify-center">
+            <Checkbox isChecked={row.original.batchable ?? false} />
+          </div>
+        ),
+        meta: {
+          icon: <LuLayers />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" }
+            ]
+          }
+        }
+      },
+      {
+        accessorKey: "requiresAbility",
+        header: t`Requires Ability`,
+        cell: ({ row }) => (
+          <div className="flex w-full items-center justify-center">
+            <Checkbox isChecked={row.original.requiresAbility ?? false} />
+          </div>
+        ),
+        meta: {
+          icon: <LuAward />,
           filter: {
             type: "static",
             options: [

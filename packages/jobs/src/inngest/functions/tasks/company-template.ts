@@ -4,6 +4,7 @@ import { getPostgresConnectionPool } from "@carbon/database/client";
 import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
+import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
@@ -435,9 +436,11 @@ export const companyTemplateRevertFunction = inngest.createFunction(
         // SAME scope the forward apply covered so the undo is exact. Note this is
         // the restore engine's tabula-rasa wipe, not the dataset wipe the forward
         // apply used: the snapshot carries the config back, so nothing is kept.
-        const snapshot = await readBackup(client, companyId, snapshotPath);
+        const rawSnapshot = await readBackup(client, companyId, snapshotPath);
         const { targetGroupId } = await resolveRestoreScope(client, companyId);
         const catalog = await getCompanyTableCatalog(db);
+        // A snapshot predates any migration deployed since the apply it undoes.
+        const snapshot = applyTableRenames(catalog, rawSnapshot);
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
           companyId,
           userId: "",

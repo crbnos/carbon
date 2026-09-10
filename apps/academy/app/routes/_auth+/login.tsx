@@ -7,7 +7,13 @@ import {
   SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
 } from "@carbon/auth";
-import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
+import {
+  getMagicLinkErrorMessage,
+  sendMagicLink,
+  turnstileSiteKey,
+  verifyAuthSession,
+  verifyLoginCaptcha
+} from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
@@ -19,9 +25,11 @@ import {
   Button,
   Heading,
   Separator,
+  TurnstileChallenge,
   toast,
   VStack
 } from "@carbon/react";
+import { useState } from "react";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
@@ -50,7 +58,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     hasOutlookAuth: !!SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
-    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+    turnstileSiteKey
   };
 }
 
@@ -79,16 +88,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email } = validation.data;
+  const { email, turnstileToken } = validation.data;
+
+  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
+  if (captchaError) {
+    return data(
+      error(null, captchaError),
+      await flash(request, error(null, captchaError))
+    );
+  }
+
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    const magicLink = await sendMagicLink(email, turnstileToken);
 
-    if (!magicLink) {
+    if (magicLink.error) {
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
   } else {
@@ -102,13 +121,18 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
-  const { hasOutlookAuth, hasGoogleAuth } = useLoaderData<typeof loader>();
+  const {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    turnstileSiteKey: siteKey
+  } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   const onSignInWithGoogle = async () => {
     const { error } = await carbonClient.auth.signInWithOAuth({
@@ -146,7 +170,7 @@ export default function LoginRoute() {
       <div className="flex justify-center mb-8">
         <img src="/carbon-mark-light.svg" alt="Carbon Logo" className="w-24" />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         {fetcher.data?.success === true ? (
           <>
             <VStack spacing={4} className="items-center justify-center">
@@ -164,6 +188,7 @@ export default function LoginRoute() {
             method="post"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={2}>
               {fetcher.data?.success === false && fetcher.data?.message && (
                 <Alert variant="destructive">
@@ -209,7 +234,9 @@ export default function LoginRoute() {
               <Input name="email" label="" placeholder="Email Address" />
 
               <Submit
-                isDisabled={fetcher.state !== "idle"}
+                isDisabled={
+                  fetcher.state !== "idle" || (!!siteKey && !turnstileToken)
+                }
                 isLoading={fetcher.state === "submitting"}
                 size="lg"
                 className="w-full"
@@ -218,6 +245,10 @@ export default function LoginRoute() {
               >
                 Sign in with Email
               </Submit>
+              <TurnstileChallenge
+                siteKey={siteKey ?? undefined}
+                onToken={setTurnstileToken}
+              />
             </VStack>
           </ValidatedForm>
         )}

@@ -76,7 +76,7 @@ pnpm run lint
 - `upsertApiKey` / `deleteApiKey`; `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` / `getWebhookTables`
 - `insertCompany` / `insertSubsidiary` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan`
 - `updateLogoLight|LightIcon|Dark|DarkIcon|Watermark` — store the storage path on `company`, not a URL (readers prefix it)
-- `exportCompanyBackup` / `listCompanyBackups` / `deleteCompanyBackup` / `getCompanyRestoreRuns` / `getCompanyExportRun` (`backups.service.ts`); restore triggers live in `backups.server.ts`
+- `exportCompanyBackup` / `listCompanyBackupFolders` / `deleteCompanyBackup` / `getCompanyRestoreRuns` / `getCompanyExportRun` (`backups.service.ts`); `getCompanyBackups` — the Backups loader's list, which computes each backup's live compatibility verdict via `@carbon/jobs/backups` — and the restore triggers live in `backups.server.ts`
 - `resolveLabelLogo` (`labelLogo.server.ts`) — binds `@carbon/documents/labels`' resolver to this app's `SUPABASE_URL`; used by every ERP `file+/**/$id.labels[.]pdf|zpl` route (MES keeps its own copy at `apps/mes/app/services/labelLogo.server.ts`)
 
 ## Document Preview

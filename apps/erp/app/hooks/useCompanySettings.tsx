@@ -6,6 +6,7 @@ type CompanySettings = {
   showSupplierReadableId?: boolean | null;
   showCustomerReadableId?: boolean | null;
   showCurrencyTrailingZeros?: boolean | null;
+  allowLowercaseItemIds?: boolean | null;
 } & Record<string, unknown>;
 
 /** Set by a route that loaded the settings itself. `useRouteData` matches on the

@@ -2,6 +2,7 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
@@ -12,8 +13,11 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-
-import { getDefaultStorageUnitForJob, getKanban } from "~/modules/inventory";
+import {
+  getDefaultStorageUnitForJob,
+  getKanban,
+  insertStockTransfer
+} from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
   getActiveJobOperationByJobId,
@@ -30,6 +34,7 @@ import {
   getCompanyTimeZone,
   getLocationTimeZone
 } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "kanban");
@@ -163,20 +168,18 @@ async function handleKanban({
           companyId,
           userId
         }),
-        runMRP(serviceRole, {
+        runMRP(serviceRole, getDatabaseClient(), {
           type: "job",
           id,
           companyId,
           userId
         }),
-        serviceRole.functions.invoke("schedule", {
-          body: {
-            jobId: id,
-            companyId,
-            userId,
-            mode: "initial",
-            direction: "backward"
-          }
+        runLocationSchedule({
+          db: getDatabaseClient(),
+          client: serviceRole,
+          locationId: kanban.data.locationId!,
+          companyId,
+          userId
         }),
         serviceRole
           .from("job")
@@ -346,6 +349,84 @@ async function handleKanban({
 
     return {
       data: path.to.purchaseOrder(purchaseOrderId!),
+      error: null
+    };
+  } else if (kanban.data.replenishmentSystem === "Transfer") {
+    if (!kanban.data.itemId) {
+      return { data: null, error: "Failed to create stock transfer" };
+    }
+
+    if (!kanban.data.fromStorageUnitId || !kanban.data.storageUnitId) {
+      return {
+        data: null,
+        error: "Kanban is missing a from or to storage unit"
+      };
+    }
+
+    // Defense in depth: confirm BOTH storage units belong to this company and
+    // this kanban's location before moving stock. A stock transfer is
+    // intra-location, and the ids could have been set to another location's (or
+    // company's) bin — validate rather than trust the stored ids (CWE-639).
+    const storageUnits = await client
+      .from("storageUnit")
+      .select("id")
+      .in("id", [kanban.data.fromStorageUnitId, kanban.data.storageUnitId])
+      .eq("companyId", companyId)
+      .eq("locationId", kanban.data.locationId!);
+
+    const validIds = new Set((storageUnits.data ?? []).map((s) => s.id));
+    if (
+      !validIds.has(kanban.data.fromStorageUnitId) ||
+      !validIds.has(kanban.data.storageUnitId)
+    ) {
+      return {
+        data: null,
+        error: "Storage unit does not belong to the kanban location"
+      };
+    }
+
+    // Derive tracking from the item so the transfer line demands the right
+    // serial/batch handling at pick time. insertStockTransfer expands a
+    // serial-tracked line of qty > 1 into individual qty-1 lines.
+    const item = await client
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", kanban.data.itemId)
+      .eq("companyId", companyId)
+      .single();
+
+    if (item.error) {
+      logger.error("Kanban operation failed", { error: item.error });
+      return { data: null, error: "Failed to get item" };
+    }
+
+    const trackingType = item.data?.itemTrackingType;
+
+    const createStockTransfer = await insertStockTransfer(client, {
+      locationId: kanban.data.locationId!,
+      lines: [
+        {
+          itemId: kanban.data.itemId,
+          fromStorageUnitId: kanban.data.fromStorageUnitId,
+          toStorageUnitId: kanban.data.storageUnitId,
+          quantity: kanban.data.quantity!,
+          requiresSerialTracking: trackingType === "Serial",
+          requiresBatchTracking: trackingType === "Batch"
+        }
+      ],
+      companyId,
+      createdBy: userId
+    });
+
+    if (createStockTransfer.error || !createStockTransfer.data) {
+      logger.error("Kanban operation failed", {
+        error: createStockTransfer.error
+      });
+      return { data: null, error: "Failed to create stock transfer" };
+    }
+
+    return {
+      data: path.to.stockTransfer(createStockTransfer.data.id),
       error: null
     };
   } else {

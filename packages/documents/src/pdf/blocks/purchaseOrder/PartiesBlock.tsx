@@ -158,6 +158,7 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
             <View style={tw("h-[1px] bg-gray-200 my-2")} />
             <View style={tw("text-[9px] text-gray-800")}>
               {company.vatNumber && <Text>VAT: {company.vatNumber}</Text>}
+              {company.eori && <Text>EORI: {company.eori}</Text>}
               {(() => {
                 const name =
                   purchaseOrder.assigneeFullName ??

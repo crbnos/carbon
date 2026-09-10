@@ -4,6 +4,7 @@ import PersonJob from "./PersonJob";
 import PersonOvertime from "./PersonOvertime";
 import PersonPreview from "./PersonPreview";
 import PersonSidebar from "./PersonSidebar";
+import PersonTrainings from "./PersonTrainings";
 
 export {
   PersonAbilities,
@@ -11,5 +12,6 @@ export {
   PersonJob,
   PersonOvertime,
   PersonPreview,
-  PersonSidebar
+  PersonSidebar,
+  PersonTrainings
 };

@@ -234,7 +234,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Planned") {
-    await runMRP(serviceRole, {
+    await runMRP(serviceRole, getDatabaseClient(), {
       type: "purchaseOrder",
       id,
       companyId,

@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import {
   computeInvoiceDateDue,
   isSalesInvoiceLocked
@@ -8,10 +8,9 @@ import {
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyGroupId, companyId, userId } =
-    await requirePermissions(request, {
-      update: "sales"
-    });
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "sales"
+  });
 
   const formData = await request.formData();
   const ids = formData.getAll("ids");
@@ -52,11 +51,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         if (customer.data?.currencyCode) {
           currencyCode = customer.data.currencyCode;
-          const currency = await getCurrencyByCode(
-            client,
-            companyGroupId,
-            currencyCode
-          );
+          const rate = await getExchangeRate(client, companyId, currencyCode);
+          if (rate.error) return rate;
           return await client
             .from("salesInvoice")
             .update({
@@ -64,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
               invoiceCustomerContactId: null,
               invoiceCustomerLocationId: null,
               currencyCode: currencyCode ?? undefined,
-              exchangeRate: currency.data?.exchangeRate ?? 1,
+              exchangeRate: rate.data,
               updatedBy: userId,
               updatedAt: new Date().toISOString()
             })
@@ -133,22 +129,17 @@ export async function action({ request }: ActionFunctionArgs) {
     // don't break -- just let it catch the next case
     case "currencyCode":
       if (value) {
-        const currency = await getCurrencyByCode(
-          client,
-          companyGroupId,
-          value as string
-        );
-        if (currency.data) {
-          return await client
-            .from("salesInvoice")
-            .update({
-              currencyCode: value as string,
-              exchangeRate: currency.data.exchangeRate ?? 1,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", ids as string[]);
-        }
+        const rate = await getExchangeRate(client, companyId, value as string);
+        if (rate.error) return rate;
+        return await client
+          .from("salesInvoice")
+          .update({
+            currencyCode: value as string,
+            exchangeRate: rate.data,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+          .in("id", ids as string[]);
       }
     // don't break -- just let it catch the next case
     case "customerId":

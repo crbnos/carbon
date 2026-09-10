@@ -5,6 +5,7 @@ import {
   parseStoredCredentials,
   verifyRilletWebhookSignature
 } from "@carbon/ee/accounting";
+import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -52,11 +53,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 404 });
   }
 
-  // The per-webhook token lives with the API-key credentials. No token =
+  // The per-webhook token is a vaulted secret (scrubbed from the plaintext
+  // metadata column), so resolve the vault before reading it. No token =
   // payments not enabled — reject rather than fail open.
-  const metadata = (integration.data.metadata ?? {}) as Record<string, unknown>;
   let webhookToken: string | null = null;
   try {
+    const metadata = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      "rillet",
+      integration.data.metadata ?? {},
+      integration.data.secretRef
+    )) as Record<string, unknown>;
     const credentials = parseStoredCredentials(metadata.credentials);
     if (
       credentials.type === "apiKey" &&
@@ -66,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       webhookToken = credentials.providerMetadata.webhookToken;
     }
   } catch (error) {
-    logger.error("Failed to parse stored Rillet credentials", { error });
+    logger.error("Failed to resolve stored Rillet credentials", { error });
   }
   if (!webhookToken) {
     return data(

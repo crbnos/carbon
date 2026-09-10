@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBriefcase,
+  LuClock,
   LuMail,
   LuMapPin,
   LuPencil,
@@ -34,10 +35,17 @@ type PeopleTableProps = {
   data: Person[];
   count: number;
   employeeTypes: Partial<EmployeeType>[];
+  shifts: { id: string; name: string }[];
 };
 
 const PeopleTable = memo(
-  ({ attributeCategories, data, count, employeeTypes }: PeopleTableProps) => {
+  ({
+    attributeCategories,
+    data,
+    count,
+    employeeTypes,
+    shifts
+  }: PeopleTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -181,6 +189,21 @@ const PeopleTable = memo(
           }
         },
         {
+          id: "shiftId",
+          header: t`Shift`,
+          cell: ({ row }) => <Enumerable value={row.original.shiftName} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: shifts.map((shift) => ({
+                value: shift.id,
+                label: <Enumerable value={shift.name} />
+              }))
+            },
+            icon: <LuClock />
+          }
+        },
+        {
           accessorKey: "status",
           header: t`Status`,
           cell: (item) => {
@@ -240,6 +263,7 @@ const PeopleTable = memo(
       employeeTypes,
       employeeTypesById,
       locations,
+      shifts,
       renderGenericAttribute,
       t
     ]);

@@ -3,14 +3,15 @@ import { datetime } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import { isSupplierQuoteLocked } from "~/modules/purchasing";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyGroupId, companyId, userId } =
-    await requirePermissions(request, { update: "purchasing" });
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "purchasing"
+  });
 
   const formData = await request.formData();
   const ids = formData.getAll("ids");
@@ -70,17 +71,16 @@ export async function action({ request }: ActionFunctionArgs) {
         })
         .in("id", ids as string[]);
     case "currencyCode":
-      const currency = await getCurrencyByCode(
-        client,
-        companyGroupId,
-        value as string
-      );
-      if (currency.data) {
+      if (value) {
+        const rate = await getExchangeRate(client, companyId, value as string);
+        if (rate.error) {
+          return { error: rate.error, data: null };
+        }
         return await client
           .from("supplierQuote")
           .update({
             currencyCode: value,
-            exchangeRate: currency.data.exchangeRate,
+            exchangeRate: rate.data,
             updatedBy: userId,
             updatedAt: new Date().toISOString()
           })

@@ -9,6 +9,7 @@ import {
 import {
   Button,
   HStack,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -156,13 +157,13 @@ const IssueProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className="w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
-          </h3>
+          </Subheading>
           <HStack spacing={1}>
             <Tooltip>
               <TooltipTrigger asChild>

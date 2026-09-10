@@ -1,5 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import type { FunctionsResponse } from "@supabase/functions-js";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 export const recalculateFunction = inngest.createFunction(
@@ -28,23 +30,22 @@ export const recalculateFunction = inngest.createFunction(
             message: calculateQuantities.error?.message
           };
 
-        case "jobMakeMethodRequirements":
+        case "jobMakeMethodRequirements": {
           logger.info(
             `Recalculating job make method requirements for ${payload.id}`
           );
-          calculateQuantities = await recalculateJobMakeMethodRequirements(
-            serviceRole,
-            {
+          const { error: rescheduleError } =
+            await recalculateJobMakeMethodRequirements(serviceRole, {
               id: payload.id,
               companyId: payload.companyId,
               userId: payload.userId
-            }
-          );
+            });
 
           return {
-            success: !calculateQuantities.error,
-            message: calculateQuantities.error?.message
+            success: !rescheduleError,
+            message: rescheduleError?.message
           };
+        }
 
         default:
           return {
@@ -89,14 +90,32 @@ async function recalculateJobMakeMethodRequirements(
     companyId: string;
     userId: string;
   }
-) {
-  return client.functions.invoke("schedule", {
-    body: {
-      mode: "initial",
-      direction: "backward",
-      jobId: params.id,
+): Promise<{ error: Error | null }> {
+  // Forecast-first scheduling regenerates the WHOLE LOCATION; resolve the job's
+  // location and regenerate it IN-PROCESS (Node) — no edge cold-start or HTTP hop.
+  const { data: job, error } = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", params.id)
+    .eq("companyId", params.companyId)
+    .single();
+  if (error || !job?.locationId) {
+    return {
+      error: error ? new Error(error.message) : new Error("Job has no location")
+    };
+  }
+  try {
+    await runLocationSchedule({
+      db: getJobDatabaseClient(),
+      client,
+      locationId: job.locationId,
       companyId: params.companyId,
       userId: params.userId
-    }
-  });
+    });
+    return { error: null };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err : new Error("Failed to reschedule")
+    };
+  }
 }

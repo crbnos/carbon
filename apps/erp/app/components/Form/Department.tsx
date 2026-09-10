@@ -3,6 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
+import { Enumerable } from "~/components/Enumerable";
 import type { getDepartmentsList } from "~/modules/people";
 import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
 import { path } from "~/utils/path";
@@ -25,7 +26,10 @@ const Department = (props: DepartmentSelectProps) => {
     <>
       <CreatableCombobox
         ref={triggerRef}
-        options={options}
+        options={options.map((o) => ({
+          value: o.value,
+          label: <Enumerable value={o.label} />
+        }))}
         emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "Department"}

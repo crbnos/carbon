@@ -3,6 +3,7 @@ import {
   ShortcutKey,
   useDisclosure,
   useShortcutKeys,
+  useShortcutSequence,
   VStack
 } from "@carbon/react";
 import {
@@ -19,9 +20,9 @@ import {
 } from "@dnd-kit/sortable";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { AnchorHTMLAttributes } from "react";
-import { forwardRef, memo, useEffect } from "react";
+import { forwardRef, memo, useEffect, useMemo } from "react";
 import { LuSearch, LuSettings2 } from "react-icons/lu";
-import { Link, useMatches } from "react-router";
+import { Link, useMatches, useNavigate } from "react-router";
 import {
   useModules,
   useOptimisticLocation,
@@ -29,9 +30,10 @@ import {
   useSettingsModule
 } from "~/hooks";
 import { useImplementationNavItem } from "~/hooks/useImplementationNavItem";
+import { MODULE_GO_TO, MODULE_GO_TO_PREFIX, searchShortcut } from "~/shortcuts";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
-import { SearchModal, searchShortcut } from "../Topbar/Search";
+import { SearchModal } from "../Topbar/Search";
 import { HiddenModulesPopover } from "./HiddenModulesPopover";
 import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
@@ -56,6 +58,26 @@ const PrimaryNavigation = () => {
   }, new Set<string>());
 
   const editMode = useNavigationEditMode();
+
+  // g-then-letter module go-to, bound to the stable module `key` (order and
+  // visibility are per-user, so positions would be unstable).
+  const navigate = useNavigate();
+  const goToModules = useMemo(() => {
+    const map: Record<string, () => void> = {};
+    const targets = settingsModule ? [...links, settingsModule] : links;
+    for (const module of targets) {
+      const letter = MODULE_GO_TO[module.key];
+      if (letter) map[letter] = () => navigate(module.to);
+    }
+    return map;
+  }, [links, settingsModule, navigate]);
+  // Disabled while rearranging the rail — a stray `g`+letter would navigate
+  // away and discard the unsaved layout.
+  useShortcutSequence({
+    prefix: MODULE_GO_TO_PREFIX,
+    map: goToModules,
+    disabled: editMode.isEditing
+  });
 
   // The rail expands on hover. The search modal (a Radix dialog) toggles
   // document.body pointer-events, and restoring them on close fires a phantom
@@ -90,13 +112,22 @@ const PrimaryNavigation = () => {
   const isOpen = navigationPanel.isOpen || editMode.isEditing;
 
   return (
-    <div className="w-14 h-full flex-col z-50 hidden sm:flex">
+    // The wrapper (not just the inner nav) grows on expand, so the rail pushes
+    // the rest of the layout right instead of floating over it. The inner nav is
+    // `w-full` and follows the wrapper's animated width.
+    <div
+      data-state={isOpen ? "expanded" : "collapsed"}
+      className={cn(
+        "h-full flex-col z-50 hidden md:flex shrink-0",
+        "w-14 data-[state=expanded]:w-[13rem]",
+        "transition-[width] duration-200"
+      )}
+    >
       <nav
         data-state={isOpen ? "expanded" : "collapsed"}
         className={cn(
-          "bg-background py-2 group z-10 h-full w-14 data-[state=expanded]:w-[13rem]",
-          "flex flex-col justify-between data-[state=expanded]:shadow-xl data-[state=expanded]:border-r data-[state=expanded]:border-border",
-          "transition-width duration-200",
+          "bg-background py-2 group z-10 h-full w-full",
+          "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onMouseEnter={
@@ -300,7 +331,7 @@ const NavigationIconLink = forwardRef<
   ];
 
   const classes = [
-    "relative",
+    "relative text-foreground/70 hover:text-foreground",
     "h-10 w-10 group-data-[state=expanded]:w-full",
     "flex items-center rounded-md",
     "group-data-[state=collapsed]:justify-center",
@@ -310,7 +341,7 @@ const NavigationIconLink = forwardRef<
     "transition-[background-color,color,width] duration-100 ease-out",
     "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
     "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
-    !isActive && "hover:bg-accent hover:text-accent-foreground",
+    !isActive && "hover:bg-active/60 hover:text-active-foreground",
     isActive && "bg-active text-active-foreground dark:shadow-button-base",
     "group/item"
   ];

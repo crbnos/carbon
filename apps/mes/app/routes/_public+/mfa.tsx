@@ -142,7 +142,7 @@ function MfaCodeField({ result }: { result?: MfaResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" />;
+  return <InputOTP name="code" label="" autoFocus />;
 }
 
 export default function MfaRoute() {
@@ -166,7 +166,7 @@ export default function MfaRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <ValidatedForm fetcher={fetcher} validator={mfaValidator} method="post">
           <Hidden name="redirectTo" value={redirectTo} />
           <VStack spacing={4} className="items-center">
@@ -190,6 +190,7 @@ export default function MfaRoute() {
             <MfaCodeField result={fetcher.data} />
 
             <Submit
+              hideShortcutKey
               size="lg"
               className="w-full"
               withBlocker={false}

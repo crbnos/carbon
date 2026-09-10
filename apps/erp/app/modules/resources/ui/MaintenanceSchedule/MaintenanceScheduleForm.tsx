@@ -199,6 +199,13 @@ const MaintenanceScheduleForm = ({
                   label={t`Estimated Duration (minutes)`}
                   termId="maintenance-schedule-estimated-duration"
                   minValue={0}
+                  isOptional={false}
+                />
+                <Boolean
+                  name="takesWorkCenterOffline"
+                  label={t`Takes Work Center Offline`}
+                  description={t`Reserve the work center's capacity for this PM. Requires an estimated duration.`}
+                  bordered
                 />
                 {/* When the next preventive-maintenance dispatch should be
                     generated. Blank on a new schedule → the first one is

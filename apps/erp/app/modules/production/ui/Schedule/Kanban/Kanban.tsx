@@ -1,4 +1,4 @@
-import { ClientOnly, cn } from "@carbon/react";
+import { ClientOnly, cn, toast } from "@carbon/react";
 import type {
   Active,
   Announcements,
@@ -22,21 +22,27 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
+import { BatchItemCard } from "./components/BatchItemCard";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
 import { KanbanProvider } from "./context/KanbanContext";
 import {
+  calculateFractionalPriority,
   comparePriorityThenId,
   createDragOrigin,
   type DragOrigin,
   type DragPreview,
   getColumnPlacement,
-  getItemPlacement,
+  getInsertionIndex,
+  getItemsInColumn,
+  getLogicalSlot,
   isSamePlacement,
   isSamePreview,
+  planColumnReorder,
   resolveInsertionMarker
 } from "./placement";
 import type { Column, DisplaySettings, Item, Progress } from "./types";
+import { isBatchItem } from "./types";
 import {
   coordinateGetter,
   hasDraggableData,
@@ -90,11 +96,15 @@ function PreviewItemCard({
           )}
         />
       )}
-      <ItemCard
-        item={item}
-        isOverlay={isOverlay}
-        progressByItemId={progressByItemId}
-      />
+      {isBatchItem(item) ? (
+        <BatchItemCard item={item} isOverlay={isOverlay} />
+      ) : (
+        <ItemCard
+          item={item}
+          isOverlay={isOverlay}
+          progressByItemId={progressByItemId}
+        />
+      )}
     </div>
   );
 }
@@ -145,13 +155,43 @@ function resolveDragPlacement(
       return null;
     }
 
-    const placement = getItemPlacement(
-      origin,
+    // Compute the slot directly rather than via getItemPlacement so the
+    // insertion marker still renders when the two neighbors share a priority
+    // (no fractional gap) — the drop renumbers the column, so the preview must
+    // not disappear just because the fast-path priority is unavailable.
+    const destinationColumnId = overItem.columnId;
+    const destinationItems = getItemsInColumn(
       items,
-      overItem.columnId,
-      overItem.id
+      destinationColumnId,
+      origin.item.id
     );
-    return placement ? { ...placement, targetType: "item" } : null;
+    const sameColumn = origin.placement.columnId === destinationColumnId;
+    const insertionIndex = getInsertionIndex(
+      destinationItems,
+      overItem.id,
+      sameColumn,
+      origin.placement.slot.index
+    );
+    if (insertionIndex === null) return null;
+
+    const fractionalPriority = calculateFractionalPriority(
+      destinationItems[insertionIndex - 1]?.priority,
+      destinationItems[insertionIndex]?.priority
+    );
+    // The marker only needs the slot; the priority just has to be stable per
+    // slot so isSamePreview can dedupe. Fall back to the previous neighbor's
+    // priority (or the drag-start priority at the top of the column).
+    const priority =
+      fractionalPriority ??
+      destinationItems[insertionIndex - 1]?.priority ??
+      origin.placement.priority;
+
+    return {
+      columnId: destinationColumnId,
+      priority,
+      slot: getLogicalSlot(destinationItems, insertionIndex),
+      targetType: "item"
+    };
   }
 
   if (overData?.type === "column") {
@@ -175,6 +215,131 @@ function resolveDragPlacement(
   return null;
 }
 
+type DragCommit = {
+  columnId: string;
+  updates: { id: string; priority: number }[];
+};
+
+/**
+ * Resolves the priority writes a drop should persist. Unlike
+ * `resolveDragPlacement` (which drives the live insertion marker and gives up
+ * when the two neighbors have no numeric gap), this never abandons a valid drop
+ * over a priority collision: it falls back to renumbering the destination column
+ * so a fully equal-priority column — every op still at the default `1` because
+ * the scheduler has not sequenced them — can still be reordered. A no-op drop
+ * (dropped back in place, invalid/incompatible target) returns null.
+ */
+function resolveDragCommit(
+  origin: OperationDragOrigin,
+  over: Over | null,
+  items: readonly Item[],
+  itemsById: ReadonlyMap<string, Item>,
+  columnsById: ReadonlyMap<string, Column>
+): DragCommit | null {
+  if (
+    !over ||
+    over.disabled ||
+    !hasDraggableData(over) ||
+    !itemsById.has(origin.item.id)
+  ) {
+    return null;
+  }
+
+  const overId = String(over.id);
+  if (overId === origin.item.id) return null;
+
+  const overData = over.data.current;
+  if (overData?.type === "item") {
+    const overItem = itemsById.get(overId);
+    if (
+      !overItem ||
+      overData.item.id !== overId ||
+      overData.item.columnId !== overItem.columnId ||
+      !columnsById.has(overItem.columnId)
+    ) {
+      return null;
+    }
+
+    const destinationColumn = columnsById.get(overItem.columnId);
+    if (!destinationColumn?.type.includes(origin.item.columnType)) {
+      return null;
+    }
+
+    const destinationColumnId = overItem.columnId;
+    const destinationItems = getItemsInColumn(
+      items,
+      destinationColumnId,
+      origin.item.id
+    );
+    const sameColumn = origin.placement.columnId === destinationColumnId;
+    const insertionIndex = getInsertionIndex(
+      destinationItems,
+      overItem.id,
+      sameColumn,
+      origin.placement.slot.index
+    );
+    if (insertionIndex === null) return null;
+
+    const slot = getLogicalSlot(destinationItems, insertionIndex);
+    if (
+      isSamePlacement(origin.placement, {
+        columnId: destinationColumnId,
+        priority: origin.placement.priority,
+        slot
+      })
+    ) {
+      return null;
+    }
+
+    const fractionalPriority = calculateFractionalPriority(
+      destinationItems[insertionIndex - 1]?.priority,
+      destinationItems[insertionIndex]?.priority
+    );
+    const updates =
+      fractionalPriority === null
+        ? planColumnReorder(origin, items, destinationColumnId, insertionIndex)
+        : [{ id: origin.item.id, priority: fractionalPriority }];
+
+    return updates.length ? { columnId: destinationColumnId, updates } : null;
+  }
+
+  if (overData?.type === "column") {
+    if (
+      overData.column.id !== overId ||
+      !columnsById.has(overId) ||
+      overId === origin.placement.columnId
+    ) {
+      return null;
+    }
+
+    const destinationColumn = columnsById.get(overId);
+    if (!destinationColumn?.type.includes(origin.item.columnType)) {
+      return null;
+    }
+
+    const placement = getColumnPlacement(origin, items, overId);
+    if (placement) {
+      return {
+        columnId: overId,
+        updates: [{ id: origin.item.id, priority: placement.priority }]
+      };
+    }
+
+    // A background/empty-column drop whose origin priority collides with an
+    // existing card — renumber, appending the dragged op to the column's end.
+    const destinationItems = getItemsInColumn(items, overId, origin.item.id);
+    const updates = planColumnReorder(
+      origin,
+      items,
+      overId,
+      destinationItems.length
+    );
+    return updates.length ? { columnId: overId, updates } : null;
+  }
+
+  return null;
+}
+
 const Kanban = ({
   columns,
   items: initialItems,
@@ -183,6 +348,42 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
+
+  // Surface a failed batch work-center reassignment (drag). The optimistic move
+  // snaps back on revalidation, so without this the rejection would be silent —
+  // the create/add path toasts via its own fetcher; this covers the drag path
+  // (intent="update"), which submits through useSubmit and has no result reader.
+  // A fetcher's formData is cleared once it goes idle, so capture the intent
+  // while it is still submitting and read the result on idle.
+  const batchUpdateFetchers = useFetchers();
+  const pendingBatchIntent = useRef<Map<string, string>>(new Map());
+  const toastedBatchUpdates = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const f of batchUpdateFetchers) {
+      if (f.state !== "idle") {
+        const intent = f.formData?.get("intent");
+        if (
+          f.formAction === path.to.priorityBatchingUpdate &&
+          typeof intent === "string"
+        ) {
+          pendingBatchIntent.current.set(f.key, intent);
+        }
+        toastedBatchUpdates.current.delete(f.key);
+        continue;
+      }
+      if (pendingBatchIntent.current.get(f.key) !== "update") continue;
+      const result = f.data as
+        | { success?: boolean; message?: string }
+        | undefined;
+      if (result === undefined) continue;
+      if (result.success === false && !toastedBatchUpdates.current.has(f.key)) {
+        toastedBatchUpdates.current.add(f.key);
+        toast.error(result.message ?? "Failed to move batch");
+      }
+      pendingBatchIntent.current.delete(f.key);
+    }
+  }, [batchUpdateFetchers]);
+
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
     // Get stored column order from localStorage
@@ -394,25 +595,30 @@ const Kanban = ({
                       progressByItemId={progressByItemId}
                     />
                   )}
-                  {activeItem && (
-                    <ItemCard
-                      // @ts-expect-error TS2322 - TODO: fix type
-                      item={{
-                        ...activeItem,
-                        status: progressByItemId[activeItem.id]?.active
-                          ? "In Progress"
-                          : activeItem.status,
-                        employeeIds: progressByItemId[activeItem.id]?.employees
-                          ? Array.from(
-                              progressByItemId[activeItem.id].employees!
-                            )
-                          : undefined,
-                        progress: progressByItemId[activeItem.id]?.progress ?? 0
-                      }}
-                      isOverlay
-                      progressByItemId={progressByItemId}
-                    />
-                  )}
+                  {activeItem &&
+                    (isBatchItem(activeItem) ? (
+                      <BatchItemCard item={activeItem} isOverlay />
+                    ) : (
+                      <ItemCard
+                        item={{
+                          ...activeItem,
+                          // @ts-expect-error TS2322 - TODO: fix type
+                          status: progressByItemId[activeItem.id]?.active
+                            ? "In Progress"
+                            : activeItem.status,
+                          employeeIds: progressByItemId[activeItem.id]
+                            ?.employees
+                            ? Array.from(
+                                progressByItemId[activeItem.id].employees!
+                              )
+                            : undefined,
+                          progress:
+                            progressByItemId[activeItem.id]?.progress ?? 0
+                        }}
+                        isOverlay
+                        progressByItemId={progressByItemId}
+                      />
+                    ))}
                 </DragOverlay>,
                 document.body
               )
@@ -507,7 +713,11 @@ const Kanban = ({
       origin &&
       isOriginItemDrag(active, origin)
     ) {
-      const placement = resolveDragPlacement(
+      // Resolve the actual priority writes. A pure reorder needs a single
+      // fractional priority; a collision (e.g. an unsequenced column where every
+      // card still sits at the default priority) renumbers the whole column, so
+      // several cards move at once.
+      const commit = resolveDragCommit(
         origin,
         over,
         items,
@@ -515,21 +725,69 @@ const Kanban = ({
         columnsById
       );
 
-      if (placement && !isSamePlacement(origin.placement, placement)) {
-        submit(
-          {
-            id: origin.item.id,
-            columnId: placement.columnId,
-            priority: placement.priority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleOperationUpdate,
-            navigate: false,
-            flushSync: true,
-            fetcherKey: `item:${origin.item.id}`
+      if (commit) {
+        if (
+          isBatchItem(origin.item) &&
+          commit.columnId !== origin.placement.columnId
+        ) {
+          // A batch dropped on a DIFFERENT work center reassigns the whole batch
+          // (the edge fn writes the work center to every member) and reschedules;
+          // the priority renumber is left to the resulting replan wave.
+          submit(
+            {
+              intent: "update",
+              batchId: origin.item.batchId,
+              workCenterId: commit.columnId
+            },
+            {
+              method: "post",
+              action: path.to.priorityBatchingUpdate,
+              navigate: false,
+              flushSync: true,
+              fetcherKey: `item:${origin.item.id}`
+            }
+          );
+        } else {
+          // Within-column reorder (or a non-batch cross-column move). Each
+          // renumbered card writes through its own endpoint: an operation writes
+          // its priority (+ work center), a batch card writes every member's
+          // priority so min(member) lands at the batch's new dispatch slot.
+          const flushSync = commit.updates.length === 1;
+          for (const update of commit.updates) {
+            const target = itemsById.get(update.id);
+            if (target && isBatchItem(target)) {
+              submit(
+                {
+                  intent: "reprioritize",
+                  batchId: target.batchId,
+                  priority: update.priority
+                },
+                {
+                  method: "post",
+                  action: path.to.priorityBatchingUpdate,
+                  navigate: false,
+                  flushSync,
+                  fetcherKey: `item:${update.id}`
+                }
+              );
+            } else {
+              submit(
+                {
+                  id: update.id,
+                  columnId: commit.columnId,
+                  priority: update.priority
+                },
+                {
+                  method: "post",
+                  action: path.to.priorityOperationUpdate,
+                  navigate: false,
+                  flushSync,
+                  fetcherKey: `item:${update.id}`
+                }
+              );
+            }
           }
-        );
+        }
       }
     }
 
@@ -568,21 +826,56 @@ function usePendingItems() {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
-  return useFetchers()
+  const fetchers = useFetchers();
+
+  const operationMoves = fetchers
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.scheduleOperationUpdate;
+      return fetcher.formAction === path.to.priorityOperationUpdate;
     })
     .map((fetcher) => {
       let columnId = String(fetcher.formData.get("columnId"));
       let id = String(fetcher.formData.get("id"));
       let priority = Number(fetcher.formData.get("priority"));
-      let item: { id: string; priority: number; columnId: string } = {
+      let item: { id: string; priority?: number; columnId: string } = {
         id,
         priority,
         columnId
       };
       return item;
     });
+
+  // A batch work-center reassignment in flight: keep the batch card in its
+  // destination column until the loader revalidates.
+  const batchMoves = fetchers
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        fetcher.formAction === path.to.priorityBatchingUpdate &&
+        fetcher.formData?.get("intent") === "update" &&
+        fetcher.formData?.has("workCenterId")
+      );
+    })
+    .map((fetcher) => ({
+      id: `batch:${String(fetcher.formData.get("batchId"))}`,
+      columnId: String(fetcher.formData.get("workCenterId"))
+    }));
+
+  // A within-column batch reorder in flight: the card's board priority is
+  // min(member priority), which the reprioritize action sets to a single value,
+  // so mirror that value onto the card until the loader revalidates.
+  const batchReprioritizes = fetchers
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        fetcher.formAction === path.to.priorityBatchingUpdate &&
+        fetcher.formData?.get("intent") === "reprioritize" &&
+        fetcher.formData?.has("priority")
+      );
+    })
+    .map((fetcher) => ({
+      id: `batch:${String(fetcher.formData.get("batchId"))}`,
+      priority: Number(fetcher.formData.get("priority"))
+    }));
+
+  return [...operationMoves, ...batchMoves, ...batchReprioritizes];
 }
 
 export default Kanban;

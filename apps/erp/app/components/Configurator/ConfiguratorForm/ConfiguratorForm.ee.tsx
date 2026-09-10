@@ -53,22 +53,22 @@ function getParameterSchema(parameter: ConfigurationParameter) {
     case "numeric":
       return zfd.numeric(
         z.number({
-          required_error: `${parameter.label} is required`
+          error: `${parameter.label} is required`
         })
       );
     case "text":
       return z.string({
-        required_error: `${parameter.label} is required`
+        error: `${parameter.label} is required`
       });
     case "list":
       return z.enum(parameter.listOptions as [string, ...string[]], {
-        required_error: `${parameter.label} is required`
+        error: `${parameter.label} is required`
       });
     case "boolean":
       return z.boolean();
     case "material":
       return z.string({
-        required_error: `${parameter.label} is required`
+        error: `${parameter.label} is required`
       });
     default:
       return z.any();

@@ -10,7 +10,7 @@ paths:
 
 Syncs Carbon entities <-> external accounting providers. **Three live providers**: Xero (`ProviderID.XERO`), QuickBooks Online (`ProviderID.QBO`), and Rillet (`ProviderID.RILLET`). (QuickBooks *Desktop* shipped then was removed 2026-08-01; Sage was never built.) `SyncFactory` is a **provider-keyed registry** (`registries[providerId][entityType]`) — each provider's `index.ts` barrel calls `SyncFactory.register(...)`. Runs on **Inngest** (the old trigger.dev `from-/to-accounting-sync` task design is gone — do not look for `UPSERT_MAP`/`DELETE_MAP` or a `trigger/` dir; neither exists).
 
-Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (v5 — ONE state-shaped decision core; events are hints; the authoritative design of record) and `.ai/specs/implemented/2026-08-05-accounting-document-representation.md` (AR/AP documents replay their posting journal; provider items non-tracked). The superseded v2/v3/v4 specs (engine + ledger + pull sweep + Phase F/G payment sync-back; journal policy/dimensions/tie-out; delivery robustness — converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement) were removed 2026-08-13 — their shipped behavior is documented in THIS rule; their history is in git. **Always-on (implemented 2026-08-13, plan `.ai/plans/2026-08-13-accounting-sync-automated-postings-only.md` Tasks 1–6+8):** posting sync mirrors Carbon's automated GL postings whenever an accounting integration is connected — no master `postingSync.enabled` toggle, no per-source-type on/off, no `journalEntry` entity gate (defaulted on in `DEFAULT_SYNC_CONFIG` and forced on in every `build*SyncConfig`). `Manual` journals NEVER sync (`POSTING_POLICY.Manual.syncable: false` → permanent `MANUAL_DISABLED`). Legacy `enabled` fields stay in the stored schema for parse-compat but are never read; per-type granularity (individual vs daily-summary) remains the only per-type setting. Plan Tasks 7 (reversal/void propagation audit) and 9 (lock AR/AP families to documents) remain open.
+Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (v5 — ONE state-shaped decision core; events are hints; the authoritative design of record) and `.ai/specs/implemented/2026-08-05-accounting-document-representation.md` (AR/AP documents replay their posting journal; provider items non-tracked). The superseded v2/v3/v4 specs (engine + ledger + pull sweep + Phase F/G payment sync-back; journal policy/dimensions/tie-out; delivery robustness — converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement) were removed 2026-08-13 — their shipped behavior is documented in THIS rule; their history is in git. **Always-on (implemented 2026-08-13, plan `.ai/plans/2026-08-13-accounting-sync-automated-postings-only.md` Tasks 1–6+8):** posting sync mirrors Carbon's automated GL postings whenever an accounting integration is connected — no master `postingSync.enabled` toggle, no per-source-type on/off, no `journalEntry` entity gate (defaulted on in `DEFAULT_SYNC_CONFIG` and forced on in every `build*SyncConfig`). `Manual` and `Opening Balance` journals NEVER sync (`POSTING_POLICY[...].syncable: false` → the `MANUAL_DISABLED` exclude at `posting.ts`; the external ledger owns manual journals and its own opening balances). Note the exclude `reason`/`message` are still worded "Manual" for both — the gate is `syncable === false`, not a name check. Legacy `enabled` fields stay in the stored schema for parse-compat but are never read; per-type granularity (individual vs daily-summary) remains the only per-type setting. Plan Tasks 7 (reversal/void propagation audit) and 9 (lock AR/AP families to documents) remain open.
 
 ## Architecture: class-per-entity syncers, not a handler map
 
@@ -121,7 +121,12 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
   to Carbon's GL** — no double-count because `documents`-mode `Payment` journals are
   DOC_BACKED-excluded from outbound push (the payment journal never re-posts to the
   provider). `getSettledInvoiceStatus` is retained for tests only (status is
-  view-derived).
+  view-derived). Provider-omitted rates remain `null` until authoritative company
+  and currency reads confirm identity; foreign payments require a valid snapshot.
+  Inbound payment amounts/source principal stay in document currency, while
+  target principal is base. Outbound prior-credit-funded payments are rejected
+  before provider writes because the existing provider cash endpoints cannot
+  represent those allocations.
 - Provider syncers: `providers/{rillet,quickbooks-online,xero}/entities/payment.ts`.
   Composite entity-id convention: AR = `<documentRemoteId>:<paymentRemoteId>` (no
   prefix, back-compat), AP = `bill:<billRemoteId>:<paymentRemoteId>`.
@@ -155,8 +160,13 @@ a later pull no-ops. `supportsPaymentPush` gates the whole thing — **Rillet, X
 AND QBO all set it true** (2026-08-14 parity). The capability set
 `PAYMENT_PUSH_PROVIDERS` (`core/payment-syncer.ts`, must stay in sync with the
 syncer flags) is what the reconcile executor and outbound sweep read instead of the
-old `providerId === "rillet"` literal. v1 is single-settlement, base-currency, no
-discount, no void-echo — everything else parks as Skipped. The paid date goes
+old `providerId === "rillet"` literal. Push validation controls supported
+currency, funding and discount shapes; unsupported payments park as Skipped.
+Rillet supports native voids for Carbon-origin payments: every persisted mapping
+under the payment's single/fan-out identity is deleted remotely, then marked
+`metadata.voided=true` in one local transaction. Mapping identities survive;
+404 means the desired deletion already happened, while provider refusals remain
+visible failures. Pulled/provider-origin payments never echo deletion. The paid date goes
 through `toPostingDateString` (Kysely's pg driver returns DATE columns as JS
 `Date`s; a bare `.slice` crashed the push). Provider adapters (`pushRemotePayment`):
 **Rillet** `createInvoicePayment`/`createBillPayment` (`POST /{invoices,bills}/{id}/payments`,
@@ -176,28 +186,40 @@ removed v2 engine spec; the behavior is documented in this section — see git f
 
 ## Document representation model (bills, invoices, items)
 
-Every AR/AP **document** Carbon pushes reproduces its Carbon posting journal, so
-the provider's GL for that document equals Carbon's. Spec:
+AR/AP **documents** preserve Carbon's component amounts and account effects.
+Base-currency GL parity also requires the provider to accept Carbon's FX snapshot.
+Rillet uses REVENUE_RECOGNITION_ONLY invoices with a fixed rate and same-day
+recognition; AR_ONLY ignores the invoice rate and initially credits deferred
+revenue, so it cannot mirror Carbon's posting. Spec:
 `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`.
 
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
   NOT the item's account. `core/document-costing.ts` is the shared core:
-  `loadBillCostingLines(db, { companyId, billId, payablesAccountId })` reads the
+  `loadBillCostingLines(db, { companyId, billId })` reads the
   posted journal (`journal.sourceType='Purchase Invoice'`, `status='Posted'`),
-  drops the AP control line, and returns base-currency debit-signed
-  `CostingLine[]` (+ `currencyCode`/`exchangeRate`). Item labels are joined via
+  excludes original AP/IC control rows using `classifyAccountingPostingRole` from
+  `@carbon/utils` (never today's payables default), and returns base-currency debit-signed
+  `CostingLine[]` (+ `currencyCode`/`exchangeRate`, document total, base currency and precision). Item labels are joined via
   `journalLine.documentLineReference` (`purchase-invoice:<purchaseOrderLineId>`
   → `purchaseOrderLine.itemId` → `item`); direct no-PO / variance lines have
-  `sourceItem: undefined`. `toTransactionCurrencyLines(lines, exchangeRate)`
-  converts to the invoice's transaction currency (÷ rate, residue into the
-  largest-|amount| line; rate 1 = pass-through). The item is a **description
+  `sourceItem: undefined`. `toTransactionCurrencyLines(lines, {exchangeRate, documentTotal, decimalPlaces})`
+  multiplies base values by the foreign-per-base rate, rounds at document
+  currency precision, and reconciles only a permitted rounding residual to the
+  largest absolute line; its storage envelope derives from shared `SCALE`.
+  Identity conversion also rounds; signed PPV is retained. The item is a **description
   label only** (`costingLineItemLabel`). Bill lines are **tax-neutral** (the
   purchase posting folds tax into cost): Rillet no `tax_rate`, QBO no
   `TxnTaxDetail`, Xero `TaxType: "NONE"`. FX bills pin the provider rate
-  (Rillet `exchange_rate`, QBO `CurrencyRef`+`ExchangeRate`, Xero `CurrencyRate`).
+  (Rillet named `exchange_rate` object, QBO `CurrencyRef` + reciprocal
+  `ExchangeRate = 1/r`, Xero `CurrencyRate = r`, including foreign 1:1 snapshots).
+  Rillet's directed pair is document currency → subsidiary base currency at
+  `1/r`, not Carbon's base → document convention. Foreign1:1 must stay explicit.
+  This direction is verified against the sandbox's independent journal report.
   Every bill syncer has a posted-status `shouldSync` (Draft excluded — no
-  journal to replay). Unmapped/account-less/no-journal lines throw the
-  structured `UNMAPPED_ACCOUNTS` Warning.
+  journal to replay). Missing original journal/control/account metadata throws
+  the structured `UNMAPPED_ACCOUNTS` Warning before numeric reconciliation.
+  A genuine costing amount discrepancy remains a failure. Provider builders
+  accept costing-only rows and do not repeat the AP filter.
   - QBO bill emits `AccountBasedExpenseLineDetail` from a NEW bill-only builder
     (`buildQboBillLines`); it no longer uses the shared `buildQboExpenseLines`
     or `ensureDependencySynced("item")`. Xero bill uses `buildXeroBillLineItems`.
@@ -205,11 +227,58 @@ the provider's GL for that document equals Carbon's. Spec:
     QBO/Xero substitute it). Account codes resolve through the shared
     `loadAccountCodesById` (Xero) / `loadQboAccountRefsById` (QBO) /
     `loadRilletAccountCodesById` (Rillet).
-- **AR invoices = item-referenced to the item's REVENUE account**
-  (`accountDefault.salesAccount` → the account-mapping code/ref — the same
-  resolution for Rillet product `account_code`, QBO `IncomeAccountRef`, Xero
-  invoice `AccountCode`), NOT the journal line and NOT the blunt
-  `defaultSalesAccountCode`. COGS stays on the pushed `Sales Shipment` journal.
+- **AR invoices preserve separate sales, shipping and native tax components.**
+  `core/sales-invoice-source.ts` is the single typed batch loader for all three
+  invoice adapters: authoritative view totals, add-ons, line/header shipping,
+  group-scoped currency metadata and the original posted Shipping Revenue
+  account. `core/sales-document-components.ts` shares the internal posting
+  breakdown, converts base amounts once and reconciles document rounding
+  through `distributeRoundingResidual` (`@carbon/utils`) — **largest remainder,
+  one minor unit per component**, ordered by component id so an exact tie
+  resolves the same way whatever order the lines arrive in. Do NOT go back to
+  concentrating the residual on a single component: that breaks the component's
+  own percent/amount pair, and QBO's `tax = net × percent` preflight
+  (`invoice-tax.ts`) then refuses the invoice with a message blaming the
+  customer's tax configuration, which they cannot act on. A component's unit
+  price is DERIVED from its reconciled net when the stored `convertedUnitPrice`
+  mirror and the converted extension straddle a rounding tie (the two are
+  rounded on independent float paths); it still refuses when no representable
+  price can reproduce the net, which is a real quantity/total contradiction.
+  Original journal reads scope company, document, source type and Posted
+  status; the shared role selector excludes VOID descriptions. Missing or
+  ambiguous original shipping accounts refuse sync before dependency writes.
+  Changing defaults after posting cannot change the account used on retry.
+  Merchandise and add-ons retain the item's existing sales mapping. QBO and
+  Rillet provision reusable service/product helpers under `shippingItem`, keyed
+  by the original shipping account (Rillet also includes base currency).
+  Tax appears once through native provider fields; COGS stays on the pushed
+  `Sales Shipment` journal.
+  - Xero sends one monetary unit per component, keeping original quantity and
+    unit price in Description. This preserves net and native tax for bulk
+    quantities and fine unit prices. Actual invoice/bill POSTs use `unitdp=4`;
+    amounts that cannot be represented at Xero's two-decimal monetary boundary
+    are refused before document writes rather than rounded away. Tax magnitude
+    cannot exceed the monetary line unit; exotic/negative taxable adjustments
+    still need provider acceptance. [Xero rounding contract](https://developer.xero.com/documentation/guides/how-to-guides/rounding-in-xero/).
+    CurrencyRate is omitted only for identical currencies; foreign 1:1 stays
+    explicit. Preflight and mocked transports do not prove returned-provider
+    totals; connected acceptance must compare those independently.
+  - QBO US line `TAX`/`NON` values are documented protocol markers, so an
+    untaxed US invoice does not require catalog marker rows. Nonzero US
+    transaction tax rates and all non-US line codes still resolve from the
+    real active catalog; missing/ambiguous configuration raises
+    `UNMAPPED_TAX_CODES` before dependencies. Failed catalog reads evict the
+    cached promise so another invoice can retry. [Intuit SDK tax contract](https://intuit.github.io/QuickBooks-V3-PHP-SDK/quickstart.html#constructing-entities-with-tax).
+  - Rillet REVENUE_RECOGNITION_ONLY accepts the same directed fixed rate as bills.
+    Each item has a DAILY revenue period beginning and ending on Carbon's
+    posting date, also used as the remote invoice/FX date. The interim
+    deferred-revenue entries net to zero and recognition
+    credits the mapped revenue account; shipping retains its original-account
+    override. Native invoice/bill DELETE handles Carbon Voided status before
+    the mapped-create idempotency shortcut. Reconciliation and the outbound
+    sweep include mapped voided documents/payments, and mapping tombstones stop
+    repeated deletes. Compare independent remote GL, including recognition
+    and reversal, instead of treating create HTTP200 as accounting parity.
 - **Provider items are non-tracked** so the provider never posts inventory
   (bills) or COGS (invoices): Xero pushes `IsTrackedAsInventory: false` on
   create and OMITS the flag on update (Xero rejects untracking an item with

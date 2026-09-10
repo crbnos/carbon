@@ -169,11 +169,6 @@ verify_jwt = true
 # static_files = [ "./functions/post-sales-invoice/*.html" ]
 
 
-[functions.mrp]
-enabled = true
-verify_jwt = true
-
-
 [functions.pick]
 enabled = true
 verify_jwt = true
@@ -218,6 +213,11 @@ entrypoint = "./functions/correct-stock-movement/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-nonconformance/index.ts"
+
+[functions.batch-operations]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/batch-operations/index.ts"
 
 
 [functions.transcription]

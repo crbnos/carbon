@@ -17,7 +17,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 
 ## Never
 
-- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **One deliberate exception:** `math.ts` re-exports `packages/database/supabase/functions/shared/precision.ts` by relative path. That file is dependency-free pure TS and lives there because the Supabase edge runtime only mounts `supabase/functions/`; it is not a package import and not something to "fix" (same pattern as `packages/database/src/sampling.ts`).
+- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate edge-shared utilities:** `precision.ts`, `accounting-currency.ts`, `accounting-posting.ts`, `payment-funding.ts`, `sales-posting-amounts.ts`, `batch-time-split.ts`, and `batch-compatibility.ts` each re-export their namesake under `packages/database/supabase/functions/shared/` by relative path (`math.ts` consumes `precision.ts`). Those implementations live there because the Supabase edge runtime only mounts `supabase/functions/`; re-exporting rather than duplicating keeps ONE source of truth so the Node and Deno sides never drift. They are client-safe source imports, not imports of the server/database package, and not something to "fix" (same pattern as `packages/database/src/sampling.ts`). Keep their dependency graphs pure.
 - Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers).
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
@@ -33,12 +33,17 @@ pnpm --filter @carbon/utils typecheck
 | Module | Provides |
 |--------|----------|
 | `accounting` | Currency formatting, financial calculations |
+| `accounting-currency` | Explicit foreign-per-base conversion and settlement FX |
+| `accounting-posting` | Original journal role vocabulary: `classifyAccountingPostingRole` maps a journal line's description by EXACT match — `Accounts Receivable`/`IC Receivables` → Receivables, `Accounts Payable`/`IC Payables` → Payables, `Shipping Revenue`, `Sales Account` — and returns `null` for anything else, which is how a `VOID: …` reversal line falls out (there is no explicit void branch) |
+| `payment-funding` | Shared effective-settlement, invoice/funding balance reducers and exact document-principal allocation; callers own tenant/status/reservation queries |
+| `sales-posting-amounts` | Pure sales component normalization and posting calculations |
 | `arrays` | Array manipulation, grouping, deduplication |
 | `bom` | Bill of Materials traversal and level computation |
-| `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`) |
+| `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |
 | `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Mirrored for Deno at `packages/database/supabase/functions/lib/datetime.ts` — keep in sync |
 | `hash` | The repo's stable content hashes — `fnv1a32`/`fnv1a64` (cache and idempotency keys) and `getBucket`. Browser-safe; never add `node:crypto` here |
-| `math` | `clamp`/`lerp`/`inverseLerp`, plus the whole numeric-precision API re-exported from the edge-runtime module: `SCALE`, `EPSILON`, `round`, `scrapAllowance`, `applyRate`, `deriveRate`, `isBalanced`, `assertBalanced`, `RoundingMode` (re-exported from `precision.ts`) |
+| `math` | `clamp`/`lerp`/`inverseLerp` only — it re-exports nothing |
+| `precision` | The whole numeric-precision API, re-exported from the edge-runtime module: `SCALE`, `EPSILON`, `RoundingMode`, `round`, `distributeRoundingResidual`, `scrapAllowance`, `applyRate`, `deriveRate`, `isBalanced`, `assertBalanced` |
 | `format` | The ONLY place display/input digit counts are chosen: `moneyFormatOptions` (settlement — the currency's decimals are floor AND ceiling), `rateFormatOptions` (per-unit RATE — those decimals are only the floor, ceiling is `SCALE`), the `PERCENT_FORMAT` / `PERCENT_POINTS_FORMAT` / `SCALE_FORMAT` constants, `cldrCurrencyDecimals`, their `format*` helpers, and `INPUT_FORMAT` / `INPUT_STEP` for editable fields. Call sites pick a KIND, never a digit count |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |

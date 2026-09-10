@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { SelectControlled, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -30,10 +30,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBlocks,
   LuChevronRight,
+  LuCirclePlay,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
@@ -44,7 +45,14 @@ import { RiProgress4Line } from "react-icons/ri";
 import { Link, useFetcher, useLocation, useParams } from "react-router";
 import { PrintButton } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
-import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
+import {
+  Combobox,
+  Hidden,
+  Item,
+  SelectControlled,
+  Submit,
+  useConfigurableItems
+} from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import {
@@ -225,6 +233,67 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   };
 
+  // Source-method versions for the Get Method modal's item tab. Separate from
+  // `makeMethods` above: Save Method lists Draft versions only (the writable
+  // ones), while Get Method can read ANY version of the source item's method.
+  const [sourceMakeMethods, setSourceMakeMethods] = useState<
+    { label: JSX.Element; value: string }[]
+  >([]);
+  const [selectedSourceVersion, setSelectedSourceVersion] = useState<
+    string | null
+  >(null);
+
+  const sourceVersionRequestRef = useRef(0);
+  const getSourceMakeMethods = async (itemId: string | null) => {
+    const requestId = ++sourceVersionRequestRef.current;
+    setSourceMakeMethods([]);
+    setSelectedSourceVersion(null);
+    if (!itemId || !carbon) return;
+
+    const [versions, activeVersion] = await Promise.all([
+      carbon
+        .from("makeMethod")
+        .select("id, version, status")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .order("version", { ascending: false }),
+      // The default mirrors what get-method uses when no version is chosen:
+      // the Active version, else the highest non-archived (which can be a
+      // Draft). The view owns that ranking — don't re-derive it here.
+      carbon
+        .from("activeMakeMethods")
+        .select("id")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+
+    // A newer selection superseded this load — drop it, or a slow item A's
+    // versions could render (and submit a versionId) against item B's sourceId.
+    if (requestId !== sourceVersionRequestRef.current) return;
+
+    if (versions.error) {
+      toast.error(versions.error.message);
+      return;
+    }
+
+    setSourceMakeMethods(
+      (versions.data ?? []).map(({ id, version, status }) => ({
+        label: (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">V{version}</Badge>{" "}
+            <MakeMethodVersionStatus status={status} />
+          </div>
+        ),
+        value: id
+      }))
+    );
+
+    if (activeVersion.data?.id) {
+      setSelectedSourceVersion(activeVersion.data.id);
+    }
+  };
+
   useMount(() => {
     if (isJobMethod && routeData?.job.itemId) {
       getMakeMethods(routeData.job.itemId);
@@ -242,7 +311,13 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                   isLoading={isGetMethodLoading}
                   isDisabled={isDisabled || isGetMethodLoading}
                   leftIcon={<LuGitBranch />}
-                  onClick={getMethodModal.onOpen}
+                  onClick={() => {
+                    // The modal's Item picker opens empty — clear any versions
+                    // loaded on a previous open so the two can't disagree.
+                    setSourceMakeMethods([]);
+                    setSelectedSourceVersion(null);
+                    getMethodModal.onOpen();
+                  }}
                 >
                   <Trans>Get Method</Trans>
                 </MenubarItem>
@@ -302,300 +377,327 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
             </HStack>
           </Menubar>
         )}
-      {getMethodModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              getMethodModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={path.to.jobMethodGet}
-              validator={getJobMethodValidator}
-              onSubmit={getMethodModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Get Method</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  Overwrite the job method with the source method
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Tabs defaultValue="item" className="w-full">
-                  {isJobMethod && (
-                    <TabsList className="grid w-full grid-cols-2 mb-4">
-                      <TabsTrigger value="item">
-                        <LuBlocks className="mr-2" /> Item
-                      </TabsTrigger>
-                      <TabsTrigger value="quote">
-                        <RiProgress4Line className="mr-2" />
-                        <Trans>Quote</Trans>
-                      </TabsTrigger>
-                    </TabsList>
-                  )}
-                  <TabsContent value="item">
-                    {isJobMethod ? (
-                      <>
-                        <Hidden name="type" value="item" />
-                        <Hidden name="targetId" value={jobId} />
-                      </>
-                    ) : (
-                      <>
-                        <Hidden name="type" value="method" />
-                        <Hidden name="targetId" value={methodId!} />
-                      </>
-                    )}
-
-                    <VStack spacing={4}>
-                      {hasMethods && (
-                        <Alert variant="destructive">
-                          <LuTriangleAlert className="h-4 w-4" />
-                          <AlertTitle>
-                            <Trans>
-                              This will overwrite the existing job method
-                            </Trans>
-                          </AlertTitle>
-                        </Alert>
-                      )}
-                      <Item
-                        name="sourceId"
-                        label={t`Source Method`}
-                        termId="method"
-                        type={(routeData?.job.itemType ?? "Part") as "Part"}
-                        blacklist={configurableItemIds}
-                        includeInactive={includeInactive === true}
-                        locationId={routeData?.job?.locationId ?? undefined}
-                        replenishmentSystem="Make"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="include-inactive"
-                          checked={includeInactive}
-                          onCheckedChange={setIncludeInactive}
-                        />
-                        <label
-                          htmlFor="include-inactive"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          <Trans>Include Inactive</Trans>
-                        </label>
-                      </div>
-
-                      <AdvancedSection onChange={setHasMethodParts} />
-                    </VStack>
-                  </TabsContent>
-                  <TabsContent value="quote">
-                    <Hidden name="type" value="quoteLine" />
-                    <Hidden name="targetId" value={jobId} />
-                    <VStack spacing={4}>
-                      <QuoteLineMethodForm />
-                      <AdvancedSection onChange={setHasMethodParts} />
-                    </VStack>
-                  </TabsContent>
-                </Tabs>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={getMethodModal.onClose} variant="secondary">
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit
-                  isDisabled={!hasMethodParts}
-                  variant={hasMethods ? "destructive" : "primary"}
-                >
-                  <Trans>Confirm</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-      {saveMethodModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              saveMethodModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={path.to.jobMethodSave}
-              validator={getJobMethodValidator}
-              defaultValues={{
-                // @ts-expect-error
-                itemId: isJobMethod
-                  ? (routeData?.job?.itemId ?? undefined)
-                  : undefined
-              }}
-              onSubmit={saveMethodModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Save Method</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  Overwrite the target manufacturing method with the job method
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                {isJobMethod ? (
-                  <>
-                    <Hidden name="type" value="job" />
-                    <Hidden name="sourceId" value={jobId} />
-                  </>
-                ) : (
-                  <>
-                    <Hidden name="type" value="method" />
-                    <Hidden name="sourceId" value={methodId!} />
-                  </>
+      <Modal
+        open={getMethodModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            getMethodModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={path.to.jobMethodGet}
+            validator={getJobMethodValidator}
+            onSubmit={getMethodModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Get Method</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                Overwrite the job method with the source method
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Tabs defaultValue="item" className="w-full">
+                {isJobMethod && (
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="item">
+                      <LuBlocks className="mr-2" /> Item
+                    </TabsTrigger>
+                    <TabsTrigger value="quote">
+                      <RiProgress4Line className="mr-2" />
+                      <Trans>Quote</Trans>
+                    </TabsTrigger>
+                    <TabsTrigger value="job">
+                      <LuCirclePlay className="mr-2" />
+                      <Trans>Job</Trans>
+                    </TabsTrigger>
+                  </TabsList>
                 )}
+                <TabsContent value="item">
+                  {isJobMethod ? (
+                    <>
+                      <Hidden name="type" value="item" />
+                      <Hidden name="targetId" value={jobId} />
+                    </>
+                  ) : (
+                    <>
+                      <Hidden name="type" value="method" />
+                      <Hidden name="targetId" value={methodId!} />
+                    </>
+                  )}
 
-                <VStack spacing={4}>
-                  <Alert variant="destructive">
-                    <LuTriangleAlert className="h-4 w-4" />
-                    <AlertTitle>
-                      <Trans>
-                        This will overwrite the existing manufacturing method
-                        and the latest versions of all subassemblies.
-                      </Trans>
-                    </AlertTitle>
-                  </Alert>
-                  <Item
-                    name="itemId"
-                    label={t`Target Method`}
-                    termId="method"
-                    type={(routeData?.job?.itemType ?? "Part") as "Part"}
-                    blacklist={configurableItemIds}
-                    locationId={routeData?.job?.locationId ?? undefined}
-                    onChange={(value) => {
-                      if (value) {
-                        getMakeMethods(value?.value);
-                      } else {
-                        setMakeMethods([]);
-                        setSelectedMakeMethod(null);
-                      }
-                    }}
-                    includeInactive={includeInactive === true}
-                    replenishmentSystem="Make"
-                  />
-                  <SelectControlled
-                    name="targetId"
-                    options={makeMethods}
-                    label={t`Version`}
-                    value={selectedMakeMethod ?? undefined}
-                    onChange={(value) => {
-                      if (value) {
-                        setSelectedMakeMethod(value?.value);
-                      } else {
-                        setSelectedMakeMethod(null);
-                      }
-                    }}
-                    placeholder={
-                      makeMethods.length === 0
-                        ? t`No draft versions available`
-                        : undefined
-                    }
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-inactive"
-                      checked={includeInactive}
-                      onCheckedChange={setIncludeInactive}
+                  <VStack spacing={4}>
+                    {hasMethods && (
+                      <Alert variant="destructive">
+                        <LuTriangleAlert className="h-4 w-4" />
+                        <AlertTitle>
+                          <Trans>
+                            This will overwrite the existing job method
+                          </Trans>
+                        </AlertTitle>
+                      </Alert>
+                    )}
+                    <Item
+                      name="sourceId"
+                      label={t`Source Method`}
+                      termId="method"
+                      type={(routeData?.job.itemType ?? "Part") as "Part"}
+                      blacklist={configurableItemIds}
+                      includeInactive={includeInactive === true}
+                      locationId={routeData?.job?.locationId ?? undefined}
+                      replenishmentSystem="Make"
+                      onChange={(value) => {
+                        getSourceMakeMethods(value?.value ?? null);
+                      }}
                     />
-                    <label
-                      htmlFor="include-inactive"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      <Trans>Include Inactive</Trans>
-                    </label>
-                  </div>
+                    <SelectControlled
+                      name="versionId"
+                      options={sourceMakeMethods}
+                      label={t`Version`}
+                      value={selectedSourceVersion ?? undefined}
+                      onChange={(value) => {
+                        if (value) {
+                          setSelectedSourceVersion(value?.value);
+                        } else {
+                          setSelectedSourceVersion(null);
+                        }
+                      }}
+                      placeholder={
+                        sourceMakeMethods.length === 0
+                          ? t`No versions available`
+                          : undefined
+                      }
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="include-inactive"
+                        checked={includeInactive}
+                        onCheckedChange={setIncludeInactive}
+                      />
+                      <label
+                        htmlFor="include-inactive"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        <Trans>Include Inactive</Trans>
+                      </label>
+                    </div>
 
-                  <AdvancedSection onChange={setHasMethodParts} />
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={saveMethodModal.onClose} variant="secondary">
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit
-                  variant={hasMethods ? "destructive" : "primary"}
-                  isDisabled={
-                    !selectedMakeMethod ||
-                    !permissions.can("update", "parts") ||
-                    !hasMethodParts
-                  }
-                >
-                  <Trans>Confirm</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-      {configureSelectModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              configureSelectModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm validator={getJobMethodValidator}>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Configure Item</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>Select an item to configure</Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
+                    <AdvancedSection onChange={setHasMethodParts} />
+                  </VStack>
+                </TabsContent>
+                <TabsContent value="quote">
+                  <Hidden name="type" value="quoteLine" />
+                  <Hidden name="targetId" value={jobId} />
+                  <VStack spacing={4}>
+                    <QuoteLineMethodForm />
+                    <AdvancedSection onChange={setHasMethodParts} />
+                  </VStack>
+                </TabsContent>
+                <TabsContent value="job">
+                  <Hidden name="type" value="job" />
+                  <Hidden name="targetId" value={jobId} />
+                  <VStack spacing={4}>
+                    <CompletedJobMethodForm currentJobId={jobId} />
+                    <AdvancedSection onChange={setHasMethodParts} />
+                  </VStack>
+                </TabsContent>
+              </Tabs>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={getMethodModal.onClose} variant="secondary">
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit
+                isDisabled={!hasMethodParts}
+                variant={hasMethods ? "destructive" : "primary"}
+              >
+                <Trans>Confirm</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <Modal
+        open={saveMethodModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            saveMethodModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={path.to.jobMethodSave}
+            validator={getJobMethodValidator}
+            defaultValues={{
+              // @ts-expect-error
+              itemId: isJobMethod
+                ? (routeData?.job?.itemId ?? undefined)
+                : undefined
+            }}
+            onSubmit={saveMethodModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Save Method</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                Overwrite the target manufacturing method with the job method
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              {isJobMethod ? (
+                <>
+                  <Hidden name="type" value="job" />
+                  <Hidden name="sourceId" value={jobId} />
+                </>
+              ) : (
+                <>
+                  <Hidden name="type" value="method" />
+                  <Hidden name="sourceId" value={methodId!} />
+                </>
+              )}
+
+              <VStack spacing={4}>
+                <Alert variant="destructive">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>
+                    <Trans>
+                      This will overwrite the existing manufacturing method and
+                      the latest versions of all subassemblies.
+                    </Trans>
+                  </AlertTitle>
+                </Alert>
                 <Item
-                  name="sourceId"
-                  label={t`Item`}
-                  value={selectedConfigureItemId ?? undefined}
+                  name="itemId"
+                  label={t`Target Method`}
+                  termId="method"
                   type={(routeData?.job?.itemType ?? "Part") as "Part"}
-                  includeInactive={includeInactive === true}
-                  whitelist={configurableItemIds}
+                  blacklist={configurableItemIds}
                   locationId={routeData?.job?.locationId ?? undefined}
-                  replenishmentSystem="Make"
                   onChange={(value) => {
-                    setSelectedConfigureItemId(value?.value ?? null);
+                    if (value) {
+                      getMakeMethods(value?.value);
+                    } else {
+                      setMakeMethods([]);
+                      setSelectedMakeMethod(null);
+                    }
                   }}
+                  includeInactive={includeInactive === true}
+                  replenishmentSystem="Make"
                 />
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  onClick={configureSelectModal.onClose}
-                  variant="secondary"
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  isDisabled={!selectedConfigureItemId}
-                  onClick={() =>
-                    handleConfigureItemSelect(selectedConfigureItemId)
+                <SelectControlled
+                  name="targetId"
+                  options={makeMethods}
+                  label={t`Version`}
+                  value={selectedMakeMethod ?? undefined}
+                  onChange={(value) => {
+                    if (value) {
+                      setSelectedMakeMethod(value?.value);
+                    } else {
+                      setSelectedMakeMethod(null);
+                    }
+                  }}
+                  placeholder={
+                    makeMethods.length === 0
+                      ? t`No draft versions available`
+                      : undefined
                   }
-                >
-                  <Trans>Next</Trans>
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-inactive"
+                    checked={includeInactive}
+                    onCheckedChange={setIncludeInactive}
+                  />
+                  <label
+                    htmlFor="include-inactive"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    <Trans>Include Inactive</Trans>
+                  </label>
+                </div>
+
+                <AdvancedSection onChange={setHasMethodParts} />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={saveMethodModal.onClose} variant="secondary">
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit
+                variant={hasMethods ? "destructive" : "primary"}
+                isDisabled={
+                  !selectedMakeMethod ||
+                  !permissions.can("update", "parts") ||
+                  !hasMethodParts
+                }
+              >
+                <Trans>Confirm</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <Modal
+        open={configureSelectModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            configureSelectModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm validator={getJobMethodValidator}>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Configure Item</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>Select an item to configure</Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Item
+                name="sourceId"
+                label={t`Item`}
+                value={selectedConfigureItemId ?? undefined}
+                type={(routeData?.job?.itemType ?? "Part") as "Part"}
+                includeInactive={includeInactive === true}
+                whitelist={configurableItemIds}
+                locationId={routeData?.job?.locationId ?? undefined}
+                replenishmentSystem="Make"
+                onChange={(value) => {
+                  setSelectedConfigureItemId(value?.value ?? null);
+                }}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                onClick={configureSelectModal.onClose}
+                variant="secondary"
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                isDisabled={!selectedConfigureItemId}
+                onClick={() =>
+                  handleConfigureItemSelect(selectedConfigureItemId)
+                }
+              >
+                <Trans>Next</Trans>
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
       {configuratorModal.isOpen && (
         <ConfiguratorModal
           open
@@ -620,6 +722,37 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     </Fragment>
   );
 };
+
+function CompletedJobMethodForm({ currentJobId }: { currentJobId: string }) {
+  const { t } = useLingui();
+  const jobsFetcher = useFetcher<{
+    data: { id: string; jobId: string }[] | null;
+  }>();
+
+  useMount(() => {
+    jobsFetcher.load(`${path.to.api.jobs}?status=Completed&status=Closed`);
+  });
+
+  const jobOptions = useMemo(
+    () =>
+      jobsFetcher.data?.data
+        ?.filter((job) => job.id !== currentJobId)
+        .map((job) => ({
+          label: job.jobId,
+          value: job.id
+        })) ?? [],
+    [jobsFetcher.data, currentJobId]
+  );
+
+  return (
+    <Combobox
+      name="sourceId"
+      label={t`Source Job`}
+      options={jobOptions}
+      placeholder={t`Select a completed job`}
+    />
+  );
+}
 
 function AdvancedSection({
   onChange

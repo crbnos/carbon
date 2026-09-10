@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBuilding,
-  LuCog,
   LuContact,
   LuCreditCard,
   LuFiles,
@@ -9,11 +8,13 @@ import {
   LuMapPin,
   LuPackageSearch,
   LuReceipt,
+  LuRedoDot,
   LuShieldAlert,
   LuTruck
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
+import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 
@@ -33,7 +34,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       name: t`Details`,
       to: path.to.supplierDetails(supplierId),
       icon: <LuBuilding />,
-      shortcut: "Command+Shift+d"
+      shortcut: DETAIL_TAB_SHORTCUTS.details
     },
     {
       name: t`Contacts`,
@@ -41,7 +42,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       count: contacts,
       icon: <LuContact />,
-      shortcut: "Command+Shift+c"
+      shortcut: DETAIL_TAB_SHORTCUTS.contacts
     },
     {
       name: t`Locations`,
@@ -49,35 +50,35 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee", "supplier"],
       count: locations,
       icon: <LuMapPin />,
-      shortcut: "Command+Shift+l"
+      shortcut: DETAIL_TAB_SHORTCUTS.locations
     },
     {
       name: t`Payment`,
       to: path.to.supplierPayment(supplierId),
       role: ["employee"],
       icon: <LuCreditCard />,
-      shortcut: "Command+Shift+p"
+      shortcut: DETAIL_TAB_SHORTCUTS.payment
     },
     {
       name: t`Tax`,
       to: path.to.supplierTax(supplierId),
       role: ["employee"],
       icon: <LuReceipt />,
-      shortcut: "Command+Shift+t"
+      shortcut: DETAIL_TAB_SHORTCUTS.tax
     },
     {
       name: t`Shipping`,
       to: path.to.supplierShipping(supplierId),
       role: ["employee"],
       icon: <LuTruck />,
-      shortcut: "Command+Shift+s"
+      shortcut: DETAIL_TAB_SHORTCUTS.shipping
     },
     {
       name: t`Processes`,
       to: path.to.supplierProcesses(supplierId),
       role: ["employee"],
-      icon: <LuCog />,
-      shortcut: "Command+Shift+r"
+      icon: <LuRedoDot />,
+      shortcut: DETAIL_TAB_SHORTCUTS.processes
     },
     {
       name: t`Default Attachments`,
@@ -112,14 +113,14 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
     //   to: path.to.supplierShipping(supplierId),
     //   role: ["employee"],
     //   icon: <LuTruck />,
-    //   shortcut: "Command+Shift+s",
+    //   shortcut: DETAIL_TAB_SHORTCUTS.shipping,
     // },
     // {
     //   name: t`Accounting`,
     //   to: path.to.supplierAccounting(supplierId),
     //   role: ["employee"],
     //   icon: <LuLandmark />,
-    //   shortcut: "Command+Shift+a",
+    //   shortcut: DETAIL_TAB_SHORTCUTS.accounting,
     // },
   ].filter(
     (item) =>

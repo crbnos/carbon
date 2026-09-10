@@ -7,13 +7,13 @@ import {
   LuBlocks,
   LuDice5,
   LuDna,
+  LuLocateFixed,
   LuPencil,
   LuShapes,
   LuStar,
   LuTrash,
   LuTriangleAlert,
-  LuUser,
-  LuWrench
+  LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import {
@@ -202,7 +202,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Work Center`,
         cell: ({ row }) => <Enumerable value={row.original.workCenterName} />,
         meta: {
-          icon: <LuWrench />,
+          icon: <LuLocateFixed />,
           exportValue: (row) => row.workCenterName,
           filter: {
             type: "static",

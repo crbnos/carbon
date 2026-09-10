@@ -4,11 +4,9 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -107,10 +105,6 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
         <HStack className="w-full justify-between">
           <CardHeader>
             <CardTitle className="line-clamp-2">{initialValues.name}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              {initialValues.readableId}
-              <Copy text={initialValues.readableId ?? ""} />
-            </CardDescription>
           </CardHeader>
           <CardAction>
             <DropdownMenu>

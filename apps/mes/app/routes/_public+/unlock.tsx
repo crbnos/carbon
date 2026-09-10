@@ -351,7 +351,7 @@ function UnlockCodeField({ result }: { result?: UnlockResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" />;
+  return <InputOTP name="code" label="" autoFocus />;
 }
 
 export default function UnlockRoute() {
@@ -410,7 +410,7 @@ export default function UnlockRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <VStack spacing={4} className="items-center">
           <LuLock className="w-8 h-8 text-muted-foreground" />
           <Heading size="h3">
@@ -472,6 +472,7 @@ export default function UnlockRoute() {
                 </p>
                 <UnlockCodeField result={fetcher.data} />
                 <Submit
+                  hideShortcutKey
                   size="lg"
                   className="w-full"
                   withBlocker={false}

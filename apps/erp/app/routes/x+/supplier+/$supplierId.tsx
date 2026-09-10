@@ -22,7 +22,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Suppliers`, to: path.to.suppliers },
     (data) => data?.supplier?.name
-  )
+  ),
+  module: "purchasing"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

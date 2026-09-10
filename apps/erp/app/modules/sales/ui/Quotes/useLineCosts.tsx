@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import type { Tree } from "~/components/TreeView";
-import { lookupBuyPriceFromMap, type SupplierPriceMap } from "~/modules/shared";
+import { resolveBuyUnitCost, type SupplierPriceMap } from "~/modules/shared";
 import type {
   CostEffects,
   Costs,
@@ -79,15 +79,15 @@ export function useLineCosts({
       itemType: string,
       quantity: number,
       unitCost: number,
+      unitCostSource: string | null,
       supplierPriceMap: SupplierPriceMap
     ) {
       const costFn = (outerQty: number) => {
         const requestedQty = quantity * outerQty;
-        const resolved = lookupBuyPriceFromMap(
-          itemId,
+        const resolved = resolveBuyUnitCost(
+          { itemId, unitCost, unitCostSource },
           requestedQty,
-          supplierPriceMap,
-          unitCost
+          supplierPriceMap
         );
         return resolved * requestedQty;
       };
@@ -121,6 +121,7 @@ export function useLineCosts({
           data.itemType,
           data.quantity,
           data.unitCost,
+          data.unitCostSource,
           supplierPriceMap
         );
       } else if (data.methodType === "Pull from Inventory") {
@@ -381,6 +382,10 @@ export function useLineCosts({
         "Material",
         1,
         line.unitCost ?? 0,
+        // The quote LINE's own cost, not a BOM material's. Only quoteMaterial
+        // carries a typed/calculated flag, so this always resolves from the
+        // supplier's price breaks, exactly as it did before.
+        null,
         supplierPriceMap
       );
     } else {

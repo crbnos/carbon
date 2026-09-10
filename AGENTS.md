@@ -30,6 +30,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never expose cross-tenant data or skip `companyId` scoping.
 - Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
 - Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction, or an RPC when it must also be callable from an edge function.
+- Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — service files are re-exported through the module barrel that client components import, so they are bundled for the browser. Build the client in a `.server` file (`getDatabaseClient()` from `~/services/database.server`) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
 - Never rebuild the database to test changes — wait for the user.
@@ -47,7 +48,15 @@ pnpm run build               # Full build
 pnpm db:migrate:new <name>   # Create new migration
 pnpm db:migrate              # Apply pending migrations
 pnpm run generate:types      # Regenerate DB types (after migrations)
+pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
+pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+Both `db:check:*` commands read your live local schema. They run from
+`.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
+the dataset check fail for the wrong reason and makes the backup check refuse to give
+a verdict at all. Run by hand, both write nothing; from the hook, `db:check:backups`
+additionally regenerates and stages `packages/jobs/manifests/schema.json` on success.
 
 ## Task Router — Where to Find Detailed Guidance
 
@@ -85,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Issues (NCR, CAPA, ECO, RMA) | `.claude/rules/issue-module.md` |
 | Traceability / lot tracking | `.claude/rules/traceability-model.md` |
 | Revision system | `.claude/rules/revision-system.md` |
+| Item supersession (phase-out / successor swaps) | `.claude/rules/supersession-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
 | Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |

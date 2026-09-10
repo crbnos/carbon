@@ -25,7 +25,7 @@ export default function DocumentsRoute() {
 
   return (
     <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full">
         <ContentSidebar links={links} />
         <VStack spacing={0} className="h-full">
           <Outlet />

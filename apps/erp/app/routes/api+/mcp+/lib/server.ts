@@ -6,7 +6,12 @@ import { z } from "zod";
 import { withErrorHandling, READ_ONLY_ANNOTATIONS, WRITE_ANNOTATIONS } from "./types";
 import toolMetadata from "./tool-metadata.json";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
-import { executeFunction } from "./direct-executor";
+import { callOperation } from "../../v1+/lib/call.server";
+import {
+  isListOperation,
+  operationsByName
+} from "../../v1+/lib/operations.server";
+import { formatMcpResult, MCP_DEFAULT_LIMIT } from "./format-result";
 
 const logger = getLogger("erp", "mcp");
 
@@ -49,6 +54,8 @@ KEY PATTERNS:
 - companyId/userId are auto-filled
 - call_tool.arguments is always a JSON object (never a stringified JSON blob)
 - Responses: { data, error?, count? }
+- Results omit null fields — an absent field means null
+- List reads default to 25 rows; pass limit/offset to page
 - Dates: ISO 8601 (YYYY-MM-DD)
 - Pagination: limit/offset`;
 }
@@ -99,8 +106,10 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
       output += `Classification: ${tool.classification}\n`;
       output += `Description: ${tool.description}\n\n`;
       
+      // Compact on purpose — pretty-printing roughly doubles the whitespace
+      // tokens of a schema, and models parse compact JSON just as well.
       output += `Input Schema:\n`;
-      output += JSON.stringify(tool.schema || {}, null, 2);
+      output += JSON.stringify(tool.schema || {});
       
       return {
         content: [{ type: "text" as const, text: output }]
@@ -147,56 +156,64 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
         };
       }
       
-      // Use direct executor instead of MCP protocol
-      const result = await executeFunction(name, ctx, args);
-      
+      // List reads apply no limit unless the caller passes one (the schema's
+      // `default: 100` is documentation, not enforcement — an argless call
+      // returned up to PostgREST's 1000-row cap). Inject a modest default so
+      // agents page deliberately; MCP-only, the other callOperation callers
+      // (HTTP, agent, workflows) are untouched. Unknown keys are inert for
+      // list-shaped ops that don't page, so injecting unconditionally is safe.
+      // setGenericQueryFilters applies its `.range()` only when BOTH limit and
+      // offset are integers, so the pair is always filled together — a bare
+      // `limit` (injected OR caller-supplied) would silently paginate nothing.
+      const fillPagination = (target: Record<string, unknown>) => {
+        if (target.limit === undefined) target.limit = MCP_DEFAULT_LIMIT;
+        if (target.offset === undefined) target.offset = 0;
+      };
+      const meta = operationsByName.get(name);
+      if (meta && isListOperation(meta)) {
+        if (args === undefined || args === null) {
+          // The argless call is the worst offender — no limit at all.
+          args = { limit: MCP_DEFAULT_LIMIT, offset: 0 };
+        } else if (typeof args === "object" && !Array.isArray(args)) {
+          const body = args as Record<string, unknown>;
+          const wrapped = body.args;
+          if (
+            wrapped &&
+            typeof wrapped === "object" &&
+            !Array.isArray(wrapped)
+          ) {
+            fillPagination(wrapped as Record<string, unknown>);
+          } else {
+            fillPagination(body);
+          }
+        }
+      }
+
+      // Runs through the canonical oRPC dispatch (gate middleware included); the
+      // Supabase envelope arrives already unwrapped to `data`/`count`.
+      const result = await callOperation(name, ctx, args);
+
       logger.info("Execution result", {
         success: result.success,
-        hasData: !!result.data,
-        error: result.error
+        hasData: result.success && result.data !== undefined,
+        error: result.success ? undefined : result.error
       });
-      
+
       if (result.success) {
-        // Format successful response
-        let output = "";
-        
-        // Check if the result.data is a Supabase response format
-        if (result.data && typeof result.data === 'object' && 'data' in result.data) {
-          // Supabase format: { data: [...], error: null, count: ... }
-          const supabaseData = result.data.data;
-          logger.info("Detected Supabase response format", {
-            dataLength: Array.isArray(supabaseData) ? supabaseData.length : "not array"
-          });
-
-          if (result.data.error) {
-            logger.error("Supabase error", { error: result.data.error });
-            return {
-              content: [{ type: "text" as const, text: `Database error: ${JSON.stringify(result.data.error)}` }],
-              isError: true
-            };
-          }
-          
-          output = JSON.stringify(supabaseData, null, 2);
-        } else if (result.data) {
-          output = JSON.stringify(result.data, null, 2);
-          logger.info("Using result.data for output");
-        } else {
-          output = "Operation completed successfully";
-          logger.info("No data in result, using default message");
-        }
-
-        logger.info("Returning output", { output: output.substring(0, 200) });
-
-        return {
-          content: [{ type: "text" as const, text: output }]
-        };
-      } else {
-        logger.error("Tool execution failed", { error: result.error });
-        return {
-          content: [{ type: "text" as const, text: `Error: ${result.error}` }],
-          isError: true
-        };
+        const output =
+          result.data === undefined
+            ? "Operation completed successfully"
+            : formatMcpResult(result.data, result.count);
+        return { content: [{ type: "text" as const, text: output }] };
       }
+      logger.error("Tool execution failed", { error: result.error });
+      return {
+        content: [{
+          type: "text" as const,
+          text: result.errorKind === "database" ? result.error : `Error: ${result.error}`
+        }],
+        isError: true
+      };
     }, "Call tool failed")
   );
 
@@ -271,23 +288,10 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
         output += "\n";
       }
       
-      // Add instructions for using call_tool
-      if (toolNames.length > 0) {
-        output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        output += `To use these tools:\n`;
-        output += `1. Use describe_tool({ name: "tool_name" }) to see the schema\n`;
-        output += `2. Use call_tool({ name: "tool_name", arguments: {...} })\n\n`;
-        output += `Example:\n`;
-        output += `call_tool({ \n`;
-        output += `  name: "${toolNames[0]}",\n`;
-        output += `  arguments: { /* tool parameters */ }\n`;
-        output += `})\n`;
-        output += `\nAvailable tools:\n`;
-        output += toolNames.map(name => `  • ${name}`).join('\n');
-        output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      }
-      
-      output += `\nSTATUS: ${toolMetadata.totalTools} tools available via call_tool`;
+      // No usage footer: the describe_tool/call_tool how-to ships once in the
+      // server instructions at connect, and re-listing the names duplicated
+      // the grouped list above on every search.
+      output += `STATUS: ${toolMetadata.totalTools} tools available via call_tool`;
       
       return {
         content: [{ type: "text" as const, text: output }],

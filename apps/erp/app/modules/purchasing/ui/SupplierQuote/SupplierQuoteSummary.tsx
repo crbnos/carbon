@@ -2,7 +2,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Heading,
@@ -327,9 +326,6 @@ const SupplierQuoteSummary = () => {
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
             <CardTitle>{routeData?.quote.supplierQuoteId}</CardTitle>
-            <CardDescription>
-              <Trans>Supplier Quote</Trans>
-            </CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
             <SupplierAvatar supplierId={routeData?.quote.supplierId ?? null} />

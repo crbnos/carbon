@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Heading,
@@ -433,9 +432,6 @@ const PurchaseInvoiceSummary = ({
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
             <CardTitle>{routeData?.purchaseInvoice.invoiceId}</CardTitle>
-            <CardDescription>
-              <Trans>Purchase Invoice</Trans>
-            </CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
             <SupplierAvatar

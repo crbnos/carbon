@@ -43,6 +43,7 @@ import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { useCustomers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import JobStatus from "../../../Jobs/JobStatus";
+import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import {
   getDateOnly,
@@ -59,36 +60,33 @@ interface Progress {
   employees?: Set<string>;
 }
 
-const cardVariants = cva(
-  "bg-card hover:bg-muted/30 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
-  {
-    variants: {
-      highlighted: {
-        true: "ring-2 ring-primary opacity-100",
-        false: ""
-      },
-      dragging: {
-        over: "ring-2 ring-primary opacity-30",
-        overlay: "ring-2 ring-primary hover:bg-muted"
-      },
-      status: {
-        Draft: "border-border",
-        Planned: "border-yellow-500/30",
-        Ready: "border-blue-500/30",
-        "In Progress": "border-emerald-600/30",
-        Paused: "border-orange-500/30",
-        Completed: "border-green-500/30",
-        Closed: "border-border",
-        Cancelled: "border-red-500/30",
-        Overdue: "border-red-500/50",
-        "Due Today": "border-orange-500/50"
-      }
+const cardVariants = cva(KANBAN_CARD_SHELL, {
+  variants: {
+    highlighted: {
+      true: "ring-2 ring-primary opacity-100",
+      false: ""
     },
-    defaultVariants: {
-      status: "Planned"
+    dragging: {
+      over: "ring-2 ring-primary opacity-30",
+      overlay: "ring-2 ring-primary hover:bg-muted"
+    },
+    status: {
+      Draft: "border-border",
+      Planned: "border-yellow-500/30",
+      Ready: "border-blue-500/30",
+      "In Progress": "border-emerald-600/30",
+      Paused: "border-orange-500/30",
+      Completed: "border-green-500/30",
+      Closed: "border-border",
+      Cancelled: "border-red-500/30",
+      Overdue: "border-red-500/50",
+      "Due Today": "border-orange-500/50"
     }
+  },
+  defaultVariants: {
+    status: "Planned"
   }
-);
+});
 
 type JobCardProps = {
   item: JobItem;
@@ -149,6 +147,21 @@ export function JobCard({
   const dueDateValue = isDueDateValid && dueDate ? dueDate : null;
   const scheduleColumnIds = columnIds ?? [];
 
+  // Forecast slack: calendar days between projected completion and the due date.
+  // Positive = late (+2d, red), negative = early (-3d, muted).
+  const projectedCompletionOnly = getDateOnly(item.projectedCompletionAt);
+  const slackDays =
+    projectedCompletionOnly && dueDateValue
+      ? parseDate(projectedCompletionOnly).compare(parseDate(dueDateValue))
+      : 0;
+  const slack =
+    projectedCompletionOnly && slackDays !== 0
+      ? {
+          late: slackDays > 0,
+          label: `${slackDays > 0 ? "+" : ""}${slackDays}d`
+        }
+      : null;
+
   function submitDueDate(nextDueDate: string | null) {
     submit(
       getInlineDueDateUpdateFields(
@@ -159,7 +172,7 @@ export function JobCard({
       ),
       {
         method: "post",
-        action: path.to.scheduleDatesUpdate,
+        action: path.to.priorityDatesUpdate,
         navigate: false,
         fetcherKey: `job:${item.id}`
       }
@@ -212,6 +225,34 @@ export function JobCard({
                   </TooltipTrigger>
                   <TooltipContent>
                     Scheduling conflict: operations cannot meet due date
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {item.scheduleOutdatedReason && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Schedule outdated — {item.scheduleOutdatedReason}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {slack && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span
+                      className={cn(
+                        "text-xs font-medium tabular-nums flex-shrink-0",
+                        slack.late ? "text-red-500" : "text-muted-foreground"
+                      )}
+                    >
+                      {slack.label}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Projected{" "}
+                    <DateTime value={projectedCompletionOnly!} variant="date" />
                   </TooltipContent>
                 </Tooltip>
               )}

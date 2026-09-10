@@ -30,8 +30,9 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
   `useCreateLookup.ts` creates missing lookup values inline.
 - `useCsvContext.tsx` — shared state (`file`, `filePath`, `fileColumns`, `firstRows`).
 
-Used from `apps/erp/app/components/Table/components/TableHeader.tsx` (table import button)
-and `apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx`.
+Mounted from exactly one place: `apps/erp/app/components/Table/components/TableHeader.tsx`
+(the Bulk Import dropdown). A list page opts in by passing `importCSV={[{ table, label }]}`
+to `<Table>` — that prop is the whole UI-side registration.
 
 ## Models (`apps/erp/app/modules/shared/imports.models.ts`)
 
@@ -58,20 +59,93 @@ Three exported maps, all keyed by table name:
 
 Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 
+> **Every field in `fieldMappings[table]` must also be declared in `importSchemas[table]`.**
+> The route builds `columnMappings` from the zod parse result, and a zod object strips
+> keys it does not declare — so a field the wizard offers but the schema omits is mapped
+> by the user, submitted, and silently dropped before the edge function sees it. That is
+> what made every CSV-imported item land at revision `"0"` while the wizard marked the
+> Revision column required. `apps/erp/app/modules/shared/imports.models.test.ts` asserts
+> the invariant per table; add the field to BOTH maps when adding one.
+
 ### Tables & permissions
 
 `customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
-`part`, `material`, `tool`, `fixture`, `consumable`, `methodMaterial`, `bom`,
+`part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
-`materialGrade`, `materialType`, `materialDimension` → `parts`;
-`workCenter`, `process` → `production`; `fixedAsset` → `accounting`.
+`materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
+`storageType` → `parts`;
+`workCenter`, `process`, `scrapReason` → `production`; `storageUnit` → `inventory`;
+`department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+
+An import's permission is the one its table's **RLS INSERT policy** requires, not
+the one that opens its list page. The edge function writes through a service-role
+Kysely connection that bypasses RLS, so `importPermissions` is the only
+authorization on a bulk import — taking it from the page gate would let a user
+create rows the database itself would refuse. `itemPostingGroup` is where the two
+disagree: its page is parts-gated, its policies are `accounting_*`.
 
 The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
-`partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
-`process`, `materialSubstance`, `materialForm`, `materialFinish`, `materialGrade`,
-`materialType`, `materialDimension`. Note it does **not** list `fixedAsset` or
-`methodMaterial` (see Gotchas).
+`partWithMethod`, `part`, `service`, `supplier`, `supplierContact`, `tool`,
+`workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
+`storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
+`materialFinish`, `materialGrade`, `materialType`, `materialDimension`. Note it does
+**not** list `fixedAsset` (see Gotchas).
+
+### Service import (rides the item path)
+
+A `service` is an item — `item.type = "Service"` plus a row in `service` keyed by
+`readableId` — so it is handled by the SAME case as part/tool/fixture/consumable
+rather than a path of its own. Two service-specific rules live in that case:
+`itemTrackingType` is forced to `"Non-Inventory"` before validation (a service can
+never be shipped, received or stocked, so the wizard offers no Tracking Type
+column, and the item validator requires one), and the type-row insert writes the
+legacy `serviceType: "External"` instead of `approved: true`. Both mirror
+`upsertService` in `items.service.ts`; the wizard's replenishment options are
+narrowed to `Buy | Make`, since "Buy and Make" is not a service.
+
+### Storage-unit import (natural-key match + two-pass parent linking)
+
+`storageUnit` imports the fields `id` (Unique ID), `name`, `locationId` (Location,
+an enum resolved via the FieldMappings location fetcher), `parentName`,
+`storageTypeNames` (comma-separated), and `active`. Because storage unit names are
+unique **per location** (`storageUnit_name_locationId_key`), both in-file dedup and
+match-existing-to-update key on `(locationId, lower(name))` — NOT `classifyImportRow`'s
+name-only dedup. A csv `id` still writes an `externalIntegrationMapping` for id-based
+re-import. Updates deliberately never change `locationId` (avoids the "cannot move a
+unit with children" interceptor); a unit's location is **immutable via import**, so a row
+whose csv id resolves to a unit in a DIFFERENT location than the row states is reported as
+a row error (not a silent move), and an id-matched rename onto a name another unit already
+owns in that location is likewise reported rather than crashing the batch on
+`storageUnit_name_locationId_key`. `storageTypeNames` resolve case-insensitively against
+existing company `storageType` rows, **creating** any missing ones (mirrors the creatable
+StorageTypes combobox). `parentName` is applied in a **second pass** after all inserts —
+individual `UPDATE`s outside the insert transaction — so a parent defined later in the
+same file resolves and an unresolved/cyclic/self parent reports a per-row error instead
+of rolling back the whole import. The DB same-location / no-cycle interceptors
+(`20260417000200`) are the final guard; their exceptions are caught per row.
+
+### Configuration-lookup imports (skip-duplicate, create-only)
+
+`unitOfMeasure`, `itemPostingGroup`, `storageType`, `scrapReason` and `department`
+are small company-scoped config tables filled in once during onboarding. They are
+handled by `import-csv/config-lookup-import.ts` — one `CONFIGS` entry per table,
+one shared walk — with the same **create-only, skip-duplicate** semantics as the
+material lookups below: no `externalIntegrationMapping`, no updates, and no
+`id` column in the wizard, because none of these carries a natural external id.
+
+Dedup mirrors the DB unique constraints, case- and whitespace-insensitively.
+`unitOfMeasure` is the one with TWO of them (`code` and `name`, each unique per
+company), so it contributes two keys and a row colliding on either is reported as
+skipped rather than swallowed by the `ON CONFLICT DO NOTHING` clause. Every other
+table keys on `name` alone.
+
+`department.parentName` resolves in a **second pass** after the inserts commit —
+individual `UPDATE`s outside the insert transaction, so a parent defined further
+down the same file resolves and an unresolved or self-referencing parent reports
+one row error instead of rolling back the batch. Same shape as the storage-unit
+parent pass. `CONFIGS[table].parentField` is what gates it; only `department` sets
+one, and `config-lookup-import.test.ts` pins that.
 
 ### Material-property imports (skip-duplicate, create-only)
 
@@ -150,7 +224,9 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
 
 ## Gotchas
 
-- **`methodMaterial` is not implemented** — its edge-function case `throw new Error("Not implemented")`.
+- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and the edge
+  function's enum, but `Fixture` was dropped from the app's item-type enum
+  (`items.models.ts`) and there is no Fixtures list page, so nothing surfaces it.
 - **`fixedAsset`** has models/permissions (`fieldMappings`, `importPermissions`) but is
   **confirmed absent** from the edge function's `table` enum, so the edge function
   **rejects it** — the zod `table` enum fails to parse and it errors out (effectively

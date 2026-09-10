@@ -30,7 +30,7 @@ const taskToEvent = {
   "print-job-deliver": "carbon/print-job-deliver",
   "print-job": "carbon/print-job",
   recalculate: "carbon/recalculate",
-  "schedule-job": "carbon/reschedule-job",
+  "schedule-inputs-changed": "carbon/schedule.inputs.changed",
   "send-email": "carbon/send-email",
   "send-slack": "carbon/send-slack",
   "slack-document-assignment-update": "carbon/slack-document-assignment-update",

@@ -30,6 +30,7 @@ function resolve(
     }
     case NotificationEvent.JobAssignment:
     case NotificationEvent.JobCompleted:
+    case NotificationEvent.JobsProjectedLate:
       return path.to.job(documentId);
     case NotificationEvent.JobOperationAssignment:
     case NotificationEvent.JobOperationMessage: {

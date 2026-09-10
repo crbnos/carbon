@@ -101,7 +101,7 @@ vi.mock("~/modules/resources", () => ({
 }));
 
 describe("resolveLocationId company scoping", () => {
-  const request = new Request("https://erp.test/x/schedule/dates");
+  const request = new Request("https://erp.test/x/priority/dates");
 
   it("returns a ?location= that belongs to the caller's company", async () => {
     const client = makeClient([{ id: OWN_LOCATION, companyId: COMPANY }]);

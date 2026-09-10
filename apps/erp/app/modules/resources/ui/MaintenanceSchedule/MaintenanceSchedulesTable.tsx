@@ -17,6 +17,7 @@ import {
   LuClock,
   LuMapPin,
   LuPencil,
+  LuPower,
   LuToggleRight,
   LuTrash
 } from "react-icons/lu";
@@ -181,6 +182,19 @@ const MaintenanceSchedulesTable = memo(
               : "-",
           meta: {
             icon: <LuClock />
+          }
+        },
+        {
+          accessorKey: "takesWorkCenterOffline",
+          header: t`Blocks Machine`,
+          cell: ({ row }) =>
+            row.original.takesWorkCenterOffline ? (
+              <Status color="red">Offline</Status>
+            ) : (
+              <Status color="gray">No</Status>
+            ),
+          meta: {
+            icon: <LuPower />
           }
         },
         {

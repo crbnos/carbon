@@ -95,6 +95,7 @@ export default function EditMaintenanceScheduleRoute() {
     frequency: schedule.frequency ?? ("Weekly" as const),
     priority: schedule.priority ?? ("Medium" as const),
     estimatedDuration: schedule.estimatedDuration ?? undefined,
+    takesWorkCenterOffline: (schedule as any).takesWorkCenterOffline ?? false,
     nextDueAt: schedule.nextDueAt ? schedule.nextDueAt.slice(0, 10) : undefined,
     active: schedule.active ?? true,
     // Day-of-week settings

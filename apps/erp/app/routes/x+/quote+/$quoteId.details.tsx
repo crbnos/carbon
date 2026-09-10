@@ -61,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -86,32 +86,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await updateQuote(
-    client,
-    {
-      id,
-      status: validation.data.status,
-      currencyCode: validation.data.currencyCode,
-      expirationDate: validation.data.expirationDate || null,
-      customerId: validation.data.customerId,
-      customerContactId: validation.data.customerContactId || null,
-      customerLocationId: validation.data.customerLocationId || null,
-      customerEngineeringContactId:
-        validation.data.customerEngineeringContactId || null,
-      customerReference: validation.data.customerReference || null,
-      salesPersonId: validation.data.salesPersonId || null,
-      estimatorId: validation.data.estimatorId || null,
-      locationId: validation.data.locationId,
-      dueDate: validation.data.dueDate || null,
-      digitalQuoteAcceptedBy: validation.data.digitalQuoteAcceptedBy || null,
-      digitalQuoteAcceptedByEmail:
-        validation.data.digitalQuoteAcceptedByEmail || null,
-      notes: validation.data.notes,
-      customFields: setCustomFields(formData),
-      updatedBy: userId
-    },
-    companyGroupId
-  );
+  const result = await updateQuote(client, {
+    id,
+    status: validation.data.status,
+    currencyCode: validation.data.currencyCode,
+    expirationDate: validation.data.expirationDate || null,
+    customerId: validation.data.customerId,
+    customerContactId: validation.data.customerContactId || null,
+    customerLocationId: validation.data.customerLocationId || null,
+    customerEngineeringContactId:
+      validation.data.customerEngineeringContactId || null,
+    customerReference: validation.data.customerReference || null,
+    salesPersonId: validation.data.salesPersonId || null,
+    estimatorId: validation.data.estimatorId || null,
+    locationId: validation.data.locationId,
+    dueDate: validation.data.dueDate || null,
+    digitalQuoteAcceptedBy: validation.data.digitalQuoteAcceptedBy || null,
+    digitalQuoteAcceptedByEmail:
+      validation.data.digitalQuoteAcceptedByEmail || null,
+    notes: validation.data.notes,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
+  });
   if (result.error) {
     throw redirect(
       path.to.quote(id),

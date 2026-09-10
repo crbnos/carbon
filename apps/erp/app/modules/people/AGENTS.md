@@ -60,6 +60,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=people
 - `getContacts` — external contact search
 - `getDepartments` / `getDepartmentsList` / `getDepartmentsTree` — org structure
 - `getShifts` / `getShiftsList` / `upsertShift` — work schedule management
+- `getShiftsWithTimes` — shifts with `startTime`/`endTime` + per-weekday flags for a location (people capacity math); `getEmployeeShifts` — company-wide `employeeShift` map (each person's standing shift)
 - `getHolidays` / `getHolidayYears` / `upsertHoliday` — holiday calendar
 - `clockIn` / `clockOut` / `getTimeCardEntries` / `getWeeklyHoursForEmployees` — time tracking
 - `getClockedInEmployees` / `getScheduledEmployeesToday` — real-time workforce status

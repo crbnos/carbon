@@ -3,8 +3,8 @@ import {
   LuContainer,
   LuFileText,
   LuLayoutList,
+  LuListTodo,
   LuPackageSearch,
-  LuSquareChartGantt,
   LuStar
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -48,12 +48,12 @@ export default function usePurchasingSubmodules() {
       ]
     },
     {
-      name: t`Plan`,
+      name: t`Planning`,
       routes: [
         {
-          name: t`Planning`,
+          name: t`Material Planning`,
           to: path.to.purchasingPlanning,
-          icon: <LuSquareChartGantt />,
+          icon: <LuListTodo />,
           table: "purchase-planning"
         }
       ]

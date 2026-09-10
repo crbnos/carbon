@@ -601,6 +601,62 @@ export async function failOperation(
 }
 
 /**
+ * Accounts currently blocking a sync: the distinct account ids named by
+ * parked UNMAPPED_ACCOUNTS journal operations (metadata.unmappedAccountIds),
+ * minus any that have since been mapped. Feeds the "Blocking sync" rows in the
+ * Account Mapping tab so an arbitrary (non-posting-default) account that held
+ * up a journal is surfaced with a mapping control.
+ */
+export async function getAccountsBlockingSync(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; integration: string }
+): Promise<{
+  data: Array<{ id: string; number: string | null; name: string }> | null;
+  error: string | null;
+}> {
+  const ops = await syncOperationTable(client)
+    .select("metadata")
+    .eq("companyId", args.companyId)
+    .eq("integration", args.integration)
+    .eq("status", "Warning")
+    .eq("errorCode", "UNMAPPED_ACCOUNTS");
+  if (ops.error) return { data: null, error: ops.error.message };
+
+  const accountIds = new Set<string>();
+  for (const op of (ops.data ?? []) as Array<{
+    metadata: { unmappedAccountIds?: unknown } | null;
+  }>) {
+    const ids = op.metadata?.unmappedAccountIds;
+    if (Array.isArray(ids)) {
+      for (const id of ids) {
+        if (typeof id === "string" && id.length > 0) accountIds.add(id);
+      }
+    }
+  }
+  if (accountIds.size === 0) return { data: [], error: null };
+
+  const mapped = await client
+    .from("externalIntegrationMapping")
+    .select("entityId")
+    .eq("entityType", "account")
+    .eq("integration", args.integration)
+    .eq("companyId", args.companyId);
+  if (mapped.error) return { data: null, error: mapped.error.message };
+  const mappedSet = new Set((mapped.data ?? []).map((row) => row.entityId));
+
+  const remaining = [...accountIds].filter((id) => !mappedSet.has(id));
+  if (remaining.length === 0) return { data: [], error: null };
+
+  const accounts = await client
+    .from("account")
+    .select("id, number, name")
+    .in("id", remaining)
+    .order("number", { ascending: true });
+  if (accounts.error) return { data: null, error: accounts.error.message };
+  return { data: accounts.data ?? [], error: null };
+}
+
+/**
  * Mark an operation Skipped — the drain's close-out for a syncer no-op
  * with NO remote copy behind it (shouldSync gate, config-disabled entity,
  * parked payment). Truthful-ledger rule (v4 spec, Pillar C): such a no-op

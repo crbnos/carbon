@@ -9,6 +9,7 @@ import { data } from "react-router";
 import { productionEventValidator } from "~/services/models";
 import {
   endProductionEvent,
+  getOperationEligibility,
   startProductionEvent
 } from "~/services/operations.service";
 
@@ -35,6 +36,28 @@ export async function action({ request }: ActionFunctionArgs) {
   } = validation.data;
 
   if (productionAction === "Start") {
+    // Ability gate: the shop-floor Start button posts here, so the
+    // qualification check must run on this path (not only in the
+    // start.$operationId loader)
+    const serviceRole = await getCarbonServiceRole();
+    const eligibility = await getOperationEligibility(serviceRole, {
+      operationId: d.jobOperationId,
+      employeeId: userId,
+      companyId
+    });
+    if (!eligibility.eligible) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            null,
+            eligibility.reason ?? "Not qualified to start this operation"
+          )
+        )
+      );
+    }
+
     // Single-phase (assembly) clocking: end any other open work type for this
     // operator on this operation before starting, so Setup and Labor can never
     // run simultaneously. Post each ended event so its cost still books.
@@ -103,14 +126,19 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     if (endEvent.data && endEvent.data.length > 0) {
-      const serviceRole = await getCarbonServiceRole();
-      await serviceRole.functions.invoke("post-production-event", {
-        body: {
-          productionEventId: endEvent.data[0].id,
-          userId,
-          companyId
-        }
-      });
+      // Batch timers post cost at batch completion, when the aggregate event is
+      // sliced per member (batch-operations edge fn). Posting it here too would
+      // double-book the cost, so skip post-production-event for a batch event.
+      if (!endEvent.data[0].jobOperationBatchId) {
+        const serviceRole = await getCarbonServiceRole();
+        await serviceRole.functions.invoke("post-production-event", {
+          body: {
+            productionEventId: endEvent.data[0].id,
+            userId,
+            companyId
+          }
+        });
+      }
     }
     return data(
       endEvent.data,

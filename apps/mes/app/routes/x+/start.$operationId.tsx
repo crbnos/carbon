@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { activeJobStatuses } from "@carbon/database";
 import {
   evaluateLinesForSurface,
   isBlocked
@@ -12,6 +13,7 @@ import { redirect } from "react-router";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   getNextIncompleteSerialEntity,
+  getOperationEligibility,
   getTrackedEntitiesByMakeMethodId,
   startProductionEvent
 } from "~/services/operations.service";
@@ -34,21 +36,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
-  const [jobOperation] = await Promise.all([
-    serviceRole
-      .from("jobOperation")
-      .select("*")
-      .eq("id", operationId)
-      .maybeSingle(),
-    serviceRole
-      .from("productionEvent")
-      .update({
-        endTime: null,
-        updatedBy: userId
-      })
-      .eq("jobOperationId", operationId)
-      .is("endTime", null)
-  ]);
+  const jobOperation = await serviceRole
+    .from("jobOperation")
+    .select("*")
+    .eq("id", operationId)
+    .maybeSingle();
 
   if (jobOperation.error || !jobOperation.data) {
     throw redirect(
@@ -70,6 +62,61 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // Floor rule: an operation is startable iff it is floor-visible — a batched
+  // op needs its batch released (not Planned); an unbatched op needs its job
+  // released (Ready/In Progress/Paused). These guards must run BEFORE the
+  // productionEvent re-open below so a not-released op never mutates timers.
+  if (jobOperation.data.jobOperationBatchId) {
+    const batch = await serviceRole
+      .from("jobOperationBatch")
+      .select("status")
+      .eq("id", jobOperation.data.jobOperationBatchId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (batch.data?.status === "Planned") {
+      throw redirect(
+        path.to.operations,
+        await flash(
+          request,
+          error(
+            null,
+            "This operation is part of a batch that has not been released to the floor"
+          )
+        )
+      );
+    }
+  } else {
+    const job = await serviceRole
+      .from("job")
+      .select("status")
+      .eq("id", jobOperation.data.jobId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (
+      !job.data?.status ||
+      !(activeJobStatuses as readonly string[]).includes(job.data.status)
+    ) {
+      throw redirect(
+        path.to.operations,
+        await flash(
+          request,
+          error(null, "This operation's job has not been released to the floor")
+        )
+      );
+    }
+  }
+
+  // Re-open any still-running timers for this operation (touches updatedBy so
+  // realtime subscribers refresh).
+  await serviceRole
+    .from("productionEvent")
+    .update({
+      endTime: null,
+      updatedBy: userId
+    })
+    .eq("jobOperationId", operationId)
+    .is("endTime", null);
+
   // Check if work center is blocked for maintenance
   if (jobOperation.data.workCenterId) {
     const workCenterStatus = await getWorkCenterWithBlockingStatus(
@@ -89,6 +136,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         )
       );
     }
+  }
+
+  // Check if the operator is qualified for the operation's required abilities
+  const eligibility = await getOperationEligibility(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+
+  if (!eligibility.eligible) {
+    throw redirect(
+      path.to.operation(operationId),
+      await flash(
+        request,
+        error(null, eligibility.reason ?? "Not qualified to start operation")
+      )
+    );
   }
 
   // Get tracked entities if jobMakeMethodId exists

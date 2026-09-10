@@ -600,7 +600,7 @@ const ProductionPlanningTable = ({
           </div>
         }
         renderActions={renderActions}
-        title={t`Planning`}
+        title={t`Material Planning`}
         table="production-planning"
         withSavedView
         withSelectableRows

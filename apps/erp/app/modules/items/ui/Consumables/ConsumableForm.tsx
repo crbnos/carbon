@@ -32,6 +32,7 @@ import {
 } from "~/components/Form";
 import { TrackingTypeIcon } from "~/components/Icons";
 import {
+  useCompanySettings,
   useCurrencyDecimals,
   useNextItemId,
   usePermissions,
@@ -78,6 +79,8 @@ const ConsumableForm = ({
 
   const { id, onIdChange, loading } = useNextItemId("Consumable");
   const permissions = usePermissions();
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
   const isEditing = !!initialValues.id;
 
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
@@ -149,7 +152,7 @@ const ConsumableForm = ({
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
-                    isUppercase
+                    isUppercase={!allowLowercaseItemIds}
                     autoFocus
                   />
                 )}

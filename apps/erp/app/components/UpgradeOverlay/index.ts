@@ -8,6 +8,7 @@ export {
   UpgradeOverlayIcon,
   UpgradeOverlayInline,
   UpgradeOverlayPreview,
+  UpgradeOverlaySection,
   UpgradeOverlayStickyGradient,
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton

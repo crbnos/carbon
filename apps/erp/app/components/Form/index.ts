@@ -55,6 +55,7 @@ import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
 import JobSalesOrderLine from "./JobSalesOrderLine";
 import Location from "./Location";
+import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
 import PaymentTerm from "./PaymentTerm";
@@ -69,6 +70,7 @@ import {
   ShelfLifeStartTiming
 } from "./ShelfLifeStartEvent";
 import Shift from "./Shift";
+import Shifts from "./Shifts";
 import ShippingMethod from "./ShippingMethod";
 import StandardFactor from "./StandardFactor";
 import StorageTypes from "./StorageTypes";
@@ -109,6 +111,7 @@ export {
   ConversionFactor,
   CreatableCombobox,
   CreatableMultiSelect,
+  LocationEmployee,
   Currency,
   Customer,
   CustomerContact,
@@ -161,6 +164,7 @@ export {
   StorageUnit,
   StorageTypes,
   Shift,
+  Shifts,
   ShippingMethod,
   StandardFactor,
   Submit,

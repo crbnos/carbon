@@ -130,6 +130,22 @@ BEGIN
   IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
 END \$\$;
 " >/dev/null
+# The migration ledger must travel WITH the schema. The public schema was just
+# dropped, so the local supabase_migrations ledger no longer describes anything
+# real — and left in place it survives the restore (the dump's own ledger rows
+# lose their primary-key conflicts under ON_ERROR_STOP=0), pairing the dump's
+# OLDER schema with the local NEWER ledger. The post-restore "apply migrations
+# the backup predates" step then no-ops and the DB is silently missing weeks of
+# migrations. Truncate it so the dump's ledger lands cleanly; anything the
+# backup predates then genuinely pends.
+$PSQL_PG -c "
+DO \$\$
+BEGIN
+  IF to_regclass('supabase_migrations.schema_migrations') IS NOT NULL THEN
+    TRUNCATE supabase_migrations.schema_migrations;
+  END IF;
+END \$\$;
+" >/dev/null
 # ── 3. Restore ───────────────────────────────────────────────────────────────
 # Supports both plain-text SQL dumps (Supabase cluster .backup files) and
 # custom-format pg_dump archives (.dump, magic bytes 'PGDMP').

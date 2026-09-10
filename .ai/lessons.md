@@ -498,6 +498,26 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/jobs/src/inngest/functions/events/queue.ts`; any new Inngest function reaching for `debounce`/flow-control that will be exercised in local dev.
 
+## Table cells in @carbon/react highlight on row hover by default
+
+**Context:** The people Capacity view needed a hover-free (then row-scoped-hover) table; removing every hover class in the feature file changed nothing — cells still tinted on row hover, and a rowSpan name cell lit up whenever its first row was hovered.
+
+**Problem:** `packages/react/src/Table.tsx` bakes the hover in at the primitive level: `Tr` carries the Tailwind `group` class and `Td`/`Th` ship `group-hover:bg-muted`. No amount of feature-level class removal turns it off, and a `rowSpan` cell belongs to its first row, so that row's hover tints it.
+
+**Rule:** To opt a table out of (or customize) hover, override per cell with `group-hover:bg-transparent` (tailwind-merge lets the passed className win) — a local `<Td>` wrapper keeps it tidy. For a rowSpan cell that must stay static, also give it an opaque `bg-card` so sibling-row tints can't bleed through. If more tables need this, promote a `static` prop into `packages/react` instead of copying wrappers.
+
+**Applies to:** any table built on `@carbon/react` `Tr`/`Td`/`Th`, especially with `rowSpan` cells or custom hover semantics (`PeopleCapacity.tsx` is the reference).
+
+## position:sticky inside a horizontal board needs a content-width row and a clamped scroll root
+
+**Context:** Making the people board's Unassigned column sticky worked for one viewport-width of scrolling, then scrolled away; fixing that caused page-level overflow on small screens.
+
+**Problem:** Sticky elements only stick within their parent's bounds. The flex row inside the Radix ScrollArea was viewport-width (columns overflowed it), so the sticky column ran out of parent after one screenful. Adding `min-w-max` fixed that but let the ScrollArea (a flex item, which sizes to content) exceed ITS parent, pushing overflow to the page.
+
+**Rule:** The sizing contract for a sticky column in a scrollable flex board is three layers: scroll root clamped (`w-full min-w-0 max-w-full`) > row content-width (`min-w-max`) > column `sticky left-0 z-10` with an opaque background. With dnd-kit on top, add `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}` — cached droppable rects assume elements move with the scroll, and sticky ones don't.
+
+**Applies to:** `BoardContainer` (`ColumnCard.tsx`) and any kanban wanting a pinned column; any dnd-kit board with sticky droppables.
+
 ## Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass
 
 **Context:** Adding ChangeOrder* entries to `packages/documents/scripts/generate-notification-previews.mjs` and re-running it to emit the per-event preview fixtures.
@@ -966,6 +986,16 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
 
+## The migration ledger must travel with the schema it describes
+
+**Context:** A `crbn restore` left the people board dead ("Failed to load people assignments"): the dump's schema was weeks older than the branch, yet `supabase migration up` reported "schema already up to date", so ~60 migrations' worth of tables (people, workflows, inspections, the operationType enum consolidation) silently didn't exist.
+
+**Problem:** The restore script dropped every `public` object and loaded the dump — but never touched `supabase_migrations.schema_migrations`. The local ledger (which recorded everything as applied against the PRE-restore database) survived, and the dump's own ledger rows lost their primary-key conflicts under `ON_ERROR_STOP=0`. Result: an older schema paired with a newer ledger, which makes every "apply what's pending" mechanism a no-op. Diagnosing it required probing per-migration artifacts (tables, enum values, functions) because the ledger could no longer be trusted; recovery was deleting the stale ledger rows and replaying, marking the two genuinely-applied ones on their loud "already exists" failures.
+
+**Rule:** Any operation that replaces schema state wholesale (restore, snapshot rollback, volume swap) must replace the migration ledger in the same stroke — truncate it before the load so the source's ledger lands and anything the backup predates genuinely pends. When a ledger and its schema disagree, believe the schema: probe artifacts, don't trust records. `scripts/restore-database.sh` now truncates the ledger before loading the dump; `crbn restore`'s trailing `applyMigrations` step is unchanged and picks up the pending set.
+
+**Applies to:** `scripts/restore-database.sh`, any future backup/restore or snapshot tooling.
+
 ## A VERIFY-flagged provider endpoint in a cron loop is an outage, not a TODO
 
 **Context:** The Rillet AP payment pull assumed an org-wide `GET /bill-payments` feed mirroring `/invoice-payments`. The method carried a VERIFY comment ("assumed to mirror… not confirmed") and even named its own fallback, but shipped unguarded inside `listChanges`. The endpoint does not exist (404).
@@ -1102,6 +1132,26 @@ canvas hosting Radix popovers/selects.
 **Rule:** In edge functions, batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
 
 **Applies to:** `packages/database/supabase/functions/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
+
+## Kysely writes in an edge function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
+
+**Context:** The `batch-operations` edge function's `remove`/`update`/`dissolve` cases updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
+
+**Problem:** Edge functions run on the service-role Kysely handle, which bypasses RLS entirely — the app-layer permission check is the ONLY gate, and it does not scope the rows a subsequent write touches. A caller passing their own `companyId` (to pass the gate) plus another company's `batchId` (a `nanoid`, not enumerable, but leakable) could detach or re-point the victim's operations; the companyId-scoped batch delete right after matched 0 rows but the transaction still committed the unscoped write. A batch-id predicate is not a tenant boundary.
+
+**Rule:** In an edge function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
+
+**Applies to:** `packages/database/supabase/functions/**` (any service-role Kysely write), resumable multi-phase edge flows.
+
+## A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there
+
+**Context:** `batch-time-split.ts` exported `assertAllOperationsClaimed` (concurrent-claim race guard) and `assertBatchWorkCenterMutable` (completed-batch immutability guard), both unit-tested. Neither was ever imported by the `batch-operations` edge function — the `update` branch happily re-pointed a Completed batch's work center, and the claim had no `IS NULL` race guard.
+
+**Problem:** The presence of a well-named, tested guard function signals "this invariant is enforced." A reviewer (and the author) reads the export list and assumes coverage. Dead safety helpers give false confidence precisely where the risk is highest.
+
+**Rule:** Wire a safety `assert*` into its call site in the same change that introduces it, or don't write it yet. When reviewing, grep every exported `assert*`/guard for a real importer — an unused one is a finding, not dead weight to leave. Duplicated cross-runtime logic (Node + Deno copies) should re-export one source (`precision.ts` / `batch-time-split.ts` pattern) rather than rely on "keep in sync" comments.
+
+**Applies to:** `packages/utils/src/**`, `packages/database/supabase/functions/shared/**`, any exported guard/assert helper.
 ## Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`
 
 **Context:** Adding a shared `getQuoteDisplayId` / `getPurchaseOrderDisplayId` helper for showing the revision suffix on documents. The natural home looked like the `./pdf` barrel, which already re-exported it for the server-side PDF routes.
@@ -1122,6 +1172,15 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## `crbn reload` must load root `.env` — compose-substituted secrets silently reset
+
+**Context:** Enabling GoTrue SAML via `${SAML_ENABLED:-false}` / `${SAML_PRIVATE_KEY:-}` in docker-compose.dev.yml, values kept in root `.env`.
+
+**Problem:** `crbn reload <service>` invoked `docker compose up -d --force-recreate` with only `--env-file .env.local` and no dotenv preload. Root `.env` vars referenced by compose substitution resolved to their defaults, and — worse — recreating ANY service also reconciles other services whose definition changed, so a `crbn reload kong` recreated gotrue with SAML silently OFF even though the user's earlier `crbn up` had it on. (`crbn up` was immune only because it loads `.env.local` then `.env` into process.env first, and shell env wins compose interpolation.)
+
+**Rule:** Any crbn command that invokes docker compose must preload BOTH env files into process.env the way `up.ts` does (`loadDotenv(.env.local)` then `loadDotenv(.env)`, both `override: false`). `reload.ts` now does this. After any reload, still verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status.
+
+**Applies to:** packages/dev reload/compose commands; any GoTrue/Kong/storage env sourced from root `.env`.
 ## An incremental pull-sweep cursor must advance on the SAME field the query filters on
 
 **Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.
@@ -1171,3 +1230,256 @@ canvas hosting Radix popovers/selects.
 **Rule:** When `db:migrate` fails with `LegacyDbConfigLoadError`, look for a malformed line (bare key without `=`, unterminated quote) in `packages/database/.env` specifically — every line must be `KEY=value`. To bisect quickly, temporarily move that `.env` aside and re-run with an explicit `--db-url`; parse errors disappear while connection errors remain, cleanly separating the two failure modes.
 
 **Applies to:** `pnpm db:migrate`, `supabase migration up`, `packages/database/.env`, any worktree whose env files were hand-edited.
+## Kysely builds ONE column list per multi-row insert — a conditionally-set key writes NULL into its siblings
+
+**Context:** `get-method`'s `quoteLineToJob` builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
+
+**Problem:** Kysely derives the INSERT's column list from the union of keys across ALL rows, not per row. The moment one swapped row carries `unitCost`, the column joins the statement and every row that omitted the key is written `NULL`. `jobMaterial.unitCost` is `NOT NULL DEFAULT 0`, so the whole insert failed with a 23502 and job creation died — and because it is one statement in one transaction, a single swapped line took down the entire job. The column default is only reached when NO row in the batch has the key, which is why it worked until the first quote-to-job with a superseded line. It was invisible to typecheck, to 157 unit tests, and to three review agents; it surfaced the first time a human clicked the flow in a browser.
+
+**Rule:** In a multi-row insert, set every column on EVERY row or on none. Never conditionally spread a key (`...(cond ? {col: v} : {})`) into rows of a batch — that is the shape that writes NULL into the others. If a column is `NOT NULL DEFAULT x` and you want the default, either omit it from all rows or write `x` explicitly. When in doubt write the value explicitly; a default duplicated in code is cheaper than a constraint violation that fails the whole transaction.
+
+**Applies to:** any Kysely `.values([...])` over more than one row, especially `jobMaterial` / `methodMaterial` / any table with `NOT NULL DEFAULT` columns.
+
+## A cast to an OPTIONAL property silently yields `undefined` on a type that lacks it
+
+**Context:** `JobMaterialsTable` renders an "↩ substituted from X" indicator for supersession-swapped job materials, reading the field as `(row.original as { substitutedFromItemId?: string | null }).substitutedFromItemId`. The row type comes from the `get_job_quantity_on_hand` RPC, whose `RETURNS TABLE` never included that column.
+
+**Problem:** Asserting an OPTIONAL property onto a type that does not have it is legal TypeScript and raises nothing — the expression just evaluates to `undefined` on every row, so `{substitutedFrom && ...}` never rendered. The feature wrote correct provenance data to the database for its entire life and displayed it zero times. Had the property been declared non-optional, or read without the cast, it would have been a compile error the day it was written.
+
+**Rule:** Treat `as { someField?: T }` on a row/DTO type as a smell, not a convenience — it is indistinguishable from a field that does not exist. When a UI needs a column its loader does not return, widen the RPC/view and regenerate types so the compiler enforces the contract. More generally: a field written to the DB but rendered nowhere has no feedback loop — `jobMaterial.itemScrapPercentage` was wrong in three code paths for the same reason.
+
+**Applies to:** `apps/erp/app/**` table cells reading loader rows; any `as { x?: T }` over a generated DB/RPC type.
+
+## A verdict computed against its own input is a tautology — diff across time, at read time
+
+**Context:** PR #1477 stored a "can this backup still be restored?" verdict (`compatibility.json`) beside each backup, written once by the export job and never refreshed. Its badge, typed-confirm gate, and no-confirm-button state were the PR's headline UX. CI was green; ~500 lines of tests passed.
+
+**Problem:** The export computed `reportBackupCompatibility(catalog, manifest)` where the manifest had just been PROJECTED from that same catalog, in the same process. `diff(x, project(x))` is empty by construction, so the stored status was `"ready"` for every backup forever, and every downstream state driven by findings was unreachable. Nothing failed: the function was correct, the tests exercised it with hand-built drifted inputs, and only the one production call site was degenerate.
+
+**Rule:** A comparison is only meaningful when its two sides come from different points in time or different origins. When a check's input is derived from the thing it is checked against — at the same moment, by the same code — the check can only ever pass, and green tests won't catch it because tests construct the divergent inputs the call site never produces. Compute such verdicts at READ time (live schema vs stored artifact), and when reviewing, trace where each argument of a comparison actually comes from at the real call site.
+
+**Applies to:** `packages/jobs/src/backups/schema.ts` (`reportBackupCompatibility`), `getCompanyBackups` in `apps/erp/app/modules/settings/backups.server.ts`, and any future "is X still valid?" precomputation (schema drift, config validation, cache-freshness verdicts).
+
+## Bare-tsx scripts: isolate the import chain, never flip a shared package's `type`
+
+**Context:** `pnpm db:check:backups` (`packages/jobs/src/scripts/check-backups.ts`) runs under bare `tsx`, which cannot named-import a CJS workspace package at runtime. Its import of `company-backup.ts` pulled in `@carbon/logger` via a module-scope `getLogger`, and the branch "fixed" the resulting crash by adding `"type": "module"` to `packages/logger/package.json` — a module-system change to a package consumed by 13 others, made for one dev script.
+
+**Problem:** Flipping a shared package's `type` field changes resolution for every consumer to satisfy one entrypoint, and the connection between the flip and its reason is invisible — the next person hitting the same error flips the next package. The actual dependency was incidental: the script needed six pure functions that sat in a file whose module scope also called the logger.
+
+**Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
+
+**Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows
+
+**Context:** The work-center batch-capacity migration added `batchCapacity`/`minimumBatchQuantity` to `workCenter` and re-declared the `workCenters` view (which selects `wc.*` before aliased join columns like `locationName`) with `CREATE OR REPLACE VIEW`.
+
+**Problem:** `CREATE OR REPLACE VIEW` can only APPEND columns at the end — the new `wc.*` columns expand in the middle, shifting `locationName` to a new position, and Postgres refuses with `cannot change name of view column "locationName" to "batchCapacity"`. The migration fails at apply time even though the SQL looks like a routine re-declare.
+
+**Rule:** When a view selects `t.*` and the underlying table gains columns that land BEFORE any explicitly-aliased column, re-declare with `DROP VIEW IF EXISTS` + `CREATE VIEW` (checking dependent views first) — not `CREATE OR REPLACE`. Only a pure append at the end of the select list is REPLACE-safe.
+
+**Applies to:** every `packages/database/supabase/migrations/*.sql` that re-declares a `SELECT t.*, …` view after an `ALTER TABLE … ADD COLUMN` (`workCenters`, `processes`, `jobs`, and siblings).
+
+## Single-column FKs on multi-tenant children accept cross-tenant ids
+
+**Context:** `jobOperationBatch` shipped with `locationId`/`processId`/`workCenterId` FKs referencing only the parent's `id`. The `batch-operations` edge fn wrote `payload.locationId`/`workCenterId` straight into the row after `requirePermissions` — which authorizes the CALLER for a company, not the record ids in the body.
+
+**Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role edge fn bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
+
+**Rule:** In an edge fn, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecord` in batch-operations; `schedule` does the same for `jobId`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
+
+**Applies to:** `packages/database/supabase/functions/**` taking record ids in the payload; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
+
+## A "did my job finish?" baseline must include the rows a FAILED run left behind
+
+**Context:** The Backups page shows a spinner row while an export runs, and decides the
+run finished when a backup appears in the list that was not in a `baseline` snapshot
+taken when tracking began. The baseline recorded only backups with status `ready`.
+
+**Problem:** A failed export leaves a **pending** (manifest-less) folder in the list.
+When the user clicked "Skip corrupted rows and retry", that leftover folder later
+flipped to `ready` — it was not in the ready-only baseline, so it read as "this run
+completed" and the spinner vanished a second after the retry started, while the job was
+still running. The job was correct throughout; only the completion test was wrong. The
+same shape bit the failure banner: a marker cleared by the action could still arrive via
+a revalidation already in flight, so the banner reappeared under the running row.
+
+**Rule:** A baseline for "something NEW appeared" must snapshot **every** item already
+present, in every status — not just the ones in the terminal state you are waiting for.
+A prior failure's debris is exactly what will later transition into that state and fake
+a completion. And when a stale record can still arrive after you delete it, identify it
+by **identity** (the exact row you superseded), never by comparing a client timestamp
+against a server one — clock skew then decides your control flow.
+
+**Applies to:** `apps/erp/app/routes/x+/settings+/backups.tsx` (`runningExport`,
+`knownBackupNames`, `failedIsStale`), and any optimistic progress row driven by polling
+a list.
+
+## Per-edge findings are not a row count
+
+**Context:** `findExportScopeViolations` returns one entry per offending FK edge
+(`jobOperationDependency` violates `jobId`, `operationId` and `dependsOnId`), and the
+backup UI summed `violations[].rows` for the figure it showed the user.
+
+**Problem:** A row escaping scope through three foreign keys was counted three times.
+The failed-backup banner claimed "10 rows" where 4 rows existed, and the same sum sat on
+the confirm button of an irreversible delete that then removed 4 — the toast and the
+modal disagreed inside one flow.
+
+**Rule:** When a diagnostic groups by RELATIONSHIP (FK edge, constraint, rule), it
+cannot be summed into a count of ROWS. Compute the distinct count separately — one
+`count(*)` over the OR of the offending predicates — and keep the per-edge list purely
+as the breakdown. Name the two so they cannot be confused (`violations` vs
+`rowsByTable`) and say so in the type's doc comment.
+
+**Applies to:** `packages/jobs/src/backups/scope.ts`
+(`findExportScopeViolationsDetailed`, `computeScopeExclusions`, `totalExcludedRows`),
+`Manifest.excludedRowsByTable`, and any future "N things are wrong" surface.
+
+## Browser-testing MES flows that write data
+
+- **Context:** Verifying AssemblyView keyboard shortcuts with agent-browser while editing the same file (Vite HMR live).
+- **Problem:** Step records appeared at timestamps with no corresponding keypress; hours went into suspecting the new code. Cause: overlapping test sessions — a page left open across HMR edits (sometimes with a modal up) replays/refires interactions, and interleaved key presses land on freshly auto-advanced steps.
+- **Rule:** When a browser test writes rows, run it as a closed loop: wipe the rows, reload the page fresh, then check the DB after EVERY single action before pressing the next key. Never diagnose from an accumulated tail of prior test sessions.
+- **Applies to:** agent-browser verification of any MES/ERP flow with side effects, especially while HMR is live.
+
+## Full-screen height calcs must subtract the app-shell inset
+
+**Context:** The ERP app shell (`apps/erp/app/routes/x+/_layout.tsx`, PR #1551) moved
+content into an inset floating panel with `md:mt-2 md:mb-2` (8px top + 8px bottom
+gutters). ~81 full-screen pages/explorers sized themselves with
+`calc(100dvh - var(--topbar-height) [- var(--header-height)])`, which assumes the
+content spans the full viewport.
+
+**Problem:** Those containers are 16px taller than the panel at md+, so bottom-pinned
+content is pushed below the panel's clipped edge. The Procedures "Add Step" footer was
+sheared in half; the overflow was invisible on pages whose content merely scrolls.
+
+**Rule:** `vh`/`dvh` ignore the panel inset by nature, so any full-height calc inside the
+content panel must subtract `var(--content-inset)` (defined in `styles/tailwind.css`: 0
+below md, 1rem at md+), e.g. `h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]`.
+Prefer `h-full`/flex height inheritance from `<main>` for new pages so the inset never
+has to be tracked by hand. Do NOT add the inset to viewport-fixed/body-portaled elements
+(dialogs, drawers) or to `PrimaryNavigation`, which live outside the panel.
+
+**Applies to:** every `calc(100dvh-var(--topbar-height)...)` in `apps/erp/app`, the shared
+`components/Layout/Panels.tsx` + `Navigation/CollapsibleSidebar.tsx`, and any new
+full-screen ERP route.
+
+## The backups schema baseline on main can carry phantom tables from a dirty local DB
+
+**Context:** `pnpm db:check:backups` blocked the currency-refactor commit on `onshapeSyncRun`/`onshapeItemSyncState` — tables with NO migration anywhere in the repo.
+
+**Problem:** `packages/jobs/manifests/schema.json` regenerates from the committing developer's LIVE schema. If that database has tables applied from an unmerged branch, they enter the committed baseline, and every later committer's check flags them as "dropped without a rename mapping" — a false alarm that invites `--no-verify` reflexes or, worse, bogus `TABLE_RENAMES: null` entries declaring never-shipped tables dropped.
+
+**Rule:** When `db:check:backups` blocks on a missing table, first verify the table exists in ANY migration (`grep -r <table> packages/database/supabase/migrations/`). No migration ⇒ baseline pollution, not your break: regenerate `schema.json` from a clean fully-migrated database (the catalog code in `src/backups/schema.ts` + the manifest shape in `check-backups.ts`), commit it with `CARBON_SKIP_BACKUP_CHECK=1`, and say why in the commit message. Never add a rename entry for a table that never shipped.
+
+**Applies to:** `packages/jobs/manifests/schema.json`, `packages/jobs/src/scripts/check-backups.ts`, `.husky/pre-commit`.
+
+## Adding CHECK + VALIDATE requires auditing every WRITER of the column and pre-cleaning data in the same migration
+
+**Context:** The currency refactor added `CHECK ("exchangeRate" > 0)` + `VALIDATE` on 12 document tables. Review found `get-method` had been writing `exchangeRate: l.exchangeRate ?? 0` into `quoteLinePrice` for every legacy null-rate quote line, and the old `NUMERIC(10,4)` clamp had stored sub-0.00005 rates as literal `0.0000`.
+
+**Problem:** `VALIDATE CONSTRAINT` scans existing rows mid-deploy — one violating row anywhere fails the whole migration in production, and post-deploy the unfixed writer fails at runtime (a whole edge-function transaction). A constraint that is obviously true "going forward" says nothing about years of rows written by code paths you didn't grep.
+
+**Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
+
+**Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/database/supabase/functions/**` writers of the constrained column.
+
+## A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter
+
+**Context:** Batch release schedules a Released operation batch as one coalesced `capacityReservation` anchored (for the NOT NULL `jobId`/`operationId`) on an arbitrary member — whose job may legitimately still be `Draft` (membership handoff pulls members ahead of their jobs).
+
+**Problem:** `getLiveReservations` quietly filters `j."status" IN capacityHoldingJobStatuses` at the END of the query builder — separate from the `excludeJobIds` filter that had already been made batch-aware. The batch row vanished from every snapshot whenever its anchor job was unreleased: the machine looked free and every other job over-booked straight through the batch window.
+
+**Rule:** When a reservation (or any capacity-holding row) must survive independently of its anchor row's status, grep EVERY filter in the read path — not just the one you were pointed at — and give each an explicit escape (`OR "jobOperationBatchId" IS NOT NULL`). A snapshot read with two filters a hundred lines apart is two bugs, not one.
+
+**Applies to:** `packages/ee/src/planning/scheduling/master-data-provider.ts` `getLiveReservations`, any future scenario/what-if reservation reads, and generally any row whose lifecycle is owned by a different entity than its FK anchor.
+
+## A degenerate-input guard on a scheduling surface is a silent-vanish bug, not defensive coding
+
+**Context:** The batch pre-pass had `if (durationSeconds <= 0) continue;` — a released batch whose member operations all carry zero setup/labor/machine time (routinely true for freshly-authored routings) was skipped entirely: no reservation, no auto work-center selection, nothing on the reservation-driven Forecast. The user released BAT000005 and it simply didn't exist anywhere schedule-shaped, indistinguishable from the (separate) dead-Inngest failure being debugged at the same time.
+
+**Problem:** Zero/empty/unsized work still EXISTS. On surfaces whose only rendering source is a derived row (the Forecast draws `capacityReservation` rows and nothing else), a "skip nonsense input" guard doesn't degrade gracefully — it erases the entity, and the erasure reads as any of five other failures (event bus down, filter bug, RLS, wrong week, stale registration).
+
+**Rule:** In the scheduling engine, degenerate input never `continue`s past a persistence step — it emits the flagged placeholder shape (`isPlaceholder = true`, honest `workHours`, a `conflictReason` naming the DATA gap and its fix) so the entity stays visible and self-diagnosing. Match the unplaceable-op precedent; give the placeholder a nominal drawable window when true content is zero.
+
+**Applies to:** `packages/ee/src/planning/scheduling/batch-scheduler.ts`, `work-center-selector.ts` placeholder branches, and any future pre-pass/what-if that turns entities into reservations or timeline rows.
+
+## A shared executor acquires callers nobody planned for — grep every importer before deleting one
+
+**Context:** The oRPC migration plan said MCP `call_tool` and the in-app agent were the two consumers of the MCP `direct-executor.ts`, so once both moved to `callOperation` the file could be deleted. A pre-deletion grep found a THIRD caller: `apps/erp/app/routes/api+/inngest.ts` registered `executeFunction` as the workflow engine's `setWorkflowDispatch` seam — every customer workflow `*.create` action ran through it.
+
+**Problem:** A convenient shared function gets wired into new seams (dependency-injection slots, dispatchers, adapters) without its own file ever changing, so the mental list of "who uses this" goes stale. Deleting it on the strength of the plan's caller list would have broken customer workflow create actions in production while every named caller kept working.
+
+**Rule:** Before deleting or changing the contract of any shared executor/service entry point, grep the WHOLE repo for its name (not just imports of its file — injection sites pass it by value: `setX(fn)`, `register(fn)`, config objects), and treat each hit as a caller to migrate in the same change. A DI/seam registration is a caller even though the dependency arrow points away from the file.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/call.server.ts` (the shared entry point now), `packages/jobs/src/workflows/actions/dispatcher.ts`, any `set*`/`register*` seam.
+
+## In a bulk API sweep, a 4xx carrying a service's generic fallback string is a finding, not a pass
+
+**Context:** The 1,495-operation API sweep triaged all 274 WRITE-op 400s as "reached the DB, expected FK rejections" and flagged only 500s. `inventory_insertManualInventoryAdjustment` came back 400 with `"Failed to create manual inventory adjustment"` and was waved through — but that string is the service's FALLBACK for an edge-function error whose real message was suppressed. A customer later hit exactly this: the published schema advertised 12 `adjustmentType` values (the validator spread `itemLedgerTypes` into its enum) while the `post-inventory-adjustment` edge function accepts 5, so every LLM-guided "add stock" call failed undiagnosably.
+
+**Problem:** Bucketing sweep results by status code alone treats "the request was validly rejected" and "the error was swallowed somewhere in the chain" as the same outcome. The ops most likely to be broken-by-contract-drift are precisely the ones that fail with a generic message, because the generic message IS the symptom of a suppressed real error.
+
+**Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
+
+**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
+
+## Resolve adoption assumptions before designing accounting migration machinery
+
+**Context:** The accounting posting-corrections spec raised legacy open-balance migration concerns; the user clarified that accounting can be assumed unused.
+
+**Problem:** Designing calculation versions, correction journals, and cutover tooling before resolving adoption added unnecessary scope to a correctness fix.
+
+**Rule:** Use the user's explicit adoption premise to size compatibility work. For this spec, correct the monetary contract directly; do not add legacy-accounting machinery. An unused accounting module does not imply permission to delete operational records or reset a database.
+
+**Applies to:** `.ai/specs/2026-09-07-accounting-posting-corrections.md` and its implementation; other modules require their own adoption evidence.
+
+
+## Accounting review: carrying balances and source principal
+
+- **Context:** Mixed positive and negative invoice lines, high FX rates, and changes to account defaults during settlement and provider replay.
+- **Problem:** Summing control magnitudes invented FX; recovering document units from rounded base lost valid minor-unit balances; current defaults rewrote original account provenance.
+- **Rule:** Sum signed original control amounts, preserve exact document principal independently of carrying base, and identify original journal roles through the shared exhaustive vocabulary (including intercompany roles). Reject unknown effective principal rather than infer it; retain Draft reservation policy separately from Posted effectiveness.
+- **Applies to:** Invoice/payment/memo posting, open-balance readers, and accounting provider replay.
+
+## Apportion a document total, never concentrate its rounding residual
+
+**Context:** Sales invoices push to QuickBooks/Xero/Rillet as components (merchandise, add-ons, line shipping, header shipping), each rounded at the document currency's precision, and the sum must equal the authoritative document total.
+
+**Problem:** Rounding N components independently leaves a residual of up to N/2 minor units. Assigning that whole residual to one component broke that component's own percent/amount pair — a 20 x $1.99 @ 8.25% invoice gave one line $0.24 tax on $1.99 net (12.06% against a stated 8.25%). QuickBooks re-derives `round(net x percent)` within one minor unit and refused the invoice with `UNMAPPED_TAX_CODES`, a message blaming the customer's QuickBooks configuration, which they cannot act on. A randomised sweep put this at 1.6% of invoices; some cases produced a negative tax on positive revenue, which Xero accepts and posts.
+
+**Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
+
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, and any future provider document mapper.
+
+## Two halves of an intercompany trade must round at the same scale
+
+**Context:** `post-sales-invoice` and `post-purchase-invoice` each write an `intercompanyTransaction` row, and `generate_intercompany_matches` pairs them with `src."amount" = tgt."amount"` — exact NUMERIC equality, no tolerance.
+
+**Problem:** The seller began rounding its half at the document currency's settlement precision (2dp) while the buyer kept internal `SCALE` (5dp). A trade of 3 x 100.005 stored 300.02 against 300.015, so the pair sat `Unmatched` forever and eliminations silently never ran — consolidated income kept the intragroup profit, with no error anywhere.
+
+**Rule:** An amount used as a MATCHING KEY is not a settlement amount. Round both halves at internal `SCALE`. Before changing rounding anywhere, check whether the value is compared for equality by something else — a matcher, a tie-out, or a reconciliation — and change both sides together.
+
+**Applies to:** `calculateSalesIntercompanyAmount`, `post-purchase-invoice`'s IC amount, `generate_intercompany_matches`.
+
+## Prove provider accounting against its independent journal
+
+**Context:** The live Rillet E2E run accepted invoice payloads while ignoring their FX override and crediting deferred revenue.
+
+**Problem:** Request shape and HTTP success did not prove economic parity. AR_ONLY used provider FX; the supported REVENUE_RECOGNITION_ONLY scope accepted fixed document-to-base rates and same-day recognition.
+
+**Rule:** Verify returned account effects in the provider's independent GL, including recognition and voids. Treat Carbon's rate as document units per base unit, invert it for Rillet, and align recognition and FX dates with Carbon's posting date. Check voided mappings before create-idempotency shortcuts and retain durable deletion markers.
+
+**Applies to:** Rillet invoice/bill/payment adapters, native-void reconciliation, and future provider acceptance tests.
+
+## Seed UI-only controlled fields through the form defaults
+
+**Context:** Payment type choices combine counterparty and cash direction while the persisted paymentType remains Receipt or Disbursement.
+
+**Problem:** Passing only SelectControlled.value left the initial registered paymentKind empty in the real browser; unit mocks did not model form initialization. A composer also retained old targets after a saved header identity changed.
+
+**Rule:** Include a UI-only field's initial value in ValidatedForm defaults, and key stateful composers by the document/party/currency/direction identity whose data they hold. Verify the initial label and actual submitted fields in the browser.
+
+**Applies to:** PaymentForm, PaymentApplyTable, and other forms using derived presentation choices.

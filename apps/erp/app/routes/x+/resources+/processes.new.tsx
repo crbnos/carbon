@@ -8,6 +8,8 @@ import type {
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import {
+  batchRuleInitialValues,
+  ensureProcessAbility,
   ProcessForm,
   processValidator,
   upsertProcess
@@ -53,6 +55,34 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
+  if (d.requiresAbility && createProcess.data?.id) {
+    const abilityResult = await ensureProcessAbility(client, {
+      processId: createProcess.data.id,
+      processName: d.name,
+      companyId,
+      userId
+    });
+    if (abilityResult.error) {
+      // Don't leave an unschedulable process behind: requiresAbility=true
+      // without its backing ability gates scheduling on a qualification
+      // nobody can hold
+      await client
+        .from("process")
+        .update({ requiresAbility: false })
+        .eq("id", createProcess.data.id)
+        .eq("companyId", companyId);
+      return modal
+        ? abilityResult
+        : redirect(
+            path.to.processes,
+            await flash(
+              request,
+              error(abilityResult.error, "Failed to create process ability.")
+            )
+          );
+    }
+  }
+
   return modal
     ? createProcess
     : redirect(
@@ -77,7 +107,11 @@ export default function NewProcessRoute() {
     name: "",
     processType: "Process" as const,
     defaultStandardFactor: "Minutes/Piece" as const,
-    completeAllOnScan: false
+    completeAllOnScan: false,
+    batchable: false,
+    batchType: "Sequential" as const,
+    requiresAbility: false,
+    ...batchRuleInitialValues(null)
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

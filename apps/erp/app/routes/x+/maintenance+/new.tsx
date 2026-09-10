@@ -5,6 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   getFailureModesList,
   insertMaintenanceDispatch,
@@ -68,6 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
     suspectedFailureModeId: validation.data.suspectedFailureModeId || undefined,
     plannedStartTime: validation.data.plannedStartTime || undefined,
     plannedEndTime: validation.data.plannedEndTime || undefined,
+    takesWorkCenterOffline: validation.data.takesWorkCenterOffline,
     content,
     companyId,
     createdBy: userId
@@ -80,6 +82,17 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(result.error, "Failed to create maintenance dispatch")
       )
+    );
+  }
+
+  // A dispatch that takes its work center offline removes hours from the
+  // schedule — stamp the affected work center so the wave regenerates.
+  if (validation.data.takesWorkCenterOffline && validation.data.workCenterId) {
+    await notifyScheduleInputsChanged(
+      companyId,
+      "work-center",
+      "Machine downtime changed",
+      validation.data.workCenterId
     );
   }
 
@@ -98,6 +111,7 @@ export default function NewMaintenanceDispatchRoute() {
     source: "Reactive" as const,
     severity: "Support Required" as const,
     oeeImpact: "No Impact" as const,
+    takesWorkCenterOffline: false,
     locationId: defaultLocationId ?? ""
   };
 

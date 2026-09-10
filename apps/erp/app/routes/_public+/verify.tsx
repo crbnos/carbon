@@ -164,7 +164,7 @@ export default function VerifyRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <ValidatedForm
           fetcher={fetcher}
           validator={verifyValidator}
@@ -191,7 +191,7 @@ export default function VerifyRoute() {
               </Alert>
             )}
 
-            <InputOTP name="code" label="" />
+            <InputOTP name="code" label="" autoFocus />
 
             <Button type="button" variant="link" size="sm" asChild>
               <Link to="/login">

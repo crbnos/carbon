@@ -28,7 +28,7 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 
 ### Never
 - Bypass the `convert` edge function for quote→order or RFQ→quote conversions.
-- Delete `quoteLinePrice` rows when *rewriting* a line's pricing — that must preserve `discountPercent`, `leadTime`, `shippingCost`, and `categoryMarkups` via `upsertQuoteLinePrices`. Deleting rows for a quantity break the line no longer offers is different and required: see `reconcileQuantityBreaks` (`sales.utils.ts`) and its use in `x+/quote+/$quoteId.$lineId.details.tsx`. Orphaned rows render as selectable options on the customer share page.
+- Delete `quoteLinePrice` rows when *rewriting* a line's pricing — go through `upsertQuoteLinePrices`, which delete-and-reinserts inside one transaction and carries over any user-entered field (`discountPercent`, `leadTime`, `shippingCost`, `categoryMarkups`, `priceSource`) you **omit** (explicit-wins, omit-preserves via `resolvePreservedQuoteLinePriceFields`). Deleting rows for a quantity break the line no longer offers is different and required: see `reconcileQuantityBreaks` (`sales.utils.ts`) and its use in `x+/quote+/$quoteId.$lineId.details.tsx`. Orphaned rows render as selectable options on the customer share page.
 - Store `discountPercent` as a whole number (e.g., 10 instead of 0.10).
 
 ## Validation Commands
@@ -82,7 +82,7 @@ import { resolvePrice, applyPriceRules, getCustomer } from "~/modules/sales";
 - **items** — quote lines reference items; methods copied from item make methods
 - **purchasing** — outside operations on quotes create PO lines
 - **inventory** — shipments fulfill sales order lines
-- **accounting** — sales invoices tie to orders; `getCurrencyByCode` used for exchange rates
+- **accounting** — sales invoices tie to orders; `getExchangeRate` resolves document exchange rates (per-company: base=1, override, else global market store)
 - **people** — `getEmployeeJob` used for assignee lookups
 
 ## Rules References

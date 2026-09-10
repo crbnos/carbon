@@ -33,7 +33,7 @@ export default function PartsRoute() {
         className={
           hideSidebar
             ? "w-full h-full"
-            : "grid grid-cols-[auto_1fr] w-full h-full"
+            : "grid grid-cols-[auto_minmax(0,1fr)] w-full h-full"
         }
       >
         {!hideSidebar && <GroupedContentSidebar groups={groups} />}

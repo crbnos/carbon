@@ -69,13 +69,24 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
 
 `upsertQuoteLinePrices(db, companyId, quoteId, lineId, prices)` deletes and
 re-inserts rows **inside one Kysely transaction** (so a failed insert rolls the
-delete back instead of leaving the line with no pricing), **preserving** the
-existing `discountPercent`, `leadTime`, `shippingCost`, `categoryMarkups`, and
-`priceSource` per quantity when present (an explicit caller `categoryMarkups` or
-`priceSource` wins over the stored value; the rest always keep the stored one). It takes a `Kysely<KyselyDatabase>`, not a supabase client,
-so it bypasses RLS — every statement is scoped by `companyId` explicitly and the
-route must authorize with `requirePermissions` first. Any user-entered column added to `quoteLinePrice` has to be added
-to that carry-over list or the delete+reinsert silently resets it to its default.
+delete back instead of leaving the line with no pricing). Per-quantity carry-over
+of the user-entered fields (`discountPercent`, `leadTime`, `shippingCost`,
+`categoryMarkups`, `priceSource`) is **explicit-wins, omit-preserves**
+(`resolvePreservedQuoteLinePriceFields` in `sales.utils.ts`): a value the caller
+provides is written, a field the caller omits keeps the stored value for that
+quantity, and a brand-new row with neither falls back to the column default —
+`priceSource` defaulting to `"manual"` (a hand-set price with no declared source
+is a manual override, not a system cost-plus price). This is why the recalc route
+(`$quoteId.$lineId.recalculate-price.tsx`) passes ONLY the recomputed `unitPrice`
+(+ explicit `priceSource: "system"`) and omits lead time / discount / shipping —
+so the user's entries survive. When an explicit `prices` array is passed, the
+rewrite also **syncs `quoteLine.quantity`** to the sorted distinct quantities of
+the rows (the precision rebuild, which omits `prices`, leaves the breaks alone).
+It takes a `Kysely<KyselyDatabase>`, not a supabase client, so it bypasses RLS —
+every statement is scoped by `companyId` explicitly and the route must authorize
+with `requirePermissions` first. Any user-entered column added to `quoteLinePrice`
+has to be added to `resolvePreservedQuoteLinePriceFields` or the delete+reinsert
+silently resets it to its default.
 The rewrite throws if the quote or line is missing for that company, because the
 insert's `companyId` is overwritten by a trigger from the parent quote — without
 the check it would write into whichever company owns the quote. An **empty**

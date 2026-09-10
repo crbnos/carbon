@@ -1,12 +1,14 @@
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuAward,
   LuCalendarClock,
   LuCircleAlert,
   LuClipboardCheck,
-  LuCog,
   LuGraduationCap,
+  LuLocateFixed,
   LuMailbox,
   LuMapPin,
+  LuRedoDot,
   LuWrench
 } from "react-icons/lu";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -52,13 +54,13 @@ export default function useResourcesSubmodules() {
         {
           name: t`Processes`,
           to: path.to.processes,
-          icon: <LuCog />,
+          icon: <LuRedoDot />,
           table: "process"
         },
         {
           name: t`Work Centers`,
           to: path.to.workCenters,
-          icon: <LuWrench />,
+          icon: <LuLocateFixed />,
           table: "workCenter"
         }
       ]
@@ -66,6 +68,12 @@ export default function useResourcesSubmodules() {
     {
       name: t`People`,
       routes: [
+        {
+          name: t`Abilities`,
+          to: path.to.abilities,
+          icon: <LuAward />,
+          table: "ability"
+        },
         {
           name: t`Training`,
           to: path.to.trainings,

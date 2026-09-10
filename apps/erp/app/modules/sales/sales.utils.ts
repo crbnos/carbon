@@ -19,6 +19,48 @@ export function getEffectiveDefaultMarkups(
 }
 
 /**
+ * The user-entered fields on a `quoteLinePrice` row that must survive a
+ * delete-and-reinsert rewrite. An explicitly provided value wins; an omitted one
+ * preserves the value stored for that quantity; if neither exists it falls back
+ * to the column default. This is what lets a cost recalc pass only the recomputed
+ * `unitPrice` and leave the user's lead time / discount / shipping untouched.
+ *
+ * `priceSource` defaults to `manual` for a brand-new row: a hand-set price with
+ * no declared source is a manual override, not a system (cost-plus) price that a
+ * later rollup would reprice.
+ */
+export function resolvePreservedQuoteLinePriceFields(
+  input: {
+    leadTime?: number;
+    discountPercent?: number;
+    shippingCost?: number;
+    categoryMarkups?: CategoryMarkups;
+    priceSource?: QuoteLinePriceSource;
+  },
+  existing?: {
+    leadTime?: number | null;
+    discountPercent?: number | null;
+    shippingCost?: number | null;
+    categoryMarkups?: CategoryMarkups | null;
+    priceSource?: QuoteLinePriceSource | null;
+  } | null
+): {
+  leadTime: number;
+  discountPercent: number;
+  shippingCost: number;
+  categoryMarkups: CategoryMarkups;
+  priceSource: QuoteLinePriceSource;
+} {
+  return {
+    discountPercent: input.discountPercent ?? existing?.discountPercent ?? 0,
+    leadTime: input.leadTime ?? existing?.leadTime ?? 0,
+    shippingCost: input.shippingCost ?? existing?.shippingCost ?? 0,
+    categoryMarkups: input.categoryMarkups ?? existing?.categoryMarkups ?? {},
+    priceSource: input.priceSource ?? existing?.priceSource ?? "manual"
+  };
+}
+
+/**
  * Reconcile the quantity breaks a quote line currently offers against the
  * `quoteLinePrice` rows that exist for it, in BOTH directions.
  *

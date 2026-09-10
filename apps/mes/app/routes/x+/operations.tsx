@@ -1,12 +1,14 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
   ClientOnly,
   Heading,
   HStack,
+  IconButton,
   LoadingBars,
   Popover,
   PopoverContent,
@@ -21,6 +23,7 @@ import {
   useRealtimeChannel,
   VStack
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -29,9 +32,9 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
+import { LuFactory, LuSettings2, LuTriangleAlert, LuX } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, redirect, useFetcher, useLoaderData } from "react-router";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
@@ -44,13 +47,48 @@ import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getCustomers,
+  getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
 } from "~/services/operations.service";
+import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import { path } from "~/utils/path";
 
 const log = getLogger("mes");
+
+// Collapse operations sharing a jobOperationBatchId into one card: keep the first
+// as the card, tag it with the member count and summed quantities.
+function collapseBatches(items: Item[]): Item[] {
+  const byBatch = new Map<string, Item[]>();
+  const result: Item[] = [];
+  for (const item of items) {
+    // Require a resolvable batch (readableId comes from the join to
+    // jobOperationBatch): a stale batchId whose header is gone must not suppress
+    // the op — render it as an individual card, mirroring the ERP board.
+    if (item.batchId && item.batchReadableId) {
+      const arr = byBatch.get(item.batchId);
+      if (arr) arr.push(item);
+      else byBatch.set(item.batchId, [item]);
+    } else {
+      result.push(item);
+    }
+  }
+  for (const members of byBatch.values()) {
+    result.push({
+      ...members[0],
+      batchSize: members.length,
+      batchJobReadableIds: members.map((m) => m.title).filter(Boolean),
+      quantity: members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
+      targetQuantity: members.reduce(
+        (sum, m) => sum + (m.targetQuantity ?? 0),
+        0
+      )
+    });
+  }
+  return result;
+}
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -139,6 +177,32 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
   const locationId = context.get(userContext)?.locationId;
 
+  // People-assignment station default: when the operator has a manning-board
+  // assignment for today and no explicit work-center filter (and hasn't
+  // dismissed the default this session), open on their station.
+  const effectiveUserId = context.get(userContext)?.effectiveUserId;
+  let peopleStation: { workCenterId: string; name: string } | null = null;
+  let peopleDate: string | null = null;
+  if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
+    const today = datetime
+      .today(await getLocationTimeZone(serviceRole, locationId, companyId))
+      .toString();
+    peopleDate = today;
+    const dismissed = await getPeopleOverride(request);
+    if (dismissed !== today) {
+      const myAssignment = await getMyPeopleAssignment(serviceRole, {
+        companyId,
+        employeeId: effectiveUserId,
+        date: today
+      });
+      const assignment = myAssignment.data?.[0];
+      if (assignment) {
+        selectedWorkCenterIds = [assignment.workCenterId];
+        peopleStation = { workCenterId: assignment.workCenterId, name: "" };
+      }
+    }
+  }
+
   const [workCenters, processes, operations] = await Promise.all([
     getWorkCentersByLocation(serviceRole, locationId),
     getProcessesList(serviceRole, companyId),
@@ -225,8 +289,16 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     new Set(filteredOperations.flatMap((op) => op.tags || []))
   ).sort();
 
+  if (peopleStation) {
+    peopleStation.name =
+      workCenters.data?.find((wc: any) => wc.id === peopleStation?.workCenterId)
+        ?.name ?? "";
+  }
+
   return data(
     {
+      peopleStation,
+      peopleDate,
       columns: filteredWorkCenters
         .map((wc: any) => ({
           id: wc.id!,
@@ -238,44 +310,50 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
         }))
         .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-      items: (filteredOperations.map((op) => {
-        const operation = makeDurations(op);
-        return {
-          id: op.id,
-          assignee: op.assignee,
-          tags: op.tags,
-          columnId: op.workCenterId,
-          columnType: op.processId,
-          priority: op.priority,
-          title: op.jobReadableId,
-          subtitle: op.itemReadableId,
-          description: op.description,
-          dueDate: op.operationDueDate,
-          duration:
-            operation.setupDuration +
-            Math.max(operation.laborDuration, operation.machineDuration),
-          deadlineType: op.jobDeadlineType,
-          customerId: op.jobCustomerId,
-          operationQuantity: op.operationQuantity,
-          targetQuantity: op.targetQuantity ?? op.operationQuantity,
-          jobReadableId: op.jobReadableId,
-          itemReadableId: op.itemReadableId,
-          itemDescription: op.itemDescription,
-          salesOrderReadableId: op.salesOrderReadableId,
-          salesOrderId: op.salesOrderId,
-          salesOrderLineId: op.salesOrderLineId,
-          status: op.operationStatus,
-          thumbnailPath: op.thumbnailPath,
-          quantity: op.operationQuantity,
-          quantityCompleted: op.quantityComplete,
-          quantityReworked: op.quantityReworked,
-          quantityScrapped: op.quantityScrapped,
-          reworkId: op.reworkId,
-          setupDuration: operation.setupDuration,
-          laborDuration: operation.laborDuration,
-          machineDuration: operation.machineDuration
-        };
-      }) ?? []) satisfies Item[],
+      items: collapseBatches(
+        (filteredOperations.map((op) => {
+          const operation = makeDurations(op);
+          return {
+            id: op.id,
+            assignee: op.assignee,
+            tags: op.tags,
+            columnId: op.workCenterId,
+            columnType: op.processId,
+            priority: op.priority,
+            title: op.jobReadableId,
+            subtitle: op.itemReadableId,
+            description: op.description,
+            dueDate: op.operationDueDate,
+            duration:
+              operation.setupDuration +
+              Math.max(operation.laborDuration, operation.machineDuration),
+            deadlineType: op.jobDeadlineType,
+            customerId: op.jobCustomerId,
+            operationQuantity: op.operationQuantity,
+            targetQuantity: op.targetQuantity ?? op.operationQuantity,
+            jobReadableId: op.jobReadableId,
+            itemReadableId: op.itemReadableId,
+            itemDescription: op.itemDescription,
+            salesOrderReadableId: op.salesOrderReadableId,
+            salesOrderId: op.salesOrderId,
+            salesOrderLineId: op.salesOrderLineId,
+            status: op.operationStatus,
+            thumbnailPath: op.thumbnailPath,
+            quantity: op.operationQuantity,
+            quantityCompleted: op.quantityComplete,
+            quantityReworked: op.quantityReworked,
+            quantityScrapped: op.quantityScrapped,
+            reworkId: op.reworkId,
+            setupDuration: operation.setupDuration,
+            laborDuration: operation.laborDuration,
+            machineDuration: operation.machineDuration,
+            batchId: op.jobOperationBatchId,
+            batchReadableId: op.batchReadableId,
+            hasConflict: op.hasConflict ?? undefined,
+            conflictReason: op.conflictReason ?? undefined
+          };
+        }) ?? []) satisfies Item[]
+      ),
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],
       customers: customers.data ?? [],
@@ -321,8 +399,11 @@ function KanbanSchedule() {
     items: initialItems,
     processes,
     workCenters,
-    availableTags
+    availableTags,
+    peopleStation,
+    peopleDate
   } = useLoaderData<typeof loader>();
+  const peopleOverrideFetcher = useFetcher();
   const [items, setItems] = useState<Item[]>(initialItems);
 
   useEffect(() => {
@@ -421,8 +502,8 @@ function KanbanSchedule() {
   }, [processes, workCenters, availableTags, people, t]);
 
   return (
-    <div className="flex flex-col h-screen w-[calc(100dvw-var(--sidebar-width-icon))]">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
+    <div className="flex flex-col flex-1 min-h-0 w-full">
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
           <Heading size="h4">
@@ -430,11 +511,37 @@ function KanbanSchedule() {
           </Heading>
         </div>
       </header>
-      <div className="flex flex-col h-full max-h-full overflow-auto relative">
+      <div className="flex flex-col flex-1 min-h-0 overflow-auto relative">
         <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
           <HStack>
             <SearchFilter param="search" size="sm" placeholder={t`Search`} />
             <Filter filters={filters} />
+            {peopleStation &&
+              !currentFilters.some((filter) =>
+                filter.startsWith("workCenterId:")
+              ) && (
+                <HStack
+                  spacing={0}
+                  className="rounded-md border border-border bg-card"
+                >
+                  <span className="flex items-center gap-1.5 px-2 py-1 text-sm whitespace-nowrap">
+                    <LuFactory className="flex-shrink-0" />
+                    <Trans>Your station: {peopleStation.name}</Trans>
+                  </span>
+                  <IconButton
+                    aria-label={t`Clear station default`}
+                    icon={<LuX />}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      peopleOverrideFetcher.submit(
+                        { date: peopleDate ?? "" },
+                        { method: "post", action: path.to.peopleOverride }
+                      )
+                    }
+                  />
+                </HStack>
+              )}
           </HStack>
 
           <Popover>

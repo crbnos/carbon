@@ -18,6 +18,7 @@ import {
 } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -169,7 +170,7 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
       type: "salesOrder",
       id: orderId,
       companyId: companyId,

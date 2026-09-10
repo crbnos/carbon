@@ -11,7 +11,7 @@ This page is the deep dive. The [quality overview](/docs/reference/quality) has 
 
 Inspection is **lot-based**: one inspection per received line (the `receiptLineId` is unique, so a line can't spawn two lots). The lot carries a snapshot of the resolved plan — sample size, acceptance number, rejection number, the standard, the code letter — frozen at receipt so later plan edits never rewrite history.
 
-<StatusFlow>
+<StatusFlow entity="inspection">
   <Status name="Pending">The lot exists but no samples are recorded yet. Its tracked entities were posted **On Hold** at receipt, not Available.</Status>
   <Status name="In Progress">At least one sample has been inspected. The inspector is working through the sample size, recording each unit as Passed or Failed.</Status>
   <Status name="Passed" accent>The lot was **accepted** on disposition. Un-sampled entities are released to Available; sampled passes stay Available, sampled failures stay Rejected.</Status>
@@ -87,7 +87,7 @@ Sampling decides *how many* to inspect. An **inspection template** decides *what
   <Field name="Inspection">A nested inspection reference.</Field>
 </FieldTable>
 
-The step validator (`qualityDocumentStepValidator`, `quality.models.ts:591`) enforces the type-specific rules: a **Measurement** step must have a unit of measure, a **List** step must have at least one non-empty option, and when both `minValue` and `maxValue` are set the max must be greater than or equal to the min. This same step model backs versioned quality documents (SOPs and work instructions), so an inspection template and a procedure share their building blocks.
+The step validator (`qualityDocumentStepValidator`, `quality.models.ts:591`) enforces the type-specific rules: a **Measurement** step must have a unit of measure, a **List** step must have at least one non-empty option, and when both `minValue` and `maxValue` are set the max must be greater than or equal to the min.
 
 ## FAI, inspection documents, and balloons
 

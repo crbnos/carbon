@@ -31,10 +31,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const operationData = validation.data;
+
   // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
   const lock = await checkRevisionLock(client, {
     kind: "makeMethod",
-    id: validation.data.makeMethodId,
+    id: operationData.makeMethodId,
     companyId
   });
   if (!lock.ok) {
@@ -44,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const updateMethodOperation = await upsertMethodOperation(client, {
-    ...validation.data,
+    ...operationData,
     id: id,
     companyId,
     updatedBy: userId,

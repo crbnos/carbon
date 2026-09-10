@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode, getExchangeRate } from "~/modules/accounting";
 import {
   getSiblingQuotesForQuote,
   getSupplier,
@@ -43,19 +43,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   const serviceRole = await getCarbonServiceRole();
 
-  const [quote, lines, prices, siblingQuotes] = await Promise.all([
-    getSupplierQuote(serviceRole, id),
-    getSupplierQuoteLines(serviceRole, id),
-    getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
-    getSiblingQuotesForQuote(serviceRole, id)
-  ]);
+  // These reads run service-role (RLS bypassed), and `id` is the untrusted URL
+  // param, so resolve the quote and confirm it belongs to the caller's company
+  // BEFORE reading anything else keyed off it — otherwise a cross-company id
+  // would load that quote's lines/prices/siblings (CWE-639 IDOR).
+  const quote = await getSupplierQuote(serviceRole, id);
 
-  if (quote.error) {
+  if (quote.error || !quote.data) {
     throw redirect(
       path.to.supplierQuotes,
       await flash(request, error(quote.error, "Failed to load quote"))
     );
   }
+
+  if (quote.data.companyId !== companyId) {
+    throw redirect(
+      path.to.supplierQuotes,
+      await flash(request, error(null, "Failed to load quote"))
+    );
+  }
+
+  const [lines, prices, siblingQuotes] = await Promise.all([
+    getSupplierQuoteLines(serviceRole, id),
+    getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
+    getSiblingQuotesForQuote(serviceRole, id)
+  ]);
 
   const [supplierInteraction, presentationCurrency, supplier, companySettings] =
     await Promise.all([
@@ -79,8 +91,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let exchangeRate = 1;
-  if (quote.data?.currencyCode && presentationCurrency.data?.exchangeRate) {
-    exchangeRate = presentationCurrency.data.exchangeRate;
+  if (quote.data?.currencyCode) {
+    const rate = await getExchangeRate(
+      serviceRole,
+      quote.data.companyId,
+      quote.data.currencyCode
+    );
+    // A missing LIVE rate must not make the quote unopenable — this page hosts
+    // the refresh button that fixes it. Fall back to the document's own stamped
+    // snapshot (the PDF routes' policy); writes still refuse.
+    exchangeRate =
+      rate.error || rate.data === null
+        ? (quote.data.exchangeRate ?? 1)
+        : rate.data;
   }
 
   // Extract sibling quotes from the linked data
@@ -126,14 +149,14 @@ export default function SupplierQuoteRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <SupplierQuoteHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<SupplierQuoteExplorer />}
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>

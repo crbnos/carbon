@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import puppeteer from "npm:puppeteer-core@16.2.0";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 import {
@@ -11,6 +12,8 @@ import {
   MagickFormat,
   initializeImageMagick,
 } from "npm:@imagemagick/magick-wasm@0.0.30";
+
+const logger = getFunctionLogger("thumbnail");
 
 const wasmBytes = await Deno.readFile(
   new URL(
@@ -39,10 +42,7 @@ serve(async (req: Request) => {
     const payload = await req.json();
     const { url } = payloadSchema.parse(payload);
 
-    console.log({
-      function: "thumbnail",
-      url,
-    });
+    logger.info({ url });
 
     browser = await puppeteer.connect({
       browserWSEndpoint,
@@ -50,18 +50,18 @@ serve(async (req: Request) => {
       // valid cert so this is a no-op there.
       ignoreHTTPSErrors: true,
     });
-    console.log("browser connected");
+    logger.debug("browser connected");
     const page = await browser.newPage();
-    console.log("page created");
+    logger.debug("page created");
     await page.setViewport({ width: 1000, height: 1000 });
-    console.log("viewport set");
+    logger.debug("viewport set");
     await page.goto(url);
-    console.log(`navigated to ${url}`);
+    logger.debug(`navigated to ${url}`);
     // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
     await page.waitForSelector("#model-viewer-canvas", {
       timeout: 10000,
     });
-    console.log("model-viewer-canvas visible");
+    logger.debug("model-viewer-canvas visible");
     // Capture just the center portion of the viewport to avoid the ring
     const screenshot = await page.screenshot({
       encoding: "binary",
@@ -95,7 +95,7 @@ serve(async (req: Request) => {
   } finally {
     if (browser) {
       await browser.close();
-      console.log("browser closed");
+      logger.debug("browser closed");
     }
   }
 });

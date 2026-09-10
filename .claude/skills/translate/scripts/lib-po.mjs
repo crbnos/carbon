@@ -41,11 +41,25 @@ export function parsePo(text) {
     const msgidQ = [lines[i].slice("msgid ".length)];
     i++;
     while (i < lines.length && lines[i].startsWith('"')) msgidQ.push(lines[i++]);
+    // Plural entries carry msgstr[n], not msgstr. Lingui does not emit them, but
+    // consume them rather than leaving the msgstr[n] lines to be re-scanned.
+    if (i < lines.length && lines[i].startsWith("msgid_plural ")) {
+      i++;
+      while (i < lines.length && (lines[i].startsWith('"') || lines[i].startsWith("msgstr["))) i++;
+      continue;
+    }
     if (i >= lines.length || !lines[i].startsWith("msgstr ")) continue;
     const msgstrLineIndex = i;
     const msgstrQ = [lines[i].slice("msgstr ".length)];
     i++;
     while (i < lines.length && lines[i].startsWith('"')) msgstrQ.push(lines[i++]);
+    // A second msgstr on one msgid is a corrupt catalog (a bad .po merge keeps
+    // both sides). Refuse rather than silently translating against one of them.
+    if (i < lines.length && lines[i].startsWith("msgstr ")) {
+      throw new Error(
+        `Corrupt .po: duplicate msgstr on line ${i + 1} for msgid ${msgidQ.join("")}. Keep one translation per entry.`,
+      );
+    }
     entries.push({
       comments,
       msgid: msgidQ.map((q) => unescapePo(stripQuotes(q))).join(""),

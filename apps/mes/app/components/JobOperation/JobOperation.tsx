@@ -20,6 +20,8 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   generateHTML,
   Heading,
@@ -52,6 +54,7 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   convertDateStringToIsoString,
   convertKbToString,
+  formatDate,
   formatDurationMilliseconds,
   getItemReadableId,
   MODEL_RAW_KEEP_MAX_BYTES
@@ -59,6 +62,7 @@ import {
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -81,7 +85,9 @@ import {
   LuGitPullRequest,
   LuHammer,
   LuHardHat,
+  LuLayers,
   LuPackageCheck,
+  LuPrinter,
   LuQrCode,
   LuSquareUser,
   LuTimer,
@@ -104,6 +110,7 @@ import {
 } from "~/components/Icons";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
+import type { JobOperationBatch } from "~/services/operations.service";
 import { getFileType } from "~/services/operations.service";
 import type {
   Job,
@@ -119,8 +126,10 @@ import type {
   TrackedInput
 } from "~/services/types";
 import { useItems } from "~/stores";
+import { makeDurations } from "~/utils/durations";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
+import { BatchCompleteModal } from "./components/BatchCompleteModal";
 import { OperationChat } from "./components/Chat";
 import {
   Controls,
@@ -148,6 +157,10 @@ import { useOperation } from "./hooks/useOperation";
 const log = getLogger("mes", "job-operation");
 
 type JobOperationProps = {
+  // Present only when the op belongs to an Active/Completing batch; the loader
+  // resolves it and swaps in the batch's events. In batch mode the timers and
+  // completion act on the whole batch.
+  batch: JobOperationBatch | null;
   events: ProductionEvent[];
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
   autoSelectMaterialWithoutPickingList?: boolean;
@@ -216,6 +229,7 @@ function PickedBadge({
 }
 
 export const JobOperation = ({
+  batch,
   events,
   expiredEntityPolicy = "Block",
   autoSelectMaterialWithoutPickingList = false,
@@ -241,6 +255,14 @@ export const JobOperation = ({
 
   const parentIsSerial = method?.requiresSerialTracking;
   const parentIsBatch = method?.requiresBatchTracking;
+
+  // Batch mode: the loader only passes `batch` when the op belongs to an
+  // Active/Completing batch, so its presence is the switch. In batch mode the
+  // Start/Stop timer, planned durations, and completion all act on the whole
+  // batch rather than this single member.
+  const isBatched = !!batch;
+  const isCompleting = batch?.status === "Completing";
+  const batchCompleteModal = useDisclosure();
 
   const serialIndex =
     trackedEntities.findIndex((entity) => entity.id === trackedEntityId) ?? 0;
@@ -303,6 +325,9 @@ export const JobOperation = ({
     requiresSerialTracking: !!parentIsSerial,
     pauseInterval: isModalOpen,
     procedure,
+    // In batch mode the realtime subscription follows the batch's events (all
+    // members) rather than this operation's own.
+    batchId: batch?.id,
     // First operation only (no labels to scan yet): auto-select the next unit.
     // `activeStep` follows `trackedEntityId` via the sync effect above, so setting
     // the URL param is all that's needed.
@@ -311,16 +336,72 @@ export const JobOperation = ({
     }
   });
 
+  // In batch mode the shared timer is judged against the batch's TOTAL plan:
+  // ONE shared setup (the largest member's — that is the point of batching) plus
+  // each member's labor/machine summed. `displayOperation` feeds the info-bar
+  // duration, the work-type toggle, the Times denominators, and controlsHeight
+  // so a batch timer reads against the whole batch, not one member. A batch
+  // with no planned time anywhere still gets a Machine timer (fallback of 1).
+  const displayOperation = useMemo<OperationWithDetails>(() => {
+    if (!batch) return operation;
+    const totals = (batch.operations ?? []).reduce(
+      (acc, m) => {
+        try {
+          const d = makeDurations({
+            setupTime: m.setupTime ?? 0,
+            setupUnit: (m.setupUnit ?? "Total Minutes") as string,
+            laborTime: m.laborTime ?? 0,
+            laborUnit: (m.laborUnit ?? "Minutes/Piece") as string,
+            machineTime: m.machineTime ?? 0,
+            machineUnit: (m.machineUnit ?? "Minutes/Piece") as string,
+            operationQuantity: m.operationQuantity
+          });
+          acc.setupDuration = Math.max(acc.setupDuration, d.setupDuration);
+          acc.laborDuration += d.laborDuration;
+          acc.machineDuration += d.machineDuration;
+        } catch {
+          // A member without times contributes nothing.
+        }
+        return acc;
+      },
+      { setupDuration: 0, laborDuration: 0, machineDuration: 0 }
+    );
+    if (
+      totals.setupDuration === 0 &&
+      totals.laborDuration === 0 &&
+      totals.machineDuration === 0
+    ) {
+      totals.machineDuration = 1;
+    }
+    return {
+      ...operation,
+      ...totals,
+      duration:
+        totals.setupDuration + totals.laborDuration + totals.machineDuration
+    };
+  }, [batch, operation]);
+
+  const projectedCompletionDate = operation.projectedCompletionAt
+    ? operation.projectedCompletionAt.slice(0, 10)
+    : null;
+  const daysBehindTarget =
+    projectedCompletionDate && operation.operationDueDate
+      ? parseDate(projectedCompletionDate).compare(
+          parseDate(operation.operationDueDate.slice(0, 10))
+        )
+      : 0;
+  const isBehindTarget = daysBehindTarget > 0;
+
   const controlsHeight = useMemo(() => {
     let operations = 1;
-    if (operation.setupDuration > 0) operations++;
-    if (operation.laborDuration > 0) operations++;
-    if (operation.machineDuration > 0) operations++;
+    if (displayOperation.setupDuration > 0) operations++;
+    if (displayOperation.laborDuration > 0) operations++;
+    if (displayOperation.machineDuration > 0) operations++;
     return 60 + operations * 36;
   }, [
-    operation.laborDuration,
-    operation.machineDuration,
-    operation.setupDuration
+    displayOperation.laborDuration,
+    displayOperation.machineDuration,
+    displayOperation.setupDuration
   ]);
 
   // The side control panel only exists on some tabs; content reserves space for
@@ -474,7 +555,9 @@ export const JobOperation = ({
     callback: () => {
       completeFetcher.load(path.to.endOperation(operation.id));
     },
-    active: !!kanban?.id
+    // The wedge completes this single op via endOperation — never for a batched
+    // member; the batch completes as a whole.
+    active: !!kanban?.id && !isBatched
   });
 
   const item = items.find((it) => it.id === operation.itemId);
@@ -531,7 +614,7 @@ export const JobOperation = ({
           </HStack>
         </header>
 
-        <div className="flex flex-nowrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-background gap-2 md:gap-4 w-full min-w-0 overflow-hidden">
+        <div className="flex flex-nowrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-2 md:gap-4 w-full min-w-0 overflow-hidden">
           <HStack className="min-w-22 shrink-0 justify-between">
             <Heading size="h4">{operation.jobReadableId}</Heading>
 
@@ -574,6 +657,70 @@ export const JobOperation = ({
             </DropdownMenu>
           </HStack>
 
+          {batch && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-sm shrink-0 active:scale-[0.98] transition-transform"
+                >
+                  <LuLayers className="size-3.5 text-muted-foreground" />
+                  <span className="font-medium tabular-nums">
+                    {batch.readableId}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t`${(batch.operations ?? []).length} jobs`}
+                  </span>
+                  {isCompleting && (
+                    <Badge variant="yellow" className="ml-1">
+                      <Trans>Completing</Trans>
+                    </Badge>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[240px]">
+                <DropdownMenuLabel>
+                  <Trans>Batched jobs</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(batch.operations ?? []).map((member) => {
+                  const isCurrent = member.id === operation.id;
+                  return (
+                    <DropdownMenuItem key={member.id} asChild>
+                      <Link to={path.to.operation(member.id)}>
+                        <DropdownMenuIcon
+                          icon={
+                            isCurrent ? (
+                              <LuCheck className="text-emerald-500" />
+                            ) : (
+                              <LuClipboardCheck />
+                            )
+                          }
+                        />
+                        <span className="truncate">
+                          {(member.job as { jobId?: string | null } | null)
+                            ?.jobId ?? member.id}
+                          {member.description ? ` — ${member.description}` : ""}
+                        </span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.file.batchList(batch.id as string)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuPrinter />} />
+                    <Trans>Print batch list</Trans>
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <HStack className="hidden lg:flex min-w-0 flex-1 justify-end items-center gap-3 overflow-hidden">
             {job.customer?.name && (
               <HStack className="min-w-0 justify-start space-x-2">
@@ -605,14 +752,18 @@ export const JobOperation = ({
                 </span>
               </HStack>
             )}
-            {typeof operation.duration === "number" && (
-              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                <LuTimer className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate tabular-nums">
-                  {formatDurationMilliseconds(operation.duration)}
-                </span>
-              </HStack>
-            )}
+            {/* Batch mode shows the batch's planned total (shared setup +
+                summed work); a zero plan renders nothing rather than
+                "0 milliseconds". */}
+            {typeof displayOperation.duration === "number" &&
+              displayOperation.duration > 1 && (
+                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
+                  <LuTimer className="text-muted-foreground shrink-0" />
+                  <span className="text-sm truncate tabular-nums">
+                    {formatDurationMilliseconds(displayOperation.duration)}
+                  </span>
+                </HStack>
+              )}
             {operation.jobDeadlineType && (
               <HStack className="min-w-0 shrink-0 justify-start space-x-2">
                 <DeadlineIcon
@@ -650,6 +801,26 @@ export const JobOperation = ({
             (#959)
           */}
           <div className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-auto lg:h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-visible lg:overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+            {isCompleting && (
+              <div className="px-4 pt-4 lg:px-6">
+                <Card>
+                  <CardContent className="py-4">
+                    <HStack className="justify-between">
+                      <span className="text-sm">
+                        <Trans>
+                          A previous completion did not finish. Retrying resumes
+                          the remaining steps — quantities are not
+                          double-counted.
+                        </Trans>
+                      </span>
+                      <Badge variant="yellow">
+                        <Trans>Completing</Trans>
+                      </Badge>
+                    </HStack>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
             <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
               <HStack className="min-w-0">
                 {thumbnailPath && (
@@ -663,7 +834,7 @@ export const JobOperation = ({
                     {operation.reworkId && <Badge variant="red">Rework</Badge>}
                   </HStack>
                   <p className="text-muted-foreground line-clamp-1">
-                    {operation.itemDescription}{" "}
+                    {operation.itemReadableId}
                   </p>
                 </div>
               </HStack>
@@ -673,7 +844,19 @@ export const JobOperation = ({
                     ((progress.setup ?? 0) +
                       (progress.labor ?? 0) +
                       (progress.machine ?? 0)) /
-                      Math.max(operation.quantityComplete, 1),
+                      // Batch mode: the timer is shared, so the per-piece rate
+                      // is elapsed over ALL members' completed parts — a
+                      // quantity-weighted average, matching how completion
+                      // slices the shared time (weight = operationQuantity).
+                      Math.max(
+                        batch
+                          ? (batch.operations ?? []).reduce(
+                              (sum, m) => sum + (m.quantityComplete ?? 0),
+                              0
+                            )
+                          : operation.quantityComplete,
+                        1
+                      ),
                     {
                       style: "short"
                     }
@@ -754,6 +937,25 @@ export const JobOperation = ({
                           />
                         ) : null}
                       </span>
+                      {projectedCompletionDate &&
+                        (isBehindTarget ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="red">
+                                {t`Proj. ${formatDate(
+                                  projectedCompletionDate
+                                )}`}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t`Behind target by ${daysBehindTarget} day(s)`}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                          </span>
+                        ))}
                     </VStack>
                   </CardContent>
                 </Card>
@@ -1124,7 +1326,7 @@ export const JobOperation = ({
                                             "opacity-50 hover:opacity-100"
                                         )}
                                       >
-                                        <Td>
+                                        <Td className="max-w-[20vw]">
                                           <HStack
                                             spacing={2}
                                             className="justify-between min-w-0"
@@ -1325,7 +1527,7 @@ export const JobOperation = ({
                                                   "opacity-50 hover:opacity-100"
                                               )}
                                             >
-                                              <Td className="pl-10">
+                                              <Td className="pl-10 max-w-[20vw]">
                                                 <HStack
                                                   spacing={2}
                                                   className="justify-between min-w-0"
@@ -2268,7 +2470,7 @@ export const JobOperation = ({
 
               <WorkTypeToggle
                 active={active}
-                operation={operation}
+                operation={displayOperation}
                 value={eventType}
                 onChange={setEventType}
               />
@@ -2281,14 +2483,17 @@ export const JobOperation = ({
                 laborProductionEvent={laborProductionEvent}
                 machineProductionEvent={machineProductionEvent}
                 isTrackedActivity={
-                  method?.requiresSerialTracking === true ||
-                  method?.requiresBatchTracking === true
+                  !isBatched &&
+                  (method?.requiresSerialTracking === true ||
+                    method?.requiresBatchTracking === true)
                 }
                 trackedEntityId={trackedEntityId}
+                batchId={batch?.id}
               />
               <div className="flex flex-row lg:flex-col items-center gap-2 justify-center">
                 <IconButtonWithTooltip
                   disabled={
+                    !isBatched &&
                     parentIsSerial &&
                     trackedEntities.some(
                       (entity) =>
@@ -2298,10 +2503,16 @@ export const JobOperation = ({
                     )
                   }
                   icon={
-                    <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    isBatched ? (
+                      <LuPackageCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    ) : (
+                      <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    )
                   }
-                  tooltip={t`Log Completed`}
-                  onClick={completeModal.onOpen}
+                  tooltip={isBatched ? t`Complete Batch` : t`Log Completed`}
+                  onClick={
+                    isBatched ? batchCompleteModal.onOpen : completeModal.onOpen
+                  }
                 />
                 <IconButtonWithTooltip
                   icon={
@@ -2318,7 +2529,7 @@ export const JobOperation = ({
           <Times>
             <div className=" lg:p-6">
               <div className="w-full gap-2 grid grid-cols-[auto_auto_1fr]">
-                {operation.setupDuration > 0 && (
+                {displayOperation.setupDuration > 0 && (
                   <>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2333,25 +2544,28 @@ export const JobOperation = ({
                         style: "short"
                       })}
                       /
-                      {formatDurationMilliseconds(operation.setupDuration, {
-                        style: "short"
-                      })}
+                      {formatDurationMilliseconds(
+                        displayOperation.setupDuration,
+                        {
+                          style: "short"
+                        }
+                      )}
                     </span>
                     <BarProgress
                       gradient
                       invertGradient
                       progress={
-                        (progress.setup / operation.setupDuration) * 100
+                        (progress.setup / displayOperation.setupDuration) * 100
                       }
                       activeClassName={
-                        progress.setup > operation.setupDuration
+                        progress.setup > displayOperation.setupDuration
                           ? "bg-red-500"
                           : "bg-emerald-500"
                       }
                     />
                   </>
                 )}
-                {operation.laborDuration > 0 && (
+                {displayOperation.laborDuration > 0 && (
                   <>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2366,25 +2580,28 @@ export const JobOperation = ({
                         style: "short"
                       })}
                       /
-                      {formatDurationMilliseconds(operation.laborDuration, {
-                        style: "short"
-                      })}
+                      {formatDurationMilliseconds(
+                        displayOperation.laborDuration,
+                        {
+                          style: "short"
+                        }
+                      )}
                     </span>
                     <BarProgress
                       gradient
                       invertGradient
                       progress={
-                        (progress.labor / operation.laborDuration) * 100
+                        (progress.labor / displayOperation.laborDuration) * 100
                       }
                       activeClassName={
-                        progress.labor > operation.laborDuration
+                        progress.labor > displayOperation.laborDuration
                           ? "bg-red-500"
                           : "bg-emerald-500"
                       }
                     />
                   </>
                 )}
-                {operation.machineDuration > 0 && (
+                {displayOperation.machineDuration > 0 && (
                   <>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2399,18 +2616,22 @@ export const JobOperation = ({
                         style: "short"
                       })}
                       /
-                      {formatDurationMilliseconds(operation.machineDuration, {
-                        style: "short"
-                      })}
+                      {formatDurationMilliseconds(
+                        displayOperation.machineDuration,
+                        {
+                          style: "short"
+                        }
+                      )}
                     </span>
                     <BarProgress
                       gradient
                       invertGradient
                       progress={
-                        (progress.machine / operation.machineDuration) * 100
+                        (progress.machine / displayOperation.machineDuration) *
+                        100
                       }
                       activeClassName={
-                        progress.machine > operation.machineDuration
+                        progress.machine > displayOperation.machineDuration
                           ? "bg-red-500"
                           : "bg-emerald-500"
                       }
@@ -2465,45 +2686,67 @@ export const JobOperation = ({
         <BottomSheetContent className="max-w-md mx-auto">
           <BottomSheetBody>
             <div className="flex flex-col gap-2 pb-2">
-              <button
-                type="button"
-                className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
-                onClick={() => {
-                  actionsSheet.onClose();
-                  scrapModal.onOpen();
-                }}
-              >
-                <FaTrash className="size-4 shrink-0 fill-muted-foreground" />
-                <span className="text-base/6 font-medium">
-                  <Trans>Scrap</Trans>
-                </span>
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
-                onClick={() => {
-                  actionsSheet.onClose();
-                  reworkModal.onOpen();
-                }}
-              >
-                <LuGitPullRequest className="size-4 shrink-0 stroke-muted-foreground" />
-                <span className="text-base/6 font-medium">
-                  <Trans>Rework</Trans>
-                </span>
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
-                onClick={() => {
-                  actionsSheet.onClose();
-                  finishModal.onOpen();
-                }}
-              >
-                <LuCheck className="size-4 shrink-0 stroke-muted-foreground" />
-                <span className="text-base/6 font-medium">
-                  <Trans>Finish</Trans>
-                </span>
-              </button>
+              {isBatched && (
+                <button
+                  type="button"
+                  className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                  onClick={() => {
+                    actionsSheet.onClose();
+                    batchCompleteModal.onOpen();
+                  }}
+                >
+                  <LuLayers className="size-4 shrink-0 stroke-muted-foreground" />
+                  <span className="text-base/6 font-medium">
+                    <Trans>Complete Batch</Trans>
+                  </span>
+                </button>
+              )}
+              {/* Scrap / Rework / Finish are per-operation writes. In batch mode
+                  the batch completion records production + scrap per member, so
+                  these are hidden to avoid double-counting a member. */}
+              {!isBatched && (
+                <>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      scrapModal.onOpen();
+                    }}
+                  >
+                    <FaTrash className="size-4 shrink-0 fill-muted-foreground" />
+                    <span className="text-base/6 font-medium">
+                      <Trans>Scrap</Trans>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      reworkModal.onOpen();
+                    }}
+                  >
+                    <LuGitPullRequest className="size-4 shrink-0 stroke-muted-foreground" />
+                    <span className="text-base/6 font-medium">
+                      <Trans>Rework</Trans>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      finishModal.onOpen();
+                    }}
+                  >
+                    <LuCheck className="size-4 shrink-0 stroke-muted-foreground" />
+                    <span className="text-base/6 font-medium">
+                      <Trans>Finish</Trans>
+                    </span>
+                  </button>
+                </>
+              )}
               <Suspense>
                 <Await resolve={workCenter}>
                   {(resolvedWorkCenter) =>
@@ -2617,6 +2860,14 @@ export const JobOperation = ({
             }}
           </Await>
         </Suspense>
+      )}
+
+      {batch && batchCompleteModal.isOpen && (
+        <BatchCompleteModal
+          batch={batch}
+          isCompleting={isCompleting}
+          onClose={batchCompleteModal.onClose}
+        />
       )}
 
       {serialModal.isOpen && (

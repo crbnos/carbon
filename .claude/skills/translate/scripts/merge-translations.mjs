@@ -18,6 +18,59 @@ if (!existsSync(MANIFEST)) {
 }
 const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
 
+// The one failure mode a cheap model hits over and over: a bare ASCII `"` inside
+// a value, because so many msgids quote a word. Left alone it costs the WHOLE
+// chunk — 6 of 37 on the de run, ~230 strings — so repair it here rather than
+// re-spending on a retry that fails the same way. A closing quote is one whose
+// next non-space character is `:`, `,` or `}`; anything else is text.
+//
+// BEST EFFORT, not a guarantee — 5 of those 6 chunks. It cannot save a mismatched
+// pair like German `„Wort"`, where the closing ASCII quote sits before a comma and
+// is genuinely indistinguishable from the end of the value. The retry round is the
+// backstop for those; this just stops the common case costing a whole chunk.
+function repairBareQuotes(src) {
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (inStr && c === "\\") {
+      out += c + src[++i];
+      continue;
+    }
+    if (c === '"') {
+      if (!inStr) {
+        inStr = true;
+        out += c;
+        continue;
+      }
+      let j = i + 1;
+      while (j < src.length && /\s/.test(src[j])) j++;
+      if (":,}".includes(src[j])) {
+        inStr = false;
+        out += c;
+        continue;
+      }
+      out += '\\"';
+      continue;
+    }
+    out += c;
+  }
+  return out;
+}
+
+let repairedChunks = 0;
+
+function readChunk(path) {
+  const raw = readFileSync(path, "utf8");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const parsed = JSON.parse(repairBareQuotes(raw)); // throws on anything else
+    repairedChunks++;
+    return parsed;
+  }
+}
+
 // Merge all chunk outputs for a given (locale,catalog) against its .po once.
 const byPo = {};
 for (const m of manifest) {
@@ -37,7 +90,7 @@ for (const { locale, catalog, outs } of Object.values(byPo)) {
       continue;
     }
     try {
-      Object.assign(translations, JSON.parse(readFileSync(out, "utf8")));
+      Object.assign(translations, readChunk(out));
     } catch {
       missingChunks.push(`${out} (invalid JSON)`);
     }
@@ -69,6 +122,7 @@ for (const { locale, catalog } of Object.values(byPo)) {
 }
 
 console.log(`Merged: ${matched} filled, ${unmatched} unmatched (key mismatch)`);
+if (repairedChunks) console.log(`Repaired ${repairedChunks} chunk(s) with unescaped quotes`);
 console.log(`Remaining empty msgstr in targeted catalogs: ${remaining}`);
 if (missingChunks.length) {
   console.log(`Missing/invalid chunk outputs (${missingChunks.length}):`);

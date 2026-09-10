@@ -16,6 +16,7 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  Subheading,
   toast,
   useDisclosure,
   VStack
@@ -91,7 +92,7 @@ const ProcessForm = ({
           if (!open) onClose?.();
         }}
       >
-        <ModalDrawerContent>
+        <ModalDrawerContent size="lg">
           <ValidatedForm
             validator={processValidator}
             method="post"
@@ -117,6 +118,9 @@ const ProcessForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
+                <Subheading variant="heavy" className="block">
+                  <Trans>Basic Information</Trans>
+                </Subheading>
                 <Input name="name" label={t`Process Name`} />
                 <Select
                   name="processType"
@@ -146,11 +150,36 @@ const ProcessForm = ({
                   label={t`Work Centers`}
                   termId="work-center"
                 />
+
+                {/* SupplierProcesses renders its own section (heading + list)
+                    only for Outside Processing, gating on processType. */}
                 <SupplierProcesses processId={initialValues.id} />
+
+                <Subheading variant="heavy" className="block pt-2">
+                  <Trans>Scheduling</Trans>
+                </Subheading>
+                <Boolean
+                  name="requiresAbility"
+                  label={t`Requires Ability`}
+                  description={t`Only qualified employees can be scheduled for and run this process`}
+                  bordered
+                />
+
+                <Boolean
+                  name="batchable"
+                  label={t`Batchable`}
+                  description={t`Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath`}
+                  bordered
+                />
+                <BatchCompatibilityRules />
+
+                <Subheading variant="heavy" className="block pt-2">
+                  <Trans>Kanban</Trans>
+                </Subheading>
                 <Boolean
                   name="completeAllOnScan"
-                  label={t`Complete all quantities on barcode scan`}
-                  termId="process-complete-all-on-scan"
+                  label={t`Complete all quantities on kanban complete scan`}
+                  description={t`When using kanbans, the complete barcode will complete all quantities of an operation instead of just one`}
                   bordered
                 />
                 <CustomFormFields table="process" />
@@ -175,6 +204,115 @@ const ProcessForm = ({
 
 export default ProcessForm;
 
+// Batch settings — only shown once a process is Batchable. The batch type
+// selector (sequential vs simultaneous) rides the same conditional as the
+// per-dimension compatibility card.
+// "Must match" blocks incompatible ops from sharing a batch; "Guide" warns and
+// splits suggestion groups; "Ignore" never considers the dimension. Defaults
+// (substance/grade/dimension = Guide, the rest = Ignore) reproduce today's
+// behavior, so an untouched process behaves exactly as before.
+function BatchCompatibilityRules() {
+  const { t } = useLingui();
+  const [batchable] = useControlField<boolean>("batchable");
+
+  if (!batchable) return null;
+
+  const batchTypeOptions = [
+    {
+      value: "Sequential",
+      label: t`Sequential`,
+      helper: t`Parts run one after another — e.g. a saw or laser table.`
+    },
+    {
+      value: "Simultaneous",
+      label: t`Simultaneous`,
+      helper: t`Parts run together in one load — e.g. a furnace, oven, or plating bath.`
+    }
+  ];
+
+  const levelOptions = [
+    { value: "must", label: t`Require Match` },
+    { value: "guide", label: t`Suggest Match` },
+    { value: "ignore", label: t`Ignore` }
+  ];
+
+  const rules: { name: string; label: string; description: string }[] = [
+    {
+      name: "batchRuleFinish",
+      label: t`Finish`,
+      description: t`Surface finish — e.g. anodized vs powder-coat`
+    },
+    {
+      name: "batchRuleSubstance",
+      label: t`Substance`,
+      description: t`Base material — e.g. steel vs aluminum`
+    },
+    {
+      name: "batchRuleGrade",
+      label: t`Grade`,
+      description: t`Material grade or alloy designation`
+    },
+    {
+      name: "batchRuleDimension",
+      label: t`Dimension`,
+      description: t`Stock size — e.g. sheet thickness or bar diameter`
+    },
+    {
+      name: "batchRuleForm",
+      label: t`Form`,
+      description: t`Material form — e.g. sheet, bar, tube`
+    },
+    {
+      name: "batchRuleItem",
+      label: t`Material item`,
+      description: t`The exact material part, not just its properties`
+    }
+  ];
+
+  return (
+    <>
+      <Select
+        name="batchType"
+        label={t`Batch type`}
+        termId="batch-type"
+        options={batchTypeOptions}
+      />
+      <div className="flex flex-col gap-3 w-full rounded-md border border-border p-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">
+            <Trans>Compatibility rules</Trans>
+          </span>
+          <span className="text-xs text-muted-foreground text-pretty">
+            <Trans>
+              How strictly each material property must match for operations to
+              share a batch on this process.
+            </Trans>
+          </span>
+        </div>
+        {rules.map((rule) => (
+          <div
+            key={rule.name}
+            className="grid grid-cols-[1fr_10rem] items-center gap-4"
+          >
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-sm">{rule.label}</span>
+              <span className="text-xs text-muted-foreground text-pretty">
+                {rule.description}
+              </span>
+            </div>
+            <Select
+              name={rule.name}
+              label=""
+              options={levelOptions}
+              isOptional={false}
+            />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function SupplierProcesses({ processId }: { processId?: string }) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -189,14 +327,14 @@ function SupplierProcesses({ processId }: { processId?: string }) {
 
   return (
     <>
+      <Subheading variant="heavy" className="block pt-2">
+        <LabelWithHelp termId="process-suppliers" variant="inline">
+          <Trans>Suppliers</Trans>
+        </LabelWithHelp>
+      </Subheading>
       <div className="flex flex-col gap-2 w-full">
         {processes.length > 0 && (
           <>
-            <label className="text-muted-foreground text-xs">
-              <LabelWithHelp termId="process-suppliers">
-                {t`Suppliers`}
-              </LabelWithHelp>
-            </label>
             {processes.map((sp) => (
               <HStack
                 key={sp.id}

@@ -82,18 +82,21 @@
   border: 1px solid rgba(38, 35, 35, 0.08);
   border-radius: 5px;
   padding: 0.08em 0.36em;
-  white-space: nowrap;
+  /* pre-wrap + break-word: a chip only wraps when the line runs out, and a single
+   * identifier never splits mid-word unless it alone exceeds the line — nowrap here
+   * made any over-long chip (a full SQL statement, a deep module path) overflow its
+   * container on desktop instead of wrapping. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 .prose :not(pre) > code::before,
 .prose :not(pre) > code::after {
   content: none !important;
 }
-/* …but nowrap on a phone means one long inline path (a full `apps/erp/app/modules/…`
- * reference) widens the whole document and every section scrolls sideways with it.
- * Below the tablet breakpoint, let those chips wrap; desktop keeps identifiers intact. */
+/* On a phone even a single long token must be able to break anywhere, or it widens
+ * the whole document and every section scrolls sideways with it. */
 @media (max-width: 640px) {
   .prose :not(pre) > code {
-    white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
 }

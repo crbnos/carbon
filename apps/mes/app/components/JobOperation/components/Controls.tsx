@@ -1,17 +1,19 @@
 import { Hidden, ValidatedForm } from "@carbon/form";
 import {
   cn,
+  hasOpenDialog,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger
+  TooltipTrigger,
+  useShortcutKeys
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ComponentProps, ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { forwardRef, useCallback, useMemo, useRef, useState } from "react";
 import { FaPause, FaPlay } from "react-icons/fa6";
 import {
   LuEllipsisVertical,
@@ -28,6 +30,7 @@ import type {
   OperationWithDetails,
   ProductionEvent
 } from "~/services/types";
+import { START_STOP_SHORTCUT } from "~/shortcuts";
 import { path } from "~/utils/path";
 
 export function Controls({
@@ -70,20 +73,22 @@ export function Times({
   );
 }
 
-export function ButtonWithTooltip({
-  tooltip,
-  children,
-  ...props
-}: ComponentProps<"button"> & { tooltip: string }) {
+export const ButtonWithTooltip = forwardRef<
+  HTMLButtonElement,
+  ComponentProps<"button"> & { tooltip: string }
+>(({ tooltip, children, ...props }, ref) => {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <button {...props}>{children}</button>
+        <button ref={ref} {...props}>
+          {children}
+        </button>
       </TooltipTrigger>
       <TooltipContent side="top">{tooltip}</TooltipContent>
     </Tooltip>
   );
-}
+});
+ButtonWithTooltip.displayName = "ButtonWithTooltip";
 
 export function IconButtonWithTooltip({
   icon,
@@ -223,6 +228,7 @@ export function StartStopButton({
   machineProductionEvent,
   isTrackedActivity,
   trackedEntityId,
+  batchId,
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
@@ -233,8 +239,26 @@ export function StartStopButton({
   machineProductionEvent: ProductionEvent | undefined;
   isTrackedActivity: boolean;
   trackedEntityId: string | undefined;
+  // When set, the start/stop event is tagged as part of this batch — sliced per
+  // member at batch completion, and cost posting is deferred until then.
+  batchId?: string;
 }) {
   const fetcher = useFetcher<ProductionEvent>();
+
+  // Space = Start/Pause, the most-pressed button in MES. Inert in inputs
+  // (hook default) and under any open dialog. AssemblyView owns its own Space
+  // handling on a separate route (assembly.$operationId) — the two never
+  // co-mount. Ref-click so a disabled button stays a native no-op.
+  const startStopRef = useRef<HTMLButtonElement>(null);
+  useShortcutKeys({
+    shortcut: START_STOP_SHORTCUT,
+    action: (event) => {
+      event.preventDefault();
+      startStopRef.current?.click();
+    },
+    guard: () => !hasOpenDialog(),
+    disabled: fetcher.state !== "idle"
+  });
 
   const isActive = useMemo(() => {
     if (fetcher.formData?.get("action") === "End") {
@@ -301,24 +325,37 @@ export function StartStopButton({
       {isTrackedActivity && (
         <Hidden name="trackedEntityId" value={trackedEntityId} />
       )}
+      {batchId && <Hidden name="jobOperationBatchId" value={batchId} />}
       <Hidden name="jobOperationId" value={operation.id} />
 
       <Hidden name="action" value={isActive ? "End" : "Start"} />
       <Hidden name="type" value={eventType} />
       <Hidden name="workCenterId" value={operation.workCenterId ?? undefined} />
       {isActive ? (
-        <PauseButton disabled={fetcher.state !== "idle"} type="submit" />
+        <PauseButton
+          ref={startStopRef}
+          disabled={fetcher.state !== "idle"}
+          type="submit"
+        />
       ) : (
-        <PlayButton disabled={fetcher.state !== "idle"} type="submit" />
+        <PlayButton
+          ref={startStopRef}
+          disabled={fetcher.state !== "idle"}
+          type="submit"
+        />
       )}
     </ValidatedForm>
   );
 }
 
-export function PauseButton({ className, ...props }: ComponentProps<"button">) {
+export const PauseButton = forwardRef<
+  HTMLButtonElement,
+  ComponentProps<"button">
+>(({ className, ...props }, ref) => {
   const { t } = useLingui();
   return (
     <ButtonWithTooltip
+      ref={ref}
       {...props}
       tooltip={t`Pause`}
       className="group size-24 tall:size-32 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-4xl border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white"
@@ -326,12 +363,17 @@ export function PauseButton({ className, ...props }: ComponentProps<"button">) {
       <FaPause className="group-hover:scale-110" />
     </ButtonWithTooltip>
   );
-}
+});
+PauseButton.displayName = "PauseButton";
 
-export function PlayButton({ className, ...props }: ComponentProps<"button">) {
+export const PlayButton = forwardRef<
+  HTMLButtonElement,
+  ComponentProps<"button">
+>(({ className, ...props }, ref) => {
   const { t } = useLingui();
   return (
     <ButtonWithTooltip
+      ref={ref}
       {...props}
       tooltip={t`Start`}
       className="group size-24 tall:size-32 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-4xl border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white"
@@ -339,7 +381,8 @@ export function PlayButton({ className, ...props }: ComponentProps<"button">) {
       <FaPlay className="group-hover:scale-110" />
     </ButtonWithTooltip>
   );
-}
+});
+PlayButton.displayName = "PlayButton";
 
 export type FABItem = {
   icon: ReactNode;

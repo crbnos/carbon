@@ -245,6 +245,8 @@ export type WorkDisplayQueueRow = {
   operationStatus: string | null;
   assigneeName: string | null;
   dueDate: string | null;
+  /** Forward-ASAP forecast finish for the operation; `dueDate` stays the need-by target. */
+  projectedCompletionAt: string | null;
   tags: string[] | null;
 };
 
@@ -373,6 +375,7 @@ export async function getWorkDisplayData(
       operationStatus: row.operationStatus ?? null,
       assigneeName: row.assignee ? (names.get(row.assignee) ?? null) : null,
       dueDate: row.operationDueDate ?? row.jobDueDate ?? null,
+      projectedCompletionAt: row.projectedCompletionAt ?? null,
       tags: row.tags ?? null
     }))
   };

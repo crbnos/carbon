@@ -578,6 +578,12 @@ const StorageUnitsTable = memo(
           data={displayRows}
           defaultColumnVisibility={defaultColumnVisibility}
           defaultColumnPinning={defaultColumnPinning}
+          importCSV={[
+            {
+              table: "storageUnit" as const,
+              label: "Storage Units"
+            }
+          ]}
           primaryAction={actions}
           renderContextMenu={renderContextMenu}
           title={t`Storage Units`}

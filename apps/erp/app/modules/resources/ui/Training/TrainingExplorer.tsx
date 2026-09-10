@@ -25,16 +25,15 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
   Label,
+  ShortcutKey,
   Switch,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDebounce,
   useDisclosure,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -65,10 +64,10 @@ import {
   trainingQuestionType,
   trainingQuestionValidator
 } from "~/modules/resources";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
 export default function TrainingExplorer() {
-  const prettifyShortcut = usePrettifyShortcut();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const trainingData = useRouteData<{
@@ -171,14 +170,17 @@ export default function TrainingExplorer() {
   };
 
   const newQuestionRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+a": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      if (!isDisabled) {
-        newQuestionRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addAttribute,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        if (!isDisabled) {
+          newQuestionRef.current?.click();
+        }
       }
     }
-  });
+  ]);
 
   const questionMap = useMemo(
     () =>
@@ -191,7 +193,7 @@ export default function TrainingExplorer() {
 
   return (
     <>
-      <VStack className="w-full h-[calc(100dvh-99px)] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <VStack
           className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
@@ -268,7 +270,10 @@ export default function TrainingExplorer() {
                 <span>
                   <Trans>Add Question</Trans>
                 </span>
-                <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
+                <ShortcutKey
+                  shortcut={EXPLORER_SHORTCUTS.addAttribute}
+                  variant="small"
+                />
               </HStack>
             </TooltipContent>
           </Tooltip>

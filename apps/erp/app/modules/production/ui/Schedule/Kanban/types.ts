@@ -30,6 +30,7 @@ export type DisplaySettings = {
   showDueDate: boolean;
   showDuration: boolean;
   showEmployee: boolean;
+  showMaterial?: boolean;
   showProgress: boolean;
   showQuantity: boolean;
   showStatus: boolean;
@@ -62,6 +63,7 @@ const baseItemValidator = z.object({
   link: z.string().optional(),
   priority: z.number(),
   progress: z.number().optional(), // miliseconds
+  projectedCompletionAt: z.string().nullable().optional(), // forecast finish (timestamptz)
   reworkId: z.string().nullable().optional(),
   targetQuantity: z.number().optional(),
   quantity: z.number().optional(),
@@ -74,7 +76,10 @@ const baseItemValidator = z.object({
   subtitle: z.string().optional(),
   tags: z.array(z.string()).optional(),
   thumbnailPath: z.string().optional(),
-  title: z.string()
+  title: z.string(),
+  hasConflict: z.boolean().optional(),
+  scheduleOutdatedReason: z.string().nullable().optional(),
+  conflictReason: z.string().optional()
 });
 
 // Operation item with operation-level status
@@ -83,20 +88,47 @@ const operationItemValidator = baseItemValidator.extend({
   laborDuration: z.number().optional(),
   machineDuration: z.number().optional(),
   setupDuration: z.number().optional(),
-  status: z.enum(jobOperationStatus).optional()
+  status: z.enum(jobOperationStatus).optional(),
+  processBatchable: z.boolean().optional(),
+  processName: z.string().optional(),
+  jobOperationBatchId: z.string().nullable().optional(),
+  batchReadableId: z.string().nullable().optional(),
+  // "Substance Grade Dimension" strings from the operation's BOM lines —
+  // the nesting-compatibility signal planners batch by.
+  materialChips: z.array(z.string()).optional()
 });
 
 // Job item with job-level status
 const jobItemValidator = baseItemValidator.extend({
   status: z.enum(jobStatus).optional(),
   completedDate: z.string().optional(),
-  hasConflict: z.boolean().optional(),
   jobMakeMethodId: z.string()
 });
 
 export type OperationItem = z.infer<typeof operationItemValidator>;
 export type JobItem = z.infer<typeof jobItemValidator>;
-export type Item = OperationItem | JobItem;
+
+// An operation batch collapsed to one card on the schedule board. Explicit
+// variant (not an ItemCard boolean): rendered by BatchItemCard, dragged across
+// columns to reassign the batch's work center. `id` is the synthetic sortable
+// id (`batch:<batchId>`); members keep their real ids.
+export type BatchItem = Pick<
+  z.infer<typeof baseItemValidator>,
+  "id" | "columnId" | "columnType" | "priority" | "title"
+> & {
+  batchId: string;
+  batchReadableId: string;
+  // Planned = composed but not yet dispatched (renders dashed, still
+  // draggable); Active is displayed as "Released"; Completing is read-only.
+  batchStatus: "Planned" | "Active" | "Completing";
+  members: OperationItem[];
+};
+
+export function isBatchItem(item: Item): item is BatchItem {
+  return "batchId" in item;
+}
+
+export type Item = OperationItem | JobItem | BatchItem;
 
 export interface ItemDragData {
   type: "item";

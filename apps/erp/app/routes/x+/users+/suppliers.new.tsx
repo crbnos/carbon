@@ -2,13 +2,14 @@ import {
   assertIsPost,
   CONTROLLED_ENVIRONMENT,
   error,
-  getAppUrl,
   RESEND_DOMAIN,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
@@ -78,6 +79,13 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Failed to load company or user");
   }
 
+  const inviteLink = await getSsoAwareInviteLink(
+    getCarbonServiceRole(),
+    result.email,
+    result.code,
+    companyId
+  );
+
   await sendEmail({
     from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
     to: result.email,
@@ -92,7 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
         email: result.email,
         name: invitee.data?.fullName ?? "",
         companyName: company.data.name,
-        inviteLink: `${getAppUrl()}/invite/${result.code}`,
+        inviteLink,
         ip,
         location,
         controlledEnvironment: CONTROLLED_ENVIRONMENT

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRevalidator } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
+import { shouldAdvanceToNextSerialUnit } from "~/services/serial-advancement";
 import type {
   JobMaterial,
   JobOperationParameter,
@@ -34,6 +35,7 @@ export function useOperation({
   requiresSerialTracking,
   pauseInterval,
   procedure,
+  batchId,
   onAdvanceToUnit
 }: {
   operation: OperationWithDetails;
@@ -51,6 +53,10 @@ export function useOperation({
     attributes: JobOperationStep[];
     parameters: JobOperationParameter[];
   }>;
+  // In batch mode, subscribe to every productionEvent for the batch (all
+  // members' timers) rather than just this operation's, so the shared running
+  // timer stays live regardless of which member started it.
+  batchId?: string;
   // Auto-select the next serial unit (used on the first operation, where there
   // are no printed labels to scan yet). Provided by JobOperation.
   onAdvanceToUnit?: (entity: TrackedEntity) => void;
@@ -113,7 +119,7 @@ export function useOperation({
 
   useRealtimeChannel({
     topic: `job-operations:${operation.id}`,
-    dependencies: [operation.jobId],
+    dependencies: [operation.jobId, batchId],
     setup(channel) {
       return channel
         .on(
@@ -136,7 +142,9 @@ export function useOperation({
             event: "*",
             schema: "public",
             table: "productionEvent",
-            filter: `jobOperationId=eq.${operation.id}`
+            filter: batchId
+              ? `jobOperationBatchId=eq.${batchId}`
+              : `jobOperationId=eq.${operation.id}`
           },
           (payload) => {
             switch (payload.eventType) {
@@ -303,8 +311,24 @@ export function useOperation({
       uncompletedEntities.some((entity) => entity.id === trackedEntityParam);
 
     if (isFirstOperation) {
-      // Auto-select the next unit once the selected one is done (or none yet).
-      if (!selectedIsIncomplete) onAdvanceToUnit?.(uncompletedEntities[0]);
+      // Auto-advance is edge-triggered off the held unit: advance on arrival
+      // with nothing selected, or when the held unit itself completes — never
+      // over an explicit selection of an already-complete unit (going back to
+      // review/re-print is allowed).
+      if (
+        shouldAdvanceToNextSerialUnit({
+          selectedEntityId: trackedEntityParam,
+          selectedIsIncomplete,
+          heldEntityId: heldEntityRef.current
+        })
+      ) {
+        heldEntityRef.current = null;
+        onAdvanceToUnit?.(uncompletedEntities[0]);
+      } else {
+        heldEntityRef.current = selectedIsIncomplete
+          ? trackedEntityParam
+          : null;
+      }
       return;
     }
 

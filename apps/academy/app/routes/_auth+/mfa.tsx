@@ -156,7 +156,7 @@ export default function MfaRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <ValidatedForm fetcher={fetcher} validator={mfaValidator} method="post">
           <Hidden name="redirectTo" value={redirectTo} />
           <VStack spacing={4} className="items-center">

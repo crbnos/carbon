@@ -2,13 +2,14 @@ import {
   assertIsPost,
   CONTROLLED_ENVIRONMENT,
   error,
-  getAppUrl,
   RESEND_DOMAIN,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { getLogger } from "@carbon/logger";
@@ -26,7 +27,10 @@ import {
   createEmployeeValidator,
   getInvitable
 } from "~/modules/users";
-import { createEmployeeAccount } from "~/modules/users/users.server";
+import {
+  createEmployeeAccount,
+  getSsoInviteDomainError
+} from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
@@ -87,6 +91,19 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  // Once SSO is active for the company, an employee invite outside its
+  // covered domains is refused before anything is created or emailed.
+  const ssoDomainError = await getSsoInviteDomainError(
+    getCarbonServiceRole(),
+    companyId,
+    email
+  );
+  if (ssoDomainError) {
+    return validationError({
+      fieldErrors: { email: ssoDomainError }
+    });
+  }
+
   const result = await createEmployeeAccount(client, {
     email: email.toLowerCase(),
     firstName,
@@ -121,6 +138,13 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Failed to load company or user");
   }
 
+  const inviteLink = await getSsoAwareInviteLink(
+    getCarbonServiceRole(),
+    email,
+    result.code,
+    companyId
+  );
+
   await sendEmail({
     from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
     to: email,
@@ -135,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
         email,
         name: `${firstName} ${lastName}`.trim(),
         companyName: company.data.name,
-        inviteLink: `${getAppUrl()}/invite/${result.code}`,
+        inviteLink,
         ip,
         location,
         controlledEnvironment: CONTROLLED_ENVIRONMENT

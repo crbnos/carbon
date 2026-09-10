@@ -31,6 +31,15 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedAt: new Date().toISOString()
         })
         .in("id", ids as string[]);
+    case "grantsAbilityId":
+      return await client
+        .from("training")
+        .update({
+          grantsAbilityId: value === "" ? null : value,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", ids as string[]);
     case "tags":
       return await client
         .from("training")

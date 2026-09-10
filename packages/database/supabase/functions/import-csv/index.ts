@@ -2,18 +2,21 @@ import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { sql } from "npm:kysely@0.27.6";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 import { classifyImportRow } from "./classify-import-row.ts";
+import { importConfigLookups } from "./config-lookup-import.ts";
 import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("import-csv");
 
 const importCsvValidator = z.object({
   table: z.enum([
@@ -26,11 +29,18 @@ const importCsvValidator = z.object({
     "operations",
     "partWithMethod",
     "part",
+    "service",
     "supplier",
     "supplierContact",
     "tool",
     "workCenter",
     "process",
+    "storageUnit",
+    "unitOfMeasure",
+    "itemPostingGroup",
+    "storageType",
+    "scrapReason",
+    "department",
     "materialSubstance",
     "materialForm",
     "materialFinish",
@@ -39,8 +49,10 @@ const importCsvValidator = z.object({
     "materialDimension",
   ]),
   filePath: z.string(),
-  columnMappings: z.record(z.string()),
-  enumMappings: z.record(z.record(z.string())).optional(),
+  columnMappings: z.record(z.string(), z.string()),
+  enumMappings: z
+    .record(z.string(), z.record(z.string(), z.string()))
+    .optional(),
   companyId: z.string(),
   userId: z.string(),
 });
@@ -113,7 +125,8 @@ type CsvEntityType =
   | "item"
   | "contact"
   | "workCenter"
-  | "process";
+  | "process"
+  | "storageUnit";
 
 /**
  * Look up the ids that still exist in the entity table. Done as a typed
@@ -165,6 +178,13 @@ async function fetchLiveEntityIds(
     case "process":
       rows = await db
         .selectFrom("process")
+        .select(["id"])
+        .where("id", "in", ids)
+        .execute();
+      break;
+    case "storageUnit":
+      rows = await db
+        .selectFrom("storageUnit")
         .select(["id"])
         .where("id", "in", ids)
         .execute();
@@ -944,15 +964,7 @@ serve(async (req: Request) => {
       userId,
     } = importCsvValidator.parse(payload);
 
-    console.log({
-      function: "import-csv",
-      table,
-      filePath,
-      columnMappings,
-      enumMappings,
-      companyId,
-      userId,
-    });
+    logger.info({ table, filePath, columnMappings, enumMappings, companyId, userId });
 
     const client = await requirePermissions(req, companyId, userId, { create: "resources" });
 
@@ -1134,7 +1146,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             customerInserts: customerInserts.length,
             customerUpdates: customerUpdates.length,
@@ -1335,7 +1347,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             supplierInserts: supplierInserts.length,
             supplierUpdates: supplierUpdates.length,
@@ -1429,10 +1441,28 @@ serve(async (req: Request) => {
       case "consumable":
       case "tool":
       case "fixture":
+      case "service":
       case "part": {
         const getExternalId = (id: string) => {
           return `${table}:${id}`;
         };
+
+        // A service can never be shipped, received or stocked. The wizard
+        // therefore offers neither a Tracking Type nor a Default Method column
+        // for one: the validator below requires a tracking type, and the method
+        // is fully determined by the replenishment system — "Pull from
+        // Inventory" is not valid for a Non-Inventory item, and an independent
+        // column could contradict the replenishment system on the same row.
+        // `ServiceForm` derives both the same way and hides the method field.
+        if (table === "service") {
+          for (const record of mappedRecords) {
+            record.itemTrackingType = "Non-Inventory";
+            record.defaultMethodType =
+              record.replenishmentSystem === "Make"
+                ? "Make to Order"
+                : "Purchase to Order";
+          }
+        }
 
         const externalIdMap = await getCsvExternalIdMap("item", companyId);
         const readableIds = new Set();
@@ -1660,9 +1690,17 @@ serve(async (req: Request) => {
             }
 
             const { id, ...rest } = item.data;
+            // A blank Revision cell arrives as "" — not undefined — so the
+            // `??` this replaced let it through and the item landed with an
+            // empty revision instead of the "0" the wizard advertises as the
+            // default. (Unreachable until the route stopped stripping the
+            // field, which made `rest.revision` genuinely present-but-empty.)
+            // Normalize once, before the dedup key is built from it, so the
+            // key and the stored value cannot disagree.
+            const revision = rest.revision || "0";
             const readableIdWithRevision = getReadableIdWithRevision(
               item.data.readableId,
-              item.data.revision
+              revision
             );
 
             if (
@@ -1676,7 +1714,7 @@ serve(async (req: Request) => {
                 id: existingEntityId,
                 data: {
                   ...rest,
-                  revision: rest.revision ?? "0",
+                  revision,
                   active: rest.active?.toLowerCase() !== "false" ?? true,
                   unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
                   description: rest.description || undefined,
@@ -1775,7 +1813,7 @@ serve(async (req: Request) => {
                   | "Fixture"
                   | "Consumable",
                 companyId,
-                revision: rest.revision ?? "0",
+                revision,
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
               };
@@ -1860,10 +1898,19 @@ serve(async (req: Request) => {
               userId
             );
 
-            if (["part", "fixture", "tool", "consumable"].includes(table)) {
+            if (
+              ["part", "fixture", "tool", "consumable", "service"].includes(
+                table
+              )
+            ) {
               const specificInserts = insertedItems.map((item) => ({
                 id: item.readableId,
-                approved: true,
+                // `service` has its own `approved` default and a legacy
+                // NOT NULL `serviceType` the UI no longer surfaces —
+                // `upsertService` writes "External" for the same reason.
+                ...(table === "service"
+                  ? { serviceType: "External" }
+                  : { approved: true }),
                 companyId,
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
@@ -1962,7 +2009,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             itemInserts: itemInserts.length,
             itemUpdates: itemUpdates.length,
@@ -2129,7 +2176,7 @@ serve(async (req: Request) => {
           summary.inserted += contactInserts.length;
           summary.updated += contactUpdates.length;
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             contactInserts: contactInserts.length,
             contactUpdates: contactUpdates.length,
@@ -2249,7 +2296,7 @@ serve(async (req: Request) => {
           summary.inserted += contactInserts.length;
           summary.updated += contactUpdates.length;
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             contactInserts: contactInserts.length,
             contactUpdates: contactUpdates.length,
@@ -2362,7 +2409,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             workCenterInserts: workCenterInserts.length,
             workCenterUpdates: workCenterUpdates.length,
@@ -2471,7 +2518,7 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log({
+          logger.info({
             totalRecords: mappedRecords.length,
             processInserts: processInserts.length,
             processUpdates: processUpdates.length,
@@ -2506,10 +2553,385 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "storageUnit": {
+        const externalIdMap = await getCsvExternalIdMap(
+          "storageUnit",
+          companyId
+        );
+        // Entities that already carry a csv mapping. externalIntegrationMapping
+        // is unique on (entityType, entityId, integration, companyId) — ONE
+        // external id per entity — so a name-matched update must NOT attach a
+        // second external id to an entity that already has one (it would violate
+        // that index and roll back the whole import).
+        const alreadyMappedEntityIds = new Set(externalIdMap.values());
+
+        // Stored location of each already-mapped entity. A csv-id match that
+        // resolves to a unit in a DIFFERENT location than the row states is a
+        // conflict, not a move — used below to reject it instead of silently
+        // renaming the wrong unit or crashing on storageUnit_name_locationId_key.
+        const mappedEntityIds = Array.from(alreadyMappedEntityIds);
+        const entityLocation = new Map<string, string>(
+          (mappedEntityIds.length > 0
+            ? await db
+                .selectFrom("storageUnit")
+                .select(["id", "locationId"])
+                .where("id", "in", mappedEntityIds)
+                .execute()
+            : []
+          ).map((r) => [r.id, r.locationId])
+        );
+
+        // Storage unit names are unique per location
+        // (storageUnit_name_locationId_key), so the natural key for both in-file
+        // dedup and match-existing-to-update is (locationId + lowercased name).
+        const naturalKey = (locationId: string, name: string) =>
+          `${locationId}::${name.trim().toLowerCase()}`;
+
+        // Preload existing units for the referenced locations so a name that
+        // already exists updates instead of tripping the unique constraint, and
+        // so parent references can resolve against pre-existing units.
+        const referencedLocationIds = Array.from(
+          new Set(
+            mappedRecords
+              .map((r) => r.locationId)
+              .filter(
+                (l): l is string => typeof l === "string" && l.trim() !== ""
+              )
+          )
+        );
+        const existingUnits =
+          referencedLocationIds.length > 0
+            ? await db
+                .selectFrom("storageUnit")
+                .select(["id", "name", "locationId"])
+                .where("companyId", "=", companyId)
+                .where("locationId", "in", referencedLocationIds)
+                .execute()
+            : [];
+        // (locationId + lowercased name) -> storageUnit id. Grows as we insert,
+        // so a child whose parent is defined later in the same file resolves.
+        const naturalKeyMap = new Map<string, string>();
+        for (const u of existingUnits) {
+          naturalKeyMap.set(naturalKey(u.locationId, u.name), u.id);
+        }
+
+        // Preload existing storage types (lowercased name -> id). Unmatched
+        // names create a company-scoped storageType, mirroring the creatable
+        // StorageTypes combobox on the storage-unit form.
+        const existingTypes = await db
+          .selectFrom("storageType")
+          .select(["id", "name"])
+          .where("companyId", "=", companyId)
+          .execute();
+        const storageTypeByName = new Map<string, string>();
+        for (const st of existingTypes) {
+          storageTypeByName.set(st.name.trim().toLowerCase(), st.id);
+        }
+
+        const parseActive = (value: string | undefined): boolean => {
+          const v = (value ?? "").trim().toLowerCase();
+          // Default active; only explicit falsey values deactivate.
+          return !["false", "no", "0", "inactive", "n"].includes(v);
+        };
+        const parseTypeNames = (value: string | undefined): string[] =>
+          (value ?? "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s !== "");
+
+        const seenNaturalKeys = new Set<string>();
+        const seenCsvIds = new Set<string>();
+        // Parent links are applied in a second pass (after all inserts) so a
+        // parent defined later in the same file resolves and a bad parent
+        // reports a row error instead of rolling back the whole import.
+        const parentIntents: Array<{
+          locationId: string;
+          childKey: string;
+          parentName: string;
+          rowIndex: number;
+        }> = [];
+
+        await db.transaction().execute(async (trx) => {
+          const inserts: Database["public"]["Tables"]["storageUnit"]["Insert"][] =
+            [];
+          const csvIdsForInserts: string[] = [];
+          const updates: {
+            id: string;
+            data: Database["public"]["Tables"]["storageUnit"]["Update"];
+          }[] = [];
+          const csvIdsForNameMatchedUpdates: Array<{
+            entityId: string;
+            externalId: string;
+          }> = [];
+
+          // Resolve storage type names to ids, creating any that don't exist.
+          const resolveTypeIds = async (names: string[]): Promise<string[]> => {
+            const ids: string[] = [];
+            for (const name of names) {
+              const key = name.toLowerCase();
+              let id = storageTypeByName.get(key);
+              if (!id) {
+                const created = await trx
+                  .insertInto("storageType")
+                  .values({
+                    id: nanoid(),
+                    name,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: new Date().toISOString(),
+                  } as never)
+                  .returning(["id"])
+                  .execute();
+                id = created[0]?.id ?? undefined;
+                if (id) storageTypeByName.set(key, id);
+              }
+              if (id && !ids.includes(id)) ids.push(id);
+            }
+            return ids;
+          };
+
+          for (const [rowIndex, record] of mappedRecords.entries()) {
+            const id = record.id ?? "";
+            const name = (record.name ?? "").trim();
+            const locationId = (record.locationId ?? "").trim();
+            const parentName = (record.parentName ?? "").trim();
+
+            if (name === "" || locationId === "") {
+              summary.errors.push({
+                row: rowIndex,
+                reason:
+                  name === ""
+                    ? "Missing required Name"
+                    : "Missing required Location",
+              });
+              continue;
+            }
+            if (id && seenCsvIds.has(id)) {
+              summary.skipped.push({
+                row: rowIndex,
+                reason: `Duplicate ID "${id}" in file`,
+              });
+              continue;
+            }
+            const key = naturalKey(locationId, name);
+            if (seenNaturalKeys.has(key)) {
+              summary.skipped.push({
+                row: rowIndex,
+                reason: `Duplicate storage unit "${name}" for this location in file`,
+              });
+              continue;
+            }
+            // Resolve the row to an existing unit. A csv-id match is honored only
+            // when it is in the SAME location the row states — a storage unit's
+            // location is immutable via import. Updates never touch locationId, so
+            // a cross-location id match would otherwise silently rename the unit in
+            // its old location (ignoring the CSV Location) or crash the whole
+            // import on storageUnit_name_locationId_key.
+            const matchedByCsvId = id ? externalIdMap.get(id) : undefined;
+            const csvIdLocation =
+              matchedByCsvId !== undefined
+                ? entityLocation.get(matchedByCsvId)
+                : undefined;
+            if (
+              matchedByCsvId !== undefined &&
+              csvIdLocation !== undefined &&
+              csvIdLocation !== locationId
+            ) {
+              summary.errors.push({
+                row: rowIndex,
+                reason: `Unique ID "${id}" already belongs to a storage unit in a different location; import cannot move a storage unit between locations`,
+              });
+              continue;
+            }
+            const matchedByName =
+              matchedByCsvId === undefined ? naturalKeyMap.get(key) : undefined;
+            // An id-matched update renames the unit to `name`. If a DIFFERENT unit
+            // in this location already owns that name, the rename would violate
+            // storageUnit_name_locationId_key — report it instead of crashing.
+            if (matchedByCsvId !== undefined) {
+              const nameOwner = naturalKeyMap.get(key);
+              if (nameOwner !== undefined && nameOwner !== matchedByCsvId) {
+                summary.errors.push({
+                  row: rowIndex,
+                  reason: `A different storage unit named "${name}" already exists in this location`,
+                });
+                continue;
+              }
+            }
+            const existingEntityId = matchedByCsvId ?? matchedByName;
+
+            // Row is valid — claim its dedup slots now (after the guards, so a
+            // rejected row never blocks a later legitimate row with the same
+            // name/id from being processed).
+            seenNaturalKeys.add(key);
+            if (id) seenCsvIds.add(id);
+
+            const storageTypeIds = await resolveTypeIds(
+              parseTypeNames(record.storageTypeNames)
+            );
+            const active = parseActive(record.active);
+
+            if (parentName) {
+              parentIntents.push({
+                locationId,
+                childKey: key,
+                parentName,
+                rowIndex,
+              });
+            }
+
+            if (existingEntityId !== undefined) {
+              // Deliberately does not touch locationId (the match/natural key)
+              // to avoid the "cannot move a unit with children" interceptor.
+              updates.push({
+                id: existingEntityId,
+                data: {
+                  name,
+                  storageTypeIds,
+                  active,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                },
+              });
+              if (
+                matchedByCsvId === undefined &&
+                id &&
+                !alreadyMappedEntityIds.has(existingEntityId)
+              ) {
+                csvIdsForNameMatchedUpdates.push({
+                  entityId: existingEntityId,
+                  externalId: id,
+                });
+                // Guard against two name-matched rows in the same file both
+                // trying to first-map the same entity (they can't share a
+                // natural key, but belt-and-braces for the unique index).
+                alreadyMappedEntityIds.add(existingEntityId);
+              }
+              naturalKeyMap.set(key, existingEntityId);
+            } else {
+              const newId = nanoid();
+              inserts.push({
+                id: newId,
+                name,
+                locationId,
+                storageTypeIds,
+                active,
+                companyId,
+                createdBy: userId,
+                createdAt: new Date().toISOString(),
+              } as never);
+              csvIdsForInserts.push(id);
+              naturalKeyMap.set(key, newId);
+            }
+          }
+
+          logger.info({
+            totalRecords: mappedRecords.length,
+            storageUnitInserts: inserts.length,
+            storageUnitUpdates: updates.length,
+          });
+          summary.inserted += inserts.length;
+          summary.updated += updates.length;
+
+          if (inserts.length > 0) {
+            const inserted = await trx
+              .insertInto("storageUnit")
+              .values(inserts)
+              .returning(["id"])
+              .execute();
+            await upsertCsvMappings(
+              trx,
+              "storageUnit",
+              inserted.map((row, i) => ({
+                entityId: row.id!,
+                externalId: csvIdsForInserts[i],
+              })),
+              companyId,
+              userId
+            );
+          }
+          for (const update of updates) {
+            await trx
+              .updateTable("storageUnit")
+              .set(update.data)
+              .where("id", "=", update.id)
+              .execute();
+          }
+          if (csvIdsForNameMatchedUpdates.length > 0) {
+            await upsertCsvMappings(
+              trx,
+              "storageUnit",
+              csvIdsForNameMatchedUpdates,
+              companyId,
+              userId
+            );
+          }
+        });
+
+        // Second pass: link parents by (locationId + name) now that every unit
+        // in the file exists. Individual UPDATEs (outside the insert txn) so an
+        // unresolved or cyclic parent reports a row error without discarding the
+        // successful imports. The DB same-location / no-cycle interceptors are
+        // the final guard; their exceptions are caught per-row.
+        for (const intent of parentIntents) {
+          const childId = naturalKeyMap.get(intent.childKey);
+          const parentId = naturalKeyMap.get(
+            naturalKey(intent.locationId, intent.parentName)
+          );
+          if (!childId) continue;
+          if (!parentId) {
+            summary.errors.push({
+              row: intent.rowIndex,
+              reason: `Parent storage unit "${intent.parentName}" not found in the same location`,
+            });
+            continue;
+          }
+          if (parentId === childId) {
+            summary.errors.push({
+              row: intent.rowIndex,
+              reason: `Storage unit cannot be its own parent`,
+            });
+            continue;
+          }
+          try {
+            await db
+              .updateTable("storageUnit")
+              .set({
+                parentId,
+                updatedAt: new Date().toISOString(),
+                updatedBy: userId,
+              })
+              .where("id", "=", childId)
+              .execute();
+          } catch (parentErr) {
+            summary.errors.push({
+              row: intent.rowIndex,
+              reason: `Could not set parent "${intent.parentName}": ${
+                (parentErr as Error).message
+              }`,
+            });
+          }
+        }
+        break;
+      }
       case "bom":
       case "operations":
       case "partWithMethod": {
         await importMethods(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
+      case "unitOfMeasure":
+      case "itemPostingGroup":
+      case "storageType":
+      case "scrapReason":
+      case "department": {
+        await importConfigLookups(db, {
           table,
           mappedRecords,
           companyId,

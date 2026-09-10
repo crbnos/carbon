@@ -13,15 +13,14 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
+  ShortcutKey,
   Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDisclosure,
-  useKeyboardShortcuts,
   useMount,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { useDroppable } from "@dnd-kit/core";
@@ -60,6 +59,7 @@ import {
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -77,7 +77,6 @@ type QuoteExplorerProps = {
 };
 
 export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
-  const prettifyShortcut = usePrettifyShortcut();
   const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -125,12 +124,15 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   };
 
   const newButtonRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+l": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      newButtonRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addLine,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        newButtonRef.current?.click();
+      }
     }
-  });
+  ]);
 
   const { setNodeRef: setExplorerRef, isOver: isOverExplorer } = useDroppable({
     id: "quote-explorer"
@@ -172,7 +174,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
         isOverExplorer && "bg-primary/10 border-2 border-dashed border-primary"
       )}
     >
-      <VStack className="w-full h-[calc(100dvh-99px)] justify-between">
+      <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <VStack
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
@@ -254,7 +256,10 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
                     <span>
                       <Trans>New Line Item</Trans>
                     </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
+                    <ShortcutKey
+                      shortcut={EXPLORER_SHORTCUTS.addLine}
+                      variant="small"
+                    />
                   </HStack>
                 </TooltipContent>
               </Tooltip>

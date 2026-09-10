@@ -105,9 +105,7 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
   "default-accounts": path.to.accountingDefaults,
   "cost-centers": path.to.costCenters,
   "payment-terms": path.to.paymentTerms,
-  // Exchange rates are set up by installing the integration, so deep-link to
-  // the integrations page pre-filtered to it rather than the rates list.
-  "exchange-rates": `${path.to.integrations}?search=exchange`,
+  "exchange-rates": path.to.exchangeRates,
   "fiscal-year": path.to.fiscalYears,
   "accounting-periods": path.to.accountingPeriods,
   "asset-classes": path.to.assetClasses,
@@ -249,7 +247,7 @@ export default function GetStartedLayout() {
 
   return (
     <CollapsibleSidebarProvider>
-      <div className="bg-card grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
+      <div className="bg-card grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
         <GroupedContentSidebar groups={groups} exactMatch />
         <div className="relative min-w-0 overflow-hidden bg-card">
           <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">

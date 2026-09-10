@@ -1,12 +1,20 @@
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import {
   evaluateLinesForSurface,
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { triggerJobSchedule } from "./production.service";
+import type { z } from "zod";
+import { getDatabaseClient } from "~/services/database.server";
+import type { jobMaterialValidator } from "./production.models";
+import {
+  pullJobMaterialMakeMethod,
+  recalculateJobMakeMethodRequirements,
+  recalculateJobOperationDependencies,
+  upsertJobMaterial as upsertJobMaterialRow
+} from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
 // (`@carbon/auth/users.server`, `@carbon/ee/storage-rules.server`). These CANNOT
@@ -15,7 +23,8 @@ import { triggerJobSchedule } from "./production.service";
 // part of the client bundle and React Router's dot-server plugin rejects any
 // `.server` reference reachable from it. This module is server-only (never
 // re-exported by the barrel) and is pulled into the MCP tool set by
-// `scripts/generate-mcp.ts` + `direct-executor.ts`, which run server-side only.
+// `scripts/generate-mcp.ts` + the Carbon API registry
+// (`api+/v1+/lib/registry.server.ts`), which run server-side only.
 //
 // The MCP executor injects companyId/userId from the OAuth token but performs no
 // per-tool permission check, and some of these writes reach privileged paths (a
@@ -140,16 +149,18 @@ export async function completeJob(
 }
 
 /**
- * Schedule or reschedule a job's operations. Routes through `triggerJobSchedule` (the Inngest
- * scheduling path) rather than invoking the `schedule` edge function directly, so the MCP entry
- * point uses the same validated dispatch the rest of the app does. Invalid `mode`/`direction`
- * strings are rejected up front rather than only at the edge function.
+ * Schedule or reschedule a job's operations. Routes through
+ * `recalculateJobOperationDependencies`, which resolves the job's location and
+ * regenerates the whole location IN-PROCESS via `@carbon/ee/planning`
+ * (`runLocationSchedule`) — the same in-process path the rest of the app uses now
+ * that the `schedule` edge function is gone. Forecast-first scheduling is a single
+ * forward-ASAP pass, so there are no `mode`/`direction` knobs to validate.
  *
- * `triggerJobSchedule` fires an Inngest event with no gate of its own — every ERP route that
- * calls it does `requirePermissions({ update: "production" })` first — so the same
- * `production` update gate is re-applied here (the MCP executor performs no per-tool check).
- * `client` is unused (the work is an Inngest event) but MUST stay named `client` and first —
- * the MCP executor injects it positionally by that exact name; renaming breaks the tool.
+ * The scheduling path has no gate of its own — every ERP route that reschedules
+ * does `requirePermissions({ update: "production" })` first — so the same
+ * `production` update gate is re-applied here (the MCP executor performs no
+ * per-tool check). `client` MUST stay named `client` and first — the MCP executor
+ * injects it positionally by that exact name; renaming breaks the tool.
  */
 export async function scheduleJob(
   client: SupabaseClient<Database>,
@@ -157,8 +168,6 @@ export async function scheduleJob(
   userId: string,
   args: {
     jobId: string;
-    mode?: "initial" | "reschedule";
-    direction?: "backward" | "forward";
   }
 ) {
   const claims = await getUserClaims(userId, companyId);
@@ -167,17 +176,134 @@ export async function scheduleJob(
       "You do not have permission to schedule jobs (production update)."
     );
   }
-  const mode = args.mode ?? "reschedule";
-  const direction = args.direction ?? "backward";
-  if (mode !== "initial" && mode !== "reschedule") {
+  return recalculateJobOperationDependencies(client, getDatabaseClient(), {
+    jobId: args.jobId,
+    companyId,
+    userId
+  });
+}
+
+/**
+ * Upsert a job material WITH the route-level orchestration the bare service
+ * function lacks. Shadows `production.service.ts`'s `upsertJobMaterial` in the
+ * MCP/API registry (the mcp.server spread wins), so the published tool name is
+ * unchanged; the ERP routes keep calling the service directly and run this
+ * orchestration themselves.
+ *
+ * Without this, a connector-created material sat at `estimatedQuantity = 0`
+ * (the column default — the requirements recalc that fills it lives in the
+ * ROUTES, not the service), and since `quantityToIssue` is GENERATED as
+ * `estimatedQuantity - quantityIssued`, issue/picking pulled nothing.
+ *
+ * Mirrors `x+/job+/methods+/$jobId.material.new.tsx` and `.material.$id.tsx`:
+ * - Make-to-Order pulls the subassembly's method — on create, and on the
+ *   TRANSITION into Make to Order only (a re-pull wipes existing edits).
+ * - Create recalcs requirements + operation dependencies when the job is
+ *   already released (release itself recalcs the whole job, so Draft/Planned
+ *   creates match the UI: estimates fill at release).
+ * - Update recalcs requirements ALWAYS; dependencies when the material is
+ *   Make to Order and tied to an operation.
+ */
+export async function upsertJobMaterial(
+  client: SupabaseClient<Database>,
+  jobMaterial:
+    | (z.infer<typeof jobMaterialValidator> & {
+        jobId: string;
+        jobOperationId?: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof jobMaterialValidator> & {
+        jobId: string;
+        jobOperationId?: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const isUpdate = "updatedBy" in jobMaterial;
+  const userId = isUpdate ? jobMaterial.updatedBy : jobMaterial.createdBy;
+  const { companyId, jobId } = jobMaterial;
+
+  // The dependency recalc reaches the scheduling engine over Kysely (no RLS),
+  // so the routes' production gate is re-applied here, like scheduleJob.
+  const action = isUpdate ? ("update" as const) : ("create" as const);
+  const claims = await getUserClaims(userId, companyId);
+  if (!hasPermission(claims?.permissions, "production", action, companyId)) {
     throw new Error(
-      `Invalid schedule mode "${mode}". Expected "initial" or "reschedule".`
+      `You do not have permission to ${action} job materials (production ${action}).`
     );
   }
-  if (direction !== "backward" && direction !== "forward") {
-    throw new Error(
-      `Invalid schedule direction "${direction}". Expected "backward" or "forward".`
-    );
+
+  // Capture the previous methodType BEFORE the write — the make-method pull
+  // runs only on the transition INTO "Make to Order".
+  let wasMakeToOrder = false;
+  if (isUpdate) {
+    const existing = await client
+      .from("jobMaterial")
+      .select("methodType")
+      .eq("id", jobMaterial.id)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error) return existing;
+    wasMakeToOrder = existing.data?.methodType === "Make to Order";
   }
-  return triggerJobSchedule(args.jobId, companyId, userId, mode, direction);
+
+  const upserted = await upsertJobMaterialRow(client, jobMaterial);
+  if (upserted.error || !upserted.data) return upserted;
+  const jobMaterialId = upserted.data.id;
+
+  if (jobMaterial.methodType === "Make to Order" && !wasMakeToOrder) {
+    const makeMethod = await pullJobMaterialMakeMethod(client, {
+      jobMaterialId,
+      itemId: jobMaterial.itemId,
+      companyId,
+      userId
+    });
+    if (makeMethod.error) {
+      return { data: upserted.data, error: makeMethod.error };
+    }
+  }
+
+  let recalcRequirements: boolean;
+  let recalcDependencies: boolean;
+  if (isUpdate) {
+    recalcRequirements = true;
+    recalcDependencies =
+      jobMaterial.methodType === "Make to Order" &&
+      Boolean(jobMaterial.jobOperationId);
+  } else {
+    const job = await client
+      .from("job")
+      .select("status")
+      .eq("id", jobId)
+      .single();
+    const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
+    recalcRequirements = isReleased;
+    recalcDependencies = isReleased;
+  }
+
+  if (recalcRequirements) {
+    const requirements = await recalculateJobMakeMethodRequirements(client, {
+      id: jobMaterial.jobMakeMethodId,
+      companyId,
+      userId
+    });
+    if (requirements.error) {
+      return { data: upserted.data, error: requirements.error };
+    }
+  }
+  if (recalcDependencies) {
+    const dependencies = await recalculateJobOperationDependencies(
+      client,
+      getDatabaseClient(),
+      { jobId, companyId, userId }
+    );
+    if (dependencies?.error) {
+      return { data: upserted.data, error: dependencies.error };
+    }
+  }
+
+  return upserted;
 }

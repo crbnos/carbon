@@ -3,7 +3,10 @@ import {
   assertEquals,
   assertThrows,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { buildMemoJournal, type BuildMemoJournalInput } from "./build-memo-journal.ts";
+import {
+  buildMemoJournal,
+  type BuildMemoJournalInput,
+} from "./build-memo-journal.ts";
 
 // Golden-master tests for the GL journal a credit/debit memo posts. A memo is a
 // two-line entry: the AR/AP control leg and a reason leg. Direction alone decides
@@ -12,13 +15,14 @@ import { buildMemoJournal, type BuildMemoJournalInput } from "./build-memo-journ
 // natural class. Every combo must balance (signedDebitTotal ~ 0).
 
 const base = (
-  overrides: Partial<BuildMemoJournalInput>
+  overrides: Partial<BuildMemoJournalInput>,
 ): BuildMemoJournalInput => ({
   memoId: "memo_1",
   companyId: "co_1",
   isAR: true,
   direction: "Credit",
-  amountBase: 300,
+  amount: 300,
+  exchangeRate: 1,
   journalLineReference: "ref_1",
   controlAccountId: "acct_ar",
   reasonAccountId: "acct_reason",
@@ -52,7 +56,7 @@ Deno.test("customer Debit memo: DR AR (asset), CR reason; balances", () => {
 
 Deno.test("supplier Credit memo: CR AP (liability), DR reason; balances", () => {
   const r = buildMemoJournal(
-    base({ isAR: false, direction: "Credit", reasonAccountClass: "Expense" })
+    base({ isAR: false, direction: "Credit", reasonAccountClass: "Expense" }),
   );
   // Control AP is a liability; a credit stores +magnitude.
   assertEquals(line(r, "acct_ar").amount, 300);
@@ -63,7 +67,7 @@ Deno.test("supplier Credit memo: CR AP (liability), DR reason; balances", () => 
 
 Deno.test("supplier Debit memo: DR AP (liability), CR reason; balances", () => {
   const r = buildMemoJournal(
-    base({ isAR: false, direction: "Debit", reasonAccountClass: "Expense" })
+    base({ isAR: false, direction: "Debit", reasonAccountClass: "Expense" }),
   );
   // Control AP debit (liability) stores −magnitude.
   assertEquals(line(r, "acct_ar").amount, -300);
@@ -73,20 +77,41 @@ Deno.test("supplier Debit memo: DR AP (liability), CR reason; balances", () => {
 });
 
 Deno.test("rounds to internal scale and stays balanced on fractional amounts", () => {
-  const r = buildMemoJournal(base({ amountBase: 123.456789 }));
+  const r = buildMemoJournal(base({ amount: 123.456789 }));
   // SCALE = 5: GL lines carry internal precision, not the old 4dp column clamp.
   assertEquals(line(r, "acct_ar").amount, -123.45679);
   assert(Math.abs(r.signedDebitTotal) < 0.01);
 });
 
 Deno.test("rejects a zero amount", () => {
-  assertThrows(() => buildMemoJournal(base({ amountBase: 0 })), Error, "greater than 0");
+  assertThrows(
+    () => buildMemoJournal(base({ amount: 0 })),
+    Error,
+    "greater than 0",
+  );
 });
 
 Deno.test("rejects an unknown reason account class", () => {
   assertThrows(
     () => buildMemoJournal(base({ reasonAccountClass: "Bogus" })),
     Error,
-    "Unknown GL account class"
+    "Unknown GL account class",
   );
+});
+
+Deno.test("memo55 at rate1.1 posts base50 rather than60.5", () => {
+  const result = buildMemoJournal(base({ amount: 55, exchangeRate: 1.1 }));
+  assertEquals(line(result, "acct_ar").amount, -50);
+});
+Deno.test("positive document principal remains postable below base dust thresholds", () => {
+  const result = buildMemoJournal(base({ amount: 0.01, exchangeRate: 16000 }));
+  assertEquals(line(result, "acct_ar").amount, 0);
+});
+Deno.test("invalid memo snapshots are rejected before journal construction", () => {
+  for (const exchangeRate of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assertThrows(() => buildMemoJournal(base({ exchangeRate })));
+  }
+  for (const amount of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assertThrows(() => buildMemoJournal(base({ amount })));
+  }
 });

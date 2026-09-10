@@ -40,6 +40,10 @@ export default $config({
       scaling: {
         min: 1,
         max: 10,
+        // Scale on sustained request volume too — CPU/mem stay low under an
+        // I/O-bound request pile-up, so those triggers alone never fire.
+        // Safe alongside the WAF: floods are blocked before they reach targets.
+        requestCount: 500,
         cpuUtilization: 70,
         memoryUtilization: 80,
       },
@@ -142,6 +146,10 @@ export default $config({
       scaling: {
         min: 1,
         max: 10,
+        // Scale on sustained request volume too — CPU/mem stay low under an
+        // I/O-bound request pile-up, so those triggers alone never fire.
+        // Safe alongside the WAF: floods are blocked before they reach targets.
+        requestCount: 500,
         cpuUtilization: 70,
         memoryUtilization: 80,
       },
@@ -233,9 +241,8 @@ export default $config({
       },
     };
 
-    // WAF configuration kept for manual association with load balancer
-    // To use: Associate this WAF ACL with your manually created load balancer in AWS Console
-    new aws.wafv2.WebAcl("AppAlbWebAcl", {
+    // WAF web ACL: rate-limit (1000 req/IP/5min) + AWS managed common rule set.
+    const webAcl = new aws.wafv2.WebAcl("AppAlbWebAcl", {
       defaultAction: { allow: {} },
       scope: "REGIONAL",
       visibilityConfig: {
@@ -244,6 +251,17 @@ export default $config({
         metricName: "AppAlbWebAcl",
       },
       rules: [rateLimitRule, awsManagedRules],
+    });
+
+    // Associate the web ACL with each service's ALB so the rules actually run.
+    // Without this the ACL exists but inspects no traffic (the prior state).
+    new aws.wafv2.WebAclAssociation("ErpAlbWebAclAssociation", {
+      resourceArn: erp.nodes.loadBalancer.arn,
+      webAclArn: webAcl.arn,
+    });
+    new aws.wafv2.WebAclAssociation("MesAlbWebAclAssociation", {
+      resourceArn: mes.nodes.loadBalancer.arn,
+      webAclArn: webAcl.arn,
     });
 
     return {};

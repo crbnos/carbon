@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -11,6 +12,7 @@ import {
   runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "jobid-status");
@@ -62,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       userId
     });
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
       type: "job",
       id,
       companyId,
@@ -70,58 +72,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  if (["Ready", "Planned"].includes(status) && shouldSchedule) {
-    try {
-      const purchaseOrdersBySupplierId = JSON.parse(
-        selectedPurchaseOrdersBySupplierId ?? "{}"
-      );
-
-      const serviceRole = getCarbonServiceRole();
-      const [scheduler] = await Promise.all([
-        serviceRole.functions.invoke("schedule", {
-          body: {
-            jobId: id,
-            companyId,
-            userId,
-            mode: "initial",
-            direction: "backward"
-          }
-        }),
-        serviceRole.functions.invoke("create", {
-          body: {
-            type: "purchaseOrderFromJob",
-            jobId: id,
-            purchaseOrdersBySupplierId,
-            companyId,
-            userId
-          }
-        })
-      ]);
-
-      if (scheduler.error) {
-        throw redirect(
-          requestReferrer(request) ?? path.to.job(id),
-          await flash(request, error(scheduler.error, "Failed to schedule job"))
-        );
-      }
-
-      if (status === "Ready") {
-        await client
-          .from("job")
-          .update({
-            releasedDate: new Date().toISOString()
-          })
-          .eq("id", id);
-      }
-    } catch (err) {
-      logger.error("Error", { error: err });
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(err, "Failed to schedule job"))
-      );
-    }
-  }
-
+  // Commit the new status BEFORE invoking the scheduler. The `schedule` edge
+  // function only batches jobs whose status is already Ready/In Progress/Paused,
+  // so a job released here must be persisted as Ready first — otherwise it is
+  // filtered out of its own scheduling run and never lands in the forecast.
+  //
   // A direct POST of status=Completed here bypasses complete_job_to_inventory
   // (no inventory receipt, no backflush) and therefore also skips the
   // picked-material return sweep. The UI never sends Completed to this route —
@@ -138,6 +93,60 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.job(id),
       await flash(request, error(update.error, "Failed to update job status"))
     );
+  }
+
+  if (["Ready", "Planned"].includes(status) && shouldSchedule) {
+    try {
+      const purchaseOrdersBySupplierId = JSON.parse(
+        selectedPurchaseOrdersBySupplierId ?? "{}"
+      );
+
+      const serviceRole = getCarbonServiceRole();
+      // Forecast-first scheduling regenerates the whole location the job is in.
+      const { data: jobLocation } = await serviceRole
+        .from("job")
+        .select("locationId")
+        .eq("id", id)
+        .single();
+      if (!jobLocation?.locationId) {
+        throw new Error("Job has no location to schedule");
+      }
+      // Regenerate the whole location IN-PROCESS (Node) — no edge cold-start or
+      // HTTP hop. Throws on failure (caught below), in parallel with PO creation.
+      await Promise.all([
+        runLocationSchedule({
+          db: getDatabaseClient(),
+          client: serviceRole,
+          locationId: jobLocation.locationId,
+          companyId,
+          userId
+        }),
+        serviceRole.functions.invoke("create", {
+          body: {
+            type: "purchaseOrderFromJob",
+            jobId: id,
+            purchaseOrdersBySupplierId,
+            companyId,
+            userId
+          }
+        })
+      ]);
+
+      if (status === "Ready") {
+        await client
+          .from("job")
+          .update({
+            releasedDate: new Date().toISOString()
+          })
+          .eq("id", id);
+      }
+    } catch (err) {
+      logger.error("Error", { error: err });
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to schedule job"))
+      );
+    }
   }
 
   if (status === "Closed") {

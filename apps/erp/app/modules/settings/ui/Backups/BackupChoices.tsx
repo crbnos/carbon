@@ -1,4 +1,4 @@
-import { Submit, useControlField } from "@carbon/form";
+import { useControlField } from "@carbon/form";
 import { ChoiceSelect } from "@carbon/react";
 import { LuDatabaseBackup, LuFiles } from "react-icons/lu";
 
@@ -64,11 +64,4 @@ export function RestoreIncludeChoice() {
       <input type="hidden" name="includeStorage" value={current} />
     </>
   );
-}
-
-// Submit for the restore form — disabled until a source is chosen (the rest of
-// the disabled/loading states come from Submit itself).
-export function RestoreSubmit() {
-  const [source] = useControlField<string>("source");
-  return <Submit isDisabled={!source}>Restore</Submit>;
 }

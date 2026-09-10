@@ -21,7 +21,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuCalendar, LuCog, LuContainer } from "react-icons/lu";
+import { LuCalendar, LuContainer, LuRedoDot } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { useFetchers, useParams, useSubmit } from "react-router";
 import {
@@ -707,7 +707,7 @@ function TaskProcesses({
 
   if (!canEdit) {
     return (
-      <Button variant="secondary" size="sm" leftIcon={<LuCog />} isDisabled>
+      <Button variant="secondary" size="sm" leftIcon={<LuRedoDot />} isDisabled>
         <span>{buttonLabel}</span>
       </Button>
     );
@@ -719,7 +719,7 @@ function TaskProcesses({
         <Button
           variant="secondary"
           size="sm"
-          leftIcon={<LuCog />}
+          leftIcon={<LuRedoDot />}
           isDisabled={isDisabled}
         >
           {buttonLabel}

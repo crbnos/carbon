@@ -59,6 +59,21 @@ export interface UnmappedPostingAccount {
 }
 
 /**
+ * A leaf Carbon account offered for mapping in the full chart-of-accounts
+ * view — every postable account, not just the accountDefault (required) set,
+ * so a user can map an arbitrary account (e.g. an Expense account charged on a
+ * PO G/L-account line) before or after it blocks a sync. class/accountType are
+ * carried for grouping the list in the UI.
+ */
+export interface MappableChartAccount {
+  id: string;
+  number: string | null;
+  name: string;
+  class: string | null;
+  accountType: string | null;
+}
+
+/**
  * A proposed (not written) match between a Carbon account and a provider
  * account. The UI confirms proposals and calls upsertAccountMapping.
  */
@@ -418,12 +433,56 @@ export async function getUnmappedPostingAccounts(
 }
 
 /**
+ * Every postable (leaf) Carbon account in the company's chart of accounts —
+ * the full mappable set for the account-mapping UI's "All accounts" view.
+ * Unlike getUnmappedPostingAccounts this is NOT scoped to accountDefault: any
+ * account a transaction can hit (e.g. an Expense account on a PO G/L-account
+ * line) must be mappable. Group headers are excluded.
+ */
+export async function getFullChartMappableAccounts(
+  db: Db,
+  args: { companyId: string }
+): Promise<{ data: MappableChartAccount[] | null; error: string | null }> {
+  try {
+    const companyGroupId = await getCompanyGroupId(db, args.companyId);
+    if (!companyGroupId) {
+      return {
+        data: null,
+        error: `No company group found for company ${args.companyId}`
+      };
+    }
+
+    const accounts = await db
+      .selectFrom("account")
+      .select(["id", "number", "name", "class", "accountType"])
+      .where("companyGroupId", "=", companyGroupId)
+      .where("isGroup", "=", false)
+      .where("active", "=", true)
+      .orderBy("number", "asc")
+      .execute();
+
+    return {
+      data: accounts.map((account) => ({
+        id: account.id,
+        number: account.number ?? null,
+        name: account.name,
+        class: (account.class as string | null) ?? null,
+        accountType: (account.accountType as string | null) ?? null
+      })),
+      error: null
+    };
+  } catch (err) {
+    return { data: null, error: toErrorMessage(err) };
+  }
+}
+
+/**
  * Propose (not write) exact matches between Carbon account numbers and the
- * provider's chart-of-accounts codes. Only active, non-group, numbered
- * accountDefault accounts without an existing mapping are considered — the
- * same set getUnmappedPostingAccounts surfaces — so proposals never suggest
- * an account outside the mappable set; the UI confirms each proposal and
- * calls upsertAccountMapping.
+ * provider's chart-of-accounts codes across the FULL chart of accounts — every
+ * active, non-group, numbered account without an existing mapping (widened from
+ * the accountDefault-only set so an arbitrary account can be matched too). The
+ * proposer already excludes already-mapped Carbon ids and already-used external
+ * ids; the UI confirms each proposal and calls upsertAccountMapping.
  */
 export async function matchAccountsByCode(
   db: Db,
@@ -442,16 +501,8 @@ export async function matchAccountsByCode(
       };
     }
 
-    // Only accountDefault accounts are mappable (automated postings run
-    // through them), so an account outside that set is never proposed.
-    const accountDefaultIds = await loadAccountDefaultAccountIds(
-      db,
-      args.companyId
-    );
-    if (accountDefaultIds.length === 0) {
-      return { data: [], error: null };
-    }
-
+    // The full chart of accounts is matchable by code, not just the
+    // accountDefault set — so an arbitrary account can be proposed a match too.
     const accounts = await db
       .selectFrom("account")
       .select(["id", "number", "name"])
@@ -459,7 +510,6 @@ export async function matchAccountsByCode(
       .where("isGroup", "=", false)
       .where("active", "=", true)
       .where("number", "is not", null)
-      .where("id", "in", accountDefaultIds)
       .execute();
 
     const mappings = await db

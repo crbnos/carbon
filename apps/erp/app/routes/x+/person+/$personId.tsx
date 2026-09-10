@@ -20,7 +20,11 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`People`, to: path.to.people },
     (data) => data?.employeeSummary?.name
-  )
+  ),
+  // Required for Recently Viewed: the recorder only captures a match whose
+  // handle has BOTH a detail breadcrumb and a module (mirrors every other detail
+  // route, e.g. tool+/$itemId.tsx). Without it, viewing a person never records.
+  module: "people"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { activeJobStatuses } from "@carbon/database";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
@@ -97,8 +98,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // Planner visibility: on a released job, count operations on a batchable
+  // process that are in no batch. They run individually (that's the deliberate
+  // happy path — never blocked), so this is informational only. The pre-start
+  // statuses stand in for the batch builder's production-event exclusion, which
+  // PostgREST cannot express in this single query.
+  let unbatchedBatchableOperations = 0;
+  if (
+    (activeJobStatuses as readonly (string | null)[]).includes(job.data.status)
+  ) {
+    const { count } = await client
+      .from("jobOperation")
+      .select("id, process!inner(batchable)", { count: "exact", head: true })
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
+      .eq("process.batchable", true)
+      .is("jobOperationBatchId", null)
+      .in("status", ["Todo", "Ready", "Waiting"]);
+    unbatchedBatchableOperations = count ?? 0;
+  }
+
   return {
     job: job.data,
+    unbatchedBatchableOperations,
     tags: tags.data ?? [],
     files: getJobDocuments(client, companyId, job.data),
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),
@@ -127,9 +149,9 @@ export default function JobRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <JobHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={
@@ -154,7 +176,7 @@ export default function JobRoute() {
                 </div>
               }
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-hidden w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
                   <Outlet />
                 </div>
               }

@@ -60,6 +60,7 @@ import { ConsolePill } from "~/components/ConsolePill";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
+import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
@@ -106,8 +107,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 export const middleware: MiddlewareFunction[] = [userMiddleware];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
-  const { accessToken, companyId, expiresAt, expiresIn, userId } =
-    await requireAuthSession(request, { verify: true });
+  const authSession = await requireAuthSession(request, { verify: true });
+  const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
   // share a client between requests
   const client = getCarbon(accessToken);
@@ -187,9 +188,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const mfaRequired =
     !consoleMode &&
     (CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true);
-  const mfaEnrollmentRequired = mfaRequired
-    ? !(await userHasVerifiedTotpFactor(userId))
-    : false;
+  // SSO sessions trust the IdP for MFA in all environments, including
+  // controlled — user decision, mirroring the ERP shell.
+  const ssoMfaExempt = Boolean(authSession.ssoProviderId);
+  const mfaEnrollmentRequired =
+    mfaRequired && !ssoMfaExempt
+      ? !(await userHasVerifiedTotpFactor(userId))
+      : false;
 
   // Get active maintenance count after we have the location
   const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
@@ -474,7 +479,10 @@ export default function AuthenticatedRoute() {
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
                   />
-                  <Outlet />
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
+                    <Outlet />
+                  </div>
+                  <ShortcutHelp />
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>

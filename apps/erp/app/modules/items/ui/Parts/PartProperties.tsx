@@ -5,6 +5,7 @@ import {
   Button,
   cn,
   HStack,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -34,7 +35,7 @@ import {
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -110,6 +111,8 @@ const PartProperties = ({
   const lockPartNumber = changeType === "Revision";
   const { t } = useLingui();
   const params = useParams();
+  const companySettings = useCompanySettings();
+  const allowLowercaseItemIds = companySettings?.allowLowercaseItemIds === true;
   const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
@@ -319,6 +322,7 @@ const PartProperties = ({
           label={formLayout ? t`Part Number` : ""}
           name="partId"
           inline={inlineLayout}
+          isUppercase={!allowLowercaseItemIds}
           value={routeData?.partSummary?.readableId ?? ""}
           onBlur={(e) => {
             onUpdate("partId", e.target.value ?? null);
@@ -336,7 +340,7 @@ const PartProperties = ({
       validator={z.object({
         name: z.string()
       })}
-      className={cn("w-full", !formLayout && "-mt-2")}
+      className="w-full"
       isReadOnly={isReadOnly}
     >
       <span className="text-xs text-muted-foreground">
@@ -364,7 +368,7 @@ const PartProperties = ({
           : "flex flex-col items-start space-y-4",
         embedded
           ? "px-1 py-2"
-          : "w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
+          : "w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
       )}
     >
       {formLayout ? (
@@ -379,9 +383,9 @@ const PartProperties = ({
               copy affordances there. Part page (non-embedded) is unchanged. */}
           {!embedded && (
             <HStack className="w-full justify-between">
-              <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+              <Subheading as="h3" variant="light">
                 <Trans>Properties</Trans>
-              </h3>
+              </Subheading>
               <HStack spacing={1}>
                 <Tooltip>
                   <TooltipTrigger asChild>

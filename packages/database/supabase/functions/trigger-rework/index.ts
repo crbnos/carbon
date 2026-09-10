@@ -1,13 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("trigger-rework");
 
 interface TriggerReworkRequest {
   jobId: string;
@@ -109,7 +112,7 @@ async function triggerRework(
     triggeredAtJobOperationId
   );
 
-  console.info(
+  logger.info(
     `📋 Rework path: ${operationPath.length} operations to clone`
   );
 
@@ -262,7 +265,7 @@ async function triggerRework(
     sourceToCloneMap.set(sourceOp.id, clonedOps[i].id);
   });
 
-  console.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
+  logger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
 
   // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
   const [allSteps, allTools, allParams] = await Promise.all([
@@ -348,9 +351,15 @@ async function triggerRework(
 
   // 7b. Convergence: downstream ops that depended on triggeredAt also depend
   //     on the last rework op so the DAG merges back.
+  // Filter on `jobId`, not `companyId`: dependency edges are per-job, and
+  // `jobId` is the column the scheduler's own rebuild filters on. Trusting the
+  // row's stamped `companyId` would trust exactly the field that cross-tenant
+  // mis-stamping makes unreliable. Without any filter this read reaches every
+  // tenant's edges and re-inserts them under this job's company.
   const downstreamDeps = await trx
     .selectFrom("jobOperationDependency")
     .select(["operationId"])
+    .where("jobId", "=", jobId)
     .where("dependsOnId", "=", triggeredAtJobOperationId)
     .where("operationId", "not in", clonedOperationIds)
     .execute();
@@ -373,7 +382,7 @@ async function triggerRework(
       .execute();
   }
 
-  console.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
+  logger.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
 
   // 8. Record a productionQuantity entry for the rework
   await trx
@@ -425,7 +434,33 @@ serve(async (req) => {
 
     const body = parsed.data;
 
-    console.info(
+    // This function had NO authorization gate at all. It writes rework
+    // operations, dependency edges and productionQuantity rows, so it needs the
+    // same gate every other write function uses. Note `requirePermissions`
+    // short-circuits for a service_role caller (the two MES callers), which is
+    // exactly why the ownership check below — not this call — is what protects
+    // those paths.
+    await requirePermissions(req, body.companyId, body.userId, {
+      update: "production",
+    });
+
+    // `jobId` and `companyId` both arrive in the payload, and nothing proved
+    // they belong together. Without this, a request pairing one company's id
+    // with another company's job writes rows attributed to the wrong tenant.
+    // See .ai/specs/2026-08-25-backup-durability.md Part 3.
+    const job = await db
+      .selectFrom("job")
+      .select(["id", "companyId"])
+      .where("id", "=", body.jobId)
+      .executeTakeFirst();
+
+    // 404, not 403: a job in another company must be indistinguishable from a
+    // job that does not exist.
+    if (!job || job.companyId !== body.companyId) {
+      return errorResponse("Job not found in this company", 404);
+    }
+
+    logger.info(
       `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`
     );
 
@@ -450,12 +485,14 @@ serve(async (req) => {
         }),
       });
     } catch (err) {
-      console.error("Failed to trigger reschedule after rework:", err);
+      logger.error("Failed to trigger reschedule after rework", {
+        error: String((err as Error)?.stack ?? err),
+      });
     }
 
     return jsonResponse({ success: true, ...result });
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Rework failed: ${
         error instanceof Error ? error.message : String(error)
       }`

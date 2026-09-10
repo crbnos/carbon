@@ -207,7 +207,11 @@ export function useTree<TData, TFilterValue>({
   filter,
   isEager
 }: TreeStateHookProps<TData, TFilterValue>): UseTreeStateOutput {
-  const previousNodeCount = useRef(tree.length);
+  // Fingerprint of node ids — length alone can't tell two same-sized trees
+  // apart, and a stale count let a tree that shrank then grew back to its
+  // original size skip the update entirely (children never reappeared).
+  const treeShape = tree.map((node) => node.id).join("\n");
+  const previousTreeShape = useRef(treeShape);
   const previousSelectedId = useRef<string | undefined>(selectedId);
 
   const [state, dispatch] = useReducer(
@@ -225,13 +229,14 @@ export function useTree<TData, TFilterValue>({
     }
   }, [state.changes.selectedId]);
 
-  //update tree when the data changes or the tree length changes
+  //update tree when the data changes or the tree's shape changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (isEager || tree.length !== previousNodeCount.current) {
+    if (isEager || treeShape !== previousTreeShape.current) {
+      previousTreeShape.current = treeShape;
       dispatch({ type: "UPDATE_TREE", payload: { tree } });
     }
-  }, [previousNodeCount.current, tree]);
+  }, [treeShape, tree]);
 
   //update the filter, if it's changed
   const previousFilter = useRef(filter);

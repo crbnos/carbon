@@ -1,5 +1,6 @@
 import {
   assertIsPost,
+  CONTROLLED_ENVIRONMENT,
   error,
   isAuthProviderEnabled,
   success
@@ -55,11 +56,13 @@ import {
   OtpInput,
   useTotpEnrollment
 } from "~/components/TotpEnrollment";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   getActiveSessions,
   getLoginHistory,
   revokeSession
 } from "~/modules/account";
+import { TwoFactorUpgradeDialog } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -277,6 +280,10 @@ export default function AccountSecurity() {
       revalidate();
     }
   });
+
+  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
+  const mfaGated = isGated && !CONTROLLED_ENVIRONMENT;
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [removeFactor, setRemoveFactor] = useState<TotpFactor | null>(null);
   const [removeCode, setRemoveCode] = useState("");
@@ -521,7 +528,13 @@ export default function AccountSecurity() {
             <Button
               type="button"
               variant="secondary"
-              onClick={onStartMfaEnrollment}
+              onClick={() => {
+                if (mfaGated) {
+                  setShowUpgrade(true);
+                  return;
+                }
+                onStartMfaEnrollment();
+              }}
               isDisabled={mfaStarting}
               isLoading={mfaStarting}
               leftIcon={<LuShieldCheck className="size-4" />}
@@ -681,6 +694,11 @@ export default function AccountSecurity() {
           )}
         </CardContent>
       </Card>
+
+      <TwoFactorUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+      />
 
       <Modal
         open={!!mfaEnrollment}

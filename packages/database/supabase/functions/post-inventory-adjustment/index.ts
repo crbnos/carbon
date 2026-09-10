@@ -1030,7 +1030,10 @@ serve(async (req: Request) => {
     logger.error("post-inventory-adjustment failed", {
       error: String((err as Error).stack ?? err),
     });
-    const isValidationError = err instanceof ValidationError;
+    // A payload ZodError is the caller's input contract failing, same as our
+    // own ValidationError — a 400, not an outage.
+    const isValidationError =
+      err instanceof ValidationError || err instanceof z.ZodError;
     return errorResponse(err, isValidationError ? 400 : 500);
   }
 });

@@ -3,7 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { insertTrainingCompletion } from "~/modules/resources";
+import { notifyScheduleInputsChanged } from "~/modules/production";
+import {
+  getTrainingGrantedAbilityId,
+  insertTrainingCompletion
+} from "~/modules/resources";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -48,6 +52,22 @@ export async function action({ request }: ActionFunctionArgs) {
           error(result.error, "Failed to mark training complete")
         )
       }
+    );
+  }
+
+  // Completing training that grants an ability adds a qualification (via the
+  // grant trigger) — restamp the scheduler for that ability's operator pool.
+  const grantedAbilityId = await getTrainingGrantedAbilityId(
+    client,
+    trainingAssignmentId.toString(),
+    companyId
+  );
+  if (grantedAbilityId) {
+    await notifyScheduleInputsChanged(
+      companyId,
+      "ability",
+      "Operator qualified via training",
+      grantedAbilityId
     );
   }
 

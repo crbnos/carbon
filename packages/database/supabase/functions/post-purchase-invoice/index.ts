@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
@@ -23,9 +24,15 @@ import {
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
 import { round } from "../shared/precision.ts";
+import { classifyIntercompanyPostingLines } from "../shared/intercompany-capture.ts";
+import {
+  calculatePurchasePostingAmounts,
+  getInvoicedPurchaseQuantityAfterVoid,
+} from "./purchase-posting-amounts.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("post-purchase-invoice");
 
 const payloadValidator = z.object({
   type: z.enum(["post", "void"]).default("post"),
@@ -45,13 +52,7 @@ serve(async (req: Request) => {
     const { type, invoiceId, userId, companyId, skipReceiptPost } =
       payloadValidator.parse(payload);
 
-    console.log({
-      function: "post-purchase-invoice",
-      type,
-      invoiceId,
-      userId,
-      skipReceiptPost,
-    });
+    logger.info({ type, invoiceId, userId, skipReceiptPost });
     const client = await requirePermissions(req, companyId, userId, { update: "invoicing" });
     const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
@@ -191,13 +192,9 @@ serve(async (req: Request) => {
           purchaseOrderLine.purchaseQuantity &&
           purchaseOrderLine.purchaseQuantity > 0
         ) {
-          const invoicedQuantityInPurchaseUnit =
-            invoiceLine.quantity / (invoiceLine.conversionFactor ?? 1);
-
-          const newQuantityInvoiced = Math.max(
-            0,
-            (purchaseOrderLine.quantityInvoiced ?? 0) -
-            invoicedQuantityInPurchaseUnit
+          const newQuantityInvoiced = getInvoicedPurchaseQuantityAfterVoid(
+            purchaseOrderLine.quantityInvoiced,
+            invoiceLine.quantity,
           );
 
           // Short-close aware: compare against the billable (received)
@@ -548,7 +545,7 @@ serve(async (req: Request) => {
     if (purchaseInvoiceDelivery.error)
       throw new Error("Failed to fetch purchase invoice delivery");
     if (dimensions.error) {
-      console.error("Failed to fetch dimensions", dimensions.error);
+      logger.error("Failed to fetch dimensions", { error: dimensions.error });
     }
 
     const dimensionMap = new Map<string, string>();
@@ -556,33 +553,13 @@ serve(async (req: Request) => {
       if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
     }
 
-    // supplierShippingCost is a supplier-currency amount; currency.exchangeRate
-    // stores foreign-units-per-base, so supplier→base is DIVIDE (matching the
-    // purchaseInvoices view and the line-level generated columns). It is then
-    // folded into the per-line totals BEFORE the payment-chain exchange-rate
-    // multiplier so AP is credited exactly what post-payment will debit.
-    const shippingCost =
-      (purchaseInvoiceDelivery.data?.supplierShippingCost ?? 0) /
-      (purchaseInvoice.data?.exchangeRate || 1);
-
-    // Pre-allocation denominator for the header shipping cost. Comment lines
-    // post no journal entries, so they must not absorb a share of the
-    // shipping (it would never reach the GL).
-    const totalLinesCost = purchaseInvoiceLines.data.reduce(
-      (acc, invoiceLine) => {
-        if (invoiceLine.invoiceLineType === "Comment") return acc;
-        const lineCost =
-          (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
-          (invoiceLine.shippingCost ?? 0) +
-          (invoiceLine.taxAmount ?? 0);
-        return acc + lineCost;
-      },
-      0
+    const amountsByLineId = new Map(
+      calculatePurchasePostingAmounts({
+        lines: purchaseInvoiceLines.data,
+        exchangeRate: purchaseInvoice.data.exchangeRate ?? 1,
+        supplierShippingCost: purchaseInvoiceDelivery.data.supplierShippingCost ?? 0,
+      }).map((amounts) => [amounts.id, amounts])
     );
-
-    const postableLineCount = purchaseInvoiceLines.data.filter(
-      (invoiceLine) => invoiceLine.invoiceLineType !== "Comment"
-    ).length;
 
     const itemIds = purchaseInvoiceLines.data.reduce<string[]>(
       (acc, invoiceLine) => {
@@ -641,20 +618,11 @@ serve(async (req: Request) => {
       ? supplier.data.intercompanyCompanyId
       : null;
 
-    // Pre-tax value of the intercompany document. Mirrors the sales side's basis
-    // (quantity * unitPrice + line shippingCost over non-comment lines) so the two
-    // rows match on amount. Tax is excluded — the sales side excludes it too — and
-    // purchaseInvoiceLine has no addOnCost column. This is NOT totalLinesCost above,
-    // which folds in taxAmount for the shipping allocation and would never match.
-    const intercompanyAmount = purchaseInvoiceLines.data.reduce(
-      (acc, invoiceLine) => {
-        if (invoiceLine.invoiceLineType === "Comment") return acc;
-        return (
-          acc +
-          (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
-          (invoiceLine.shippingCost ?? 0)
-        );
-      },
+    // Keep the existing pre-tax matching basis in the document currency named
+    // on the trade. Supplier fields retain that denomination; generated unitPrice
+    // and shippingCost are base and must not be labelled as document amounts.
+    const intercompanyAmount = [...amountsByLineId.values()].reduce(
+      (total, amounts) => total + amounts.intercompanyDocumentAmount,
       0
     );
 
@@ -833,43 +801,14 @@ serve(async (req: Request) => {
         ? icPayablesAccount
         : accountDefaults?.data?.payablesAccount;
 
-    // Invoice exchange rate (defaults to 1 for base-currency invoices).
-    // The payment chain (post-payment/build-payment-journal) relieves AP at
-    // `applied × exchangeRate`, so posting applies the same multiplier to the
-    // line totals (header shipping included, already divided to base above)
-    // to keep AP credit == what payments will debit. See the FX-convention
-    // spec for the planned normalization of this multiplier.
-    const invoiceExchangeRate = purchaseInvoice.data?.exchangeRate ?? 1;
-
     for await (const invoiceLine of purchaseInvoiceLines.data) {
-      const invoiceLineQuantityInInventoryUnit =
-        invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1);
-
-      const totalLineCost =
-        invoiceLine.quantity * (invoiceLine.unitPrice ?? 0) +
-        (invoiceLine.shippingCost ?? 0) +
-        (invoiceLine.taxAmount ?? 0);
-
-      // When every line has a zero basis (e.g. a freight-only invoice), fall
-      // back to equal weights so the header shipping still reaches AP.
-      const lineCostPercentageOfTotalCost =
-        invoiceLine.invoiceLineType === "Comment"
-          ? 0
-          : totalLinesCost === 0
-            ? postableLineCount === 0
-              ? 0
-              : 1 / postableLineCount
-            : totalLineCost / totalLinesCost;
-      const lineWeightedShippingCost =
-        shippingCost * lineCostPercentageOfTotalCost;
-      // Line cost and weighted shipping are both base currency here; the
-      // exchange-rate multiplier matches the payment chain's AP relief.
-      const totalLineCostWithWeightedShipping =
-        (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
-
-      const invoiceLineUnitCostInInventoryUnit =
-        totalLineCostWithWeightedShipping /
-        (invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1));
+      if (invoiceLine.invoiceLineType === "Comment") continue;
+      const postingAmounts = amountsByLineId.get(invoiceLine.id)!;
+      const {
+        inventoryQuantity: invoiceLineQuantityInInventoryUnit,
+        totalBaseCost: totalLineCostWithWeightedShipping,
+        inventoryUnitCost: invoiceLineUnitCostInInventoryUnit,
+      } = postingAmounts;
 
       let journalLineReference: string;
 
@@ -886,7 +825,7 @@ serve(async (req: Request) => {
             );
             const itemTrackingType = item?.itemTrackingType ?? "Inventory";
 
-            console.log({
+            logger.debug({
               invoiceLineItemId: invoiceLine.itemId,
               foundItem: item,
               itemTrackingType,
@@ -909,7 +848,7 @@ serve(async (req: Request) => {
                   locationId: invoiceLine.locationId,
                   storageUnitId: invoiceLine.storageUnitId,
                   unitOfMeasure: invoiceLine.inventoryUnitOfMeasureCode ?? "EA",
-                  unitPrice: invoiceLine.unitPrice ?? 0,
+                  unitPrice: invoiceLineUnitCostInInventoryUnit,
                   requiresSerialTracking: itemTrackingType === "Serial",
                   requiresBatchTracking: itemTrackingType === "Batch",
                   createdBy: invoiceLine.createdBy,
@@ -951,9 +890,7 @@ serve(async (req: Request) => {
                     purchaseInvoice.data?.supplierReference ?? undefined,
                   itemId: invoiceLine.itemId,
                   quantity: round(invoiceLineQuantityInInventoryUnit),
-                  nominalCost: round(
-                    invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-                  ),
+                  nominalCost: postingAmounts.nominalBaseCost,
                   cost: round(totalLineCostWithWeightedShipping),
                   remainingQuantity: round(invoiceLineQuantityInInventoryUnit),
                   supplierId: purchaseInvoice.data?.supplierId,
@@ -1720,8 +1657,6 @@ serve(async (req: Request) => {
           }
           break;
         }
-        case "Comment":
-          break;
         case "G/L Account": {
           if (accountingEnabled && accountDefaults?.data) {
             const account = await client
@@ -2058,18 +1993,19 @@ serve(async (req: Request) => {
         // pair the two and generateEliminationEntries can eliminate them for
         // consolidated reporting. Uses the first journal line as the reference,
         // exactly as the sales side does.
-        // Reference the IC payable line (not [0], which is the asset/expense line)
-        // so generateEliminationEntries reverses the Inter-Company Payables control
-        // account and clears it against the seller's IC Receivables. journalLineInserts
-        // is inserted 1:1 into journalLineResults, so the index aligns.
-        const icPayableIdx = journalLineInserts.findIndex(
-          (line) => line.accountId === payablesAccountId
-        );
-        // If no payable line was posted, leave this null so the guard below skips
-        // the insert: referencing another line (asset/expense) would make
-        // elimination reverse the wrong account and leave the control balance.
-        const icJournalLineId =
-          icPayableIdx >= 0 ? journalLineResults[icPayableIdx]?.id ?? null : null;
+        // Keep the first payable as the matching anchor while capturing every
+        // actual payable row for elimination of multiline and split receipts.
+        const icControlLines = isIntercompany
+          ? classifyIntercompanyPostingLines(
+              journalLineInserts.map((line, index) => ({
+                ...line,
+                id: journalLineResults[index]?.id ?? "",
+              })),
+              journalLineDimensionsMeta,
+              { controlAccountId: payablesAccountId }
+            )
+          : [];
+        const icJournalLineId = icControlLines[0]?.journalLineId ?? null;
         if (
           isIntercompany &&
           intercompanyPartnerId &&
@@ -2099,20 +2035,12 @@ serve(async (req: Request) => {
           // capture the buyer's actual capitalization account (not the seller's
           // inventory relief, which was the negative-Finished-Goods bug).
           const eliminationLineInserts: Database["public"]["Tables"]["intercompanyEliminationLine"]["Insert"][] =
-            [];
-
-          // Control: the IC payable line.
-          eliminationLineInserts.push({
-            companyId,
-            intercompanyTransactionId: icTxn.id,
-            role: "Control",
-            journalLineId: icJournalLineId,
-            accountId: payablesAccountId!,
-            amount: journalLineInserts[icPayableIdx]?.amount ?? 0,
-            itemId: null,
-            quantity: null,
-            createdBy: userId,
-          });
+            icControlLines.map((line) => ({
+              ...line,
+              companyId,
+              intercompanyTransactionId: icTxn.id,
+              createdBy: userId,
+            }));
 
           // Capitalization is any Asset-class DEBIT the buyer posted for the
           // goods — which excludes GR/IR clearing (a liability) and expensed
@@ -2141,6 +2069,7 @@ serve(async (req: Request) => {
               "jl.quantity as quantity",
             ])
             .where("jl.journalId", "=", journalId)
+            .where("jl.companyId", "=", companyId)
             .where("a.class", "=", "Asset")
             .where("jl.amount", ">", 0)
             .execute();
@@ -2261,7 +2190,6 @@ serve(async (req: Request) => {
       await trx
         .updateTable("purchaseInvoice")
         .set({
-          datePaid: today, // TODO: remove this once we have payments working
           ...(dateDue ? { dateDue } : {}),
           postingDate: today,
           status: "Open",
@@ -2275,7 +2203,9 @@ serve(async (req: Request) => {
       receiptIds: createdReceiptIds,
     });
   } catch (err) {
-    console.error(err);
+    logger.error("post-purchase-invoice failed", {
+      error: String((err as Error)?.stack ?? err),
+    });
     if (payload.type !== "void" && "invoiceId" in payload) {
       const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "invoicing" });
       await client

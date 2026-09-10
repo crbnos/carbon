@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -43,16 +43,74 @@ export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
 ) {
-  return client
+  // Floor rule: an operation in a Released (Active/Completing) batch is
+  // floor-visible even when its own job is not released yet, so the jobs
+  // list widens to include those member jobs alongside the released ones.
+  const memberJobs = await client
+    .from("jobOperation")
+    .select("jobId, jobOperationBatch!inner(status)")
+    .eq("companyId", args.companyId)
+    .in("jobOperationBatch.status", ["Active", "Completing"]);
+
+  const memberJobIds = [
+    ...new Set((memberJobs.data ?? []).map((op) => op.jobId))
+  ];
+
+  let query = client
     .from("jobs")
     .select(
       "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
     )
     .eq("companyId", args.companyId)
-    .eq("locationId", args.locationId)
-    .in("status", ["Ready", "In Progress", "Paused"])
-    .order("jobId", { ascending: true });
+    .eq("locationId", args.locationId);
+
+  if (memberJobIds.length > 0) {
+    // PostgREST `in` lists inside `.or()` quote each value — "In Progress"
+    // contains a space.
+    const statuses = activeJobStatuses.map((s) => `"${s}"`).join(",");
+    const ids = memberJobIds.map((id) => `"${id}"`).join(",");
+    query = query.or(`status.in.(${statuses}),id.in.(${ids})`);
+  } else {
+    query = query.in("status", [...activeJobStatuses]);
+  }
+
+  return query.order("jobId", { ascending: true });
 }
+
+export async function getJobOperationBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  // Only what the operation view's batch mode consumes: member planned times
+  // (summed into the work-type toggle), completion pre-fill quantities, and the
+  // member's job id for the chip / completion table.
+  const operations = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, job(jobId)"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  return {
+    data: {
+      ...batch.data,
+      operations: operations.data ?? []
+    },
+    error: operations.error
+  };
+}
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
+>;
 
 export async function getTrackedEntitiesByJobMakeMethodIds(
   client: SupabaseClient<Database>,
@@ -87,7 +145,9 @@ export async function getJobOperations(
 ) {
   return client
     .from("jobOperation")
-    .select("*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))")
+    .select(
+      "*, jobOperationBatch(readableId, status), jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+    )
     .eq("jobId", jobId);
 }
 
@@ -468,7 +528,9 @@ export async function getModelUploadsByIds(
 ) {
   return client
     .from("modelUpload")
-    .select("id, name, modelPath, thumbnailPath, glbPath, processingStatus")
+    .select(
+      "id, name, modelPath, thumbnailPath, glbPath, processingStatus, optimizedModelPath"
+    )
     .in("id", ids);
 }
 
@@ -1150,6 +1212,120 @@ export async function getNonConformanceActions(
   }[];
 }
 
+export async function getOperationEligibility(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; employeeId: string; companyId: string }
+): Promise<{ eligible: boolean; reason: string | null }> {
+  const { operationId, employeeId, companyId } = args;
+
+  // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
+  // error must not brick the shop floor — the scheduler is the primary
+  // enforcement of ability requirements; this gate is a best-effort backstop.
+  // The requirement comes from the operation's PROCESS: process.requiresAbility
+  // gates, and the ability linked 1:1 to the process (ability.processId) is
+  // what the employee must be qualified for.
+  const operation = await client
+    .from("jobOperation")
+    .select("processId")
+    .eq("id", operationId)
+    .maybeSingle();
+
+  if (operation.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch jobOperation",
+      operation.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!operation.data?.processId) {
+    return { eligible: true, reason: null };
+  }
+
+  const process = await client
+    .from("process")
+    .select("name, requiresAbility")
+    .eq("id", operation.data.processId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (process.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch process",
+      process.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!process.data?.requiresAbility) {
+    return { eligible: true, reason: null };
+  }
+
+  const ability = await client
+    .from("ability")
+    .select("id, name")
+    .eq("processId", operation.data.processId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (ability.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch ability",
+      ability.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!ability.data) {
+    // requiresAbility is on but no linked ability exists — data anomaly,
+    // don't block the floor
+    return { eligible: true, reason: null };
+  }
+
+  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+
+  const employeeAbility = await client
+    .from("employeeAbility")
+    .select("expiresAt")
+    .eq("employeeId", employeeId)
+    .eq("abilityId", ability.data.id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (employeeAbility.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch employeeAbility",
+      employeeAbility.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  // Qualification is presence-based: the row existing means qualified, subject
+  // only to expiry below.
+  if (!employeeAbility.data) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — not qualified`
+    };
+  }
+
+  const todayDate = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+  if (
+    employeeAbility.data.expiresAt !== null &&
+    employeeAbility.data.expiresAt <= todayDate
+  ) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
+    };
+  }
+
+  return { eligible: true, reason: null };
+}
+
 export async function getProcessesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1182,6 +1358,20 @@ export async function getProductionQuantitiesForJobOperation(
     .from("productionQuantity")
     .select("*")
     .eq("jobOperationId", operationId);
+}
+
+// Every productionEvent tagged with the batch — a batch timer started from any
+// member's operation page is tagged with the batch id, not one member's
+// operationId, so a batched operation view reads the batch's events rather than
+// its own to show the shared running timer and progress.
+export async function getProductionEventsForBatch(
+  client: SupabaseClient<Database>,
+  batchId: string
+) {
+  return client
+    .from("productionEvent")
+    .select("*")
+    .eq("jobOperationBatchId", batchId);
 }
 
 export async function getToolsByOperationId(
@@ -1528,15 +1718,65 @@ export async function getWorkCentersByLocation(
   return { data: mergedData, error: null };
 }
 
+/**
+ * The operator's people assignment (manning-board station) for a date. Multiple
+ * rows are possible at multi-shift locations; callers take the first.
+ */
+export async function getMyPeopleAssignment(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string; date: string }
+) {
+  return client
+    .from("peopleAssignment")
+    .select("id, workCenterId, shiftId")
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("date", args.date);
+}
+
 export async function getWorkCentersByCompany(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("workCenter")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("name", { ascending: true });
+  // Query both views and merge - workCenters has processes, workCentersWithBlockingStatus has blocking info
+  const [workCentersResult, blockingStatusResult] = await Promise.all([
+    client
+      .from("workCenters")
+      .select("*")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    client
+      .from("workCentersWithBlockingStatus")
+      .select("id, isBlocked, blockingDispatchId, blockingDispatchReadableId")
+      .eq("companyId", companyId)
+      .eq("active", true)
+  ]);
+
+  if (workCentersResult.error) {
+    return workCentersResult;
+  }
+
+  if (blockingStatusResult.error) {
+    return { data: null, error: blockingStatusResult.error };
+  }
+
+  const blockingStatusMap = new Map(
+    blockingStatusResult.data?.map((wc) => [wc.id, wc]) ?? []
+  );
+
+  const mergedData = workCentersResult.data?.map((wc) => {
+    const blockingStatus = blockingStatusMap.get(wc.id);
+    return {
+      ...wc,
+      isBlocked: blockingStatus?.isBlocked ?? false,
+      blockingDispatchId: blockingStatus?.blockingDispatchId ?? null,
+      blockingDispatchReadableId:
+        blockingStatus?.blockingDispatchReadableId ?? null
+    };
+  });
+
+  return { data: mergedData, error: null };
 }
 
 export async function insertAttributeRecord(
@@ -1805,6 +2045,8 @@ export async function startProductionEvent(
     employeeId: string;
     companyId: string;
     createdBy: string;
+    // Tags the event as part of an operation batch (sliced per-member at completion).
+    jobOperationBatchId?: string;
   },
   trackedEntityId: string | undefined,
   unitIndex?: number,
@@ -1990,4 +2232,31 @@ export async function getJobMethodBomIdMap(
   });
 
   return bomIdMap;
+}
+
+/**
+ * Stamp the schedule as outdated so the debounced replan wave regenerates the
+ * affected location. Mirrors production.service.ts's helper (ERP) — used here
+ * when a MES maintenance dispatch changes a work center's downtime window.
+ */
+export async function notifyScheduleInputsChanged(
+  companyId: string,
+  kind:
+    | "ability"
+    | "shift"
+    | "employee-shift"
+    | "work-center"
+    | "location"
+    | "reorder"
+    | "people",
+  reason: string,
+  entityId?: string
+) {
+  const { trigger } = await import("@carbon/jobs");
+  await trigger("schedule-inputs-changed", {
+    companyId,
+    kind,
+    reason,
+    entityId
+  });
 }

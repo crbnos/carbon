@@ -153,6 +153,11 @@ export const terms = {
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,
     href: "/docs/reference/work-centers"
   },
+  "operation-batch": {
+    term: msg`Operation batch`,
+    definition: msg`Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity.`,
+    href: "/docs/reference/batching"
+  },
   backflush: {
     term: msg`Backflush`,
     definition: msg`Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually.`,
@@ -552,6 +557,10 @@ export const terms = {
   "account-default-sales": {
     term: msg`Sales (default)`,
     definition: msg`Default revenue GL account credited when a sales invoice posts.`
+  },
+  "account-default-sales-shipping-revenue": {
+    term: msg`Shipping Revenue (default)`,
+    definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
   },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,
@@ -1286,11 +1295,12 @@ export const terms = {
   },
   "job-deadline-type": {
     term: msg`Deadline Type`,
-    definition: msg`How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely.`
+    definition: msg`How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement.`,
+    href: "/docs/reference/scheduling#placement-against-real-capacity"
   },
   "job-due-date": {
     term: msg`Due Date (job)`,
-    definition: msg`The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue.`
+    definition: msg`The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules.`
   },
   "job-priority": {
     term: msg`Job Priority`,
@@ -1713,8 +1723,12 @@ export const terms = {
     definition: msg`The outside suppliers that perform this process; each gets a row of pricing and lead-time inputs on the supplier process form.`
   },
   "process-complete-all-on-scan": {
-    term: msg`Complete all quantities on barcode scan`,
+    term: msg`Complete all quantities on kanban complete scan`,
     definition: msg`When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials.`
+  },
+  "batch-type": {
+    term: msg`Batch type`,
+    definition: msg`How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath).`
   },
 
   // ── Resources: Work centers (WorkCenterForm) ────────────────────────────
@@ -1921,8 +1935,18 @@ export const terms = {
   },
   "dispatch-priority": {
     term: msg`Dispatch priority`,
-    definition: msg`An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates.`,
-    href: "/docs/reference/scheduling"
+    definition: msg`An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates.`,
+    href: "/docs/reference/scheduling#placement-against-real-capacity"
+  },
+  "capacity-reservation": {
+    term: msg`Capacity reservation`,
+    definition: msg`A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws.`,
+    href: "/docs/reference/scheduling#the-forecast-explains-the-schedule"
+  },
+  "need-by-date": {
+    term: msg`Need-by target`,
+    definition: msg`The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement.`,
+    href: "/docs/reference/scheduling#two-dates-on-every-operation"
   },
 
   // ── Shop floor: MES, kanban, picking, lineside ──────────────────────────
@@ -1961,7 +1985,7 @@ export const terms = {
   "api-key": {
     term: msg`API key`,
     definition: msg`A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's.`,
-    href: "/docs/reference/api-keys"
+    href: "/docs/building/api-keys"
   },
   session: {
     term: msg`Session`,
@@ -2022,5 +2046,19 @@ export const terms = {
   "workflow-webhook-headers": {
     term: msg`Webhook Headers`,
     definition: msg`Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable.`
+  },
+  "single-sign-on": {
+    term: msg`Single sign-on (SSO)`,
+    definition: msg`An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "identity-provider": {
+    term: msg`Identity provider (IdP)`,
+    definition: msg`The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "magic-link": {
+    term: msg`Magic link`,
+    definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

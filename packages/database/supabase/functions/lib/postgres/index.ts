@@ -14,6 +14,11 @@ import * as pg from "pg";
 import type { Database as SupabaseDatabase } from "../../../../src/types.ts";
 
 export type KyselyDatabase = KyselifyDatabase<SupabaseDatabase>;
+// Type-only alias so Node-reachable code (the in-process scheduling engine) can
+// name the Kysely DB shape WITHOUT importing ../database.ts, which pulls in the
+// Deno-only postgres driver (driver.ts) and fails a Node typecheck. database.ts
+// keeps re-exporting this same `DB` for the edge runtime.
+export type DB = KyselyDatabase;
 export type KyselyTx = Transaction<KyselyDatabase>;
 export type KyselyDbTx = KyselyDatabase | KyselyTx;
 

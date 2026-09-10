@@ -6,7 +6,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle
@@ -40,9 +39,6 @@ const ProfileLanguageForm = ({ locale }: { locale: string }) => {
           <CardTitle>
             <Trans>Language</Trans>
           </CardTitle>
-          <CardDescription>
-            <Trans>Choose your preferred language for the interface.</Trans>
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Select name="locale" label={t`Language`} options={options} />

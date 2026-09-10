@@ -9,6 +9,7 @@ import { type fieldMappings, importSchemas } from "~/modules/shared";
 import type { action } from "~/routes/x+/shared+/import.$tableId";
 import { path } from "~/utils/path";
 import { AnimatedSizeContainer } from "../AnimatedSizeContainer";
+import { ConfirmDiscardImport } from "./ConfirmDiscardImport";
 import { FieldMapping } from "./FieldMappings";
 import { ImportResultsModal } from "./ImportResultsModal";
 import { UploadCSV } from "./UploadCSV";
@@ -40,6 +41,36 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
   const [firstRows, setFirstRows] = useState<Record<string, string>[] | null>(
     null
   );
+  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
+
+  // Parsed columns are what moves the wizard off the upload step, so they are
+  // also the point from which closing costs the user something: the upload and
+  // every mapping they've made, all of which the wizard keeps in memory and
+  // nowhere else. Before that (and after "choose a different file", which
+  // clears them) the × closes straight away. Once the import has landed the
+  // results modal owns the close and there is nothing left to lose.
+  const hasImportInProgress =
+    fileColumns !== null && fetcher.data?.success !== true;
+
+  const requestClose = () => {
+    if (hasImportInProgress) {
+      setIsConfirmingDiscard(true);
+      return;
+    }
+    onClose();
+  };
+
+  // A reload drops the same state, and there is nowhere to persist it to yet,
+  // so the browser's own prompt is the only guard available for that path.
+  useEffect(() => {
+    if (!hasImportInProgress) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasImportInProgress]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -95,7 +126,7 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
       open
       onOpenChange={(open) => {
         if (!open) {
-          onClose();
+          requestClose();
         }
       }}
     >
@@ -155,6 +186,12 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
           </AnimatedSizeContainer>
         </div>
       </ModalContent>
+      {isConfirmingDiscard && (
+        <ConfirmDiscardImport
+          onCancel={() => setIsConfirmingDiscard(false)}
+          onDiscard={onClose}
+        />
+      )}
     </Modal>
   );
 };

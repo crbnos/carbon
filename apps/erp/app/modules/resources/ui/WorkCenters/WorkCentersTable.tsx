@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -27,13 +28,13 @@ import {
   LuAlignLeft,
   LuBuilding2,
   LuCheck,
-  LuCog,
   LuDollarSign,
+  LuLocateFixed,
   LuPencil,
+  LuRedoDot,
   LuTrash,
   LuTriangleAlert,
-  LuUser,
-  LuWrench
+  LuUser
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
@@ -127,7 +128,7 @@ const WorkCentersTable = memo(
             </HStack>
           ),
           meta: {
-            icon: <LuWrench />
+            icon: <LuLocateFixed />
           }
         },
         {
@@ -149,7 +150,7 @@ const WorkCentersTable = memo(
             </span>
           ),
           meta: {
-            icon: <LuCog />,
+            icon: <LuRedoDot />,
             filter: {
               type: "static",
               options: processes.map((process) => ({
@@ -420,7 +421,7 @@ function DeleteWorkCenterModal({
     const { data, error } = await carbon
       .from("jobOperation")
       .select("job(jobId, id, status)")
-      .in("job.status", ["Ready", "In Progress", "Paused"])
+      .in("job.status", [...activeJobStatuses])
       .neq("status", "Done")
       .eq("workCenterId", workCenter.id!)
       .eq("companyId", company?.id);

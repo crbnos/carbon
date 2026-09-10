@@ -8,10 +8,12 @@ import { LuPanelLeft } from "react-icons/lu";
 import type { Button } from "./Button";
 import { Drawer, DrawerContent } from "./Drawer";
 import { useIsMobile } from "./hooks";
+import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import { Input } from "./Input";
 import { Separator } from "./Separator";
 import { Skeleton } from "./Skeleton";
+import { SHORTCUTS } from "./shortcuts";
 import {
   Tooltip,
   TooltipContent,
@@ -26,7 +28,6 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_WIDTH_ICON_TOUCH = "4rem";
-const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContext = {
   state: "expanded" | "collapsed";
@@ -103,21 +104,14 @@ const SidebarProvider = React.forwardRef<
         : setOpen((open) => !open);
     }, [isMobile, setOpen, setOpenMobile]);
 
-    // Adds a keyboard shortcut to toggle the sidebar.
-    React.useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (
-          event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-          (event.metaKey || event.ctrlKey)
-        ) {
-          event.preventDefault();
-          toggleSidebar();
-        }
-      };
-
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [toggleSidebar]);
+    // Inert while typing in a field (hook default).
+    useShortcutKeys({
+      shortcut: SHORTCUTS.sidebarToggle,
+      action: (event) => {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    });
 
     // We add a state so that we can do data-state="expanded" or "collapsed".
     // This makes it easier to style the sidebar with Tailwind classes.

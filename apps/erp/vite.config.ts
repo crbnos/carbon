@@ -6,8 +6,59 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import babelMacros from "vite-plugin-babel-macros";
 
-export default defineConfig(({ isSsrBuild, mode }) => {
+export default defineConfig(({ command, isSsrBuild, mode }) => {
   applyDotenvToProcessEnv(mode, __dirname);
+
+  /**
+   * SSR dependencies that must be bundled into the server output rather than
+   * left as bare `import`s. Defined once and applied to BOTH `ssr.noExternal`
+   * (honored by the dev server and the plain `react-router build`) and
+   * `environments.ssr.resolve.noExternal`.
+   *
+   * The second location is not redundant: with `future.v8_viteEnvironmentApi`
+   * enabled, the Vercel preset builds each route group as a named server-bundle
+   * environment (`ssr_bundle_*`), and React Router's server-bundle environment
+   * resolver merges `viteUserConfig.environments.ssr` — NOT the top-level `ssr`
+   * config. Without this, every entry below is externalized in the Vercel
+   * Lambda, and `zustand` (default-imported by @react-three/fiber, see below)
+   * crashes the function on cold start with "does not provide an export named
+   * 'default'".
+   */
+  const ssrNoExternal = [
+    "react-tweet",
+    "react-dropzone",
+    "react-icons",
+    "react-phone-number-input",
+    "tailwind-merge",
+    /**
+     * react-csv@2.2.2 ships a broken manifest: it `require('react')` and
+     * `require('prop-types')` at runtime but declares neither as a
+     * dependency or peer. Externalized, the SSR server bundle keeps the bare
+     * `require('react')`, which resolves locally via pnpm's hoisted store
+     * but is NOT traced into the Vercel serverless function — so the Lambda
+     * crashes on cold start with "Cannot find module 'react'". Bundling it
+     * inline resolves react/prop-types against the app's copies at build
+     * time, the same reason the react-* packages above are inlined.
+     *
+     * Build-only: react-csv also declares `"jsnext:main": "src/index.js"`,
+     * so when inlined in the dev server Vite picks the untranspiled ESM
+     * source, whose `import { func } from "prop-types"` fails under Node's
+     * CJS interop ("Named export 'func' not found"). In dev the CJS entry is
+     * externalized and `require`d directly, which works via pnpm's store.
+     * (Gated on `command` — not `isSsrBuild` — because under the environment
+     * API the config callback runs once for the whole build, so `isSsrBuild`
+     * is unreliable, whereas `command` is always "build" vs "serve".)
+     */
+    ...(command === "build" ? ["react-csv"] : []),
+    /**
+     * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
+     * its nested zustand v3, while the app uses zustand v5 (no default
+     * export). Externalizing zustand merges both into one bare import that
+     * resolves to v5 at runtime and crashes the server at module load.
+     * Bundling it lets each importer keep its own version.
+     */
+    "zustand",
+  ];
 
   return {
     build: {
@@ -27,21 +78,14 @@ export default defineConfig(({ isSsrBuild, mode }) => {
       global: "globalThis",
     },
     ssr: {
-      noExternal: [
-        "react-tweet",
-        "react-dropzone",
-        "react-icons",
-        "react-phone-number-input",
-        "tailwind-merge",
-        /**
-         * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
-         * its nested zustand v3, while the app uses zustand v5 (no default
-         * export). Externalizing zustand merges both into one bare import that
-         * resolves to v5 at runtime and crashes the server at module load.
-         * Bundling it lets each importer keep its own version.
-         */
-        "zustand",
-      ],
+      noExternal: ssrNoExternal,
+    },
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: ssrNoExternal,
+        },
+      },
     },
     server: {
       port: 3000,
@@ -69,12 +113,20 @@ export default defineConfig(({ isSsrBuild, mode }) => {
          * whole `konva` package — react-konva imports `konva/lib/Core.js`, etc.).
          */
         canvas: path.resolve(__dirname, "app/ssr-shims/canvas-stub.cjs"),
+        /**
+         * `rhino3dm` (via @carbon/viewer) has a Node-only branch that
+         * `require("ws")`, but declares no dependencies, so `ws` is not
+         * resolvable from it. Rolldown (Vite 8) resolves that statically and
+         * fails the build; esbuild did not. Nothing here uses `ws` — stub it
+         * like `canvas` above.
+         */
+        ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
         "@carbon/form": path.resolve(
           __dirname,
-          "../../packages/form/src/index.tsx",
+          "../../packages/form/src/index.tsx"
         ),
       },
     },

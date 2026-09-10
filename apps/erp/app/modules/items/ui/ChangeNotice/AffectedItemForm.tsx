@@ -28,7 +28,7 @@ import {
   Submit
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
-import { useNextItemId } from "~/hooks";
+import { useCompanySettings, useNextItemId } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   type ChangeNoticeChangeType,
@@ -71,6 +71,8 @@ export default function AffectedItemForm({
   // A net-new affected item is always a Part (no Part/Tool choice) — mint under
   // the Part sequence.
   const { id: nextId, onIdChange, loading } = useNextItemId("Part");
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
 
   const isNewPart = changeType === "New Part";
 
@@ -224,7 +226,7 @@ export default function AffectedItemForm({
                     value={nextId}
                     onChange={onIdChange}
                     isDisabled={loading}
-                    isUppercase
+                    isUppercase={!allowLowercaseItemIds}
                   />
                   <Input name="name" label={t`Name`} characterLimit={40} />
                   <Select

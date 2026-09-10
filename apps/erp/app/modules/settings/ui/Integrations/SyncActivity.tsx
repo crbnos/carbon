@@ -904,6 +904,29 @@ function SyncOperationDetailDrawer({
                   {operation.errorMessage}
                 </p>
               )}
+              {operation.errorCode === "UNMAPPED_ACCOUNTS" &&
+                (() => {
+                  const metadata = operation.metadata as {
+                    unmappedAccountIds?: unknown;
+                  } | null;
+                  const ids = Array.isArray(metadata?.unmappedAccountIds)
+                    ? metadata.unmappedAccountIds.filter(
+                        (id): id is string =>
+                          typeof id === "string" && id.length > 0
+                      )
+                    : [];
+                  const params = new URLSearchParams();
+                  params.set("tab", "account-mapping");
+                  for (const id of ids) params.append("focusAccount", id);
+                  return (
+                    <Link
+                      to={`?${params.toString()}`}
+                      className="self-start text-sm text-primary underline-offset-2 hover:underline"
+                    >
+                      <Trans>Map accounts</Trans>
+                    </Link>
+                  );
+                })()}
             </div>
           )}
           {hasMetadata && (

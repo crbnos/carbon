@@ -21,7 +21,7 @@ Background job system built on Inngest. Handles event system processing (webhook
 
 ## Never
 
-- Import Inngest internals or server-only job code in app bundles — use only the public exports from `@carbon/jobs` (`.` subpath: `trigger`, `batchTrigger`, schemas).
+- Import Inngest internals or server-only job code in app bundles — use only the public exports from `@carbon/jobs` (`.` subpath: `trigger`, `batchTrigger`, schemas; `./backups`: the pure catalog/compatibility layer, server-side only).
 - Use the event system for real-time / data-integrity needs — it is async (typically ~3–5s, up to ~1 min if a push wake is lost). Use sync interceptors instead.
 - Bypass the PGMQ queue by writing directly to handler tables — always go through `dispatch_event_batch()` triggers.
 - Give a workflow action anything but the owner-scoped client it was handed. A privileged or
@@ -34,13 +34,32 @@ Background job system built on Inngest. Handles event system processing (webhook
 pnpm --filter @carbon/jobs test
 pnpm --filter @carbon/jobs typecheck
 pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
+pnpm db:check:backups                 # Would existing customer backups still restore?
 ```
+
+`db:check:backups` (`src/scripts/check-backups.ts`) runs from `.husky/pre-commit` when a staged
+file is under `packages/database/supabase/migrations/`. It compares `manifests/schema.json` **as
+it stands on `main`** (fetched from raw.githubusercontent.com, slug from your `origin` remote,
+falling back with a staleness warning to `git show origin/main:…`) against your live schema, and
+skips rather than passes when your database is behind. Nobody maintains that file: the hook passes
+`--stage`, which regenerates and `git add`s it on success. A bare `pnpm db:check:backups` is
+read-only. See `manifests/README.md` and `.claude/rules/company-backup-restore.md`.
+
+Scripts under `src/scripts/` run through bare `tsx`, which does NOT paper over CJS/ESM interop the
+way Vite and vitest do. A **named** import of a workspace package that lacks `"type": "module"`
+(`@carbon/database`, `@carbon/utils`, `@carbon/logger`) throws `does not provide an export named …`
+at run time even though it typechecks. The fix is to keep a script's runtime import chain free of
+those packages (type-only imports are fine — they erase) — never to flip a shared package's `type`
+field for one script. That is exactly why the catalog/compatibility logic lives in
+`src/backups/schema.ts` with no runtime `@carbon/*` imports, instead of in `company-backup.ts`
+(whose module-scope `getLogger` would drag `@carbon/logger` into the script).
 
 ## Key Exports
 
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | `trigger()`, `batchTrigger()`, `Events` type, Jira/Linear webhook schemas |
+| `./backups` | `src/backups/schema.ts` — catalog introspection + backup-compatibility diff (`getCompanyTableCatalog`, `reportBackupCompatibility`, `compatibilityStatus`, types), plus the re-exported `src/backups/scope.ts` — scope predicates, the export closure guard (`findExportScopeViolations`, `ExportScopeViolationError`) and the opt-in exclusion/purge (`computeScopeExclusions`, `purgeScopeViolations`). No Inngest, no logger; the ERP Backups loader computes the live restore verdict through it and the purge action deletes through it. Server-side only (runs `information_schema` SQL) |
 | `./events` | `Events` type (re-export from `@carbon/lib`) |
 | `./inngest` | Inngest client + function registrations, plus `setWorkflowDispatch` and its `WorkflowDispatch` / `DispatchContext` / `DispatchResult` types (server-only) |
 | `./worker` | Worker entry point for Inngest serve |
@@ -139,8 +158,9 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 
 `packages/jobs` cannot import `~/modules/*` — the dependency only runs app → package. So
 `dispatcher.ts` holds a module-level `WorkflowDispatch` slot, and the ERP app fills it at boot:
-`apps/erp/app/routes/api+/inngest.ts` calls `setWorkflowDispatch(executeFunction)` with the MCP
-direct executor from `./mcp+/lib/direct-executor`. The type is structural, so the app satisfies it
+`apps/erp/app/routes/api+/inngest.ts` registers a wrapper over `callOperation` (the Carbon API's
+canonical dispatch, `./v1+/lib/call.server`) with `authKind: "session"` — the same entry point MCP
+`call_tool` and the in-app agent use. The type is structural, so the app satisfies it
 without importing anything from here beyond the setter (re-exported from `@carbon/jobs/inngest`).
 With no dispatcher registered, create actions fail cleanly with "This step is not available in this
 environment" — they do not throw.

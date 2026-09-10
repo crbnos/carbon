@@ -84,7 +84,7 @@ several `invoice.*` events are forwarded to GTM.
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:
 `API_KEYS, WEBHOOKS, INTEGRATIONS, ITEM_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
 CUSTOMER_PORTALS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST`
-(`email`, `exchange-rates-v1`) bypasses the `INTEGRATIONS` gate.
+(`email`) bypasses the `INTEGRATIONS` gate.
 
 Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId)`):
 

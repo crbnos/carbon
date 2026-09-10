@@ -33,7 +33,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   const categoryMarkupsByQuantityValidator = z.record(
-    z.record(z.number().min(0))
+    z.string(),
+    z.record(z.string(), z.number().min(0))
   );
   const categoryMarkupsByQuantity =
     categoryMarkupsByQuantityValidator.safeParse(
@@ -42,14 +43,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (unitPricesByQuantity.success === false) {
     return data(
-      { data: null, errors: unitPricesByQuantity.error.errors?.[0].message },
+      { data: null, errors: unitPricesByQuantity.error.issues?.[0].message },
       { status: 400 }
     );
   }
 
   if (quantities.success === false) {
     return data(
-      { data: null, errors: quantities.error.errors?.[0].message },
+      { data: null, errors: quantities.error.issues?.[0].message },
       { status: 400 }
     );
   }
@@ -70,17 +71,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const inserts = unitPricesByQuantity.data.map((unitPrice, index) => {
     const quantity = quantities.data[index];
+    const markups = categoryMarkupsByQuantity.data[quantity];
     return {
       quoteLineId: lineId,
       quantity,
       unitPrice,
-      discountPercent: 0,
-      leadTime: 0,
       createdBy: userId,
-      categoryMarkups: categoryMarkupsByQuantity.data[quantity] ?? undefined,
-      // Applying a markup is explicit cost-plus intent: the row goes back to
-      // system pricing so future BOM changes reprice it from these markups.
-      priceSource: "system" as const
+      // discountPercent / leadTime / shippingCost are intentionally omitted so
+      // upsertQuoteLinePrices preserves the user-entered values for each quantity
+      // — a recalc only recomputes the unit price.
+      categoryMarkups: markups ?? undefined,
+      // Applying a markup is explicit cost-plus intent: that row goes back to
+      // system pricing so future BOM changes reprice it. A quantity with no
+      // markup omits priceSource, so a manual row keeps its manual source.
+      ...(markups !== undefined ? { priceSource: "system" as const } : {})
     };
   });
 

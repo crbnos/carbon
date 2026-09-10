@@ -59,6 +59,7 @@ import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
+import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
@@ -260,10 +261,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // non-privileged accounts), so a company cannot switch it back off.
   const mfaRequired =
     CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true;
+  // SSO sessions trust the IdP for MFA in all environments, including
+  // controlled — user decision: attestation is delegated to the IdP policy.
+  const ssoMfaExempt = Boolean(authSession.ssoProviderId);
   // Redis-cached + memoized per read; only queried when it could gate.
-  const mfaEnrolled = mfaRequired
-    ? await userHasVerifiedTotpFactor(userId)
-    : true;
+  const mfaEnrolled =
+    mfaRequired && !ssoMfaExempt
+      ? await userHasVerifiedTotpFactor(userId)
+      : true;
 
   return data({
     session: {
@@ -466,11 +471,11 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               <TooltipProvider>
-                <div className="flex flex-col h-screen">
-                  <Topbar />
-                  <div className="flex flex-1 h-[calc(100vh-49px)] relative">
-                    <PrimaryNavigation />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-card sm:rounded-tl-2xl relative z-10">
+                <div className="flex h-screen">
+                  <PrimaryNavigation />
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border relative z-10">
+                    <Topbar />
+                    <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <Outlet />
                     </main>
                   </div>
@@ -481,6 +486,7 @@ export default function AuthenticatedRoute() {
                   onDismiss={dismiss}
                 />
                 <AgentRoot />
+                <ShortcutHelp />
                 {companySettings?.timeCardEnabled && (
                   <Suspense fallback={null}>
                     <Await resolve={openClockEntry}>

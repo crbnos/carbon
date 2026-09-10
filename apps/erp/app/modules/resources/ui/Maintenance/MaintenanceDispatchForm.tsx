@@ -21,7 +21,13 @@ import type { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
-import { Hidden, Location, Submit, WorkCenter } from "~/components/Form";
+import {
+  Boolean,
+  Hidden,
+  Location,
+  Submit,
+  WorkCenter
+} from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
@@ -213,6 +219,14 @@ const MaintenanceDispatchForm = ({
               <DateTimePicker
                 name="plannedEndTime"
                 label={t`Planned End Time`}
+              />
+
+              <Boolean
+                bordered
+                className="col-span-2"
+                name="takesWorkCenterOffline"
+                label={t`Takes work center offline`}
+                description={t`While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed).`}
               />
               {showFailureModes ? (
                 <Select

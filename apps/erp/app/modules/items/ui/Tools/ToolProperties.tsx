@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   HStack,
+  Subheading,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -27,7 +28,7 @@ import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -67,6 +68,8 @@ type ToolPropertiesProps = {
 const ToolProperties = ({ data }: ToolPropertiesProps) => {
   const { t } = useLingui();
   const params = useParams();
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
   const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
@@ -204,13 +207,13 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className="w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
-          </h3>
+          </Subheading>
           <HStack spacing={1}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -295,6 +298,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
                 name="toolId"
                 inline
                 size="sm"
+                isUppercase={!allowLowercaseItemIds}
                 value={routeData?.toolSummary?.readableId ?? ""}
                 onBlur={(e) => {
                   onUpdate("toolId", e.target.value ?? null);
@@ -310,7 +314,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
             validator={z.object({
               name: z.string()
             })}
-            className="w-full -mt-2"
+            className="w-full"
           >
             <span className="text-xs text-muted-foreground">
               <InputControlled

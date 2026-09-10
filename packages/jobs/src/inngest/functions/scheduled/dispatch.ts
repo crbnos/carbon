@@ -40,6 +40,8 @@ interface MaintenanceSchedule {
   saturday: boolean;
   sunday: boolean;
   procedureId: string | null;
+  estimatedDuration: number | null;
+  takesWorkCenterOffline: boolean;
 }
 
 // Check if a date is enabled for the schedule based on day-of-week settings
@@ -200,6 +202,24 @@ export async function generateDispatchesForSchedule(args: {
       break;
     }
 
+    // A scheduled PM is a due *date*, not a time. Anchor it to noon UTC so it
+    // renders as the intended day in every timezone — midnight UTC would show a
+    // day earlier for anyone behind UTC.
+    const plannedStart = targetDate.set({
+      hour: 12,
+      minute: 0,
+      second: 0,
+      millisecond: 0
+    });
+    // Give the dispatch a bounded expected window whenever the schedule declares
+    // a duration (minutes). For an offline PM the scheduler subtracts this
+    // window; for a non-offline PM it is just a self-describing "~N min" window.
+    // `.add({ minutes })` is @internationalized/date arithmetic — never a JS Date.
+    const plannedEnd =
+      schedule.estimatedDuration && schedule.estimatedDuration > 0
+        ? plannedStart.add({ minutes: schedule.estimatedDuration })
+        : null;
+
     // Create the dispatch
     const { data: newDispatch, error: dispatchError } = await serviceRole
       .from("maintenanceDispatch")
@@ -217,12 +237,11 @@ export async function generateDispatchesForSchedule(args: {
         locationId: schedule.locationId,
         maintenanceScheduleId: schedule.id,
         procedureId: schedule.procedureId,
-        // A scheduled PM is a due *date*, not a time. Anchor it to noon UTC so
-        // it renders as the intended day in every timezone — midnight UTC would
-        // show a day earlier for anyone behind UTC.
-        plannedStartTime: targetDate
-          .set({ hour: 12, minute: 0, second: 0, millisecond: 0 })
-          .toAbsoluteString(),
+        plannedStartTime: plannedStart.toAbsoluteString(),
+        plannedEndTime: plannedEnd ? plannedEnd.toAbsoluteString() : null,
+        // Mirror the schedule's capacity-blocking flag so a PM that takes the
+        // machine offline reserves its window in the finite scheduler.
+        takesWorkCenterOffline: schedule.takesWorkCenterOffline,
         companyId,
         createdBy: "system"
       })

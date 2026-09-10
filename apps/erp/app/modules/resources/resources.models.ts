@@ -1,7 +1,30 @@
-import { isValidTimeZone } from "@carbon/utils";
+import {
+  type BatchRules,
+  isValidTimeZone,
+  resolveBatchRules
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { operationTypes, standardFactorType } from "../shared";
+
+// Batch compatibility rule levels — mirrors BatchRuleLevel in @carbon/utils.
+// A tuple literal is needed for z.enum; kept in sync with BATCH_RULE_DIMENSIONS.
+export const batchRuleLevels = ["must", "guide", "ignore"] as const;
+
+// Seed the six process-form batch-rule fields from a stored (sparse/null)
+// `batchRules` value, filling defaults. Used by the process create/edit forms so
+// an untouched process shows Guide/Ignore defaults and a saved one round-trips.
+export function batchRuleInitialValues(raw: BatchRules | null | undefined) {
+  const r = resolveBatchRules(raw);
+  return {
+    batchRuleItem: r.item,
+    batchRuleSubstance: r.substance,
+    batchRuleGrade: r.grade,
+    batchRuleDimension: r.dimension,
+    batchRuleForm: r.form,
+    batchRuleFinish: r.finish
+  };
+}
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -17,24 +40,10 @@ export const abilityNameValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
-export const abilityValidator = z
-  .object({
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    startingPoint: zfd.numeric(
-      z.number().min(0, { message: "Learning curve is required" })
-    ),
-    weeks: zfd.numeric(z.number().min(0, { message: "Weeks is required" })),
-    shadowWeeks: zfd.numeric(
-      z.number().min(0, { message: "Shadow is required" })
-    ),
-    employees: z
-      .array(z.string().min(1, { message: "Invalid selection" }))
-      .min(1, { message: "Group members are required" })
-      .optional()
-  })
-  .refine((schema) => schema.shadowWeeks <= schema.weeks, {
-    message: "name is required when you send color on request"
-  });
+export const abilityValidator = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
+});
 
 export const contractorValidator = z.object({
   id: z.string().min(1, { message: "Supplier Contact is required" }),
@@ -48,11 +57,11 @@ export const contractorValidator = z.object({
   assignee: zfd.text(z.string().optional())
 });
 
-export const employeeAbilityValidator = z.object({
+export const employeeAbilityCellValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
-  trainingStatus: z.string().min(1, { message: "Status is required" }),
-  trainingPercent: zfd.numeric(z.number().optional()),
-  trainingDays: zfd.numeric(z.number().optional())
+  abilityId: z.string().min(1, { message: "Ability is required" }),
+  lastTrainingDate: zfd.text(z.string().optional()),
+  expiresAt: zfd.text(z.string().optional())
 });
 
 export const maintenanceFailureModeType = [
@@ -196,6 +205,7 @@ export const maintenanceDispatchValidator = z.object({
   suspectedFailureModeId: zfd.text(z.string().optional()),
   plannedStartTime: zfd.text(z.string().optional()),
   plannedEndTime: zfd.text(z.string().optional()),
+  takesWorkCenterOffline: zfd.checkbox(),
   assignee: zfd.text(z.string().optional()),
   content: zfd.text(z.string().optional())
 });
@@ -242,30 +252,50 @@ export const maintenanceScheduleItemValidator = z.object({
     .min(1, { message: "Unit of measure is required" })
 });
 
-export const maintenanceScheduleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().optional()),
-  workCenterId: z.string().min(1, { message: "Work center is required" }),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  frequency: z.enum(maintenanceFrequency),
-  priority: z.enum(maintenanceDispatchPriority),
-  estimatedDuration: zfd.numeric(z.number().optional()),
-  nextDueAt: zfd.text(z.string().optional()),
-  active: zfd.checkbox(),
-  // Day-of-week fields for daily frequency
-  monday: zfd.checkbox(),
-  tuesday: zfd.checkbox(),
-  wednesday: zfd.checkbox(),
-  thursday: zfd.checkbox(),
-  friday: zfd.checkbox(),
-  saturday: zfd.checkbox(),
-  sunday: zfd.checkbox(),
-  // Skip holidays option
-  skipHolidays: zfd.checkbox(),
-  // Procedure
-  procedureId: zfd.text(z.string().optional())
-});
+export const maintenanceScheduleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: zfd.text(z.string().optional()),
+    workCenterId: z.string().min(1, { message: "Work center is required" }),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    frequency: z.enum(maintenanceFrequency),
+    priority: z.enum(maintenanceDispatchPriority),
+    estimatedDuration: zfd.numeric(z.number().optional()),
+    takesWorkCenterOffline: zfd.checkbox(),
+    nextDueAt: zfd.text(z.string().optional()),
+    active: zfd.checkbox(),
+    // Day-of-week fields for daily frequency
+    monday: zfd.checkbox(),
+    tuesday: zfd.checkbox(),
+    wednesday: zfd.checkbox(),
+    thursday: zfd.checkbox(),
+    friday: zfd.checkbox(),
+    saturday: zfd.checkbox(),
+    sunday: zfd.checkbox(),
+    // Skip holidays option
+    skipHolidays: zfd.checkbox(),
+    // Procedure
+    procedureId: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    // An offline PM subtracts its plannedStartTime → plannedEndTime window from the
+    // work center's capacity; plannedEndTime is derived from estimatedDuration, so
+    // without a duration the block would be open-ended. Require it when offline.
+    if (
+      data.takesWorkCenterOffline &&
+      (data.estimatedDuration === undefined ||
+        data.estimatedDuration === null ||
+        data.estimatedDuration <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["estimatedDuration"],
+        message:
+          "Estimated duration is required when the PM takes the work center offline"
+      });
+    }
+  });
 
 export const maintenanceSeverity = [
   "Preventive",
@@ -296,17 +326,29 @@ export const processValidator = z
     id: zfd.text(z.string().optional()),
     name: z.string().trim().min(1, { message: "Process name is required" }),
     processType: z.enum(operationTypes, {
-      errorMap: () => ({ message: "Process type is required" })
+      error: "Process type is required"
     }),
     defaultStandardFactor: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Standard factor is required" })
+        error: "Standard factor is required"
       })
       .optional(),
     workCenters: z
       .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
-    completeAllOnScan: zfd.checkbox()
+    completeAllOnScan: zfd.checkbox(),
+    batchable: zfd.checkbox(),
+    batchType: z
+      .enum(["Sequential", "Simultaneous"])
+      .optional()
+      .default("Sequential"),
+    requiresAbility: zfd.checkbox(),
+    batchRuleItem: z.enum(batchRuleLevels).optional(),
+    batchRuleSubstance: z.enum(batchRuleLevels).optional(),
+    batchRuleGrade: z.enum(batchRuleLevels).optional(),
+    batchRuleDimension: z.enum(batchRuleLevels).optional(),
+    batchRuleForm: z.enum(batchRuleLevels).optional(),
+    batchRuleFinish: z.enum(batchRuleLevels).optional()
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {
@@ -363,7 +405,7 @@ export const trainingQuestionValidator = z
     trainingId: z.string().min(1, { message: "Training is required" }),
     question: z.string().min(1, { message: "Question is required" }),
     type: z.enum(trainingQuestionType, {
-      errorMap: () => ({ message: "Type is required" })
+      error: "Type is required"
     }),
     sortOrder: zfd.numeric(z.number().min(0).optional()),
     required: zfd.checkbox().optional(),
@@ -482,23 +524,38 @@ export const trainingType = ["Mandatory", "Optional"] as const;
 export const trainingValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  content: zfd.text(z.string().optional())
+  content: zfd.text(z.string().optional()),
+  grantsAbilityId: zfd.text(z.string().optional())
 });
 
-export const workCenterValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: z.string(),
-  defaultStandardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" })
-  }),
-  departmentId: zfd.text(z.string().optional()),
-  laborRate: zfd.numeric(z.number().min(0)),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  machineRate: zfd.numeric(z.number().min(0)),
-  overheadRate: zfd.numeric(z.number().min(0)),
-  processes: z
-    .array(z.string().min(1, { message: "Invalid process" }))
-    .optional()
-  // requiredAbilityId: zfd.text(z.string().optional()),
-});
+export const workCenterValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: z.string(),
+    defaultStandardFactor: z.enum(standardFactorType, {
+      error: "Standard factor is required"
+    }),
+    departmentId: zfd.text(z.string().optional()),
+    laborRate: zfd.numeric(z.number().min(0)),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    machineRate: zfd.numeric(z.number().min(0)),
+    overheadRate: zfd.numeric(z.number().min(0)),
+    processes: z
+      .array(z.string().min(1, { message: "Invalid process" }))
+      .optional(),
+    shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
+    alwaysOn: zfd.checkbox(),
+    batchCapacity: zfd.numeric(z.number().int().min(1).optional()),
+    minimumBatchQuantity: zfd.numeric(z.number().int().min(1).optional())
+  })
+  .refine(
+    (data) =>
+      data.batchCapacity == null ||
+      data.minimumBatchQuantity == null ||
+      data.minimumBatchQuantity <= data.batchCapacity,
+    {
+      message: "Minimum batch quantity cannot exceed batch capacity",
+      path: ["minimumBatchQuantity"]
+    }
+  );

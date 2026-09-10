@@ -21,7 +21,7 @@ Master data for all item types (Parts, Materials, Tools, Consumables, Services),
 - MUST use `updateItemMethodAndSourcing` when changing `replenishmentSystem`, `defaultMethodType`, or `sourcingType` — it cascades to Draft method materials.
 
 ### Ask First
-- Deleting items that have inventory, open POs, or active jobs — `item` FK has `ON DELETE RESTRICT` from `trackedEntity`.
+- Deleting items that have inventory, open POs, or active jobs — blocked at the DB by FKs to `item`: `trackedEntity` (serial/batch) via `ON DELETE RESTRICT`, and `itemLedger`/`costLedger` (any inventory movement or cost history) via `ON DELETE NO ACTION`. Deactivate the item instead. `NO ACTION` (not `RESTRICT`) is deliberate so whole-company cascade deletes still work.
 - Changing `itemTrackingType` on items that already have tracked entities — use `cascadeItemTrackingType`.
 - Modifying Active method versions — create a new version instead.
 
