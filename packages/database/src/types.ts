@@ -3610,6 +3610,7 @@ export type Database = {
           parentStepId: string | null
           planConfidence: string
           required: boolean | null
+          rootStepId: string | null
           sortOrder: number
           status: Database["public"]["Enums"]["assemblyStepStatus"]
           title: string | null
@@ -3642,6 +3643,7 @@ export type Database = {
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
+          rootStepId?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["assemblyStepStatus"]
           title?: string | null
@@ -3674,6 +3676,7 @@ export type Database = {
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
+          rootStepId?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["assemblyStepStatus"]
           title?: string | null
@@ -3764,6 +3767,13 @@ export type Database = {
           {
             foreignKeyName: "assemblyInstructionStep_parentStepId_fkey"
             columns: ["parentStepId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructionStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstructionStep_rootStepId_fkey"
+            columns: ["rootStepId"]
             isOneToOne: false
             referencedRelation: "assemblyInstructionStep"
             referencedColumns: ["id"]
@@ -68711,14 +68721,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -73810,14 +73820,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
