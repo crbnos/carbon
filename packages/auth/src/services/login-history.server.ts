@@ -19,6 +19,7 @@ export type LoginMethod =
   | "passkey"
   | "verification_code"
   | "bypass"
+  | "sso"
   | "unknown";
 
 type AccessTokenClaims = {

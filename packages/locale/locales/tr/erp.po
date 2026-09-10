@@ -2951,7 +2951,6 @@ msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Yayınlanan sürümüne salt okunur olarak göz atın. Adımları düzenlemek için yeniden düzenleyebilirsiniz."
 msgstr "Yayınlanan sürümü salt okunur şekilde inceleyin. Düzeni düzenlemek için adımları yine de yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
@@ -3168,7 +3167,6 @@ msgid "Cannot send RFQ"
 msgstr "RFQ gönderilemiyor"
 
 msgid "Cannot send through Stripe"
-msgstr "Stripe aracılığıyla gönderilemiyor"
 msgstr "Stripe aracılığıyla gönderilemez"
 
 msgid "Cannot upload — supplier interaction not yet created"
@@ -6772,6 +6770,7 @@ msgstr "Her satır başarıyla içe aktarıldı."
 
 msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
 msgstr "Şu anda kullandığınız oturum dışındaki her oturum sonlandırılacaktır. Diğer cihazlar, bir sonraki sayfa yüklemesinin bir dakika içinde oturum açma sayfasına döndürülecektir."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Seçtiğiniz haftanın herhangi bir gününde çalışan herkes, kendi vardiyalarının ötesinde belirlediğiniz saatler kadar kalır. Yalnızca filtrelediğiniz departmanlar ve vardiyalar etkilenir."
 
@@ -8809,7 +8808,6 @@ msgid "Issues"
 msgstr "Sorunlar"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Tekrar bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
 msgid "ITAR Certifications"
@@ -9094,6 +9092,8 @@ msgid "Last 6 Months"
 msgstr "Son 6 Ay"
 
 msgid "Last active"
+msgstr ""
+
 msgid "Last Activity"
 msgstr "Son etkinlik"
 
@@ -9215,7 +9215,6 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr "Üyelerin SAML ile kimlik sağlayıcınız üzerinden oturum açmasını sağlayın."
 
 msgid "Let's Build"
-msgstr "Hadi İnşa Edelim"
 msgstr "Üretelim"
 
 msgid "Let's build something"
@@ -11014,8 +11013,6 @@ msgstr "Burada satır yok."
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
-msgid "No signed-in devices found."
-msgstr "Oturum açılı cihaz bulunamadı."
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
 
@@ -11024,6 +11021,9 @@ msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
 
 msgid "No shortcuts available on this page."
 msgstr "Bu sayfada kullanılabilir kısayol yok."
+
+msgid "No signed-in devices found."
+msgstr "Oturum açılı cihaz bulunamadı."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Envanter veya iş durumu için tek bir güvenilir sayı yok"
@@ -11380,8 +11380,6 @@ msgstr "Carbon tarafından bireysel takip edilen bir seri adet veya bir parti, s
 msgid "One set of numbers"
 msgstr "Tek bir sayı seti"
 
-msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
-msgstr "Hesabınızdaki bir oturum açılı tarayıcı veya cihaz, oturum açma tamamlandığında oluşturulur ve yedi güne kadar etkinlik sürer; oturum kapatıldığında, o cihazı Hesap → Güvenlik'ten çıkardığınızda veya süresi dolduğunda biter."
 msgid "One shared setup instead of one per operation"
 msgstr "Operasyon başına değil, tek ortak hazırlık"
 
@@ -11390,6 +11388,9 @@ msgstr "Bir paylaşılan hazırlık artı en uzun işçilik ve makine süresi �
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Bir ortak kurulum artı toplam işçilik ve makine süresi"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "Hesabınızdaki bir oturum açılı tarayıcı veya cihaz, oturum açma tamamlandığında oluşturulur ve yedi güne kadar etkinlik sürer; oturum kapatıldığında, o cihazı Hesap → Güvenlik'ten çıkardığınızda veya süresi dolduğunda biter."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "İş emri rotasında bir adım, bir proses ve iş merkezini adlandıran, kendi hazırlık, işçilik, makine süresi ve oranlarını taşıyan."
@@ -13898,7 +13899,6 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
-msgstr "Ters kesinti"
 msgstr "Ters kayıt"
 
 msgid "Reverse Charge Sales Tax"
@@ -15733,16 +15733,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe'ın zaten bu e-postayla bir müşterisi var"
 
 msgid "Stripe Due Date"
-msgstr "Stripe Son Ödeme Tarihi"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe, faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki kişiye de kaydedilecektir."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe'ın henüz bu Carbon müşterisi için bir müşterisi yok. Yayınlama, bağlı hesabınızda bir müşteri oluşturacaktır."
-msgstr "Stripe'ın zaten bu e-posta ile bir müşterisi var"
-
-msgid "Stripe Due Date"
 msgstr "Stripe Son Tarihi"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -16179,7 +16169,6 @@ msgid "Tax Depreciation Method"
 msgstr "Vergi Amortisman Yöntemi"
 
 msgid "Tax exempt"
-msgstr "Vergi muafiyeti"
 msgstr "vergiden muaf"
 
 msgid "Tax Exempt"
@@ -17135,7 +17124,6 @@ msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
 
 msgid "This contact has no email address"
-msgstr "Bu kişinin e-posta adresi yok"
 msgstr "Bu ilgili kişinin e-posta adresi yok"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
@@ -17171,10 +17159,6 @@ msgstr "{0} grubuna katılma davetinizin süresi doldu. Yeni bir davet talebinde
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Bu faturanın kullanılabilir son ödeme tarihi yok — Stripe için bir tane seçin."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Bu fatura, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosu'nda düzenleyin."
-msgstr "Bu faturanın kullanılabilir bir vade tarihi yok — Stripe için birini seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
@@ -17937,8 +17921,6 @@ msgstr "bilinmeyen konum"
 msgid "Unknown location"
 msgstr "Bilinmeyen konum"
 
-msgid "Unlimited Functional Support"
-msgstr "Sınırsız Fonksiyonel Destek"
 msgid "Unlimited functional support"
 msgstr "Sınırsız işlevsel destek"
 
@@ -17986,10 +17968,6 @@ msgstr "Deftere Geçmemiş Belgeler"
 
 msgid "Unpublish"
 msgstr "Yayından Kaldır"
-
-msgid "Unpublish {name}?"
-msgstr "{name} yayından kaldırılsın mı?"
-msgstr "Yayını kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "{name} yayınlaması kaldırılsın mı?"
@@ -18381,7 +18359,6 @@ msgstr "Sürüm"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "Sürüm {0} yayınlandı ve değiştirilecek."
 msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecektir."
 
 msgid "Version:"
@@ -19326,7 +19303,6 @@ msgid "You're live on Carbon"
 msgstr "Carbon'da canlısınız"
 
 msgid "You're one step away from your workspace."
-msgstr "Çalışma alanınızdan bir adım uzaktasınız."
 msgstr "Çalışma alanınıza bir adım uzaktasınız."
 
 msgid "You're setting Carbon up yourself, at your own pace"
@@ -19356,10 +19332,11 @@ msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
 
-msgid "Your devices"
-msgstr "Cihazlarınız"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Verileriniz değiştirilmedi — geri yükleme, tamamlayamayacak olursa hiçbir şeye dokunmadan durur."
+
+msgid "Your devices"
+msgstr "Cihazlarınız"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."

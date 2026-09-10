@@ -296,8 +296,8 @@ Verified on branch `user-devices-login-history`; file:line references are to tha
    so rows already survive user deletion — exactly the property the proposal asks for.
    `SYSTEM_ACTOR = "system"` exists for unattributed actions.
 5. **`userLogin` partially satisfies the audit requirement.** `sessionId` has **no FK**
-   (`20260826134307_user-devices-session-id.sql`), so history survives session deletion —
-   good. But `userId` is `ON DELETE CASCADE` (`20260825235427_user-devices-login-history.sql`)
+   (`20260910000000_user-devices-login-history.sql`), so history survives session deletion —
+   good. But `userId` is `ON DELETE CASCADE` (`20260910000000_user-devices-login-history.sql`)
    and rows are pruned at **90 days** on every insert (`login-history.server.ts:13,145-158`).
    RLS is SELECT-only for the owner by design ("a user must not be able to forge or erase
    their own sign-in audit trail").

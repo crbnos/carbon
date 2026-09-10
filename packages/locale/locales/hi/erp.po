@@ -268,7 +268,6 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{count} ऑपरेशन में से {from}–{to}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} अन्य: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
 
 #. placeholder {0}: errors.length
@@ -2952,7 +2951,6 @@ msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए ब्राउज़ करें। आप लेआउट को साफ-सुथरा करने के लिए अभी भी चरणों को पुनः व्यवस्थित कर सकते हैं।"
 msgstr "प्रकाशित संस्करण को केवल पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
@@ -3169,7 +3167,6 @@ msgid "Cannot send RFQ"
 msgstr "RFQ नहीं भेज सकते"
 
 msgid "Cannot send through Stripe"
-msgstr "Stripe के माध्यम से भेज नहीं सकते"
 msgstr "Stripe के माध्यम से भेजा नहीं जा सकता"
 
 msgid "Cannot upload — supplier interaction not yet created"
@@ -4364,7 +4361,6 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "विक्रय आदेश को पूरा करने के लिए एक नया उत्पादन जॉब बनाएँ"
 
 msgid "Create a new Stripe customer instead"
-msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएं"
 msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएँ"
 
 msgid "Create a new version"
@@ -6774,6 +6770,7 @@ msgstr "हर पंक्ति सफलतापूर्वक आयात
 
 msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
 msgstr "आपके द्वारा अभी उपयोग किए जा रहे को छोड़कर हर सत्र साइन आउट हो जाएगा। अन्य डिवाइस अपने अगले पृष्ठ लोड के एक मिनट के भीतर लॉगिन पृष्ठ पर लौट आएंगे।"
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
 
@@ -8811,7 +8808,6 @@ msgid "Issues"
 msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "जब तक आप फिर से संस्करण प्रकाशित नहीं करते तब तक यह चलना बंद हो जाएगा। कुछ भी हटाया नहीं जाता है।"
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
@@ -9097,6 +9093,7 @@ msgstr "पिछले 6 महीने"
 
 msgid "Last active"
 msgstr "अंतिम सक्रिय"
+
 msgid "Last Activity"
 msgstr "अंतिम गतिविधि"
 
@@ -9218,7 +9215,6 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr "अपने सदस्यों को SAML के साथ अपने पहचान प्रदाता के माध्यम से साइन इन करने दें।"
 
 msgid "Let's Build"
-msgstr "चलिए बनाते हैं"
 msgstr "चलिए निर्माण करें"
 
 msgid "Let's build something"
@@ -9315,7 +9311,6 @@ msgid "link outside company"
 msgstr "कंपनी के बाहर का लिंक"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "इस Carbon ग्राहक को उनमें से एक से लिंक करें, या एक अलग Stripe ग्राहक बनाएं।"
 msgstr "इस Carbon ग्राहक को इनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएँ।"
 
 msgid "Link to sales order line"
@@ -11018,8 +11013,6 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
-msgid "No signed-in devices found."
-msgstr "कोई साइन इन किए गए डिवाइस नहीं मिले।"
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
 
@@ -11028,6 +11021,9 @@ msgstr "कोई पारियाँ कॉन्फ़िगर नहीं
 
 msgid "No shortcuts available on this page."
 msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं है।"
+
+msgid "No signed-in devices found."
+msgstr "कोई साइन इन किए गए डिवाइस नहीं मिले।"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -11384,8 +11380,6 @@ msgstr "एक सीरीज यूनिट या एक बैच जो Ca
 msgid "One set of numbers"
 msgstr "एक ही संख्या का सेट"
 
-msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
-msgstr "आपके खाते पर एक साइन इन किया गया ब्राउज़र या डिवाइस, साइन-इन पूरा होने पर बनाया गया और गतिविधि के सात दिनों तक चलने वाला; यह तब समाप्त होता है जब आप लॉगआउट करते हैं, जब आप उस डिवाइस को खाता → सुरक्षा से साइन आउट करते हैं, या जब यह समाप्त हो जाता है।"
 msgid "One shared setup instead of one per operation"
 msgstr "हर प्रक्रिया के बजाय एक साझा सेटअप"
 
@@ -11394,6 +11388,9 @@ msgstr "एक साझा सेटअप प्लस सबसे लंब�
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "एक साझा सेटअप जमा श्रम और मशीन समय के साथ"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "आपके खाते पर एक साइन इन किया गया ब्राउज़र या डिवाइस, साइन-इन पूरा होने पर बनाया गया और गतिविधि के सात दिनों तक चलने वाला; यह तब समाप्त होता है जब आप लॉगआउट करते हैं, जब आप उस डिवाइस को खाता → सुरक्षा से साइन आउट करते हैं, या जब यह समाप्त हो जाता है।"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "एक जॉब की रूटिंग में एक चरण, एक प्रक्रिया और एक वर्क सेंटर का नाम देते हुए और अपने स्वयं के सेटअप, श्रम, मशीन समय और दरें शामिल करते हुए।"
@@ -15742,10 +15739,6 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क में भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe के पास अभी इस Carbon ग्राहक के लिए कोई ग्राहक नहीं है। पोस्ट करने से आपके जुड़े खाते पर एक बनाया जाएगा।"
-msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
 
 msgid "Style of kanban output to show in the Kanban table"
@@ -17168,7 +17161,6 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "इस चालान के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "इस चालान को Stripe ग्राहक को बिल किया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा है। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
@@ -17929,7 +17921,6 @@ msgstr "अज्ञात स्थान"
 msgid "Unknown location"
 msgstr "अज्ञात स्थान"
 
-msgid "Unlimited Functional Support"
 msgid "Unlimited functional support"
 msgstr "असीमित कार्यात्मक समर्थन"
 
@@ -17977,10 +17968,6 @@ msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unpublish"
 msgstr "प्रकाशन रद्द करें"
-
-msgid "Unpublish {name}?"
-msgstr "क्या {name} का प्रकाशन रद्द करें?"
-msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"
@@ -18372,7 +18359,6 @@ msgstr "संस्करण"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "संस्करण {0} अब प्रकाशित हो गया है और इसे बदल दिया जाएगा।"
 msgstr "संस्करण {0} अभी प्रकाशित है और प्रतिस्थापित किया जाएगा।"
 
 msgid "Version:"
@@ -19321,7 +19307,6 @@ msgid "You're live on Carbon"
 msgstr "आप Carbon पर लाइव हैं"
 
 msgid "You're one step away from your workspace."
-msgstr "आप अपने वर्कस्पेस से एक कदम दूर हैं।"
 msgstr "आप अपने कार्यक्षेत्र से एक चरण दूर हैं।"
 
 msgid "You're setting Carbon up yourself, at your own pace"
@@ -19351,10 +19336,11 @@ msgstr "आपकी ग्राहक-सामना करने वाल�
 msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"
 
-msgid "Your devices"
-msgstr "आपके डिवाइस"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "आपका डेटा परिवर्तित नहीं किया गया — पुनर्स्थापन पूरा न हो सके तो किसी भी चीज़ को छूने से पहले रुक जाता है।"
+
+msgid "Your devices"
+msgstr "आपके डिवाइस"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"

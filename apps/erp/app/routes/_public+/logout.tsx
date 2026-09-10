@@ -8,7 +8,7 @@ import { path } from "~/utils/path";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  return destroyAuthSession(request);
+  return destroyAuthSession(request, { revoke: true });
 }
 
 export async function loader() {

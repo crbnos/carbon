@@ -547,7 +547,6 @@ msgid "Finish Anyways"
 msgstr "Trotzdem beenden"
 
 msgid "Finish setting up your account"
-msgstr "Beenden Sie die Kontoeinrichtung"
 msgstr "Beenden Sie die Einrichtung Ihres Kontos"
 
 msgid "Finish with material unpicked?"
@@ -563,7 +562,6 @@ msgid "Go back to operation"
 msgstr "Zurück zur Operation"
 
 msgid "Go to onboarding"
-msgstr "Zum Onboarding gehen"
 msgstr "Gehen Sie zum Onboarding"
 
 msgid "How many were actually picked?"

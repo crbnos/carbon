@@ -81,7 +81,11 @@ type Passkey = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  // sessionUserId, not userId: the effective user can be a console-pinned
+  // operator, and GoTrue sessions/passkeys belong to whoever is actually
+  // signed in. Keying these off the effective user would list (and allow
+  // revoking) another person's sessions.
+  const { client, sessionUserId } = await requirePermissions(request, {});
   const serviceRole = getCarbonServiceRole();
   const authSession = await getAuthSession(request);
   const currentSessionId = authSession
@@ -92,13 +96,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (serviceRole as any)
         .from("passkeyCredential")
         .select("id, credentialName, createdAt, lastUsedAt, backedUp")
-        .eq("userId", userId)
+        .eq("userId", sessionUserId)
         .order("createdAt", { ascending: false }),
-      getTotpFactors(userId),
+      getTotpFactors(sessionUserId),
       // History rows are the JOIN SOURCE for device/location detail, not a
       // displayed list — fetch enough to cover every live session's login.
-      getLoginHistory(client, userId, 100),
-      getActiveSessions(getDatabaseClient(), userId)
+      getLoginHistory(client, sessionUserId, 100),
+      getActiveSessions(getDatabaseClient(), sessionUserId)
     ]);
 
   const loginBySession = new Map(
@@ -135,13 +139,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     passkeys: (passkeysResult.data ?? []) as Passkey[],
     totpFactors: totpFactors.filter((f) => f.status === "verified"),
-    devices
+    devices,
+    // Without a current session id no row can be identified as "this device",
+    // so revocation is hidden entirely rather than offered against every row
+    // (including the caller's own). The action refuses these posts too.
+    canRevoke: currentSessionId !== null
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { sessionUserId } = await requirePermissions(request, {});
   const formData = await request.formData();
 
   if (formData.get("intent") === "deletePasskey") {
@@ -155,7 +163,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("passkeyCredential")
       .delete()
       .eq("id", credentialId)
-      .eq("userId", userId);
+      .eq("userId", sessionUserId);
 
     if (dbError) {
       return data(
@@ -184,7 +192,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("passkeyCredential")
       .update({ credentialName })
       .eq("id", credentialId)
-      .eq("userId", userId);
+      .eq("userId", sessionUserId);
 
     if (dbError) {
       return data(
@@ -203,18 +211,25 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Refuse the caller's own session even if posted directly — ending the
-    // session you are on is logout, not revocation.
+    // session you are on is logout, not revocation. When the current session
+    // id cannot be derived we refuse outright rather than compare against
+    // null: every id would differ from null, so the guard would pass for the
+    // caller's own session — the exact case it exists to prevent.
     const authSession = await getAuthSession(request);
     const currentSessionId = authSession
       ? getSessionId(authSession.accessToken)
       : null;
-    if (sessionId === currentSessionId) {
+    if (!currentSessionId || sessionId === currentSessionId) {
       return data(error(null, "Use log out to end your current session"), {
         status: 400
       });
     }
 
-    const revoked = await revokeSession(getDatabaseClient(), userId, sessionId);
+    const revoked = await revokeSession(
+      getDatabaseClient(),
+      sessionUserId,
+      sessionId
+    );
     return data(
       success(
         revoked > 0 ? "Device signed out" : "That session had already ended"
@@ -251,7 +266,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AccountSecurity() {
   const { t } = useLingui();
-  const { passkeys, totpFactors, devices } = useLoaderData<typeof loader>();
+  const { passkeys, totpFactors, devices, canRevoke } =
+    useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
   const renameFetcher = useFetcher();
   const { revalidate } = useRevalidator();
@@ -393,7 +409,8 @@ export default function AccountSecurity() {
     (typeof devices)[number] | null
   >(null);
   const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
-  const hasOtherDevices = devices.some((device) => !device.isCurrent);
+  const hasOtherDevices =
+    canRevoke && devices.some((device) => !device.isCurrent);
 
   const describeDevice = (device: (typeof devices)[number]) => {
     const { browser, os } = parseUserAgent(device.userAgent);
@@ -677,14 +694,16 @@ export default function AccountSecurity() {
                           <Trans>This device</Trans>
                         </Badge>
                       ) : (
-                        <IconButton
-                          onClick={() => setConfirmRevoke(device)}
-                          aria-label={t`Sign out device`}
-                          type="button"
-                          variant="ghost"
-                          icon={<LuLogOut />}
-                          className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                        />
+                        canRevoke && (
+                          <IconButton
+                            onClick={() => setConfirmRevoke(device)}
+                            aria-label={t`Sign out device`}
+                            type="button"
+                            variant="ghost"
+                            icon={<LuLogOut />}
+                            className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                          />
+                        )
                       )}
                     </HStack>
                   </HStack>

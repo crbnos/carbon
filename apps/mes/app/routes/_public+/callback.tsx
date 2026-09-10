@@ -163,6 +163,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
     await new AccountLockout({ redis }).reset(authSession.email);
 
+    // SSO is a login mint point like any other — record it here, because this
+    // branch returns before the shared recordLogin call below.
+    await recordLogin({
+      request,
+      userId: authSession.userId,
+      email: authSession.email,
+      accessToken: authSession.accessToken,
+      method: "sso",
+      app: "mes"
+    });
+
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
     authSession.mfaVerified = true;

@@ -268,7 +268,6 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} sur {count} opérations"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} de plus : {hiddenNames}"
 msgstr "{hiddenCount} autres : {hiddenNames}"
 
 #. placeholder {0}: errors.length
@@ -662,7 +661,6 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Une nouvelle taille sera créée en utilisant une copie de la taille actuelle"
 
 msgid "A new Stripe customer will be created"
-msgstr "Un nouveau client Stripe sera créé"
 msgstr "Un nouveau client Stripe sera créé."
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
@@ -2953,7 +2951,6 @@ msgid "Browse library"
 msgstr "Parcourir la bibliothèque"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Parcourir la version publiée en lecture seule. Vous pouvez toujours réorganiser les étapes pour ranger la mise en page."
 msgstr "Parcourez la version publiée en lecture seule. Vous pouvez toujours réarranger les étapes pour nettoyer la mise en page."
 
 msgid "Bucket"
@@ -6773,6 +6770,7 @@ msgstr "Chaque ligne a été importée avec succès."
 
 msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
 msgstr "Chaque session sauf celle que vous utilisez actuellement sera fermée. Les autres appareils sont renvoyés à la page de connexion dans la minute suivant leur prochain chargement de page."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Toute personne travaillant n'importe quel jour de la semaine choisie prolonge son quart des heures que vous définissez. Seuls les départements et quarts que vous filtrez sont affectés."
 
@@ -8810,7 +8808,6 @@ msgid "Issues"
 msgstr "Problèmes"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Il s'arrêtera jusqu'à ce que vous publiez une version à nouveau. Rien n'est supprimé."
 msgstr "Elle s'arrêtera d'être exécutée jusqu'à ce que vous publiiez une nouvelle version. Rien n'est supprimé."
 
 msgid "ITAR Certifications"
@@ -9096,6 +9093,7 @@ msgstr "6 derniers mois"
 
 msgid "Last active"
 msgstr "Dernier actif"
+
 msgid "Last Activity"
 msgstr "Dernière activité"
 
@@ -9217,7 +9215,6 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr "Permettez aux membres de se connecter par le biais de votre fournisseur d'identité avec SAML."
 
 msgid "Let's Build"
-msgstr "Construisons"
 msgstr "Allons construire"
 
 msgid "Let's build something"
@@ -9314,7 +9311,6 @@ msgid "link outside company"
 msgstr "lien en dehors de la Société"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "Liez ce client Carbon à l'un d'eux, ou créez un client Stripe séparé."
 msgstr "Liez ce client Carbon à l'un d'entre eux, ou créez un client Stripe distinct."
 
 msgid "Link to sales order line"
@@ -11017,8 +11013,6 @@ msgstr "Pas de lignes ici."
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
 
-msgid "No signed-in devices found."
-msgstr "Aucun appareil connecté trouvé."
 msgid "No scheduled work in this window"
 msgstr "Aucun travail prévu dans cette fenêtre"
 
@@ -11027,6 +11021,9 @@ msgstr "Aucun quart configuré — hypothèse lun–ven, jours de 8h"
 
 msgid "No shortcuts available on this page."
 msgstr "Aucun raccourci disponible sur cette page."
+
+msgid "No signed-in devices found."
+msgstr "Aucun appareil connecté trouvé."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Pas de chiffre unique et fiable pour l'inventaire ou le statut du travail"
@@ -11383,8 +11380,6 @@ msgstr "Une unité de série ou un lot de production que Carbon suit individuell
 msgid "One set of numbers"
 msgstr "Un seul ensemble de chiffres"
 
-msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
-msgstr "Un navigateur ou un appareil connecté sur votre compte, créé à la fin d'une connexion et durant jusqu'à sept jours d'activité ; il se termine lorsque vous vous déconnectez, lorsque vous déconnectez cet appareil depuis Compte → Sécurité, ou lorsqu'il expire."
 msgid "One shared setup instead of one per operation"
 msgstr "Un seul réglage partagé au lieu d'un par opération"
 
@@ -11393,6 +11388,9 @@ msgstr "Un réglage partagé plus la main-d'œuvre et le temps machine les plus 
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Une configuration partagée plus le temps total de main-d'œuvre et de machine"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "Un navigateur ou un appareil connecté sur votre compte, créé à la fin d'une connexion et durant jusqu'à sept jours d'activité ; il se termine lorsque vous vous déconnectez, lorsque vous déconnectez cet appareil depuis Compte → Sécurité, ou lorsqu'il expire."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Une étape dans la gamme d'un OF, identifiant un procédé et un poste de travail, et portant ses propres temps et tarifs de réglage, main-d'œuvre et temps machine."
@@ -13901,7 +13899,6 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Inverser les écritures de registre d'articles de cette facture"
 
 msgid "Reverse charge"
-msgstr "Autofacturation"
 msgstr "Autofacture"
 
 msgid "Reverse Charge Sales Tax"
@@ -15733,7 +15730,6 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe a déjà un client avec cet e-mail"
 msgstr "Stripe possède déjà un client avec cet e-mail"
 
 msgid "Stripe Due Date"
@@ -15741,10 +15737,6 @@ msgstr "Date d'échéance Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe envoie la facture par e-mail au client, donc une adresse est requise. Cela sera également enregistré dans le contact dans Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe n'a pas encore de client pour ce client Carbon. La publication en créera un sur votre compte connecté."
-msgstr "Stripe envoie la facture par e-mail au client, une adresse est donc requise. Ceci sera également enregistré dans le contact dans Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
@@ -17339,10 +17331,6 @@ msgid "This version is published"
 msgstr "Cette version est publiée"
 
 msgid "This version is published. Create a new version to edit."
-msgstr "Cette version est publiée. Créez une nouvelle version pour la modifier."
-msgstr "Cette version est publiée."
-
-msgid "This version is published. Create a new version to edit."
 msgstr "Cette version est publiée. Créez une nouvelle version à modifier."
 
 msgid "This version's definition could not be read."
@@ -17933,8 +17921,6 @@ msgstr "localisation inconnue"
 msgid "Unknown location"
 msgstr "Emplacement inconnu"
 
-msgid "Unlimited Functional Support"
-msgstr "Support fonctionnel illimité"
 msgid "Unlimited functional support"
 msgstr "Soutien fonctionnel illimité"
 
@@ -19346,10 +19332,11 @@ msgstr "Vos listes de prix destinées aux clients"
 msgid "Your data is accessible and reasonably clean"
 msgstr "Vos données sont accessibles et raisonnablement propres"
 
-msgid "Your devices"
-msgstr "Vos appareils"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Vos données n'ont pas été modifiées — la restauration s'arrête avant de modifier quoi que ce soit si elle ne peut pas se terminer."
+
+msgid "Your devices"
+msgstr "Vos appareils"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Votre fournisseur DNS peut ajouter automatiquement votre domaine au nom de l'enregistrement — le cas échéant, entrez uniquement la partie qui précède (par exemple, _carbon-challenge plus tout sous-domaine)."

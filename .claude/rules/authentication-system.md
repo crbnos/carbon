@@ -56,7 +56,7 @@ Routes live under `_public+/` (`login`, `callback`, `logout`, `magic-link`, `ver
 ## Sign-in history (`login-history.server.ts`)
 
 Every completed first factor writes a `userLogin` row (method, app, IP,
-`x-vercel-ip-*` geo, user agent; migration `20260825235427`) via
+`x-vercel-ip-*` geo, user agent; migration `20260910000000`) via
 `recordLogin` from `@carbon/auth/login-history.server` — called in ERP/MES
 `callback.tsx` and `passkey.authenticate.verify.ts` (before the TOTP gate),
 ERP `login.tsx` dev bypass, and ERP `verify.tsx` signup. It NEVER throws

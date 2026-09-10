@@ -227,7 +227,7 @@ the shared `destroyAuthSession`.
   displayed — the table remains the recording backbone.
   `getActiveSessionIds` → `getActiveSessions`.
 - 2026-08-26: Implemented on branch `jackson` (migration
-  `20260826134307_user-devices-session-id.sql`; `getSessionId` + `sessionId`
+  `20260910000000_user-devices-login-history.sql`; `getSessionId` + `sessionId`
   capture in `recordLogin`; logout revocation in `destroyAuthSession`;
   `getActiveSessionIds`/`revokeSession` in the account module; status badges +
   Sign out / Sign out other devices on Account → Security). Typecheck ×4 and

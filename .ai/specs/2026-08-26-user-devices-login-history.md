@@ -68,13 +68,14 @@ CREATE TABLE "userLogin" (
   "userId" TEXT NOT NULL,
   "method" TEXT NOT NULL CHECK (
     "method" IN ('magic_link', 'oauth_google', 'oauth_azure', 'passkey',
-                 'verification_code', 'bypass', 'unknown')
+                 'verification_code', 'bypass', 'sso', 'unknown')
   ),
   "app" TEXT NOT NULL CHECK ("app" IN ('erp', 'mes')),
   "ipAddress" TEXT,
   "city" TEXT,                       -- x-vercel-ip-city (null when absent)
   "country" TEXT,                    -- x-vercel-ip-country (null when absent)
   "userAgent" TEXT,
+  "sessionId" TEXT,                  -- GoTrue session_id claim; join key to auth.sessions
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT "userLogin_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "userLogin_userId_fkey" FOREIGN KEY ("userId")
@@ -276,7 +277,7 @@ additive on top of this table:
   `userLogin` recording, retention, and RLS are unchanged and now serve as the
   join source for device detail.
 - 2026-08-26: Implemented on branch `jackson` (migration
-  `20260825235427_user-devices-login-history.sql`, `@carbon/auth/login-history.server`,
+  `20260910000000_user-devices-login-history.sql`, `@carbon/auth/login-history.server`,
   `parseUserAgent` in `@carbon/utils`, six call sites, `getLoginHistory` +
   activity card on Account → Security). Typecheck + unit tests green; RLS
   verified against the local DB in a rolled-back transaction.

@@ -268,7 +268,6 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "Ещё {hiddenCount}: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
 
 #. placeholder {0}: errors.length
@@ -662,7 +661,6 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
 
 msgid "A new Stripe customer will be created"
-msgstr "Будет создан новый клиент Stripe"
 msgstr "Будет создана новая учетная запись покупателя Stripe"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
@@ -2953,7 +2951,6 @@ msgid "Browse library"
 msgstr "Обзор библиотеки"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для упорядочения макета."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для очистки макета."
 
 msgid "Bucket"
@@ -3393,7 +3390,6 @@ msgid "Check your email"
 msgstr "Проверьте вашу почту"
 
 msgid "Checking Stripe for this customer…"
-msgstr "Проверка Stripe для этого клиента…"
 msgstr "Проверка Stripe для этого покупателя…"
 
 msgid "Checkpoint ·"
@@ -4365,7 +4361,6 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Создать новый производственный заказ для выполнения заказа покупателя"
 
 msgid "Create a new Stripe customer instead"
-msgstr "Вместо этого создайте нового клиента Stripe"
 msgstr "Вместо этого создать нового покупателя Stripe"
 
 msgid "Create a new version"
@@ -6775,6 +6770,7 @@ msgstr "Каждая строка была успешно импортирова
 
 msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
 msgstr "Все сеансы, кроме используемого вами сейчас, будут закрыты. Другие устройства будут возвращены на страницу входа в течение минуты после их следующей загрузки страницы."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Все работающие в любой день недели, который вы выберете, остаются после смены на количество часов, которые вы установите. Затронуты только отделы и смены, по которым вы фильтруете."
 
@@ -6821,7 +6817,6 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
 
 msgid "Existing Stripe customer"
-msgstr "Существующий клиент Stripe"
 msgstr "Существующий покупатель Stripe"
 
 msgid "Expand"
@@ -8813,7 +8808,6 @@ msgid "Issues"
 msgstr "Проблемы"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Она будет остановлена до тех пор, пока вы не опубликуете версию снова. Ничего не удаляется."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
 
 msgid "ITAR Certifications"
@@ -9098,6 +9092,8 @@ msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
 
 msgid "Last active"
+msgstr ""
+
 msgid "Last Activity"
 msgstr "Последняя активность"
 
@@ -9219,7 +9215,6 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr "Позвольте членам входить через вашего поставщика удостоверений с помощью SAML."
 
 msgid "Let's Build"
-msgstr "Давайте создавать"
 msgstr "Начнём производство"
 
 msgid "Let's build something"
@@ -9316,7 +9311,6 @@ msgid "link outside company"
 msgstr "связь вне организации"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "Свяжите этого клиента Carbon с одним из них или создайте отдельного клиента Stripe."
 msgstr "Свяжите этого покупателя Carbon с одним из них или создайте отдельного покупателя Stripe."
 
 msgid "Link to sales order line"
@@ -11019,8 +11013,6 @@ msgstr "Нет строк здесь."
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
 
-msgid "No signed-in devices found."
-msgstr "Подписанные устройства не найдены."
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
 
@@ -11029,6 +11021,9 @@ msgstr "Смены не настроены — предполагается Пн
 
 msgid "No shortcuts available on this page."
 msgstr "На этой странице сочетания клавиш недоступны."
+
+msgid "No signed-in devices found."
+msgstr "Подписанные устройства не найдены."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -11385,8 +11380,6 @@ msgstr "Одна серийная единица или одна серия, к�
 msgid "One set of numbers"
 msgstr "Один набор цифр"
 
-msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
-msgstr "На вашей учетной записи один браузер или устройство с входом, созданное при завершении входа и действующее до семи дней активности; оно завершается при выходе, при выходе этого устройства из Account → Security или при истечении."
 msgid "One shared setup instead of one per operation"
 msgstr "Одна общая наладка вместо наладки на каждую операцию"
 
@@ -11395,6 +11388,9 @@ msgstr "Одна общая наладка плюс наибольший тру�
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "На вашей учетной записи один браузер или устройство с входом, созданное при завершении входа и действующее до семи дней активности; оно завершается при выходе, при выходе этого устройства из Account → Security или при истечении."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
@@ -15737,16 +15733,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "В Stripe уже есть клиент с этой электронной почтой"
 
 msgid "Stripe Due Date"
-msgstr "Срок платежа Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe отправляет счет-фактуру клиенту по электронной почте, поэтому требуется адрес. Это также будет сохранено в контакт Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe еще не имеет клиента для этого клиента Carbon. Публикация создаст его на вашей подключенной учетной записи."
-msgstr "В Stripe уже есть клиент с этим адресом электронной почты"
-
-msgid "Stripe Due Date"
 msgstr "Срок выполнения Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -16183,7 +16169,6 @@ msgid "Tax Depreciation Method"
 msgstr "Метод налоговой амортизации"
 
 msgid "Tax exempt"
-msgstr "Налоговое освобождение"
 msgstr "Не облагается налогом"
 
 msgid "Tax Exempt"
@@ -17139,7 +17124,6 @@ msgid "This completes the Discovery step."
 msgstr "Этим завершается этап обнаружения."
 
 msgid "This contact has no email address"
-msgstr "У этого контакта нет адреса электронной почты"
 msgstr "Это контактное лицо не имеет адреса электронной почты"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
@@ -17175,10 +17159,6 @@ msgstr "Это приглашение присоединиться к {0} ист
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "У этого счета-фактуры нет пригодной даты платежа — выберите один для Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Этот счет-фактура будет выставлен клиенту Stripe, уже связанному с этим клиентом Carbon. Чтобы изменить его детали, отредактируйте его в панели управления Stripe."
-msgstr "Этот счет не имеет пригодной даты платежа — выберите одну для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
@@ -17941,7 +17921,6 @@ msgstr "неизвестное местоположение"
 msgid "Unknown location"
 msgstr "Неизвестное местоположение"
 
-msgid "Unlimited Functional Support"
 msgid "Unlimited functional support"
 msgstr "Неограниченная функциональная поддержка"
 
@@ -18380,7 +18359,6 @@ msgstr "Версия"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "Версия {0} опубликована и будет заменена."
 msgstr "Версия {0} опубликована сейчас и будет заменена."
 
 msgid "Version:"
@@ -19325,7 +19303,6 @@ msgid "You're live on Carbon"
 msgstr "Вы работаете на Carbon"
 
 msgid "You're one step away from your workspace."
-msgstr "До вашего рабочего пространства осталось один шаг."
 msgstr "Вы на один шаг от вашего рабочего пространства."
 
 msgid "You're setting Carbon up yourself, at your own pace"
@@ -19355,10 +19332,11 @@ msgstr "Ваши ценовые списки для клиентов"
 msgid "Your data is accessible and reasonably clean"
 msgstr "Ваши данные доступны и находятся в относительно чистом виде"
 
-msgid "Your devices"
-msgstr "Ваши устройства"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Ваши данные не были изменены — восстановление останавливается перед внесением изменений, если оно не может быть завершено."
+
+msgid "Your devices"
+msgstr "Ваши устройства"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Ваш поставщик DNS может автоматически добавить ваш домен к имени записи — если это так, введите только часть перед ней (например, _carbon-challenge плюс любой поддомен)."

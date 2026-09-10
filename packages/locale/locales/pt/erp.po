@@ -2951,7 +2951,6 @@ msgid "Browse library"
 msgstr "Procurar biblioteca"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Navegue a versão publicada somente leitura. Você ainda pode reorganizar as etapas para organizar o layout."
 msgstr "Navegue pela versão publicada somente leitura. Você ainda pode reorganizar etapas para limpar o layout."
 
 msgid "Bucket"
@@ -3168,7 +3167,6 @@ msgid "Cannot send RFQ"
 msgstr "Não é possível enviar RFQ"
 
 msgid "Cannot send through Stripe"
-msgstr "Não é possível enviar via Stripe"
 msgstr "Não é possível enviar através do Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
@@ -4363,7 +4361,6 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Criar um novo trabalho de produção para atender ao pedido de venda"
 
 msgid "Create a new Stripe customer instead"
-msgstr "Criar um novo cliente Stripe em vez disso"
 msgstr "Criar um novo cliente Stripe em seu lugar"
 
 msgid "Create a new version"
@@ -6773,6 +6770,7 @@ msgstr "Cada linha foi importada com sucesso."
 
 msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
 msgstr "Todas as sessões, exceto a que você está usando agora, serão desconectadas. Outros dispositivos são retornados à página de login dentro de um minuto do seu próximo carregamento de página."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Todos que trabalham em qualquer dia da semana que você escolher ficam além do seu turno pelas horas que você definir. Apenas os departamentos e turnos que você está filtrando são afetados."
 
@@ -8810,7 +8808,6 @@ msgid "Issues"
 msgstr "Problemas"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Ele deixará de ser executado até que você publique uma versão novamente. Nada é excluído."
 msgstr "Ele parará de ser executado até que você publique uma versão novamente. Nada é excluído."
 
 msgid "ITAR Certifications"
@@ -9096,6 +9093,7 @@ msgstr "Últimos 6 Meses"
 
 msgid "Last active"
 msgstr "Ativo por último"
+
 msgid "Last Activity"
 msgstr "Última atividade"
 
@@ -9313,7 +9311,6 @@ msgid "link outside company"
 msgstr "vínculo fora da empresa"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "Vincule este cliente Carbon a um deles, ou crie um cliente Stripe separado."
 msgstr "Vincule este cliente Carbon a um deles ou crie um cliente Stripe separado."
 
 msgid "Link to sales order line"
@@ -11016,8 +11013,6 @@ msgstr "Nenhuma linha aqui."
 msgid "No rules assigned"
 msgstr "Nenhuma regra atribuída"
 
-msgid "No signed-in devices found."
-msgstr "Nenhum dispositivo conectado encontrado."
 msgid "No scheduled work in this window"
 msgstr "Nenhum trabalho programado nesta janela"
 
@@ -11026,6 +11021,9 @@ msgstr "Nenhum turno configurado — assumindo segunda–sexta, dias de 8h"
 
 msgid "No shortcuts available on this page."
 msgstr "Nenhum atalho disponível nesta página."
+
+msgid "No signed-in devices found."
+msgstr "Nenhum dispositivo conectado encontrado."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Nenhum número único e confiável para inventário ou status do trabalho"
@@ -11382,8 +11380,6 @@ msgstr "Uma unidade serial ou um lote que Carbon acompanha individualmente, carr
 msgid "One set of numbers"
 msgstr "Um conjunto de números"
 
-msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
-msgstr "Um navegador conectado ou dispositivo na sua conta, criado quando um login é concluído e durando até sete dias de atividade; termina quando você faz logout, quando você desconecta esse dispositivo em Conta → Segurança, ou quando expira."
 msgid "One shared setup instead of one per operation"
 msgstr "Um único setup compartilhado em vez de um por operação"
 
@@ -11392,6 +11388,9 @@ msgstr "Um Setup compartilhado mais os tempos mais longos de mão de obra e de m
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "Uma configuração compartilhada mais o tempo de trabalho e máquina somados"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "Um navegador conectado ou dispositivo na sua conta, criado quando um login é concluído e durando até sete dias de atividade; termina quando você faz logout, quando você desconecta esse dispositivo em Conta → Segurança, ou quando expira."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Uma operação no roteiro de produção de uma ordem, nomeando um processo e um centro de trabalho, e carregando seu próprio Setup, mão de obra, tempos de máquina e taxas."
@@ -12751,7 +12750,6 @@ msgid "Published by Carbon"
 msgstr "Publicado pela Carbon"
 
 msgid "Published Version"
-msgstr "Versão Publicada"
 msgstr "Versão publicada"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
@@ -13901,7 +13899,6 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Reverter quaisquer entradas do razão de itens desta fatura"
 
 msgid "Reverse charge"
-msgstr "Cobrança invertida"
 msgstr "Cobrança reversa"
 
 msgid "Reverse Charge Sales Tax"
@@ -15736,16 +15733,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe já tem um cliente com este email"
 
 msgid "Stripe Due Date"
-msgstr "Data de Vencimento do Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe envia o recibo por email para o cliente, portanto um endereço é necessário. Isso também será salvo no contato no Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe ainda não tem um cliente para este cliente Carbon. A publicação criará um na sua conta conectada."
-msgstr "O Stripe já possui um cliente com este e-mail"
-
-msgid "Stripe Due Date"
 msgstr "Data de Vencimento Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -16182,7 +16169,6 @@ msgid "Tax Depreciation Method"
 msgstr "Método de depreciação fiscal"
 
 msgid "Tax exempt"
-msgstr "Isento de impostos"
 msgstr "Isento de imposto"
 
 msgid "Tax Exempt"
@@ -17138,7 +17124,6 @@ msgid "This completes the Discovery step."
 msgstr "Isto completa a etapa de Descoberta."
 
 msgid "This contact has no email address"
-msgstr "Este contato não tem endereço de email"
 msgstr "Este contato não possui endereço de e-mail"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
@@ -17174,10 +17159,6 @@ msgstr "Este convite para participar de {0} expirou. Você pode solicitar que um
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Este recibo não tem uma data de vencimento utilizável — escolha um para Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Este recibo será cobrado do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-o no painel do Stripe."
-msgstr "Esta fatura não tem uma data de vencimento utilizável — escolha uma para o Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta fatura será cobrada do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-o no painel Stripe."
@@ -17348,10 +17329,6 @@ msgstr "Esta versão não pode ser aberta"
 
 msgid "This version is published"
 msgstr "Esta versão foi publicada"
-
-msgid "This version is published. Create a new version to edit."
-msgstr "Esta versão foi publicada. Crie uma nova versão para editar."
-msgstr "Esta versão é publicada."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versão está publicada. Crie uma nova versão para editar."
@@ -17944,8 +17921,6 @@ msgstr "localização desconhecida"
 msgid "Unknown location"
 msgstr "Local desconhecido"
 
-msgid "Unlimited Functional Support"
-msgstr "Suporte Funcional Ilimitado"
 msgid "Unlimited functional support"
 msgstr "Suporte funcional ilimitado"
 
@@ -17995,7 +17970,6 @@ msgid "Unpublish"
 msgstr "Cancelar publicação"
 
 msgid "Unpublish {name}?"
-msgstr "Cancelar publicação de {name}?"
 msgstr "Cancelar Publicação de {name}?"
 
 msgid "Unreceived POs"
@@ -18385,7 +18359,6 @@ msgstr "Versão"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "A versão {0} foi publicada e será substituída."
 msgstr "Versão {0} está publicada agora e será substituída."
 
 msgid "Version:"
@@ -19330,7 +19303,6 @@ msgid "You're live on Carbon"
 msgstr "Está ao vivo no Carbon"
 
 msgid "You're one step away from your workspace."
-msgstr "Você está a um passo do seu espaço de trabalho."
 msgstr "Você está a uma etapa de seu espaço de trabalho."
 
 msgid "You're setting Carbon up yourself, at your own pace"
@@ -19360,10 +19332,11 @@ msgstr "Suas listas de preços voltadas para o cliente"
 msgid "Your data is accessible and reasonably clean"
 msgstr "Os seus dados são acessíveis e razoavelmente limpos"
 
-msgid "Your devices"
-msgstr "Seus dispositivos"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Seus dados não foram alterados — a restauração para antes de fazer qualquer alteração se não conseguir ser concluída."
+
+msgid "Your devices"
+msgstr "Seus dispositivos"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Seu provedor de DNS pode anexar automaticamente seu domínio ao nome do registro — se for o caso, digite apenas a parte anterior (por exemplo, _carbon-challenge mais qualquer subdomínio)."

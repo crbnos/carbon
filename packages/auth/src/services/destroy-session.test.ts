@@ -80,7 +80,21 @@ afterEach(() => {
 });
 
 describe("destroyAuthSession GoTrue revocation", () => {
-  it("revokes the session server-side with the cookie's access token", async () => {
+  it("revokes the session server-side when the caller opts in", async () => {
+    const cookie = await setAuthSession(
+      new Request("http://localhost:3000/callback", { method: "POST" }),
+      { authSession: makeSession() }
+    );
+
+    const response = await destroyAuthSession(requestWithCookie(cookie), {
+      revoke: true
+    });
+
+    expect(signOutMock).toHaveBeenCalledWith("access-token-abc", "local");
+    expect(response.status).toBe(302);
+  });
+
+  it("does NOT revoke by default — recoverable error paths clear cookies only", async () => {
     const cookie = await setAuthSession(
       new Request("http://localhost:3000/callback", { method: "POST" }),
       { authSession: makeSession() }
@@ -88,7 +102,7 @@ describe("destroyAuthSession GoTrue revocation", () => {
 
     const response = await destroyAuthSession(requestWithCookie(cookie));
 
-    expect(signOutMock).toHaveBeenCalledWith("access-token-abc", "local");
+    expect(signOutMock).not.toHaveBeenCalled();
     expect(response.status).toBe(302);
   });
 
@@ -99,7 +113,9 @@ describe("destroyAuthSession GoTrue revocation", () => {
       { authSession: makeSession() }
     );
 
-    const response = await destroyAuthSession(requestWithCookie(cookie));
+    const response = await destroyAuthSession(requestWithCookie(cookie), {
+      revoke: true
+    });
 
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toContain("/");
@@ -107,7 +123,8 @@ describe("destroyAuthSession GoTrue revocation", () => {
 
   it("skips revocation when there is no session cookie", async () => {
     const response = await destroyAuthSession(
-      new Request("http://localhost:3000/logout", { method: "POST" })
+      new Request("http://localhost:3000/logout", { method: "POST" }),
+      { revoke: true }
     );
 
     expect(signOutMock).not.toHaveBeenCalled();

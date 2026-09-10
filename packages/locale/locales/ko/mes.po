@@ -1591,7 +1591,6 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "계정이 아직 회사에 속하지 않습니다. Carbon ERP에서 온보딩을 완료하여 계속하세요."
 msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."

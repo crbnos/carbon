@@ -268,7 +268,6 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to}/{count} 공정"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount}개 더: {hiddenNames}"
 msgstr "{hiddenCount}개 추가: {hiddenNames}"
 
 #. placeholder {0}: errors.length
@@ -662,7 +661,6 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
 
 msgid "A new Stripe customer will be created"
-msgstr "새로운 Stripe 고객이 생성됩니다"
 msgstr "새 Stripe 고객이 생성됩니다."
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
@@ -2953,7 +2951,6 @@ msgid "Browse library"
 msgstr "라이브러리 둘러보기"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "게시된 버전을 읽기 전용으로 탐색하세요. 레이아웃을 정리하기 위해 단계를 재배열할 수 있습니다."
 msgstr "게시된 버전을 읽기 전용으로 찾아봅니다. 여전히 단계를 재정렬하여 레이아웃을 정돈할 수 있습니다."
 
 msgid "Bucket"
@@ -3393,7 +3390,6 @@ msgid "Check your email"
 msgstr "이메일을 확인하세요"
 
 msgid "Checking Stripe for this customer…"
-msgstr "이 고객에 대해 Stripe를 확인 중입니다…"
 msgstr "이 고객의 Stripe 확인 중…"
 
 msgid "Checkpoint ·"
@@ -4365,7 +4361,6 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "수주를 이행하기 위해 새 생산 작업 지시를 생성합니다."
 
 msgid "Create a new Stripe customer instead"
-msgstr "대신 새로운 Stripe 고객을 생성하세요"
 msgstr "대신 새 Stripe 고객을 생성합니다."
 
 msgid "Create a new version"
@@ -6775,6 +6770,7 @@ msgstr "모든 행이 성공적으로 가져와졌습니다."
 
 msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
 msgstr "현재 사용 중인 세션을 제외한 모든 세션이 로그아웃됩니다. 다른 기기는 다음 페이지 로드 후 1분 이내에 로그인 페이지로 돌아갑니다."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "선택한 주의 어느 날을 근무하는 모든 사람이 설정한 시간만큼 교대 시간을 초과합니다. 필터링하는 부서와 교대만 영향을 받습니다."
 
@@ -8812,7 +8808,6 @@ msgid "Issues"
 msgstr "이슈"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "버전을 다시 게시할 때까지 실행이 중지됩니다. 아무것도 삭제되지 않습니다."
 msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 내용은 없습니다."
 
 msgid "ITAR Certifications"
@@ -9098,6 +9093,7 @@ msgstr "지난 6개월"
 
 msgid "Last active"
 msgstr "마지막 활동"
+
 msgid "Last Activity"
 msgstr "최근 활동"
 
@@ -9219,7 +9215,6 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr "멤버가 SAML을 통한 ID 제공자로 로그인하도록 허용합니다."
 
 msgid "Let's Build"
-msgstr "빌드해 봅시다"
 msgstr "제조해 봅시다"
 
 msgid "Let's build something"
@@ -9316,7 +9311,6 @@ msgid "link outside company"
 msgstr "회사 외부 링크"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "이 Carbon 고객을 그 중 하나에 연결하거나 별도의 Stripe 고객을 생성하세요."
 msgstr "이 Carbon 고객을 그 중 하나에 연결하거나 별도의 Stripe 고객을 생성합니다."
 
 msgid "Link to sales order line"
@@ -11019,8 +11013,6 @@ msgstr "행이 없습니다."
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
 
-msgid "No signed-in devices found."
-msgstr "로그인된 기기를 찾을 수 없습니다."
 msgid "No scheduled work in this window"
 msgstr "이 시간대에 스케줄된 작업이 없습니다"
 
@@ -11029,6 +11021,9 @@ msgstr "교대근무 구성 없음 — 월–금, 8시간 근무일 가정"
 
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서는 사용 가능한 단축키가 없습니다."
+
+msgid "No signed-in devices found."
+msgstr "로그인된 기기를 찾을 수 없습니다."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
@@ -11385,8 +11380,6 @@ msgstr "Carbon이 개별적으로 추적하는 하나의 일련 단위 또는 �
 msgid "One set of numbers"
 msgstr "하나의 번호 집합"
 
-msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
-msgstr "계정의 한 개의 로그인된 브라우저 또는 기기로, 로그인이 완료될 때 생성되고 최대 7일 동안 유지됩니다. 로그아웃할 때, 계정 → 보안에서 해당 기기를 로그아웃할 때, 또는 만료될 때 종료됩니다."
 msgid "One shared setup instead of one per operation"
 msgstr "공정마다가 아닌 한 번의 공용 셋업"
 
@@ -11395,6 +11388,9 @@ msgstr "공유된 셋업 하나와 가장 긴 노무 및 기계 시간 — 멤�
 
 msgid "One shared setup plus the summed labor and machine time"
 msgstr "공유 설정 1개 + 누계 노동력 및 기계 시간"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "계정의 한 개의 로그인된 브라우저 또는 기기로, 로그인이 완료될 때 생성되고 최대 7일 동안 유지됩니다. 로그아웃할 때, 계정 → 보안에서 해당 기기를 로그아웃할 때, 또는 만료될 때 종료됩니다."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "작업 지시의 라우팅에서 한 단계로, 공법과 작업장을 지정하고 각자의 셋업, 노무, 기계 시간 및 요금을 포함합니다."
@@ -13903,7 +13899,6 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "이 송장에서 모든 품목 원장 항목을 역분개합니다."
 
 msgid "Reverse charge"
-msgstr "역과세"
 msgstr "역청구"
 
 msgid "Reverse Charge Sales Tax"
@@ -15738,16 +15733,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe에 이미 이 이메일의 고객이 있습니다"
 
 msgid "Stripe Due Date"
-msgstr "Stripe 지불 기한"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe가 고객에게 송장을 이메일로 전송하므로 주소가 필요합니다. 이것은 Carbon의 연락처에도 저장됩니다."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe에는 이 Carbon 고객의 고객이 아직 없습니다. 게시하면 연결된 계정에서 생성됩니다."
-msgstr "Stripe에 이미 이 이메일을 가진 고객이 있습니다"
-
-msgid "Stripe Due Date"
 msgstr "Stripe 만기일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -17139,7 +17124,6 @@ msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 
 msgid "This contact has no email address"
-msgstr "이 연락처에는 이메일 주소가 없습니다"
 msgstr "이 담당자는 이메일 주소가 없습니다."
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
@@ -17175,10 +17159,6 @@ msgstr "{0}에 가입하라는 초대가 만료되었습니다. 이메일로 새
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "이 송장에는 사용 가능한 지불 기한이 없습니다 — Stripe용으로 하나를 선택하세요."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "이 송장은 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집하세요."
-msgstr "이 청구서에는 사용할 수 있는 만기일이 없습니다 — Stripe를 위해 하나를 선택하세요."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
@@ -17349,10 +17329,6 @@ msgstr "이 버전을 열 수 없습니다."
 
 msgid "This version is published"
 msgstr "이 버전이 게시되었습니다"
-
-msgid "This version is published. Create a new version to edit."
-msgstr "이 버전이 게시되었습니다. 편집하려면 새 버전을 생성하세요."
-msgstr "이 버전은 게시되었습니다."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "이 버전이 게시됩니다. 편집할 새 버전을 만듭니다."
@@ -17945,7 +17921,6 @@ msgstr "알 수 없는 위치"
 msgid "Unknown location"
 msgstr "알 수 없는 위치"
 
-msgid "Unlimited Functional Support"
 msgid "Unlimited functional support"
 msgstr "무제한 기능 지원"
 
@@ -17995,7 +17970,6 @@ msgid "Unpublish"
 msgstr "게시 해제"
 
 msgid "Unpublish {name}?"
-msgstr "{name}의 게시를 해제하시겠습니까?"
 msgstr "게시 취소 {name}?"
 
 msgid "Unreceived POs"
@@ -18385,7 +18359,6 @@ msgstr "버전"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "버전 {0}이(가) 지금 게시되었으며 교체될 예정입니다."
 msgstr "버전 {0}이(가) 지금 게시되었으며 교체될 것입니다."
 
 msgid "Version:"
@@ -19330,7 +19303,6 @@ msgid "You're live on Carbon"
 msgstr "Carbon 도입 완료"
 
 msgid "You're one step away from your workspace."
-msgstr "작업공간까지 한 단계만 남았습니다."
 msgstr "작업 공간까지 한 단계 남았습니다."
 
 msgid "You're setting Carbon up yourself, at your own pace"
@@ -19360,10 +19332,11 @@ msgstr "고객 대상 가격표"
 msgid "Your data is accessible and reasonably clean"
 msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"
 
-msgid "Your devices"
-msgstr "내 기기"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "귀하의 데이터는 변경되지 않았습니다 — 복원이 완료될 수 없으면 아무것도 변경하기 전에 중단됩니다."
+
+msgid "Your devices"
+msgstr "내 기기"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS 공급자가 레코드 이름에 도메인을 자동으로 추가할 수 있습니다 — 그렇다면 그 앞 부분만 입력하세요 (예: _carbon-challenge 및 모든 하위 도메인)."

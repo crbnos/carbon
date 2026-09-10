@@ -215,22 +215,42 @@ export async function clearAuthCookies(request: Request) {
   ];
 }
 
-export async function destroyAuthSession(request: Request) {
-  // Best-effort server-side revocation of the GoTrue session: deletes the
-  // auth.sessions row (its refresh tokens cascade), so signed-out sessions
-  // don't linger as "Active" on the sign-in activity card and a logged-out
-  // refresh token is dead. Never blocks logout — an already-invalid token or
-  // an unreachable GoTrue is a harmless no-op.
-  try {
-    const authSession = await getAuthSession(request);
-    if (authSession?.accessToken) {
-      await getCarbonServiceRole().auth.admin.signOut(
-        authSession.accessToken,
-        "local"
-      );
+/** How long a best-effort revocation may delay clearing cookies. */
+const REVOKE_TIMEOUT_MS = 2000;
+
+export async function destroyAuthSession(
+  request: Request,
+  /**
+   * Whether to also revoke the GoTrue session server-side (deleting the
+   * auth.sessions row; its refresh tokens cascade), so a signed-out session
+   * doesn't linger as a live device and its refresh token is dead.
+   *
+   * Defaults to FALSE because this function is also called from recoverable
+   * error paths — a failed RPC in the app shell, a missing companyId on
+   * company switch, the callback loader clearing a pre-existing session. Those
+   * want cookies cleared, not the user's credentials destroyed across every
+   * device. Only genuine logout passes `true`.
+   */
+  { revoke = false }: { revoke?: boolean } = {}
+) {
+  if (revoke) {
+    try {
+      const authSession = await getAuthSession(request);
+      if (authSession?.accessToken) {
+        // Bounded: a hung GoTrue must not stop us clearing cookies, which is
+        // the part the user is actually waiting on. A rejection or a timeout
+        // both fall through to the cookie clear below.
+        await Promise.race([
+          getCarbonServiceRole().auth.admin.signOut(
+            authSession.accessToken,
+            "local"
+          ),
+          new Promise((resolve) => setTimeout(resolve, REVOKE_TIMEOUT_MS))
+        ]);
+      }
+    } catch {
+      // ignore — logout must never fail because revocation did
     }
-  } catch {
-    // ignore — logout must never fail because revocation did
   }
   const headers = await clearAuthCookies(request);
   return redirect(path.to.login, {

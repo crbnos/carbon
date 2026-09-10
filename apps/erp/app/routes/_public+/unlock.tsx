@@ -101,7 +101,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // /unlock would relock them — an ERR_TOO_MANY_REDIRECTS loop. Clearing the
   // cookie makes /login render its form.
   if (isSessionExpiredAbsolute(authSession)) {
-    throw await destroyAuthSession(request);
+    throw await destroyAuthSession(request, { revoke: true });
   }
   // Not actually locked → nothing to unlock, send them where they were going.
   if (!isSessionIdleLocked(authSession)) {
@@ -122,7 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (!hasTotp && !hasPasskey) {
-    throw await destroyAuthSession(request);
+    throw await destroyAuthSession(request, { revoke: true });
   }
 
   return { hasTotp, hasPasskey };

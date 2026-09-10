@@ -547,7 +547,6 @@ msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
 msgid "Finish setting up your account"
-msgstr "Hesabınızı kurma işlemini tamamlayın"
 msgstr "Hesabınızı ayarlamayı tamamlayın"
 
 msgid "Finish with material unpicked?"
@@ -563,7 +562,6 @@ msgid "Go back to operation"
 msgstr "İşleme geri dön"
 
 msgid "Go to onboarding"
-msgstr "Katılım işlemine git"
 msgstr "Başlangıç adımına git"
 
 msgid "How many were actually picked?"
@@ -1593,7 +1591,6 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Hesabınız henüz bir şirkete bağlı değil. Carbon ERP'de katılım işlemini tamamlayarak devam edin."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
