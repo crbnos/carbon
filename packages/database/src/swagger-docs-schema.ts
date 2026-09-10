@@ -6817,9 +6817,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7023,9 +7020,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7181,9 +7175,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
@@ -19864,6 +19855,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
           },
           {
@@ -19871,9 +19865,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.jobMakeMethodId"
@@ -29434,6 +29425,9 @@ export default {
             $ref: "#/parameters/rowFilter.userLogin.sessionId"
           },
           {
+            $ref: "#/parameters/rowFilter.userLogin.deviceId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -29523,6 +29517,9 @@ export default {
             $ref: "#/parameters/rowFilter.userLogin.sessionId"
           },
           {
+            $ref: "#/parameters/rowFilter.userLogin.deviceId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -29564,6 +29561,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.userLogin.sessionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.deviceId"
           },
           {
             $ref: "#/parameters/body.userLogin"
@@ -32794,6 +32794,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -32801,9 +32804,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/select"
@@ -32976,6 +32976,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -32983,9 +32986,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -33112,6 +33112,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -33119,9 +33122,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/body.job"
@@ -42406,10 +42406,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -42615,10 +42615,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -42778,10 +42778,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -79957,9 +79957,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
           },
           {
@@ -104326,10 +104323,6 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -110516,6 +110509,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         projectedCompletionAt: {
           format: "timestamp with time zone",
           type: "string"
@@ -110527,10 +110524,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         },
         jobMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -115214,6 +115207,10 @@ export default {
         sessionId: {
           format: "text",
           type: "string"
+        },
+        deviceId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -116836,6 +116833,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         projectedCompletionAt: {
           description:
             "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
@@ -116851,10 +116852,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         }
       },
       type: "object"
@@ -121434,14 +121431,14 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         projectedCompletionAt: {
@@ -139144,10 +139141,6 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -147206,12 +147199,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperationsWithDependencies.readyAt": {
-      name: "readyAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.jobOperationsWithDependencies.inspectionDocumentId": {
       name: "inspectionDocumentId",
       required: false,
@@ -154142,6 +154129,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobs.projectedCompletionAt": {
       name: "projectedCompletionAt",
       required: false,
@@ -154156,12 +154149,6 @@ export default {
     },
     "rowFilter.jobs.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -159459,6 +159446,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.userLogin.deviceId": {
+      name: "deviceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.externalIntegrationMapping": {
       name: "externalIntegrationMapping",
       description: "externalIntegrationMapping",
@@ -161247,6 +161240,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.job.projectedCompletionAt": {
       name: "projectedCompletionAt",
       description:
@@ -161265,12 +161264,6 @@ export default {
     },
     "rowFilter.job.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -166191,14 +166184,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.readyAt": {
-      name: "readyAt",
+    "rowFilter.jobOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.inspectionDocumentId": {
-      name: "inspectionDocumentId",
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -186051,12 +186044,6 @@ export default {
     },
     "rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId": {
       name: "assemblyInstructionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobOperationsWithMakeMethods.readyAt": {
-      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
