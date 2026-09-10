@@ -1,5 +1,5 @@
 import { getLogger } from "@carbon/logger";
-import { normalizeIp } from "@carbon/utils";
+import { getClientIp } from "@carbon/utils";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import { logAuthEvent } from "./auth-events.server";
 
@@ -116,12 +116,20 @@ export async function recordLogin(params: {
 }): Promise<void> {
   const { request, userId, email, accessToken, method, app } = params;
   try {
-    // First hop of x-forwarded-for is the client; the rest are proxies.
-    // normalizeIp strips the IPv4-mapped IPv6 prefix ("::ffff:1.2.3.4") that
-    // local proxies report for IPv4 sockets.
-    const ipAddress =
-      normalizeIp(request.headers.get("x-forwarded-for")?.split(",")[0]) ??
-      normalizeIp(request.headers.get("x-real-ip"));
+    // Right-to-left walk past our own proxies. The leftmost hop is whatever
+    // the client sent — see getClientIp.
+    //
+    // Read from process.env at call time rather than importing @carbon/env:
+    // that module validates EVERY required var at import, so a module-scope
+    // import would make this file (and its tests) depend on unrelated config.
+    const ipAddress = getClientIp(request, {
+      trustedProxyCount: Number.parseInt(
+        process.env.TRUSTED_PROXY_COUNT ?? "0",
+        10
+      ),
+      trustedProxyIps:
+        process.env.TRUSTED_PROXY_IPS?.split(",").map((ip) => ip.trim()) ?? []
+    });
     // Vercel URL-encodes geo header values (e.g. "S%C3%A3o%20Paulo").
     const city = decodeGeoHeader(request.headers.get("x-vercel-ip-city"));
     const country = decodeGeoHeader(request.headers.get("x-vercel-ip-country"));

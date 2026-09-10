@@ -118,6 +118,7 @@ describe("recordLogin", () => {
   it("inserts a row with IP, decoded geo, and user agent from headers", async () => {
     await recordLogin({
       request: makeRequest({
+        // Rightmost hop wins: the leftmost is client-supplied.
         "x-forwarded-for": "203.0.113.9, 10.0.0.1",
         "x-vercel-ip-city": "S%C3%A3o%20Paulo",
         "x-vercel-ip-country": "BR",
@@ -136,7 +137,7 @@ describe("recordLogin", () => {
       sessionId: "session-uuid-1",
       method: "magic_link",
       app: "erp",
-      ipAddress: "203.0.113.9",
+      ipAddress: "10.0.0.1",
       city: "São Paulo",
       country: "BR",
       userAgent: "Mozilla/5.0 test"
