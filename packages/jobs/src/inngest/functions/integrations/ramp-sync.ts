@@ -51,6 +51,7 @@ import {
 import { getAppUrl } from "@carbon/env";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
+import { toDocumentAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -2728,10 +2729,16 @@ export const rampSyncFunction = inngest.createFunction(
             const rampEntityId = await resolveRampEntityId(metadata, ramp);
 
             const poIds = poRows.map((row) => row.id);
+            // Push the DOCUMENT-currency price (`supplierUnitPrice`), not the
+            // generated `unitPrice` — the latter is company-base
+            // (supplierUnitPrice ÷ exchangeRate), but the Ramp PO is labelled
+            // `currency: po.currencyCode` (the PO's transaction currency), which
+            // is the currency `supplierUnitPrice` is denominated in. Sending base
+            // amounts under a foreign-currency label mis-states every non-base PO.
             const lines = await client
               .from("purchaseOrderLine")
               .select(
-                "id, purchaseOrderId, description, purchaseQuantity, unitPrice, purchaseOrderLineType, sortOrder"
+                "id, purchaseOrderId, description, purchaseQuantity, supplierUnitPrice, purchaseOrderLineType, sortOrder"
               )
               .eq("companyId", companyId)
               .in("purchaseOrderId", poIds)
@@ -2752,7 +2759,7 @@ export const rampSyncFunction = inngest.createFunction(
                 id: line.id,
                 description: line.description,
                 quantity: line.purchaseQuantity,
-                unitPrice: line.unitPrice
+                unitPrice: line.supplierUnitPrice
               });
               linesByPo.set(line.purchaseOrderId, list);
             }
@@ -2831,7 +2838,7 @@ export const rampSyncFunction = inngest.createFunction(
           let invQuery = client
             .from("purchaseInvoices")
             .select(
-              "id, invoiceId, supplierId, supplierReference, currencyCode, dateIssued, dateDue, updatedAt"
+              "id, invoiceId, supplierId, supplierReference, currencyCode, exchangeRate, dateIssued, dateDue, updatedAt"
             )
             .eq("companyId", companyId)
             .in("status", INVOICE_PUSH_STATUSES)
@@ -2889,6 +2896,10 @@ export const rampSyncFunction = inngest.createFunction(
             const invoiceIds = candidates
               .map((row) => row.id)
               .filter((id): id is string => Boolean(id));
+            // `totalAmount` is the generated COMPANY-BASE line total
+            // (supplierUnitPrice·qty ÷ rate + shipping ÷ rate + tax ÷ rate). It
+            // is converted back to the invoice's document currency per candidate
+            // below, since Ramp is told `invoice_currency: invoice.currencyCode`.
             const invLines = await client
               .from("purchaseInvoiceLine")
               .select("invoiceId, description, totalAmount, sortOrder")
@@ -2920,6 +2931,27 @@ export const rampSyncFunction = inngest.createFunction(
                 continue;
               }
               try {
+                // Convert each base line total to the invoice's document
+                // currency (base × foreign-per-base rate, rounded at the
+                // currency's decimals) so the pushed amounts match the
+                // `invoice_currency` label. A base-currency invoice has rate 1,
+                // so this only rounds to settlement precision.
+                const invoiceCurrency = row.currencyCode ?? ctx.baseCurrency;
+                const invoiceRate =
+                  row.exchangeRate && row.exchangeRate > 0
+                    ? row.exchangeRate
+                    : 1;
+                const invoiceDecimals = await getDecimals(ctx, invoiceCurrency);
+                const documentLines = (
+                  linesByInvoice.get(invoiceRowId) ?? []
+                ).map((line) => ({
+                  description: line.description,
+                  amount: toDocumentAmount(
+                    line.amount,
+                    invoiceRate,
+                    invoiceDecimals
+                  )
+                }));
                 const outcome = await pushInvoiceDraftBill(
                   client,
                   companyId,
@@ -2935,7 +2967,7 @@ export const rampSyncFunction = inngest.createFunction(
                     supplier:
                       supplier ??
                       emptyRampVendorSupplier(row.supplierId ?? "", null),
-                    lines: linesByInvoice.get(invoiceRowId) ?? []
+                    lines: documentLines
                   }
                 );
                 if (outcome === "pushed") result.invoices.pushed += 1;

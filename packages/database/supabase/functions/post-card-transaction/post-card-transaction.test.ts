@@ -221,12 +221,15 @@ Deno.test("throws when the line sum does not equal the header amount", () => {
 });
 
 // ---------------------------------------------------------------------------
-// FX — exchangeRate ≠ 1 must scale BOTH sides to base currency, or the entry
-// silently posts foreign face value / unbalances. A regression that scaled only
-// the coding lines (or only the card side) fails here.
+// FX — exchangeRate ≠ 1 must convert BOTH sides to base currency, or the entry
+// silently posts foreign face value / unbalances. `exchangeRate` is the
+// canonical foreign-per-base rate (document units per 1 base unit), so a
+// document amount converts to base by DIVIDING: base = document / rate. A
+// regression that MULTIPLIED (the old inverted convention), or that converted
+// only the coding lines or only the card side, fails here.
 // ---------------------------------------------------------------------------
 
-Deno.test("Charge at exchangeRate 2: both the lines AND the card credit scale to base", () => {
+Deno.test("Charge at exchangeRate 2: both the lines AND the card credit convert to base (÷ rate)", () => {
   const { journalLines } = buildCardTransactionJournal(
     base({
       transaction: {
@@ -245,9 +248,9 @@ Deno.test("Charge at exchangeRate 2: both the lines AND the card credit scale to
   );
 
   assertEquals(journalLines.length, 3);
-  assertEquals(line(journalLines, "exp1")!.amount, 120); // 60 × 2 → base debit
-  assertEquals(line(journalLines, "exp2")!.amount, 80); // 40 × 2 → base debit
-  assertEquals(line(journalLines, "card")!.amount, 200); // 100 × 2 → base credit
+  assertEquals(line(journalLines, "exp1")!.amount, 30); // 60 ÷ 2 → base debit
+  assertEquals(line(journalLines, "exp2")!.amount, 20); // 40 ÷ 2 → base debit
+  assertEquals(line(journalLines, "card")!.amount, 50); // 100 ÷ 2 → base credit
   assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
 });
 

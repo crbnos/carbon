@@ -19,7 +19,11 @@
 // per-line accounts take their class from the resolved `accounts` map — except
 // Cashback, whose offset is booked to Revenue by definition (a rebate is income).
 
-import { assertBalanced, EPSILON, round } from "../shared/precision.ts";
+import { assertBalanced, EPSILON } from "../shared/precision.ts";
+import {
+  assertExchangeRate,
+  toBaseAmount,
+} from "../shared/accounting-currency.ts";
 import { credit, debit } from "../lib/utils.ts";
 
 export type GLAccountClass =
@@ -95,11 +99,17 @@ export function buildCardTransactionJournal(
   const { type, amount, cardAccountId, offsetAccountId, exchangeRate } =
     transaction;
 
-  // Journal lines hit the GL in base currency. Both sides scale by the same
-  // rate so the entry stays balanced; the offset/card side accumulates the
-  // rounded per-line magnitudes so rounding dust can never unbalance a split.
-  const rate = exchangeRate || 1;
-  const toBase = (value: number) => round(value * rate);
+  // Journal lines hit the GL in base currency. `exchangeRate` is the canonical
+  // foreign-per-base rate (units of the document currency per 1 unit of base,
+  // via get_exchange_rate; base currency → 1), so a document amount converts to
+  // base by DIVIDING — the shared `toBaseAmount`, which rounds once per call at
+  // internal SCALE. Both sides convert the same way so the entry stays balanced;
+  // the offset/card side accumulates the rounded per-line magnitudes so rounding
+  // dust can never unbalance a split. The column is NOT NULL default 1 (> 0), so
+  // this guard passes for the rate=1 base-currency fallback and only refuses a
+  // corrupt (0 / negative / non-finite) rate before it can post.
+  assertExchangeRate(exchangeRate);
+  const toBase = (value: number) => toBaseAmount(value, exchangeRate);
 
   const classOf = (accountId: string): AccountType => {
     const account = accounts[accountId];
