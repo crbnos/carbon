@@ -1087,6 +1087,10 @@ async function syncBill(
 
   const currencyCode = bill.currency_code ?? ctx.baseCurrency;
   const decimals = await getDecimals(ctx, currencyCode);
+  // Foreign-per-base rate for the bill's currency; the generated
+  // purchaseInvoiceLine.unitPrice/totalAmount = supplierUnitPrice / exchangeRate
+  // is what post-purchase-invoice posts to the GL in base currency.
+  const exchangeRate = await getExchangeRate(ctx, currencyCode);
   const dateIssued = bill.issued_at?.slice(0, 10) ?? null;
   const dateDue = bill.due_at?.slice(0, 10) ?? null;
 
@@ -1234,6 +1238,7 @@ async function syncBill(
         supplierId,
         supplierReference: invoiceNumber,
         currencyCode,
+        exchangeRate,
         dateIssued,
         dateDue,
         supplierInteractionId: interaction.data.id,
@@ -1261,8 +1266,10 @@ async function syncBill(
       costCenterId: line.costCenterId,
       description: line.description,
       quantity: 1,
-      unitPrice: line.amount,
-      exchangeRate: 1,
+      // Document-currency amount; the generated unitPrice/totalAmount divide by
+      // exchangeRate to post the GL in base currency.
+      supplierUnitPrice: line.amount,
+      exchangeRate,
       sortOrder: lineIndex + 1,
       companyId: ctx.companyId,
       createdBy: "system"
@@ -1671,6 +1678,10 @@ async function syncReimbursement(
 
   const currencyCode = reimbursement.currency_code ?? ctx.baseCurrency;
   const decimals = await getDecimals(ctx, currencyCode);
+  // Foreign-per-base rate for the reimbursement's currency; the generated
+  // purchaseInvoiceLine.unitPrice = supplierUnitPrice / exchangeRate is what
+  // post-purchase-invoice posts to the GL in base currency.
+  const exchangeRate = await getExchangeRate(ctx, currencyCode);
 
   const built = await buildGlLinesFromItems(
     ctx,
@@ -1726,6 +1737,7 @@ async function syncReimbursement(
       supplierId,
       supplierReference: `RAMP-REIMB-${reimbursement.id}`,
       currencyCode,
+      exchangeRate,
       dateIssued,
       dateDue,
       supplierInteractionId: interaction.data.id,
@@ -1753,8 +1765,10 @@ async function syncReimbursement(
     costCenterId: line.costCenterId,
     description: line.description,
     quantity: 1,
-    unitPrice: line.amount,
-    exchangeRate: 1,
+    // Document-currency amount; the generated unitPrice/totalAmount divide by
+    // exchangeRate to post the GL in base currency.
+    supplierUnitPrice: line.amount,
+    exchangeRate,
     sortOrder: lineIndex + 1,
     companyId: ctx.companyId,
     createdBy: "system"

@@ -190,6 +190,20 @@ every card family); `statementBankAccountId` (transfers, bill payments, repaymen
 `cashbackIncomeAccountId` (cashbacks). Amounts come from `fromMinorUnits`; the currency's
 `decimalPlaces` is read once per code and cached.
 
+**FX (foreign-per-base convention).** `exchangeRate` everywhere here is the
+`get_exchange_rate` foreign-per-base rate (`getExchangeRate(ctx, code)`, cached;
+base → 1, unresolved → 1 so a missing rate never blocks the sync). The card
+journal converts document→base by DIVIDING via the shared `toBaseAmount`
+(`build-card-transaction-journal.ts`) — NOT multiplying. Inbound bills/
+reimbursements write the document amount to `purchaseInvoiceLine.supplierUnitPrice`
++ the resolved `exchangeRate` on both header and lines (NEVER the generated
+`unitPrice`/`totalAmount`, which are `supplier* / exchangeRate` and rejected on
+write); `post-purchase-invoice` then posts the generated base `unitPrice`.
+Outbound pushes send DOCUMENT currency under the `currency`/`invoice_currency`
+label — PO push uses `purchaseOrderLine.supplierUnitPrice` (already document),
+draft-bill push converts the generated base `totalAmount` back via
+`toDocumentAmount(total, rate, decimals)`.
+
 Coding: `codeSelections` reads a Ramp `accounting_field_selections` list — the first
 `GL_ACCOUNT` selection's `external_id` (the Carbon `account.id` Carbon pushed) wins for the
 account, the first `COST_CENTER` for the cost center. A line coded to an account Carbon
