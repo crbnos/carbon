@@ -1,7 +1,28 @@
 import type { Database, Json } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime, EPSILON, round } from "@carbon/utils";
+import {
+  allocatePaymentFunding,
+  applyRate,
+  assertCurrencyDecimals,
+  assertExchangeRate,
+  chunkArray,
+  datetime,
+  type FundingConsumptionRow,
+  type FundingPaymentRow,
+  type FundingRequest,
+  type FundingSource,
+  invoiceRemainingAmounts,
+  isEffectiveSettlement,
+  PAYABLE_POSTING_DESCRIPTIONS,
+  RECEIVABLE_POSTING_DESCRIPTIONS,
+  reduceInvoiceSettlements,
+  remainingFundingSources,
+  round,
+  type SettlementBalanceRow,
+  toBaseAmount,
+  toDocumentAmount
+} from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -126,6 +147,109 @@ export async function computeInvoiceDateDue(
   } catch {
     return null;
   }
+}
+
+/**
+ * Early-payment (cash) discount per invoice, for seeding a payment's
+ * applications. A discount only applies when the payment lands within the
+ * term's discount window (e.g. "2/10 net 30" → 2% only if paid within 10 days
+ * of the issue date). Returns a Map keyed by invoice id; invoices with no term,
+ * a zero discount percentage, a missing issue date, or a payment date past the
+ * window map to 0.
+ *
+ * The discount is a settlement amount, so it rounds to the currency's decimals
+ * via `applyRate` (`discountPercentage` is stored as points, e.g. 2 → 0.02).
+ * The deadline uses the same calculationMethod anchoring as the due date (see
+ * computeInvoiceDateDue) but with `daysDiscount` instead of `daysDue`. Terms are
+ * batch-loaded in one query — never per invoice (N+1).
+ */
+export async function computeEarlyPaymentDiscounts(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    asOfDate: string;
+    currencyDecimals: number;
+    invoices: {
+      id: string;
+      balance: number;
+      dateIssued: string | null;
+      paymentTermId: string | null;
+    }[];
+  }
+): Promise<Map<string, number>> {
+  const { companyId, asOfDate, currencyDecimals, invoices } = args;
+  const result = new Map<string, number>(invoices.map((inv) => [inv.id, 0]));
+
+  const termIds = [
+    ...new Set(
+      invoices
+        .map((inv) => inv.paymentTermId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (termIds.length === 0) return result;
+
+  const terms = await client
+    .from("paymentTerm")
+    .select("id, daysDiscount, discountPercentage, calculationMethod")
+    .in("id", termIds)
+    .eq("companyId", companyId);
+  if (terms.error) {
+    throw new Error(
+      `Failed to load payment terms while computing early-payment discounts: ${terms.error.message}`
+    );
+  }
+  const termById = new Map((terms.data ?? []).map((term) => [term.id, term]));
+
+  let asOf: ReturnType<typeof parseDate>;
+  try {
+    asOf = parseDate(asOfDate);
+  } catch {
+    return result;
+  }
+
+  for (const inv of invoices) {
+    if (!inv.paymentTermId || !inv.dateIssued) continue;
+    const term = termById.get(inv.paymentTermId);
+    if (!term) continue;
+    const pct = Number(term.discountPercentage ?? 0);
+    const days = Number(term.daysDiscount ?? 0);
+    if (pct <= 0) continue;
+
+    let issued: ReturnType<typeof parseDate>;
+    try {
+      issued = parseDate(inv.dateIssued);
+    } catch {
+      continue;
+    }
+
+    let deadline: ReturnType<typeof parseDate>;
+    switch (term.calculationMethod) {
+      case "End of Month":
+        deadline = endOfMonth(issued).add({ days });
+        break;
+      case "Day of Month": {
+        const sameMonth = issued.set({ day: days });
+        deadline =
+          sameMonth.compare(issued) >= 0
+            ? sameMonth
+            : issued.add({ months: 1 }).set({ day: days });
+        break;
+      }
+      default:
+        deadline = issued.add({ days });
+    }
+
+    // Past the discount window → the early-payment discount is no longer offered.
+    if (asOf.compare(deadline) > 0) continue;
+
+    result.set(
+      inv.id,
+      applyRate(Number(inv.balance), pct / 100, currencyDecimals)
+    );
+  }
+
+  return result;
 }
 
 export async function createPurchaseInvoiceFromPurchaseOrder(
@@ -1245,8 +1369,14 @@ export async function updateSalesInvoiceLineOrder(
 // Payments (AR receipts + AP disbursements + applications)
 // ======================================================================
 
-export async function getPayment(client: SupabaseClient<Database>, id: string) {
-  return client.from("payment").select("*").eq("id", id).single();
+export async function getPayment(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId?: string
+) {
+  let query = client.from("payment").select("*").eq("id", id);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getPayments(
@@ -1304,16 +1434,22 @@ export async function getInvoiceSettlements(
   companyId: string,
   paymentId: string
 ) {
-  // Embed the invoice's human-readable id (salesInvoice/purchaseInvoice.invoiceId)
-  // so the UI can show "AP000001" rather than the raw FK id.
-  return client
-    .from("invoiceSettlement")
-    .select(
-      "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId)"
-    )
-    .eq("companyId", companyId)
-    .eq("paymentId", paymentId)
-    .order("appliedDate", { ascending: true });
+  type Settlement = Database["public"]["Tables"]["invoiceSettlement"]["Row"] & {
+    salesInvoice: { invoiceId: string } | null;
+    purchaseInvoice: { invoiceId: string } | null;
+    targetMemo: { memoId: string } | null;
+  };
+  return fetchAllFromTable<Settlement>(
+    client,
+    "invoiceSettlement",
+    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("paymentId", paymentId)
+        .order("appliedDate", { ascending: true })
+        .order("id")
+  );
 }
 
 // A settlement against an invoice can be sourced by either a cash payment or a
@@ -1340,21 +1476,21 @@ export type InvoiceSettlementSource =
 
 export type InvoiceSettlementForInvoice = {
   id: string;
+  sourceAmount: number | null;
   appliedAmount: number;
   discountAmount: number;
   writeOffAmount: number;
   fxGainLossAmount: number | null;
   targetExchangeRate: number;
-  sourceExchangeRate: number;
+  sourceExchangeRate: number | null;
   appliedDate: string;
   source: InvoiceSettlementSource;
 };
 
 // Posted settlements against a specific invoice — BOTH cash payments and applied
 // credit/debit memos. Used by the "Applied" panel on the sales/purchase invoice
-// detail page. Two-step query (settlements, then their parent payments/memos)
-// dodges the supabase JS type depth limit a !inner join hits, and lets us drop
-// settlements whose source is still Draft/Voided.
+// detail page. Page the embedded parents with their applications so large histories
+// retain every source without oversized ID lookups.
 export async function getInvoiceSettlementsForInvoice(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1366,81 +1502,66 @@ export async function getInvoiceSettlementsForInvoice(
 }> {
   const column =
     side === "sales" ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId";
-  const apps = await client
-    .from("invoiceSettlement")
-    .select(
-      "id, paymentId, memoId, appliedViaPaymentId, appliedAmount, discountAmount, writeOffAmount, fxGainLossAmount, targetExchangeRate, sourceExchangeRate, appliedDate"
-    )
-    .eq("companyId", companyId)
-    .eq(column, invoiceId)
-    .order("appliedDate", { ascending: false });
-
+  type Settlement = Pick<
+    Database["public"]["Tables"]["invoiceSettlement"]["Row"],
+    | "id"
+    | "paymentId"
+    | "memoId"
+    | "appliedViaPaymentId"
+    | "sourceAmount"
+    | "appliedAmount"
+    | "discountAmount"
+    | "writeOffAmount"
+    | "fxGainLossAmount"
+    | "targetExchangeRate"
+    | "sourceExchangeRate"
+    | "appliedDate"
+  > & {
+    payment: Pick<
+      Database["public"]["Tables"]["payment"]["Row"],
+      "id" | "paymentId" | "status" | "paymentDate" | "currencyCode"
+    > | null;
+    memo: Pick<
+      Database["public"]["Tables"]["memo"]["Row"],
+      | "id"
+      | "memoId"
+      | "status"
+      | "postingDate"
+      | "memoDate"
+      | "currencyCode"
+      | "direction"
+    > | null;
+    appliedViaPayment: { status: string | null } | null;
+  };
+  const apps = await fetchAllFromTable<Settlement>(
+    client,
+    "invoiceSettlement",
+    "id, paymentId, memoId, appliedViaPaymentId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, fxGainLossAmount, targetExchangeRate, sourceExchangeRate, appliedDate, payment:payment!invoiceSettlement_paymentId_fkey(id,paymentId,status,paymentDate,currencyCode), memo:memo!invoiceSettlement_memoId_fkey(id,memoId,status,postingDate,memoDate,currencyCode,direction), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq(column, invoiceId)
+        .order("appliedDate", { ascending: false })
+        .order("id")
+  );
   if (apps.error) return { data: null, error: apps.error };
-  if (!apps.data || apps.data.length === 0) return { data: [], error: null };
-
-  const paymentIds = apps.data
-    .map((a) => a.paymentId)
-    .filter((id): id is string => Boolean(id));
-  const memoIds = apps.data
-    .map((a) => (a as { memoId: string | null }).memoId)
-    .filter((id): id is string => Boolean(id));
-
-  const [payments, memos] = await Promise.all([
-    paymentIds.length > 0
-      ? client
-          .from("payment")
-          .select("id, paymentId, status, paymentDate, currencyCode")
-          .in("id", paymentIds)
-          .eq("status", "Posted")
-      : Promise.resolve({ data: [], error: null }),
-    memoIds.length > 0
-      ? client
-          .from("memo")
-          .select(
-            "id, memoId, status, postingDate, memoDate, currencyCode, direction"
-          )
-          .in("id", memoIds)
-          .eq("status", "Posted")
-      : Promise.resolve({ data: [], error: null })
-  ]);
-
-  if (payments.error) return { data: null, error: payments.error };
-  if (memos.error) return { data: null, error: memos.error };
-
-  // deno-lint-ignore no-explicit-any
-  const paymentById = new Map(
-    ((payments.data ?? []) as any[]).map((p) => [p.id, p])
-  );
-  // deno-lint-ignore no-explicit-any
-  const memoById = new Map(((memos.data ?? []) as any[]).map((m) => [m.id, m]));
-
-  // A credit applied through a payment is staged on that payment and only counts
-  // once the payment is Posted (mirrors the invoice-balance view gating).
-  const viaPaymentIds = apps.data
-    .map(
-      (a) => (a as { appliedViaPaymentId: string | null }).appliedViaPaymentId
-    )
-    .filter((id): id is string => Boolean(id));
-  const postedViaPayments =
-    viaPaymentIds.length > 0
-      ? await client
-          .from("payment")
-          .select("id")
-          .in("id", viaPaymentIds)
-          .eq("status", "Posted")
-      : { data: [] as { id: string }[], error: null };
-  if (postedViaPayments.error)
-    return { data: null, error: postedViaPayments.error };
-  const postedViaSet = new Set(
-    ((postedViaPayments.data ?? []) as { id: string }[]).map((p) => p.id)
-  );
 
   const merged: InvoiceSettlementForInvoice[] = [];
-  for (const a of apps.data) {
-    const memoId = (a as { memoId: string | null }).memoId;
+  for (const a of apps.data ?? []) {
+    if (
+      !isEffectiveSettlement({
+        paymentId: a.paymentId,
+        memoId: a.memoId,
+        appliedViaPaymentId: a.appliedViaPaymentId,
+        paymentStatus: a.payment?.status ?? null,
+        memoStatus: a.memo?.status ?? null,
+        viaStatus: a.appliedViaPayment?.status ?? null
+      })
+    )
+      continue;
     let source: InvoiceSettlementSource | null = null;
-    if (a.paymentId && paymentById.has(a.paymentId)) {
-      const p = paymentById.get(a.paymentId);
+    if (a.paymentId && a.payment) {
+      const p = a.payment;
       source = {
         type: "payment",
         id: p.id,
@@ -1449,12 +1570,8 @@ export async function getInvoiceSettlementsForInvoice(
         date: p.paymentDate,
         currencyCode: p.currencyCode
       };
-    } else if (memoId && memoById.has(memoId)) {
-      const viaId = (a as { appliedViaPaymentId: string | null })
-        .appliedViaPaymentId;
-      // Staged on a Draft payment — not applied yet, so omit it from the card.
-      if (viaId && !postedViaSet.has(viaId)) continue;
-      const m = memoById.get(memoId);
+    } else if (a.memoId && a.memo) {
+      const m = a.memo;
       source = {
         type: "memo",
         id: m.id,
@@ -1465,10 +1582,10 @@ export async function getInvoiceSettlementsForInvoice(
         direction: m.direction
       };
     }
-    // Skip settlements whose source isn't Posted (a Draft/Voided payment/memo).
     if (!source) continue;
     merged.push({
       id: a.id,
+      sourceAmount: a.sourceAmount,
       appliedAmount: Number(a.appliedAmount),
       discountAmount: Number(a.discountAmount),
       writeOffAmount: Number(a.writeOffAmount),
@@ -1481,7 +1598,32 @@ export async function getInvoiceSettlementsForInvoice(
     });
   }
 
-  return { data: merged, error: null };
+  const bySource = new Map<string, InvoiceSettlementForInvoice>();
+  for (const row of merged) {
+    const key = `${row.source.type}:${row.source.id}:${row.appliedDate}`;
+    const previous = bySource.get(key);
+    if (!previous) {
+      bySource.set(key, { ...row });
+      continue;
+    }
+    previous.appliedAmount = round(previous.appliedAmount + row.appliedAmount);
+    previous.discountAmount = round(
+      previous.discountAmount + row.discountAmount
+    );
+    previous.writeOffAmount = round(
+      previous.writeOffAmount + row.writeOffAmount
+    );
+    previous.sourceAmount =
+      previous.sourceAmount == null || row.sourceAmount == null
+        ? null
+        : round(previous.sourceAmount + row.sourceAmount);
+    previous.fxGainLossAmount = round(
+      Number(previous.fxGainLossAmount ?? 0) + Number(row.fxGainLossAmount ?? 0)
+    );
+    if (previous.sourceExchangeRate !== row.sourceExchangeRate)
+      previous.sourceExchangeRate = null;
+  }
+  return { data: [...bySource.values()], error: null };
 }
 
 // Where a posted credit/debit memo's balance went — the documents it has been
@@ -1582,91 +1724,389 @@ export async function getMemoApplications(
 export async function getOpenSalesInvoicesForCustomer(
   client: SupabaseClient<Database>,
   companyId: string,
-  customerId: string
+  customerId: string,
+  currencyCode?: string
 ) {
-  return client
-    .from("salesInvoices")
-    .select(
-      "id, invoiceId, dateDue, currencyCode, exchangeRate, totalAmount, balance, status"
-    )
-    .eq("companyId", companyId)
-    .eq("customerId", customerId)
-    .in("status", ["Submitted", "Partially Paid", "Overdue"])
-    .gt("balance", 0)
-    .order("dateDue", { ascending: true });
+  return getOpenInvoicesForParty(
+    client,
+    companyId,
+    true,
+    customerId,
+    currencyCode
+  );
 }
-
 export async function getOpenPurchaseInvoicesForSupplier(
   client: SupabaseClient<Database>,
   companyId: string,
-  supplierId: string
+  supplierId: string,
+  currencyCode?: string
 ) {
-  return client
-    .from("purchaseInvoices")
-    .select(
-      "id, invoiceId, dateDue, currencyCode, exchangeRate, totalAmount, balance, status"
-    )
-    .eq("companyId", companyId)
-    .eq("supplierId", supplierId)
-    .in("status", ["Open", "Partially Paid", "Overdue"])
-    .gt("balance", 0)
-    .order("dateDue", { ascending: true });
+  return getOpenInvoicesForParty(
+    client,
+    companyId,
+    false,
+    supplierId,
+    currencyCode
+  );
 }
 
-// The party's available on-account credit in BASE currency: the net unapplied
-// cash across their posted payments (Σ cash − Σ applied). This is the pool a new
-// payment may draw on when it applies more than its own cash. Mirrors the
-// authoritative check in the post-payment edge function; returns 0 on any read
-// error (conservative — posting re-validates under lock). Returns base currency;
-// callers convert to the payment's currency for display via the exchange rate.
+async function getOpenInvoicesForParty(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  isAR: boolean,
+  partyId: string,
+  currencyCode?: string
+) {
+  type OpenInvoiceRow = Pick<
+    Database["public"]["Views"]["salesInvoices" | "purchaseInvoices"]["Row"],
+    | "id"
+    | "invoiceId"
+    // dateIssued + paymentTermId drive the early-payment discount window when a
+    // payment is seeded from these invoices.
+    | "dateIssued"
+    | "dateDue"
+    | "paymentTermId"
+    | "currencyCode"
+    | "exchangeRate"
+    | "totalAmount"
+    | "balance"
+    | "status"
+  >;
+  type SettlementRow = SettlementBalanceRow & {
+    paymentId: string | null;
+    memoId: string | null;
+    appliedViaPaymentId: string | null;
+    payment: { status: string } | null;
+    memo: { status: string } | null;
+    appliedViaPayment: { status: string } | null;
+  };
+  type ControlRow = Pick<
+    Database["public"]["Tables"]["journalLine"]["Row"],
+    "documentId" | "amount"
+  >;
+  const [invoices, company] = await Promise.all([
+    fetchAllFromTable<OpenInvoiceRow>(
+      client,
+      isAR ? "salesInvoices" : "purchaseInvoices",
+      "id, invoiceId, dateIssued, dateDue, paymentTermId, currencyCode, exchangeRate, totalAmount, balance, status",
+      (query) => {
+        query = query
+          .eq("companyId", companyId)
+          .in(
+            "status",
+            isAR
+              ? ["Submitted", "Partially Paid", "Overdue"]
+              : ["Open", "Partially Paid", "Overdue"]
+          )
+          .eq(isAR ? "customerId" : "supplierId", partyId);
+        if (currencyCode) query = query.eq("currencyCode", currencyCode);
+        return query.order("dateDue", { ascending: true }).order("id");
+      }
+    ),
+    client.from("company").select("companyGroupId").eq("id", companyId).single()
+  ]);
+  if (invoices.error) return { data: null, error: invoices.error };
+  if (company.error || !company.data?.companyGroupId)
+    return {
+      data: null,
+      error: { message: "Company currency configuration is missing" }
+    };
+  const currencies = await client
+    .from("currency")
+    .select("code, decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId);
+  if (currencies.error) return { data: null, error: currencies.error };
+  const ids = invoices.data.map((i) => i.id!);
+  const settlements: SettlementRow[] = [];
+  const controls: ControlRow[] = [];
+  // Bound filter URLs as well as response pages. A single invoice can itself
+  // have more than one response page of control lines or settlements.
+  for (const batch of chunkArray(ids, 100)) {
+    const [batchSettlements, batchControls] = await Promise.all([
+      fetchAllFromTable<SettlementRow>(
+        client,
+        "invoiceSettlement",
+        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in(
+              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+              batch
+            )
+            .order("id")
+      ),
+      fetchAllFromTable<ControlRow>(
+        client,
+        "journalLine",
+        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .eq("journal.companyId", companyId)
+            .eq("journal.status", "Posted")
+            .eq(
+              "journal.sourceType",
+              isAR ? "Sales Invoice" : "Purchase Invoice"
+            )
+            .eq("documentType", "Invoice")
+            .in(
+              "description",
+              isAR
+                ? RECEIVABLE_POSTING_DESCRIPTIONS
+                : PAYABLE_POSTING_DESCRIPTIONS
+            )
+            .in("documentId", batch)
+            .order("id")
+      )
+    ]);
+    const error = batchSettlements.error ?? batchControls.error;
+    if (error) return { data: null, error };
+    settlements.push(...(batchSettlements.data ?? []));
+    controls.push(...(batchControls.data ?? []));
+  }
+  try {
+    const decimals = new Map(
+      (currencies.data ?? []).map((c) => [c.code, c.decimalPlaces])
+    );
+    if (currencyCode) requireCurrencyDecimals(decimals, currencyCode);
+    const effective = settlements.filter((s) =>
+      isEffectiveSettlement({
+        paymentId: s.paymentId,
+        memoId: s.memoId,
+        appliedViaPaymentId: s.appliedViaPaymentId,
+        paymentStatus: s.payment?.status ?? null,
+        memoStatus: s.memo?.status ?? null,
+        viaStatus: s.appliedViaPayment?.status ?? null
+      })
+    );
+    const controlAmounts = new Map<string, number>();
+    for (const line of controls)
+      if (line.documentId)
+        controlAmounts.set(
+          line.documentId,
+          (controlAmounts.get(line.documentId) ?? 0) + Number(line.amount)
+        );
+    return {
+      data: (invoices.data ?? [])
+        .map((i) => {
+          if (!i.id || !i.currencyCode)
+            throw new Error("Invoice currency or identity is missing");
+          const remaining = invoiceRemainingAmounts(
+            i,
+            effective,
+            controlAmounts,
+            requireCurrencyDecimals(decimals, i.currencyCode!),
+            isAR
+          );
+          return {
+            ...i,
+            id: i.id,
+            currencyCode: i.currencyCode,
+            balance: remaining.remainingBase,
+            remainingDocument: remaining.remainingDocument
+          };
+        })
+        .filter((i) => i.remainingDocument > 0),
+      error: null
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to load invoice balances"
+      }
+    };
+  }
+}
+
+type PaymentParty =
+  | { paymentType: "Receipt"; customerId: string }
+  | { paymentType: "Disbursement"; supplierId: string };
+
+function requireCurrencyDecimals(
+  decimals: Map<string, number>,
+  code: string
+): number {
+  const value = decimals.get(code);
+  if (value == null || !Number.isInteger(value) || value < 0) {
+    throw new Error(`Currency ${code} requires configured decimal places`);
+  }
+  assertCurrencyDecimals(value);
+  return value;
+}
+
+export async function getPaymentCurrencyConfiguration(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+): Promise<{ baseCurrencyCode: string; currencyDecimals: number }> {
+  const company = await client
+    .from("company")
+    .select("companyGroupId, baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+  if (
+    company.error ||
+    !company.data?.companyGroupId ||
+    !company.data.baseCurrencyCode
+  ) {
+    throw new Error("Company currency configuration is missing");
+  }
+  const currencies = await client
+    .from("currency")
+    .select("code, decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId)
+    .eq("code", currencyCode);
+  if (currencies.error) throw new Error(currencies.error.message);
+  return {
+    baseCurrencyCode: company.data.baseCurrencyCode,
+    currencyDecimals: requireCurrencyDecimals(
+      new Map((currencies.data ?? []).map((c) => [c.code, c.decimalPlaces])),
+      currencyCode
+    )
+  };
+}
+
+async function loadOnAccountSources(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  party: PaymentParty,
+  currencyCode?: string
+) {
+  const [payments, company] = await Promise.all([
+    fetchAllFromTable<FundingPaymentRow>(
+      client,
+      "payment",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode",
+      (query) => {
+        query = query
+          .eq("companyId", companyId)
+          .eq("status", "Posted")
+          .eq("paymentType", party.paymentType);
+        query =
+          party.paymentType === "Receipt"
+            ? query.eq("customerId", party.customerId)
+            : query.eq("supplierId", party.supplierId);
+        if (currencyCode) query = query.eq("currencyCode", currencyCode);
+        return query.order("id");
+      }
+    ),
+    client.from("company").select("companyGroupId").eq("id", companyId).single()
+  ]);
+  if (payments.error) throw new Error(payments.error.message);
+  if (company.error || !company.data?.companyGroupId)
+    throw new Error("Company currency configuration is missing");
+  const currencies = await client
+    .from("currency")
+    .select("code, decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId);
+  if (currencies.error) throw new Error(currencies.error.message);
+  const decimals = new Map(
+    (currencies.data ?? []).map((c) => [c.code, c.decimalPlaces])
+  );
+  if (currencyCode) requireCurrencyDecimals(decimals, currencyCode);
+  if (!payments.data.length)
+    return { sources: [] as FundingSource[], decimals };
+  // Filter through the applying parent instead of sending an unbounded source-ID
+  // list in the URL. Every valid use of prior funding has the same party/currency.
+  const apps = await fetchAllFromTable<
+    FundingConsumptionRow & { payment: { status: string } | null }
+  >(
+    client,
+    "invoiceSettlement",
+    "paymentId, sourcePaymentId, sourceAmount, appliedAmount, fxGainLossAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
+    (query) => {
+      query = query
+        .eq("companyId", companyId)
+        .eq("payment.companyId", companyId)
+        .eq("payment.status", "Posted")
+        .eq("payment.paymentType", party.paymentType);
+      query =
+        party.paymentType === "Receipt"
+          ? query.eq("payment.customerId", party.customerId)
+          : query.eq("payment.supplierId", party.supplierId);
+      if (currencyCode) query = query.eq("payment.currencyCode", currencyCode);
+      return query.order("id");
+    }
+  );
+  if (apps.error) throw new Error(apps.error.message);
+  const effective = (apps.data ?? []).filter(
+    (a) => a.payment?.status === "Posted"
+  );
+  return {
+    sources: remainingFundingSources(
+      payments.data ?? [],
+      effective,
+      decimals,
+      party.paymentType === "Receipt"
+    ),
+    decimals
+  };
+}
+
+export async function getAvailableOnAccountCreditSources(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  party: PaymentParty,
+  currencyCode: string
+): Promise<{
+  data: {
+    sources: FundingSource[];
+    availableDocumentAmount: number;
+    availableBaseAmount: number;
+  } | null;
+  error: { message: string } | null;
+}> {
+  try {
+    const { sources, decimals } = await loadOnAccountSources(
+      client,
+      companyId,
+      party,
+      currencyCode
+    );
+    return {
+      data: {
+        sources,
+        availableDocumentAmount: toDocumentAmount(
+          sources.reduce((sum, p) => sum + p.remainingDocument, 0),
+          1,
+          requireCurrencyDecimals(decimals, currencyCode)
+        ),
+        availableBaseAmount: round(
+          sources.reduce((sum, p) => sum + p.remainingBase, 0)
+        )
+      },
+      error: null
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to load payment funding"
+      }
+    };
+  }
+}
+
+/** Base-total contract for other readers; the composer uses typed document sources. */
 export async function getAvailableOnAccountCredit(
   client: SupabaseClient<Database>,
   companyId: string,
-  party:
-    | { paymentType: "Receipt"; customerId: string }
-    | { paymentType: "Disbursement"; supplierId: string }
+  party: PaymentParty
 ): Promise<number> {
-  let query = client
-    .from("payment")
-    .select("id, totalAmount, exchangeRate")
-    .eq("companyId", companyId)
-    .eq("status", "Posted")
-    .eq("paymentType", party.paymentType);
-  query =
-    party.paymentType === "Receipt"
-      ? query.eq("customerId", party.customerId)
-      : query.eq("supplierId", party.supplierId);
-
-  const payments = await query;
-  if (payments.error || !payments.data || payments.data.length === 0) return 0;
-
-  const apps = await client
-    .from("invoiceSettlement")
-    .select("paymentId, appliedAmount, sourceExchangeRate")
-    .eq("companyId", companyId)
-    .in(
-      "paymentId",
-      payments.data.map((p) => p.id)
-    );
-  if (apps.error) return 0;
-
-  const appliedBaseByPayment = new Map<string, number>();
-  for (const a of apps.data ?? []) {
-    if (!a.paymentId) continue;
-    appliedBaseByPayment.set(
-      a.paymentId,
-      (appliedBaseByPayment.get(a.paymentId) ?? 0) +
-        Number(a.appliedAmount) * Number(a.sourceExchangeRate)
-    );
+  try {
+    const { sources } = await loadOnAccountSources(client, companyId, party);
+    return round(sources.reduce((sum, p) => sum + p.remainingBase, 0));
+  } catch {
+    return 0;
   }
-
-  let baseCredit = 0;
-  for (const p of payments.data) {
-    baseCredit +=
-      Number(p.totalAmount) * Number(p.exchangeRate) -
-      (appliedBaseByPayment.get(p.id) ?? 0);
-  }
-  return Math.max(0, round(baseCredit));
 }
 
 export async function upsertPayment(
@@ -1687,13 +2127,23 @@ export async function upsertPayment(
   if ("createdBy" in payment) {
     return client
       .from("payment")
-      .insert([sanitize(payment)])
+      .insert([
+        {
+          ...sanitize(payment),
+          customerId: payment.customerId ?? null,
+          supplierId: payment.supplierId ?? null
+        }
+      ])
       .select("id, paymentId")
       .single();
   }
   return client
     .from("payment")
-    .update(sanitize(payment))
+    .update({
+      ...sanitize(payment),
+      customerId: payment.customerId ?? null,
+      supplierId: payment.supplierId ?? null
+    })
     .eq("id", payment.id)
     .select("id, paymentId")
     .single();
@@ -1746,6 +2196,241 @@ export async function deleteInvoiceSettlement(
 // applications wiped and nothing in their place. Kysely bypasses RLS, so we
 // re-assert the payment is Draft inside the txn — the FOR UPDATE lock also
 // serializes this against a concurrent post/void of the same payment.
+async function loadTransactionCurrency(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  code: string
+) {
+  const company = await db
+    .selectFrom("company")
+    .select(["companyGroupId", "baseCurrencyCode"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company?.companyGroupId)
+    throw new Error("Company currency configuration is missing");
+  const currencies = await db
+    .selectFrom("currency")
+    .select(["code", "decimalPlaces"])
+    .where("companyGroupId", "=", company.companyGroupId)
+    .execute();
+  const decimals = new Map(currencies.map((c) => [c.code, c.decimalPlaces]));
+  return {
+    decimals,
+    currencyDecimals: requireCurrencyDecimals(decimals, code)
+  };
+}
+
+async function loadTransactionInvoices(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  ids: string[],
+  isAR: boolean,
+  currencyCode: string,
+  partyId: string,
+  decimals: number
+) {
+  const view = isAR ? "salesInvoices" : "purchaseInvoices";
+  const targetColumn = isAR
+    ? "invoiceSettlement.targetSalesInvoiceId"
+    : "invoiceSettlement.targetPurchaseInvoiceId";
+  const invoices = isAR
+    ? await db
+        .selectFrom("salesInvoice")
+        .select([
+          "id",
+          "status",
+          "exchangeRate",
+          "currencyCode",
+          "customerId as partyId"
+        ])
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .orderBy("id")
+        .forUpdate()
+        .execute()
+    : await db
+        .selectFrom("purchaseInvoice")
+        .select([
+          "id",
+          "status",
+          "exchangeRate",
+          "currencyCode",
+          "supplierId as partyId"
+        ])
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .orderBy("id")
+        .forUpdate()
+        .execute();
+  for (const id of ids) {
+    const invoice = invoices.find((i) => i.id === id);
+    if (!invoice) throw new Error(`Invoice ${id} not found`);
+    if (invoice.partyId !== partyId)
+      throw new Error("A payment can only settle invoices for the same party");
+    if (invoice.currencyCode !== currencyCode)
+      throw new Error("Invoice and payment currency must match");
+    if (
+      !(
+        isAR
+          ? ["Submitted", "Partially Paid", "Overdue"]
+          : ["Open", "Partially Paid", "Overdue"]
+      ).includes(invoice.status)
+    )
+      throw new Error(`Invoice ${id} is not open`);
+    assertExchangeRate(Number(invoice.exchangeRate));
+  }
+  const [totals, settlements, controls] = await Promise.all([
+    db
+      .selectFrom(view)
+      .select(["id", "totalAmount", "exchangeRate"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute(),
+    db
+      .selectFrom("invoiceSettlement")
+      .leftJoin(
+        "payment as applyingPayment",
+        "applyingPayment.id",
+        "invoiceSettlement.paymentId"
+      )
+      .leftJoin(
+        "memo as sourceMemo",
+        "sourceMemo.id",
+        "invoiceSettlement.memoId"
+      )
+      .leftJoin(
+        "payment as viaPayment",
+        "viaPayment.id",
+        "invoiceSettlement.appliedViaPaymentId"
+      )
+      .select([
+        "invoiceSettlement.targetSalesInvoiceId",
+        "invoiceSettlement.targetPurchaseInvoiceId",
+        "invoiceSettlement.sourceAmount",
+        "invoiceSettlement.appliedAmount",
+        "invoiceSettlement.discountAmount",
+        "invoiceSettlement.writeOffAmount"
+      ])
+      .where("invoiceSettlement.companyId", "=", companyId)
+      .where(targetColumn, "in", ids)
+      .where((eb) =>
+        eb.or([
+          eb.and([
+            eb("applyingPayment.companyId", "=", companyId),
+            eb("applyingPayment.status", "=", "Posted")
+          ]),
+          eb.and([
+            eb("sourceMemo.companyId", "=", companyId),
+            eb("sourceMemo.status", "=", "Posted"),
+            eb.or([
+              eb("invoiceSettlement.appliedViaPaymentId", "is", null),
+              eb.and([
+                eb("viaPayment.companyId", "=", companyId),
+                eb("viaPayment.status", "=", "Posted")
+              ])
+            ])
+          ])
+        ])
+      )
+      .execute(),
+    db
+      .selectFrom("journalLine")
+      .innerJoin("journal", "journal.id", "journalLine.journalId")
+      .select(["journalLine.documentId", "journalLine.amount"])
+      .where("journalLine.companyId", "=", companyId)
+      .where("journal.companyId", "=", companyId)
+      .where("journal.status", "=", "Posted")
+      .where(
+        "journal.sourceType",
+        "=",
+        isAR ? "Sales Invoice" : "Purchase Invoice"
+      )
+      .where("journalLine.documentType", "=", "Invoice")
+      .where(
+        "journalLine.description",
+        "in",
+        isAR ? RECEIVABLE_POSTING_DESCRIPTIONS : PAYABLE_POSTING_DESCRIPTIONS
+      )
+      .where("journalLine.documentId", "in", ids)
+      .execute()
+  ]);
+  const controlAmounts = new Map<string, number>();
+  for (const line of controls)
+    if (line.documentId)
+      controlAmounts.set(
+        line.documentId,
+        (controlAmounts.get(line.documentId) ?? 0) + Number(line.amount)
+      );
+  return new Map(
+    totals.map((i) => [
+      i.id!,
+      {
+        ...invoiceRemainingAmounts(
+          i,
+          settlements,
+          controlAmounts,
+          decimals,
+          isAR
+        ),
+        exchangeRate: Number(i.exchangeRate)
+      }
+    ])
+  );
+}
+
+/** Reserve both invoice applications and refunds against the same locked memo. */
+async function loadTransactionMemoConsumption(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  memoIds: string[],
+  excludePaymentId: string
+) {
+  return trx
+    .selectFrom("invoiceSettlement")
+    .leftJoin("payment as viaPayment", (join) =>
+      join
+        .onRef("viaPayment.id", "=", "invoiceSettlement.appliedViaPaymentId")
+        .onRef("viaPayment.companyId", "=", "invoiceSettlement.companyId")
+    )
+    .leftJoin("payment as refund", (join) =>
+      join
+        .onRef("refund.id", "=", "invoiceSettlement.paymentId")
+        .onRef("refund.companyId", "=", "invoiceSettlement.companyId")
+    )
+    .select([
+      "invoiceSettlement.memoId",
+      "invoiceSettlement.targetMemoId",
+      "invoiceSettlement.sourceAmount",
+      "invoiceSettlement.appliedAmount",
+      "invoiceSettlement.fxGainLossAmount"
+    ])
+    .where("invoiceSettlement.companyId", "=", companyId)
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("invoiceSettlement.memoId", "in", memoIds),
+          eb.or([
+            eb("invoiceSettlement.appliedViaPaymentId", "is", null),
+            eb.and([
+              eb(
+                "invoiceSettlement.appliedViaPaymentId",
+                "!=",
+                excludePaymentId
+              ),
+              eb("viaPayment.status", "in", ["Draft", "Posted"])
+            ])
+          ])
+        ]),
+        eb.and([
+          eb("invoiceSettlement.targetMemoId", "in", memoIds),
+          eb("invoiceSettlement.paymentId", "!=", excludePaymentId),
+          eb("refund.status", "in", ["Draft", "Posted"])
+        ])
+      ])
+    )
+    .execute();
+}
+
 export async function replaceInvoiceSettlements(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -1761,113 +2446,403 @@ export async function replaceInvoiceSettlements(
   return db.transaction().execute(async (trx) => {
     const payment = await trx
       .selectFrom("payment")
-      .select(["id", "status", "paymentType", "customerId", "supplierId"])
+      .selectAll()
       .where("id", "=", args.paymentId)
       .where("companyId", "=", args.companyId)
       .forUpdate()
       .executeTakeFirst();
-
-    if (!payment) {
-      throw new Error("Payment not found");
-    }
-    if (payment.status !== "Draft") {
+    if (!payment) throw new Error("Payment not found");
+    if (payment.status !== "Draft")
       throw new Error(
         "Applications can only be edited while the payment is Draft"
       );
+    const { decimals, currencyDecimals } = await loadTransactionCurrency(
+      trx,
+      args.companyId,
+      payment.currencyCode
+    );
+    assertExchangeRate(Number(payment.exchangeRate));
+    const isAR = Boolean(payment.customerId);
+    const cashIn = payment.paymentType === "Receipt";
+    const isRefund = cashIn !== isAR;
+    const partyId = isAR ? payment.customerId : payment.supplierId;
+    if (!partyId || Boolean(payment.customerId) === Boolean(payment.supplierId))
+      throw new Error("Payment must have exactly one customer or supplier");
+    for (const app of args.applications) {
+      if (
+        app.sourceAmount != null &&
+        toDocumentAmount(app.sourceAmount, 1, currencyDecimals) !==
+          app.sourceAmount
+      ) {
+        throw new Error("Source amount exceeds document currency precision");
+      }
+      if ("sourcePaymentId" in app || "fxGainLossAmount" in app || app.memoId)
+        throw new Error("Funding source and FX are server-authoritative");
+      if (app.sourceExchangeRate !== Number(payment.exchangeRate))
+        throw new Error("Source exchange rate does not match the payment");
+      if (
+        isRefund
+          ? !app.targetMemoId ||
+            app.targetSalesInvoiceId ||
+            app.targetPurchaseInvoiceId ||
+            app.discountAmount !== 0 ||
+            app.writeOffAmount !== 0
+          : app.targetMemoId ||
+            (isAR
+              ? !app.targetSalesInvoiceId || app.targetPurchaseInvoiceId
+              : !app.targetPurchaseInvoiceId || app.targetSalesInvoiceId)
+      )
+        throw new Error(
+          "Payments target same-side invoices; refunds target reducing memos without adjustments"
+        );
     }
-
+    if (isRefund) {
+      const ids = [
+        ...new Set(args.applications.map((app) => app.targetMemoId!))
+      ].sort();
+      const memos = ids.length
+        ? await trx
+            .selectFrom("memo")
+            .selectAll()
+            .where("companyId", "=", args.companyId)
+            .where("id", "in", ids)
+            .orderBy("id")
+            .forUpdate()
+            .execute()
+        : [];
+      if (memos.length !== ids.length)
+        throw new Error("Refund memo not found in this company");
+      for (const memo of memos) {
+        if (
+          memo.status !== "Posted" ||
+          memo.direction !== (isAR ? "Credit" : "Debit") ||
+          (isAR ? memo.customerId : memo.supplierId) !== partyId ||
+          memo.currencyCode !== payment.currencyCode
+        ) {
+          throw new Error(
+            "Refund target must be a posted reducing memo with matching party and currency"
+          );
+        }
+      }
+      const consumption = ids.length
+        ? await loadTransactionMemoConsumption(
+            trx,
+            args.companyId,
+            ids,
+            payment.id
+          )
+        : [];
+      const remaining = new Map(
+        remainingFundingSources(
+          memos.map((memo) => ({
+            ...memo,
+            totalAmount: memo.amount,
+            paymentDate: memo.memoDate
+          })),
+          consumption.map((row) => ({
+            ...row,
+            paymentId: row.memoId ?? row.targetMemoId,
+            sourcePaymentId: null,
+            fxGainLossAmount: row.targetMemoId ? 0 : row.fxGainLossAmount
+          })),
+          decimals,
+          isAR
+        ).map((source) => [source.paymentId, source])
+      );
+      const requests = new Map<string, FundingRequest>();
+      const dates = new Map<string, string>();
+      for (const app of args.applications) {
+        const memo = remaining.get(app.targetMemoId!);
+        if (!memo) throw new Error("Memo has no remaining refund balance");
+        if (app.targetExchangeRate !== memo.exchangeRate)
+          throw new Error("Target exchange rate does not match the memo");
+        const requested =
+          app.sourceAmount ??
+          (app.appliedAmount === memo.remainingBase
+            ? memo.remainingDocument
+            : toDocumentAmount(
+                app.appliedAmount,
+                memo.exchangeRate,
+                currencyDecimals
+              ));
+        const request = requests.get(app.targetMemoId!) ?? {
+          targetId: app.targetMemoId!,
+          targetExchangeRate: memo.exchangeRate,
+          remainingDocument: memo.remainingDocument,
+          remainingBase: memo.remainingBase,
+          requestedDocumentPrincipal: 0,
+          discountAmount: 0,
+          writeOffAmount: 0
+        };
+        request.requestedDocumentPrincipal = toDocumentAmount(
+          request.requestedDocumentPrincipal + requested,
+          1,
+          currencyDecimals
+        );
+        requests.set(app.targetMemoId!, request);
+        dates.set(app.targetMemoId!, app.appliedDate);
+      }
+      const allocation = allocatePaymentFunding({
+        currentPayment: {
+          paymentId: payment.id,
+          postingDate: payment.paymentDate,
+          exchangeRate: Number(payment.exchangeRate),
+          remainingDocument: Number(payment.totalAmount),
+          remainingBase: toBaseAmount(
+            Number(payment.totalAmount),
+            Number(payment.exchangeRate)
+          )
+        },
+        priorSources: [],
+        requests: [...requests.values()],
+        currencyDecimals,
+        isAR: cashIn
+      });
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("paymentId", "=", payment.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      if (allocation.applications.length)
+        await trx
+          .insertInto("invoiceSettlement")
+          .values(
+            allocation.applications.map(({ targetId, ...application }) => ({
+              ...application,
+              paymentId: payment.id,
+              targetMemoId: targetId,
+              targetSalesInvoiceId: null,
+              targetPurchaseInvoiceId: null,
+              appliedDate: dates.get(targetId)!,
+              createdBy: args.createdBy,
+              companyId: args.companyId
+            }))
+          )
+          .execute();
+      return;
+    }
+    const ids = [
+      ...new Set(
+        args.applications.map(
+          (a) => (isAR ? a.targetSalesInvoiceId : a.targetPurchaseInvoiceId)!
+        )
+      )
+    ].sort();
+    if (!ids.length) {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("paymentId", "=", args.paymentId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return;
+    }
+    const invoices = await loadTransactionInvoices(
+      trx,
+      args.companyId,
+      ids,
+      isAR,
+      payment.currencyCode,
+      partyId,
+      currencyDecimals
+    );
+    // Existing staged memos reserve target capacity while the cash half is edited.
+    const staged = await trx
+      .selectFrom("invoiceSettlement")
+      .selectAll()
+      .where("companyId", "=", args.companyId)
+      .where("appliedViaPaymentId", "=", args.paymentId)
+      .execute();
+    const stagedMemoIds = [
+      ...new Set(
+        staged
+          .map((row) => row.memoId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ].sort();
+    const stagedMemos = stagedMemoIds.length
+      ? await trx
+          .selectFrom("memo")
+          .select([
+            "id",
+            "status",
+            "direction",
+            "customerId",
+            "supplierId",
+            "currencyCode",
+            "exchangeRate"
+          ])
+          .where("companyId", "=", args.companyId)
+          .where("id", "in", stagedMemoIds)
+          .orderBy("id")
+          .forUpdate()
+          .execute()
+      : [];
+    const stagedMemoById = new Map(stagedMemos.map((memo) => [memo.id, memo]));
+    for (const row of staged) {
+      const memo = row.memoId ? stagedMemoById.get(row.memoId) : undefined;
+      if (
+        !memo ||
+        memo.status !== "Posted" ||
+        memo.direction !== (isAR ? "Credit" : "Debit")
+      ) {
+        throw new Error("Staged applications must use a posted credit memo");
+      }
+      if (
+        (isAR ? memo.customerId : memo.supplierId) !== partyId ||
+        memo.currencyCode !== payment.currencyCode
+      ) {
+        throw new Error(
+          "Staged credit and payment currency and party must match"
+        );
+      }
+      const id = isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId;
+      const invoice = id ? invoices.get(id) : undefined;
+      if (!invoice) continue;
+      if (Number(memo.exchangeRate) !== invoice.exchangeRate)
+        throw new Error("Staged credit and invoice exchange rates must match");
+      const reserved = reduceInvoiceSettlements(
+        [row],
+        invoice.exchangeRate,
+        currencyDecimals
+      );
+      invoice.remainingDocument = toDocumentAmount(
+        invoice.remainingDocument - reserved.document,
+        1,
+        currencyDecimals
+      );
+      invoice.remainingBase = round(invoice.remainingBase - reserved.base);
+    }
+    let priorQuery = trx
+      .selectFrom("payment")
+      .selectAll()
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Posted")
+      .where("paymentType", "=", payment.paymentType)
+      .where("currencyCode", "=", payment.currencyCode);
+    priorQuery = isAR
+      ? priorQuery.where("customerId", "=", partyId)
+      : priorQuery.where("supplierId", "=", partyId);
+    const priorPayments = await priorQuery.orderBy("id").forUpdate().execute();
+    const sourceIds = priorPayments.map((p) => p.id);
+    const consumption = sourceIds.length
+      ? await trx
+          .selectFrom("invoiceSettlement")
+          .innerJoin(
+            "payment as applyingPayment",
+            "applyingPayment.id",
+            "invoiceSettlement.paymentId"
+          )
+          .select([
+            "invoiceSettlement.paymentId",
+            "invoiceSettlement.sourcePaymentId",
+            "invoiceSettlement.sourceAmount",
+            "invoiceSettlement.appliedAmount",
+            "invoiceSettlement.fxGainLossAmount"
+          ])
+          .where("invoiceSettlement.companyId", "=", args.companyId)
+          .where("applyingPayment.companyId", "=", args.companyId)
+          .where("applyingPayment.status", "=", "Posted")
+          .where((eb) =>
+            eb.or([
+              eb("invoiceSettlement.sourcePaymentId", "in", sourceIds),
+              eb("invoiceSettlement.paymentId", "in", sourceIds)
+            ])
+          )
+          .execute()
+      : [];
+    const requests = new Map<string, FundingRequest>();
+    const dates = new Map<string, string>();
+    for (const app of args.applications) {
+      const id = (
+        isAR ? app.targetSalesInvoiceId : app.targetPurchaseInvoiceId
+      )!;
+      const invoice = invoices.get(id);
+      if (!invoice) throw new Error(`Invoice ${id} balance not found`);
+      if (app.targetExchangeRate !== invoice.exchangeRate)
+        throw new Error("Target exchange rate does not match the invoice");
+      const sourceAmount =
+        app.sourceAmount ??
+        (round(app.appliedAmount + app.discountAmount + app.writeOffAmount) ===
+        invoice.remainingBase
+          ? toDocumentAmount(
+              invoice.remainingDocument -
+                toDocumentAmount(
+                  app.discountAmount + app.writeOffAmount,
+                  invoice.exchangeRate,
+                  currencyDecimals
+                ),
+              1,
+              currencyDecimals
+            )
+          : toDocumentAmount(
+              app.appliedAmount,
+              invoice.exchangeRate,
+              currencyDecimals
+            ));
+      const request = requests.get(id) ?? {
+        targetId: id,
+        targetExchangeRate: invoice.exchangeRate,
+        remainingDocument: invoice.remainingDocument,
+        remainingBase: invoice.remainingBase,
+        requestedDocumentPrincipal: 0,
+        discountAmount: 0,
+        writeOffAmount: 0
+      };
+      request.requestedDocumentPrincipal = toDocumentAmount(
+        request.requestedDocumentPrincipal + sourceAmount,
+        1,
+        currencyDecimals
+      );
+      request.discountAmount = round(
+        request.discountAmount + app.discountAmount
+      );
+      request.writeOffAmount = round(
+        request.writeOffAmount + app.writeOffAmount
+      );
+      requests.set(id, request);
+      dates.set(id, app.appliedDate);
+    }
+    const result = allocatePaymentFunding({
+      currentPayment: {
+        paymentId: payment.id,
+        postingDate: payment.paymentDate,
+        exchangeRate: Number(payment.exchangeRate),
+        remainingDocument: Number(payment.totalAmount),
+        remainingBase: toBaseAmount(
+          Number(payment.totalAmount),
+          Number(payment.exchangeRate)
+        )
+      },
+      priorSources: remainingFundingSources(
+        priorPayments,
+        consumption,
+        decimals,
+        isAR
+      ),
+      requests: [...requests.values()],
+      currencyDecimals,
+      isAR
+    });
     await trx
       .deleteFrom("invoiceSettlement")
       .where("paymentId", "=", args.paymentId)
+      .where("companyId", "=", args.companyId)
       .execute();
-
-    if (args.applications.length === 0) return;
-
-    // Guard the source→target relationship before inserting. Kysely bypasses
-    // RLS, so this is the only enforcement point for the cash path: a Receipt
-    // may only settle ITS customer's sales invoices, a Disbursement only ITS
-    // supplier's purchase invoices. (Memo targets aren't persisted here — the
-    // insert below maps only invoice targets — so reject them rather than write
-    // an orphan row with every target FK null.)
-    if (args.applications.some((a) => a.targetMemoId)) {
-      throw new Error("Settling a memo from a payment is not supported here");
-    }
-    const isReceipt = payment.paymentType === "Receipt";
-    const salesInvoiceIds = [
-      ...new Set(
-        args.applications
-          .map((a) => a.targetSalesInvoiceId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    const purchaseInvoiceIds = [
-      ...new Set(
-        args.applications
-          .map((a) => a.targetPurchaseInvoiceId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    if (isReceipt && purchaseInvoiceIds.length > 0) {
-      throw new Error("A receipt can only be applied to sales invoices");
-    }
-    if (!isReceipt && salesInvoiceIds.length > 0) {
-      throw new Error(
-        "A disbursement can only be applied to purchase invoices"
-      );
-    }
-    if (salesInvoiceIds.length > 0) {
-      const rows = await trx
-        .selectFrom("salesInvoice")
-        .select(["id", "customerId"])
-        .where("id", "in", salesInvoiceIds)
-        .where("companyId", "=", args.companyId)
+    if (result.applications.length)
+      await trx
+        .insertInto("invoiceSettlement")
+        .values(
+          result.applications.map(({ targetId, ...a }) => ({
+            ...a,
+            paymentId: args.paymentId,
+            companyId: args.companyId,
+            createdBy: args.createdBy,
+            targetSalesInvoiceId: isAR ? targetId : null,
+            targetPurchaseInvoiceId: isAR ? null : targetId,
+            appliedDate: dates.get(targetId)!
+          }))
+        )
         .execute();
-      const customerById = new Map(rows.map((r) => [r.id, r.customerId]));
-      for (const id of salesInvoiceIds) {
-        if (!customerById.has(id))
-          throw new Error(`Sales invoice ${id} not found`);
-        if (customerById.get(id) !== payment.customerId)
-          throw new Error(
-            "A payment can only be applied to its own customer's invoices"
-          );
-      }
-    }
-    if (purchaseInvoiceIds.length > 0) {
-      const rows = await trx
-        .selectFrom("purchaseInvoice")
-        .select(["id", "supplierId"])
-        .where("id", "in", purchaseInvoiceIds)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      const supplierById = new Map(rows.map((r) => [r.id, r.supplierId]));
-      for (const id of purchaseInvoiceIds) {
-        if (!supplierById.has(id))
-          throw new Error(`Purchase invoice ${id} not found`);
-        if (supplierById.get(id) !== payment.supplierId)
-          throw new Error(
-            "A payment can only be applied to its own supplier's invoices"
-          );
-      }
-    }
-
-    await trx
-      .insertInto("invoiceSettlement")
-      .values(
-        args.applications.map((a) => ({
-          paymentId: args.paymentId,
-          companyId: args.companyId,
-          createdBy: args.createdBy,
-          targetSalesInvoiceId: a.targetSalesInvoiceId ?? null,
-          targetPurchaseInvoiceId: a.targetPurchaseInvoiceId ?? null,
-          appliedAmount: a.appliedAmount,
-          discountAmount: a.discountAmount,
-          writeOffAmount: a.writeOffAmount,
-          targetExchangeRate: a.targetExchangeRate,
-          sourceExchangeRate: a.sourceExchangeRate,
-          appliedDate: a.appliedDate
-        }))
-      )
-      .execute();
   });
 }
 
@@ -1963,138 +2938,216 @@ export async function deleteMemo(client: SupabaseClient<Database>, id: string) {
 // (apply to purchase invoices). `remaining` = amount − Σ already applied (memo as
 // settlement source). Drives the credits section of the invoice "Receive Payment"
 // composer.
+type AvailableMemoCredit = {
+  id: string;
+  memoId: string;
+  direction: string;
+  currencyCode: string;
+  exchangeRate: number;
+  amount: number;
+  remaining: number;
+  remainingDocument: number;
+};
+
+async function loadAvailableMemoCredits(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  side: "sales" | "purchase",
+  partyId?: string,
+  excludePaymentId?: string,
+  currencyCode?: string
+): Promise<AvailableMemoCredit[]> {
+  const [memos, company] = await Promise.all([
+    fetchAllFromTable<
+      Omit<AvailableMemoCredit, "remaining" | "remainingDocument"> & {
+        memoDate: string;
+        postingDate: string | null;
+      }
+    >(
+      client,
+      "memo",
+      "id, memoId, direction, currencyCode, exchangeRate, amount, memoDate, postingDate",
+      (query) => {
+        query = query
+          .eq("companyId", companyId)
+          .eq("status", "Posted")
+          .eq("direction", side === "sales" ? "Credit" : "Debit");
+        if (partyId)
+          query =
+            side === "sales"
+              ? query.eq("customerId", partyId)
+              : query.eq("supplierId", partyId);
+        if (currencyCode) query = query.eq("currencyCode", currencyCode);
+        return query.order("id");
+      }
+    ),
+    client.from("company").select("companyGroupId").eq("id", companyId).single()
+  ]);
+  if (memos.error) throw new Error(memos.error.message);
+  if (company.error || !company.data?.companyGroupId)
+    throw new Error("Company currency configuration is missing");
+  const currencies = await client
+    .from("currency")
+    .select("code, decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId);
+  if (currencies.error) throw new Error(currencies.error.message);
+  const decimals = new Map(
+    (currencies.data ?? []).map((c) => [c.code, c.decimalPlaces])
+  );
+  if (currencyCode) requireCurrencyDecimals(decimals, currencyCode);
+  if (!memos.data?.length) return [];
+  const apps = await fetchAllFromTable<{
+    memoId: string | null;
+    sourceAmount: number | null;
+    appliedAmount: number;
+    fxGainLossAmount: number | null;
+    appliedViaPaymentId: string | null;
+    appliedViaPayment: { status: string } | null;
+  }>(
+    client,
+    "invoiceSettlement",
+    "memoId, sourceAmount, appliedAmount, fxGainLossAmount, appliedViaPaymentId, appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey!inner(status)",
+    (query) => {
+      query = query
+        .eq("companyId", companyId)
+        .eq("memo.companyId", companyId)
+        .eq("memo.status", "Posted")
+        .eq("memo.direction", side === "sales" ? "Credit" : "Debit");
+      if (partyId)
+        query =
+          side === "sales"
+            ? query.eq("memo.customerId", partyId)
+            : query.eq("memo.supplierId", partyId);
+      if (currencyCode) query = query.eq("memo.currencyCode", currencyCode);
+      return query.order("id");
+    }
+  );
+  if (apps.error) throw new Error(apps.error.message);
+  const refunds = await fetchAllFromTable<{
+    targetMemoId: string | null;
+    paymentId: string | null;
+    sourceAmount: number | null;
+    appliedAmount: number;
+    payment: { status: string } | null;
+  }>(
+    client,
+    "invoiceSettlement",
+    "targetMemoId, paymentId, sourceAmount, appliedAmount, payment:payment!invoiceSettlement_paymentId_fkey(status), targetMemo:memo!invoiceSettlement_targetMemoId_fkey!inner(status)",
+    (query) => {
+      query = query
+        .eq("companyId", companyId)
+        .eq("targetMemo.companyId", companyId)
+        .eq("targetMemo.status", "Posted")
+        .eq("targetMemo.direction", side === "sales" ? "Credit" : "Debit");
+      if (partyId)
+        query = query.eq(
+          side === "sales" ? "targetMemo.customerId" : "targetMemo.supplierId",
+          partyId
+        );
+      if (currencyCode)
+        query = query.eq("targetMemo.currencyCode", currencyCode);
+      return query.order("id");
+    }
+  );
+  if (refunds.error) throw new Error(refunds.error.message);
+  const reservedRefunds = refunds.data.filter(
+    (row) =>
+      row.targetMemoId &&
+      !(excludePaymentId && row.paymentId === excludePaymentId) &&
+      ["Draft", "Posted"].includes(row.payment?.status ?? "")
+  );
+  // Memo availability reserves competing Draft applications as well as Posted
+  // ones; sharing the arithmetic must not change this eligibility policy.
+  const reserved = apps.data.filter(
+    (row) =>
+      row.memoId &&
+      !(excludePaymentId && row.appliedViaPaymentId === excludePaymentId) &&
+      (!row.appliedViaPaymentId ||
+        ["Draft", "Posted"].includes(row.appliedViaPayment?.status ?? ""))
+  );
+  const sources = remainingFundingSources(
+    memos.data.map((memo) => ({
+      ...memo,
+      totalAmount: memo.amount,
+      paymentDate: memo.memoDate
+    })),
+    [
+      ...reserved.map((row) => ({
+        ...row,
+        paymentId: row.memoId,
+        sourcePaymentId: null
+      })),
+      ...reservedRefunds.map((row) => ({
+        ...row,
+        paymentId: row.targetMemoId,
+        sourcePaymentId: null,
+        fxGainLossAmount: 0
+      }))
+    ],
+    decimals,
+    side === "sales"
+  );
+  const remaining = new Map(
+    sources.map((source) => [source.paymentId, source])
+  );
+  return memos.data.flatMap((memo) => {
+    const source = remaining.get(memo.id);
+    return source
+      ? [
+          {
+            id: memo.id,
+            memoId: memo.memoId,
+            direction: memo.direction,
+            currencyCode: memo.currencyCode,
+            exchangeRate: memo.exchangeRate,
+            amount: toBaseAmount(
+              Number(memo.amount),
+              Number(memo.exchangeRate)
+            ),
+            remaining: source.remainingBase,
+            remainingDocument: source.remainingDocument
+          }
+        ]
+      : [];
+  });
+}
+
 export async function getAvailableCreditsForParty(
   client: SupabaseClient<Database>,
   companyId: string,
   party:
     | { side: "sales"; customerId: string }
     | { side: "purchase"; supplierId: string },
-  // When editing a Draft payment's composer, that payment's own staged credits
-  // should NOT count as used — they show as staged, not consumed.
-  excludePaymentId?: string
-): Promise<{
-  data:
-    | {
-        id: string;
-        memoId: string;
-        direction: string;
-        currencyCode: string;
-        exchangeRate: number;
-        amount: number;
-        remaining: number;
-      }[]
-    | null;
-  error: unknown;
-}> {
-  const direction = party.side === "sales" ? "Credit" : "Debit";
-  let query = client
-    .from("memo")
-    .select("id, memoId, direction, currencyCode, exchangeRate, amount")
-    .eq("companyId", companyId)
-    .eq("status", "Posted")
-    .eq("direction", direction);
-  query =
-    party.side === "sales"
-      ? query.eq("customerId", party.customerId)
-      : query.eq("supplierId", party.supplierId);
-
-  const memos = await query;
-  if (memos.error) return { data: null, error: memos.error };
-  if (!memos.data || memos.data.length === 0) return { data: [], error: null };
-
-  // deno-lint-ignore no-explicit-any
-  const rows = memos.data as any[];
-  const ids = rows.map((m) => m.id as string);
-  const apps = await client
-    .from("invoiceSettlement")
-    .select(
-      "memoId, appliedAmount, appliedViaPaymentId, appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)"
-    )
-    .in("memoId", ids);
-  if (apps.error) return { data: null, error: apps.error };
-
-  const appliedByMemo = new Map<string, number>();
-  for (const a of apps.data ?? []) {
-    if (!a.memoId) continue;
-    const viaId = (a as { appliedViaPaymentId: string | null })
-      .appliedViaPaymentId;
-    if (excludePaymentId && viaId === excludePaymentId) continue;
-    // A voided applying payment releases its credit application — the
-    // invoice balance reopens (the views stop counting the row), so the
-    // memo's remaining must reopen with it. Draft still reserves.
-    const viaStatus = (a as { appliedViaPayment: { status: string } | null })
-      .appliedViaPayment?.status;
-    if (viaId && viaStatus === "Voided") continue;
-    appliedByMemo.set(
-      a.memoId,
-      (appliedByMemo.get(a.memoId) ?? 0) + Number(a.appliedAmount)
-    );
+  excludePaymentId?: string,
+  currencyCode?: string
+): Promise<{ data: AvailableMemoCredit[] | null; error: unknown }> {
+  try {
+    return {
+      data: await loadAvailableMemoCredits(
+        client,
+        companyId,
+        party.side,
+        party.side === "sales" ? party.customerId : party.supplierId,
+        excludePaymentId,
+        currencyCode
+      ),
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error };
   }
-
-  const result = rows
-    .map((m) => {
-      const remaining = round(
-        Number(m.amount) - (appliedByMemo.get(m.id) ?? 0)
-      );
-      return {
-        id: m.id as string,
-        memoId: m.memoId as string,
-        direction: m.direction as string,
-        currencyCode: m.currencyCode as string,
-        exchangeRate: Number(m.exchangeRate),
-        amount: Number(m.amount),
-        remaining
-      };
-    })
-    .filter((m) => m.remaining > 0.0001);
-
-  return { data: result, error: null };
 }
 
-// Does the company have ANY open credits to apply on this side? (sales → posted
-// customer Credit memos; purchase → posted supplier Debit memos, each with credit
-// remaining.) Cheap org-level gate for the invoice "Apply Credit" action — we
-// don't surface it at all unless there's something to apply.
 export async function getCompanyHasOpenCredits(
   client: SupabaseClient<Database>,
   companyId: string,
   side: "sales" | "purchase"
 ): Promise<boolean> {
-  const direction = side === "sales" ? "Credit" : "Debit";
-  const memos = await client
-    .from("memo")
-    .select("id, amount")
-    .eq("companyId", companyId)
-    .eq("status", "Posted")
-    .eq("direction", direction);
-  if (memos.error || !memos.data || memos.data.length === 0) return false;
-
-  // deno-lint-ignore no-explicit-any
-  const rows = memos.data as any[];
-  const ids = rows.map((m) => m.id as string);
-  const apps = await client
-    .from("invoiceSettlement")
-    .select(
-      "memoId, appliedAmount, appliedViaPaymentId, appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)"
-    )
-    .in("memoId", ids);
-  if (apps.error) return false;
-
-  const appliedByMemo = new Map<string, number>();
-  for (const a of apps.data ?? []) {
-    if (!a.memoId) continue;
-    // A voided applying payment releases its credit application.
-    const viaStatus = (a as { appliedViaPayment: { status: string } | null })
-      .appliedViaPayment?.status;
-    if (a.appliedViaPaymentId && viaStatus === "Voided") continue;
-    appliedByMemo.set(
-      a.memoId,
-      (appliedByMemo.get(a.memoId) ?? 0) + Number(a.appliedAmount)
-    );
+  try {
+    return (await loadAvailableMemoCredits(client, companyId, side)).length > 0;
+  } catch {
+    return false;
   }
-  return rows.some(
-    (m) => Number(m.amount) - (appliedByMemo.get(m.id) ?? 0) > 0.0001
-  );
 }
 
 // Apply posted credits to invoices — additive insert of memo-sourced
@@ -2109,23 +3162,34 @@ export async function getCompanyHasOpenCredits(
 export async function getStagedCreditsForPayment(
   client: SupabaseClient<Database>,
   paymentId: string,
-  side: "sales" | "purchase"
+  side: "sales" | "purchase",
+  companyId?: string
 ): Promise<{
-  data: { memoId: string; invoiceId: string; amount: number }[] | null;
+  data:
+    | {
+        memoId: string;
+        invoiceId: string;
+        amount: number;
+        sourceAmount: number | null;
+      }[]
+    | null;
   error: unknown;
 }> {
-  const apps = await client
+  let query = client
     .from("invoiceSettlement")
     .select(
-      "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, appliedAmount"
+      "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, appliedAmount, sourceAmount"
     )
     .eq("appliedViaPaymentId", paymentId);
+  if (companyId) query = query.eq("companyId", companyId);
+  const apps = await query;
   if (apps.error) return { data: null, error: apps.error };
   const rows = (apps.data ?? []) as Array<{
     memoId: string | null;
     targetSalesInvoiceId: string | null;
     targetPurchaseInvoiceId: string | null;
     appliedAmount: number;
+    sourceAmount: number | null;
   }>;
   const data = rows
     .map((r) => ({
@@ -2134,7 +3198,8 @@ export async function getStagedCreditsForPayment(
         side === "sales"
           ? (r.targetSalesInvoiceId ?? "")
           : (r.targetPurchaseInvoiceId ?? ""),
-      amount: Number(r.appliedAmount)
+      amount: Number(r.appliedAmount),
+      sourceAmount: r.sourceAmount
     }))
     .filter((r) => r.memoId && r.invoiceId);
   return { data, error: null };
@@ -2148,235 +3213,199 @@ export async function applyCreditsToInvoices(
     createdBy: string;
     appliedDate: string;
     side: "sales" | "purchase";
-    applications: { memoId: string; invoiceId: string; amount: number }[];
+    applications: {
+      memoId: string;
+      invoiceId: string;
+      amount: number;
+      sourceAmount?: number;
+    }[];
   }
 ) {
-  const isSales = args.side === "sales";
-  const activeStatuses = isSales
-    ? ["Submitted", "Partially Paid", "Overdue"]
-    : ["Open", "Partially Paid", "Overdue"];
-
   return db.transaction().execute(async (trx) => {
-    // Credit applications are STAGED on a Draft payment and only go live when it
-    // posts (the invoice views gate memo settlements on appliedViaPaymentId's
-    // payment status). The composer pre-fills the currently-staged set and submits
-    // the FULL set each time, so this is a delete-then-insert REPLACE keyed on the
-    // payment — exactly like cash applications (replaceInvoiceSettlements).
     const payment = await trx
       .selectFrom("payment")
-      .select(["id", "status", "customerId", "supplierId"])
+      .selectAll()
       .where("id", "=", args.paymentId)
       .where("companyId", "=", args.companyId)
       .forUpdate()
       .executeTakeFirst();
     if (!payment) throw new Error("Payment not found");
-    if (payment.status !== "Draft") {
+    if (payment.status !== "Draft")
       throw new Error(
         "Credit applications can only be edited while the payment is Draft"
       );
+    const isAR = args.side === "sales";
+    if ((payment.paymentType === "Receipt") !== isAR)
+      throw new Error("Payment and invoice side must match");
+    const partyId = isAR ? payment.customerId : payment.supplierId;
+    if (!partyId) throw new Error("Payment party is required");
+    const { currencyDecimals } = await loadTransactionCurrency(
+      trx,
+      args.companyId,
+      payment.currencyCode
+    );
+    if (!args.applications.length) {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("appliedViaPaymentId", "=", args.paymentId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return;
     }
-    // The party every memo and invoice in this batch must belong to: a payment's
-    // credits can only clear ITS own party's invoices using ITS own party's
-    // credit memos (a customer's credit can't settle another customer's invoice).
-    const paymentParty = isSales ? payment.customerId : payment.supplierId;
-
-    // Replace this payment's prior credit applications with the submitted set.
+    const ids = [...new Set(args.applications.map((a) => a.invoiceId))].sort();
+    const memoIds = [...new Set(args.applications.map((a) => a.memoId))].sort();
+    const invoices = await loadTransactionInvoices(
+      trx,
+      args.companyId,
+      ids,
+      isAR,
+      payment.currencyCode,
+      partyId,
+      currencyDecimals
+    );
+    const memos = await trx
+      .selectFrom("memo")
+      .selectAll()
+      .where("companyId", "=", args.companyId)
+      .where("id", "in", memoIds)
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+    const [prior, cash] = await Promise.all([
+      loadTransactionMemoConsumption(
+        trx,
+        args.companyId,
+        memoIds,
+        args.paymentId
+      ),
+      trx
+        .selectFrom("invoiceSettlement")
+        .selectAll()
+        .where("companyId", "=", args.companyId)
+        .where("paymentId", "=", args.paymentId)
+        .execute()
+    ]);
+    for (const row of cash) {
+      const id = isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId;
+      const invoice = id ? invoices.get(id) : undefined;
+      if (!invoice) continue;
+      const reserved = reduceInvoiceSettlements(
+        [row],
+        invoice.exchangeRate,
+        currencyDecimals
+      );
+      invoice.remainingDocument = toDocumentAmount(
+        invoice.remainingDocument - reserved.document,
+        1,
+        currencyDecimals
+      );
+      invoice.remainingBase = round(invoice.remainingBase - reserved.base);
+    }
+    for (const id of memoIds) {
+      const memo = memos.find((m) => m.id === id);
+      if (!memo || memo.status !== "Posted")
+        throw new Error("Only posted credits can be applied");
+      if (memo.direction !== (isAR ? "Credit" : "Debit"))
+        throw new Error("Memo direction does not reduce this invoice balance");
+      if ((isAR ? memo.customerId : memo.supplierId) !== partyId)
+        throw new Error("Memo and payment party must match");
+      if (memo.currencyCode !== payment.currencyCode)
+        throw new Error("Memo and payment currency must match");
+    }
+    const sources = new Map(
+      remainingFundingSources(
+        memos.map((memo) => ({
+          ...memo,
+          totalAmount: memo.amount,
+          paymentDate: memo.memoDate
+        })),
+        prior.map((row) => ({
+          ...row,
+          paymentId: row.memoId ?? row.targetMemoId,
+          sourcePaymentId: null,
+          fxGainLossAmount: row.targetMemoId ? 0 : row.fxGainLossAmount
+        })),
+        new Map([[payment.currencyCode, currencyDecimals]]),
+        isAR
+      ).map((source) => [source.paymentId, source])
+    );
+    const values: Database["public"]["Tables"]["invoiceSettlement"]["Insert"][] =
+      [];
+    for (const app of args.applications) {
+      const source = sources.get(app.memoId);
+      if (!source) throw new Error("Credit has no remaining funding balance");
+      const invoice = invoices.get(app.invoiceId);
+      if (!invoice)
+        throw new Error(`Invoice ${app.invoiceId} balance not found`);
+      if (source.exchangeRate !== invoice.exchangeRate)
+        throw new Error("Applying a credit requires matching exchange rates");
+      if (!Number.isFinite(app.amount) || app.amount < 0)
+        throw new Error("Applied amount must be nonnegative and finite");
+      const sourceAmount =
+        app.sourceAmount ??
+        (app.amount === source.remainingBase
+          ? source.remainingDocument
+          : app.amount === invoice.remainingBase
+            ? invoice.remainingDocument
+            : toDocumentAmount(
+                app.amount,
+                invoice.exchangeRate,
+                currencyDecimals
+              ));
+      if (sourceAmount <= 0)
+        throw new Error("Applied document amount must be greater than zero");
+      const result = allocatePaymentFunding({
+        currentPayment: source,
+        priorSources: [],
+        currencyDecimals,
+        isAR,
+        requests: [
+          {
+            targetId: app.invoiceId,
+            targetExchangeRate: invoice.exchangeRate,
+            remainingDocument: invoice.remainingDocument,
+            remainingBase: invoice.remainingBase,
+            requestedDocumentPrincipal: sourceAmount,
+            discountAmount: 0,
+            writeOffAmount: 0
+          }
+        ]
+      });
+      const allocated = result.applications[0];
+      sources.set(app.memoId, { ...source, ...result.sourceRemainders[0] });
+      invoice.remainingDocument = toDocumentAmount(
+        invoice.remainingDocument - sourceAmount,
+        1,
+        currencyDecimals
+      );
+      invoice.remainingBase = round(
+        invoice.remainingBase - allocated.appliedAmount
+      );
+      values.push({
+        memoId: app.memoId,
+        appliedViaPaymentId: args.paymentId,
+        companyId: args.companyId,
+        createdBy: args.createdBy,
+        targetSalesInvoiceId: isAR ? app.invoiceId : null,
+        targetPurchaseInvoiceId: isAR ? null : app.invoiceId,
+        sourceAmount: allocated.sourceAmount,
+        appliedAmount: allocated.appliedAmount,
+        discountAmount: 0,
+        writeOffAmount: 0,
+        sourceExchangeRate: source.exchangeRate,
+        targetExchangeRate: invoice.exchangeRate,
+        // Matching-snapshot memo applications are GL-neutral.
+        fxGainLossAmount: 0,
+        appliedDate: args.appliedDate
+      });
+    }
     await trx
       .deleteFrom("invoiceSettlement")
       .where("appliedViaPaymentId", "=", args.paymentId)
-      .execute();
-
-    if (args.applications.length === 0) return;
-
-    const memoIds = [...new Set(args.applications.map((a) => a.memoId))];
-    const invoiceIds = [...new Set(args.applications.map((a) => a.invoiceId))];
-
-    // Lock the memos + read their remaining credit (amount - Σ applied elsewhere).
-    const memos = await trx
-      .selectFrom("memo")
-      .select([
-        "id",
-        "status",
-        "exchangeRate",
-        "amount",
-        "customerId",
-        "supplierId"
-      ])
-      .where("id", "in", memoIds)
       .where("companyId", "=", args.companyId)
-      .forUpdate()
       .execute();
-    // A voided applying payment releases its credit application; Draft
-    // still reserves (pessimistic, matches the composer's available list).
-    const priorByMemo = await trx
-      .selectFrom("invoiceSettlement")
-      .leftJoin(
-        "payment as vp",
-        "vp.id",
-        "invoiceSettlement.appliedViaPaymentId"
-      )
-      .select(["invoiceSettlement.memoId", "invoiceSettlement.appliedAmount"])
-      .where("invoiceSettlement.memoId", "in", memoIds)
-      .where((eb) =>
-        eb.or([
-          eb("invoiceSettlement.appliedViaPaymentId", "is", null),
-          eb("vp.status", "!=", "Voided")
-        ])
-      )
-      .execute();
-    const priorApplied = new Map<string, number>();
-    for (const p of priorByMemo) {
-      if (!p.memoId) continue;
-      priorApplied.set(
-        p.memoId,
-        (priorApplied.get(p.memoId) ?? 0) + Number(p.appliedAmount)
-      );
-    }
-    const memoById = new Map(memos.map((m) => [m.id, m]));
-
-    // Lock the invoices + read open balance + status from the view.
-    const invoiceTable = isSales ? "salesInvoice" : "purchaseInvoice";
-    const invoiceView = isSales ? "salesInvoices" : "purchaseInvoices";
-    const lockedInvoices = await trx
-      .selectFrom(invoiceTable)
-      .select(["id", "invoiceId", "status", "exchangeRate"])
-      .where("id", "in", invoiceIds)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .execute();
-    const invoiceBalances = await trx
-      .selectFrom(invoiceView)
-      .select(["id", "balance"])
-      .where("id", "in", invoiceIds)
-      .execute();
-    const balById = new Map(invoiceBalances.map((b) => [b.id, b]));
-    const invById = new Map(lockedInvoices.map((i) => [i.id, i]));
-
-    // Party of each targeted invoice (the column differs by side, so fetch
-    // per-branch). Used below to reject applying a credit to an invoice that
-    // belongs to a different party than the payment.
-    const partyByInvoice = new Map<string, string | null>();
-    if (isSales) {
-      const rows = await trx
-        .selectFrom("salesInvoice")
-        .select(["id", "customerId"])
-        .where("id", "in", invoiceIds)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      for (const r of rows) partyByInvoice.set(r.id, r.customerId);
-    } else {
-      const rows = await trx
-        .selectFrom("purchaseInvoice")
-        .select(["id", "supplierId"])
-        .where("id", "in", invoiceIds)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      for (const r of rows) partyByInvoice.set(r.id, r.supplierId);
-    }
-
-    // This payment's own cash applications aren't in the live balance yet (the
-    // payment is Draft) and its prior credits were just deleted above, so reserve
-    // room for the cash when capping these credits.
-    const cashApps = await trx
-      .selectFrom("invoiceSettlement")
-      .select([
-        "targetSalesInvoiceId",
-        "targetPurchaseInvoiceId",
-        "appliedAmount",
-        "discountAmount",
-        "writeOffAmount"
-      ])
-      .where("paymentId", "=", args.paymentId)
-      .execute();
-    const cashByInvoice = new Map<string, number>();
-    for (const c of cashApps) {
-      const inv = isSales ? c.targetSalesInvoiceId : c.targetPurchaseInvoiceId;
-      if (!inv) continue;
-      cashByInvoice.set(
-        inv,
-        (cashByInvoice.get(inv) ?? 0) +
-          Number(c.appliedAmount) +
-          Number(c.discountAmount) +
-          Number(c.writeOffAmount)
-      );
-    }
-
-    // Validate each application, accumulating per-memo and per-invoice caps.
-    const memoUse = new Map<string, number>();
-    const invoiceUse = new Map<string, number>();
-    for (const app of args.applications) {
-      if (app.amount <= 0)
-        throw new Error("Applied amount must be greater than 0");
-      const memo = memoById.get(app.memoId);
-      if (!memo) throw new Error(`Credit memo ${app.memoId} not found`);
-      if (memo.status !== "Posted")
-        throw new Error("Only posted credits can be applied");
-      const memoParty = isSales ? memo.customerId : memo.supplierId;
-      if (memoParty !== paymentParty)
-        throw new Error(
-          "A credit memo can only be applied through a payment for the same party"
-        );
-      const inv = invById.get(app.invoiceId);
-      if (!inv) throw new Error(`Invoice ${app.invoiceId} not found`);
-      const invoiceLabel = inv.invoiceId ?? app.invoiceId;
-      if (partyByInvoice.get(app.invoiceId) !== paymentParty)
-        throw new Error(
-          `Invoice ${invoiceLabel} belongs to a different party than the payment`
-        );
-      if (!activeStatuses.includes(String(inv.status)))
-        throw new Error(
-          `Invoice ${invoiceLabel} is ${String(inv.status).toLowerCase()}, so no credit can be applied to it`
-        );
-      if (Number(memo.exchangeRate) !== Number(inv.exchangeRate))
-        throw new Error(
-          "Applying a credit requires matching exchange rates (cross-rate FX not yet supported)"
-        );
-
-      memoUse.set(app.memoId, (memoUse.get(app.memoId) ?? 0) + app.amount);
-      invoiceUse.set(
-        app.invoiceId,
-        (invoiceUse.get(app.invoiceId) ?? 0) + app.amount
-      );
-
-      const memoRemaining =
-        Number(memo.amount) - (priorApplied.get(app.memoId) ?? 0);
-      if (memoUse.get(app.memoId)! > memoRemaining + 0.0001)
-        throw new Error(
-          `Applied (${memoUse.get(app.memoId)}) exceeds the credit's remaining balance (${memoRemaining})`
-        );
-
-      const invoiceOpen =
-        Number(balById.get(app.invoiceId)?.balance ?? 0) -
-        (cashByInvoice.get(app.invoiceId) ?? 0);
-      if (invoiceUse.get(app.invoiceId)! > invoiceOpen + EPSILON)
-        throw new Error(
-          invoiceOpen <= EPSILON
-            ? `Invoice ${invoiceLabel} has no open balance to apply credit to (it is already fully settled)`
-            : `Credit applied to invoice ${invoiceLabel} (${invoiceUse.get(
-                app.invoiceId
-              )}) exceeds its open balance of ${round(invoiceOpen)}`
-        );
-    }
-
-    await trx
-      .insertInto("invoiceSettlement")
-      .values(
-        args.applications.map((app) => ({
-          memoId: app.memoId,
-          appliedViaPaymentId: args.paymentId,
-          companyId: args.companyId,
-          createdBy: args.createdBy,
-          targetSalesInvoiceId: isSales ? app.invoiceId : null,
-          targetPurchaseInvoiceId: isSales ? null : app.invoiceId,
-          appliedAmount: app.amount,
-          discountAmount: 0,
-          writeOffAmount: 0,
-          sourceExchangeRate: Number(memoById.get(app.memoId)!.exchangeRate),
-          targetExchangeRate: Number(invById.get(app.invoiceId)!.exchangeRate),
-          appliedDate: args.appliedDate
-        }))
-      )
-      .execute();
+    if (values.length)
+      await trx.insertInto("invoiceSettlement").values(values).execute();
   });
 }
 

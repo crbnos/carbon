@@ -751,6 +751,40 @@ export class RilletProvider extends BaseProvider {
     return unwrapRilletEntity<T>(response.data, envelopeKey);
   }
 
+  private async deleteEntity(path: string, operation: string): Promise<void> {
+    const response = await this.request<unknown>("DELETE", path);
+    // The mapping survives a delete. A retry after a successful remote delete
+    // but failed local transaction must converge when the resource is absent.
+    if (response.error && response.code !== 404) {
+      throwRilletApiError(operation, response);
+    }
+  }
+
+  async deleteInvoice(id: string): Promise<void> {
+    await this.deleteEntity(`/invoices/${id}`, "void invoice");
+  }
+
+  async deleteBill(id: string): Promise<void> {
+    await this.deleteEntity(`/bills/${id}`, "void bill");
+  }
+
+  async deleteInvoicePayment(
+    invoiceId: string,
+    paymentId: string
+  ): Promise<void> {
+    await this.deleteEntity(
+      `/invoices/${invoiceId}/payments/${paymentId}`,
+      "void invoice payment"
+    );
+  }
+
+  async deleteBillPayment(billId: string, paymentId: string): Promise<void> {
+    await this.deleteEntity(
+      `/bills/${billId}/payments/${paymentId}`,
+      "void bill payment"
+    );
+  }
+
   private async writeEntity<T>(args: {
     method: "POST" | "PUT";
     path: string;
@@ -900,7 +934,7 @@ export class RilletProvider extends BaseProvider {
     return this.readEntity<Rillet.Invoice>(`/invoices/${id}`, "invoice");
   }
 
-  /** Create an AR_ONLY invoice (Carbon invoices; Rillet carries the receivable). */
+  /** Create a native invoice (Carbon issues it; Rillet recognizes the posting). */
   async createInvoice(
     invoice: RilletInvoiceCreate,
     idempotencyKey?: string

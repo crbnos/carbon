@@ -11,6 +11,7 @@
     "work-centers",
     "jobs",
     "scheduling",
+    "batching",
     "kanban",
     "mes",
     "maintenance",
@@ -21,6 +22,7 @@
     "pricing",
     "sales-orders",
     "sales-rules",
+    "customer-portal",
     "approvals",
     "purchase-orders",
     "supplier-quotes",
@@ -59,12 +61,12 @@
     "training",
     "permissions",
     "two-factor",
+    "single-sign-on",
     "account",
     "onboarding",
     "sharing",
     "agent",
     "workflows",
-    "workflow-runs",
     "notifications"
   ]
 }

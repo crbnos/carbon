@@ -94,7 +94,7 @@ A **time card** is a clock-in / clock-out record for an employee. Time tracking 
 
 Each entry captures the employee, a clock-in time, an optional clock-out time, and a note. An entry with no clock-out is still open — Carbon derives its **Status** from that:
 
-<StatusFlow>
+<StatusFlow entity="timecard">
   <Status name="Active" accent>Clocked in with no clock-out yet — the employee is on the clock.</Status>
   <Status name="Complete" terminal>Clocked out. The entry is closed and its duration is fixed.</Status>
 </StatusFlow>

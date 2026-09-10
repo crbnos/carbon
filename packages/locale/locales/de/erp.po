@@ -613,6 +613,9 @@ msgstr "Das Startdatum eines Auftrags ändert sich"
 msgid "A job's status changes"
 msgstr "Der Status eines Auftrags ändert sich"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "Eine Position begleicht mehr als den offenen Betrag ihrer Rechnung"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Eine Liste ist mit {0} verbunden, sodass dieser Schritt einmal für jedes Element ausgeführt wird und eine Liste von Ergebnissen zurückgibt."
@@ -1232,8 +1235,14 @@ msgstr "Benutzerdefinierten Preiszeile hinzufügen, um Menge, Preis, Versand, Be
 msgid "Add a domain"
 msgstr "Domäne hinzufügen"
 
+msgid "Add a line (in document explorers)"
+msgstr "Eine Position hinzufügen (in Dokument-Explorern)"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Materialien-Abschnitt hinzufügen, der jeden Artikel auf der Stückliste mit seiner Menge auflistet."
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr "Parameter hinzufügen (im Verfahrensanweisung-Explorer)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
@@ -1246,6 +1255,9 @@ msgstr "Zeile hinzufügen"
 
 msgid "Add a step"
 msgstr "Einen Schritt hinzufügen"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr "Schritt oder Frage hinzufügen (in Verfahrensanweisung- und Schulungs-Explorern)"
 
 msgid "Add Ability"
 msgstr "Fähigkeit hinzufügen"
@@ -1844,11 +1856,17 @@ msgstr "Angewendet"
 msgid "Applied amount for {0}"
 msgstr "Angewendeter Betrag für {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Angewendete Beträge sind in der Basiswährung des Unternehmens ({baseCurrency})."
+
 msgid "Applied Date"
 msgstr "Anwendungsdatum"
 
 msgid "Applied To"
 msgstr "Angewendet auf"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "Angewandte Beträge sowie Rabatt- und Ausbuchungsbeträge werden in der Basiswährung des Unternehmens ({baseCurrency}) angegeben."
 
 msgid "Applies to"
 msgstr "Gilt für"
@@ -2373,6 +2391,12 @@ msgstr "Sind Sie sicher, dass Sie eine Einladung an diese Benutzer senden möcht
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Sind Sie sicher, dass Sie eine Einladung an diesen Benutzer senden möchten?"
+
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie diese Notiz stornieren möchten? Dies wird ihre Buchhaltungseinträge und Zuordnungen stornieren. Dies kann nicht rückgängig gemacht werden."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie diese Zahlung stornieren möchten? Dies wird ihre Buchhaltungseinträge und Zuordnungen stornieren. Dies kann nicht rückgängig gemacht werden."
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Sind Sie sicher, dass Sie diese Eingangsrechnung stornieren möchten? Diese Aktion kehrt alle Finanztransaktionen um und kann nicht rückgängig gemacht werden."
@@ -3434,9 +3458,6 @@ msgstr "Suchanfrage löschen"
 msgid "Clear selection"
 msgstr "Auswahl löschen"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Begleichen Sie diese Rechnung mit den gebuchten Gutschriften des Geschäftspartners sowie Kasse. Gutschriften werden direkt angewendet – keine Buchung erforderlich."
-
 msgid "Clear value"
 msgstr "Wert löschen"
 
@@ -3759,6 +3780,9 @@ msgstr "Bestätigen {0}"
 
 msgid "Confirm & release"
 msgstr "Bestätigen & Freigeben"
+
+msgid "Confirm a dialog"
+msgstr "Dialog bestätigen"
 
 msgid "Confirm all"
 msgstr "Alle bestätigen"
@@ -4253,7 +4277,7 @@ msgstr "Dokument konnte nicht gelesen werden: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "Konnte {0} nicht freigeben: {1}"
 
 msgid "Could not save"
 msgstr "Konnte nicht gespeichert werden"
@@ -4590,6 +4614,9 @@ msgstr "Habenkonto bei der Absorption von Gemeinkosten in WIP"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Habenkonten bei der Absorption von Fertigungskosten in WIP"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Guthabenbeträge werden in der Basiswährung des Unternehmens ({currency}) angegeben. Die Verrechnung der Guthaben wird wirksam, sobald diese Zahlung gebucht wird."
 
 msgid "Credit Memo"
 msgstr "Gutschrift"
@@ -7879,6 +7906,9 @@ msgstr "Gehe zu {0}"
 msgid "Go to implementation hub"
 msgstr "Zum Umsetzungs-Hub gehen"
 
+msgid "Go to module"
+msgstr "Zum Modul wechseln"
+
 msgid "Go to that week"
 msgstr "Gehe zu dieser Woche"
 
@@ -8567,6 +8597,9 @@ msgstr "Inv"
 msgid "Inv Rate"
 msgstr "Rechnungskurs"
 
+msgid "Invalid applications"
+msgstr "Ungültige Verrechnungen"
+
 msgid "Invalid Invite"
 msgstr "Ungültige Einladung"
 
@@ -8958,6 +8991,9 @@ msgstr "Journalzeilen"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Buchungssätze mit Datum an oder vor diesem Datum werden als gesperrt behandelt. Sie werden mit dem vom Anbieter gemeldeten Sperrdatum zusammengeführt, falls beide vorhanden sind."
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr "Zu einem Bereich auf Detailseiten springen (gleiche Modifizierer + Buchstabe des Bereichs)"
+
 msgid "Just one"
 msgstr "Nur eine"
 
@@ -9003,6 +9039,9 @@ msgstr "Schützt Bestellungen, Angebote und Einstellungen durch eine zweite Übe
 msgid "Key"
 msgstr "Schlüssel"
 
+msgid "Keyboard shortcuts"
+msgstr "Tastenkombinationen"
+
 msgid "Kind of record"
 msgstr "Art des Datensatzes"
 
@@ -9015,7 +9054,7 @@ msgstr "Bezeichnung"
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etikett zum Abschließen des aktuellen Vorgangs für dieses Kanban"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "Etikett zum Erstellen eines {0} für diesen Kanban"
 
@@ -9228,6 +9267,9 @@ msgstr "Hell"
 
 msgid "Light Mode"
 msgstr "Hellmodus"
+
+msgid "Light or dark mode"
+msgstr "Helles oder dunkles Design"
 
 msgid "Lights Out (24×7)"
 msgstr "Lichter aus (24×7)"
@@ -10439,6 +10481,9 @@ msgstr "Neue Angebotsposition"
 msgid "New Receipt"
 msgstr "Neue Quittung"
 
+msgid "New record (on list pages)"
+msgstr "Neuer Datensatz (auf Listenseiten)"
+
 msgid "New record created"
 msgstr "Neuer Datensatz erstellt"
 
@@ -10561,6 +10606,9 @@ msgstr "Nächstes Fälligkeitsdatum"
 
 msgid "Next page"
 msgstr "Nächste Seite"
+
+msgid "Next page (in tables)"
+msgstr "Nächste Seite (in Tabellen)"
 
 msgid "Next Sequence"
 msgstr "Nächster Nummernkreis"
@@ -10842,6 +10890,9 @@ msgstr "Niemand zum Zuweisen"
 msgid "No open invoices"
 msgstr "Keine offenen Rechnungen"
 
+msgid "No open memos"
+msgstr "Keine offenen Notizen"
+
 msgid "No open orders for this item are available to link."
 msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verfügbar."
 
@@ -10976,6 +11027,9 @@ msgstr "Keine eingeplante Arbeit in diesem Zeitfenster"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Keine Schichten konfiguriert — angenommen Mo–Fr, 8h Tage"
+
+msgid "No shortcuts available on this page."
+msgstr "Auf dieser Seite sind keine Tastenkombinationen verfügbar."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Keine einzige, vertrauenswürdige Zahl für Bestand oder Auftragsstatus"
@@ -11335,11 +11389,11 @@ msgstr "Ein Satz von Zahlen"
 msgid "One shared setup instead of one per operation"
 msgstr "Eine gemeinsame Rüstung statt einer pro Arbeitsgang"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "Ein gemeinsames Rüsten plus die längste Personal- und Maschinenzeit — die Mitglieder laufen zusammen"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "Ein gemeinsames Rüsten plus die Bearbeitungszeit jedes Mitglieds — das Höhere aus Personal- und Maschinenzeit — nacheinander"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "Eine gemeinsame Einrichtung plus die Summe der Arbeits- und Maschinenzeit"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "Ein gemeinsames Rüsten plus die längste Bearbeitungszeit der Mitglieder — das Höhere aus Personal- und Maschinenzeit — da die Mitglieder zusammen laufen"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Ein Schritt im Arbeitsplan eines Fertigungsauftrags, der ein Verfahren und einen Arbeitsplatz benennt und seine eigenen Rüst-, Personal- und Maschinenzeiten sowie Sätze trägt."
@@ -11524,6 +11578,9 @@ msgstr "Arbeitsgang"
 
 msgid "Operation"
 msgstr "Betrieb"
+
+msgid "Operation batch"
+msgstr "Arbeitsgang-Los"
 
 msgid "Operation lead time"
 msgstr "Beschaffungszeit des Arbeitsgangs"
@@ -11947,6 +12004,9 @@ msgstr "Zahlungsanwendungen"
 msgid "Payment Date"
 msgstr "Zahlungsdatum"
 
+msgid "Payment from Customer"
+msgstr "Zahlung vom Kunden"
+
 msgid "Payment ID"
 msgstr "Zahlungs-ID"
 
@@ -11968,11 +12028,14 @@ msgstr "Zahlungsbedingungen"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Zahlungsbedingungen wie Net 30 oder zahlbar bei Erhalt"
 
+msgid "Payment to Supplier"
+msgstr "Zahlung an den Lieferanten"
+
 msgid "Payments"
 msgstr "Zahlungen"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Zahlungen und Gutschriften, die auf diese Rechnung angerechnet wurden. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Mit dieser Rechnung verrechnete Zahlungen und Guthaben. Verrechnete Beträge und Kursdifferenzen werden in der Basiswährung des Unternehmens angegeben. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
 
 msgid "PDF"
 msgstr "PDF"
@@ -12386,6 +12449,9 @@ msgstr "Vorheriger Tag"
 
 msgid "Previous page"
 msgstr "Vorherige Seite"
+
+msgid "Previous page (in tables)"
+msgstr "Vorherige Seite (in Tabellen)"
 
 msgid "Previous step"
 msgstr "Vorheriger Schritt"
@@ -12851,7 +12917,7 @@ msgstr "Zur Buchhaltung senden"
 msgid "Putting your data back"
 msgstr "Ihre Daten werden wiederhergestellt"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-Code zum Erstellen eines {0} für diesen Kanban"
 
@@ -13262,8 +13328,8 @@ msgstr "Aufnahme"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Erfassen Sie eine Gutschrift oder Lastschrift gegen einen Kunden oder Lieferanten. Anwendungen auf spezifische Rechnungen werden nach der Erstellung des Dokuments hinzugefügt."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Erfassen Sie erhaltene Kasse von einem Kunden oder an einen Lieferanten gezahlte Kasse (Auszahlung). Anwendungen auf spezifische Rechnungen werden nach der Erstellung der Zahlung hinzugefügt."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Erfassen Sie eine Kundenzahlung, Lieferantenzahlung oder Gutschrift. Anwendungen auf Rechnungen oder Notizen werden hinzugefügt, nachdem die Zahlung erstellt wurde."
 
 msgid "Record deleted"
 msgstr "Datensatz gelöscht"
@@ -13306,6 +13372,15 @@ msgstr "Aktualisieren"
 
 msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
+
+msgid "Refund from Supplier"
+msgstr "Gutschrift vom Lieferanten"
+
+msgid "Refund memos"
+msgstr "Gutschriftsnotizen"
+
+msgid "Refund to Customer"
+msgstr "Gutschrift an den Kunden"
 
 msgid "Regenerate"
 msgstr "Neu generieren"
@@ -13366,7 +13441,7 @@ msgstr "Freigeben"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "{0} Lose freigeben"
 
 msgid "Release Batch"
 msgstr "Los freigeben"
@@ -13388,7 +13463,7 @@ msgstr "Freigegeben"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "{0} Lose freigegeben"
 
 msgid "Released date"
 msgstr "Freigabedatum"
@@ -13811,8 +13886,14 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "Umsatzerlöse"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "Umsatzerlöskonto für Versandkosten, die Kunden in Rechnung gestellt werden"
+
 msgid "Revenue and expenses over a period"
 msgstr "Umsatzerlöse und Aufwand über einen Zeitraum"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Sachkonto für Umsatzerlöse, das für die den Kunden berechneten Versandkosten gutgeschrieben und auf einer eigenen Position gebucht wird; es muss sich vom Standardkonto „Vertrieb“ unterscheiden."
 
 msgid "Reverse all inventory adjustments"
 msgstr "Alle Bestandskorrektionen rückgängig machen"
@@ -14255,6 +14336,9 @@ msgstr "Methode speichern"
 
 msgid "Save Rate"
 msgstr "Kurs speichern"
+
+msgid "Save the form you're editing"
+msgstr "Das bearbeitete Formular speichern"
 
 msgid "Save view"
 msgstr "Ansicht speichern"
@@ -14707,9 +14791,6 @@ msgstr "Oberflächen auswählen"
 msgid "Select the groups that should complete this training"
 msgstr "Wählen Sie die Gruppen aus, die diese Schulung absolvieren sollen"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "Wählen Sie die Rechnungen aus, die diese Zahlung begleicht. Rabatt und Ausbuchung sind in Rechnungswährung."
-
 msgid "Select value"
 msgstr "Wert auswählen"
 
@@ -15083,6 +15164,12 @@ msgstr "Versandmethoden"
 msgid "Shipping Notes"
 msgstr "Versandnotizen"
 
+msgid "Shipping Revenue"
+msgstr "Umsatzerlöse aus Versand"
+
+msgid "Shipping Revenue (default)"
+msgstr "Umsatzerlöse aus Versand (Standard)"
+
 msgid "Shipping Supplier"
 msgstr "Versandlieferant"
 
@@ -15148,6 +15235,9 @@ msgstr "Lieferanten-IDs anzeigen"
 
 msgid "Show sync options"
 msgstr "Synchronisierungsoptionen anzeigen"
+
+msgid "Show this overlay"
+msgstr "Dieses Overlay anzeigen"
 
 msgid "Show Trailing Zeros"
 msgstr "Nachgestellte Nullen anzeigen"
@@ -16110,6 +16200,9 @@ msgstr "Steuerprozentsatz"
 
 msgid "Tax Residual Value %"
 msgstr "Steuerlicher Restwert %"
+
+msgid "Tax Status"
+msgstr "Steuerstatus"
 
 msgid "Tax Useful Life (default)"
 msgstr "Steuerliche Nutzungsdauer (Standard)"
@@ -17423,6 +17516,9 @@ msgstr "Ebene umschalten"
 msgid "Toggle Properties"
 msgstr "Eigenschaften umschalten"
 
+msgid "Toggle the sidebar"
+msgstr "Seitenleiste umschalten"
+
 msgid "Toggle views"
 msgstr "Ansichten umschalten"
 
@@ -17893,6 +17989,9 @@ msgstr "Entschrotten {label}"
 
 msgid "Unshipped orders"
 msgstr "Nicht versendete Bestellungen"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Nicht gestartete Auftragsvorvorgänge auf einem gruppierbaren Verfahren, zusammengefasst zum Betrieb an einem Arbeitsplatz mit gemeinsamer Rüstzeit und Timer, deren Zeit sich pro Fertigungsauftrag proportional zur Menge aufteilt."
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Ursprungsbeleg-Typ nicht unterstützt: {sourceDocument}"
@@ -18462,6 +18561,11 @@ msgstr "Sichtbar im öffentlichen Profil eines Benutzers"
 
 msgid "Void"
 msgstr "Stornieren"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "Stornieren {0}"
 
 msgid "Void Invoice"
 msgstr "Rechnung stornieren"

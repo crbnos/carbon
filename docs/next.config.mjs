@@ -31,12 +31,12 @@ const config = {
     "*.ngrok.app",
     "*.ngrok.io",
   ],
-  // Serve the Architecture reference at "/" without changing the URL — a server-side
+  // Serve the docs Overview at "/" without changing the URL — a server-side
   // rewrite, not a client/redirect bounce. `beforeFiles` runs ahead of the app router
   // so it takes precedence (app/page.tsx is removed).
   async rewrites() {
     return {
-      beforeFiles: [{ source: "/", destination: "/docs/platform/architecture" }],
+      beforeFiles: [{ source: "/", destination: "/docs" }],
     };
   },
   // Deployment moved under Self-hosting as the "AWS with SST" recipe; keep the old
@@ -46,6 +46,25 @@ const config = {
       {
         source: "/docs/platform/deployment",
         destination: "/docs/platform/self-hosting",
+        permanent: true,
+      },
+      // Architecture is developer content, so it moved under Building on Carbon;
+      // single sign-on is admin content, so it moved into the Product reference
+      // next to two-factor.
+      {
+        source: "/docs/platform/architecture",
+        destination: "/docs/building/architecture",
+        permanent: true,
+      },
+      {
+        source: "/docs/platform/single-sign-on",
+        destination: "/docs/reference/single-sign-on",
+        permanent: true,
+      },
+      // Workflow runs merged into the Workflows page as its "Runs and history" section.
+      {
+        source: "/docs/reference/workflow-runs",
+        destination: "/docs/reference/workflows#runs-and-history",
         permanent: true,
       },
       // The Data API moved from its own root to a section inside /api, so the whole

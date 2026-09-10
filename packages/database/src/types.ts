@@ -393,6 +393,7 @@ export type Database = {
           roundingAccount: string
           salesAccount: string
           salesDiscountAccount: string
+          salesShippingRevenueAccount: string | null
           salesTaxPayableAccount: string
           scrapAccount: string | null
           serviceChargeAccount: string
@@ -448,6 +449,7 @@ export type Database = {
           roundingAccount: string
           salesAccount: string
           salesDiscountAccount: string
+          salesShippingRevenueAccount?: string | null
           salesTaxPayableAccount: string
           scrapAccount?: string | null
           serviceChargeAccount: string
@@ -503,6 +505,7 @@ export type Database = {
           roundingAccount?: string
           salesAccount?: string
           salesDiscountAccount?: string
+          salesShippingRevenueAccount?: string | null
           salesTaxPayableAccount?: string
           scrapAccount?: string | null
           serviceChargeAccount?: string
@@ -1140,6 +1143,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_salesDiscountAccount_fkey"
             columns: ["salesDiscountAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_salesShippingRevenueAccount_fkey"
+            columns: ["salesShippingRevenueAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_salesShippingRevenueAccount_fkey"
+            columns: ["salesShippingRevenueAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -3593,6 +3610,7 @@ export type Database = {
           parentStepId: string | null
           planConfidence: string
           required: boolean | null
+          rootStepId: string | null
           sortOrder: number
           status: Database["public"]["Enums"]["assemblyStepStatus"]
           title: string | null
@@ -3625,6 +3643,7 @@ export type Database = {
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
+          rootStepId?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["assemblyStepStatus"]
           title?: string | null
@@ -3657,6 +3676,7 @@ export type Database = {
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
+          rootStepId?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["assemblyStepStatus"]
           title?: string | null
@@ -3747,6 +3767,13 @@ export type Database = {
           {
             foreignKeyName: "assemblyInstructionStep_parentStepId_fkey"
             columns: ["parentStepId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructionStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstructionStep_rootStepId_fkey"
+            columns: ["rootStepId"]
             isOneToOne: false
             referencedRelation: "assemblyInstructionStep"
             referencedColumns: ["id"]
@@ -20292,11 +20319,13 @@ export type Database = {
           createdAt: string
           createdBy: string
           discountAmount: number
-          fxGainLossAmount: number | null
+          fxGainLossAmount: number
           id: string
           memoId: string | null
           paymentId: string | null
+          sourceAmount: number | null
           sourceExchangeRate: number
+          sourcePaymentId: string | null
           targetExchangeRate: number
           targetMemoId: string | null
           targetPurchaseInvoiceId: string | null
@@ -20312,11 +20341,13 @@ export type Database = {
           createdAt?: string
           createdBy: string
           discountAmount?: number
-          fxGainLossAmount?: number | null
+          fxGainLossAmount?: number
           id?: string
           memoId?: string | null
           paymentId?: string | null
+          sourceAmount?: number | null
           sourceExchangeRate: number
+          sourcePaymentId?: string | null
           targetExchangeRate: number
           targetMemoId?: string | null
           targetPurchaseInvoiceId?: string | null
@@ -20332,11 +20363,13 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           discountAmount?: number
-          fxGainLossAmount?: number | null
+          fxGainLossAmount?: number
           id?: string
           memoId?: string | null
           paymentId?: string | null
+          sourceAmount?: number | null
           sourceExchangeRate?: number
+          sourcePaymentId?: string | null
           targetExchangeRate?: number
           targetMemoId?: string | null
           targetPurchaseInvoiceId?: string | null
@@ -20428,6 +20461,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payment"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoiceSettlement_sourcePaymentId_companyId_fkey"
+            columns: ["sourcePaymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "invoiceSettlement_targetMemoId_fkey"
@@ -26518,13 +26558,14 @@ export type Database = {
           conversionFactor: number
           createdAt: string
           createdBy: string
+          fromStorageUnitId: string | null
           id: string
           itemId: string
           jobId: string | null
           locationId: string
           purchaseUnitOfMeasureCode: string | null
           quantity: number
-          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystem: Database["public"]["Enums"]["kanbanReplenishmentSystem"]
           storageUnitId: string | null
           supplierId: string | null
           updatedAt: string | null
@@ -26538,13 +26579,14 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy: string
+          fromStorageUnitId?: string | null
           id?: string
           itemId: string
           jobId?: string | null
           locationId: string
           purchaseUnitOfMeasureCode?: string | null
           quantity: number
-          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystem?: Database["public"]["Enums"]["kanbanReplenishmentSystem"]
           storageUnitId?: string | null
           supplierId?: string | null
           updatedAt?: string | null
@@ -26558,13 +26600,14 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy?: string
+          fromStorageUnitId?: string | null
           id?: string
           itemId?: string
           jobId?: string | null
           locationId?: string
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number
-          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystem?: Database["public"]["Enums"]["kanbanReplenishmentSystem"]
           storageUnitId?: string | null
           supplierId?: string | null
           updatedAt?: string | null
@@ -26633,6 +26676,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "kanban_fromStorageUnitId_fkey"
+            columns: ["fromStorageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "kanban_itemId_fkey"
@@ -67413,6 +67463,8 @@ export type Database = {
           conversionFactor: number | null
           createdAt: string | null
           createdBy: string | null
+          fromStorageUnitId: string | null
+          fromStorageUnitName: string | null
           id: string | null
           itemId: string | null
           jobId: string | null
@@ -67424,7 +67476,7 @@ export type Database = {
           quantity: number | null
           readableIdWithRevision: string | null
           replenishmentSystem:
-            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | Database["public"]["Enums"]["kanbanReplenishmentSystem"]
             | null
           storageUnitId: string | null
           storageUnitName: string | null
@@ -67497,6 +67549,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "kanban_fromStorageUnitId_fkey"
+            columns: ["fromStorageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "kanban_itemId_fkey"
@@ -73906,14 +73965,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74467,14 +74526,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77811,6 +77870,7 @@ export type Database = {
     }
     Functions: {
       _xid_machine_id: { Args: never; Returns: number }
+      accounting_round_internal: { Args: { _value: number }; Returns: number }
       accountTreeBalancePeriodSeries: {
         Args: {
           p_company_group_id: string
@@ -80934,6 +80994,7 @@ export type Database = {
         | "Inbound Inspection"
         | "Scrap"
       kanbanOutput: "label" | "qrcode" | "url"
+      kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
       maintenanceDispatchPriority: "Low" | "Medium" | "High" | "Critical"
@@ -82348,6 +82409,7 @@ export const Constants = {
         "Scrap",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
+      kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],
       macrsPropertyClass: ["3", "5", "7", "10", "15", "20", "27.5", "39"],
       maintenanceDispatchPriority: ["Low", "Medium", "High", "Critical"],

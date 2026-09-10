@@ -53,7 +53,7 @@ The **Forecast** page renders the schedule the engine actually booked: a lane pe
 
 Click any bar and a side panel explains its timing. A **schedule note** answers "why does this start when it does" in plain language, for example *"Waited 14h for the work center — queued behind J000001 (3 ops)"* or *"Waited 2d 3h for a qualified operator to be available"*. The panel also separates **work** from **span**: an operation stretched across shift boundaries might show 6 hours of work across a 22-hour span, which is honest rather than alarming. A popover on each lane, *"How are these hours calculated?"*, shows which rung of the availability ladder is in use and what downtime and staffing subtract from it.
 
-A **released operation batch** — several operations that run together on one batchable process — books a **single** reservation, so it appears as one bar labeled by the batch, *"BAT000005 · 2 jobs"*, not one bar per member. Its side panel names the batch and its action button opens the **batch** rather than a single member's job.
+A **released `docs/reference/batching`** — several operations that run together on one batchable process — books a **single** reservation, so it appears as one bar labeled by the batch, *"BAT000005 · 2 jobs"*, not one bar per member. Its side panel names the batch and its action button opens the **batch** rather than a single member's job.
 
 An **operation batch** (`BAT…`) groups job operations that run together on a machine — a scheduling concept. It is unrelated to batch tracking, the lot/batch numbers that trace a quantity of identical units through inventory. Same word, different feature.
 

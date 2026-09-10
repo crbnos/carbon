@@ -25,6 +25,7 @@ import { parseDate } from "@internationalized/date";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
@@ -6011,7 +6012,7 @@ export async function getJobOperationBatchWithMembers(
 ) {
   const batch = await client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name), location(name)")
+    .select("*, process(name, batchType), workCenter(name), location(name)")
     .eq("id", batchId)
     .eq("companyId", companyId)
     .single();
@@ -6427,6 +6428,10 @@ export async function copyAssemblyInstructionAsVersion(
         parentStepId: step.parentStepId
           ? (stepIdMap.get(step.parentStepId) ?? null)
           : null,
+        // Lineage across versions: a step copied from v1 roots at v1's step, and
+        // a v3 copied from v2 still roots at v1 — the chain stays flat so
+        // COALESCE("rootStepId", "id") identifies the group at any depth.
+        rootStepId: step.rootStepId ?? step.id,
         companyId,
         createdBy: userId
       };
@@ -6487,9 +6492,17 @@ export async function copyAssemblyInstructionAsVersion(
  */
 export async function activateAssemblyInstructionVersion(
   client: SupabaseClient<Database>,
-  args: { id: string; companyId: string; userId: string }
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    // Node Kysely handle for the per-operation re-sync. Built by the route
+    // action (getDatabaseClient) and passed in — never constructed here; this
+    // module is bundled for the browser (see the note above getJob).
+    db: Kysely<KyselyDatabase>;
+  }
 ) {
-  const { id, companyId, userId } = args;
+  const { id, companyId, userId, db } = args;
 
   const target = await client
     .from("assemblyInstruction")
@@ -6566,6 +6579,79 @@ export async function activateAssemblyInstructionVersion(
         .update({ assemblyInstructionId: id })
         .in("id", staleOpIds);
       if (repoint.error) return repoint;
+
+      // Migrate step markers v(old) -> v(new) by lineage group before syncing.
+      // Without this the job's steps still point at the old version's step ids,
+      // MES cannot match them (AssemblyView findIndex -> -1), and playback
+      // silently degrades to a static model on every step.
+      const [oldStepRows, newStepRows] = await Promise.all([
+        client
+          .from("assemblyInstructionStep")
+          .select("id, rootStepId")
+          .in("assemblyInstructionId", otherVersionIds)
+          .eq("companyId", companyId),
+        client
+          .from("assemblyInstructionStep")
+          .select("id, rootStepId")
+          .eq("assemblyInstructionId", id)
+          .eq("companyId", companyId)
+      ]);
+      if (oldStepRows.error) return oldStepRows;
+      if (newStepRows.error) return newStepRows;
+
+      const remap = planAssemblyStepMarkerRemap(
+        oldStepRows.data ?? [],
+        newStepRows.data ?? []
+      );
+
+      // One statement, one transaction: the repoint above has already committed,
+      // so until every marker moves, these operations point at the new version
+      // while their steps still name the old one — precisely the state MES reads
+      // as "no playback". Migrating them row by row would expose that window on
+      // every activation, and an error midway would leave the operation split
+      // across two versions with no rollback and no way to re-run (the new
+      // version is Published by then, so it is no longer a "stale" source).
+      if (remap.size > 0) {
+        const pairs = sql.join(
+          [...remap].map(
+            ([oldStepId, newStepId]) => sql`(${oldStepId}, ${newStepId})`
+          )
+        );
+        await db.transaction().execute(async (trx) => {
+          await sql`
+            UPDATE "jobOperationStep" AS s
+            SET "assemblyInstructionStepId" = r."newStepId"
+            FROM (VALUES ${pairs}) AS r("oldStepId", "newStepId")
+            WHERE s."assemblyInstructionStepId" = r."oldStepId"
+              AND s."companyId" = ${companyId}
+              AND s."operationId" = ANY(${staleOpIds})
+          `.execute(trx);
+        });
+      }
+
+      // Reconcile added/deleted steps. Marker-matched steps UPDATE in place, so
+      // jobOperationStepRecord survives. Isolated per operation so one failure
+      // cannot abort the activation.
+      for (const operationId of staleOpIds) {
+        try {
+          await syncAssemblyInstructionToOperation(db, {
+            assemblyInstructionId: id,
+            operationId,
+            companyId,
+            userId
+          });
+        } catch (error) {
+          // The remap already restored playback for surviving steps, so this
+          // only leaves added/deleted steps unreconciled on one operation —
+          // recoverable from the job. Logged so a systematic failure is visible.
+          logger.error("Failed to re-sync assembly steps after activation", {
+            assemblyInstructionId: id,
+            operationId,
+            companyId,
+            error
+          });
+        }
+      }
     }
   }
 
@@ -8010,14 +8096,103 @@ function plainTextToTiptap(text: string) {
  * permissions) belong to the route — Kysely bypasses RLS.
  */
 /**
+ * Maps a job step's marker from an OLD instruction version's step id to the
+ * equivalent step id in the NEWLY-ACTIVATED version, by lineage group
+ * (COALESCE(rootStepId, id) — the same idiom as rootInstructionId).
+ *
+ * A step that survives across versions keeps its identity even when reordered
+ * or retitled, so the caller can UPDATE it in place and preserve the operator's
+ * completion records. Steps with no counterpart in the new version are left
+ * unmapped — the caller's re-sync then treats them as stale. Pure so the
+ * remapping is unit-testable.
+ *
+ * `oldSteps` spans EVERY older sibling version, so several of them can share a
+ * lineage root and collapse onto the same new step id. That is safe only
+ * because a job operation's markers all come from a single version (both
+ * writers — the step insert and planOrphanStepAdoption — only ever write ids
+ * from the instruction being synced), so at most one of those entries can match
+ * any given row. There is no unique constraint enforcing it.
+ */
+export function planAssemblyStepMarkerRemap(
+  oldSteps: { id: string; rootStepId: string | null }[],
+  newSteps: { id: string; rootStepId: string | null }[]
+): Map<string, string> {
+  const newIdByRoot = new Map<string, string>();
+  for (const step of newSteps) {
+    const root = step.rootStepId ?? step.id;
+    // First writer wins: a well-formed version has one step per lineage group.
+    if (!newIdByRoot.has(root)) newIdByRoot.set(root, step.id);
+  }
+
+  const remap = new Map<string, string>();
+  for (const step of oldSteps) {
+    const root = step.rootStepId ?? step.id;
+    const newId = newIdByRoot.get(root);
+    if (newId && newId !== step.id) remap.set(step.id, newId);
+  }
+  return remap;
+}
+
+/**
+ * The name a synced job step is written with. `title` is nullable on the
+ * instruction step but `name` is NOT NULL on the job step, so a null title
+ * becomes a positional placeholder. Adoption below must compare against this
+ * same value, not the raw title — otherwise a null-titled step's job step is
+ * named "Step 3" and can never be matched back to its source.
+ */
+function assemblyStepName(title: string | null, index: number) {
+  return title || `Step ${index + 1}`;
+}
+
+/**
+ * Re-adopts job steps orphaned by the assemblyInstructionStepId ON DELETE SET
+ * NULL cascade (deleting an instruction step nulls the marker on every live
+ * job synced from it). Without this a re-sync treats them as hand-authored and
+ * inserts duplicates beside them.
+ *
+ * Deliberately conservative: an orphan is claimed only when it matches a source
+ * step on BOTH sortOrder and name AND no already-marked step claims that source
+ * step. Genuinely hand-authored steps match no source step and are untouched;
+ * ambiguous cases are left alone rather than guessed at.
+ */
+export function planOrphanStepAdoption(
+  sourceSteps: { id: string; title: string | null; sortOrder: number | null }[],
+  orphanSteps: { id: string; name: string | null; sortOrder: number | null }[],
+  claimedSourceIds: Set<string>
+): Map<string, string> {
+  const adoption = new Map<string, string>();
+  const takenOrphans = new Set<string>();
+
+  sourceSteps.forEach((source, index) => {
+    if (claimedSourceIds.has(source.id)) return;
+    const sourceName = assemblyStepName(source.title, index);
+    const match = orphanSteps.find(
+      (orphan) =>
+        !takenOrphans.has(orphan.id) &&
+        orphan.sortOrder === source.sortOrder &&
+        orphan.name === sourceName
+    );
+    if (match) {
+      adoption.set(match.id, source.id);
+      takenOrphans.add(match.id);
+    }
+  });
+  return adoption;
+}
+
+/**
  * Marker-based step reconciliation for the assembly→BoP sync. Given the current
  * source step ids and the operation's existing synced steps (each carrying the
  * `assemblyInstructionStepId` provenance marker), decide which source maps onto
  * an existing target (update) vs. is new (insert), and which existing synced
  * steps are stale — their source step was removed, so they must be deleted
- * (cascading their slides/links). Hand-authored steps (null marker) are excluded
- * by the caller's `assemblyInstructionStepId is not null` filter; a null marker
- * here is treated as stale. Pure so the reconciliation is unit-testable.
+ * (cascading their slides/links).
+ *
+ * The caller passes only marked steps: hand-authored steps (NULL marker) are
+ * filtered out, and orphans re-adopted by planOrphanStepAdoption arrive here
+ * already carrying the marker they were adopted onto. A null marker reaching
+ * this function is therefore treated as stale. Pure so the reconciliation is
+ * unit-testable.
  */
 export function planAssemblyStepMarkerSync(
   sourceStepIds: string[],
@@ -8213,13 +8388,55 @@ export async function syncAssemblyInstructionToOperation(
       }
     }
 
-    const existingSynced = await trx
+    const existingSteps = await trx
       .selectFrom(stepTable)
-      .select(["id", "assemblyInstructionStepId"])
+      .select(["id", "assemblyInstructionStepId", "name", "sortOrder"])
       .where("operationId", "=", operationId)
       .where("companyId", "=", companyId)
-      .where("assemblyInstructionStepId", "is not", null)
       .execute();
+
+    const existingSynced = existingSteps.filter(
+      (step) => step.assemblyInstructionStepId !== null
+    );
+
+    // Re-adopt steps orphaned by the ON DELETE SET NULL cascade so a re-sync
+    // heals them instead of inserting duplicates beside them.
+    const adoption = planOrphanStepAdoption(
+      sourceSteps.map((step) => ({
+        id: step.id,
+        title: step.title,
+        sortOrder: step.sortOrder
+      })),
+      existingSteps
+        .filter((step) => step.assemblyInstructionStepId === null)
+        .map((step) => ({
+          id: step.id,
+          name: step.name,
+          sortOrder: step.sortOrder
+        })),
+      new Set(
+        existingSynced
+          .map((step) => step.assemblyInstructionStepId)
+          .filter((id): id is string => id !== null)
+      )
+    );
+
+    for (const [orphanId, sourceStepId] of adoption) {
+      await trx
+        .updateTable(stepTable)
+        .set({ assemblyInstructionStepId: sourceStepId })
+        .where("id", "=", orphanId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const orphan = existingSteps.find((step) => step.id === orphanId);
+      if (orphan) {
+        existingSynced.push({
+          ...orphan,
+          assemblyInstructionStepId: sourceStepId
+        });
+      }
+    }
+
     const { targetIdBySourceId, staleTargetIds } = planAssemblyStepMarkerSync(
       sourceSteps.map((step) => step.id),
       existingSynced
@@ -8240,7 +8457,7 @@ export async function syncAssemblyInstructionToOperation(
 
     for (const [index, source] of sourceSteps.entries()) {
       const payload = {
-        name: source.title || `Step ${index + 1}`,
+        name: assemblyStepName(source.title, index),
         type: source.type ?? "Task",
         description:
           source.description ??

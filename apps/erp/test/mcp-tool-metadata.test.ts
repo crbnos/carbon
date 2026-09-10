@@ -108,6 +108,86 @@ describe("mcp tool-metadata generator", () => {
     expect(insertContact?.required ?? []).not.toContain("email");
   });
 
+  // zod's email conversion emits a ~200-char `pattern` next to
+  // `format: "email"` on every email field — the format keyword carries the
+  // contract; the regex is stripped to keep describe_tool responses lean.
+  it("never publishes pattern alongside format", () => {
+    const walk = (node: unknown, path: string): void => {
+      if (Array.isArray(node)) {
+        node.forEach((item, i) => walk(item, `${path}[${i}]`));
+        return;
+      }
+      if (node !== null && typeof node === "object") {
+        const record = node as Record<string, unknown>;
+        if (typeof record.format === "string") {
+          expect(record.pattern, path).toBeUndefined();
+        }
+        for (const [key, value] of Object.entries(record)) {
+          walk(value, `${path}.${key}`);
+        }
+      }
+    };
+    for (const t of tools) walk(t.schema, t.name);
+    // The format itself survives the strip.
+    const email = props(get("sales_insertCustomerContact")).contact?.properties
+      ?.email;
+    expect(email?.format).toBe("email");
+  });
+
+  // A `{mod}.mcp.server.ts` export that shares a service function's name
+  // SHADOWS it — one tool, the wrapper's implementation, the same published
+  // name/schema. Without the generator dedupe the tool appeared twice.
+  it("registers a shadowed mcp.server function exactly once", () => {
+    const entries = tools.filter(
+      (t) => t.name === "production_upsertJobMaterial"
+    );
+    expect(entries).toHaveLength(1);
+    // The wrapper keeps the service's discriminated-upsert contract.
+    expect(props(entries[0]!)._operation?.enum).toEqual(["create", "update"]);
+  });
+
+  // A union/intersection AROUND a validator reference publishes the
+  // intersection extras, not the validator verbatim. `jobId` is NOT NULL in
+  // the DB but lived only in the `& { jobId: string }` extras, so the schema
+  // omitted it and a schema-exact create failed with a 23502 — an MCP agent
+  // found this live. Required only where required in EVERY union branch, so a
+  // create-only `Omit<…, "id">` branch demotes `id` to optional.
+  it("publishes intersection extras on discriminated upserts", () => {
+    const jobMaterial = get("production_upsertJobMaterial");
+    expect(props(jobMaterial).jobId?.type).toBe("string");
+    expect(jobMaterial.schema.required).toContain("jobId");
+    expect(Object.keys(props(jobMaterial))).toContain("customFields");
+
+    const quoteMaterial = get("sales_upsertQuoteMaterial");
+    expect(quoteMaterial.schema.required).toContain("quoteId");
+    expect(quoteMaterial.schema.required).toContain("quoteLineId");
+
+    // Create branch omits `id` (server-minted), update branch has it → optional.
+    const quoteOperation = get("sales_upsertQuoteOperation");
+    expect(Object.keys(props(quoteOperation))).toContain("id");
+    expect(quoteOperation.schema.required ?? []).not.toContain("id");
+  });
+
+  // An `Omit<…, "field">` in the service signature is honored — the field the
+  // service explicitly refuses must not be re-published from the validator.
+  it("honors Omit<> in composed signatures", () => {
+    expect(Object.keys(props(get("purchasing_insertSupplier")))).not.toContain(
+      "id"
+    );
+    expect(
+      Object.keys(props(get("inventory_insertManualInventoryAdjustment")))
+    ).not.toContain("requiresSerialTracking");
+  });
+
+  // `zfd.text(z.string().transform((v) => v === "true"))` — the form-post
+  // boolean — publishes its two legal values instead of a bare string. An MCP
+  // agent passing real booleans got an opaque validation failure.
+  it("annotates string-encoded booleans with their legal values", () => {
+    const p = props(get("production_upsertJobMaterial"));
+    expect(p.requiresBatchTracking?.enum).toEqual(["true", "false"]);
+    expect(p.requiresSerialTracking?.enum).toEqual(["true", "false"]);
+  });
+
   // A parenthesized discriminated-upsert union branch resolves instead of
   // publishing an opaque {} member (and the leading-pipe union style must not
   // contribute an empty first member).
@@ -159,5 +239,30 @@ describe("mcp tool-metadata generator", () => {
     const ability = props(get("resources_updateAbility")).ability;
     expect(Object.keys(ability?.properties ?? {})).toContain("name");
     expect(ability?.required).toBeUndefined();
+  });
+
+  // Insert-vs-update discriminator, BOTH directions, gets a required `_operation`.
+  // upsertQuoteMaterial / upsertJobMaterial branch on `if ("updatedBy" in …)` — the
+  // generator used to detect only the `"createdBy" in` convention, so these tools
+  // shipped without `_operation`, the dispatch always stamped updatedBy, and every
+  // create was forced down the UPDATE branch (0 rows → PGRST116, silent no-op).
+  it("gives an `_operation` flag to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
+    const requiresOperation = (name: string) => {
+      const t = get(name);
+      expect(props(t)._operation, `${name} should expose _operation`).toMatchObject({
+        enum: ["create", "update"]
+      });
+      expect(t.schema.required ?? [], `${name} should require _operation`).toContain(
+        "_operation"
+      );
+    };
+    // Inverted (`"updatedBy" in`) — the ones that were broken.
+    requiresOperation("sales_upsertQuoteMaterial");
+    requiresOperation("production_upsertJobMaterial");
+    requiresOperation("production_upsertJob");
+    requiresOperation("production_upsertProductionQuantity");
+    requiresOperation("resources_upsertPartner");
+    // Standard (`"createdBy" in`) control — unchanged, still carries the flag.
+    requiresOperation("sales_upsertQuoteOperation");
   });
 });

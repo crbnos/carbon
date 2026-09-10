@@ -2,23 +2,19 @@
 
 > A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.
 
-An API key is a secret string that authenticates programmatic calls to Carbon. Where a person signs in and Carbon reads their permissions from a session, a script sends its key on every request and Carbon reads the key's own permissions instead. A key belongs to one company and carries an explicit set of scopes, so you can hand a partner or a job exactly the access it needs and nothing more.
+An API key is a secret string that authenticates programmatic calls to Carbon. Where a person signs in and Carbon reads their session's permissions, a script sends its key on every request and Carbon reads the key's own permissions instead. A key belongs to one company and carries an explicit set of scopes, so you can hand a partner or a job exactly the access it needs and nothing more. Manage keys under **Settings → API Keys**.
 
-Create and manage keys under **Settings → API Keys**. Every key you see is listed by **Name**, a masked **Key** preview (only the last five characters, e.g. `crbn_•••abcde`), its **Scopes**, **Rate Limit**, who created it, and when it expires.
+Claude.ai, Claude Desktop, and ChatGPT connect over **OAuth**: add the server URL, approve in the browser, and the connection inherits the role and company of whoever authorized it. A key is for everything that can't do that browser dance: Claude Code, Cursor, VS Code, Codex, headless scripts, and CI (stdio-only clients bridge through `mcp-remote`). The [authentication reference](/api/authentication) covers both flows.
 
 ## Creating a key
 
-Click **New API Key** and give it a **Name** (unique within your company). Optionally set **Expires At** — a future date after which the key stops working; leave it blank and the key never expires. Then grant scopes with the permission matrix (covered below) and save.
+Click **New API Key**, give it a **Name** (unique within your company), optionally set **Expires At** (blank means never), grant scopes in the permission matrix, and save. Carbon shows the full key exactly once, in a dialog headed "You can only see this key once. Store it safely." — copy it right then. Only a SHA-256 hash and a five-character preview are kept, so a lost key means delete and recreate. The same dialog hands you a ready-to-paste MCP command that wires the key into an AI assistant.
 
-Carbon shows the full key exactly once, in a dialog headed "You can only see this key once. Store it safely." Copy it right then. Carbon never stores the raw key: it keeps only a SHA-256 hash for lookup and the five-character preview for display. There is no way to reveal a key again later, so if you lose it, delete the key and create a new one.
+Anyone holding the key can act as it, within its scopes. Store it in a secret manager, never commit it, and rotate (delete and recreate) if it leaks.
 
-Anyone holding the key can act as it, within its scopes. Treat it like a password: store it in a secret manager, never commit it to source control, and rotate it (delete and recreate) if it leaks.
+## Authenticating a request
 
-The full format is `crbn_` followed by a random token. The same dialog also hands you a ready-to-paste MCP command that wires the key into an AI assistant — see [The MCP endpoint](#the-mcp-endpoint) below.
-
-## How a key authenticates a request
-
-Send the key as a bearer token on every request. The hosted Data API lives at `rest.carbon.ms`:
+Send the key as a bearer token; the hosted Data API lives at `rest.carbon.ms`:
 
 ```http
 GET /salesOrder?select=id,salesOrderId,status
@@ -26,79 +22,49 @@ Host: rest.carbon.ms
 Authorization: Bearer crbn_your_key_here
 ```
 
-Carbon hashes the incoming key, looks up the matching record, and checks two things before it lets the request through:
+There is no login step and no token to refresh. Carbon hashes the incoming key, looks it up, and checks expiry and the rate limit before letting the request through.
 
-- **Expiry.** If the key has an `expiresAt` in the past, the request is rejected.
-- **Rate limit.** The request is counted against the key's window; if the window is full, the request is rejected.
+`rest.carbon.ms` takes `Authorization: Bearer crbn_…` and forwards it internally as the `carbon-key` header. Calling PostgREST directly on a self-hosted install, send `carbon-key: crbn_…` against `/rest/v1/<table>` instead. The MCP endpoint takes the same Bearer token either way.
 
-There is no separate login step and no token to refresh. The header is the whole handshake.
+## Scopes and rate limit
 
-`rest.carbon.ms` takes the key as `Authorization: Bearer crbn_…` and forwards it internally as the `carbon-key` header that the database reads. If you run Carbon yourself and call PostgREST directly, send `carbon-key: crbn_…` against `/rest/v1/<table>` instead. The MCP endpoint that fronts the Carbon API takes the same `Bearer` token either way.
+A key does **not** inherit its creator's permissions: it acts with exactly the `module_action` scopes stored on it (`sales_view`, `inventory_create`, …), and only within its company. A key with no scopes can authenticate but read and write nothing. Scopes are checked on every request against the key's own record, so tightening them, or deleting the key, takes effect immediately. On Carbon Cloud, API access is a **Business-tier feature**: a company on the Starter plan gets `403` on every call regardless of the key's scopes; see `docs/platform/licensing`.
 
-## Permission scoping
-
-A key does **not** inherit the permissions of the person who created it. It acts with exactly the scopes stored on the key, and only for the company it belongs to. A brand-new key with no scopes granted can authenticate but can read and write nothing.
-
-You grant scopes in the permission matrix when you create or edit the key. Each cell is a `module_action` pair — the same shape Carbon uses for a user's permissions. So a key scoped to view sales and create inventory can read `salesOrder` rows and insert inventory records, but a call that needs, say, `purchasing_update` is refused with "API key lacks required permissions" unless you granted that exact scope.
-
-  - **Scopes**: The set of permissions the key carries, e.g. `sales_view`, `inventory_create`. Empty means no access. Edit them anytime from the key's form.
-  - **Company**: A key is bound to the single company it was created under. It can never reach another company's data, even one you also belong to.
-
-Because scopes are checked on every request against the key's own record, tightening a key's scopes (or deleting the key) takes effect immediately — there is no cached session to wait out.
-
-## Rate limiting
-
-Every key allows **60 requests per minute**. Carbon counts each authenticated request against the current window and rejects anything over the limit with "Rate limit exceeded" until the window rolls over.
-
-The limit is platform-controlled, not something you set: the key's form has no rate-limit field, and `insertApiKey`/`updateApiKey` strip the columns from whatever is submitted (`apps/erp/app/modules/settings/settings.service.ts:1282`). The **Rate Limit** column in the key list reports the limit in force; it is not an input.
-
-The limit is counted per key, not per company, so one integration burning its allowance does not throttle another.
-
-A rejected request comes back `429` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` (`packages/auth/src/services/auth.server.ts:255`). Read `Retry-After` and wait it out rather than hammering through the rejection.
+Every key allows **60 requests per minute**, counted per key, so one integration burning its allowance doesn't throttle another. The limit is platform-controlled: the form has no rate-limit field, and the list's **Rate Limit** column is a report, not an input. A rejected request comes back `429` with `Retry-After` and `X-RateLimit-*` headers; wait it out rather than hammering through.
 
 ## What the key unlocks
 
-One key unlocks two surfaces. Reach for the Carbon API first; drop to the Data API only when you need raw table access.
+One key unlocks two surfaces. Reach for the **[Carbon API](/api)** first: the service layer, the same code the app runs when you click a button, with every call validating its input, recalculating what depends on it, and enforcing your permissions. Every operation is reachable two ways with the same arguments, plain HTTP at `POST /api/v1/{module}/{operation}` or a tool over [MCP](/api/mcp), and each carries a `READ` / `WRITE` / `DESTRUCTIVE` classification so a client can filter or gate by risk. Each operation has its own reference page with copyable samples in six languages, and the published OpenAPI spec means a typed client in your language is one generator command away — see [Client SDKs](/api/sdks).
 
-### The Carbon API
+The **[Data API](/api/data)** is direct REST access to every table and view, governed by the same row-level security as the app.
 
-The [Carbon API](/api) is Carbon's service layer — the safe way to read and write, running the same validation, recalculation, and permission checks the app itself uses. Reach it over plain HTTP at `POST /api/v1/{module}/{operation}` — the key goes in an `Authorization: Bearer` header, and the full operation catalogue is described by [`/api/v1/openapi.json`](/api). The same surface is also exposed over MCP: the creation dialog hands you a ready-to-paste command that registers the key with an AI assistant, which then operates strictly within the key's scopes. See [Connect over MCP](/api/mcp).
-
-### The Data API
-
-The same key also unlocks the [Data API](/api/data) — direct REST access to every table and view, hosted at `rest.carbon.ms` (the full endpoint catalogue is generated in the [reference](/api/data)). The same row-level security that governs the app governs these calls: the key is scoped to its company and permissions by the database itself, not just the application layer, so it can only ever touch data its scopes allow.
-
-The Data API writes straight to tables, so Carbon does not recalculate the derived values — totals, statuses, ledger entries — that it maintains when you write through the Carbon API. It's the escape hatch: reach for the Carbon API first, and use the Data API when it doesn't cover what you need and you know exactly what the table touches.
-
-The full endpoint catalogue, with request and response shapes per resource, lives in the generated [Data API reference](/api/data).
+It writes straight to tables, so Carbon does not recalculate the derived values (totals, statuses, ledger entries) it maintains when you write through the Carbon API. Use it when the Carbon API doesn't cover what you need and you know exactly what the table touches.
 
 ## Keys versus webhooks
 
-API keys and `docs/building/webhooks` are two halves of an integration, pulling in opposite directions:
-
-- An **API key** lets *you* call *Carbon* — poll for data, create records, run reports on demand.
-- A **webhook** lets *Carbon* call *you* — an HTTP callback the moment a subscribed record changes.
-
-They are independent: a webhook is not authenticated with an API key (Carbon does not sign webhook payloads at all), and an API key does not subscribe to anything. The common pattern is to use both together: let a webhook tell you *that* a record changed, then use your API key to fetch the full, current record from the REST API.
+An **API key** lets *you* call *Carbon*; a **`docs/building/webhooks`** lets *Carbon* call *you* when a subscribed record changes. They're independent — webhook payloads aren't signed with a key — and the common pattern is both together: the webhook tells you *that* a record changed, your key fetches the full, current record.
 
   - Webhooks Get an HTTP callback when a Carbon record changes, then pull the detail with your key.
   - Data API The generated endpoint catalogue for every table and view.
 
-## Troubleshooting
+## Internals and troubleshooting
 
-The exact rejections an API key can return, and the one-time-secret gotcha.
+Key format is `crbn_` + random token; storage is SHA-256 hash + last-five preview. `insertApiKey`/`updateApiKey` strip rate-limit columns from any submission (`settings.service.ts:1282`). The 429 response headers come from `packages/auth/src/services/auth.server.ts:255`.
 
 ### "API key lacks required permissions"
-The call needs a `module_action` scope the key doesn't carry. Scopes are checked per request against the key's own record (`packages/database/supabase/functions/lib/supabase.ts:315`), not the creator's permissions — a key with no scopes can authenticate but read and write nothing. Add the exact `module_action` (e.g. `purchasing_update`) to the key in the permission matrix under **Settings → API Keys**. It takes effect immediately, no session to wait out.
+The call needs a `module_action` scope the key doesn't carry — checked per request against the key's record (`functions/lib/supabase.ts:315`), never the creator's permissions. Add the exact scope in the permission matrix; it applies immediately.
+
+### 403 on every call despite correct scopes
+On Carbon Cloud, API access is Business-tier: the key path blocks Starter-plan companies outright (`packages/auth/src/services/auth.server.ts:312-330`). Upgrade the plan; the key itself is fine. A 403 on a single operation is the scope problem above instead. Connectors (OAuth) hit the same plan gate through the identity they inherit.
 
 ### "Rate limit exceeded"
-The key exceeded its allowance for the current window (`supabase.ts:304`). Every key allows 60 requests per minute, and the limit is platform-controlled — there is no field to raise it, and the API-key service strips the columns from any submitted value. The `429` carries `Retry-After` and `X-RateLimit-*` headers; wait out `Retry-After` rather than retrying immediately. If 60/minute is genuinely too tight for your integration, batch your reads (PostgREST `in.(...)` filters and embedded relations fetch in one call) or talk to us.
+Over the key's 60/minute window (`supabase.ts:304`). Platform-controlled, no field to raise it. Honor `Retry-After`; if the ceiling is genuinely too tight, batch reads (PostgREST `in.(...)` filters, embedded relations) or talk to us.
 
 ### "API key has expired"
-The key's `expiresAt` is in the past, so it's rejected before any work (`supabase.ts:293`). Create a new key (optionally with a later **Expires At**, or leave it blank to never expire) and swap it in — expiry can't be extended on a used key.
+`expiresAt` is in the past (`supabase.ts:293`). Expiry can't be extended on a used key — create a new one and swap it in.
 
 ### "API key not found"
-The `carbon-key` (or Bearer token) didn't hash to a key for this company (`supabase.ts:287`). Usually a mistyped/truncated key, a key from a different company, or one that was deleted. Carbon stores only a SHA-256 hash and the five-character preview, so verify the full key value.
+The token didn't hash to a key for this company (`supabase.ts:287`): mistyped/truncated, a different company's key, or a deleted one. Verify the full value.
 
-### I lost the key / can't find where to see it again
-There's no way to reveal a key after creation. Carbon shows the full key exactly once, in the "You can only see this key once. Store it safely." dialog, and keeps only a hash afterward. If you lost it, delete the key and create a new one.
+### I lost the key / can't see it again
+Not possible by design — the full key is shown once at creation and only a hash is kept. Delete and recreate.

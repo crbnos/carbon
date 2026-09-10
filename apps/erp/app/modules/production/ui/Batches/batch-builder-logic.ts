@@ -4,7 +4,9 @@
 // transform — see apps/erp/test/batching-migration-guards.test.ts).
 
 import {
+  batchPlanBreakdown as aggregateBatchPlan,
   BATCH_RULE_DIMENSIONS,
+  type BatchPlanBreakdown,
   type BatchRuleDimension,
   type BatchRules,
   type BatchType,
@@ -117,21 +119,16 @@ export type BatchDurationMember = {
   operationQuantity: number | null;
 };
 
-export type BatchPlanBreakdown = {
-  setup: number;
-  labor: number;
-  machine: number;
-};
-
 // The planned batch durations by type: ONE shared setup (the largest member's),
-// then labor and machine per the process's batch type — summed for Sequential
-// (members run one after another off the shared setup) or the largest member
-// for Simultaneous (members run together, e.g. one furnace cycle). The single
-// source for the review preview, the setup-saving chip, and the batch-detail
-// Run card. `unitDefaults` supplies a per-type fallback unit when a member's
-// own unit is null (the drawer defaults setup to Total Minutes and
-// labor/machine to Minutes/Piece); the builder passes none, so a missing unit
-// contributes nothing.
+// per-type labor/machine buckets, and the wall-clock `total` (one shared setup
+// plus each member's run — the longer of its labor and machine — combined per
+// the process's batch type). This is the unit-conversion ADAPTER: it converts
+// each member's raw time+unit to milliseconds via `makeDurations`, then delegates
+// the batch-type aggregation to `@carbon/utils` `batchPlanBreakdown` so the
+// scheduler, builder, drawer, and MES totals all share one rule. `unitDefaults`
+// supplies a per-type fallback unit when a member's own unit is null (the drawer
+// defaults setup to Total Minutes and labor/machine to Minutes/Piece); the
+// builder passes none, so a missing unit contributes nothing.
 export function batchPlanBreakdown(
   members: BatchDurationMember[],
   unitDefaults?: {
@@ -141,10 +138,7 @@ export function batchPlanBreakdown(
   },
   batchType: BatchType = "Sequential"
 ): BatchPlanBreakdown {
-  let setup = 0;
-  let labor = 0;
-  let machine = 0;
-  for (const m of members) {
+  const durations = members.map((m) => {
     const d = makeDurations({
       setupTime: m.setupTime ?? 0,
       setupUnit: m.setupUnit ?? unitDefaults?.setupUnit,
@@ -154,30 +148,13 @@ export function batchPlanBreakdown(
       machineUnit: m.machineUnit ?? unitDefaults?.machineUnit,
       operationQuantity: m.operationQuantity
     });
-    setup = Math.max(setup, d.setupDuration);
-    if (batchType === "Simultaneous") {
-      labor = Math.max(labor, d.laborDuration);
-      machine = Math.max(machine, d.machineDuration);
-    } else {
-      labor += d.laborDuration;
-      machine += d.machineDuration;
-    }
-  }
-  return { setup, labor, machine };
-}
-
-// Estimated batch run time: one shared setup (largest), plus labor and machine
-// per the batch type (see batchPlanBreakdown).
-export function batchEstimateMs(
-  members: BatchCandidate[],
-  batchType: BatchType = "Sequential"
-): number {
-  const { setup, labor, machine } = batchPlanBreakdown(
-    members,
-    undefined,
-    batchType
-  );
-  return setup + labor + machine;
+    return {
+      setupDuration: d.setupDuration,
+      laborDuration: d.laborDuration,
+      machineDuration: d.machineDuration
+    };
+  });
+  return aggregateBatchPlan(durations, batchType);
 }
 
 export function dueDateOf(candidate: BatchCandidate): string | null {

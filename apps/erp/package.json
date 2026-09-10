@@ -43,7 +43,6 @@
     "@internationalized/date": "catalog:",
     "@lingui/core": "catalog:",
     "@lingui/react": "catalog:",
-    "@marsidev/react-turnstile": "1.5.0",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@monaco-editor/react": "4.7.0",
     "@nanostores/react": "catalog:",
@@ -182,6 +181,7 @@
     "dev:app": "react-router dev",
     "lint": "biome lint --write ",
     "start": "NODE_ENV=production react-router-serve ./build/server/index.js",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit",
     "typegen": "react-router typegen"
   },

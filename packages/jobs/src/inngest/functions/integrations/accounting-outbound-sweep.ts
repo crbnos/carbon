@@ -229,7 +229,10 @@ async function sweepCompanyProvider(args: {
     const billIds = await pageIds({
       ctx,
       table: "purchaseInvoice",
-      statuses: SWEPT_BILL_STATUSES,
+      statuses:
+        providerId === "rillet"
+          ? [...SWEPT_BILL_STATUSES, "Voided"]
+          : SWEPT_BILL_STATUSES,
       dateColumn: "postingDate",
       floor
     });
@@ -258,7 +261,10 @@ async function sweepCompanyProvider(args: {
     const invoiceIds = await pageIds({
       ctx,
       table: "salesInvoice",
-      statuses: SWEPT_INVOICE_STATUSES,
+      statuses:
+        providerId === "rillet"
+          ? [...SWEPT_INVOICE_STATUSES, "Voided"]
+          : SWEPT_INVOICE_STATUSES,
       dateColumn: "postingDate",
       floor
     });
@@ -281,9 +287,23 @@ async function sweepCompanyProvider(args: {
       dateColumn: "createdAt",
       floor
     });
-    scanned.payments = paymentIds.length;
+    // A void is a LATE state change, so `createdAt` cannot see it: a payment
+    // created before the lookback floor and voided today is invisible to the
+    // page above, and a lost void event would never recover. Page those by
+    // `voidedAt` as well — the column that actually moved.
+    const lateVoidedPaymentIds = await pageIds({
+      ctx,
+      table: "payment",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor
+    });
+    const sweptPaymentIds = [
+      ...new Set([...paymentIds, ...lateVoidedPaymentIds])
+    ];
+    scanned.payments = sweptPaymentIds.length;
     refs.push(
-      ...paymentIds.map(
+      ...sweptPaymentIds.map(
         (id): ReconcileRef => ({ entityType: "payment", entityId: id })
       )
     );

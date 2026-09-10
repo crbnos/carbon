@@ -101,7 +101,65 @@ export namespace Qbo {
 
   export type Item = z.infer<typeof ItemSchema>;
 
+  export const TaxRateDetailSchema = z.object({
+    TaxRateRef: RefSchema,
+    TaxTypeApplicable: z.string().optional(),
+    TaxOrder: z.number().optional(),
+    TaxOnTaxOrder: z.number().optional()
+  });
+  export const TaxRateListSchema = z.object({
+    TaxRateDetail: z.array(TaxRateDetailSchema)
+  });
+  export const TaxCodeSchema = z.object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    Active: z.boolean().optional(),
+    Taxable: z.boolean().optional(),
+    TaxGroup: z.boolean().optional(),
+    SalesTaxRateList: TaxRateListSchema.optional(),
+    PurchaseTaxRateList: TaxRateListSchema.optional()
+  });
+  export type TaxCode = z.infer<typeof TaxCodeSchema>;
+  export const TaxRateSchema = z.object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    Active: z.boolean().optional(),
+    RateValue: z.number().optional(),
+    SpecialTaxType: z.string().optional(),
+    EffectiveTaxRate: z
+      .array(
+        z
+          .object({
+            EffectiveDate: z.string().optional(),
+            RateValue: z.number().optional()
+          })
+          .passthrough()
+      )
+      .optional()
+  });
+  export type TaxRate = z.infer<typeof TaxRateSchema>;
+  export const TaxLineDetailSchema = z.object({
+    TaxRateRef: RefSchema,
+    NetAmountTaxable: z.number(),
+    PercentBased: z.literal(true),
+    TaxPercent: z.number()
+  });
+  export type TaxLineDetail = z.infer<typeof TaxLineDetailSchema>;
+  export const TxnTaxDetailSchema = z.object({
+    TxnTaxCodeRef: RefSchema.optional(),
+    TotalTax: z.number(),
+    TaxLine: z.array(
+      z.object({
+        Amount: z.number(),
+        DetailType: z.literal("TaxLineDetail"),
+        TaxLineDetail: TaxLineDetailSchema
+      })
+    )
+  });
+  export type TxnTaxDetail = z.infer<typeof TxnTaxDetailSchema>;
+
   export const SalesItemLineDetailSchema = z.object({
+    TaxCodeRef: RefSchema.optional(),
     ItemRef: RefSchema.optional(),
     Qty: z.number().optional(),
     UnitPrice: z.number().optional()
@@ -125,6 +183,12 @@ export namespace Qbo {
   export type InvoiceLine = z.infer<typeof InvoiceLineSchema>;
 
   export const InvoiceSchema = z.object({
+    TxnTaxDetail: TxnTaxDetailSchema.optional(),
+    CurrencyRef: RefSchema.optional(),
+    ExchangeRate: z.number().optional(),
+    GlobalTaxCalculation: z
+      .enum(["TaxExcluded", "TaxInclusive", "NotApplicable"])
+      .optional(),
     Id: z.string(),
     SyncToken: z.string(),
     /** QBO caps DocNumber at 21 characters. */

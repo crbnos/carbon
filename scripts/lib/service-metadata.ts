@@ -100,6 +100,11 @@ const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
   accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
   account_upsertNotificationPreference: ["companyId"],
+  // Both operations replace settlement rows in a transaction. Their verbs do
+  // not imply INSERT to the name-based rule, but the service requires the
+  // authenticated creator for every replacement row.
+  invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
+  invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`
@@ -1163,14 +1168,23 @@ function permissionActionsFor(
   return ["update"];
 }
 
-// Services that pick insert-vs-update this way are the only ones MCP can't infer.
-function usesCreatedByDiscriminator(
+// Services that pick insert-vs-update by testing for an audit field on the
+// payload are the only ones MCP can't infer, so they need the `_operation` flag.
+// BOTH directions count: `"createdBy" in` (create-branch first, e.g.
+// upsertQuoteOperation) and `"updatedBy" in` (update-branch first, e.g.
+// upsertQuoteMaterial / upsertJobMaterial). The dispatch stamps createdBy on
+// create and updatedBy on update and suppresses the other, so either convention
+// lands on the branch the caller asked for.
+function usesOperationDiscriminator(
   content: string,
   funcName: string
 ): boolean {
   const body = extractFunctionBody(content, funcName);
   if (body === null) return false;
-  return stripComments(body).includes('"createdBy" in');
+  const stripped = stripComments(body);
+  return (
+    stripped.includes('"createdBy" in') || stripped.includes('"updatedBy" in')
+  );
 }
 
 // The `:` guard keeps `https://` intact.
@@ -1178,6 +1192,27 @@ function stripComments(source: string): string {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+/**
+ * Delete `pattern` wherever a sibling `format` is present, recursively. zod
+ * v4's email conversion emits BOTH — `format: "email"` plus a ~200-character
+ * regex — on every email field of every validator-derived schema. The format
+ * keyword carries the same contract for a fraction of the tokens, and MCP
+ * clients read these schemas far more often than they validate against them.
+ */
+function stripRedundantPatterns(node: unknown): void {
+  if (Array.isArray(node)) {
+    for (const item of node) stripRedundantPatterns(item);
+    return;
+  }
+  if (node !== null && typeof node === "object") {
+    const record = node as Record<string, unknown>;
+    if (typeof record.format === "string" && "pattern" in record) {
+      delete record.pattern;
+    }
+    for (const value of Object.values(record)) stripRedundantPatterns(value);
+  }
 }
 
 function addOperationArg(schema: Record<string, unknown>): void {
@@ -1227,6 +1262,61 @@ function buildToolSchema(
     // nested schema.
     const trimmedType = param.typeStr.trim();
     const isInlineObject = trimmedType.startsWith("{");
+
+    // A union/intersection AROUND a validator reference — the discriminated
+    // upsert shape `(z.infer<V> & { jobId; …; createdBy }) | (z.infer<V> &
+    // { jobId; …; updatedBy })`. The unanchored validatorMatch below used to
+    // win here and publish the validator VERBATIM, silently dropping every
+    // intersection extra: `jobId` (NOT NULL in the DB) was absent from
+    // production_upsertJobMaterial's schema, quoteId/quoteLineId from
+    // sales_upsertQuoteMaterial's. Resolve each union branch through the
+    // intersection-aware machinery and merge them flat — properties from every
+    // branch, required only where required in EVERY branch (so a create-only
+    // Omit<…, "id"> branch demotes `id` to optional, and auth fields never
+    // appear at all: CONTEXT_PARAMS strips them). Falls through untouched when
+    // any branch fails to resolve — the `& ({createdBy} | {updatedBy})` audit
+    // union resolves to {} by design and keeps the verbatim-validator path.
+    const looksComposed =
+      !isInlineObject &&
+      !trimmedType.endsWith("[]") &&
+      trimmedType.includes("z.infer<") &&
+      (splitAtTopLevel(trimmedType, "|").filter((s) => s.trim() !== "")
+        .length > 1 ||
+        splitAtTopLevel(trimmedType, "&").length > 1);
+    if (looksComposed) {
+      const branches = splitAtTopLevel(trimmedType, "|")
+        .map((s) => s.trim())
+        .filter((s) => s !== "")
+        .map((branch) => typeToJsonSchema(branch, resolveCtx));
+      const allResolved = branches.every(
+        (b) =>
+          b.type === "object" &&
+          Object.keys((b.properties as Record<string, unknown>) ?? {}).length >
+            0
+      );
+      if (allResolved) {
+        const properties: Record<string, unknown> = {};
+        for (const branch of branches) {
+          Object.assign(
+            properties,
+            branch.properties as Record<string, unknown>
+          );
+        }
+        const required = [
+          ...new Set(
+            branches.flatMap((b) => (b.required as string[] | undefined) ?? [])
+          ),
+        ].filter((name) =>
+          branches.every((b) =>
+            ((b.required as string[] | undefined) ?? []).includes(name)
+          )
+        );
+        const schema: Record<string, unknown> = { type: "object", properties };
+        if (required.length > 0) schema.required = required;
+        return { schema, paramCount: Object.keys(properties).length };
+      }
+    }
+
     // The regex is unanchored, so it also matches a `z.infer<…>` NESTED inside a
     // wrapper (`lines: (Omit<z.infer<…>> & {…})[]`) — returning the validator's
     // schema verbatim there publishes one line's fields flat and drops the array.
@@ -1444,7 +1534,19 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     if (fs.existsSync(mcpServerFile)) {
       const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
       content = `${content}\n${mcpServerContent}`;
-      functions.push(...parseExportedFunctions(mcpServerContent));
+      // A same-named mcp.server export SHADOWS the service one — matching the
+      // runtime registry, where the mcp.server spread wins — so an orchestration
+      // wrapper can replace a bare service function without renaming the
+      // published tool. Its PARAMS come from the wrapper; note that body scans
+      // (classification, the `_operation` discriminator) read the FIRST match in
+      // the concatenated content, i.e. the service body — a wrapper must keep
+      // the same discriminator convention as the function it shadows.
+      const mcpFunctions = parseExportedFunctions(mcpServerContent);
+      const shadowed = new Set(mcpFunctions.map((f) => f.name));
+      for (let i = functions.length - 1; i >= 0; i--) {
+        if (shadowed.has(functions[i].name)) functions.splice(i, 1);
+      }
+      functions.push(...mcpFunctions);
     }
 
     // Sources searched when a param references a bare type alias, most
@@ -1485,9 +1587,10 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         onResolved: (validatorName, how) =>
           opts.onValidatorResolved?.(toolName, validatorName, how),
       });
+      stripRedundantPatterns(schema);
       if (
         injectAuth.includes("createdBy") &&
-        usesCreatedByDiscriminator(content, func.name)
+        usesOperationDiscriminator(content, func.name)
       ) {
         addOperationArg(schema);
       }

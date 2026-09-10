@@ -1,10 +1,17 @@
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
-import { recalculateJobOperationDependencies } from "./production.service";
+import type { jobMaterialValidator } from "./production.models";
+import {
+  pullJobMaterialMakeMethod,
+  recalculateJobMakeMethodRequirements,
+  recalculateJobOperationDependencies,
+  upsertJobMaterial as upsertJobMaterialRow
+} from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
 // (`@carbon/auth/users.server`, `@carbon/ee/rules.server`). These CANNOT
@@ -171,4 +178,129 @@ export async function scheduleJob(
     companyId,
     userId
   });
+}
+
+/**
+ * Upsert a job material WITH the route-level orchestration the bare service
+ * function lacks. Shadows `production.service.ts`'s `upsertJobMaterial` in the
+ * MCP/API registry (the mcp.server spread wins), so the published tool name is
+ * unchanged; the ERP routes keep calling the service directly and run this
+ * orchestration themselves.
+ *
+ * Without this, a connector-created material sat at `estimatedQuantity = 0`
+ * (the column default — the requirements recalc that fills it lives in the
+ * ROUTES, not the service), and since `quantityToIssue` is GENERATED as
+ * `estimatedQuantity - quantityIssued`, issue/picking pulled nothing.
+ *
+ * Mirrors `x+/job+/methods+/$jobId.material.new.tsx` and `.material.$id.tsx`:
+ * - Make-to-Order pulls the subassembly's method — on create, and on the
+ *   TRANSITION into Make to Order only (a re-pull wipes existing edits).
+ * - Create recalcs requirements + operation dependencies when the job is
+ *   already released (release itself recalcs the whole job, so Draft/Planned
+ *   creates match the UI: estimates fill at release).
+ * - Update recalcs requirements ALWAYS; dependencies when the material is
+ *   Make to Order and tied to an operation.
+ */
+export async function upsertJobMaterial(
+  client: SupabaseClient<Database>,
+  jobMaterial:
+    | (z.infer<typeof jobMaterialValidator> & {
+        jobId: string;
+        jobOperationId?: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof jobMaterialValidator> & {
+        jobId: string;
+        jobOperationId?: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const isUpdate = "updatedBy" in jobMaterial;
+  const userId = isUpdate ? jobMaterial.updatedBy : jobMaterial.createdBy;
+  const { companyId, jobId } = jobMaterial;
+
+  // The dependency recalc reaches the scheduling engine over Kysely (no RLS),
+  // so the routes' production gate is re-applied here, like scheduleJob.
+  const action = isUpdate ? ("update" as const) : ("create" as const);
+  const claims = await getUserClaims(userId, companyId);
+  if (!hasPermission(claims?.permissions, "production", action, companyId)) {
+    throw new Error(
+      `You do not have permission to ${action} job materials (production ${action}).`
+    );
+  }
+
+  // Capture the previous methodType BEFORE the write — the make-method pull
+  // runs only on the transition INTO "Make to Order".
+  let wasMakeToOrder = false;
+  if (isUpdate) {
+    const existing = await client
+      .from("jobMaterial")
+      .select("methodType")
+      .eq("id", jobMaterial.id)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error) return existing;
+    wasMakeToOrder = existing.data?.methodType === "Make to Order";
+  }
+
+  const upserted = await upsertJobMaterialRow(client, jobMaterial);
+  if (upserted.error || !upserted.data) return upserted;
+  const jobMaterialId = upserted.data.id;
+
+  if (jobMaterial.methodType === "Make to Order" && !wasMakeToOrder) {
+    const makeMethod = await pullJobMaterialMakeMethod(client, {
+      jobMaterialId,
+      itemId: jobMaterial.itemId,
+      companyId,
+      userId
+    });
+    if (makeMethod.error) {
+      return { data: upserted.data, error: makeMethod.error };
+    }
+  }
+
+  let recalcRequirements: boolean;
+  let recalcDependencies: boolean;
+  if (isUpdate) {
+    recalcRequirements = true;
+    recalcDependencies =
+      jobMaterial.methodType === "Make to Order" &&
+      Boolean(jobMaterial.jobOperationId);
+  } else {
+    const job = await client
+      .from("job")
+      .select("status")
+      .eq("id", jobId)
+      .single();
+    const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
+    recalcRequirements = isReleased;
+    recalcDependencies = isReleased;
+  }
+
+  if (recalcRequirements) {
+    const requirements = await recalculateJobMakeMethodRequirements(client, {
+      id: jobMaterial.jobMakeMethodId,
+      companyId,
+      userId
+    });
+    if (requirements.error) {
+      return { data: upserted.data, error: requirements.error };
+    }
+  }
+  if (recalcDependencies) {
+    const dependencies = await recalculateJobOperationDependencies(
+      client,
+      getDatabaseClient(),
+      { jobId, companyId, userId }
+    );
+    if (dependencies?.error) {
+      return { data: upserted.data, error: dependencies.error };
+    }
+  }
+
+  return upserted;
 }

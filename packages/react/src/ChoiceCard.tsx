@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
 import { RadioGroup, RadioGroupItem } from "./Radio";
 import { cn } from "./utils/cn";
 
@@ -33,6 +33,11 @@ type ChoiceCardGroupProps<V extends string = string> = {
    * `"row"` lays them out horizontally with equal-width columns.
    */
   direction?: "row" | "column";
+  /**
+   * Focus the selected card (falling back to the first) on mount, so a
+   * choice screen is immediately arrow-key navigable without a Tab first.
+   */
+  autoFocus?: boolean;
   /** Extra classes for the wrapping `<div>`. */
   className?: string;
 };
@@ -61,9 +66,21 @@ export function ChoiceCardGroup<V extends string = string>({
   onChange,
   options,
   direction = "column",
+  autoFocus = false,
   className
 }: ChoiceCardGroupProps<V>) {
   const groupId = useId();
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only focus
+  useEffect(() => {
+    if (!autoFocus) return;
+    const radio =
+      groupRef.current?.querySelector<HTMLElement>(
+        '[role="radio"][data-state="checked"]'
+      ) ?? groupRef.current?.querySelector<HTMLElement>('[role="radio"]');
+    radio?.focus();
+  }, []);
 
   return (
     <div className={cn("space-y-2 w-full", className)}>
@@ -73,6 +90,7 @@ export function ChoiceCardGroup<V extends string = string>({
         </span>
       )}
       <RadioGroup
+        ref={groupRef}
         value={value}
         onValueChange={(v) => onChange(v as V)}
         className={cn(

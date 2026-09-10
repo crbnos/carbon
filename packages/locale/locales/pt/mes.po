@@ -145,6 +145,9 @@ msgstr "Tem a certeza de que deseja concluir esta operação? Isto terminará to
 msgid "Are you sure you want to leave this page?"
 msgstr "Tem certeza que deseja sair desta página?"
 
+msgid "Assembly steps"
+msgstr "Etapas de montagem"
+
 msgid "Assigned"
 msgstr "Atribuído"
 
@@ -552,6 +555,9 @@ msgstr "Finalizar com material não selecionado?"
 msgid "Forgot to Clock Out?"
 msgstr "Esqueceu de apontar fim?"
 
+msgid "General"
+msgstr "Geral"
+
 msgid "Go back to operation"
 msgstr "Voltar para operação"
 
@@ -649,6 +655,9 @@ msgstr "Ordens de produção"
 msgid "Keep picking"
 msgstr "Continuar separação"
 
+msgid "Keyboard shortcuts"
+msgstr "Atalhos de teclado"
+
 msgid "Kit"
 msgstr "Kit"
 
@@ -742,6 +751,9 @@ msgstr "Remover itens do estoque manualmente"
 msgid "Mark Short"
 msgstr "Marcar como Falta"
 
+msgid "Mark the step done / record"
+msgstr "Marcar a etapa como feita / gravar"
+
 msgid "matches"
 msgstr "corresponde"
 
@@ -785,6 +797,9 @@ msgstr "Minhas Horas"
 msgid "Name"
 msgstr "Nome"
 
+msgid "Navigation"
+msgstr "Navegação"
+
 msgid "New"
 msgstr "Novo"
 
@@ -796,6 +811,9 @@ msgstr "Mais recente primeiro"
 
 msgid "Next"
 msgstr "Próximo"
+
+msgid "Next step"
+msgstr "Próxima etapa"
 
 msgid "No"
 msgstr "Não"
@@ -892,6 +910,9 @@ msgstr "Nenhum número de série"
 
 msgid "No serial numbers found"
 msgstr "Nenhum número de série encontrado"
+
+msgid "No shortcuts available on this page."
+msgstr "Nenhum atalho disponível nesta página."
 
 msgid "No spare parts added yet"
 msgstr "Nenhuma peça de reposição adicionada ainda"
@@ -1044,6 +1065,9 @@ msgstr "Anterior"
 msgid "Preventive"
 msgstr "Preventiva"
 
+msgid "Previous step"
+msgstr "Etapa anterior"
+
 msgid "Print"
 msgstr "Imprimir"
 
@@ -1154,6 +1178,9 @@ msgstr "Pedido de Venda"
 
 msgid "Save"
 msgstr "Salvar"
+
+msgid "Save the form you're editing"
+msgstr "Salvar o formulário que você está editando"
 
 msgid "Scan"
 msgstr "Escanear"
@@ -1311,6 +1338,9 @@ msgstr "Falta"
 msgid "Short pick {itemName}"
 msgstr "Colheita curta {itemName}"
 
+msgid "Show this overlay"
+msgstr "Mostrar esta sobreposição"
+
 msgid "Sign in with Google"
 msgstr "Entrar com Google"
 
@@ -1346,6 +1376,9 @@ msgstr "Peças de reposição utilizadas"
 
 msgid "Start"
 msgstr "Iniciar"
+
+msgid "Start or pause the operation"
+msgstr "Iniciar ou pausar a operação"
 
 msgid "Station User"
 msgstr "Usuário da Estação"
@@ -1435,6 +1468,9 @@ msgstr "Tempo Trabalhado: {0}"
 
 msgid "Today"
 msgstr "Hoje"
+
+msgid "Toggle the sidebar"
+msgstr "Alternar barra lateral"
 
 msgid "Tools"
 msgstr "Ferramentas"

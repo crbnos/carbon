@@ -25,10 +25,13 @@ import { allocateOperation, isConflict } from "./slot-allocator.ts";
  * placed later than the batch start this wave surfaces as a conflict flag on
  * the member (in the selector), and the next wave converges.
  *
- * Duration follows `process.batchType`: `setup(max) + Σ run` (Sequential) or
- * `setup(max) + max run` (Simultaneous), net of progress via the shared
- * `batchDuration` from `@carbon/utils` — the same helper the builder estimate
- * uses, so the reservation and the UI can never disagree.
+ * Duration follows `process.batchType`: run_i = `max(labor_i, machine_i)`,
+ * combined `setup(max) + Σ run` (Sequential) or `setup(max) + max run`
+ * (Simultaneous), net of progress via the shared `batchDuration` from
+ * `@carbon/utils`. Its sibling `batchPlanBreakdown` (same `@carbon/utils`
+ * module, same run-combining rule) computes the display totals for the builder
+ * estimate, the drawer, and the MES batch surfaces without progress netting —
+ * so the reservation and the UI can never disagree.
  *
  * `Planned` batches are deliberately NOT here — their members schedule per-op
  * exactly as before release (bounded residual over-booking that disappears at

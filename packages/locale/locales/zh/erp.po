@@ -613,6 +613,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "某行结算金额超过其发票的未结余额"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "列表被接入到 {0}，所以此步骤为每个项目运行一次并返回结果列表。"
@@ -1232,8 +1235,14 @@ msgstr "添加自定义定价行以覆盖数量、价格、运费、提前期和
 msgid "Add a domain"
 msgstr "添加一个域"
 
+msgid "Add a line (in document explorers)"
+msgstr "添加一行（在文件浏览器中）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr "添加参数（在程序文件浏览器中）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
@@ -1246,6 +1255,9 @@ msgstr "添加一行"
 
 msgid "Add a step"
 msgstr "添加步骤"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr "添加步骤或问题（在程序文件和培训浏览器中）"
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -1844,11 +1856,17 @@ msgstr "已应用"
 msgid "Applied amount for {0}"
 msgstr "已应用金额 {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
+
 msgid "Applied Date"
 msgstr "应用日期"
 
 msgid "Applied To"
 msgstr "应用于"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "已应用金额、折扣和核销金额均以公司基本货币（{baseCurrency}）表示。"
 
 msgid "Applies to"
 msgstr "适用于"
@@ -2373,6 +2391,12 @@ msgstr "你确定要向这些用户发送邀请吗？"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "你确定要向此用户发送邀请吗？"
+
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "你确定要作废此备忘录吗？这将反转其会计分录和应用。此操作无法撤销。"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "你确定要作废此付款吗？这将反转其会计分录和应用。此操作无法撤销。"
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "您确定要作废此采购发票吗？此操作将反转所有财务交易，无法撤销。"
@@ -3434,9 +3458,6 @@ msgstr "清除搜索查询"
 msgid "Clear selection"
 msgstr "清除选择"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "用交易对方的已过账信用余额和现金清偿此发票。信用直接应用 — 无需过账。"
-
 msgid "Clear value"
 msgstr "清除值"
 
@@ -3759,6 +3780,9 @@ msgstr "确认 {0}"
 
 msgid "Confirm & release"
 msgstr "确认并下达"
+
+msgid "Confirm a dialog"
+msgstr "确认对话框"
 
 msgid "Confirm all"
 msgstr "全部确认"
@@ -4253,7 +4277,7 @@ msgstr "无法读取文件：{0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "无法下达{0}：{1}"
 
 msgid "Could not save"
 msgstr "无法保存"
@@ -4590,6 +4614,9 @@ msgstr "当制造费用吸收入在制品时的贷方科目"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "当制造成本吸收入在制品时使用的贷方科目"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "抵扣金额以公司基本货币（{currency}）表示。此付款过账后，抵扣才会生效。"
 
 msgid "Credit Memo"
 msgstr "贷项凭证"
@@ -7879,6 +7906,9 @@ msgstr "前往 {0}"
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
+msgid "Go to module"
+msgstr "转到模块"
+
 msgid "Go to that week"
 msgstr "跳转到该周"
 
@@ -8567,6 +8597,9 @@ msgstr "库存"
 msgid "Inv Rate"
 msgstr "发票汇率"
 
+msgid "Invalid applications"
+msgstr "无效应用"
+
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
@@ -8958,6 +8991,9 @@ msgstr "日记账行"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr "跳转到详情页面中的某个分区（同样的修饰符 + 分区字母）"
+
 msgid "Just one"
 msgstr "仅一个"
 
@@ -9003,6 +9039,9 @@ msgstr "让订单、报价单和设置受到第二道检查的保护"
 msgid "Key"
 msgstr "钥匙"
 
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
 msgid "Kind of record"
 msgstr "记录类型"
 
@@ -9015,7 +9054,7 @@ msgstr "标签"
 msgid "Label to complete the current operation for this kanban"
 msgstr "用于完成此看板当前操作的标签"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "用于为此看板创建 {0} 的标签"
 
@@ -9228,6 +9267,9 @@ msgstr "浅色"
 
 msgid "Light Mode"
 msgstr "浅色模式"
+
+msgid "Light or dark mode"
+msgstr "亮色或深色模式"
 
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
@@ -10439,6 +10481,9 @@ msgstr "新报价行"
 msgid "New Receipt"
 msgstr "新收据"
 
+msgid "New record (on list pages)"
+msgstr "新建记录（在列表页面）"
+
 msgid "New record created"
 msgstr "新记录已创建"
 
@@ -10561,6 +10606,9 @@ msgstr "下次到期日期"
 
 msgid "Next page"
 msgstr "下一页"
+
+msgid "Next page (in tables)"
+msgstr "下一页（在表格中）"
 
 msgid "Next Sequence"
 msgstr "下一个编号规则"
@@ -10842,6 +10890,9 @@ msgstr "没有人员可分配"
 msgid "No open invoices"
 msgstr "没有未结发票"
 
+msgid "No open memos"
+msgstr "无未结单据"
+
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
 
@@ -10976,6 +11027,9 @@ msgstr "此时间窗内无排程工作"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
+
+msgid "No shortcuts available on this page."
+msgstr "此页面没有可用的快捷键。"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "库存管理或工单状态没有单一的可信数字"
@@ -11335,11 +11389,11 @@ msgstr "一套数字"
 msgid "One shared setup instead of one per operation"
 msgstr "共享一次设置，而非每道工序一次"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "一次共享换型加上最长的人工和机器工时 — 成员一起运行"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "一次共享换型加上每个成员的加工时间 — 取人工和机器时间的较大值 — 按顺序运行"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "一个共享设置加上汇总的劳动和机器时间"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "一次共享换型加上最长的成员加工时间 — 取人工和机器时间的较大值 — 由于成员并行运行"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "工单工艺路线中的一个步骤，命名一个工艺和工作中心，并包含其自己的换型、人工和机器工时及费率。"
@@ -11524,6 +11578,9 @@ msgstr "工序"
 
 msgid "Operation"
 msgstr "操作"
+
+msgid "Operation batch"
+msgstr "工序生产批次"
 
 msgid "Operation lead time"
 msgstr "操作提前期"
@@ -11947,6 +12004,9 @@ msgstr "付款应用"
 msgid "Payment Date"
 msgstr "付款日期"
 
+msgid "Payment from Customer"
+msgstr "来自客户的付款"
+
 msgid "Payment ID"
 msgstr "付款ID"
 
@@ -11968,11 +12028,14 @@ msgstr "付款条件"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "付款条件，如净30天或收货即付"
 
+msgid "Payment to Supplier"
+msgstr "向供应商付款"
+
 msgid "Payments"
 msgstr "付款"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "应用于此发票的付款和贷方。单击一行以打开源单据。"
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
 
 msgid "PDF"
 msgstr "PDF"
@@ -12386,6 +12449,9 @@ msgstr "前一天"
 
 msgid "Previous page"
 msgstr "上一页"
+
+msgid "Previous page (in tables)"
+msgstr "上一页（在表格中）"
 
 msgid "Previous step"
 msgstr "上一步骤"
@@ -12851,7 +12917,7 @@ msgstr "推送到会计系统"
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
 
@@ -13262,8 +13328,8 @@ msgstr "录音"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "针对客户或供应商记录贷方或借方备忘录。对特定发票的应用在创建备忘录后添加。"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "记录从客户收到的现金（收据）或支付给供应商的现金（支付）。对特定发票的应用在创建付款后添加。"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "记录客户付款、供应商付款或退款。付款创建后，可以添加对发票或单据的应用。"
 
 msgid "Record deleted"
 msgstr "记录已删除"
@@ -13306,6 +13372,15 @@ msgstr "刷新"
 
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
+
+msgid "Refund from Supplier"
+msgstr "来自供应商的退款"
+
+msgid "Refund memos"
+msgstr "退款单据"
+
+msgid "Refund to Customer"
+msgstr "向客户退款"
 
 msgid "Regenerate"
 msgstr "重新生成"
@@ -13366,7 +13441,7 @@ msgstr "下达"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "下达{0}个生产批次"
 
 msgid "Release Batch"
 msgstr "下达生产批次"
@@ -13388,7 +13463,7 @@ msgstr "已下达"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "已下达{0}个生产批次"
 
 msgid "Released date"
 msgstr "下达日期"
@@ -13811,8 +13886,14 @@ msgstr "修订版 {revision}"
 msgid "Revenue"
 msgstr "收入"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "向客户收取的运输费用收入科目"
+
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "用于向客户收取的运费收入贷记的总账科目，已过账显示在单独行；必须与销售默认账户不同。"
 
 msgid "Reverse all inventory adjustments"
 msgstr "反转所有库存调整"
@@ -14255,6 +14336,9 @@ msgstr "保存方法"
 
 msgid "Save Rate"
 msgstr "保存汇率"
+
+msgid "Save the form you're editing"
+msgstr "保存您正在编辑的表单"
 
 msgid "Save view"
 msgstr "保存视图"
@@ -14707,9 +14791,6 @@ msgstr "选择表面"
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "选择此付款结算的发票。折扣和核销以发票货币计。"
-
 msgid "Select value"
 msgstr "选择值"
 
@@ -15083,6 +15164,12 @@ msgstr "发货方式"
 msgid "Shipping Notes"
 msgstr "运输备注"
 
+msgid "Shipping Revenue"
+msgstr "运输收入"
+
+msgid "Shipping Revenue (default)"
+msgstr "运输收入（默认）"
+
 msgid "Shipping Supplier"
 msgstr "运输供应商"
 
@@ -15148,6 +15235,9 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+msgid "Show this overlay"
+msgstr "显示此覆盖层"
 
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
@@ -16110,6 +16200,9 @@ msgstr "税收百分比"
 
 msgid "Tax Residual Value %"
 msgstr "税务残值 %"
+
+msgid "Tax Status"
+msgstr "税状态"
 
 msgid "Tax Useful Life (default)"
 msgstr "税使用年限（默认）"
@@ -17423,6 +17516,9 @@ msgstr "切换级别"
 msgid "Toggle Properties"
 msgstr "切换属性"
 
+msgid "Toggle the sidebar"
+msgstr "切换侧边栏"
+
 msgid "Toggle views"
 msgstr "切换视图"
 
@@ -17893,6 +17989,9 @@ msgstr "取消报废 {label}"
 
 msgid "Unshipped orders"
 msgstr "未发货订单"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "在工作中心的可组批工艺上，分组在一起运行的未开始工单工序，共享一个换型和一个计时器，其时间按工单数量比例分配回各工单。"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
@@ -18462,6 +18561,11 @@ msgstr "在用户的公开资料中可见"
 
 msgid "Void"
 msgstr "作废"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "作废 {0}"
 
 msgid "Void Invoice"
 msgstr "作废发票"

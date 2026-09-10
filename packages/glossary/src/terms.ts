@@ -153,6 +153,11 @@ export const terms = {
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,
     href: "/docs/reference/work-centers"
   },
+  "operation-batch": {
+    term: msg`Operation batch`,
+    definition: msg`Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity.`,
+    href: "/docs/reference/batching"
+  },
   backflush: {
     term: msg`Backflush`,
     definition: msg`Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually.`,
@@ -556,6 +561,10 @@ export const terms = {
   "account-default-sales": {
     term: msg`Sales (default)`,
     definition: msg`Default revenue GL account credited when a sales invoice posts.`
+  },
+  "account-default-sales-shipping-revenue": {
+    term: msg`Shipping Revenue (default)`,
+    definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
   },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,

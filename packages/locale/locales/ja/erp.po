@@ -613,6 +613,9 @@ msgstr "ジョブの開始日が変更されました"
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "明細が請求書の未払い残高を超えて消込しています"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "リストが{0}に接続されているため、このステップは各項目ごとに1回実行され、結果のリストを返します。"
@@ -1232,8 +1235,14 @@ msgstr "数量、価格、配送、リードタイム、および税を上書き
 msgid "Add a domain"
 msgstr "ドメインを追加"
 
+msgid "Add a line (in document explorers)"
+msgstr "行を追加（文書エクスプローラーで）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr "手順書エクスプローラーでパラメータを追加"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -1246,6 +1255,9 @@ msgstr "行を追加"
 
 msgid "Add a step"
 msgstr "ステップを追加"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr "手順書と教育訓練エクスプローラーでステップまたは質問を追加"
 
 msgid "Add Ability"
 msgstr "能力を追加"
@@ -1844,11 +1856,17 @@ msgstr "適用"
 msgid "Applied amount for {0}"
 msgstr "{0}の適用額"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
+
 msgid "Applied Date"
 msgstr "適用日"
 
 msgid "Applied To"
 msgstr "適用先"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "適用済み金額、値引額、償却額は会社の基本通貨（{baseCurrency}）で表示されます。"
 
 msgid "Applies to"
 msgstr "適用対象"
@@ -2373,6 +2391,12 @@ msgstr "これらのユーザーに招待を送信してもよろしいですか
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "このユーザーに招待を送信してもよろしいですか?"
+
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "このメモを取消しますか？会計エントリと適用が反転されます。この操作は元に戻すことができません。"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "この支払を取消しますか？会計エントリと適用が反転されます。この操作は元に戻すことができません。"
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "この仕入先請求書を取消してもよろしいですか？この操作はすべての財務取引を取消し、取り消せません。"
@@ -3434,9 +3458,6 @@ msgstr "検索クエリをクリア"
 msgid "Clear selection"
 msgstr "選択をクリア"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "転記済みクレジットと現金を使用して請求書をクリアします。クレジットは直接適用されます。転記は不要です。"
-
 msgid "Clear value"
 msgstr "値をクリア"
 
@@ -3759,6 +3780,9 @@ msgstr "{0}を確認"
 
 msgid "Confirm & release"
 msgstr "確認してリリース"
+
+msgid "Confirm a dialog"
+msgstr "ダイアログを確認"
 
 msgid "Confirm all"
 msgstr "すべて確認"
@@ -4253,7 +4277,7 @@ msgstr "文書が読み込めません: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "{0}をリリースできませんでした: {1}"
 
 msgid "Could not save"
 msgstr "保存できませんでした"
@@ -4590,6 +4614,9 @@ msgstr "間接費が仕掛品に吸収されたときに貸方勘定を計上"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "製造原価が仕掛品に吸収されたときに使用される貸方勘定"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "クレジット金額は会社の基本通貨（{currency}）で表示されます。この支払を転記すると、クレジットの適用が反映されます。"
 
 msgid "Credit Memo"
 msgstr "クレジットメモ"
@@ -7879,6 +7906,9 @@ msgstr "{0}に移動"
 msgid "Go to implementation hub"
 msgstr "実施ハブに移動"
 
+msgid "Go to module"
+msgstr "モジュールに移動"
+
 msgid "Go to that week"
 msgstr "その週に移動"
 
@@ -8567,6 +8597,9 @@ msgstr "在庫"
 msgid "Inv Rate"
 msgstr "請求書レート"
 
+msgid "Invalid applications"
+msgstr "無効な適用"
+
 msgid "Invalid Invite"
 msgstr "無効な招待"
 
@@ -8958,6 +8991,9 @@ msgstr "仕訳明細"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr "詳細ページのセクションにジャンプします (同じ修飾子 + セクションの文字)"
+
 msgid "Just one"
 msgstr "1つだけ"
 
@@ -9003,6 +9039,9 @@ msgstr "注文、見積、設定を2段階認証で保護します"
 msgid "Key"
 msgstr "キー"
 
+msgid "Keyboard shortcuts"
+msgstr "キーボードショートカット"
+
 msgid "Kind of record"
 msgstr "レコード種別"
 
@@ -9015,7 +9054,7 @@ msgstr "ラベル"
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのラベル"
 
@@ -9228,6 +9267,9 @@ msgstr "ライト"
 
 msgid "Light Mode"
 msgstr "ライトモード"
+
+msgid "Light or dark mode"
+msgstr "ライト/ダークモード"
 
 msgid "Lights Out (24×7)"
 msgstr "ライツアウト（24×7）"
@@ -10439,6 +10481,9 @@ msgstr "新規見積明細"
 msgid "New Receipt"
 msgstr "新しい領収書"
 
+msgid "New record (on list pages)"
+msgstr "新規記録（リストページで）"
+
 msgid "New record created"
 msgstr "新しいレコードが作成されました"
 
@@ -10561,6 +10606,9 @@ msgstr "次の期日"
 
 msgid "Next page"
 msgstr "次のページ"
+
+msgid "Next page (in tables)"
+msgstr "次ページ（テーブルで）"
 
 msgid "Next Sequence"
 msgstr "次の採番"
@@ -10842,6 +10890,9 @@ msgstr "配置する人がいません"
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
+msgid "No open memos"
+msgstr "オープンなメモはありません"
+
 msgid "No open orders for this item are available to link."
 msgstr "この品目にリンク可能なオープンな注文はありません"
 
@@ -10976,6 +11027,9 @@ msgstr "このウィンドウにはスケジュール済みの作業がありま
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "シフトが構成されていません — 月～金、8時間営業を想定"
+
+msgid "No shortcuts available on this page."
+msgstr "このページではショートカットはありません。"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
@@ -11335,11 +11389,11 @@ msgstr "1つの数字セット"
 msgid "One shared setup instead of one per operation"
 msgstr "工程ごとではなく1回の段取りで共有"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "共有の段取り 1 つと最長の労務と機械時間 — メンバーは一緒に実行されます"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "1つの共有段取りプラス各メンバーの加工時間（労務と機械のいずれか大きい方）を順番に実行"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "1つの共有セットアップと合計labor時間およびmachine時間"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "1つの共有段取りプラス最長メンバーの加工時間（労務と機械のいずれか大きい方）、メンバーは同時に実行"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "製造指図の工順の1つのステップ。工法と作業区を指定し、段取り、労務、機械時間とそのレートを独自に保有しています。"
@@ -11524,6 +11578,9 @@ msgstr "工程"
 
 msgid "Operation"
 msgstr "操作"
+
+msgid "Operation batch"
+msgstr "工程バッチ"
 
 msgid "Operation lead time"
 msgstr "工程リードタイム"
@@ -11947,6 +12004,9 @@ msgstr "支払い適用"
 msgid "Payment Date"
 msgstr "支払日"
 
+msgid "Payment from Customer"
+msgstr "得意先からの支払"
+
 msgid "Payment ID"
 msgstr "支払いID"
 
@@ -11968,11 +12028,14 @@ msgstr "支払条件"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30のような支払条件または領収時に支払い"
 
+msgid "Payment to Supplier"
+msgstr "仕入先への支払"
+
 msgid "Payments"
 msgstr "支払い"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "この請求書に充当された支払と調整額。行をクリックして参照伝票を開きます。"
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
 msgid "PDF"
 msgstr "PDF"
@@ -12386,6 +12449,9 @@ msgstr "前の日"
 
 msgid "Previous page"
 msgstr "前のページ"
+
+msgid "Previous page (in tables)"
+msgstr "前ページ（テーブルで）"
 
 msgid "Previous step"
 msgstr "前のステップ"
@@ -12851,7 +12917,7 @@ msgstr "会計にプッシュ"
 msgid "Putting your data back"
 msgstr "データを復元中"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
 
@@ -13262,8 +13328,8 @@ msgstr "記録"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "得意先または仕入先に対して貸方メモまたは借方メモを記録する。特定の請求書への適用はメモ作成後に追加される。"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "得意先から受け取った現金（受取）または仕入先に支払った現金（出金）を記録する。特定の請求書への適用は支払作成後に追加される。"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "得意先支払、仕入先支払、または返金を記録します。請求書またはメモへの適用は、支払が作成された後に追加されます。"
 
 msgid "Record deleted"
 msgstr "レコード削除済み"
@@ -13306,6 +13372,15 @@ msgstr "更新"
 
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
+
+msgid "Refund from Supplier"
+msgstr "仕入先からの返金"
+
+msgid "Refund memos"
+msgstr "返金メモ"
+
+msgid "Refund to Customer"
+msgstr "得意先への返金"
 
 msgid "Regenerate"
 msgstr "再生成"
@@ -13366,7 +13441,7 @@ msgstr "リリース"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "{0}個のバッチをリリース"
 
 msgid "Release Batch"
 msgstr "バッチをリリース"
@@ -13388,7 +13463,7 @@ msgstr "リリース済み"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "{0}個のバッチがリリース済"
 
 msgid "Released date"
 msgstr "リリース日"
@@ -13811,8 +13886,14 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "売上高"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "得意先に請求する配送の売上高勘定"
+
 msgid "Revenue and expenses over a period"
 msgstr "期間中の売上高と費用"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "配送料として顧客に請求される売上高の貸記に用いられる勘定科目。独自の明細行に転記され、販売のデフォルト勘定科目とは異なる必要があります。"
 
 msgid "Reverse all inventory adjustments"
 msgstr "すべての在庫調整を取り消す"
@@ -14255,6 +14336,9 @@ msgstr "メソッドを保存"
 
 msgid "Save Rate"
 msgstr "レートを保存"
+
+msgid "Save the form you're editing"
+msgstr "編集中のフォームを保存"
 
 msgid "Save view"
 msgstr "ビューを保存"
@@ -14707,9 +14791,6 @@ msgstr "サーフェスを選択"
 msgid "Select the groups that should complete this training"
 msgstr "この教育訓練を完了すべきグループを選択してください"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "この支払いで決済する請求書を選択してください。値引と償却は請求書の通貨で表示されます。"
-
 msgid "Select value"
 msgstr "値を選択"
 
@@ -15083,6 +15164,12 @@ msgstr "出荷方法"
 msgid "Shipping Notes"
 msgstr "配送メモ"
 
+msgid "Shipping Revenue"
+msgstr "配送売上高"
+
+msgid "Shipping Revenue (default)"
+msgstr "配送売上高(デフォルト)"
+
 msgid "Shipping Supplier"
 msgstr "配送仕入先"
 
@@ -15148,6 +15235,9 @@ msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
+
+msgid "Show this overlay"
+msgstr "このオーバーレイを表示"
 
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
@@ -16110,6 +16200,9 @@ msgstr "税率"
 
 msgid "Tax Residual Value %"
 msgstr "税務残存価額 %"
+
+msgid "Tax Status"
+msgstr "税務ステータス"
 
 msgid "Tax Useful Life (default)"
 msgstr "税務耐用年数（デフォルト）"
@@ -17423,6 +17516,9 @@ msgstr "レベルを切り替え"
 msgid "Toggle Properties"
 msgstr "プロパティを切り替え"
 
+msgid "Toggle the sidebar"
+msgstr "サイドバーの表示/非表示を切り替える"
+
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
@@ -17893,6 +17989,9 @@ msgstr "スクラップ解除 {label}"
 
 msgid "Unshipped orders"
 msgstr "未発送注文"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "1つのバッチ可能な工法上の未開始の指図工程がグループ化されて作業区で一緒に実行され、1つの段取りと1つのタイマーを共有し、そのタイマーの時間は各製造指図の数量に比例して配分される"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "対応していない参照伝票タイプ：{sourceDocument}"
@@ -18462,6 +18561,11 @@ msgstr "ユーザーの公開プロフィールに表示されます"
 
 msgid "Void"
 msgstr "取消"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "取消 {0}"
 
 msgid "Void Invoice"
 msgstr "請求書を取消"

@@ -108,11 +108,18 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   batch-tagged event — cost posts once at batch completion when the aggregate
   events are sliced per member. A timer started on any member is the same shared
   timer on every member's page.
-- **Batch-total planned durations** — `displayOperation` aggregates the members'
-  `makeDurations` as ONE shared setup (the max — that is the point of batching)
-  plus summed labor/machine (with a `machineDuration = 1` fallback), and carries
-  the total as `duration`, so the info-bar duration, `WorkTypeToggle`, and
-  `Times` denominators read against the batch's total plan, not one member's.
+- **Batch-total planned durations** — `displayOperation` converts each member's
+  times with `makeDurations`, then delegates to `@carbon/utils`
+  `batchPlanBreakdown(durations, batch.process?.batchType ?? "Sequential")` (the
+  same helper the scheduler's `batchDuration` shares its run-combining rule with,
+  and the ERP builder/drawer use). It yields ONE shared setup (the max — that is
+  the point of batching) and per-type labor/machine buckets (Σ Sequential | max
+  Simultaneous) as the `WorkTypeToggle` / `Times` denominators, and carries
+  `plan.total` as `duration` — setup + each member's run `max(labor, machine)`
+  combined by batch type, NOT setup + labor + machine (which double-counts a
+  member that has both). With a `machineDuration = 1` / `duration = 1` fallback
+  when the batch has no planned time anywhere, so the info-bar duration and
+  denominators read against the batch's total plan, not one member's.
   The info-bar duration hides entirely when the plan is ≤1ms (no
   "0 milliseconds"), and the per-piece header divides the shared elapsed time by
   the members' summed `quantityComplete` — a quantity-weighted per-piece rate
@@ -138,8 +145,8 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   row 0/0) disables submit. Scrap / Rework /
   Finish are hidden in the actions sheet (per-op writes would double-count a
   member); Maintenance + Quality Issue stay. The batch chip menu also offers
-  "Print load list" (`path.to.file.batchLoadList` → the ERP
-  `/file/batch/:id.pdf` route, `BatchLoadListPDF`). The kanban keyboard wedge is
+  "Print batch list" (`path.to.file.batchLoadList` → the ERP
+  `/file/batch/:id.pdf` route, `BatchListPDF`). The kanban keyboard wedge is
   disabled (`active: !!kanban?.id && !isBatched`) — it completes a single op,
   never a batched member.
 
