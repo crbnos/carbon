@@ -84,7 +84,7 @@ export async function getJobOperationBatch(
 ) {
   const batch = await client
     .from("jobOperationBatch")
-    .select("*")
+    .select("*, process(batchType)")
     .eq("id", batchId)
     .eq("companyId", companyId)
     .single();

@@ -3610,6 +3610,7 @@ export type Database = {
           parentStepId: string | null
           planConfidence: string
           required: boolean | null
+          rootStepId: string | null
           sortOrder: number
           status: Database["public"]["Enums"]["assemblyStepStatus"]
           title: string | null
@@ -3642,6 +3643,7 @@ export type Database = {
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
+          rootStepId?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["assemblyStepStatus"]
           title?: string | null
@@ -3674,6 +3676,7 @@ export type Database = {
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
+          rootStepId?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["assemblyStepStatus"]
           title?: string | null
@@ -3764,6 +3767,13 @@ export type Database = {
           {
             foreignKeyName: "assemblyInstructionStep_parentStepId_fkey"
             columns: ["parentStepId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructionStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblyInstructionStep_rootStepId_fkey"
+            columns: ["rootStepId"]
             isOneToOne: false
             referencedRelation: "assemblyInstructionStep"
             referencedColumns: ["id"]
@@ -74332,6 +74342,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -11380,11 +11380,11 @@ msgstr "Un unico set di numeri"
 msgid "One shared setup instead of one per operation"
 msgstr "Un solo setup condiviso invece di uno per operazione"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "Un attrezzaggio condiviso più il tempo di manodopera e il tempo macchina più lunghi — i componenti vengono eseguiti insieme"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "Un attrezzaggio condiviso più il tempo di lavorazione di ogni membro — il maggiore tra la sua manodopera e macchina — in sequenza"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "Una configurazione condivisa più il tempo di lavoro e macchina sommati"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "Un attrezzaggio condiviso più il tempo di lavorazione del membro più lungo — il maggiore tra la sua manodopera e macchina — poiché i membri vengono lavorati insieme"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Un passo nel ciclo di lavorazione di un ordine di produzione, che designa un processo e un centro di lavoro e dispone di propri tempi e tariffe di attrezzaggio, manodopera e tempo macchina."

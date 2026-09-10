@@ -11380,11 +11380,11 @@ msgstr "One set of numbers"
 msgid "One shared setup instead of one per operation"
 msgstr "One shared setup instead of one per operation"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "One shared setup plus the longest labor and machine time — the members run together"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "One shared setup plus the summed labor and machine time"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."

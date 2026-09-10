@@ -11380,11 +11380,11 @@ msgstr "एक ही संख्या का सेट"
 msgid "One shared setup instead of one per operation"
 msgstr "हर प्रक्रिया के बजाय एक साझा सेटअप"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "एक साझा सेटअप प्लस सबसे लंबा श्रम और मशीन समय — सदस्य एक साथ चलते हैं"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "एक साझा सेटअप और प्रत्येक सदस्य का रन समय — इसके श्रम और मशीन में से अधिकतम — अनुक्रम में"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "एक साझा सेटअप जमा श्रम और मशीन समय के साथ"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "एक साझा सेटअप और सबसे लंबे सदस्य का रन समय — इसके श्रम और मशीन में से अधिकतम — क्योंकि सदस्य एक साथ चलते हैं"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "एक जॉब की रूटिंग में एक चरण, एक प्रक्रिया और एक वर्क सेंटर का नाम देते हुए और अपने स्वयं के सेटअप, श्रम, मशीन समय और दरें शामिल करते हुए।"

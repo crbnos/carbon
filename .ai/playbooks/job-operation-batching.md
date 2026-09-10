@@ -180,3 +180,30 @@ via `[role=option]` textContent).
 - **Job detail**: a Ready job with unbatched batchable ops shows an
   "N awaiting batching" header chip.
 - Completion (§5-7) is UNCHANGED by the release feature — same slicing proof.
+
+### 10. Batch-total planned duration (2026-09-10 — Sequential/Simultaneous + overlap reconciliation)
+
+The batch's single planned-duration number (ERP drawer "Planned time", MES batch
+info-bar duration, builder "≈" estimate chip) is now `process.batchType`-aware and
+overlap-correct via the shared `@carbon/utils` `batchPlanBreakdown` (its `.total`),
+matching the scheduler's `batchDuration` reservation.
+
+- **total** = shared setup (max member) + Σ|max of each member's RUN `max(labor,
+  machine)` — Σ for Sequential, max for Simultaneous. NOT setup+labor+machine
+  (that double-counted a member with both labor and machine).
+- **Per-type buckets** (drawer Run card rows, MES Times denominators) = setup max;
+  labor/machine each Σ (Sequential) | max (Simultaneous).
+- Blockers fixed: the ERP drawer service now embeds `process(name, batchType)`
+  (`production.service.ts` `getJobOperationBatchWithMembers`) and MES
+  `getJobOperationBatch` embeds `process(batchType)`; both previously computed
+  Simultaneous as Sequential.
+
+Fast DB-seed proof (no builder needed — create the batch directly):
+- Simultaneous process; member A setup 30/labor 20/machine 30 (min), member B
+  setup 45/labor 10/machine 8 (min).
+- Expected: buckets Setup **45m** / Labor **20m** / Machine **30m**; total **1h 15m**
+  (75 min = 45 + max(30,10)). The pre-fix bug read **1h 53m** (113 min).
+- Verified 2026-09-10: ERP drawer "Planned time" = 1h 15m; MES info-bar = "1 hour,
+  15 minutes"; MES Times = 0ms/45m, 0ms/20m, 0ms/30m. The builder estimate uses the
+  same adapter and is covered by `apps/erp/test/batch-suggestions.test.ts` +
+  `packages/utils/src/batch-duration.test.ts` (incl. `total === batchDuration`).

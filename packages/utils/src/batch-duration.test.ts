@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { batchDuration } from "./batch-duration";
+import { batchDuration, batchPlanBreakdown } from "./batch-duration";
 
 describe("batchDuration", () => {
   // The spec's worked example: effective member runs of 40/70/50 minutes
@@ -115,5 +115,70 @@ describe("batchDuration", () => {
       "Sequential"
     );
     expect(total).toBe(5 * 60);
+  });
+});
+
+describe("batchPlanBreakdown", () => {
+  // Two members with BOTH labor and machine so the total's overlap rule bites:
+  // m1 run = max(40, 30) = 40; m2 run = max(70, 30) = 70. Buckets keep labor
+  // and machine separate; total combines each member's run.
+  const members = [
+    {
+      setupDuration: 10 * 60,
+      laborDuration: 40 * 60,
+      machineDuration: 30 * 60
+    },
+    { setupDuration: 15 * 60, laborDuration: 70 * 60, machineDuration: 30 * 60 }
+  ];
+
+  it("Sequential: shared setup, summed buckets, total sums each member's run", () => {
+    expect(batchPlanBreakdown(members, "Sequential")).toEqual({
+      setup: 15 * 60,
+      labor: (40 + 70) * 60,
+      machine: (30 + 30) * 60,
+      // NOT setup + labor + machine (which would double-count the overlap):
+      // 15 + max(40,30) + max(70,30) = 15 + 40 + 70 = 125 min.
+      total: (15 + 40 + 70) * 60
+    });
+  });
+
+  it("Simultaneous: shared setup, buckets take the largest, total = setup + longest run", () => {
+    expect(batchPlanBreakdown(members, "Simultaneous")).toEqual({
+      setup: 15 * 60,
+      labor: 70 * 60,
+      machine: 30 * 60,
+      // 15 + max(max(40,30), max(70,30)) = 15 + 70 = 85 min.
+      total: (15 + 70) * 60
+    });
+  });
+
+  it("returns all zeros for an empty batch", () => {
+    expect(batchPlanBreakdown([], "Sequential")).toEqual({
+      setup: 0,
+      labor: 0,
+      machine: 0,
+      total: 0
+    });
+    expect(batchPlanBreakdown([], "Simultaneous")).toEqual({
+      setup: 0,
+      labor: 0,
+      machine: 0,
+      total: 0
+    });
+  });
+
+  // The plan-vs-schedule guarantee: the display total must equal the
+  // scheduler's reservation for zero-progress members with no recorded events.
+  it("total equals batchDuration for zero-progress members without events", () => {
+    const durationMembers = members.map((m) => ({
+      ...m,
+      operationQuantity: 10,
+      quantityComplete: 0
+    }));
+    for (const batchType of ["Sequential", "Simultaneous"] as const) {
+      expect(batchPlanBreakdown(members, batchType).total).toBe(
+        batchDuration(durationMembers, batchType)
+      );
+    }
   });
 });

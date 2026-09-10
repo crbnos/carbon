@@ -50992,6 +50992,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.buildWave"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.rootStepId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51141,6 +51144,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.buildWave"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.rootStepId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51242,6 +51248,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.buildWave"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.rootStepId"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -125664,6 +125673,12 @@ export default {
         buildWave: {
           format: "integer",
           type: "integer"
+        },
+        rootStepId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -171153,6 +171168,12 @@ export default {
     },
     "rowFilter.assemblyInstructionStep.buildWave": {
       name: "buildWave",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.rootStepId": {
+      name: "rootStepId",
       required: false,
       in: "query",
       type: "string"

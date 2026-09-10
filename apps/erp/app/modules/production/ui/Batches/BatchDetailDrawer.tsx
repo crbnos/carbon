@@ -129,17 +129,24 @@ export function BatchDetailDrawer({
     );
   };
 
-  // Planned durations, batch semantics (mirrors the MES operation view): ONE
-  // shared setup — the largest member's — plus labor/machine summed. Missing
-  // units default to Total Minutes (setup) / Minutes/Piece (labor, machine).
+  // Planned durations, batch semantics (mirrors the MES operation view and the
+  // scheduler's reservation): ONE shared setup (the largest member's), per-type
+  // labor/machine buckets, and a wall-clock `total` (setup + each member's run —
+  // the longer of its labor and machine — combined per the process's batch
+  // type). Missing units default to Total Minutes (setup) / Minutes/Piece
+  // (labor, machine).
   const plan = useMemo(() => {
-    const { setup, labor, machine } = batchPlanBreakdown(batch.members ?? [], {
-      setupUnit: "Total Minutes",
-      laborUnit: "Minutes/Piece",
-      machineUnit: "Minutes/Piece"
-    });
-    return { Setup: setup, Labor: labor, Machine: machine };
-  }, [batch.members]);
+    const { setup, labor, machine, total } = batchPlanBreakdown(
+      batch.members ?? [],
+      {
+        setupUnit: "Total Minutes",
+        laborUnit: "Minutes/Piece",
+        machineUnit: "Minutes/Piece"
+      },
+      batch.process?.batchType ?? "Sequential"
+    );
+    return { Setup: setup, Labor: labor, Machine: machine, total };
+  }, [batch.members, batch.process?.batchType]);
 
   // Actual durations from the batch's events. `duration` is generated SECONDS;
   // an open event (endTime null) accrues from startTime to render time —
@@ -171,7 +178,7 @@ export function BatchDetailDrawer({
     (sum, m) => sum + (m.operationQuantity ?? 0),
     0
   );
-  const plannedTotal = plan.Setup + plan.Labor + plan.Machine;
+  const plannedTotal = plan.total;
 
   const sortedEvents = useMemo(
     () =>

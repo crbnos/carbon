@@ -11380,11 +11380,11 @@ msgstr "1つの数字セット"
 msgid "One shared setup instead of one per operation"
 msgstr "工程ごとではなく1回の段取りで共有"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "共有の段取り 1 つと最長の労務と機械時間 — メンバーは一緒に実行されます"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "1つの共有段取りプラス各メンバーの加工時間（労務と機械のいずれか大きい方）を順番に実行"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "1つの共有セットアップと合計labor時間およびmachine時間"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "1つの共有段取りプラス最長メンバーの加工時間（労務と機械のいずれか大きい方）、メンバーは同時に実行"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "製造指図の工順の1つのステップ。工法と作業区を指定し、段取り、労務、機械時間とそのレートを独自に保有しています。"
