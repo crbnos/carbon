@@ -11369,10 +11369,10 @@ msgid "One shared setup instead of one per operation"
 msgstr "Jedno wspólne przezbrojenie zamiast osobnego dla każdej operacji"
 
 msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
-msgstr ""
+msgstr "Jedno wspólne przezbrojenie plus dla każdego elementu jego czas obróbki — większy z robocizny i maszyny — w kolejności"
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
-msgstr ""
+msgstr "Jedno wspólne przezbrojenie plus czas obróbki najdłuższego elementu — większy z robocizny i maszyny — ponieważ elementy działają razem"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Jeden krok w marszrucie zlecenia produkcyjnego, określający proces i stanowisko robocze, posiadający własne przezbrojenie, robociznę, czasy maszynowe i stawki."

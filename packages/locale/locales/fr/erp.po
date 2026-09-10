@@ -11369,10 +11369,10 @@ msgid "One shared setup instead of one per operation"
 msgstr "Un seul réglage partagé au lieu d'un par opération"
 
 msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
-msgstr ""
+msgstr "Un réglage partagé plus le temps de production de chaque membre — le plus grand entre sa main-d'œuvre et sa machine — en séquence"
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
-msgstr ""
+msgstr "Un réglage partagé plus le temps de production du membre le plus long — le plus grand entre sa main-d'œuvre et sa machine — puisque les membres fonctionnent ensemble"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Une étape dans la gamme d'un OF, identifiant un procédé et un poste de travail, et portant ses propres temps et tarifs de réglage, main-d'œuvre et temps machine."

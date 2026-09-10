@@ -11369,10 +11369,10 @@ msgid "One shared setup instead of one per operation"
 msgstr "Operasyon başına değil, tek ortak hazırlık"
 
 msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
-msgstr ""
+msgstr "Bir paylaşılan hazırlık artı her üyenin işleme süresi — işçilik ve makine zamanının daha büyüğü — sırayla"
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
-msgstr ""
+msgstr "Bir paylaşılan hazırlık artı en uzun üyenin işleme süresi — işçilik ve makine zamanının daha büyüğü — üyeler birlikte çalıştığından"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "İş emri rotasında bir adım, bir proses ve iş merkezini adlandıran, kendi hazırlık, işçilik, makine süresi ve oranlarını taşıyan."

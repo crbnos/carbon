@@ -11369,10 +11369,10 @@ msgid "One shared setup instead of one per operation"
 msgstr "공정마다가 아닌 한 번의 공용 셋업"
 
 msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
-msgstr ""
+msgstr "공유되는 셋업 하나 플러스 각 구성원의 가공 시간 — 노무와 기계 중 더 큰 값 — 순서대로"
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
-msgstr ""
+msgstr "공유되는 셋업 하나 플러스 가장 오래 걸리는 구성원의 가공 시간 — 노무와 기계 중 더 큰 값 — 구성원들이 함께 실행되기 때문"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "작업 지시의 라우팅에서 한 단계로, 공법과 작업장을 지정하고 각자의 셋업, 노무, 기계 시간 및 요금을 포함합니다."

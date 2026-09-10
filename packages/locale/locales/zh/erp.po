@@ -11369,10 +11369,10 @@ msgid "One shared setup instead of one per operation"
 msgstr "共享一次设置，而非每道工序一次"
 
 msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
-msgstr ""
+msgstr "一次共享换型加上每个成员的加工时间 — 取人工和机器时间的较大值 — 按顺序运行"
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
-msgstr ""
+msgstr "一次共享换型加上最长的成员加工时间 — 取人工和机器时间的较大值 — 由于成员并行运行"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "工单工艺路线中的一个步骤，命名一个工艺和工作中心，并包含其自己的换型、人工和机器工时及费率。"
