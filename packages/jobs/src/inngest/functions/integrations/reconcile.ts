@@ -20,11 +20,15 @@
  * duplicates, and cooldown races unrepresentable rather than specially
  * handled.
  */
-import type { PostingSyncSettings } from "@carbon/ee/accounting";
+import type {
+  CardTransactionPolicyInput,
+  PostingSyncSettings
+} from "@carbon/ee/accounting";
 import {
   MAX_REDRIVE_ATTEMPTS,
   planJournalPostingFromState,
   SWEPT_BILL_STATUSES,
+  SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
   SWEPT_PAYMENT_STATUSES,
   type SyncOperationRequest,
@@ -37,6 +41,7 @@ export type ReconcileEntityType =
   | "journalEntry"
   | "bill"
   | "invoice"
+  | "charge"
   | "payment"
   | "customer"
   | "vendor"
@@ -89,6 +94,13 @@ export type ReconcileEntityInput = {
    */
   journalCoverage?: { normalCovered: boolean; reversalCovered: boolean };
   /**
+   * journalEntry only, "Card Transaction" source: the backing cardTransaction
+   * (`type` + whether it has a supplier). A Charge with a supplier is
+   * DOC_BACKED by the synced charge object when the charge entity is enabled;
+   * everything else keeps pushing as a journal entry.
+   */
+  cardTransaction?: CardTransactionPolicyInput | null;
+  /**
    * bill only: a posted "Purchase Invoice" journal exists for this bill —
    * the input the account-costed replay needs (the re-drive condition).
    */
@@ -114,7 +126,12 @@ export type ReconcileContext = {
   providerSupportsNativeVoid?: boolean;
   /** Inputs the journal policy core needs (planJournalPostingFromState). */
   settings: PostingSyncSettings;
-  docSync: { invoiceEnabled: boolean; billEnabled: boolean };
+  docSync: {
+    invoiceEnabled: boolean;
+    billEnabled: boolean;
+    chargeEnabled: boolean;
+    chargeCreditEnabled: boolean;
+  };
   inventoryAdjustmentEnabled: boolean;
   /** Resolved by the executor only for Payment-source journals when the
    * AR/AP family modes diverge (otherwise the side cannot matter). */
@@ -153,6 +170,7 @@ export function computeReconcileDecision(
       return reconcileJournal(input);
     case "bill":
     case "invoice":
+    case "charge":
       return reconcileDocument(input);
     case "payment":
       return reconcilePayment(input);
@@ -208,7 +226,8 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
       docSync: input.context.docSync,
       paymentFamily: input.context.paymentFamily,
       inventoryAdjustmentEntitySyncEnabled:
-        input.context.inventoryAdjustmentEnabled
+        input.context.inventoryAdjustmentEnabled,
+      cardTransaction: input.cardTransaction ?? null
     });
     if (planned.action === "push") {
       actions.push({ kind: "enqueue", request: planned.request });
@@ -285,7 +304,11 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
   if (snapshot.status === "Voided") return reconcileNativeVoid(input);
 
   const postedStatuses: readonly string[] =
-    input.entityType === "bill" ? SWEPT_BILL_STATUSES : SWEPT_INVOICE_STATUSES;
+    input.entityType === "bill"
+      ? SWEPT_BILL_STATUSES
+      : input.entityType === "charge"
+        ? SWEPT_CHARGE_STATUSES
+        : SWEPT_INVOICE_STATUSES;
   if (!snapshot.status || !postedStatuses.includes(snapshot.status)) {
     return nothing(
       `${input.entityType} status '${snapshot.status ?? "unknown"}' is not posted`

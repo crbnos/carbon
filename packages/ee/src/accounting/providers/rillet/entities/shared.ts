@@ -555,7 +555,15 @@ export abstract class RilletTransactionSyncer<
     return false;
   }
 
-  protected async deleteRemote(_remoteId: string): Promise<void> {
+  /**
+   * Delete the remote document on a local void. `metadata` is the push
+   * mapping's metadata — a syncer that writes one Carbon entity to more than
+   * one Rillet object kind (bills vs reimbursements) reads the kind from it.
+   */
+  protected async deleteRemote(
+    _remoteId: string,
+    _metadata?: Record<string, unknown>
+  ): Promise<void> {
     throw new Error("This Rillet transaction does not support native voids");
   }
 
@@ -805,7 +813,10 @@ export abstract class RilletTransactionSyncer<
 
       if (existingMapping?.externalId && this.isVoided(localEntity)) {
         if (existingMapping.metadata?.voided !== true) {
-          await this.deleteRemote(existingMapping.externalId);
+          await this.deleteRemote(
+            existingMapping.externalId,
+            existingMapping.metadata ?? undefined
+          );
           await withTriggersDisabled(this.database, async (tx) => {
             await createMappingService(tx, this.companyId).link(
               this.entityType,

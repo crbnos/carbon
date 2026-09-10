@@ -11,6 +11,8 @@
  */
 import type { Database } from "@carbon/database";
 import {
+  type CardTransactionPolicyInput,
+  CHARGE_CREDIT_PROVIDERS,
   PAYMENT_PUSH_PROVIDERS,
   type PostingSyncSettings,
   type ProviderID,
@@ -47,6 +49,7 @@ const SNAPSHOT_TABLES: Record<
   },
   bill: { table: "purchaseInvoice", columns: "id, status, updatedAt" },
   invoice: { table: "salesInvoice", columns: "id, status, updatedAt" },
+  charge: { table: "cardTransaction", columns: "id, status, type, updatedAt" },
   payment: { table: "payment", columns: "id, status, updatedAt" },
   customer: { table: "customer", columns: "id, updatedAt" },
   vendor: { table: "supplier", columns: "id, updatedAt" },
@@ -59,6 +62,7 @@ const SNAPSHOT_TABLES: Record<
 const MAPPED_TYPES: ReadonlySet<ReconcileEntityType> = new Set([
   "bill",
   "invoice",
+  "charge",
   "payment",
   "customer",
   "vendor",
@@ -165,6 +169,39 @@ export async function reconcileEntities(args: {
         row
       ])
     );
+
+    // "Card Transaction" journals are DOC_BACKED per ROW (only a Charge with
+    // a supplier has a provider charge object), so the policy needs the
+    // backing cardTransaction — one query for the batch, keyed by journalId.
+    const cardTransactionByJournalId = new Map<
+      string,
+      CardTransactionPolicyInput
+    >();
+    if (entityType === "journalEntry") {
+      const cardJournalIds = ids.filter(
+        (id) => snapshotById.get(id)?.sourceType === "Card Transaction"
+      );
+      if (cardJournalIds.length > 0) {
+        const cardTransactions = await args.client
+          .from("cardTransaction")
+          .select("journalId, type, supplierId")
+          .eq("companyId", args.companyId)
+          .in("journalId", cardJournalIds);
+        if (cardTransactions.error) {
+          throw new Error(
+            `Failed to load card transactions: ${cardTransactions.error.message}`
+          );
+        }
+        for (const row of cardTransactions.data ?? []) {
+          if (row.journalId) {
+            cardTransactionByJournalId.set(row.journalId, {
+              type: row.type as CardTransactionPolicyInput["type"],
+              hasSupplier: row.supplierId != null
+            });
+          }
+        }
+      }
+    }
 
     // Ledger state — one query covering plain ids and (for journals) the
     // `:reversal` twins.
@@ -354,7 +391,8 @@ export async function reconcileEntities(args: {
               journalCoverage: {
                 normalCovered: coveredEntityIds.has(entityId),
                 reversalCovered: coveredEntityIds.has(`${entityId}:reversal`)
-              }
+              },
+              cardTransaction: cardTransactionByJournalId.get(entityId) ?? null
             }
           : {}),
         ...(entityType === "bill"
@@ -378,7 +416,11 @@ export async function reconcileEntities(args: {
           settings: settings as PostingSyncSettings,
           docSync: {
             invoiceEnabled: syncConfig.entities.invoice.enabled,
-            billEnabled: syncConfig.entities.bill.enabled
+            billEnabled: syncConfig.entities.bill.enabled,
+            chargeEnabled: syncConfig.entities.charge.enabled,
+            chargeCreditEnabled: CHARGE_CREDIT_PROVIDERS.has(
+              args.providerId as ProviderID
+            )
           },
           inventoryAdjustmentEnabled:
             syncConfig.entities.inventoryAdjustment.enabled,

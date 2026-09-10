@@ -39526,6 +39526,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -39666,6 +39669,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -39758,6 +39764,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/body.cardTransaction"
@@ -107606,7 +107615,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -107655,7 +107664,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -120369,6 +120378,12 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -165264,6 +165279,12 @@ export default {
     },
     "rowFilter.cardTransaction.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.cardTransaction.supplierId": {
+      name: "supplierId",
       required: false,
       in: "query",
       type: "string"

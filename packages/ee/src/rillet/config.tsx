@@ -9,6 +9,8 @@ const RilletSettingsSchema = z.object({
   apiKey: z.string(),
   environment: z.enum(["production", "sandbox"]).default("production"),
   subsidiaryId: z.string().optional(),
+  // "reimbursement" | "bill" — how employee reimbursements are represented.
+  reimbursementRepresentation: z.string().optional(),
   webhookToken: z.string().optional()
 });
 
@@ -75,6 +77,23 @@ export const Rillet = defineIntegration({
       type: "text" as const,
       required: false,
       value: ""
+    },
+    {
+      name: "reimbursementRepresentation",
+      label: "Employee reimbursements",
+      description:
+        "Sync purchase invoices to Employee suppliers (e.g. Ramp reimbursements) as Rillet reimbursements, or as plain bills. Rillet has no reimbursement-payment endpoint yet, so choose bills if payouts recorded in Carbon must close the document in Rillet.",
+      group: "Connection",
+      type: "options" as const,
+      listOptions: [
+        {
+          label: "Reimbursements (Rillet's native object)",
+          value: "reimbursement"
+        },
+        { label: "Bills", value: "bill" }
+      ],
+      required: false,
+      value: "reimbursement"
     },
     {
       name: "webhookToken",

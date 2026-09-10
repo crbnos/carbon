@@ -39,7 +39,10 @@ const COMMON_PUSH_TABLES: RequiredSyncSubscription[] = [
   { table: "supplier", operations: ["INSERT", "UPDATE", "DELETE"] },
   { table: "item", operations: ["INSERT", "UPDATE", "DELETE"] },
   { table: "salesInvoice", operations: ["INSERT", "UPDATE", "DELETE"] },
-  { table: "purchaseInvoice", operations: ["INSERT", "UPDATE", "DELETE"] }
+  { table: "purchaseInvoice", operations: ["INSERT", "UPDATE", "DELETE"] },
+  // Card charges push on the transition to Posted/Voided; the row is never
+  // deleted once posted (Draft-only DELETE), so only INSERT/UPDATE.
+  { table: "cardTransaction", operations: ["INSERT", "UPDATE"] }
 ];
 
 /** Posting sync: journals are INSERTed born Posted or UPDATEd to

@@ -25,11 +25,13 @@ import {
 import type {
   Rillet,
   RilletBillCreate,
+  RilletChargeCreate,
   RilletCustomerWrite,
   RilletInvoiceCreate,
   RilletJournalEntryCreate,
   RilletPaymentCreate,
   RilletProductWrite,
+  RilletReimbursementCreate,
   RilletVendorWrite
 } from "./models";
 
@@ -240,7 +242,8 @@ export const RILLET_PUSH_ONLY_ENTITIES = [
   "item",
   "invoice",
   "bill",
-  "journalEntry"
+  "journalEntry",
+  "charge"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -428,6 +431,20 @@ export class RilletProvider extends BaseProvider {
     if (this.creds?.type !== "apiKey") return null;
     const value = this.creds.providerMetadata?.subsidiaryId;
     return typeof value === "string" && value.length > 0 ? value : null;
+  }
+
+  /**
+   * How an employee reimbursement (a purchase invoice to an "Employee"
+   * supplier, e.g. from Ramp) is represented in Rillet: its native
+   * `reimbursement` object (default) or a plain `bill`. Rillet publishes no
+   * reimbursement-payment endpoint yet, so `bill` is the fallback for a
+   * customer who needs Carbon-recorded payouts to close the document.
+   */
+  get reimbursementRepresentation(): "reimbursement" | "bill" {
+    if (this.creds?.type !== "apiKey") return "reimbursement";
+    return this.creds.providerMetadata?.reimbursementRepresentation === "bill"
+      ? "bill"
+      : "reimbursement";
   }
 
   /** `providerMetadata.webhookToken` — the inbound webhook route's shared secret. */
@@ -768,6 +785,14 @@ export class RilletProvider extends BaseProvider {
     await this.deleteEntity(`/bills/${id}`, "void bill");
   }
 
+  async deleteCharge(id: string): Promise<void> {
+    await this.deleteEntity(`/charges/${id}`, "void charge");
+  }
+
+  async deleteReimbursement(id: string): Promise<void> {
+    await this.deleteEntity(`/reimbursements/${id}`, "void reimbursement");
+  }
+
   async deleteInvoicePayment(
     invoiceId: string,
     paymentId: string
@@ -965,6 +990,80 @@ export class RilletProvider extends BaseProvider {
       payload: bill,
       idempotencyKey
     });
+  }
+
+  async getCharge(id: string): Promise<Rillet.Charge | null> {
+    return this.readEntity<Rillet.Charge>(`/charges/${id}`, "charge");
+  }
+
+  async getReimbursement(id: string): Promise<Rillet.Reimbursement | null> {
+    return this.readEntity<Rillet.Reimbursement>(
+      `/reimbursements/${id}`,
+      "reimbursement"
+    );
+  }
+
+  /** `POST /reimbursements` — an employee reimbursement (see `Rillet.ReimbursementSchema`). */
+  async createReimbursement(
+    reimbursement: RilletReimbursementCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.Reimbursement> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/reimbursements",
+      envelopeKey: "reimbursement",
+      operation: "create reimbursement",
+      payload: reimbursement,
+      idempotencyKey
+    });
+  }
+
+  /** `POST /charges` — a credit-card charge (see `Rillet.ChargeSchema`). */
+  async createCharge(
+    charge: RilletChargeCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.Charge> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/charges",
+      envelopeKey: "charge",
+      operation: "create charge",
+      payload: charge,
+      idempotencyKey
+    });
+  }
+
+  /**
+   * `POST /charges/{id}` — attach a receipt (PDF, JPEG or PNG) as multipart
+   * form data with a single file part. Bypasses `request()` because that
+   * pins `Content-Type: application/json`; fetch sets the multipart boundary
+   * itself when the body is a FormData. Throws on a non-2xx so the caller
+   * (best-effort by contract) can log and move on.
+   */
+  async uploadChargeDocument(
+    id: string,
+    file: { name: string; type: string; bytes: Uint8Array }
+  ): Promise<void> {
+    const credentials = getRilletApiKeyCredentials(this.auth.getCredentials());
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([file.bytes as BlobPart], { type: file.type }),
+      file.name
+    );
+    const response = await this.http.request<unknown>(
+      "POST",
+      `/charges/${id}`,
+      {
+        body: form,
+        headers: {
+          Authorization: `Bearer ${credentials.apiKey}`,
+          "X-Rillet-API-Version": RILLET_API_VERSION,
+          Accept: "application/json"
+        }
+      }
+    );
+    if (response.error) throwRilletApiError("upload charge document", response);
   }
 
   /**

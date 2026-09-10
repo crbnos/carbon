@@ -316,7 +316,8 @@ export const QBO_CARBON_OWNED_ENTITIES = [
   "vendor",
   "item",
   "invoice",
-  "bill"
+  "bill",
+  "charge"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -754,6 +755,43 @@ export class QboProvider extends BaseProvider {
       "PurchaseOrder",
       "update purchase order",
       this.updateBody(purchaseOrder)
+    );
+  }
+
+  // =================================================================
+  // Purchases (card charges) — POST /purchase, GET /purchase/{id}
+  // =================================================================
+
+  async getPurchase(id: string): Promise<Qbo.Purchase | null> {
+    return this.readEntity<Qbo.Purchase>("purchase", "Purchase", id);
+  }
+
+  /**
+   * Create a QBO Purchase (POST /purchase). Carbon writes card charges as
+   * `PaymentType: "CreditCard"` purchases (see QboChargeSyncer).
+   * VERIFY (QBO sandbox): no sandbox was available when this shipped — the
+   * payload follows Intuit's Purchase reference but is unverified against a
+   * live QBO company.
+   */
+  async createPurchase(
+    purchase: QboCreatePayload<Qbo.Purchase>
+  ): Promise<Qbo.Purchase> {
+    return this.writeEntity(
+      "purchase",
+      "Purchase",
+      "create purchase",
+      purchase
+    );
+  }
+
+  async updatePurchase(
+    purchase: QboUpdatePayload<Qbo.Purchase>
+  ): Promise<Qbo.Purchase> {
+    return this.writeEntity(
+      "purchase",
+      "Purchase",
+      "update purchase",
+      this.updateBody(purchase)
     );
   }
 

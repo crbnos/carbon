@@ -5394,6 +5394,7 @@ export type Database = {
           postedBy: string | null
           postingDate: string | null
           status: Database["public"]["Enums"]["cardTransactionStatus"]
+          supplierId: string | null
           transactionDate: string
           type: Database["public"]["Enums"]["cardTransactionType"]
           updatedAt: string | null
@@ -5423,6 +5424,7 @@ export type Database = {
           postedBy?: string | null
           postingDate?: string | null
           status?: Database["public"]["Enums"]["cardTransactionStatus"]
+          supplierId?: string | null
           transactionDate: string
           type?: Database["public"]["Enums"]["cardTransactionType"]
           updatedAt?: string | null
@@ -5452,6 +5454,7 @@ export type Database = {
           postedBy?: string | null
           postingDate?: string | null
           status?: Database["public"]["Enums"]["cardTransactionStatus"]
+          supplierId?: string | null
           transactionDate?: string
           type?: Database["public"]["Enums"]["cardTransactionType"]
           updatedAt?: string | null
@@ -5606,6 +5609,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "cardTransaction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "cardTransaction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "cardTransaction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cardTransaction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cardTransaction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cardTransaction_updatedBy_fkey"
@@ -69194,14 +69232,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -70859,14 +70897,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74286,14 +74324,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -1,6 +1,7 @@
 import { ProviderID } from "../../core/models";
 import { type SyncerRegistry, SyncFactory } from "../../core/sync";
 import { QboBillSyncer } from "./entities/bill";
+import { QboChargeSyncer } from "./entities/charge";
 import { QboCustomerSyncer } from "./entities/customer";
 import { QboSalesInvoiceSyncer } from "./entities/invoice";
 import { QboItemSyncer } from "./entities/item";
@@ -10,6 +11,7 @@ import { QboPurchaseOrderSyncer } from "./entities/purchase-order";
 import { QboVendorSyncer } from "./entities/vendor";
 
 export * from "./entities/bill";
+export * from "./entities/charge";
 export * from "./entities/customer";
 export * from "./entities/invoice";
 export * from "./entities/item";
@@ -41,6 +43,9 @@ export const qboSyncerRegistry: SyncerRegistry = {
 
   // Transaction Data
   bill: QboBillSyncer,
+  // Card charges (Ramp card spend) as CreditCard Purchases; their journals
+  // are DOC_BACKED-excluded per row (core/posting.ts) while this is enabled
+  charge: QboChargeSyncer,
   invoice: QboSalesInvoiceSyncer,
   purchaseOrder: QboPurchaseOrderSyncer,
 

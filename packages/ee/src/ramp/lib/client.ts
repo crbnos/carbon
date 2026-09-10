@@ -525,6 +525,55 @@ export class RampClient {
     );
   }
 
+  /**
+   * List the custom accounting fields uploaded to Ramp (paginated; filter with
+   * `remote_id`). `id` is the remote id Carbon created the field with;
+   * `ramp_id` is Ramp's UUID, which the field-options endpoints key on.
+   */
+  listAccountingFields(params?: SearchParamsInit) {
+    return this.listPaginated(
+      "/developer/v1/accounting/fields",
+      params,
+      z
+        .object({
+          id: z.string().nullish(),
+          ramp_id: z.string().nullish(),
+          name: z.string().nullish(),
+          display_name: z.string().nullish(),
+          is_active: z.boolean().nullish()
+        })
+        .passthrough()
+    );
+  }
+
+  /**
+   * List a custom field's options (paginated; filter with `field_remote_id` or
+   * `field_id`). `id` is the Carbon id pushed as the option; `ramp_id` is what
+   * `PATCH /field-options/{id}` keys on.
+   */
+  listAccountingFieldOptions(params?: SearchParamsInit) {
+    return this.listPaginated(
+      "/developer/v1/accounting/field-options",
+      params,
+      z
+        .object({
+          id: z.string().nullish(),
+          ramp_id: z.string().nullish(),
+          value: z.string().nullish(),
+          display_name: z.string().nullish(),
+          is_active: z.boolean().nullish(),
+          visibility: z.string().nullish()
+        })
+        .passthrough()
+    );
+  }
+
+  patchAccountingField<T = unknown>(id: string, body: unknown): Promise<T> {
+    return this.request<T>("PATCH", `/developer/v1/accounting/fields/${id}`, {
+      body
+    });
+  }
+
   // ---- Sync confirmation ----
 
   postAccountingSyncs<T = unknown>(body: unknown): Promise<T> {

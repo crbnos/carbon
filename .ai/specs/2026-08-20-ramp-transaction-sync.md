@@ -519,3 +519,16 @@ Sandbox-driven (demo-api.ramp.com; ⌘J demo actions for fixtures):
   the existing `dynamicOptions` mechanism in the integration drawer (first consumer);
   (4) v1 dimension push = cost centers (Carbon's one first-class AP-line coding dimension
   today) — further dimension types follow when Carbon grows them.
+
+## 2026-09-10 update — card charges as provider objects
+
+Implemented per `.ai/plans/2026-09-10-ramp-project-coding-and-rillet-charge-sync.md`:
+`cardTransaction.supplierId` (the Ramp merchant resolved to a Carbon supplier) and an
+event trigger were added (`20260910183955`); a Posted `Charge` (and `Credit` where the
+provider can represent a refund) now syncs to the accounting provider as its native
+card-charge object (Rillet `/charges`, QBO `Purchase` CreditCard, Xero SPEND bank
+transaction) with the merchant, receipt and cost-center dimension, and its `Card
+Transaction` journal is DOC_BACKED-excluded per row. The cost-center push became an
+idempotent converge keyed by the CostCenter dimension name, and `codeSelections`
+matches the custom field by `category_info.external_id`. See
+`.claude/rules/accounting-sync-handlers.md` and `.claude/rules/ramp-integration.md`.

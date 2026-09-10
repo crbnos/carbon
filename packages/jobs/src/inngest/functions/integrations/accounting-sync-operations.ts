@@ -31,6 +31,8 @@ import {
   type AccountingEntityType,
   type AccountingProvider,
   type BatchSyncResult,
+  type CardTransactionPolicyInput,
+  CHARGE_CREDIT_PROVIDERS,
   claimPendingOperations,
   completeOperation,
   enqueueSyncOperation,
@@ -308,6 +310,9 @@ export async function planJournalPostingOperation(args: {
   companyId: string;
   event: JournalPostingEventInput;
   integrationMetadata: unknown;
+  /** The provider (ProviderID) — decides whether a card Credit has a native
+   * refund object (`CHARGE_CREDIT_PROVIDERS`). Unknown → journal entry. */
+  providerId?: string;
 }): Promise<JournalPostingOperationPlan> {
   const transition = getJournalPostingDecision(args.event);
   if (transition.action === "skip") {
@@ -330,6 +335,25 @@ export async function planJournalPostingOperation(args: {
         })
       : null;
 
+  // "Card Transaction" journals are DOC_BACKED per row (a Charge with a
+  // supplier only), so the policy needs the backing card transaction.
+  let cardTransaction: CardTransactionPolicyInput | null = null;
+  if (sourceType === "Card Transaction" && syncConfig.entities.charge.enabled) {
+    const row = await args.client
+      .from("cardTransaction")
+      .select("type, supplierId")
+      .eq("companyId", args.companyId)
+      .eq("journalId", args.event.recordId)
+      .limit(1)
+      .maybeSingle();
+    cardTransaction = row.data
+      ? {
+          type: row.data.type as CardTransactionPolicyInput["type"],
+          hasSupplier: row.data.supplierId != null
+        }
+      : null;
+  }
+
   return planJournalPostingFromState({
     journalId: args.event.recordId,
     sourceType,
@@ -337,11 +361,16 @@ export async function planJournalPostingOperation(args: {
     settings,
     docSync: {
       invoiceEnabled: syncConfig.entities.invoice.enabled,
-      billEnabled: syncConfig.entities.bill.enabled
+      billEnabled: syncConfig.entities.bill.enabled,
+      chargeEnabled: syncConfig.entities.charge.enabled,
+      chargeCreditEnabled: args.providerId
+        ? CHARGE_CREDIT_PROVIDERS.has(args.providerId)
+        : false
     },
     paymentFamily,
     inventoryAdjustmentEntitySyncEnabled:
-      syncConfig.entities.inventoryAdjustment.enabled
+      syncConfig.entities.inventoryAdjustment.enabled,
+    cardTransaction
   });
 }
 
@@ -359,9 +388,16 @@ export function planJournalPostingFromState(args: {
   sourceType: string | null;
   reversal: boolean;
   settings: PostingSyncSettings;
-  docSync: { invoiceEnabled: boolean; billEnabled: boolean };
+  docSync: {
+    invoiceEnabled: boolean;
+    billEnabled: boolean;
+    chargeEnabled?: boolean;
+    chargeCreditEnabled?: boolean;
+  };
   paymentFamily: "ar" | "ap" | null;
   inventoryAdjustmentEntitySyncEnabled: boolean;
+  /** "Card Transaction" journals only: the backing cardTransaction. */
+  cardTransaction?: CardTransactionPolicyInput | null;
 }): JournalPostingOperationPlan {
   const entityId = getJournalEntrySyncEntityId(args.journalId, args.reversal);
 
@@ -371,7 +407,8 @@ export function planJournalPostingFromState(args: {
     docSync: args.docSync,
     paymentFamily: args.paymentFamily,
     inventoryAdjustmentEntitySyncEnabled:
-      args.inventoryAdjustmentEntitySyncEnabled
+      args.inventoryAdjustmentEntitySyncEnabled,
+    cardTransaction: args.cardTransaction ?? null
   });
 
   const baseMetadata = {
@@ -1402,6 +1439,8 @@ export const SWEPT_INVOICE_STATUSES = [
   "Overdue"
 ] as const;
 export const SWEPT_PAYMENT_STATUSES = ["Posted", "Voided"] as const;
+/** Card charges: Posted pushes; Voided is the native-void path (Rillet). */
+export const SWEPT_CHARGE_STATUSES = ["Posted", "Voided"] as const;
 
 /**
  * The sweep window's lower bound: `todayIso - SWEEP_LOOKBACK_DAYS`, raised

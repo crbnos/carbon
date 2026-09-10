@@ -1,10 +1,17 @@
 import { round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
+import { RAMP_COST_CENTER_FIELD_ID } from "../coding";
 import {
+  buildCostCenterFieldBody,
+  buildCostCenterOptionsBody,
   chunk,
+  costCenterFingerprint,
   diffChartOfAccounts,
+  diffCostCenterOptions,
+  isCodableAccount,
   RAMP_ACCOUNTS_BATCH_SIZE,
   type RampAccountMapping,
+  type RampCostCenterMapping,
   rampClassificationForClass,
   scaleLinesToTotal,
   scaleRepaymentLines
@@ -150,9 +157,10 @@ describe("scaleLinesToTotal", () => {
 });
 
 describe("diffChartOfAccounts", () => {
-  // Must match accountFingerprint(): `${name} ${code ?? ""}` (name + code only —
-  // classification is not PATCHable in Ramp, so it is not tracked).
-  const fp = (name: string, code: string) => `${name} ${code}`;
+  // Must match accountFingerprint(): `${name} ${code ?? ""}|${visibility}`
+  // (classification is not PATCHable in Ramp, so it is not tracked).
+  const fp = (name: string, code: string, visible = true) =>
+    `${name} ${code}|${visible ? "VISIBLE" : "HIDDEN"}`;
 
   const cash = {
     id: "acc_cash",
@@ -223,5 +231,222 @@ describe("diffChartOfAccounts", () => {
     ];
     const { toUpdate } = diffChartOfAccounts([cash], mappings);
     expect(toUpdate).toEqual([{ account: cash, externalId: "acc_cash" }]);
+  });
+});
+
+describe("cost-center field bodies", () => {
+  it("creates the field keyed by Ramp's remote `id` with the dimension name as label", () => {
+    expect(buildCostCenterFieldBody("Project")).toEqual({
+      id: RAMP_COST_CENTER_FIELD_ID,
+      name: "Project",
+      display_name: "Project",
+      input_type: "SINGLE_CHOICE",
+      is_splittable: true
+    });
+  });
+
+  it("uploads options against the field's ramp_id with the Carbon id in `id`", () => {
+    expect(
+      buildCostCenterOptionsBody("ramp-uuid", [
+        { id: "cc_apollo", value: "Apollo" },
+        { id: "cc_zeus", value: "Zeus" }
+      ])
+    ).toEqual({
+      field_id: "ramp-uuid",
+      options: [
+        { id: "cc_apollo", value: "Apollo" },
+        { id: "cc_zeus", value: "Zeus" }
+      ]
+    });
+  });
+});
+
+describe("diffCostCenterOptions", () => {
+  const apollo = { id: "cc_apollo", value: "Apollo" };
+  const zeus = { id: "cc_zeus", value: "Zeus" };
+  const remoteApollo = {
+    id: "cc_apollo",
+    ramp_id: "r_apollo",
+    value: "Apollo",
+    visibility: "VISIBLE"
+  };
+  const mapped = (
+    id: string,
+    rampId: string,
+    value: string,
+    visible = true
+  ): RampCostCenterMapping => ({
+    entityId: id,
+    externalId: rampId,
+    fingerprint: costCenterFingerprint({ value, visible })
+  });
+
+  it("creates cost centers Ramp does not have", () => {
+    const diff = diffCostCenterOptions(
+      [apollo, zeus],
+      [remoteApollo],
+      [mapped("cc_apollo", "r_apollo", "Apollo")]
+    );
+    expect(diff.toCreate).toEqual([zeus]);
+    expect(diff.toRename).toEqual([]);
+    expect(diff.toShow).toEqual([]);
+    expect(diff.toHide).toEqual([]);
+  });
+
+  it("is a no-op when nothing changed since the last push", () => {
+    const diff = diffCostCenterOptions(
+      [apollo],
+      [remoteApollo],
+      [mapped("cc_apollo", "r_apollo", "Apollo")]
+    );
+    expect(diff).toEqual({
+      toCreate: [],
+      toRename: [],
+      toShow: [],
+      toHide: []
+    });
+  });
+
+  it("renames when the Carbon name changed since Carbon last pushed it", () => {
+    const renamed = { id: "cc_apollo", value: "Apollo II" };
+    const diff = diffCostCenterOptions(
+      [renamed],
+      [remoteApollo],
+      [mapped("cc_apollo", "r_apollo", "Apollo")]
+    );
+    expect(diff.toRename).toEqual([{ option: renamed, rampId: "r_apollo" }]);
+  });
+
+  it("leaves a Ramp-side rename alone when Carbon's name is unchanged", () => {
+    const customerRenamed = { ...remoteApollo, display_name: "Apollo (Sales)" };
+    const diff = diffCostCenterOptions(
+      [apollo],
+      [customerRenamed],
+      [mapped("cc_apollo", "r_apollo", "Apollo")]
+    );
+    expect(diff.toRename).toEqual([]);
+  });
+
+  it("hides an option whose cost center is gone from Carbon, once", () => {
+    const first = diffCostCenterOptions(
+      [],
+      [remoteApollo],
+      [mapped("cc_apollo", "r_apollo", "Apollo")]
+    );
+    expect(first.toHide).toEqual([
+      { id: "cc_apollo", value: "Apollo", rampId: "r_apollo" }
+    ]);
+    const again = diffCostCenterOptions(
+      [],
+      [{ ...remoteApollo, visibility: "HIDDEN" }],
+      [mapped("cc_apollo", "r_apollo", "Apollo", false)]
+    );
+    expect(again.toHide).toEqual([]);
+  });
+
+  it("re-shows a restored cost center that Carbon had hidden", () => {
+    const diff = diffCostCenterOptions(
+      [apollo],
+      [{ ...remoteApollo, visibility: "HIDDEN" }],
+      [mapped("cc_apollo", "r_apollo", "Apollo", false)]
+    );
+    expect(diff.toShow).toEqual([{ option: apollo, rampId: "r_apollo" }]);
+  });
+
+  it("adopts an unmapped remote option, correcting only what disagrees", () => {
+    const diff = diffCostCenterOptions(
+      [apollo],
+      [{ ...remoteApollo, value: "Apolo", visibility: "HIDDEN" }],
+      []
+    );
+    expect(diff.toCreate).toEqual([]);
+    expect(diff.toRename).toEqual([{ option: apollo, rampId: "r_apollo" }]);
+    expect(diff.toShow).toEqual([{ option: apollo, rampId: "r_apollo" }]);
+  });
+
+  it("ignores remote rows without a ramp_id", () => {
+    const diff = diffCostCenterOptions(
+      [apollo],
+      [{ id: "cc_apollo", value: "Apollo" }],
+      []
+    );
+    expect(diff.toCreate).toEqual([apollo]);
+  });
+});
+
+describe("isCodableAccount", () => {
+  const card = {
+    scope: "expense" as const,
+    cardLiabilityAccountId: "acc_ramp"
+  };
+
+  it("keeps the picker to Expense accounts under the expense scope", () => {
+    expect(isCodableAccount({ id: "a", class: "Expense" }, card)).toBe(true);
+    expect(isCodableAccount({ id: "a", class: "Asset" }, card)).toBe(false);
+    expect(isCodableAccount({ id: "a", class: "Liability" }, card)).toBe(false);
+    expect(isCodableAccount({ id: "a", class: "Equity" }, card)).toBe(false);
+    expect(isCodableAccount({ id: "a", class: "Revenue" }, card)).toBe(false);
+    expect(isCodableAccount({ id: "a", class: null }, card)).toBe(false);
+  });
+
+  it("always keeps the card-liability account (Ramp needs its CREDCARD account)", () => {
+    expect(isCodableAccount({ id: "acc_ramp", class: "Liability" }, card)).toBe(
+      true
+    );
+  });
+
+  it("exposes everything under the all scope", () => {
+    const all = { scope: "all" as const, cardLiabilityAccountId: "acc_ramp" };
+    expect(isCodableAccount({ id: "a", class: "Asset" }, all)).toBe(true);
+    expect(isCodableAccount({ id: "a", class: "Revenue" }, all)).toBe(true);
+  });
+});
+
+describe("diffChartOfAccounts visibility", () => {
+  const fp = (name: string, code: string, visible = true) =>
+    `${name} ${code}|${visible ? "VISIBLE" : "HIDDEN"}`;
+  const cash = {
+    id: "acc_cash",
+    name: "Cash",
+    code: "1000",
+    classification: "ASSET"
+  };
+
+  it("does not create an account that should be hidden and was never pushed", () => {
+    const { toCreate, toUpdate } = diffChartOfAccounts(
+      [{ ...cash, visible: false }],
+      []
+    );
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([]);
+  });
+
+  it("updates (hides) an already-pushed account when it stops being codable", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000")
+      }
+    ];
+    const hidden = { ...cash, visible: false };
+    const { toUpdate } = diffChartOfAccounts([hidden], mappings);
+    expect(toUpdate).toEqual([{ account: hidden, externalId: "ramp_1" }]);
+  });
+
+  it("is a no-op once the hidden state has been pushed", () => {
+    const mappings: RampAccountMapping[] = [
+      {
+        entityId: "acc_cash",
+        externalId: "ramp_1",
+        fingerprint: fp("Cash", "1000", false)
+      }
+    ];
+    const { toCreate, toUpdate } = diffChartOfAccounts(
+      [{ ...cash, visible: false }],
+      mappings
+    );
+    expect(toCreate).toEqual([]);
+    expect(toUpdate).toEqual([]);
   });
 });

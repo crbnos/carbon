@@ -172,6 +172,87 @@ describe("getJournalPostingPolicyDecision", () => {
     });
   });
 
+  describe("Card Transaction — per-row charge backing", () => {
+    const chargeSync = { ...DOC_SYNC_ON, chargeEnabled: true };
+
+    it("hands a Charge with a supplier to the charge syncer", () => {
+      const decision = getJournalPostingPolicyDecision({
+        sourceType: "Card Transaction",
+        settings: settingsWith(),
+        docSync: chargeSync,
+        cardTransaction: { type: "Charge", hasSupplier: true }
+      });
+      expect(decision).toMatchObject({
+        kind: "exclude",
+        reason: "DOC_BACKED",
+        backingDocument: { entityType: "charge" }
+      });
+    });
+
+    it("keeps pushing a statement Payment / Cashback / Repayment as a journal entry", () => {
+      for (const type of ["Payment", "Cashback", "Repayment"] as const) {
+        expect(
+          getJournalPostingPolicyDecision({
+            sourceType: "Card Transaction",
+            settings: settingsWith(),
+            docSync: chargeSync,
+            cardTransaction: { type, hasSupplier: true }
+          })
+        ).toMatchObject({ kind: "push" });
+      }
+    });
+
+    it("keeps pushing a Charge with no merchant supplier (no vendor for a charge object)", () => {
+      expect(
+        getJournalPostingPolicyDecision({
+          sourceType: "Card Transaction",
+          settings: settingsWith(),
+          docSync: chargeSync,
+          cardTransaction: { type: "Charge", hasSupplier: false }
+        })
+      ).toMatchObject({ kind: "push" });
+    });
+
+    it("backs a Credit only where the provider can represent a refund", () => {
+      const credit = { type: "Credit", hasSupplier: true } as const;
+      expect(
+        getJournalPostingPolicyDecision({
+          sourceType: "Card Transaction",
+          settings: settingsWith(),
+          docSync: chargeSync,
+          cardTransaction: credit
+        })
+      ).toMatchObject({ kind: "push" });
+      expect(
+        getJournalPostingPolicyDecision({
+          sourceType: "Card Transaction",
+          settings: settingsWith(),
+          docSync: { ...chargeSync, chargeCreditEnabled: true },
+          cardTransaction: credit
+        })
+      ).toMatchObject({ kind: "exclude", reason: "DOC_BACKED" });
+    });
+
+    it("pushes every card transaction as a journal entry when charge sync is off or the row is unknown", () => {
+      expect(
+        getJournalPostingPolicyDecision({
+          sourceType: "Card Transaction",
+          settings: settingsWith(),
+          docSync: DOC_SYNC_ON,
+          cardTransaction: { type: "Charge", hasSupplier: true }
+        })
+      ).toMatchObject({ kind: "push" });
+      expect(
+        getJournalPostingPolicyDecision({
+          sourceType: "Card Transaction",
+          settings: settingsWith(),
+          docSync: chargeSync,
+          cardTransaction: null
+        })
+      ).toMatchObject({ kind: "push" });
+    });
+  });
+
   describe("documents mode (default families)", () => {
     it("DOC_BACKED when the backing document sync is enabled", () => {
       const decision = getJournalPostingPolicyDecision({

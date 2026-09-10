@@ -353,7 +353,8 @@ serve(async (req: Request) => {
       journalLines = built.journalLines;
 
       // The CostCenter dimension is company-group scoped; a line tagged with a
-      // costCenterId gets a journalLineDimension pointing at it.
+      // costCenterId gets a journalLineDimension pointing at it. Oldest active
+      // row wins if a group somehow has two (maybeSingle would throw).
       const companyRecord = await client
         .from("company")
         .select("companyGroupId")
@@ -367,8 +368,23 @@ serve(async (req: Request) => {
           .eq("companyGroupId", companyGroupId)
           .eq("active", true)
           .eq("entityType", "CostCenter")
+          .order("createdAt", { ascending: true })
+          .limit(1)
           .maybeSingle();
         costCenterDimensionId = dim.data?.id ?? null;
+      }
+
+      // A coded cost center must land on the journal. Posting without the
+      // dimension would silently drop every project tag (a balanced journal
+      // with nothing to show for it), so refuse instead — the sync reports it
+      // and the Ramp converge creates the dimension for installed integrations.
+      if (
+        !costCenterDimensionId &&
+        journalLines.some((journalLine) => journalLine.costCenterId)
+      ) {
+        throw new Error(
+          "Company group has no active Cost Center dimension — create one under Accounting → Dimensions"
+        );
       }
     }
 

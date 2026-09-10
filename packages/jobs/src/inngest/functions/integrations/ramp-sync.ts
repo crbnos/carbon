@@ -25,10 +25,12 @@ import { createMappingService } from "@carbon/ee/accounting";
 import {
   advanceRampCursor,
   archiveRampBillForInvoice,
+  codeSelections,
   confirmSyncs,
   fromMinorUnits,
   getRampIntegration,
   pushChartOfAccounts,
+  pushCostCenters,
   pushInvoiceDraftBill,
   pushPurchaseOrder,
   type RampBill,
@@ -44,6 +46,7 @@ import {
   type RampTransfer,
   type RampVendorSupplier,
   resolveEmployeeSupplier,
+  resolveMerchantSupplier,
   resolveRampSupplier,
   scaleLinesToTotal,
   scaleRepaymentLines
@@ -57,12 +60,6 @@ import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 type CarbonClient = SupabaseClient<Database>;
-
-/** Ramp accounting-field-selection `type` for a coded GL account. */
-const GL_ACCOUNT = "GL_ACCOUNT";
-// TODO(task-1): confirm Ramp's cost-center field selection `type` (the custom
-// `carbon-cost-center` SINGLE_CHOICE field pushed in service.pushCostCenters).
-const COST_CENTER = "COST_CENTER";
 
 /** The card-transactions list route (jobs can't import ~/utils/path). */
 const CARD_TRANSACTIONS_PATH = "/x/invoicing/card-transactions";
@@ -153,37 +150,35 @@ type Ctx = {
 };
 
 /**
- * Resolve a coded GL account + cost center from a Ramp accounting-field-selection
- * list. The first GL_ACCOUNT selection wins for the account; the first
- * COST_CENTER selection wins for the cost center. `external_id` is the Carbon id
- * Carbon pushed (account.id / costCenter.id).
+ * Verify every coded cost center exists for this company (one query). Unlike
+ * `account`, `costCenter` is company-scoped. An unknown id fails the item the
+ * same way an unknown account does — the coder recodes in Ramp — rather than
+ * dropping the tag: a project silently lost at sync time is exactly the bug
+ * this guards against.
  */
-function codeSelections(
-  selections:
-    | Array<{
-        external_id?: string | null;
-        type?: string;
-        category_info?: { type?: string } | null;
-      }>
-    | null
-    | undefined
-): { accountId: string | null; costCenterId: string | null } {
-  let accountId: string | null = null;
-  let costCenterId: string | null = null;
-  for (const selection of selections ?? []) {
-    if (!selection.external_id) continue;
-    // The field TYPE is at `category_info.type` per the Ramp OpenAPI spec
-    // (verified 2026-08-28); the legacy top-level `type` is only a fallback.
-    // Reading `selection.type` alone left this always-undefined, so no line
-    // ever resolved an account/cost-center — every line failed "uncoded".
-    const fieldType = selection.category_info?.type ?? selection.type;
-    if (fieldType === GL_ACCOUNT && !accountId) {
-      accountId = selection.external_id;
-    } else if (fieldType === COST_CENTER && !costCenterId) {
-      costCenterId = selection.external_id;
-    }
+async function verifyCostCenters(
+  ctx: Ctx,
+  lines: ReadonlyArray<{ costCenterId: string | null }>
+): Promise<string | null> {
+  const ids = [
+    ...new Set(
+      lines
+        .map((line) => line.costCenterId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (ids.length === 0) return null;
+  const { data, error } = await ctx.client
+    .from("costCenter")
+    .select("id")
+    .in("id", ids)
+    .eq("companyId", ctx.companyId);
+  if (error) return `Failed to verify cost centers: ${error.message}`;
+  const known = new Set((data ?? []).map((row) => row.id));
+  if (ids.some((id) => !known.has(id))) {
+    return "Line is coded to a cost center Carbon doesn't recognize — recode it in Ramp";
   }
-  return { accountId, costCenterId };
+  return null;
 }
 
 function deepLinkUrl(): string {
@@ -572,6 +567,9 @@ async function buildTransactionLines(
     return { error: uncoded };
   }
 
+  const costCenterError = await verifyCostCenters(ctx, settledLines);
+  if (costCenterError) return { error: costCenterError };
+
   return { lines: settledLines };
 }
 
@@ -593,6 +591,8 @@ async function createAndPostTransaction(
     cardAccountId: string;
     offsetAccountId: string | null;
     merchantName: string | null;
+    /** The merchant resolved to a Carbon supplier (Charge/Credit only). */
+    supplierId: string | null;
     cardHolderName: string | null;
     memo: string | null;
     lines: BuiltLine[];
@@ -628,6 +628,7 @@ async function createAndPostTransaction(
       cardAccountId: args.cardAccountId,
       offsetAccountId: args.offsetAccountId,
       merchantName: args.merchantName,
+      supplierId: args.supplierId,
       cardHolderName: args.cardHolderName,
       memo: args.memo,
       transactionDate: args.transactionDate,
@@ -861,6 +862,9 @@ async function buildBillLines(
   if (accountIds.some((id) => !known.has(id))) {
     return { error: uncoded };
   }
+
+  const costCenterError = await verifyCostCenters(ctx, lines);
+  if (costCenterError) return { error: costCenterError };
 
   return { lines };
 }
@@ -1631,6 +1635,8 @@ async function buildGlLinesFromItems(
   if (error) return { error: `Failed to verify accounts: ${error.message}` };
   const known = new Set((accounts ?? []).map((row) => row.id));
   if (accountIds.some((id) => !known.has(id))) return { error: uncoded };
+  const costCenterError = await verifyCostCenters(ctx, lines);
+  if (costCenterError) return { error: costCenterError };
   return { lines };
 }
 
@@ -1998,6 +2004,24 @@ export const rampSyncFunction = inngest.createFunction(
       }
     });
 
+    // ---- Cost centers (Carbon -> Ramp "project" field) --------------------
+    // Same contract as the chart of accounts: a change-gated converge on every
+    // sync, so a cost center added or renamed in Carbon reaches Ramp's coding
+    // picker within ≤1h. Also ensures the group's CostCenter dimension exists,
+    // which the posting function needs to keep the tag on the journal.
+    const costCenterResult = await step.run("ramp-cost-centers", async () => {
+      try {
+        const { created, renamed, hidden, shown } = await pushCostCenters(
+          client,
+          companyId
+        );
+        return { created, renamed, hidden, shown, failed: 0 };
+      } catch (err) {
+        console.error(`[RAMP SYNC] ${companyId}: cost-center push failed`, err);
+        return { created: 0, renamed: 0, hidden: 0, shown: 0, failed: 1 };
+      }
+    });
+
     // ---- Card transactions (Charge / Credit) -----------------------------
     const cardResult = await step.run("ramp-card-transactions", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
@@ -2081,6 +2105,32 @@ export const rampSyncFunction = inngest.createFunction(
                   .join(" ") || null
               : null;
 
+            // The merchant becomes a Carbon supplier so the charge can carry a
+            // vendor to the accounting provider. A transaction with no merchant
+            // name is still posted (supplierId null) — the charge syncer then
+            // leaves it as a journal entry with a visible reason.
+            let supplierId: string | null = null;
+            if (tx.merchant_name) {
+              try {
+                supplierId = await resolveMerchantSupplier(
+                  ctx.client,
+                  ctx.db,
+                  ctx.companyId,
+                  { id: tx.merchant_id ?? null, name: tx.merchant_name }
+                );
+              } catch (supplierError) {
+                failed.push({
+                  id: tx.id,
+                  message: `Could not resolve merchant "${tx.merchant_name}" to a supplier: ${
+                    supplierError instanceof Error
+                      ? supplierError.message
+                      : String(supplierError)
+                  }`
+                });
+                continue;
+              }
+            }
+
             const outcome = await createAndPostTransaction(ctx, {
               rampId: tx.id,
               type: isCredit ? "Credit" : "Charge",
@@ -2091,6 +2141,7 @@ export const rampSyncFunction = inngest.createFunction(
               cardAccountId: cardLiabilityAccountId,
               offsetAccountId: null,
               merchantName: tx.merchant_name ?? null,
+              supplierId,
               cardHolderName: holder,
               memo: tx.memo ?? null,
               lines: built.lines,
@@ -2182,6 +2233,7 @@ export const rampSyncFunction = inngest.createFunction(
               cardAccountId: cardLiabilityAccountId,
               offsetAccountId: metadata.statementBankAccountId,
               merchantName: null,
+              supplierId: null,
               cardHolderName: null,
               memo: null,
               lines: [],
@@ -2274,6 +2326,7 @@ export const rampSyncFunction = inngest.createFunction(
               cardAccountId: cardLiabilityAccountId,
               offsetAccountId: metadata.cashbackIncomeAccountId,
               merchantName: null,
+              supplierId: null,
               cardHolderName: null,
               memo: null,
               lines: [],
@@ -2655,6 +2708,7 @@ export const rampSyncFunction = inngest.createFunction(
               cardAccountId: cardLiabilityAccountId,
               offsetAccountId,
               merchantName: null,
+              supplierId: null,
               cardHolderName: null,
               memo: `Ramp repayment ${repayment.id}`,
               lines: scaled.map((line) => ({
@@ -3050,6 +3104,7 @@ export const rampSyncFunction = inngest.createFunction(
 
     const totalFailed =
       coaResult.failed +
+      costCenterResult.failed +
       cardResult.failed +
       transferResult.failed +
       cashbackResult.failed +
@@ -3088,6 +3143,7 @@ export const rampSyncFunction = inngest.createFunction(
     return {
       companyId,
       chartOfAccounts: coaResult,
+      costCenters: costCenterResult,
       card: cardResult,
       transfers: transferResult,
       cashbacks: cashbackResult,

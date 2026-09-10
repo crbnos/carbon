@@ -435,6 +435,10 @@ export const RampIntegrationMetadataSchema = z
     statementBankAccountId: z.string().optional(),
     cashbackIncomeAccountId: z.string().optional(),
     reimbursementBankAccountId: z.string().optional(),
+    // Which accounts are selectable in Ramp's coding picker. Defaults to
+    // expense-only so a card holder never sees the whole chart; "all" is for a
+    // customer who codes bills in Ramp. Anything unparseable falls back too.
+    codingAccountScope: z.enum(["expense", "all"]).catch("expense"),
     entityId: z.string().optional(),
     connectionId: z.string().optional(),
     webhookId: z.string().optional(),

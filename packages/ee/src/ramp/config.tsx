@@ -53,6 +53,8 @@ const RampSettingsSchema = z.object({
   statementBankAccountId: z.string().min(1),
   cashbackIncomeAccountId: z.string().optional(),
   reimbursementBankAccountId: z.string().optional(),
+  // "expense" | "all" — which accounts Ramp's coding picker offers.
+  codingAccountScope: z.string().optional(),
   // SwitchField posts a literal "true"/"false" string; stored flat as-is.
   pullTransactions: z.string().optional(),
   pullBills: z.string().optional(),
@@ -153,6 +155,20 @@ export const Ramp = defineIntegration({
       listOptions: [],
       required: false,
       value: ""
+    },
+    {
+      name: "codingAccountScope",
+      label: "Accounts card holders can code to",
+      description:
+        "Expense accounts only keeps Ramp's coding picker to what a card holder should choose; the rest of the chart is hidden in Ramp (including when bills are coded there). All accounts exposes the whole chart.",
+      group: "Accounts",
+      type: "options" as const,
+      listOptions: [
+        { label: "Expense accounts only (recommended)", value: "expense" },
+        { label: "All accounts", value: "all" }
+      ],
+      required: false,
+      value: "expense"
     },
     {
       name: "pullTransactions",

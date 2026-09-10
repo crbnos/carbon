@@ -48,7 +48,12 @@ const baseContext: ReconcileContext = {
   entityPushEnabled: true,
   providerSupportsPaymentPush: true,
   settings,
-  docSync: { invoiceEnabled: true, billEnabled: true },
+  docSync: {
+    invoiceEnabled: true,
+    billEnabled: true,
+    chargeEnabled: true,
+    chargeCreditEnabled: false
+  },
   inventoryAdjustmentEnabled: false,
   paymentFamily: null
 };
@@ -245,6 +250,113 @@ describe("golden: journals", () => {
 });
 
 // ── Documents ───────────────────────────────────────────────────────────────
+
+describe("golden: charges", () => {
+  // A Charge/Credit cardTransaction as a provider charge object — the same
+  // document rules as bills/invoices, with the card statuses.
+  const postedCharge = { status: "Posted", updatedAt: "2026-08-12T01:00:00Z" };
+
+  it("posted + lost event (no ops, no mapping) ⇔ enqueue", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({ entityType: "charge", snapshot: postedCharge })
+        )
+      )
+    ).toEqual(["enqueue"]);
+  });
+
+  it("phantom success (latest Completed, no mapping) ⇔ enqueue", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: postedCharge,
+            latestOperation: {
+              id: "op_1",
+              status: "Completed",
+              errorCode: null,
+              attemptCount: 1,
+              createdAt: "2026-08-12T00:00:00Z"
+            }
+          })
+        )
+      )
+    ).toEqual(["enqueue"]);
+  });
+
+  it("mapped ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: postedCharge,
+            hasMappingWithExternalId: true
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("Draft ⇔ nothing (only Posted pushes)", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: { status: "Draft", updatedAt: "2026-08-12T01:00:00Z" }
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("charge push disabled ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: postedCharge,
+            context: { ...baseContext, entityPushEnabled: false }
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("a Charge's own journal records DOC_BACKED terminal instead of pushing", () => {
+    const decision = computeReconcileDecision(
+      input({
+        entityType: "journalEntry",
+        snapshot: {
+          status: "Posted",
+          sourceType: "Card Transaction",
+          reversalOfId: null
+        },
+        cardTransaction: { type: "Charge", hasSupplier: true }
+      })
+    );
+    expect(kinds(decision)).toEqual(["record-terminal"]);
+  });
+
+  it("a statement Payment's journal still pushes", () => {
+    const decision = computeReconcileDecision(
+      input({
+        entityType: "journalEntry",
+        snapshot: {
+          status: "Posted",
+          sourceType: "Card Transaction",
+          reversalOfId: null
+        },
+        cardTransaction: { type: "Payment", hasSupplier: false }
+      })
+    );
+    expect(kinds(decision)).toEqual(["enqueue"]);
+  });
+});
 
 describe("golden: documents", () => {
   const openBill = { status: "Open", updatedAt: "2026-08-12T01:00:00Z" };

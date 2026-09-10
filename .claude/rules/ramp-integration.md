@@ -61,9 +61,11 @@ providers, which own the data and mirror it out.
   (`clientId`, optional `clientSecret` — blank means "keep the vaulted secret",
   `environment` production|sandbox, optional `entityId`), account mapping
   (`cardLiabilityAccountId` + `statementBankAccountId` **required**;
-  `cashbackIncomeAccountId`, `reimbursementBankAccountId` optional), and five sync
-  toggles (`pullTransactions`, `pullBills`, `pullReimbursements`, `pushPurchaseOrders`,
-  `pushInvoices`, all default `"true"`). Renders `SetupInstructions` with the webhook URL
+  `cashbackIncomeAccountId`, `reimbursementBankAccountId` optional),
+  `codingAccountScope` (`"expense"` default | `"all"` — which accounts Ramp's coding
+  picker offers, see "Coding" below), and five sync toggles (`pullTransactions`,
+  `pullBills`, `pullReimbursements`, `pushPurchaseOrders`, `pushInvoices`, all default
+  `"true"`). Renders `SetupInstructions` with the webhook URL
   `${origin}/api/webhook/ramp/${companyId}` — **see "The webhook route" below.**
 - **Client** — `lib/client.ts`: `RampClient` over the Ramp Developer API v1. Host is
   `https://api.ramp.com` (production) or `https://demo-api.ramp.com` (sandbox), chosen
@@ -139,8 +141,32 @@ allowed dependency direction (ee must never import jobs).
   `RAMP_ACCOUNTS_BATCH_SIZE = 500`). The card-liability account is classified `CREDCARD`;
   otherwise `rampClassificationForClass` maps Carbon `glAccountClass` → Ramp
   `classification` (Asset→ASSET, etc.); an unclassifiable account is skipped.
-- `pushCostCenters` pushes `costCenter` rows as one `SINGLE_CHOICE` coding field
-  (`id: "carbon-cost-center"`); skips silently when the table is empty/unreadable.
+  **Picker scope**: `isCodableAccount` decides whether an account is selectable —
+  under the default `codingAccountScope: "expense"` only Expense-class accounts plus
+  the card-liability account are; the rest are never created, and ones already in
+  Ramp are `PATCH`ed `visibility: "HIDDEN"` once (visibility is part of the mapping
+  fingerprint, so a Ramp-side manual change survives until Carbon's rule changes).
+  Ramp's native GL-account field keeps Ramp's own label; only its contents shrink.
+- `pushCostCenters` converges `costCenter` rows into ONE custom `SINGLE_CHOICE` field
+  (remote `id: "carbon-cost-center"`, `RAMP_COST_CENTER_FIELD_ID` in `lib/coding.ts`)
+  whose `name`/`display_name` are the company group's CostCenter **`dimension.name`**
+  (the customer's word for the concept — "Project" for a project-tracking customer —
+  which also names the Rillet Field). It is a true diff, not a blind post:
+  `GET /accounting/fields?remote_id=` (create with **`id`** when absent — the POST is
+  idempotent by `id`; PATCH the name only when Carbon's changed since the last push),
+  then `GET /accounting/field-options?field_remote_id=` and the pure
+  `diffCostCenterOptions` → create (`{ id: costCenter.id, value }` against
+  `field_id: ramp_id`, ≤500 per batch), rename (`display_name`, falling back from
+  `value`), hide removed (`visibility: "HIDDEN"`, never delete) and re-show restored.
+  Tracked in `externalIntegrationMapping` (`costCenter` per option, `costCenterField`
+  for the field) with fingerprints. `POST /field-options` is all-or-nothing and
+  rejects existing options — which is why the old blind re-post failed on every
+  second run and silently never pushed a cost center added after install. It first
+  calls `ensureCostCenterDimension`, creating the group's active `CostCenter`
+  dimension row if missing (nothing else seeds one for groups created after the
+  `20260228024512` backfill). Runs on install / settings save AND as the
+  `ramp-cost-centers` step of every `ramp-sync`, so a new cost center reaches Ramp
+  within ≤1h.
 - `ensureRampWebhook` is idempotent (skips when `metadata.webhookId` set); on create it
   persists `webhookId` to the plaintext metadata column and the returned signing `secret`
   to the vault (`webhookSecret`) via `persistIntegrationSecrets` (the vault RPC REPLACES,
@@ -204,11 +230,16 @@ label — PO push uses `purchaseOrderLine.supplierUnitPrice` (already document),
 draft-bill push converts the generated base `totalAmount` back via
 `toDocumentAmount(total, rate, decimals)`.
 
-Coding: `codeSelections` reads a Ramp `accounting_field_selections` list — the first
-`GL_ACCOUNT` selection's `external_id` (the Carbon `account.id` Carbon pushed) wins for the
-account, the first `COST_CENTER` for the cost center. A line coded to an account Carbon
-can't find (verified against `account` in one `.in()` query) fails that item as "uncoded"
-without creating anything.
+Coding: `codeSelections` (pure, `packages/ee/src/ramp/lib/coding.ts`, unit-tested) reads a
+Ramp `accounting_field_selections` list — the first `category_info.type === "GL_ACCOUNT"`
+selection's `external_id` (the Carbon `account.id` Carbon pushed) wins for the account; the
+first selection whose **`category_info.external_id === "carbon-cost-center"`** wins for the
+cost center. A CUSTOM field has no `type` at creation, so its selections come back typed
+`OTHER` — matching the native `COST_CENTER` enum (what the code did until 2026-09-10)
+never fires and dropped every project tag silently. A line coded to an account Carbon
+can't find (verified against `account` in one `.in()` query) — or to a cost center Carbon
+can't find (`verifyCostCenters`, one company-scoped `.in()` query) — fails that item as
+"uncoded" without creating anything; the tag is never dropped.
 
 ### Confirm semantics (`confirmSyncs`)
 
@@ -307,6 +338,23 @@ partial state.
   `invoiceSettlement`). DELETE is restricted to `Draft`; line writes additionally require
   the parent header to be Draft.
 
+## Card transactions → the accounting provider
+
+Since `20260910183955_ramp-card-transaction-supplier-and-event-trigger.sql`,
+`cardTransaction` carries **`supplierId`** and an **event trigger**
+(`attach_event_trigger('cardTransaction', …)`, the `payment` precedent). The card
+family resolves the Ramp merchant to a Carbon supplier before posting —
+`resolveMerchantSupplier` (`lib/service.ts`): mapping-first under entityType
+`"merchant"` keyed by Ramp `merchant_id`, then a case-insensitive `supplier.name`
+match, then auto-create tagged with the `"Card Merchant"` supplier type (it delegates to
+`resolveRampSupplier`, which now takes `{ entityType, supplierTypeId }`). A transaction
+with no merchant name still posts with `supplierId` null. A Posted `Charge` (and, where
+the provider can represent a refund, `Credit`) with a supplier is then pushed to the
+accounting provider as its native **card-charge object** (Rillet charge, QBO Purchase,
+Xero SPEND bank transaction) with the merchant, receipt and cost-center dimension, and
+its journal is DOC_BACKED-excluded per row; everything else stays a journal entry. Full
+rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider objects".
+
 ## post-card-transaction edge function
 
 `packages/database/supabase/functions/post-card-transaction/` (registered in
@@ -316,8 +364,13 @@ companyId }`. Kysely transaction with a `FOR UPDATE` lock + status re-assert (TO
 - **post**: only from Draft. Resolves the accounting period (shifts a Locked/Closed period
   forward to the next open period, writing the shifted `postingDate` back). When
   `companySettings.accountingEnabled`, builds the journal (`sourceType`/`documentType`
-  `'Card Transaction'`) and writes cost-center `journalLineDimension`s; flips the row to
-  Posted with `journalId`. Accounting-off = Posted with no journal.
+  `'Card Transaction'`) and writes cost-center `journalLineDimension`s against the
+  group's oldest active `CostCenter` `dimension` row; flips the row to Posted with
+  `journalId`. Accounting-off = Posted with no journal. **A line carrying a
+  `costCenterId` with no such dimension row REFUSES to post** ("Company group has no
+  active Cost Center dimension") rather than posting a balanced journal that silently
+  lost the tag — `pushCostCenters` creates the row for installed integrations, so this
+  only fires for a company posting card transactions without the Ramp converge.
 - **void**: only from Posted. Emits a reversing journal (negated amounts, carrying the
   original lines' dimensions) and flips to Voided.
 

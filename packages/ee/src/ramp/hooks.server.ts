@@ -44,8 +44,9 @@ async function convergeRamp(
 
   await ensureRampConnection(serviceRole, companyId);
   await pushChartOfAccounts(serviceRole, companyId);
-  // Cost-center coding is a secondary convenience — a Ramp-side rejection here
-  // must NOT abort the OAuth connect. Log and continue so the integration installs.
+  // Converge the cost-center ("project") field + its options. It re-runs on
+  // every ramp-sync too, so a Ramp-side rejection here must NOT abort the OAuth
+  // connect — log and continue so the integration installs.
   try {
     await pushCostCenters(serviceRole, companyId);
   } catch (err) {
