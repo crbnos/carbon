@@ -19,8 +19,8 @@ challenge exists anywhere in this design.
 - [x] Task 9: Enforce the gate in the `security.tsx` action
 - [x] Task 10: Surface the gate in the "Your devices" UI
 - [x] Task 11: New-device email template + sender
-- [ ] Task 12: Extract translations
-- [ ] Task 13: End-to-end verification
+- [x] Task 12: Extract translations
+- [x] Task 13: End-to-end verification
 
 ## Dependencies
 - Task 2 needs Task 1
