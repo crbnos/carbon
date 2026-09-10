@@ -10,8 +10,8 @@ challenge exists anywhere in this design.
 ## Progress
 - [x] Task 1: Add `getClientIp` to `@carbon/utils` and its env vars
 - [x] Task 2: Point `recordLogin` at `getClientIp`
-- [ ] Task 3: Migration — `deviceId` column + index
-- [ ] Task 4: Regenerate database types
+- [x] Task 3: Migration — `deviceId` column + index
+- [x] Task 4: Regenerate database types
 - [ ] Task 5: `device.server.ts` — signed device cookie
 - [ ] Task 6: Store `deviceId` on login; report first-sighting
 - [ ] Task 7: Thread the device cookie through all six login call sites

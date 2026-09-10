@@ -17,6 +17,7 @@
     "./client.server": "./src/lib/supabase/client.server.ts",
     "./download-token.server": "./src/lib/download-token.server.ts",
     "./company.server": "./src/services/company.server.ts",
+    "./device.server": "./src/services/device.server.ts",
     "./login-history.server": "./src/services/login-history.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",
     "./session.server": "./src/services/session.server.ts",
