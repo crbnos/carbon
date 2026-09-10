@@ -6817,6 +6817,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7020,6 +7023,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7175,6 +7181,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
@@ -24652,10 +24661,10 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.process.batchRules"
+            $ref: "#/parameters/rowFilter.process.batchType"
           },
           {
-            $ref: "#/parameters/rowFilter.process.batchType"
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/select"
@@ -24762,10 +24771,10 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.process.batchRules"
+            $ref: "#/parameters/rowFilter.process.batchType"
           },
           {
-            $ref: "#/parameters/rowFilter.process.batchType"
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -24826,10 +24835,10 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.process.batchRules"
+            $ref: "#/parameters/rowFilter.process.batchType"
           },
           {
-            $ref: "#/parameters/rowFilter.process.batchType"
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/body.process"
@@ -42535,10 +42544,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -42744,10 +42753,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -42907,10 +42916,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -67732,10 +67741,10 @@ export default {
             $ref: "#/parameters/rowFilter.processes.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.processes.batchRules"
+            $ref: "#/parameters/rowFilter.processes.batchType"
           },
           {
-            $ref: "#/parameters/rowFilter.processes.batchType"
+            $ref: "#/parameters/rowFilter.processes.batchRules"
           },
           {
             $ref: "#/parameters/rowFilter.processes.workCenters"
@@ -80273,6 +80282,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
@@ -104569,6 +104581,10 @@ export default {
           format: "text",
           type: "string"
         },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -113193,16 +113209,16 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        batchRules: {
-          description:
-            "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
-          format: "jsonb"
-        },
         batchType: {
           default: "Sequential",
           enum: ["Sequential", "Simultaneous"],
           format: 'public."batchType"',
           type: "string"
+        },
+        batchRules: {
+          description:
+            "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+          format: "jsonb"
         }
       },
       type: "object"
@@ -121759,14 +121775,14 @@ export default {
           format: "text",
           type: "string"
         },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
-          type: "string"
-        },
-        readyAt: {
-          format: "timestamp with time zone",
           type: "string"
         },
         projectedCompletionAt: {
@@ -133375,13 +133391,13 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        batchRules: {
-          format: "jsonb"
-        },
         batchType: {
           enum: ["Sequential", "Simultaneous"],
           format: 'public."batchType"',
           type: "string"
+        },
+        batchRules: {
+          format: "jsonb"
         },
         workCenters: {
           format: "text[]",
@@ -139530,6 +139546,10 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         inspectionDocumentId: {
@@ -147580,6 +147600,12 @@ export default {
     },
     "rowFilter.jobOperationsWithDependencies.assemblyInstructionId": {
       name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationsWithDependencies.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -157270,16 +157296,16 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.process.batchRules": {
-      name: "batchRules",
-      description:
-        "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+    "rowFilter.process.batchType": {
+      name: "batchType",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.process.batchType": {
-      name: "batchType",
+    "rowFilter.process.batchRules": {
+      name: "batchRules",
+      description:
+        "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
       required: false,
       in: "query",
       type: "string"
@@ -166641,14 +166667,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.inspectionDocumentId": {
-      name: "inspectionDocumentId",
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.readyAt": {
-      name: "readyAt",
+    "rowFilter.jobOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
@@ -179658,14 +179684,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.processes.batchRules": {
-      name: "batchRules",
+    "rowFilter.processes.batchType": {
+      name: "batchType",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.processes.batchType": {
-      name: "batchType",
+    "rowFilter.processes.batchRules": {
+      name: "batchRules",
       required: false,
       in: "query",
       type: "string"
@@ -186566,6 +186592,12 @@ export default {
     },
     "rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId": {
       name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationsWithMakeMethods.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
