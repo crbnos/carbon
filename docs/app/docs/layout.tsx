@@ -19,11 +19,10 @@ type TreeNode = {
 const label = (name: unknown) =>
   typeof name === "string" ? name : String(name ?? "");
 
-const byLabel = (a: DocsNavNode, b: DocsNavNode) =>
-  a.label.localeCompare(b.label);
-
-/** Convert the Fumadocs page tree into our serializable nav shape, with the pages in
- *  each group sorted alphabetically. */
+/** Convert the Fumadocs page tree into our serializable nav shape. Order is the page
+ *  tree's own order — i.e. each folder's meta.json `pages` array — so every section
+ *  can be curated there. (An earlier version alphabetized folder children, which made
+ *  meta.json ordering dead weight.) */
 function toNav(nodes: TreeNode[]): DocsNavNode[] {
   return nodes.flatMap((n) => {
     if (n.type === "separator") return [];
@@ -32,7 +31,7 @@ function toNav(nodes: TreeNode[]): DocsNavNode[] {
         {
           label: label(n.name),
           url: n.index?.url,
-          children: toNav(n.children ?? []).sort(byLabel),
+          children: toNav(n.children ?? []),
         },
       ];
     }
@@ -45,35 +44,62 @@ function toNav(nodes: TreeNode[]): DocsNavNode[] {
 // URLs (/docs/reference/<slug>) never move. Any reference page missing from this map is
 // appended ungrouped, so adding a new entity can never make it vanish from the nav.
 const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
+  { label: "Getting started", slugs: ["onboarding"] },
   {
-    label: "Items & methods",
+    label: "Sales",
+    slugs: ["quotes", "pricing", "sales-orders", "customer-portal"],
+  },
+  {
+    label: "Items & engineering",
     slugs: [
       "items",
-      "methods",
-      "configurator",
       "materials",
-      "change-orders",
+      "methods",
       "routings",
+      "configurator",
+      "change-orders",
     ],
+  },
+  { label: "Planning", slugs: ["planning", "forecast", "reordering"] },
+  {
+    label: "Purchasing",
+    slugs: ["purchase-orders", "supplier-quotes", "suppliers-and-customers"],
   },
   {
     label: "Production",
     slugs: [
       "jobs",
       "scheduling",
+      "batching",
       "kanban",
-      "mes",
       "work-centers",
       "maintenance",
+      "mes",
     ],
   },
-  { label: "Planning", slugs: ["planning", "forecast", "reordering"] },
-  { label: "Sales", slugs: ["quotes", "pricing", "sales-orders"] },
   {
-    label: "Purchasing",
-    slugs: ["purchase-orders", "supplier-quotes", "suppliers-and-customers"],
+    label: "Inventory",
+    slugs: [
+      "inventory",
+      "inventory-count",
+      "storage-rules",
+      "shelf-life",
+      "scrap",
+      "traceability",
+    ],
   },
-  { label: "Fulfillment", slugs: ["shipments", "picking", "receipts"] },
+  { label: "Fulfillment", slugs: ["picking", "shipments", "receipts"] },
+  {
+    label: "Quality",
+    slugs: [
+      "quality",
+      "inspections",
+      "issues",
+      "calibration",
+      "quality-documents",
+      "risks",
+    ],
+  },
   { label: "Invoicing & payments", slugs: ["invoices", "payments"] },
   {
     label: "Accounting",
@@ -87,47 +113,33 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     ],
   },
   {
-    label: "Quality",
+    label: "People & access",
     slugs: [
-      "quality",
-      "issues",
-      "inspections",
-      "calibration",
-      "quality-documents",
-      "risks",
+      "people",
+      "training",
+      "permissions",
+      "two-factor",
+      "single-sign-on",
+      "account",
     ],
   },
   {
-    label: "Inventory",
-    slugs: [
-      "inventory",
-      "inventory-count",
-      "scrap",
-      "storage-rules",
-      "shelf-life",
-      "traceability",
-    ],
+    label: "Automation & alerts",
+    slugs: ["workflows", "approvals", "notifications"],
   },
   {
-    label: "Configurations",
+    label: "Administration",
     slugs: [
       "company-settings",
-      "printing",
-      "custom-fields",
-      "audit-log",
       "sequences",
-      "import-export",
+      "custom-fields",
       "documents",
-      "api-keys",
+      "printing",
+      "import-export",
+      "audit-log",
+      "sharing",
+      "agent",
     ],
-  },
-  {
-    label: "People & access",
-    slugs: ["people", "training", "permissions", "account"],
-  },
-  {
-    label: "System",
-    slugs: ["onboarding", "sharing", "agent", "approvals", "notifications"],
   },
 ];
 

@@ -14,6 +14,11 @@ import {
 } from "./operations.server";
 import { router } from "./router.server";
 
+import {
+  formatValidationIssues,
+  type StandardIssue
+} from "./validation-issues";
+
 export type CallResult =
   | { success: true; data: unknown; count?: number }
   | { success: false; error: string; errorKind: "database" | "execution" };
@@ -81,6 +86,20 @@ export async function callOperation(
         success: false,
         error: `Database error: ${JSON.stringify(supabase)}`,
         errorKind: "database"
+      };
+    }
+    // oRPC's input-validation failure says only "Input validation failed" —
+    // useless to an agent that has to fix its own call. The issues ride along
+    // in `err.data`, so name the fields and what's wrong with each.
+    const issues =
+      err instanceof ORPCError
+        ? (err.data as { issues?: StandardIssue[] } | undefined)?.issues
+        : undefined;
+    if (Array.isArray(issues) && issues.length > 0) {
+      return {
+        success: false,
+        error: formatValidationIssues(issues),
+        errorKind: "execution"
       };
     }
     return {

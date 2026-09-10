@@ -1,4 +1,10 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  assertExchangeRate,
+  moneyFormatOptions,
+  toDocumentAmount
+} from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
   buildDimensionFieldLookup,
@@ -11,12 +17,12 @@ import {
   upsertDimensionMapping,
   upsertDimensionValueMapping
 } from "../../../core/dimension-mapping";
+import { createMappingService } from "../../../core/external-mapping";
 import {
   JournalEntrySyncError,
   type JournalLineDimensionRef,
   type PostingSyncSettings,
-  resolvePostingSyncSettings,
-  roundCurrency
+  resolvePostingSyncSettings
 } from "../../../core/posting";
 import {
   type Accounting,
@@ -40,10 +46,9 @@ import {
  *   structured JournalEntrySyncFailure envelopes on `SyncResult.error`
  *   (the same pushToAccounting-override pattern the Xero/QBO syncers
  *   established) and centralizes the push-only pull rejections.
- * - `RilletTransactionSyncer` — the create-only variant for documents
- *   (invoice, bill, journal entry): pushed documents are immutable in v1,
- *   so an existing mapping is a hard skip (the QBO journal-syncer
- *   contract), replacing the master-data lastSyncedAt fast bailout.
+ * - `RilletTransactionSyncer` — immutable posting amounts for documents.
+ *   Existing mappings skip re-creation; mapped invoice/bill voids delete their
+ *   native document and retain a durable voided mapping for safe retries.
  * - Pure mapping helpers (money formatting, the all-or-nothing address
  *   group, payment-terms parsing, the carbon external reference) exported
  *   for tests.
@@ -125,12 +130,58 @@ export async function writeDroppingUnregisteredReferences<
   }
 }
 
-/** Format a number as Rillet money — a 2-dp decimal STRING plus currency. */
+/**
+ * Rillet requires an ungrouped decimal string at the document currency scale.
+ *
+ * `decimalPlaces` has NO default: the settlement scale is the currency's own
+ * `currency.decimalPlaces` (data, never a literal — see
+ * `.claude/rules/numeric-precision.md`). A `= 2` default silently serialised a
+ * JPY payment as "1000.00" (JPY settles at 0) and truncated a BHD/KWD third
+ * decimal, so every caller must supply the authoritative value.
+ */
 export function toRilletMoney(
   amount: number,
-  currency: string
+  currency: string,
+  decimalPlaces: number
 ): Rillet.MonetaryAmount {
-  return { amount: roundCurrency(amount).toFixed(2), currency };
+  if (decimalPlaces > 5) throw new Error("Unsupported document decimal scale");
+  return {
+    amount: new Intl.NumberFormat("en-US", {
+      ...moneyFormatOptions(decimalPlaces),
+      useGrouping: false
+    }).format(toDocumentAmount(amount, 1, decimalPlaces)),
+    currency
+  };
+}
+
+/** Rillet converts document units into subsidiary units; Carbon stores the inverse. */
+export function toRilletExchangeRate(args: {
+  baseCurrencyCode: string;
+  documentCurrencyCode: string;
+  foreignPerBaseRate: number;
+  date: string;
+}): Rillet.ExchangeRate | undefined {
+  const {
+    baseCurrencyCode: base,
+    documentCurrencyCode: target,
+    foreignPerBaseRate: rate,
+    date
+  } = args;
+  if (!base.trim() || !target.trim())
+    throw new Error("Rillet exchange-rate currencies are required");
+  // Validation only — the result is discarded. `toDocumentAmount` refuses a
+  // non-finite/invalid rate, and the internal SCALE is the named constant the
+  // precision standard exposes (a bare scale literal is a violation).
+  assertExchangeRate(rate);
+  parseDate(date);
+  if (base === target) {
+    if (rate !== 1)
+      throw new Error("Identical currencies require identity exchange rate");
+    return undefined;
+  }
+  const inverseRate = 1 / rate;
+  assertExchangeRate(inverseRate);
+  return { base: target, target: base, rate: String(inverseRate), date };
 }
 
 /**
@@ -218,6 +269,42 @@ export async function loadCompanyBaseCurrency(
     .executeTakeFirst();
 
   return company?.baseCurrencyCode ?? "USD";
+}
+
+/**
+ * `currency.decimalPlaces` for one currency code — the authoritative
+ * settlement scale, group-scoped exactly like `loadBillCostingLines`'s read
+ * (the source the bill syncer already threads into `toRilletMoney`). Throws
+ * rather than defaulting: a guessed scale is how a JPY amount acquires cents.
+ */
+export async function loadCurrencyDecimalPlaces(
+  database: Kysely<KyselyDatabase>,
+  args: { companyId: string; currencyCode: string }
+): Promise<number> {
+  const company = await database
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+
+  if (!company?.companyGroupId)
+    throw new Error(
+      "Company group is required to resolve currency decimal places"
+    );
+
+  const currency = await database
+    .selectFrom("currency")
+    .select("decimalPlaces")
+    .where("code", "=", args.currencyCode)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+
+  if (!currency || currency.decimalPlaces == null)
+    throw new Error(
+      `Currency precision for ${args.currencyCode} is required to serialize Rillet amounts`
+    );
+
+  return currency.decimalPlaces;
 }
 
 /** Every Rillet read shape carries an optional updated_at timestamp. */
@@ -455,19 +542,23 @@ export abstract class RilletEntitySyncer<
 }
 
 /**
- * Base class for the create-only Rillet document syncers (invoice, bill,
- * journal entry): pushed documents are immutable in v1, so the
- * master-data lastSyncedAt fast bailout is replaced with a HARD
- * skip-when-mapped — an existing mapping means the push already happened
- * (the QBO journal-syncer contract). Everything else (structured
- * failures, sequential batches, push-only pulls) comes from
- * RilletEntitySyncer.
+ * Base class for immutable Rillet posting amounts (invoice, bill, journal).
+ * Invoice/bill adapters opt into native deletion on local void. Journal
+ * reversals retain their separate posting identity.
  */
 export abstract class RilletTransactionSyncer<
   TLocal,
   TRemote extends RilletTimestamped,
   TOmit extends string | symbol | number
 > extends RilletEntitySyncer<TLocal, TRemote, TOmit> {
+  protected isVoided(_local: TLocal): boolean {
+    return false;
+  }
+
+  protected async deleteRemote(_remoteId: string): Promise<void> {
+    throw new Error("This Rillet transaction does not support native voids");
+  }
+
   // Per-instance caches — a drain reuses one syncer across its claimed
   // operations, so the posting-sync settings and the dimension-value
   // lookup are each fetched at most once per drain
@@ -702,16 +793,6 @@ export abstract class RilletTransactionSyncer<
         this.provider.id
       );
 
-      if (existingMapping?.externalId) {
-        return {
-          status: "skipped",
-          action: "none",
-          localId: entityId,
-          remoteId: existingMapping.externalId,
-          error: `${this.pushOnlyEntityLabel} already pushed to Rillet — skipping (idempotent)`
-        };
-      }
-
       const localEntity = await this.fetchLocal(entityId);
       if (!localEntity) {
         return {
@@ -719,6 +800,37 @@ export abstract class RilletTransactionSyncer<
           action: "none",
           localId: entityId,
           error: `Entity ${entityId} not found in Carbon`
+        };
+      }
+
+      if (existingMapping?.externalId && this.isVoided(localEntity)) {
+        if (existingMapping.metadata?.voided !== true) {
+          await this.deleteRemote(existingMapping.externalId);
+          await withTriggersDisabled(this.database, async (tx) => {
+            await createMappingService(tx, this.companyId).link(
+              this.entityType,
+              entityId,
+              this.provider.id,
+              existingMapping.externalId,
+              { metadata: { ...existingMapping.metadata, voided: true } }
+            );
+          });
+        }
+        return {
+          status: "success",
+          action: "deleted",
+          localId: entityId,
+          remoteId: existingMapping.externalId
+        };
+      }
+
+      if (existingMapping?.externalId) {
+        return {
+          status: "skipped",
+          action: "none",
+          localId: entityId,
+          remoteId: existingMapping.externalId,
+          error: `${this.pushOnlyEntityLabel} already pushed to Rillet — skipping (idempotent)`
         };
       }
 

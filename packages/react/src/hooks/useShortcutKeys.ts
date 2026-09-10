@@ -1,5 +1,8 @@
+import { useCallback, useMemo, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useOperatingSystem } from "../OperatingSystem";
+import { hasOpenDialog } from "../utils/dialog";
+import { isEditableTarget } from "../utils/keyboard";
 
 export type Modifier = "alt" | "ctrl" | "meta" | "shift" | "mod";
 
@@ -154,6 +157,113 @@ export function resolveShortcutKeys(
       ? resolved.modifiers.join("+") + "+" + resolved.key
       : String(resolved.key);
   });
+}
+
+export type ShortcutKeyMapEntry = {
+  shortcut: ShortcutInput;
+  action: (event: KeyboardEvent) => void;
+};
+
+/**
+ * react-hotkeys-hook normalizes hotkey names and `event.code` values with this
+ * exact replacement (its internal `mapKey`, not exported), which is how it
+ * matches physical keys — `Digit1` → `"1"`, `KeyN` → `"n"`, `ArrowLeft` →
+ * `"left"`. Mirrored here (pure, exported for tests) so a combo string can be
+ * canonicalized to the same form the library hands back to a handler, letting
+ * one `useHotkeys` registration dispatch to many entries.
+ */
+export function canonicalCombo(combo: string): string {
+  const flags = { alt: 0, ctrl: 0, meta: 0, mod: 0, shift: 0 };
+  const keys: string[] = [];
+  for (const raw of combo.toLowerCase().split("+")) {
+    const token = raw.trim();
+    if (!token) continue;
+    if (token in flags) {
+      flags[token as keyof typeof flags] = 1;
+    } else {
+      keys.push(token.replace(/key|digit|numpad|arrow/, ""));
+    }
+  }
+  return `${flags.alt}${flags.ctrl}${flags.meta}${flags.mod}${flags.shift}:${keys.join("+")}`;
+}
+
+/** The matched-hotkey shape react-hotkeys-hook passes to a handler. */
+type MatchedHotkey = {
+  alt?: boolean;
+  ctrl?: boolean;
+  meta?: boolean;
+  mod?: boolean;
+  shift?: boolean;
+  keys?: readonly string[];
+};
+
+function canonicalMatchedHotkey(hotkey: MatchedHotkey): string {
+  return `${+!!hotkey.alt}${+!!hotkey.ctrl}${+!!hotkey.meta}${+!!hotkey.mod}${+!!hotkey.shift}:${(hotkey.keys ?? []).join("+")}`;
+}
+
+/**
+ * Bind many page-level shortcuts to many actions — the collision-proof
+ * replacement for the deleted legacy `useKeyboardShortcuts` record API.
+ * Delegates matching to react-hotkeys-hook (one registration for all combos,
+ * dispatched by canonical combo), so its input/contentEditable handling and
+ * physical-key (`event.code`) matching apply — ⌥1 emitting `"¡"` on mac and
+ * shift+/ emitting `"?"` both still match. On top of the library: skips open
+ * dialogs and richer editable targets (cmdk, listbox/menu typeahead), and
+ * duplicate combos warn loudly instead of silently overwriting each other,
+ * which is how a duplicate ⌘⇧P binding went unnoticed for years.
+ */
+export function useShortcutKeyMap(
+  entries: ReadonlyArray<ShortcutKeyMapEntry>,
+  options?: { disabled?: boolean }
+) {
+  const { platform } = useOperatingSystem();
+  const isMac = platform === "mac";
+
+  const disabledRef = useRef(options?.disabled ?? false);
+  disabledRef.current = options?.disabled ?? false;
+
+  const { byCombo, combos } = useMemo(() => {
+    const byCombo = new Map<string, ShortcutKeyMapEntry>();
+    const combos: string[] = [];
+    entries.forEach((entry, index) => {
+      for (const combo of resolveShortcutKeys(entry.shortcut, isMac)) {
+        const canonical = canonicalCombo(combo);
+        if (byCombo.has(canonical)) {
+          // biome-ignore lint/suspicious/noConsole: loud duplicate-combo warning is the point
+          console.warn(
+            `useShortcutKeyMap: duplicate combo "${combo}" (entry ${index}) — only fix is at the caller; duplicates are a bug, not a tiebreak.`
+          );
+          continue;
+        }
+        byCombo.set(canonical, entry);
+        combos.push(combo);
+      }
+    });
+    return { byCombo, combos };
+  }, [entries, isMac]);
+  const byComboRef = useRef(byCombo);
+  byComboRef.current = byCombo;
+
+  // Guarded via the handler + a preventDefault FUNCTION, not the `enabled`
+  // option: react-hotkeys-hook prevents/stops a matched event BEFORE it
+  // consults `enabled`, so a boolean preventDefault would swallow keys (e.g.
+  // arrows while a dialog is open) that should stay completely untouched.
+  const guardsPass = useCallback(
+    (event: KeyboardEvent) =>
+      !disabledRef.current &&
+      !hasOpenDialog() &&
+      !isEditableTarget(event.target),
+    []
+  );
+  const handler = useCallback(
+    (event: KeyboardEvent, hotkey: MatchedHotkey) => {
+      if (!guardsPass(event)) return;
+      byComboRef.current.get(canonicalMatchedHotkey(hotkey))?.action(event);
+    },
+    [guardsPass]
+  );
+
+  useHotkeys(combos, handler, { preventDefault: guardsPass });
 }
 
 export function useShortcutKeys({

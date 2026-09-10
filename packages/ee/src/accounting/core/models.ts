@@ -971,6 +971,9 @@ export const SalesInvoiceLineSchema = z.object({
   // not every provider selects it; push this to any payload that declares a
   // currency code, since unitPrice above is base.
   convertedUnitPrice: withNullable(z.number()).optional(),
+  shippingCost: z.number().default(0),
+  addOnCost: z.number().default(0),
+  nonTaxableAddOnCost: z.number().default(0),
   taxPercent: z.number(),
   lineAmount: z.number()
 });
@@ -992,8 +995,15 @@ export const SalesInvoiceSchema = z.object({
     "Credit Note Issued",
     "Return"
   ]),
-  currencyCode: z.string(),
+  currencyCode: z.string().min(1),
+  baseCurrencyCode: z.string().min(1),
+  baseCurrencyDecimalPlaces: z.number().int().nonnegative(),
+  currencyDecimalPlaces: z.number().int().nonnegative(),
+  headerShippingCost: z.number(),
+  /** Original posted shipping account; null before posting or when no shipping. */
+  shippingRevenueAccountId: z.string().nullable(),
   exchangeRate: z.number(),
+  postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),
   dateDue: withNullable(z.string()),
   datePaid: withNullable(z.string()),

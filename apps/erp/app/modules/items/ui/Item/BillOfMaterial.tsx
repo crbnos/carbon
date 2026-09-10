@@ -1250,8 +1250,8 @@ function makeItem(
     id: material.id!,
     title: (
       <VStack spacing={0} className="py-1 cursor-pointer">
-        <div className="flex items-center gap-2 group">
-          <h3 className="font-semibold truncate">
+        <div className="flex w-full min-w-0 items-center gap-2 group">
+          <h3 className="font-semibold min-w-0 truncate">
             {getItemReadableId(items, material.itemId) ?? ""}
           </h3>
           <ItemLifecycleBadge

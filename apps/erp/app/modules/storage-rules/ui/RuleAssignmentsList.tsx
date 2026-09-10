@@ -2,6 +2,7 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -152,6 +153,30 @@ export default function RuleAssignmentsList({
 
   const isEmpty = assignments.length === 0;
 
+  const actions =
+    !isEmpty && canCreate ? (
+      <div className="flex shrink-0 items-center gap-2">
+        {availableOptions.length > 0 && (
+          <Combobox
+            size="md"
+            value=""
+            options={availableOptions}
+            onChange={handleAssign}
+            placeholder={t`Add from library…`}
+            className="w-[200px]"
+          />
+        )}
+        <Button variant="primary" leftIcon={<LuPlus />} asChild>
+          <Link to={`${path.to.newStorageRule}?targetType=${targetType}`}>
+            <Trans>Add rule</Trans>
+          </Link>
+        </Button>
+      </div>
+    ) : null;
+
+  // Flat variant (rendered inside a ModalDrawer body, no Card chrome) keeps the
+  // standalone heading. The card variant uses the shared Card subcomponents
+  // below so it matches every other card in the app.
   const header = (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
@@ -169,25 +194,7 @@ export default function RuleAssignmentsList({
           {description}
         </p>
       </div>
-      {!isEmpty && canCreate && (
-        <div className="flex shrink-0 items-center gap-2">
-          {availableOptions.length > 0 && (
-            <Combobox
-              size="md"
-              value=""
-              options={availableOptions}
-              onChange={handleAssign}
-              placeholder={t`Add from library…`}
-              className="w-[200px]"
-            />
-          )}
-          <Button variant="primary" leftIcon={<LuPlus />} asChild>
-            <Link to={`${path.to.newStorageRule}?targetType=${targetType}`}>
-              <Trans>Add rule</Trans>
-            </Link>
-          </Button>
-        </div>
-      )}
+      {actions}
     </div>
   );
 
@@ -361,7 +368,20 @@ export default function RuleAssignmentsList({
 
   return (
     <Card className="flex-grow">
-      <CardHeader>{header}</CardHeader>
+      <HStack className="w-full justify-between items-start">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trans>Rules</Trans>
+            {!isEmpty && (
+              <span className="text-sm font-normal text-muted-foreground tabular-nums">
+                {assignments.length}
+              </span>
+            )}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        {actions && <CardAction>{actions}</CardAction>}
+      </HStack>
       <CardContent>{body}</CardContent>
     </Card>
   );
@@ -410,7 +430,7 @@ function EmptyState({
               <Button
                 asChild
                 variant="secondary"
-                size="sm"
+                size="md"
                 leftIcon={<LuPlus />}
               >
                 <Link to={path.to.newStorageRule}>
@@ -423,14 +443,14 @@ function EmptyState({
               <Button
                 asChild
                 variant="secondary"
-                size="sm"
+                size="md"
                 leftIcon={<LuLibrary />}
               >
                 <Link to={path.to.storageRules}>
                   <Trans>Browse library</Trans>
                 </Link>
               </Button>
-              <Button asChild size="sm" leftIcon={<LuPlus />}>
+              <Button asChild size="md" leftIcon={<LuPlus />}>
                 <Link to={path.to.newStorageRule}>
                   <Trans>Create new rule</Trans>
                 </Link>

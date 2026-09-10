@@ -18,7 +18,7 @@ export default function AskDocs() {
   return (
     <Button
       aria-label="Question (⌘L)"
-      variant="outline"
+      variant="ghost"
       leftIcon={<LuCircleHelp />}
       className="hover:scale-100"
       onClick={() => toggleAgent()}

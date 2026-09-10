@@ -24268,6 +24268,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.jobId"
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.fromStorageUnitId"
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.name"
           },
           {
@@ -24281,6 +24284,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.storageUnitName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.fromStorageUnitName"
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.supplierName"
@@ -38428,6 +38434,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.salesShippingRevenueAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -38646,6 +38655,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.salesShippingRevenueAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -38816,6 +38828,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.salesShippingRevenueAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -75607,6 +75622,12 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourcePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -75720,6 +75741,12 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourcePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -75785,6 +75812,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.invoiceSettlement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourcePaymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
           },
           {
             $ref: "#/parameters/body.invoiceSettlement"
@@ -89452,6 +89485,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.jobId"
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.fromStorageUnitId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -89565,6 +89601,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.jobId"
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.fromStorageUnitId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -89630,6 +89669,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.fromStorageUnitId"
           },
           {
             $ref: "#/parameters/body.kanban"
@@ -94775,6 +94817,69 @@ export default {
           }
         },
         tags: ["(rpc) sync_create_make_method_related_records"]
+      }
+    },
+    "/rpc/accounting_round_internal": {
+      get: {
+        parameters: [
+          {
+            format: "numeric",
+            in: "query",
+            name: "_value",
+            required: true,
+            type: "number"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        summary:
+          'Rounds a value-bearing number to the internal precision scale (SCALE = 5). The one named SQL boundary for internal-scale rounding; settlement amounts round at currency."decimalPlaces" instead.',
+        tags: ["(rpc) accounting_round_internal"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              description:
+                'Rounds a value-bearing number to the internal precision scale (SCALE = 5). The one named SQL boundary for internal-scale rounding; settlement amounts round at currency."decimalPlaces" instead.',
+              properties: {
+                _value: {
+                  format: "numeric",
+                  type: "number"
+                }
+              },
+              required: ["_value"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        summary:
+          'Rounds a value-bearing number to the internal precision scale (SCALE = 5). The one named SQL boundary for internal-scale rounding; settlement amounts round at currency."decimalPlaces" instead.',
+        tags: ["(rpc) accounting_round_internal"]
       }
     },
     "/rpc/get_entity_audit_log": {
@@ -108674,6 +108779,8 @@ export default {
           type: "number"
         },
         amount: {
+          description:
+            "Memo amount in memo currency; divide by foreign-per-base exchangeRate for company base.",
           format: "numeric",
           type: "number"
         },
@@ -110256,6 +110363,8 @@ export default {
           type: "number"
         },
         totalAmount: {
+          description:
+            "Gross cash amount in payment currency; divide by foreign-per-base exchangeRate for company base.",
           format: "numeric",
           type: "number"
         },
@@ -112777,8 +112886,8 @@ export default {
           type: "string"
         },
         replenishmentSystem: {
-          enum: ["Buy", "Make", "Buy and Make"],
-          format: 'public."itemReplenishmentSystem"',
+          enum: ["Buy", "Make", "Transfer"],
+          format: 'public."kanbanReplenishmentSystem"',
           type: "string"
         },
         quantity: {
@@ -112853,6 +112962,12 @@ export default {
           format: "text",
           type: "string"
         },
+        fromStorageUnitId: {
+          description:
+            "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
         name: {
           format: "text",
           type: "string"
@@ -112870,6 +112985,10 @@ export default {
           type: "string"
         },
         storageUnitName: {
+          format: "text",
+          type: "string"
+        },
+        fromStorageUnitName: {
           format: "text",
           type: "string"
         },
@@ -119801,6 +119920,12 @@ export default {
         intercompanyPayablesAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesShippingRevenueAccount: {
+          description:
+            "Revenue account for shipping charged to customers; account belongs to the company group.\n\nNote:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -137096,6 +137221,7 @@ export default {
         "writeOffAmount",
         "sourceExchangeRate",
         "targetExchangeRate",
+        "fxGainLossAmount",
         "appliedDate",
         "companyId",
         "createdBy",
@@ -137139,16 +137265,22 @@ export default {
           type: "string"
         },
         appliedAmount: {
+          description:
+            "Target-document principal relieved in company base currency.",
           format: "numeric",
           type: "number"
         },
         discountAmount: {
           default: 0,
+          description:
+            "Target-document discount relief in company base currency.",
           format: "numeric",
           type: "number"
         },
         writeOffAmount: {
           default: 0,
+          description:
+            "Target-document write-off relief in company base currency.",
           format: "numeric",
           type: "number"
         },
@@ -137161,6 +137293,9 @@ export default {
           type: "number"
         },
         fxGainLossAmount: {
+          default: 0,
+          description:
+            "Server-calculated posting snapshot in company base currency: positive gain, negative loss.",
           format: "numeric",
           type: "number"
         },
@@ -137196,6 +137331,18 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        sourcePaymentId: {
+          description:
+            "Prior posted payment supplying on-account credit; paymentId remains the applying/void owner. NULL means current payment cash.",
+          format: "text",
+          type: "string"
+        },
+        sourceAmount: {
+          description:
+            "Principal consumed in the funding source document currency, stored independently of target-base appliedAmount.",
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -143822,8 +143969,8 @@ export default {
         },
         replenishmentSystem: {
           default: "Buy",
-          enum: ["Buy", "Make", "Buy and Make"],
-          format: 'public."itemReplenishmentSystem"',
+          enum: ["Buy", "Make", "Transfer"],
+          format: 'public."kanbanReplenishmentSystem"',
           type: "string"
         },
         quantity: {
@@ -143899,6 +144046,12 @@ export default {
         jobId: {
           description:
             "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        fromStorageUnitId: {
+          description:
+            "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -152159,6 +152312,8 @@ export default {
     },
     "rowFilter.memo.amount": {
       name: "amount",
+      description:
+        "Memo amount in memo currency; divide by foreign-per-base exchangeRate for company base.",
       required: false,
       in: "query",
       type: "string"
@@ -153950,6 +154105,8 @@ export default {
     },
     "rowFilter.payment.totalAmount": {
       name: "totalAmount",
+      description:
+        "Gross cash amount in payment currency; divide by foreign-per-base exchangeRate for company base.",
       required: false,
       in: "query",
       type: "string"
@@ -156867,6 +157024,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.kanbans.fromStorageUnitId": {
+      name: "fromStorageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.kanbans.name": {
       name: "name",
       required: false,
@@ -156893,6 +157056,12 @@ export default {
     },
     "rowFilter.kanbans.storageUnitName": {
       name: "storageUnitName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanbans.fromStorageUnitName": {
+      name: "fromStorageUnitName",
       required: false,
       in: "query",
       type: "string"
@@ -164592,6 +164761,14 @@ export default {
     },
     "rowFilter.accountDefault.intercompanyPayablesAccount": {
       name: "intercompanyPayablesAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.salesShippingRevenueAccount": {
+      name: "salesShippingRevenueAccount",
+      description:
+        "Revenue account for shipping charged to customers; account belongs to the company group.",
       required: false,
       in: "query",
       type: "string"
@@ -183901,18 +184078,22 @@ export default {
     },
     "rowFilter.invoiceSettlement.appliedAmount": {
       name: "appliedAmount",
+      description:
+        "Target-document principal relieved in company base currency.",
       required: false,
       in: "query",
       type: "string"
     },
     "rowFilter.invoiceSettlement.discountAmount": {
       name: "discountAmount",
+      description: "Target-document discount relief in company base currency.",
       required: false,
       in: "query",
       type: "string"
     },
     "rowFilter.invoiceSettlement.writeOffAmount": {
       name: "writeOffAmount",
+      description: "Target-document write-off relief in company base currency.",
       required: false,
       in: "query",
       type: "string"
@@ -183931,6 +184112,8 @@ export default {
     },
     "rowFilter.invoiceSettlement.fxGainLossAmount": {
       name: "fxGainLossAmount",
+      description:
+        "Server-calculated posting snapshot in company base currency: positive gain, negative loss.",
       required: false,
       in: "query",
       type: "string"
@@ -183967,6 +184150,22 @@ export default {
     },
     "rowFilter.invoiceSettlement.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.invoiceSettlement.sourcePaymentId": {
+      name: "sourcePaymentId",
+      description:
+        "Prior posted payment supplying on-account credit; paymentId remains the applying/void owner. NULL means current payment cash.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.invoiceSettlement.sourceAmount": {
+      name: "sourceAmount",
+      description:
+        "Principal consumed in the funding source document currency, stored independently of target-base appliedAmount.",
       required: false,
       in: "query",
       type: "string"
@@ -191359,6 +191558,12 @@ export default {
     },
     "rowFilter.kanban.jobId": {
       name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanban.fromStorageUnitId": {
+      name: "fromStorageUnitId",
       required: false,
       in: "query",
       type: "string"

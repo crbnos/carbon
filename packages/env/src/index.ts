@@ -359,6 +359,15 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isSecret: true
   }
 );
+// True once Supabase Auth captcha (Attack Protection) is enabled — login
+// actions then forward Turnstile tokens to GoTrue instead of verifying in-app.
+export const SUPABASE_AUTH_CAPTCHA_ENABLED = parseBoolean(
+  getEnv("SUPABASE_AUTH_CAPTCHA_ENABLED", {
+    isRequired: false,
+    isSecret: false
+  }),
+  false
+);
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";

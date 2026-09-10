@@ -4,7 +4,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle
@@ -64,15 +63,15 @@ const QualityDocumentApprovalModal = ({
             <ModalTitle>
               {isApproving ? "Approve" : "Reject"} {qualityDocument?.name}
             </ModalTitle>
-            <ModalDescription>
-              {isApproving
-                ? "Are you sure you want to approve this quality document? This will make it active."
-                : "Are you sure you want to reject this quality document? The document will remain in draft status."}
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="approvalRequestId" />
             <Hidden name="decision" />
+            <p className="text-sm text-muted-foreground mb-4">
+              {isApproving
+                ? "Are you sure you want to approve this quality document? This will make it active."
+                : "Are you sure you want to reject this quality document? The document will remain in draft status."}
+            </p>
             <TextArea
               name="notes"
               label={t`Notes (optional)`}

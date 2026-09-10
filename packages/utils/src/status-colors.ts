@@ -58,10 +58,13 @@ export const JOB_OPERATION_STATUS_COLOR_MAP = {
 
 // Operation batch lifecycle. `Active` is DISPLAYED as "Released"; the colors
 // mirror the job map (Planned=yellow, Released/Ready=blue, in-flight=orange,
-// done=green) so a batch reads the same as the jobs it dispatches.
+// done=green) so a batch reads the same as the jobs it dispatches. "Released"
+// is a display alias for Active (BatchStatus rewrites the label) so consumers
+// that render the display name — the docs StatusFlow — resolve the same blue.
 export const BATCH_STATUS_COLOR_MAP = {
   Planned: "yellow",
   Active: "blue",
+  Released: "blue",
   Completing: "orange",
   Completed: "green"
 } as const satisfies Record<string, StatusColor>;
@@ -247,21 +250,132 @@ export const GAUGE_ROLE_COLOR_MAP = {
   Standard: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// ChangeNoticeStatus.tsx — Done is success; open stages step gray → blue → yellow → orange.
+export const CHANGE_ORDER_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Start: "blue",
+  "Engineering Complete": "yellow",
+  Implementation: "orange",
+  Done: "green",
+  Cancelled: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// QualityDocumentStatus.tsx
+export const QUALITY_DOCUMENT_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Active: "green",
+  Archived: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// InspectionStatus.tsx (`getInspectionStatusVariant`; the fallback variant covers Pending).
+export const INSPECTION_STATUS_COLOR_MAP = {
+  Pending: "gray",
+  "In Progress": "blue",
+  Passed: "green",
+  Failed: "red",
+  Partial: "yellow"
+} as const satisfies Record<string, StatusColor>;
+
+// PaymentStatus.tsx
+export const PAYMENT_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Posted: "green",
+  Voided: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// TrainingStatus.tsx (course lifecycle).
+export const TRAINING_COURSE_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Active: "green",
+  Archived: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// TrainingAssignmentForm.tsx StatusBadge ("Not Required" renders outline → gray token).
+export const TRAINING_ASSIGNMENT_STATUS_COLOR_MAP = {
+  Pending: "gray",
+  Completed: "green",
+  Overdue: "red",
+  "Not Required": "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// IntercompanyTransactionStatus.tsx
+export const INTERCOMPANY_TRANSACTION_STATUS_COLOR_MAP = {
+  Unmatched: "orange",
+  Matched: "green",
+  Eliminated: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// PickingListStatus.tsx
+export const PICKING_LIST_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  "In Progress": "blue",
+  Partial: "orange",
+  Completed: "green",
+  Cancelled: "red"
+} as const satisfies Record<string, StatusColor>;
+
+/* Pick lines have no dedicated component; PickingListLines badges render picked=green,
+ * short=orange. Pending/Cancelled follow the house not-started/dead conventions. */
+export const PICKING_LIST_LINE_STATUS_COLOR_MAP = {
+  Pending: "gray",
+  Picked: "green",
+  Short: "orange",
+  Cancelled: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// PeopleTable.tsx account-status badges (Inactive renders secondary → gray token).
+export const EMPLOYEE_ACCOUNT_STATUS_COLOR_MAP = {
+  Active: "green",
+  Invited: "yellow",
+  Inactive: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// TimecardsTable.tsx (Complete renders secondary → gray token).
+export const TIMECARD_STATUS_COLOR_MAP = {
+  Active: "green",
+  Complete: "gray"
+} as const satisfies Record<string, StatusColor>;
+
 /* Registry keyed by a short entity id — lets a generic consumer (e.g. the docs StatusFlow)
- * resolve a status name to its color without importing each map by hand. */
+ * resolve a status name to its color without importing each map by hand. Every map above is
+ * registered; `inventoryCount` aliases the receipt map because InventoryCountStatus.tsx
+ * deliberately shares the Draft / Pending / Posted lifecycle with receipts. */
 export const statusColorMaps = {
   job: JOB_STATUS_COLOR_MAP,
   jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
   jobOperationBatch: BATCH_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,
   salesOrder: SALES_STATUS_COLOR_MAP,
+  salesRfq: SALES_RFQ_STATUS_COLOR_MAP,
   purchaseOrder: PURCHASE_ORDER_STATUS_COLOR_MAP,
+  purchasingRfq: PURCHASING_RFQ_STATUS_COLOR_MAP,
+  supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP,
   receipt: RECEIPT_STATUS_COLOR_MAP,
   shipment: SHIPMENT_STATUS_COLOR_MAP,
+  inventoryCount: RECEIPT_STATUS_COLOR_MAP,
+  stockTransfer: STOCK_TRANSFER_STATUS_COLOR_MAP,
+  pickingList: PICKING_LIST_STATUS_COLOR_MAP,
+  pickingListLine: PICKING_LIST_LINE_STATUS_COLOR_MAP,
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
   trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP,
-  supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP,
+  salesInvoice: SALES_INVOICE_STATUS_COLOR_MAP,
+  purchaseInvoice: PURCHASE_INVOICE_STATUS_COLOR_MAP,
+  payment: PAYMENT_STATUS_COLOR_MAP,
+  journalEntry: JOURNAL_ENTRY_STATUS_COLOR_MAP,
+  accountingPeriod: PERIOD_CLOSE_STATUS_COLOR_MAP,
+  intercompanyTransaction: INTERCOMPANY_TRANSACTION_STATUS_COLOR_MAP,
+  issue: ISSUE_STATUS_COLOR_MAP,
+  inspection: INSPECTION_STATUS_COLOR_MAP,
+  qualityDocument: QUALITY_DOCUMENT_STATUS_COLOR_MAP,
+  risk: RISK_STATUS_COLOR_MAP,
+  gauge: GAUGE_STATUS_COLOR_MAP,
+  gaugeCalibration: GAUGE_CALIBRATION_STATUS_COLOR_MAP,
+  changeOrder: CHANGE_ORDER_STATUS_COLOR_MAP,
+  trainingCourse: TRAINING_COURSE_STATUS_COLOR_MAP,
+  trainingAssignment: TRAINING_ASSIGNMENT_STATUS_COLOR_MAP,
+  employeeAccount: EMPLOYEE_ACCOUNT_STATUS_COLOR_MAP,
+  timecard: TIMECARD_STATUS_COLOR_MAP,
   workflowRun: WORKFLOW_RUN_STATUS_COLOR_MAP
 } as const;
 

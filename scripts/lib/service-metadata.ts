@@ -25,6 +25,7 @@ import {
   buildResponseSchemaIndex,
   type ResponseSchemaIndex,
 } from "./response-schema";
+import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
 import {
   buildValidatorRegistry,
   CONTEXT_PARAMS,
@@ -99,6 +100,11 @@ const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
   accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
   account_upsertNotificationPreference: ["companyId"],
+  // Both operations replace settlement rows in a transaction. Their verbs do
+  // not imply INSERT to the name-based rule, but the service requires the
+  // authenticated creator for every replacement row.
+  invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
+  invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`
@@ -340,13 +346,31 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
 // Type → JSON Schema conversion
 // ---------------------------------------------------------------------------
 
-function typeToJsonSchema(typeStr: string): Record<string, unknown> {
+/**
+ * Threaded into the type converters so a `z.infer<typeof X>` NESTED inside an
+ * inline object type (`contact: PickPartial<z.infer<typeof V>, "email">`) can
+ * resolve through the validator registry instead of publishing `{}`. An untyped
+ * `{}` on a write tool is an invitation for an MCP client to guess field names
+ * — a guessed `contact.phone` reached the insert and failed with PGRST204.
+ */
+type TypeResolveContext = SchemaBuildContext & {
+  modelsContent: string | null;
+  /** Module-local sources searched for `type X = …` / `interface X {…}`. */
+  aliasSources?: string[];
+  /** Cycle guard for alias-to-alias references. */
+  aliasSeen?: Set<string>;
+};
+
+function typeToJsonSchema(
+  typeStr: string,
+  ctx?: TypeResolveContext
+): Record<string, unknown> {
   const t = typeStr.trim();
 
   // Nullable: "Type | null"
   const nullableMatch = t.match(/^(.+?)\s*\|\s*null$/);
   if (nullableMatch) {
-    const inner = typeToJsonSchema(nullableMatch[1].trim());
+    const inner = typeToJsonSchema(nullableMatch[1].trim(), ctx);
     if (Array.isArray(inner.anyOf)) {
       return { anyOf: [...(inner.anyOf as unknown[]), { type: "null" }] };
     }
@@ -356,8 +380,17 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
     return inner;
   }
 
-  // String literal union: "A" | "B" | "C"
-  const literalParts = splitAtTopLevel(t, "|").map((s) => s.trim());
+  // String literal union: "A" | "B" | "C". A leading-pipe union style
+  // (`| (A) | (B)`) yields an empty first part — drop it, or it becomes a
+  // spurious `{}` member of the anyOf. `undefined` members are dropped too:
+  // JSON has no undefined, and a `null | undefined` field otherwise published
+  // an opaque `{}` member.
+  const literalParts = splitAtTopLevel(t, "|")
+    .map((s) => s.trim())
+    .filter((s) => s !== "" && s !== "undefined");
+  if (literalParts.length === 1 && literalParts[0] !== t) {
+    return typeToJsonSchema(literalParts[0], ctx);
+  }
   if (literalParts.length > 1 && literalParts.every((p) => /^"[^"]*"$/.test(p))) {
     return {
       type: "string",
@@ -373,7 +406,7 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
     const members: Record<string, unknown>[] = [];
     const seen = new Set<string>();
     for (const part of literalParts) {
-      const member = typeToJsonSchema(part);
+      const member = typeToJsonSchema(part, ctx);
       const key = JSON.stringify(member);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -387,26 +420,164 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
   if (t === "string") return { type: "string" };
   if (t === "number") return { type: "number" };
   if (t === "boolean") return { type: "boolean" };
+  if (t === "null") return { type: "null" };
+
+  // A single string-literal type ("customer") — a one-value enum.
+  if (/^"[^"]*"$/.test(t)) {
+    return { type: "string", enum: [t.slice(1, -1)] };
+  }
 
   // Arrays
   if (t === "string[]") return { type: "array", items: { type: "string" } };
   if (t === "number[]") return { type: "array", items: { type: "number" } };
   if (t.endsWith("[]")) {
-    const inner = typeToJsonSchema(t.slice(0, -2).trim());
+    const inner = typeToJsonSchema(t.slice(0, -2).trim(), ctx);
     return { type: "array", items: inner };
+  }
+  const arrayGeneric = genericInner(t, "Array") ?? genericInner(t, "ReadonlyArray");
+  if (arrayGeneric !== null) {
+    return { type: "array", items: typeToJsonSchema(arrayGeneric, ctx) };
   }
 
   // Json type
   if (t === "Json" || t === "Json | null") return {};
 
-  // (typeof X)[number] — enum array reference. Anchored: an unanchored match
+  // Record<string, V> — an open string-keyed map.
+  const recordInner = genericInner(t, "Record");
+  if (recordInner !== null) {
+    const args = splitAtTopLevel(recordInner, ",").map((s) => s.trim());
+    if (args.length === 2 && args[0] === "string") {
+      if (args[1] === "any" || args[1] === "unknown") {
+        return { type: "object" };
+      }
+      return {
+        type: "object",
+        additionalProperties: typeToJsonSchema(args[1], ctx)
+      };
+    }
+    return { type: "object" };
+  }
+
+  // (typeof X)[number] — enum array reference; the loaded const array gives the
+  // real values, else degrade to a bare string. Anchored: an unanchored match
   // also fired for any inline object type that merely CONTAINS such a field,
   // collapsing the whole object to a string.
-  if (/^\(typeof\s+\w+\)\s*\[number\]$/.test(t)) return { type: "string" };
+  const constArrayField = t.match(/^\(typeof\s+(\w+)\)\s*\[number\]$/);
+  if (constArrayField) {
+    const values = ctx?.validators?.getConstArray(
+      ctx.module ?? "",
+      constArrayField[1]
+    );
+    return values ? { type: "string", enum: values } : { type: "string" };
+  }
+
+  // Generated database types — `Database["public"]["Enums"]["x"]` and
+  // `Database["public"]["Tables"]["t"]["Row"|"Insert"|"Update"]` (optionally
+  // with one more `["field"]` accessor) resolve from the generated types file.
+  const dbEnum = t.match(/^Database\["public"\]\["Enums"\]\["(\w+)"\]$/);
+  if (dbEnum) {
+    const values = getDbEnumValues(dbEnum[1]);
+    return values ? { type: "string", enum: values } : { type: "string" };
+  }
+  const dbTable = t.match(
+    /^Database\["public"\]\["Tables"\]\["(\w+)"\]\["(Row|Insert|Update)"\](?:\["(\w+)"\])?$/
+  );
+  if (dbTable) {
+    const fields = getDbTableTypeFields(
+      dbTable[1],
+      dbTable[2] as "Row" | "Insert" | "Update"
+    );
+    if (fields) {
+      if (dbTable[3]) {
+        const field = fields.find((f) => f.name === dbTable[3]);
+        return field ? typeToJsonSchema(field.typeStr, ctx) : {};
+      }
+      const properties: Record<string, unknown> = {};
+      const required: string[] = [];
+      for (const field of fields) {
+        if (CONTEXT_PARAMS.has(field.name)) continue;
+        properties[field.name] = typeToJsonSchema(field.typeStr, ctx);
+        if (!field.optional) required.push(field.name);
+      }
+      const schema: Record<string, unknown> = { type: "object", properties };
+      if (required.length > 0) schema.required = required;
+      return schema;
+    }
+  }
+
+  // A parenthesized type — `(Omit<z.infer<...>> & {...})`, the usual shape of a
+  // discriminated-upsert union branch. Unwrap so the branch resolves instead of
+  // publishing `{}`.
+  if (t.startsWith("(") && t.endsWith(")") && wrapsWholeType(t)) {
+    return typeToJsonSchema(t.slice(1, -1), ctx);
+  }
+
+  // Partial<X> — X's schema with nothing required.
+  const partialInner = genericInner(t, "Partial");
+  if (partialInner !== null) {
+    const inner = typeToJsonSchema(partialInner, ctx);
+    if (inner.type === "object") {
+      const { required: _required, ...rest } = inner;
+      return rest;
+    }
+    return inner;
+  }
+
+  // A validator reference nested inside a larger type — `z.infer<typeof V>`,
+  // optionally wrapped (Partial/PickPartial/Omit, an `& {...}` intersection, an
+  // indexed access). The guard excludes inline objects, which merely CONTAIN
+  // such fields and must be flattened field-by-field below.
+  if (ctx && !t.startsWith("{") && t.includes("z.infer<")) {
+    const resolved = resolveNestedInferType(t, ctx);
+    if (resolved) return resolved;
+  }
+
+  // General intersection (`A & B`) — merge the object members. Covers shapes
+  // like `Record<string, any> & { id: string }` and
+  // `{ ... } & ({ createdBy: string } | { updatedBy: string })`, which the
+  // inline-object parser would otherwise mangle (it strips one brace pair and
+  // treats the rest as fields). GenericQueryFilters keeps its dedicated branch.
+  if (!t.includes("GenericQueryFilters")) {
+    const intersection = splitAtTopLevel(t, "&")
+      .map((s) => s.trim())
+      .filter((s) => s !== "");
+    if (intersection.length > 1) {
+      const properties: Record<string, unknown> = {};
+      const required = new Set<string>();
+      for (const part of intersection) {
+        const member = typeToJsonSchema(part, ctx);
+        if (member.type === "object") {
+          Object.assign(
+            properties,
+            (member.properties as Record<string, unknown>) ?? {}
+          );
+          for (const r of (member.required as string[] | undefined) ?? []) {
+            required.add(r);
+          }
+        } else if (Object.keys(member).length > 0) {
+          // A non-object member (a scalar, an anyOf) can't be merged — a
+          // partial schema would misdocument the type, so publish nothing.
+          return {};
+        }
+        // An unresolved `{}` member contributes nothing but doesn't block the
+        // members that did resolve.
+      }
+      if (Object.keys(properties).length === 0) return {};
+      const schema: Record<string, unknown> = { type: "object", properties };
+      if (required.size > 0) schema.required = [...required];
+      return schema;
+    }
+  }
 
   // Inline object: { field: Type; ... }
   if (t.startsWith("{")) {
-    return parseInlineObjectType(t);
+    return parseInlineObjectType(t, ctx);
+  }
+
+  // A bare identifier — try the module's own type aliases before giving up.
+  if (ctx?.aliasSources && /^[A-Za-z_$][\w$]*$/.test(t)) {
+    const resolved = resolveTypeAlias(t, ctx);
+    if (resolved) return resolved;
   }
 
   // GenericQueryFilters & { ... }
@@ -420,7 +591,7 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
     };
     const intersectMatch = t.match(/&\s*(\{.+\})\s*$/s);
     if (intersectMatch) {
-      const extra = parseInlineObjectType(intersectMatch[1]);
+      const extra = parseInlineObjectType(intersectMatch[1], ctx);
       if (extra.properties) {
         base.properties = {
           ...(base.properties as Record<string, unknown>),
@@ -435,7 +606,147 @@ function typeToJsonSchema(typeStr: string): Record<string, unknown> {
   return {};
 }
 
-function parseInlineObjectType(typeStr: string): Record<string, unknown> {
+/**
+ * The type argument of `Name<...>` when the generic wraps the WHOLE type —
+ * null for a bare name, a different generic, or trailing content
+ * (`Array<A> & B`). Depth-tracked so nested generics don't end the match early.
+ */
+function genericInner(t: string, name: string): string | null {
+  if (!t.startsWith(`${name}<`) || !t.endsWith(">")) return null;
+  let depth = 0;
+  for (let i = name.length; i < t.length; i++) {
+    if (t[i] === "<") depth++;
+    else if (t[i] === ">" && !isArrowClose(t, i) && --depth === 0) {
+      return i === t.length - 1 ? t.slice(name.length + 1, i).trim() : null;
+    }
+  }
+  return null;
+}
+
+/** Does the leading "(" close only at the very end? Distinguishes a wrapping
+ *  paren (`(A & B)`) from siblings (`(A) | (B)`), which must not be unwrapped. */
+function wrapsWholeType(t: string): boolean {
+  let depth = 0;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === "(") depth++;
+    else if (t[i] === ")" && --depth === 0) return i === t.length - 1;
+  }
+  return false;
+}
+
+/**
+ * Resolve a type expression whose subject is a `z.infer<typeof X>` reference:
+ * the bare form, `Partial<...>` / `PickPartial<..., "k">` / `Omit<..., "k">`
+ * wrappers, an indexed access (`z.infer<...>["lines"]`), and an `& { ... }`
+ * intersection folding inline extras on top. Returns null for any shape it
+ * cannot resolve faithfully — the caller falls through to the `{}` fallback,
+ * which is lossy but never wrong.
+ */
+function resolveNestedInferType(
+  typeStr: string,
+  ctx: TypeResolveContext
+): Record<string, unknown> | null {
+  const parts = splitAtTopLevel(typeStr, "&");
+  const base = resolveInferExpression(parts[0].trim(), ctx);
+  if (!base || base.type !== "object") return base;
+
+  for (const part of parts.slice(1)) {
+    const extra = part.trim();
+    // An intersection member that isn't an inline object literal (a named type,
+    // another generic) can't be folded in — publishing just the validator's
+    // fields would misdocument the type, so give up entirely.
+    if (!extra.startsWith("{")) return null;
+    const extraSchema = parseInlineObjectType(extra, ctx);
+    base.properties = {
+      ...((base.properties as Record<string, unknown>) ?? {}),
+      ...((extraSchema.properties as Record<string, unknown>) ?? {})
+    };
+    const required = new Set([
+      ...((base.required as string[] | undefined) ?? []),
+      ...((extraSchema.required as string[] | undefined) ?? [])
+    ]);
+    if (required.size > 0) base.required = [...required];
+  }
+  return base;
+}
+
+function resolveInferExpression(
+  t: string,
+  ctx: TypeResolveContext
+): Record<string, unknown> | null {
+  let m = t.match(/^z\.infer<typeof\s+(\w+)>$/);
+  if (m) return lookupValidatorSchema(m[1], ctx);
+
+  // z.infer<typeof V>["field"] — the schema of one field.
+  m = t.match(/^z\.infer<typeof\s+(\w+)>\[\s*"(\w+)"\s*\]$/);
+  if (m) {
+    const schema = lookupValidatorSchema(m[1], ctx);
+    const prop = (schema?.properties as Record<string, unknown> | undefined)?.[
+      m[2]
+    ];
+    return prop && typeof prop === "object"
+      ? (prop as Record<string, unknown>)
+      : null;
+  }
+
+  // Partial<z.infer<typeof V>> — every field optional.
+  m = t.match(/^Partial<\s*z\.infer<typeof\s+(\w+)>\s*>$/);
+  if (m) {
+    const schema = lookupValidatorSchema(m[1], ctx);
+    if (schema) delete schema.required;
+    return schema;
+  }
+
+  // PickPartial<z.infer<typeof V>, "a" | "b"> — the listed keys turn optional.
+  // Omit<z.infer<typeof V>, "a" | "b"> — the listed keys are removed.
+  m = t.match(/^(PickPartial|Omit)<\s*z\.infer<typeof\s+(\w+)>\s*,\s*([\s\S]+)>$/);
+  if (m) {
+    const schema = lookupValidatorSchema(m[2], ctx);
+    if (!schema) return null;
+    const keys = [...m[3].matchAll(/"(\w+)"/g)].map((k) => k[1]);
+    if (m[1] === "Omit") {
+      for (const key of keys) {
+        delete (schema.properties as Record<string, unknown> | undefined)?.[key];
+      }
+    }
+    if (Array.isArray(schema.required)) {
+      schema.required = (schema.required as string[]).filter(
+        (r) => !keys.includes(r)
+      );
+      if ((schema.required as string[]).length === 0) delete schema.required;
+    }
+    return schema;
+  }
+
+  return null;
+}
+
+/** Registry-first, textual-fallback validator lookup, mirroring the top-level
+ *  param resolution in `buildToolSchema` (including its provenance report). */
+function lookupValidatorSchema(
+  validatorName: string,
+  ctx: TypeResolveContext
+): Record<string, unknown> | null {
+  const native = ctx.validators?.getSchema(ctx.module ?? "", validatorName);
+  if (native) {
+    ctx.onResolved?.(validatorName, "native");
+    return native as Record<string, unknown>;
+  }
+  if (ctx.modelsContent) {
+    const textual = parseValidatorFields(validatorName, ctx.modelsContent);
+    if (textual) {
+      ctx.onResolved?.(validatorName, "textual");
+      return textual;
+    }
+  }
+  ctx.onResolved?.(validatorName, "unresolved");
+  return null;
+}
+
+function parseInlineObjectType(
+  typeStr: string,
+  ctx?: TypeResolveContext
+): Record<string, unknown> {
   let inner = typeStr.trim();
   if (inner.startsWith("{")) inner = inner.slice(1);
   if (inner.endsWith("}")) inner = inner.slice(0, -1);
@@ -488,7 +799,7 @@ function parseInlineObjectType(typeStr: string): Record<string, unknown> {
       .replace(/;$/, "")
       .trim();
 
-    const fieldSchema = typeToJsonSchema(fieldType);
+    const fieldSchema = typeToJsonSchema(fieldType, ctx);
     properties[fieldName] = description
       ? { ...fieldSchema, description }
       : fieldSchema;
@@ -574,6 +885,69 @@ function parseValidatorFields(
   const result: Record<string, unknown> = { type: "object", properties };
   if (required.length > 0) result.required = required;
   return result;
+}
+
+/**
+ * Resolve a bare type-alias name against the module's own sources (service
+ * file, `types.ts`, models, and the shared equivalents): `type X = <rhs>` and
+ * non-extending `interface X { ... }`. The rhs goes back through
+ * `typeToJsonSchema`, so aliases of unions, `(typeof x)[number]`, `Record`,
+ * generated-DB references and inline objects all land as real schemas. Null
+ * when the alias is unknown, generic, cyclic, or resolves to nothing — the
+ * caller's `{}` fallback stands.
+ */
+function resolveTypeAlias(
+  name: string,
+  ctx: TypeResolveContext
+): Record<string, unknown> | null {
+  if (!ctx.aliasSources || ctx.aliasSeen?.has(name)) return null;
+  const seen = ctx.aliasSeen ?? new Set<string>();
+  seen.add(name);
+  const nested: TypeResolveContext = { ...ctx, aliasSeen: seen };
+
+  for (const source of ctx.aliasSources) {
+    const typeMatch = new RegExp(
+      `(?:export\\s+)?type\\s+${name}\\s*=\\s*`
+    ).exec(source);
+    if (typeMatch) {
+      const start = typeMatch.index + typeMatch[0].length;
+      let depth = 0;
+      let end = source.length;
+      for (let i = start; i < source.length; i++) {
+        const ch = source[i];
+        if ("({[<".includes(ch)) depth++;
+        else if (")}]>".includes(ch) && !isArrowClose(source, i)) depth--;
+        else if (ch === ";" && depth === 0) {
+          end = i;
+          break;
+        }
+      }
+      const resolved = typeToJsonSchema(source.slice(start, end).trim(), nested);
+      return Object.keys(resolved).length > 0 ? resolved : null;
+    }
+
+    // A non-extending interface is an inline object by another name. One that
+    // extends is skipped — its own block alone would misdocument the type.
+    const ifaceMatch = new RegExp(`(?:export\\s+)?interface\\s+${name}\\s*\\{`).exec(
+      source
+    );
+    if (ifaceMatch) {
+      const braceStart = source.indexOf("{", ifaceMatch.index);
+      const braceEnd = findMatchingBrace(source, braceStart);
+      if (braceEnd > braceStart) {
+        const resolved = parseInlineObjectType(
+          source.slice(braceStart, braceEnd + 1),
+          nested
+        );
+        return Object.keys(
+          (resolved.properties as Record<string, unknown>) ?? {}
+        ).length > 0
+          ? resolved
+          : null;
+      }
+    }
+  }
+  return null;
 }
 
 // The assignment expression of `export const {name} = <expr>;`, captured to the
@@ -794,14 +1168,23 @@ function permissionActionsFor(
   return ["update"];
 }
 
-// Services that pick insert-vs-update this way are the only ones MCP can't infer.
-function usesCreatedByDiscriminator(
+// Services that pick insert-vs-update by testing for an audit field on the
+// payload are the only ones MCP can't infer, so they need the `_operation` flag.
+// BOTH directions count: `"createdBy" in` (create-branch first, e.g.
+// upsertQuoteOperation) and `"updatedBy" in` (update-branch first, e.g.
+// upsertQuoteMaterial / upsertJobMaterial). The dispatch stamps createdBy on
+// create and updatedBy on update and suppresses the other, so either convention
+// lands on the branch the caller asked for.
+function usesOperationDiscriminator(
   content: string,
   funcName: string
 ): boolean {
   const body = extractFunctionBody(content, funcName);
   if (body === null) return false;
-  return stripComments(body).includes('"createdBy" in');
+  const stripped = stripComments(body);
+  return (
+    stripped.includes('"createdBy" in') || stripped.includes('"updatedBy" in')
+  );
 }
 
 // The `:` guard keeps `https://` intact.
@@ -809,6 +1192,27 @@ function stripComments(source: string): string {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+/**
+ * Delete `pattern` wherever a sibling `format` is present, recursively. zod
+ * v4's email conversion emits BOTH — `format: "email"` plus a ~200-character
+ * regex — on every email field of every validator-derived schema. The format
+ * keyword carries the same contract for a fraction of the tokens, and MCP
+ * clients read these schemas far more often than they validate against them.
+ */
+function stripRedundantPatterns(node: unknown): void {
+  if (Array.isArray(node)) {
+    for (const item of node) stripRedundantPatterns(item);
+    return;
+  }
+  if (node !== null && typeof node === "object") {
+    const record = node as Record<string, unknown>;
+    if (typeof record.format === "string" && "pattern" in record) {
+      delete record.pattern;
+    }
+    for (const value of Object.values(record)) stripRedundantPatterns(value);
+  }
 }
 
 function addOperationArg(schema: Record<string, unknown>): void {
@@ -842,6 +1246,7 @@ function buildToolSchema(
   ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
   const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
+  const resolveCtx: TypeResolveContext = { ...ctx, modelsContent };
 
   if (userParams.length === 0) {
     return { schema: { type: "object", properties: {} }, paramCount: 0 };
@@ -857,6 +1262,61 @@ function buildToolSchema(
     // nested schema.
     const trimmedType = param.typeStr.trim();
     const isInlineObject = trimmedType.startsWith("{");
+
+    // A union/intersection AROUND a validator reference — the discriminated
+    // upsert shape `(z.infer<V> & { jobId; …; createdBy }) | (z.infer<V> &
+    // { jobId; …; updatedBy })`. The unanchored validatorMatch below used to
+    // win here and publish the validator VERBATIM, silently dropping every
+    // intersection extra: `jobId` (NOT NULL in the DB) was absent from
+    // production_upsertJobMaterial's schema, quoteId/quoteLineId from
+    // sales_upsertQuoteMaterial's. Resolve each union branch through the
+    // intersection-aware machinery and merge them flat — properties from every
+    // branch, required only where required in EVERY branch (so a create-only
+    // Omit<…, "id"> branch demotes `id` to optional, and auth fields never
+    // appear at all: CONTEXT_PARAMS strips them). Falls through untouched when
+    // any branch fails to resolve — the `& ({createdBy} | {updatedBy})` audit
+    // union resolves to {} by design and keeps the verbatim-validator path.
+    const looksComposed =
+      !isInlineObject &&
+      !trimmedType.endsWith("[]") &&
+      trimmedType.includes("z.infer<") &&
+      (splitAtTopLevel(trimmedType, "|").filter((s) => s.trim() !== "")
+        .length > 1 ||
+        splitAtTopLevel(trimmedType, "&").length > 1);
+    if (looksComposed) {
+      const branches = splitAtTopLevel(trimmedType, "|")
+        .map((s) => s.trim())
+        .filter((s) => s !== "")
+        .map((branch) => typeToJsonSchema(branch, resolveCtx));
+      const allResolved = branches.every(
+        (b) =>
+          b.type === "object" &&
+          Object.keys((b.properties as Record<string, unknown>) ?? {}).length >
+            0
+      );
+      if (allResolved) {
+        const properties: Record<string, unknown> = {};
+        for (const branch of branches) {
+          Object.assign(
+            properties,
+            branch.properties as Record<string, unknown>
+          );
+        }
+        const required = [
+          ...new Set(
+            branches.flatMap((b) => (b.required as string[] | undefined) ?? [])
+          ),
+        ].filter((name) =>
+          branches.every((b) =>
+            ((b.required as string[] | undefined) ?? []).includes(name)
+          )
+        );
+        const schema: Record<string, unknown> = { type: "object", properties };
+        if (required.length > 0) schema.required = required;
+        return { schema, paramCount: Object.keys(properties).length };
+      }
+    }
+
     // The regex is unanchored, so it also matches a `z.infer<…>` NESTED inside a
     // wrapper (`lines: (Omit<z.infer<…>> & {…})[]`) — returning the validator's
     // schema verbatim there publishes one line's fields flat and drops the array.
@@ -923,7 +1383,7 @@ function buildToolSchema(
     // array-of-objects (`{...}[]`) can't be flattened, so wrap it under the
     // param name instead (typeToJsonSchema returns `{type:"array",...}`).
     if (param.typeStr.trim().startsWith("{")) {
-      const resolved = typeToJsonSchema(param.typeStr);
+      const resolved = typeToJsonSchema(param.typeStr, resolveCtx);
       if (resolved.type === "array") {
         const schema: Record<string, unknown> = {
           type: "object",
@@ -940,7 +1400,7 @@ function buildToolSchema(
 
     // GenericQueryFilters
     if (param.typeStr.includes("GenericQueryFilters")) {
-      const innerSchema = typeToJsonSchema(param.typeStr);
+      const innerSchema = typeToJsonSchema(param.typeStr, resolveCtx);
       const schema: Record<string, unknown> = {
         type: "object",
         properties: { [param.name]: innerSchema },
@@ -952,7 +1412,7 @@ function buildToolSchema(
     }
 
     // Simple primitive param
-    const propSchema = typeToJsonSchema(param.typeStr);
+    const propSchema = typeToJsonSchema(param.typeStr, resolveCtx);
     const schema: Record<string, unknown> = {
       type: "object",
       properties: {
@@ -972,7 +1432,7 @@ function buildToolSchema(
     // typeToJsonSchema handles inline objects AND arrays-of-objects (`{...}[]`),
     // checking the `[]` suffix before the `{` prefix. Calling parseInlineObjectType
     // directly here dropped the suffix, publishing an array param as a bare object.
-    const propSchema = typeToJsonSchema(param.typeStr);
+    const propSchema = typeToJsonSchema(param.typeStr, resolveCtx);
     properties[param.name] = param.description
       ? { ...propSchema, description: param.description }
       : propSchema;
@@ -1014,7 +1474,13 @@ export type ValidatorResolution = "native" | "textual" | "unresolved";
 interface SchemaBuildContext {
   module?: string;
   validators?: ValidatorRegistry;
+  /** Module-local sources for bare type-alias resolution (see `resolveTypeAlias`). */
+  aliasSources?: string[];
   onResolved?: (validatorName: string, how: ValidatorResolution) => void;
+}
+
+function readIfExists(filePath: string): string | null {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf-8") : null;
 }
 
 export interface BuildOptions {
@@ -1068,8 +1534,32 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     if (fs.existsSync(mcpServerFile)) {
       const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
       content = `${content}\n${mcpServerContent}`;
-      functions.push(...parseExportedFunctions(mcpServerContent));
+      // A same-named mcp.server export SHADOWS the service one — matching the
+      // runtime registry, where the mcp.server spread wins — so an orchestration
+      // wrapper can replace a bare service function without renaming the
+      // published tool. Its PARAMS come from the wrapper; note that body scans
+      // (classification, the `_operation` discriminator) read the FIRST match in
+      // the concatenated content, i.e. the service body — a wrapper must keep
+      // the same discriminator convention as the function it shadows.
+      const mcpFunctions = parseExportedFunctions(mcpServerContent);
+      const shadowed = new Set(mcpFunctions.map((f) => f.name));
+      for (let i = functions.length - 1; i >= 0; i--) {
+        if (shadowed.has(functions[i].name)) functions.splice(i, 1);
+      }
+      functions.push(...mcpFunctions);
     }
+
+    // Sources searched when a param references a bare type alias, most
+    // specific first: the service file itself, the module's types.ts and
+    // models, then the shared module's equivalents (the common cross-module
+    // import target).
+    const aliasSources = [
+      content,
+      readIfExists(path.join(MODULES_DIR, mod, "types.ts")),
+      modelsContent,
+      readIfExists(path.join(MODULES_DIR, "shared", "types.ts")),
+      readIfExists(path.join(MODULES_DIR, "shared", "shared.models.ts"))
+    ].filter((s): s is string => s !== null);
 
     let toolCount = 0;
 
@@ -1093,12 +1583,14 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const { schema, paramCount } = buildToolSchema(func, modelsContent, {
         module: mod,
         validators: opts.validators,
+        aliasSources,
         onResolved: (validatorName, how) =>
           opts.onValidatorResolved?.(toolName, validatorName, how),
       });
+      stripRedundantPatterns(schema);
       if (
         injectAuth.includes("createdBy") &&
-        usesCreatedByDiscriminator(content, func.name)
+        usesOperationDiscriminator(content, func.name)
       ) {
         addOperationArg(schema);
       }

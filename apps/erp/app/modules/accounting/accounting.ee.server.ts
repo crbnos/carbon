@@ -1,3 +1,4 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -6,12 +7,52 @@ import type { ReportPeriodBucket } from "@carbon/utils";
 import { toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  applyCtaToReportPeriodSeries,
   getAccountLedger,
   getAccountLedgerSummary,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries
 } from "./accounting.ee.service";
 import { acquisitionLines } from "./accounting.utils";
+
+/** Resolve only the authorized group's root CTA configuration for reporting.
+ * Operating-company balances continue to use the loader's RLS client.
+ */
+export async function applyCtaToReportPeriodSeriesForReport(
+  request: Request,
+  reportingCompanyId: string,
+  args: Parameters<typeof applyCtaToReportPeriodSeries>[3]
+) {
+  const { client, companyGroupId } = await requirePermissions(request, {
+    view: "accounting",
+    role: "employee",
+    bypassRls: true
+  });
+  const root = await client
+    .from("company")
+    .select("id")
+    .eq("id", reportingCompanyId)
+    .eq("companyGroupId", companyGroupId)
+    .is("parentCompanyId", null)
+    .single();
+  if (root.error || !root.data) {
+    return {
+      data: null,
+      error: root.error ?? {
+        message:
+          "Reporting company must be the root of the authorized company group"
+      }
+    };
+  }
+  // Use the authenticated client returned above: API keys never gain service-role
+  // privileges, even if their request also supplies the bypassRls option.
+  return applyCtaToReportPeriodSeries(
+    client,
+    companyGroupId,
+    root.data.id,
+    args
+  );
+}
 
 // Report loaders consolidate a group the user is authorized for, but the
 // synthetic elimination entities are read via service role (no user is a member

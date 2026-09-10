@@ -265,8 +265,8 @@ function makeItem(
     id: operation.id!,
     title: (
       <VStack spacing={0}>
-        <HStack spacing={2}>
-          <h3 className="font-semibold truncate cursor-pointer">
+        <HStack spacing={2} className="w-full min-w-0">
+          <h3 className="font-semibold min-w-0 truncate cursor-pointer">
             {operation.description}
           </h3>
           {operation.reworkId && <Badge variant="red">Rework</Badge>}

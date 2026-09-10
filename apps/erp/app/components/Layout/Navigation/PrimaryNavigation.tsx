@@ -3,6 +3,7 @@ import {
   ShortcutKey,
   useDisclosure,
   useShortcutKeys,
+  useShortcutSequence,
   VStack
 } from "@carbon/react";
 import {
@@ -19,9 +20,9 @@ import {
 } from "@dnd-kit/sortable";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { AnchorHTMLAttributes } from "react";
-import { forwardRef, memo, useEffect } from "react";
+import { forwardRef, memo, useEffect, useMemo } from "react";
 import { LuSearch, LuSettings2 } from "react-icons/lu";
-import { Link, useMatches } from "react-router";
+import { Link, useMatches, useNavigate } from "react-router";
 import {
   useModules,
   useOptimisticLocation,
@@ -29,9 +30,10 @@ import {
   useSettingsModule
 } from "~/hooks";
 import { useImplementationNavItem } from "~/hooks/useImplementationNavItem";
+import { MODULE_GO_TO, MODULE_GO_TO_PREFIX, searchShortcut } from "~/shortcuts";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
-import { SearchModal, searchShortcut } from "../Topbar/Search";
+import { SearchModal } from "../Topbar/Search";
 import { HiddenModulesPopover } from "./HiddenModulesPopover";
 import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
@@ -56,6 +58,26 @@ const PrimaryNavigation = () => {
   }, new Set<string>());
 
   const editMode = useNavigationEditMode();
+
+  // g-then-letter module go-to, bound to the stable module `key` (order and
+  // visibility are per-user, so positions would be unstable).
+  const navigate = useNavigate();
+  const goToModules = useMemo(() => {
+    const map: Record<string, () => void> = {};
+    const targets = settingsModule ? [...links, settingsModule] : links;
+    for (const module of targets) {
+      const letter = MODULE_GO_TO[module.key];
+      if (letter) map[letter] = () => navigate(module.to);
+    }
+    return map;
+  }, [links, settingsModule, navigate]);
+  // Disabled while rearranging the rail — a stray `g`+letter would navigate
+  // away and discard the unsaved layout.
+  useShortcutSequence({
+    prefix: MODULE_GO_TO_PREFIX,
+    map: goToModules,
+    disabled: editMode.isEditing
+  });
 
   // The rail expands on hover. The search modal (a Radix dialog) toggles
   // document.body pointer-events, and restoring them on close fires a phantom
@@ -105,7 +127,7 @@ const PrimaryNavigation = () => {
         data-state={isOpen ? "expanded" : "collapsed"}
         className={cn(
           "bg-background py-2 group z-10 h-full w-full",
-          "flex flex-col justify-between data-[state=expanded]:border-r data-[state=expanded]:border-border",
+          "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onMouseEnter={

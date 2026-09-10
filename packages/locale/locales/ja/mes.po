@@ -145,6 +145,9 @@ msgstr "この操作を終了してもよろしいですか？これにより、
 msgid "Are you sure you want to leave this page?"
 msgstr "このページを離れてもよろしいですか？"
 
+msgid "Assembly steps"
+msgstr "組立工程"
+
 msgid "Assigned"
 msgstr "割当済み"
 
@@ -552,6 +555,9 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
 
+msgid "General"
+msgstr "一般"
+
 msgid "Go back to operation"
 msgstr "操作に戻る"
 
@@ -649,6 +655,9 @@ msgstr "製造指図"
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
+msgid "Keyboard shortcuts"
+msgstr "キーボード ショートカット"
+
 msgid "Kit"
 msgstr "キット"
 
@@ -742,6 +751,9 @@ msgstr "在庫から品目を手動で除去"
 msgid "Mark Short"
 msgstr "短い数量をマーク"
 
+msgid "Mark the step done / record"
+msgstr "工程を完了としてマーク / 記録"
+
 msgid "matches"
 msgstr "が一致"
 
@@ -785,6 +797,9 @@ msgstr "勤務時間"
 msgid "Name"
 msgstr "名前"
 
+msgid "Navigation"
+msgstr "ナビゲーション"
+
 msgid "New"
 msgstr "新規"
 
@@ -796,6 +811,9 @@ msgstr "最新順"
 
 msgid "Next"
 msgstr "次へ"
+
+msgid "Next step"
+msgstr "次のステップ"
 
 msgid "No"
 msgstr "いいえ"
@@ -892,6 +910,9 @@ msgstr "シリアル番号なし"
 
 msgid "No serial numbers found"
 msgstr "シリアル番号が見つかりません"
+
+msgid "No shortcuts available on this page."
+msgstr "このページで利用可能なショートカットはありません。"
 
 msgid "No spare parts added yet"
 msgstr "予備品はまだ追加されていません。"
@@ -1044,6 +1065,9 @@ msgstr "前へ"
 msgid "Preventive"
 msgstr "予防保全"
 
+msgid "Previous step"
+msgstr "前のステップ"
+
 msgid "Print"
 msgstr "印刷"
 
@@ -1154,6 +1178,9 @@ msgstr "受注"
 
 msgid "Save"
 msgstr "保存"
+
+msgid "Save the form you're editing"
+msgstr "編集中のフォームを保存"
 
 msgid "Scan"
 msgstr "スキャン"
@@ -1311,6 +1338,9 @@ msgstr "不足"
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
+msgid "Show this overlay"
+msgstr "このオーバーレイを表示"
+
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
 
@@ -1346,6 +1376,9 @@ msgstr "使用予備品"
 
 msgid "Start"
 msgstr "開始"
+
+msgid "Start or pause the operation"
+msgstr "工程を開始 / 一時停止"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -1435,6 +1468,9 @@ msgstr "作業時間: {0}"
 
 msgid "Today"
 msgstr "今日"
+
+msgid "Toggle the sidebar"
+msgstr "サイドバーの表示/非表示を切り替える"
 
 msgid "Tools"
 msgstr "工具"

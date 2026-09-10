@@ -145,6 +145,9 @@ msgstr "您确定要完成此工序吗？这会结束此工序的所有活跃生
 msgid "Are you sure you want to leave this page?"
 msgstr "您确定要离开此页面吗？"
 
+msgid "Assembly steps"
+msgstr "装配步骤"
+
 msgid "Assigned"
 msgstr "已分配"
 
@@ -552,6 +555,9 @@ msgstr "物料未拣货的情况下要完成吗？"
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
 
+msgid "General"
+msgstr "常规"
+
 msgid "Go back to operation"
 msgstr "返回操作"
 
@@ -649,6 +655,9 @@ msgstr "工单"
 msgid "Keep picking"
 msgstr "继续拣货"
 
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
 msgid "Kit"
 msgstr "套件"
 
@@ -742,6 +751,9 @@ msgstr "手动从库存管理中移除物料"
 msgid "Mark Short"
 msgstr "标记短缺"
 
+msgid "Mark the step done / record"
+msgstr "标记步骤完成/记录"
+
 msgid "matches"
 msgstr "匹配"
 
@@ -785,6 +797,9 @@ msgstr "我的工时"
 msgid "Name"
 msgstr "名称"
 
+msgid "Navigation"
+msgstr "导航"
+
 msgid "New"
 msgstr "新建"
 
@@ -796,6 +811,9 @@ msgstr "最新优先"
 
 msgid "Next"
 msgstr "下一个"
+
+msgid "Next step"
+msgstr "下一步骤"
 
 msgid "No"
 msgstr "否"
@@ -892,6 +910,9 @@ msgstr "无序列号"
 
 msgid "No serial numbers found"
 msgstr "未找到序列号"
+
+msgid "No shortcuts available on this page."
+msgstr "此页面上无可用的快捷键。"
 
 msgid "No spare parts added yet"
 msgstr "尚未添加备件"
@@ -1044,6 +1065,9 @@ msgstr "上一个"
 msgid "Preventive"
 msgstr "预防性"
 
+msgid "Previous step"
+msgstr "上一步骤"
+
 msgid "Print"
 msgstr "打印"
 
@@ -1154,6 +1178,9 @@ msgstr "销售订单"
 
 msgid "Save"
 msgstr "保存"
+
+msgid "Save the form you're editing"
+msgstr "保存您正在编辑的表单"
 
 msgid "Scan"
 msgstr "扫码"
@@ -1311,6 +1338,9 @@ msgstr "缺货"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
+msgid "Show this overlay"
+msgstr "显示此覆盖层"
+
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
 
@@ -1346,6 +1376,9 @@ msgstr "已使用备件"
 
 msgid "Start"
 msgstr "开始"
+
+msgid "Start or pause the operation"
+msgstr "开始或暂停工序"
 
 msgid "Station User"
 msgstr "工位用户"
@@ -1435,6 +1468,9 @@ msgstr "工作时间：{0}"
 
 msgid "Today"
 msgstr "今天"
+
+msgid "Toggle the sidebar"
+msgstr "切换侧栏"
 
 msgid "Tools"
 msgstr "工具"

@@ -1,6 +1,6 @@
 # Lifecycle & release
 
-> The five change-notice stages, the Implementation lock and Reopen, the impact panel, the diff review, and exactly what release does when a change notice reaches Done.
+> The five change-notice stages, the Implementation lock and Reopen, the impact panel, the diff review, and what release does at Done.
 
 A change notice advances forward one stage at a time. There's no approval toggle — the stages *are* the
 workflow, and the change notice is its own release gate. There are two ways back: **Reopen** at

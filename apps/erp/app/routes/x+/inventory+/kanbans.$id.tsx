@@ -74,6 +74,7 @@ export default function EditKanbanRoute() {
     replenishmentSystem: kanban?.replenishmentSystem ?? "Buy",
     locationId: kanban?.locationId ?? "",
     storageUnitId: kanban?.storageUnitId ?? "",
+    fromStorageUnitId: kanban?.fromStorageUnitId ?? "",
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,

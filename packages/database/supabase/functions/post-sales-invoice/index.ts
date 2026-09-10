@@ -1,9 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import { sql } from "kysely";
 import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
+import { fetchAll } from "../lib/fetch-all.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
@@ -18,6 +20,18 @@ import {
 } from "../shared/get-posting-group.ts";
 import { round } from "../shared/precision.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import {
+  assertCurrencyDecimals,
+  assertExchangeRate,
+} from "../shared/accounting-currency.ts";
+import { classifyIntercompanyPostingLines } from "../shared/intercompany-capture.ts";
+import {
+  allocateSalesHeaderShipping,
+  buildSalesPostingLines,
+  calculateSalesIntercompanyAmount,
+  type SalesPostingAccount,
+  type SalesPostingMetadata,
+} from "../shared/sales-posting-amounts.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -48,7 +62,7 @@ serve(async (req: Request) => {
     const [companyRecord, accountingSettings] = await Promise.all([
       client
         .from("company")
-        .select("companyGroupId")
+        .select("companyGroupId, baseCurrencyCode")
         .eq("id", companyId)
         .single(),
       client
@@ -105,24 +119,9 @@ serve(async (req: Request) => {
 
     switch (type) {
       case "post": {
-        // Pre-tax denominator for allocating the header shipping cost.
-        // Comment lines post no journal entries, so they must not absorb a
-        // share of the shipping (it would never reach the GL).
-        const totalLinesCost = salesInvoiceLines.data.reduce(
-          (acc, invoiceLine) => {
-            if (invoiceLine.invoiceLineType === "Comment") return acc;
-            const lineCost =
-              (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
-              (invoiceLine.shippingCost ?? 0) +
-              (invoiceLine.addOnCost ?? 0);
-            return acc + lineCost;
-          },
-          0
-        );
-
-        const postableLineCount = salesInvoiceLines.data.filter(
-          (invoiceLine) => invoiceLine.invoiceLineType !== "Comment"
-        ).length;
+        const headerShippingAllocations = accountingEnabled
+          ? allocateSalesHeaderShipping(salesInvoiceLines.data, shippingCost)
+          : new Map<string, number>();
 
         const itemIds = salesInvoiceLines.data.reduce<string[]>(
           (acc, invoiceLine) => {
@@ -204,6 +203,12 @@ serve(async (req: Request) => {
           saleProceeds: number;
           gainLoss: number;
         }[] = [];
+        const directAssetDisposals: {
+          assetId: string;
+          saleProceeds: number;
+          netBookValue: number;
+          gainLoss: number;
+        }[] = [];
 
         const salesInvoiceLinesBySalesOrderLine = salesInvoiceLines.data.reduce<
           Record<
@@ -283,14 +288,7 @@ serve(async (req: Request) => {
           }
         }
 
-        const journalLineDimensionsMeta: {
-          customerTypeId: string | null;
-          itemPostingGroupId: string | null;
-          itemId: string | null;
-          locationId: string | null;
-          costCenterId: string | null;
-          fixedAssetClassId: string | null;
-        }[] = [];
+        const journalLineDimensionsMeta: SalesPostingMetadata[] = [];
 
         // For IC transactions, book to Inter-Company Receivables instead of
         // regular AR. Resolve it from accountDefault (stable id), not by account
@@ -306,49 +304,92 @@ serve(async (req: Request) => {
             ? icReceivablesAccount
             : accountDefaults?.data?.receivablesAccount;
 
-        // Invoice exchange rate (defaults to 1 for base-currency invoices).
-        // journalLine.amount is denominated in base currency, so all monetary
-        // amounts derived from the invoice's foreign-currency unitPrice etc.
-        // must be multiplied by this rate before they reach a journal line.
-        const invoiceExchangeRate = salesInvoice.data?.exchangeRate ?? 1;
+        const invoiceCurrencyCode = salesInvoice.data.currencyCode ?? companyRecord.data.baseCurrencyCode;
+        const invoiceExchangeRate = salesInvoice.data.exchangeRate ??
+          (invoiceCurrencyCode === companyRecord.data.baseCurrencyCode ? 1 : Number.NaN);
+        if (accountingEnabled) {
+          if (!companyGroupId) throw new Error("Accounting requires a company group");
+          assertExchangeRate(invoiceExchangeRate);
+          if (invoiceCurrencyCode === companyRecord.data.baseCurrencyCode && invoiceExchangeRate !== 1) {
+            throw new Error("Base-currency invoices require an identity exchange rate");
+          }
+        }
 
-        for await (const invoiceLine of salesInvoiceLines.data) {
+        // Batch the asset/class and disposal facts once. No asset state changes
+        // occur until the journal transaction commits.
+        type InvoiceLineRecord = Database["public"]["Tables"]["salesInvoiceLine"]["Row"];
+        const assetIds = [...new Set(salesInvoiceLines.data
+          .filter((line: InvoiceLineRecord) => line.invoiceLineType === "Fixed Asset" && line.assetId)
+          .map((line: InvoiceLineRecord) => line.assetId!))];
+        const assetQuery = () => client.from("fixedAsset")
+          .select("id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, writeOffAccountId, gainOnDisposalAccountId, lossOnDisposalAccountId)")
+          .in("id", assetIds).eq("companyId", companyId).order("id");
+        type AssetRecord = Pick<Database["public"]["Tables"]["fixedAsset"]["Row"],
+          "id" | "status" | "acquisitionCost" | "accumulatedDepreciation" | "locationId"> & {
+            fixedAssetClass: Pick<Database["public"]["Tables"]["fixedAssetClass"]["Row"],
+              "id" | "assetAccountId" | "accumulatedDepreciationAccountId" | "writeOffAccountId" | "gainOnDisposalAccountId" | "lossOnDisposalAccountId"> | null;
+          };
+        type DisposalRecord = Pick<Database["public"]["Tables"]["fixedAssetDisposal"]["Row"], "id" | "fixedAssetId" | "netBookValueAtDisposal">;
+        const [assetRecords, disposalRecords, currencyConfig] = await Promise.all([
+          accountingEnabled && assetIds.length > 0
+            ? fetchAll<AssetRecord>(assetQuery)
+            : Promise.resolve({ data: [] as AssetRecord[], error: null }),
+          accountingEnabled && assetIds.length > 0
+            ? fetchAll<DisposalRecord>(() => client.from("fixedAssetDisposal")
+              .select("id, fixedAssetId, netBookValueAtDisposal")
+              .in("fixedAssetId", assetIds).eq("companyId", companyId)
+              .order("createdAt", { ascending: false }).order("id", { ascending: false }))
+            : Promise.resolve({ data: [] as DisposalRecord[], error: null }),
+          accountingEnabled
+            ? client.from("currency").select("decimalPlaces")
+              .eq("companyGroupId", companyGroupId!).eq("code", invoiceCurrencyCode).single()
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+        if (assetRecords.error) throw new Error("Failed to fetch fixed assets for invoice posting");
+        if (disposalRecords.error) throw new Error("Failed to fetch fixed-asset disposal records");
+        if (accountingEnabled && (currencyConfig.error || !currencyConfig.data)) {
+          throw new Error("Missing invoice currency precision configuration");
+        }
+        const invoiceCurrencyDecimals = currencyConfig.data?.decimalPlaces;
+        if (accountingEnabled) assertCurrencyDecimals(invoiceCurrencyDecimals!);
+        const assetsById = new Map<string, AssetRecord>((assetRecords.data ?? []).map((asset: AssetRecord) => [asset.id, asset]));
+        const latestDisposalByAsset = new Map<string, DisposalRecord>();
+        for (const disposal of disposalRecords.data ?? []) {
+          if (!latestDisposalByAsset.has(disposal.fixedAssetId)) latestDisposalByAsset.set(disposal.fixedAssetId, disposal);
+        }
+        const accountIds = new Set<string>();
+        for (const id of [receivablesAccountId, accountDefaults?.data?.salesAccount,
+          accountDefaults?.data?.salesShippingRevenueAccount, accountDefaults?.data?.salesTaxPayableAccount]) {
+          if (id) accountIds.add(id);
+        }
+        for (const asset of assetRecords.data ?? []) {
+          const assetClass = asset.fixedAssetClass;
+          for (const id of [assetClass?.assetAccountId, assetClass?.accumulatedDepreciationAccountId,
+            assetClass?.writeOffAccountId, assetClass?.gainOnDisposalAccountId, assetClass?.lossOnDisposalAccountId]) {
+            if (id) accountIds.add(id);
+          }
+        }
+        const postingAccounts = accountingEnabled
+          ? await client.from("account").select("id, class, active, isGroup, companyGroupId")
+            .in("id", [...accountIds]).eq("companyGroupId", companyGroupId!)
+          : { data: [], error: null };
+        if (postingAccounts.error) throw new Error("Failed to validate invoice posting accounts");
+        const accountsById = new Map<string, SalesPostingAccount>((postingAccounts.data ?? []).map((account: SalesPostingAccount) => [account.id, account]));
+        const account = (id: string | null | undefined) => id ? accountsById.get(id) : undefined;
+        const chargeAccounts = {
+          receivables: account(receivablesAccountId), sales: account(accountDefaults?.data?.salesAccount),
+          shipping: account(accountDefaults?.data?.salesShippingRevenueAccount), tax: account(accountDefaults?.data?.salesTaxPayableAccount),
+        };
+
+        for (const invoiceLine of salesInvoiceLines.data) {
           const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
-
-          const preTaxLineCost =
-            invoiceLine.quantity * (invoiceLine.unitPrice ?? 0) +
-            (invoiceLine.shippingCost ?? 0) +
-            (invoiceLine.addOnCost ?? 0);
-
-          // nonTaxableAddOnCost is part of the invoice total (and of the
-          // salesInvoices view balance that caps payments) but is excluded
-          // from the tax basis.
-          const totalLineCost =
-            preTaxLineCost * (1 + (invoiceLine.taxPercent ?? 0)) +
-            (invoiceLine.nonTaxableAddOnCost ?? 0);
-
-          // Header shipping is untaxed (matching the salesInvoices view), so
-          // it is weighted by the pre-tax basis — weights sum to exactly 1.
-          // When every line has a zero basis, fall back to equal weights so
-          // the shipping still reaches AR.
-          const lineCostPercentageOfTotalCost =
-            invoiceLine.invoiceLineType === "Comment"
-              ? 0
-              : totalLinesCost === 0
-              ? postableLineCount === 0
-                ? 0
-                : 1 / postableLineCount
-              : preTaxLineCost / totalLinesCost;
-          const lineWeightedShippingCost =
-            shippingCost * lineCostPercentageOfTotalCost;
-          // Convert to base currency for the GL.
-          const totalLineCostWithWeightedShipping =
-            (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
-
-          const invoiceLineUnitCostInInventoryUnit =
-            totalLineCostWithWeightedShipping / invoiceLine.quantity;
-
-          let journalLineReference: string;
+          const postingLine = { ...invoiceLine, allocatedHeaderShipping: headerShippingAllocations.get(invoiceLine.id) ?? 0 };
+          const postingContext = {
+            companyId, companyGroupId: companyGroupId!, documentId: salesInvoice.data.id,
+            externalDocumentId: salesInvoice.data.customerReference,
+            documentLineReference: invoiceLine.salesOrderLineId ? journalReference.to.salesInvoice(invoiceLine.salesOrderLineId) : null,
+            journalLineReference: nanoid(), intercompanyPartnerId,
+          };
 
           switch (invoiceLine.invoiceLineType) {
             case "Part":
@@ -363,6 +404,20 @@ serve(async (req: Request) => {
                 );
                 const itemTrackingType =
                   invoiceLineItem?.itemTrackingType ?? "Inventory";
+
+                if (accountingEnabled && accountDefaults?.data) {
+                  const charges = buildSalesPostingLines({
+                    line: postingLine, context: postingContext, accounts: chargeAccounts,
+                    metadata: {
+                      customerTypeId: customer.data.customerTypeId ?? null,
+                      itemPostingGroupId: itemCosts.data.find((cost: Pick<Database["public"]["Tables"]["itemCost"]["Row"], "itemId" | "itemPostingGroupId">) => cost.itemId === invoiceLine.itemId)?.itemPostingGroupId ?? null,
+                      itemId: invoiceLine.itemId ?? null, locationId: invoiceLine.locationId ?? null,
+                      costCenterId: null, fixedAssetClassId: null,
+                    },
+                  });
+                  journalLineInserts.push(...charges.lines);
+                  journalLineDimensionsMeta.push(...charges.metadata);
+                }
 
                 // if the sales order line is null, we ship the part, do the normal entries and do not use accrual/reversing
                 if (
@@ -414,56 +469,6 @@ serve(async (req: Request) => {
                         (cost) => cost.itemId === invoiceLine.itemId
                       )?.itemPostingGroupId ?? null;
 
-                    journalLineReference = nanoid();
-
-                    // credit the sales account
-                    journalLineInserts.push({
-                      accountId: accountDefaults.data.salesAccount,
-                      description: "Sales Account",
-                      amount: round(
-                        credit("revenue", totalLineCostWithWeightedShipping)
-                      ),
-                      quantity: round(invoiceLineQuantityInInventoryUnit),
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: journalReference.to.salesInvoice(
-                        invoiceLine.salesOrderLineId!
-                      ),
-                      journalLineReference,
-                      companyId,
-                    });
-
-                    // debit the accounts receivable account
-                    journalLineInserts.push({
-                      accountId: receivablesAccountId,
-                      description: isIntercompany
-                        ? "IC Receivables"
-                        : "Accounts Receivable",
-                      amount: round(debit("asset", totalLineCostWithWeightedShipping)),
-                      quantity: round(invoiceLineQuantityInInventoryUnit),
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: journalReference.to.salesInvoice(
-                        invoiceLine.salesOrderLineId!
-                      ),
-                      journalLineReference,
-                      intercompanyPartnerId,
-                      companyId,
-                    });
-
-                    for (let i = 0; i < 2; i++) {
-                      journalLineDimensionsMeta.push({
-                        customerTypeId: customer.data.customerTypeId ?? null,
-                        itemPostingGroupId: lineItemPostingGroupId,
-                        itemId: invoiceLine.itemId ?? null,
-                        locationId: invoiceLine.locationId ?? null,
-                        costCenterId: null,
-                        fixedAssetClassId: null,
-                      });
-                    }
-
                     if (itemTrackingType === "Inventory") {
                       const cogsJournalLineReference = nanoid();
 
@@ -507,380 +512,62 @@ serve(async (req: Request) => {
                       }
                     }
                   }
-                } // if the line is associated with a sales order line, COGS was posted at shipment — keep only AR + Revenue
-                else {
-                  if (accountingEnabled && accountDefaults?.data) {
-                    // Create the normal GL entries for the invoice
-                    journalLineReference = nanoid();
-
-                    // Credit the sales account
-                    journalLineInserts.push({
-                      accountId: accountDefaults.data.salesAccount,
-                      description: "Sales Account",
-                      amount: round(
-                        credit("revenue", totalLineCostWithWeightedShipping)
-                      ),
-                      quantity: round(invoiceLineQuantityInInventoryUnit),
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: invoiceLine.salesOrderLineId
-                        ? journalReference.to.salesInvoice(
-                            invoiceLine.salesOrderLineId
-                          )
-                        : null,
-                      journalLineReference,
-                      companyId,
-                    });
-
-                    // Debit the accounts receivable account
-                    journalLineInserts.push({
-                      accountId: receivablesAccountId,
-                      description: isIntercompany
-                        ? "IC Receivables"
-                        : "Accounts Receivable",
-                      amount: round(debit("asset", totalLineCostWithWeightedShipping)),
-                      quantity: round(invoiceLineQuantityInInventoryUnit),
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: invoiceLine.salesOrderLineId
-                        ? journalReference.to.salesInvoice(
-                            invoiceLine.salesOrderLineId
-                          )
-                        : null,
-                      journalLineReference,
-                      intercompanyPartnerId,
-                      companyId,
-                    });
-
-                    const itemPostingGroupId =
-                      itemCosts.data.find(
-                        (cost) => cost.itemId === invoiceLine.itemId
-                      )?.itemPostingGroupId ?? null;
-
-                    for (let i = 0; i < 2; i++) {
-                      journalLineDimensionsMeta.push({
-                        customerTypeId: customer.data.customerTypeId ?? null,
-                        itemPostingGroupId,
-                        itemId: invoiceLine.itemId ?? null,
-                        locationId: invoiceLine.locationId ?? null,
-                        costCenterId: null,
-                        fixedAssetClassId: null,
-                      });
-                    }
-                  }
                 }
+                // Sales-order and Make-to-Order lines retain shipment-owned COGS;
+                // their charge rows were constructed through the same path above.
               }
 
               break;
             case "Fixed Asset": {
-              // Silently skipping would post less to AR than the invoice
-              // total the payment flow is allowed to apply against.
-              if (accountingEnabled && !invoiceLine.assetId) {
-                throw new Error(
-                  `Fixed Asset invoice line ${invoiceLine.id} has no asset selected`
-                );
+              if (!accountingEnabled) break;
+              if (!invoiceLine.assetId) throw new Error(`Fixed Asset invoice line ${invoiceLine.id} has no asset selected`);
+              const asset = assetsById.get(invoiceLine.assetId);
+              const assetClass = asset?.fixedAssetClass;
+              if (!asset || !assetClass) throw new Error(`Failed to fetch fixed asset/class ${invoiceLine.assetId}`);
+              const salesOrderLine = salesOrderLines.find((line: Database["public"]["Tables"]["salesOrderLine"]["Row"]) => line.id === invoiceLine.salesOrderLineId);
+              const wasShipped = salesOrderLine?.sentComplete === true && !!invoiceLine.salesOrderLineId;
+              const disposal = wasShipped ? latestDisposalByAsset.get(invoiceLine.assetId) : undefined;
+              if (wasShipped && !disposal) {
+                throw new Error(`No disposal record found for asset ${invoiceLine.assetId} — shipment must create it before invoice posting`);
               }
-              if (accountingEnabled && accountDefaults?.data && invoiceLine.assetId) {
-                const salesOrderLine = salesOrderLines?.find(
-                  (sol) => sol.id === invoiceLine.salesOrderLineId
-                );
-                const wasShipped = salesOrderLine?.sentComplete === true;
-                const saleProceeds = totalLineCostWithWeightedShipping;
-
-                if (wasShipped && invoiceLine.salesOrderLineId) {
-                  // Shipment already removed the asset and parked its NBV in the
-                  // disposal clearing account (writeOffAccountId). Here we book
-                  // AR, clear the holding account back to zero, and recognize the
-                  // explicit gain/loss on the matching Gain/Loss on Disposal account.
-                  const assetRecord = await client
-                    .from("fixedAsset")
-                    .select(
-                      "locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(id, writeOffAccountId, gainOnDisposalAccountId, lossOnDisposalAccountId)"
-                    )
-                    .eq("id", invoiceLine.assetId)
-                    .eq("companyId", companyId)
-                    .single();
-
-                  if (assetRecord.error)
-                    throw new Error("Failed to fetch fixed asset");
-
-                  const assetClass = assetRecord.data.fixedAssetClass as any;
-                  const writeOffAccountId = assetClass.writeOffAccountId;
-                  const gainOnDisposalAccountId =
-                    assetClass.gainOnDisposalAccountId;
-                  const lossOnDisposalAccountId =
-                    assetClass.lossOnDisposalAccountId;
-
-                  // NBV was recorded on the disposal row at shipment. The
-                  // shipment must have created it; if it is missing the ledger
-                  // would be left unbalanced, so abort rather than guess.
-                  const disposal = await client
-                    .from("fixedAssetDisposal")
-                    .select("id, netBookValueAtDisposal")
-                    .eq("fixedAssetId", invoiceLine.assetId)
-                    .eq("companyId", companyId)
-                    .order("createdAt", { ascending: false })
-                    .limit(1)
-                    .single();
-
-                  if (disposal.error || !disposal.data) {
-                    throw new Error(
-                      `No disposal record found for asset ${invoiceLine.assetId} — shipment must create the disposal record before invoice posting`
-                    );
-                  }
-
-                  const nbv = Number(disposal.data.netBookValueAtDisposal);
-                  const gainLoss = saleProceeds - nbv;
-
-                  const arJournalLineReference = nanoid();
-
-                  journalLineInserts.push({
-                    accountId: receivablesAccountId,
-                    description: "Accounts Receivable",
-                    amount: round(debit("asset", saleProceeds)),
-                    quantity: round(invoiceLineQuantityInInventoryUnit),
-                    documentType: "Invoice",
-                    documentId: salesInvoice.data?.id ?? undefined,
-                    externalDocumentId:
-                      salesInvoice.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.salesInvoice(
-                      invoiceLine.salesOrderLineId
-                    ),
-                    journalLineReference: arJournalLineReference,
-                    intercompanyPartnerId,
-                    companyId,
-                  });
-
-                  // Clear the disposal clearing account back to zero (credit the
-                  // NBV that was debited there at shipment).
-                  journalLineInserts.push({
-                    accountId: writeOffAccountId,
-                    description: "Clear disposal clearing",
-                    amount: round(credit("expense", nbv)),
-                    quantity: round(invoiceLineQuantityInInventoryUnit),
-                    documentType: "Invoice",
-                    documentId: salesInvoice.data?.id ?? undefined,
-                    externalDocumentId:
-                      salesInvoice.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.salesInvoice(
-                      invoiceLine.salesOrderLineId
-                    ),
-                    journalLineReference: arJournalLineReference,
-                    companyId,
-                  });
-
-                  for (let i = 0; i < 2; i++) {
-                    journalLineDimensionsMeta.push({
-                      customerTypeId: customer.data.customerTypeId ?? null,
-                      itemPostingGroupId: null,
-                      itemId: null,
-                      locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId: assetClass?.id ?? null,
-                    });
-                  }
-
-                  // Recognize the explicit gain (credit) or loss (debit) on the
-                  // matching non-operating account: gains to the Gain on Disposal
-                  // account, losses to the Loss on Disposal account.
-                  if (gainLoss !== 0) {
-                    journalLineInserts.push({
-                      accountId:
-                        gainLoss > 0
-                          ? gainOnDisposalAccountId
-                          : lossOnDisposalAccountId,
-                      description:
-                        gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
-                      amount:
-                        gainLoss > 0
-                          ? round(credit("revenue", gainLoss))
-                          : round(debit("expense", -gainLoss)),
-                      quantity: round(invoiceLineQuantityInInventoryUnit),
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id ?? undefined,
-                      externalDocumentId:
-                        salesInvoice.data?.customerReference ?? undefined,
-                      documentLineReference: journalReference.to.salesInvoice(
-                        invoiceLine.salesOrderLineId
-                      ),
-                      journalLineReference: arJournalLineReference,
-                      companyId,
-                    });
-
-                    journalLineDimensionsMeta.push({
-                      customerTypeId: customer.data.customerTypeId ?? null,
-                      itemPostingGroupId: null,
-                      itemId: null,
-                      locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId: assetClass?.id ?? null,
-                    });
-                  }
-
-                  // Defer the fixedAssetDisposal + fixedAsset writes so they run
-                  // inside the same transaction as the journal posting (below).
-                  fixedAssetDisposalUpdates.push({
-                    disposalId: disposal.data.id,
-                    assetId: invoiceLine.assetId,
-                    saleProceeds,
-                    gainLoss,
-                  });
-                } else {
-                  // Direct invoice (no prior shipment) — combined single-step
-                  // disposal: remove the asset + its accumulated depreciation,
-                  // book AR for proceeds, and recognize the explicit gain/loss on
-                  // the matching Gain/Loss on Disposal account. No NBV write-off
-                  // is comingled with proceeds.
-                  const assetRecord = await client
-                    .from("fixedAsset")
-                    .select(
-                      "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, gainOnDisposalAccountId, lossOnDisposalAccountId)"
-                    )
-                    .eq("id", invoiceLine.assetId)
-                    .eq("companyId", companyId)
-                    .single();
-
-                  if (assetRecord.error)
-                    throw new Error(
-                      "Failed to fetch fixed asset for disposal"
-                    );
-
-                  const assetClass =
-                    assetRecord.data.fixedAssetClass as any;
-                  const acquisitionCost =
-                    Number(assetRecord.data.acquisitionCost) ?? 0;
-                  const accumulatedDepreciation =
-                    Number(assetRecord.data.accumulatedDepreciation) ?? 0;
-                  const nbv = acquisitionCost - accumulatedDepreciation;
-                  const gainLoss = saleProceeds - nbv;
-
-                  const disposalDimensionMeta = () => ({
-                    customerTypeId: customer.data.customerTypeId ?? null,
-                    itemPostingGroupId: null,
-                    itemId: null,
-                    locationId:
-                      invoiceLine.locationId ??
-                      salesOrderLine?.locationId ??
-                      assetRecord.data.locationId ??
-                      null,
-                    costCenterId: null,
-                    fixedAssetClassId: assetClass?.id ?? null,
-                  });
-                  const disposalDocumentLineReference =
-                    invoiceLine.salesOrderLineId
-                      ? journalReference.to.salesInvoice(
-                          invoiceLine.salesOrderLineId
-                        )
-                      : null;
-
-                  if (accumulatedDepreciation > 0) {
-                    journalLineReference = nanoid();
-                    journalLineInserts.push({
-                      accountId:
-                        assetClass.accumulatedDepreciationAccountId,
-                      description: "Clear accumulated depreciation",
-                      amount: round(debit("asset", accumulatedDepreciation)),
-                      quantity: 1,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id ?? undefined,
-                      externalDocumentId:
-                        salesInvoice.data?.customerReference ?? undefined,
-                      documentLineReference: disposalDocumentLineReference,
-                      journalLineReference,
-                      companyId,
-                    });
-
-                    journalLineDimensionsMeta.push(disposalDimensionMeta());
-                  }
-
-                  const removeJournalLineReference = nanoid();
-                  journalLineInserts.push({
-                    accountId: assetClass.assetAccountId,
-                    description: "Remove asset at cost",
-                    amount: round(credit("asset", acquisitionCost)),
-                    quantity: 1,
-                    documentType: "Invoice",
-                    documentId: salesInvoice.data?.id ?? undefined,
-                    externalDocumentId:
-                      salesInvoice.data?.customerReference ?? undefined,
-                    documentLineReference: disposalDocumentLineReference,
-                    journalLineReference: removeJournalLineReference,
-                    companyId,
-                  });
-
-                  journalLineDimensionsMeta.push(disposalDimensionMeta());
-
-                  const arJournalLineReference = nanoid();
-                  journalLineInserts.push({
-                    accountId: receivablesAccountId,
-                    description: "Accounts Receivable",
-                    amount: round(debit("asset", saleProceeds)),
-                    quantity: round(invoiceLineQuantityInInventoryUnit),
-                    documentType: "Invoice",
-                    documentId: salesInvoice.data?.id ?? undefined,
-                    externalDocumentId:
-                      salesInvoice.data?.customerReference ?? undefined,
-                    documentLineReference: disposalDocumentLineReference,
-                    journalLineReference: arJournalLineReference,
-                    intercompanyPartnerId,
-                    companyId,
-                  });
-
-                  journalLineDimensionsMeta.push(disposalDimensionMeta());
-
-                  // Explicit gain (credit) / loss (debit) on the matching
-                  // non-operating account — Gain on Disposal for a gain, Loss on
-                  // Disposal for a loss.
-                  if (gainLoss !== 0) {
-                    journalLineInserts.push({
-                      accountId:
-                        gainLoss > 0
-                          ? assetClass.gainOnDisposalAccountId
-                          : assetClass.lossOnDisposalAccountId,
-                      description:
-                        gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
-                      amount:
-                        gainLoss > 0
-                          ? round(credit("revenue", gainLoss))
-                          : round(debit("expense", -gainLoss)),
-                      quantity: 1,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id ?? undefined,
-                      externalDocumentId:
-                        salesInvoice.data?.customerReference ?? undefined,
-                      documentLineReference: disposalDocumentLineReference,
-                      journalLineReference: arJournalLineReference,
-                      companyId,
-                    });
-
-                    journalLineDimensionsMeta.push(disposalDimensionMeta());
-                  }
-
-                  await client
-                    .from("fixedAsset")
-                    .update({
-                      status: "Disposed",
-                      disposalDate: today,
-                      disposalMethod: "Sale",
-                      saleProceeds,
-                      updatedBy: userId,
-                    })
-                    .eq("id", invoiceLine.assetId)
-                    .eq("companyId", companyId);
-
-                  await client.from("fixedAssetDisposal").insert({
-                    fixedAssetId: invoiceLine.assetId,
-                    disposalMethod: "Sale",
-                    disposalDate: today,
-                    saleProceeds,
-                    netBookValueAtDisposal: nbv,
-                    gainLoss,
-                    companyId,
-                    createdBy: userId,
-                  });
-                }
+              const disposalAccounts = {
+                gainAccount: account(assetClass.gainOnDisposalAccountId),
+                lossAccount: account(assetClass.lossOnDisposalAccountId),
+              };
+              const charges = buildSalesPostingLines({
+                line: postingLine, context: postingContext, accounts: chargeAccounts,
+                metadata: {
+                  customerTypeId: customer.data.customerTypeId ?? null,
+                  itemPostingGroupId: null, itemId: null,
+                  locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? asset.locationId ?? null,
+                  costCenterId: null, fixedAssetClassId: assetClass.id,
+                },
+                disposal: wasShipped && disposal ? {
+                  mode: "shipment", netBookValue: Number(disposal.netBookValueAtDisposal),
+                  clearingAccount: account(assetClass.writeOffAccountId), ...disposalAccounts,
+                } : {
+                  mode: "direct", acquisitionCost: Number(asset.acquisitionCost),
+                  accumulatedDepreciation: Number(asset.accumulatedDepreciation),
+                  assetAccount: account(assetClass.assetAccountId),
+                  accumulatedDepreciationAccount: account(assetClass.accumulatedDepreciationAccountId),
+                  ...disposalAccounts,
+                },
+              });
+              journalLineInserts.push(...charges.lines);
+              journalLineDimensionsMeta.push(...charges.metadata);
+              if (charges.netBookValue === null || charges.gainLoss === null) {
+                throw new Error("Fixed asset disposal posting is missing carrying values");
+              }
+              if (wasShipped && disposal) {
+                fixedAssetDisposalUpdates.push({
+                  disposalId: disposal.id, assetId: invoiceLine.assetId,
+                  saleProceeds: charges.saleProceeds, gainLoss: charges.gainLoss,
+                });
+              } else {
+                directAssetDisposals.push({
+                  assetId: invoiceLine.assetId, saleProceeds: charges.saleProceeds,
+                  netBookValue: charges.netBookValue, gainLoss: charges.gainLoss,
+                });
               }
               break;
             }
@@ -1102,7 +789,7 @@ serve(async (req: Request) => {
                 companyId,
                 sourceType: "Sales Invoice",
                 status: "Posted",
-                postedAt: new Date().toISOString(),
+                postedAt: datetime.timestamp(),
                 postedBy: userId,
                 createdBy: userId,
               })
@@ -1221,34 +908,22 @@ serve(async (req: Request) => {
 
           // Create intercompany transaction record if IC
           if (accountingEnabled && isIntercompany && intercompanyPartnerId) {
-            // Reference the IC receivable line (not [0], which is the revenue line)
-            // so generateEliminationEntries reverses the Inter-Company Receivables
-            // control account and clears it against the buyer's IC Payables.
-            // journalLineInserts is inserted 1:1 into journalLineResults. If no
-            // receivable line was posted, skip: referencing another line would make
-            // elimination reverse the wrong account and leave the control balance.
-            const icReceivableIdx = journalLineInserts.findIndex(
-              (line) => line.accountId === receivablesAccountId
+            const cogsAccount = accountDefaults?.data?.costOfGoodsSoldAccount;
+            const classifiedLines = classifyIntercompanyPostingLines(
+              journalLineInserts.map((line, index) => ({ ...line, id: journalLineResults[index]?.id ?? "" })),
+              journalLineDimensionsMeta,
+              {
+                controlAccountId: receivablesAccountId,
+                revenueAccountIds: [accountDefaults?.data?.salesAccount, accountDefaults?.data?.salesShippingRevenueAccount]
+                  .filter((id): id is string => !!id),
+                cogsAccountId: cogsAccount,
+              }
             );
-            const icJournalLineId =
-              icReceivableIdx >= 0
-                ? journalLineResults[icReceivableIdx]?.id ?? null
-                : null;
-
-            // Match on the same pre-tax basis the buyer computes
-            // (quantity * unitPrice + shippingCost over non-comment lines).
-            // addOnCost is excluded because purchaseInvoiceLine has no such column,
-            // so including it here would break matching on lines that carry one.
-            const intercompanyAmount = salesInvoiceLines.data.reduce(
-              (acc, invoiceLine) => {
-                if (invoiceLine.invoiceLineType === "Comment") return acc;
-                return (
-                  acc +
-                  (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
-                  (invoiceLine.shippingCost ?? 0)
-                );
-              },
-              0
+            // Keep the first control as the existing matching anchor, but capture
+            // every emitted control line so multiline balances eliminate fully.
+            const icJournalLineId = classifiedLines.find((line) => line.role === "Control")?.journalLineId;
+            const intercompanyAmount = calculateSalesIntercompanyAmount(
+              salesInvoiceLines.data, invoiceExchangeRate
             );
 
             if (icJournalLineId) {
@@ -1259,8 +934,8 @@ serve(async (req: Request) => {
                   sourceCompanyId: companyId,
                   targetCompanyId: intercompanyPartnerId,
                   sourceJournalLineId: icJournalLineId,
-                  amount: round(intercompanyAmount),
-                  currencyCode: salesInvoice.data?.currencyCode ?? "USD",
+                  amount: intercompanyAmount,
+                  currencyCode: invoiceCurrencyCode,
                   description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
                   documentType: "Invoice",
                   documentId: salesInvoice.data?.id,
@@ -1269,38 +944,10 @@ serve(async (req: Request) => {
                 .returning(["id"])
                 .executeTakeFirstOrThrow();
 
-              // Capture the seller side's role-classified elimination lines so
-              // consolidation reverses them by reference instead of reconstructing
-              // the trade from the GL. The edge function knows each line's role
-              // exactly (Control = IC receivable, Revenue = sales account, COGS =
-              // cost-of-goods account), so no account-class guessing is needed.
               const eliminationLineInserts: Database["public"]["Tables"]["intercompanyEliminationLine"]["Insert"][] =
-                [];
-              const salesAccount = accountDefaults?.data?.salesAccount;
-              const cogsAccount = accountDefaults?.data?.costOfGoodsSoldAccount;
-
-              journalLineInserts.forEach((line, index) => {
-                const jlId = journalLineResults[index]?.id;
-                if (!jlId) return;
-                let role: "Control" | "Revenue" | "COGS" | null = null;
-                if (index === icReceivableIdx) role = "Control";
-                else if (salesAccount && line.accountId === salesAccount)
-                  role = "Revenue";
-                else if (cogsAccount && line.accountId === cogsAccount)
-                  role = "COGS";
-                if (!role) return;
-                eliminationLineInserts.push({
-                  companyId,
-                  intercompanyTransactionId: icTxn.id,
-                  role,
-                  journalLineId: jlId,
-                  accountId: line.accountId!,
-                  amount: line.amount ?? 0,
-                  itemId: journalLineDimensionsMeta[index]?.itemId ?? null,
-                  quantity: line.quantity ?? null,
-                  createdBy: userId,
-                });
-              });
+                classifiedLines.map((line) => ({
+                  ...line, companyId, intercompanyTransactionId: icTxn.id, createdBy: userId,
+                }));
 
               // Sales-order-based sales post COGS at SHIPMENT (a prior posting),
               // not on this invoice, so it is not in journalLineInserts. Capture
@@ -1355,28 +1002,34 @@ serve(async (req: Request) => {
             }
           }
 
-          // Apply deferred fixed-asset disposal writes inside the transaction so
-          // any failure rolls back the journals posted above.
-          for (const upd of fixedAssetDisposalUpdates) {
-            await trx
-              .updateTable("fixedAssetDisposal")
-              .set({
-                saleProceeds: upd.saleProceeds,
-                gainLoss: upd.gainLoss,
-              })
-              .where("id", "=", upd.disposalId)
-              .where("companyId", "=", companyId)
-              .execute();
-
-            await trx
-              .updateTable("fixedAsset")
-              .set({
-                saleProceeds: upd.saleProceeds,
-                updatedBy: userId,
-              })
-              .where("id", "=", upd.assetId)
-              .where("companyId", "=", companyId)
-              .execute();
+          // All disposal state changes share the journal transaction. Batch
+          // monetary enrichment separately from direct-disposal lifecycle changes.
+          const assetProceeds = new Map([
+            ...directAssetDisposals.map((entry) => [entry.assetId, entry.saleProceeds] as const),
+            ...fixedAssetDisposalUpdates.map((entry) => [entry.assetId, entry.saleProceeds] as const),
+          ]);
+          if (assetProceeds.size > 0) {
+            await trx.updateTable("fixedAsset").set({
+              saleProceeds: sql<number>`CASE "id" ${sql.join([...assetProceeds].map(([id, proceeds]) => sql`WHEN ${id} THEN ${proceeds}::numeric`), sql` `)} ELSE "saleProceeds" END`,
+              updatedBy: userId,
+            }).where("id", "in", [...assetProceeds.keys()]).where("companyId", "=", companyId).execute();
+          }
+          if (fixedAssetDisposalUpdates.length > 0) {
+            const updates = [...new Map(fixedAssetDisposalUpdates.map((entry) => [entry.disposalId, entry])).values()];
+            await trx.updateTable("fixedAssetDisposal").set({
+              saleProceeds: sql<number>`CASE "id" ${sql.join(updates.map((entry) => sql`WHEN ${entry.disposalId} THEN ${entry.saleProceeds}::numeric`), sql` `)} ELSE "saleProceeds" END`,
+              gainLoss: sql<number>`CASE "id" ${sql.join(updates.map((entry) => sql`WHEN ${entry.disposalId} THEN ${entry.gainLoss}::numeric`), sql` `)} ELSE "gainLoss" END`,
+            }).where("id", "in", updates.map((entry) => entry.disposalId)).where("companyId", "=", companyId).execute();
+          }
+          if (directAssetDisposals.length > 0) {
+            await trx.updateTable("fixedAsset").set({
+              status: "Disposed", disposalDate: today, disposalMethod: "Sale", updatedBy: userId,
+            }).where("id", "in", directAssetDisposals.map((entry) => entry.assetId)).where("companyId", "=", companyId).execute();
+            await trx.insertInto("fixedAssetDisposal").values(directAssetDisposals.map((entry) => ({
+              fixedAssetId: entry.assetId, disposalMethod: "Sale" as const, disposalDate: today,
+              saleProceeds: entry.saleProceeds, netBookValueAtDisposal: entry.netBookValue,
+              gainLoss: entry.gainLoss, companyId, createdBy: userId,
+            }))).execute();
           }
 
           // Posting stamps dateIssued with today, so recompute dateDue from
@@ -1617,7 +1270,7 @@ serve(async (req: Request) => {
                 companyId,
                 sourceType: "Sales Invoice",
                 status: "Posted",
-                postedAt: new Date().toISOString(),
+                postedAt: datetime.timestamp(),
                 postedBy: userId,
                 createdBy: userId,
               })

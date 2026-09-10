@@ -419,16 +419,10 @@ export const paymentValidator = z
     reference: zfd.text(z.string().optional()),
     memo: zfd.text(z.string().optional())
   })
-  .refine(
-    (d) =>
-      d.paymentType === "Receipt"
-        ? Boolean(d.customerId)
-        : Boolean(d.supplierId),
-    {
-      message: "Receipt requires a customer; Disbursement requires a supplier",
-      path: ["customerId"]
-    }
-  );
+  .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
+    message: "A payment requires exactly one customer or supplier",
+    path: ["customerId"]
+  });
 
 // ----------------------------------------------------------------------
 // Card transactions (Ramp spend-management sync)
@@ -465,7 +459,8 @@ export const invoiceSettlementBase = z.object({
   targetSalesInvoiceId: zfd.text(z.string().optional()),
   targetPurchaseInvoiceId: zfd.text(z.string().optional()),
   targetMemoId: zfd.text(z.string().optional()),
-  appliedAmount: zfd.numeric(z.number().nonnegative().default(0)),
+  sourceAmount: zfd.numeric(z.number().finite().nonnegative().optional()),
+  appliedAmount: zfd.numeric(z.number().finite().nonnegative().default(0)),
   discountAmount: zfd.numeric(z.number().nonnegative().default(0)),
   writeOffAmount: zfd.numeric(z.number().nonnegative().default(0)),
   targetExchangeRate: zfd.numeric(
@@ -499,7 +494,8 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     (d) =>
       Number(d.appliedAmount) +
         Number(d.discountAmount) +
-        Number(d.writeOffAmount) >
+        Number(d.writeOffAmount) +
+        Number(d.sourceAmount ?? 0) >
       0,
     {
       message: "At least one of applied / discount / write-off must be > 0",
@@ -507,22 +503,15 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     }
   );
 
-// Sub-cent balances are forgiven as dust: an outstanding amount below one cent
-// (the smallest representable currency unit) can't be collected and is treated
-// as paid. Kept in sync with the SQL view forgiveness in
-// 20260630151500_invoice-dust-forgiveness.sql.
-export const INVOICE_DUST_THRESHOLD = 0.01;
-
-// An invoice is payable when it's posted with an outstanding balance of at least
-// one cent — i.e. not draft/pending, voided, already fully paid, or down to dust.
-// Shared by the sales (AR) and purchase (AP) invoice headers; the caller AND-s in
-// the permission check.
+// The balance views preserve any remaining document minor unit, even when its
+// base equivalent is smaller than a base currency cent.
 export function isInvoicePayable(
   status: string | null | undefined,
   balance: number | null | undefined
 ): boolean {
   return (
     !["Voided", "Draft", "Pending", "Paid"].includes(status ?? "") &&
-    Number(balance ?? 0) >= INVOICE_DUST_THRESHOLD
+    Number.isFinite(Number(balance)) &&
+    Number(balance ?? 0) > 0
   );
 }

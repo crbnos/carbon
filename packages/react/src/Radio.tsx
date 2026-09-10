@@ -5,6 +5,7 @@ import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import { LuCircle } from "react-icons/lu";
 
+import { buttonVariants } from "./Button";
 import { cn } from "./utils/cn";
 
 const RadioGroup = forwardRef<
@@ -42,4 +43,32 @@ const RadioGroupItem = forwardRef<
 });
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
 
-export { RadioGroup, RadioGroupItem };
+/**
+ * A radio option styled as a secondary Button — for choice screens where the
+ * options should read as buttons but behave as a radio group (one tab stop,
+ * arrow keys move AND select, Enter left free for the screen's continue
+ * action — Radix prevents Enter from activating a radio). Children render
+ * inline; there is no circle indicator, so express the checked state via
+ * `data-[state=checked]:*` classes at the call site.
+ */
+const RadioGroupButton = forwardRef<
+  ElementRef<typeof RadioGroupPrimitive.Item>,
+  ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
+>(({ className, children, ...props }, ref) => {
+  return (
+    <RadioGroupPrimitive.Item
+      ref={ref}
+      className={cn(
+        buttonVariants({ variant: "secondary", size: "md" }),
+        "gap-2 px-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </RadioGroupPrimitive.Item>
+  );
+});
+RadioGroupButton.displayName = "RadioGroupButton";
+
+export { RadioGroup, RadioGroupButton, RadioGroupItem };
