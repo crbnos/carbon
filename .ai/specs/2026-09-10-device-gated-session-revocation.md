@@ -7,13 +7,17 @@
 ## TLDR
 
 Recognise the **device** a login comes from (signed `carbon-device` cookie +
-`deviceId` on `userLogin`), and gate cross-session and bulk revoke on device
-recognition instead of session age. A device that has signed into this account
-before may sign out other devices with no prompt; an unrecognised device must
-pass a passkey/TOTP step-up first. **Self-termination is never gated.** A new
-device also triggers an out-of-band email alert naming the device and time —
-**no IP, no location**. Also hardens client-IP extraction, which is
-attacker-controlled on self-hosted Caddy today.
+`deviceId` on `userLogin`), and gate cross-session and bulk revoke on **device
+age** instead of session age: the older device wins. A device that has signed
+into this account before may sign out newer sessions with no prompt; a newer or
+unrecognised device is refused with a message telling the user to act from a
+device they have used before. **Self-termination is never gated.** A new device
+also triggers an out-of-band email alert naming the device and time — **no IP,
+no location**. Also hardens client-IP extraction, which is attacker-controlled
+on self-hosted Caddy today.
+
+There is deliberately **no step-up re-authentication anywhere in this design** —
+one timestamp comparison is the whole rule.
 
 Builds on [2026-08-26-user-devices-login-history.md](2026-08-26-user-devices-login-history.md)
 and [2026-08-26-session-revocation.md](2026-08-26-session-revocation.md).
@@ -42,8 +46,8 @@ become seen by waiting.
 
 ## Goals
 
-- An unrecognised device cannot sign out other devices without a second factor.
-- A recognised device signs out other devices with no added friction.
+- A newer or unrecognised device cannot sign out sessions belonging to an older device.
+- An older, recognised device signs out newer sessions with no added friction.
 - Every account has a self-service way to end its own session, always.
 - The owner learns out-of-band when a new device signs in.
 - Client IP is trustworthy enough to store as a security record.
@@ -79,22 +83,26 @@ must outlive the 7-day session, which is the entire point.
 
 ### 2. The revoke gate
 
-| Caller's device | Second factor enrolled | `revokeSession(other)` / `revokeOtherSessions` |
-|---|---|---|
-| Recognised | any | **Allowed**, no prompt |
-| Unrecognised | yes | **Step-up** — passkey or TOTP, then allowed |
-| Unrecognised | no | **Refused** — self-termination only |
-| Any | any | Self-termination: **always allowed** |
+One comparison: **the caller's device must be older than the session it wants to
+end.** A device's age is `MIN("createdAt")` over that user's `userLogin` rows
+carrying its `deviceId` — when it was first seen. The target session's age is
+its own login row's `createdAt`.
 
-Recognition is binary — *seen before*, with no minimum age or login count.
-**User decision:** an attacker who plants a cookie and waits would satisfy any
-age threshold anyway, so a threshold buys little and costs legitimate users a
-week of friction on a new laptop.
+| Case | `revokeSession(other)` / `revokeOtherSessions` |
+|---|---|
+| Caller's device first seen **before** the target session began | **Allowed**, no prompt |
+| Caller's device first seen **after** it (or device unrecognised / no cookie) | **Refused** with an explanation |
+| Self-termination | **Always allowed**, in every case |
 
-The factor-less refusal is deliberate and is the strictest of the options
-considered. **User decision:** a factor-less account keeps no cross-session
-remedy rather than gaining a weak bypass; the intruder's session then persists
-until it expires (≤7 days). The UI states this and points to passkey enrolment.
+For `revokeOtherSessions`, the caller's device must be older than **every**
+session it would end; otherwise the whole action is refused rather than
+partially applied.
+
+**User decision:** no step-up re-authentication, no TOTP, no passkey challenge
+anywhere in this flow. The cost is that the user's own new device cannot sign
+out their old sessions until it has been seen for longer than they have — they
+act from an older device, or wait. That is accepted in exchange for one rule
+with no branches.
 
 Enforced in the **action handler** in `security.tsx`, never in the UI alone —
 a hidden button stops nobody.
@@ -135,12 +143,11 @@ rate-limit keying, a documented bypass) are **not** in scope — flagged in Risk
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Trust signal | **Device recognition**, not session age | Session age inverts under attack (attacker resets the owner's clock; owner is newest after expiry). Device age survives logout, expiry and revocation |
-| Recognition threshold | Binary — seen before, no minimum age or count | **User decision.** A planted cookie satisfies any threshold by waiting; a threshold only taxes the owner's new laptop |
+| Trust comparison | Device's first-seen time vs the target session's start | **User decision.** The older device wins — no absolute threshold to tune, and an attacker's fresh browser can never outrank an established one |
 | Cookie | `carbon-device`, signed with `SESSION_SECRET`, 1-year `maxAge`, `httpOnly`, `sameSite: lax` | Must outlive the 7-day session. Signing prevents a forged `deviceId`; reuses existing cookie machinery, no new secret |
 | Storage | `deviceId` column on existing `userLogin` | Already the per-login record and already user-owned (no `companyId`). Pair `(userId, deviceId)` answers recognition with no new table |
-| Step-up mechanism | Existing `/unlock` (passkey or TOTP), resumes session in place | Already built, already handles both factors, already resumes rather than re-logging-in |
-| Step-up freshness | Challenge per revoke action; no sliding window | No standard exists (GitHub 2 h, GCP 15 min). A per-action challenge is simpler and only fires on unrecognised devices, which is rare |
-| Factor-less + unrecognised | Self-termination only; revoke refused | **User decision.** Strictest option; no weak bypass. UI offers passkey enrolment |
+| Step-up re-auth | **None.** Refuse instead | **User decision.** The design is one timestamp comparison; a challenge flow reintroduces the complexity the device signal exists to avoid. `/unlock` was considered and is unusable here anyway — it only renders for idle-locked sessions and destroys sessions with no factor |
+| Newer/unrecognised device | Refused with a message naming the remedy | **User decision.** No exception path; the user acts from a device they have used before |
 | Self-termination | Never gated, in every combination | The escape hatch that stops step-up becoming a lockout (ASVS 7.5.2) |
 | Alert trigger | New `(userId, deviceId)` pair, all login methods | Every vendor surveyed alerts on new device, not every login (>90 % want the former) |
 | Alert content | Device + timestamp + security link. **No IP, no location** | **User decision** (no IP). Location follows: no dependency, no GDPR surface, identical on cloud and self-hosted |
@@ -150,7 +157,7 @@ rate-limit keying, a documented bypass) are **not** in scope — flagged in Risk
 | Multi-tenancy (heuristic 1) | `deviceId` on user-owned `userLogin`; no `companyId` | Device identity precedes company selection, same as the parent spec |
 | RLS (heuristic 3) | Unchanged — new column rides the existing owner-only SELECT | Writes stay service-role |
 | Form pattern (heuristic 5) | Route-action intents via `useFetcher`, matching existing passkey/revoke intents | Match the file's idiom |
-| Backward compatibility (heuristic 7) | Null `deviceId` on pre-feature rows → device unrecognised → step-up | Fails toward the safer branch; rows age out at 90 days |
+| Backward compatibility (heuristic 7) | Null `deviceId` on pre-feature rows → device unrecognised → refused | Fails toward the safer branch. Note this means revoke is unavailable until the caller's device has been seen once; rows age out at 90 days |
 
 ## Data Model Changes
 
@@ -181,7 +188,9 @@ and already carries the retention and RLS stance a device record needs.
   `{ deviceId, setCookie? }`. Signed via `SESSION_SECRET`; never throws.
 - **`recordLogin`** gains `deviceId`, stores it, and returns whether the pair
   was newly seen so the caller can fire the alert.
-- **`isKnownDevice(userId, deviceId)`** — one indexed `userLogin` lookup.
+- **`getDeviceFirstSeenAt(userId, deviceId)`** — `MIN("createdAt")` over that
+  user's `userLogin` rows for the device; `null` when unrecognised. One indexed
+  lookup.
 
 ### `packages/utils`
 
@@ -194,7 +203,8 @@ and already carries the retention and RLS stance a device record needs.
   (alongside the existing security emails) — resolves the user's company,
   renders a new `NewDeviceEmail` template, `trigger("send-email")`, never throws.
 - **`security.tsx` action** — before `revokeSession` / `revokeOtherSessions`,
-  resolve recognition and apply the §2 table; refuse or redirect to step-up.
+  resolve the caller's device first-seen time and refuse when it is null or not
+  strictly older than every target session's `createdAt`.
 
 ### Login call sites
 
@@ -206,13 +216,17 @@ and already call `recordLogin` as of `7f11eb98bb`.
 
 **Account → Security**, "Your devices" card:
 
-- Unrecognised device: the sign-out control on other rows opens the step-up
-  challenge instead of the confirm modal. Copy: *"Confirm it's you to sign out
-  other devices."*
-- Unrecognised device, no factor enrolled: those controls are disabled with
-  *"Add a passkey or authenticator app to sign out other devices."* linking to
-  enrolment on the same page. "Sign out other devices" is disabled likewise.
-- Recognised device: unchanged from today.
+- Caller's device is older than a given row: that row's sign-out control behaves
+  exactly as today (confirm modal, then revoke).
+- Caller's device is newer than a row, or unrecognised: that row's control is
+  disabled with *"This device is newer than that session. Sign out from a device
+  you've used for longer."*
+- "Sign out other devices" is disabled unless the caller's device is older than
+  every other live session, with the same explanation.
+- The caller's own row is unaffected — self-termination is always available.
+
+The loader computes an `canRevoke` boolean per device row so the UI never
+re-derives the rule.
 
 All strings via Lingui, then `pnpm lingui:extract` + `/translate`.
 
@@ -227,12 +241,14 @@ specs.
       a second row with it
 - [ ] A tampered `carbon-device` cookie fails signature validation and is
       treated as absent (new device issued), never as a valid id
-- [ ] From a recognised device, "Sign out" on another row and "Sign out other
-      devices" both succeed with no challenge
-- [ ] From an unrecognised device with TOTP enrolled, both are refused until the
-      challenge passes, then succeed
-- [ ] From an unrecognised device with no factor enrolled, both are refused, the
-      UI explains why, and self-termination still works
+- [ ] From a device first seen before a target session began, "Sign out" on that
+      row succeeds with no challenge
+- [ ] From a device first seen after a target session began, that row's control
+      is disabled in the UI and the action refuses the POST
+- [ ] From an unrecognised device (no cookie, or no prior login), every other
+      row is refused and self-termination still works
+- [ ] "Sign out other devices" is refused outright when any single other session
+      predates the caller's device
 - [ ] The refusals hold when the request is POSTed directly, bypassing the UI
 - [ ] A login from an unseen `(userId, deviceId)` sends one email naming the
       device and time, containing **no IP and no location**; a login from a seen
@@ -254,8 +270,8 @@ specs.
 | Risk | Severity | Mitigation |
 |------|----------|------------|
 | Cookie theft yields a trusted device | Med | A stolen `carbon-device` usually accompanies a stolen session anyway. Device age is a strong signal, not proof — accepted, and the reason the alert is unconditional |
-| Legitimate user on a genuinely new device hits step-up | Low | Rare by design (new laptop, cleared cookies, incognito). Passkey/TOTP resolves it in one interaction |
-| Factor-less user cannot evict an intruder for ≤7 days | Med | **Accepted user decision.** UI states it and offers enrolment |
+| The user's own new device cannot revoke their old sessions | Med | **Accepted user decision** — the cost of having no step-up path. They act from an older device, or wait for the old sessions to expire (≤7 days). The UI names the remedy explicitly |
+| A user whose only device is new (new laptop + cleared cookies) has no revoke path at all | Med | Accepted; self-termination and full logout still work, and sessions expire at 7 days. Revisit if support traffic shows it |
 | The other ~25 forgeable-IP call sites stay unfixed | Med | Out of scope here, including rate-limit keying. Should be its own spec — flagged, not silently inherited |
 | Alert fatigue from frequent new devices | Low | Fires on new device, not new session; a stable browser alerts once |
 | `deviceId` is a cross-login correlator (privacy) | Low | Opaque, per-browser, user-owned, pruned with `userLogin` at 90 days, never shared |
@@ -267,8 +283,14 @@ specs.
 - [x] What earns a device the right to revoke others? — **Answer (user):**
       known device, any age. A threshold is satisfiable by waiting and only
       taxes legitimate users.
-- [x] Factor-less user on an unrecognised device? — **Answer (user):**
-      self-termination only; no weak bypass, UI offers enrolment.
+- [x] Factor-less user on an unrecognised device? — **Answer (user, superseded):**
+      originally self-termination only with a step-up path for factor-holders.
+      **Revised (user):** drop step-up entirely — see the next question.
+- [x] Should an unrecognised/newer device get a step-up challenge? —
+      **Answer (user):** no. Refuse with a clear message instead. The design is
+      one timestamp comparison and must stay that simple; `/unlock` was also
+      found unusable for this (it only renders for idle-locked sessions and
+      destroys sessions with no factor).
 - [x] How are alerts delivered given `send-email` needs a `companyId`? —
       **Answer (user):** resolve the user's company at send time, reusing the
       existing path.
@@ -284,3 +306,8 @@ specs.
 - 2026-09-10: Created. Device recognition chosen over session-age gating per
   `.ai/research/session-age-gated-revocation.md`; all six open questions
   resolved with the user before writing.
+- 2026-09-10: **Step-up re-authentication removed by user** before planning.
+  The gate is now a single comparison — the caller's device must be older than
+  the session it ends — with no TOTP/passkey challenge and no factor-based
+  branches. Recognition also became an age comparison rather than a binary
+  seen/not-seen test.
