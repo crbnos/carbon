@@ -1,5 +1,11 @@
 -- Separate shipping revenue and retain exact settlement funding principal.
 
+-- Wrapped in an explicit transaction: the migration runner applies statements in
+-- autocommit, but `LOCK TABLE` and the `CREATE TEMP TABLE ... ON COMMIT DROP`
+-- resolution below (plus its dependent INSERT/UPDATE) require a single
+-- transaction block. Same pattern as 20250204164256_numeric-increase-2.sql.
+BEGIN;
+
 ALTER TABLE "accountDefault"
   ADD COLUMN IF NOT EXISTS "salesShippingRevenueAccount" TEXT;
 ALTER TABLE "invoiceSettlement"
@@ -193,3 +199,5 @@ COMMENT ON COLUMN "invoiceSettlement"."fxGainLossAmount" IS 'Server-calculated p
 COMMENT ON COLUMN "payment"."totalAmount" IS 'Gross cash amount in payment currency; divide by foreign-per-base exchangeRate for company base.';
 COMMENT ON COLUMN "memo"."amount" IS 'Memo amount in memo currency; divide by foreign-per-base exchangeRate for company base.';
 NOTIFY pgrst, 'reload schema';
+
+COMMIT;
