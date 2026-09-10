@@ -41,6 +41,7 @@ import {
   LoadingBars,
   VStack
 } from "@carbon/react";
+import { parseUserAgent } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -54,7 +55,18 @@ import {
 } from "react-router";
 import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
+import { sendNewDeviceEmail } from "~/services/mfa-email.server";
 import { path } from "~/utils/path";
+
+/**
+ * Device label for the new-device alert: "Chrome on macOS", or whichever half
+ * we could parse. Never the raw user agent.
+ */
+function deviceLabelFor(request: Request): string {
+  const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+  if (browser && os) return `${browser} on ${os}`;
+  return browser ?? os ?? "Unknown device";
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -334,7 +346,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // branch returns before the shared recordLogin call below.
     const { deviceId: ssoDeviceId, setCookie: ssoDeviceCookie } =
       await ensureDeviceId(request);
-    await recordLogin({
+    const ssoLogin = await recordLogin({
       request,
       userId: authSession.userId,
       email: authSession.email,
@@ -343,6 +355,14 @@ export async function action({ request }: ActionFunctionArgs) {
       app: "erp",
       deviceId: ssoDeviceId
     });
+    if (ssoLogin.isNewDevice) {
+      await sendNewDeviceEmail(
+        serviceRole,
+        ssoCompanyId,
+        authSession.userId,
+        deviceLabelFor(request)
+      );
+    }
 
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
@@ -386,7 +406,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
-    await recordLogin({
+    const login = await recordLogin({
       request,
       userId: authSession.userId,
       email: authSession.email,
@@ -395,6 +415,17 @@ export async function action({ request }: ActionFunctionArgs) {
       app: "erp",
       deviceId
     });
+
+    // A user with no company membership yet gets no alert — the send needs a
+    // companyId, and they have nothing to protect.
+    if (login.isNewDevice && companyId) {
+      await sendNewDeviceEmail(
+        serviceRole,
+        companyId,
+        authSession.userId,
+        deviceLabelFor(request)
+      );
+    }
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.

@@ -1,8 +1,12 @@
 import type { Database } from "@carbon/database";
-import { MfaEnabledEmail, MfaRequiredEmail } from "@carbon/documents/email";
+import {
+  MfaEnabledEmail,
+  MfaRequiredEmail,
+  NewDeviceEmail
+} from "@carbon/documents/email";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { chunkArray } from "@carbon/utils";
+import { chunkArray, datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getUser } from "~/modules/users/users.server";
@@ -136,6 +140,50 @@ export async function sendMfaEnabledEmail(
     });
   } catch (err) {
     logger.error("Failed to send two-factor enabled email", {
+      companyId,
+      userId,
+      error: err
+    });
+  }
+}
+
+/**
+ * Tell the account owner that a device we have never seen just signed in.
+ *
+ * Same stance as the MFA mail above: account-security post, so no notification
+ * preference and no plan gate. Carries the device and the time only — never an
+ * IP or a location (see NewDeviceEmail for why). Swallows its own errors: a
+ * login must not fail because the alert did.
+ */
+export async function sendNewDeviceEmail(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  deviceLabel: string
+) {
+  try {
+    const user = await getUser(serviceRole, userId);
+
+    if (user.error) throw user.error;
+    if (!user.data.email) return;
+
+    const email = NewDeviceEmail({
+      recipientName: user.data.fullName ?? undefined,
+      deviceLabel,
+      // UTC instant via the sanctioned helper — never a raw JS Date.
+      signedInAt: datetime.timestamp(),
+      securityUrl: SECURITY_URL
+    });
+
+    await trigger("send-email", {
+      to: [user.data.email],
+      subject: "A new device signed in to your Carbon account",
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId
+    });
+  } catch (err) {
+    logger.error("Failed to send new device email", {
       companyId,
       userId,
       error: err

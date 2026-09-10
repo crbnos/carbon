@@ -18,7 +18,7 @@ challenge exists anywhere in this design.
 - [x] Task 8: `getDeviceFirstSeenAt` service function
 - [x] Task 9: Enforce the gate in the `security.tsx` action
 - [x] Task 10: Surface the gate in the "Your devices" UI
-- [ ] Task 11: New-device email template + sender
+- [x] Task 11: New-device email template + sender
 - [ ] Task 12: Extract translations
 - [ ] Task 13: End-to-end verification
 

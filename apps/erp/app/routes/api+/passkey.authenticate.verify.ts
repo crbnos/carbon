@@ -12,10 +12,12 @@ import {
 } from "@carbon/auth/session.server";
 import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
+import { parseUserAgent } from "@carbon/utils";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getEmployeeCompanies } from "~/modules/settings";
+import { sendNewDeviceEmail } from "~/services/mfa-email.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -139,7 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
-    await recordLogin({
+    const login = await recordLogin({
       request,
       userId: credRow.userId,
       email: authUser.user.email,
@@ -157,6 +159,20 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(error(null, "Sign-in failed. Please try again."), {
         status: 500
       });
+    }
+
+    // A user with no company membership yet gets no alert — the send needs a
+    // companyId, and they have nothing to protect.
+    if (login.isNewDevice && authSession.companyId) {
+      const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+      await sendNewDeviceEmail(
+        serviceRole,
+        authSession.companyId,
+        credRow.userId,
+        browser && os
+          ? `${browser} on ${os}`
+          : (browser ?? os ?? "Unknown device")
+      );
     }
 
     const safeRedirect =
