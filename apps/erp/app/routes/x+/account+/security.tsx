@@ -7,6 +7,7 @@ import {
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getDeviceId } from "@carbon/auth/device.server";
 import { getSessionId } from "@carbon/auth/login-history.server";
 import type { TotpFactor } from "@carbon/auth/mfa.server";
 import { getTotpFactors } from "@carbon/auth/mfa.server";
@@ -59,6 +60,7 @@ import {
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   getActiveSessions,
+  getDeviceFirstSeenAt,
   getLoginHistory,
   revokeSession
 } from "~/modules/account";
@@ -80,30 +82,32 @@ type Passkey = {
   backedUp: boolean;
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  // sessionUserId, not userId: the effective user can be a console-pinned
-  // operator, and GoTrue sessions/passkeys belong to whoever is actually
-  // signed in. Keying these off the effective user would list (and allow
-  // revoking) another person's sessions.
-  const { client, sessionUserId } = await requirePermissions(request, {});
-  const serviceRole = getCarbonServiceRole();
+/**
+ * The live sessions on this account, each annotated with when it began and
+ * whether the CALLING device is old enough to end it.
+ *
+ * Shared by the loader and the action so the gate is computed once: two copies
+ * of this join would drift, and the action's copy is the one that actually
+ * enforces anything.
+ */
+async function getDevices(request: Request, sessionUserId: string) {
+  const client = getCarbonServiceRole();
   const authSession = await getAuthSession(request);
   const currentSessionId = authSession
     ? getSessionId(authSession.accessToken)
     : null;
-  const [passkeysResult, totpFactors, loginsResult, activeSessions] =
-    await Promise.all([
-      (serviceRole as any)
-        .from("passkeyCredential")
-        .select("id, credentialName, createdAt, lastUsedAt, backedUp")
-        .eq("userId", sessionUserId)
-        .order("createdAt", { ascending: false }),
-      getTotpFactors(sessionUserId),
-      // History rows are the JOIN SOURCE for device/location detail, not a
-      // displayed list — fetch enough to cover every live session's login.
-      getLoginHistory(client, sessionUserId, 100),
-      getActiveSessions(getDatabaseClient(), sessionUserId)
-    ]);
+
+  const [loginsResult, activeSessions, deviceFirstSeenAt] = await Promise.all([
+    // History rows are the JOIN SOURCE for device/location detail, not a
+    // displayed list — fetch enough to cover every live session's login.
+    getLoginHistory(client as any, sessionUserId, 100),
+    getActiveSessions(getDatabaseClient(), sessionUserId),
+    getDeviceFirstSeenAt(
+      client as any,
+      sessionUserId,
+      await getDeviceId(request)
+    )
+  ]);
 
   const loginBySession = new Map(
     (loginsResult.data ?? [])
@@ -117,6 +121,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const devices = activeSessions
     .map((session) => {
       const login = loginBySession.get(session.id);
+      const startedAt = login?.createdAt ?? session.createdAt;
       return {
         sessionId: session.id,
         isCurrent: session.id === currentSessionId,
@@ -125,7 +130,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         city: login?.city ?? null,
         country: login?.country ?? null,
         app: login?.app ?? null,
-        lastActiveAt: session.refreshedAt ?? session.createdAt
+        startedAt,
+        lastActiveAt: session.refreshedAt ?? session.createdAt,
+        // The gate: this device may only end sessions that began AFTER it
+        // first appeared. An attacker's fresh browser is always newer than the
+        // owner's established one, and cannot become older by waiting.
+        canRevoke:
+          deviceFirstSeenAt !== null &&
+          Date.parse(deviceFirstSeenAt) < Date.parse(startedAt)
       };
     })
     .sort((a, b) =>
@@ -136,14 +148,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : Date.parse(b.lastActiveAt) - Date.parse(a.lastActiveAt)
     );
 
+  return { devices, currentSessionId, deviceFirstSeenAt };
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  // sessionUserId, not userId: the effective user can be a console-pinned
+  // operator, and GoTrue sessions/passkeys belong to whoever is actually
+  // signed in. Keying these off the effective user would list (and allow
+  // revoking) another person's sessions.
+  const { sessionUserId } = await requirePermissions(request, {});
+  const serviceRole = getCarbonServiceRole();
+
+  const [passkeysResult, totpFactors, deviceState] = await Promise.all([
+    (serviceRole as any)
+      .from("passkeyCredential")
+      .select("id, credentialName, createdAt, lastUsedAt, backedUp")
+      .eq("userId", sessionUserId)
+      .order("createdAt", { ascending: false }),
+    getTotpFactors(sessionUserId),
+    getDevices(request, sessionUserId)
+  ]);
+
   return {
     passkeys: (passkeysResult.data ?? []) as Passkey[],
     totpFactors: totpFactors.filter((f) => f.status === "verified"),
-    devices,
-    // Without a current session id no row can be identified as "this device",
-    // so revocation is hidden entirely rather than offered against every row
-    // (including the caller's own). The action refuses these posts too.
-    canRevoke: currentSessionId !== null
+    devices: deviceState.devices,
+    // "Sign out other devices" ends EVERY other session at once, so it needs
+    // to outrank all of them — one session it cannot touch refuses the lot.
+    canRevokeAll:
+      deviceState.deviceFirstSeenAt !== null &&
+      deviceState.devices
+        .filter((device) => !device.isCurrent)
+        .every((device) => device.canRevoke)
   };
 }
 
@@ -225,6 +261,17 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    // The device gate, enforced here and not only in the UI — a hidden button
+    // stops nobody. The caller's device must predate the session it is ending.
+    const { devices } = await getDevices(request, sessionUserId);
+    const target = devices.find((device) => device.sessionId === sessionId);
+    if (!target?.canRevoke) {
+      return data(
+        error(null, "Sign out from a device you've used for longer"),
+        { status: 403 }
+      );
+    }
+
     const revoked = await revokeSession(
       getDatabaseClient(),
       sessionUserId,
@@ -241,6 +288,18 @@ export async function action({ request }: ActionFunctionArgs) {
     const authSession = await getAuthSession(request);
     if (!authSession?.accessToken) {
       return data(error(null, "No active session"), { status: 400 });
+    }
+
+    // All-or-nothing: this ends EVERY other session, so the caller's device
+    // must outrank all of them. One session it cannot touch refuses the lot,
+    // rather than partially applying.
+    const { devices } = await getDevices(request, sessionUserId);
+    const others = devices.filter((device) => !device.isCurrent);
+    if (!others.every((device) => device.canRevoke)) {
+      return data(
+        error(null, "Sign out from a device you've used for longer"),
+        { status: 403 }
+      );
     }
 
     const serviceRole = getCarbonServiceRole();
@@ -266,7 +325,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AccountSecurity() {
   const { t } = useLingui();
-  const { passkeys, totpFactors, devices, canRevoke } =
+  const { passkeys, totpFactors, devices, canRevokeAll } =
     useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
   const renameFetcher = useFetcher();
@@ -410,7 +469,7 @@ export default function AccountSecurity() {
   >(null);
   const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
   const hasOtherDevices =
-    canRevoke && devices.some((device) => !device.isCurrent);
+    canRevokeAll && devices.some((device) => !device.isCurrent);
 
   const describeDevice = (device: (typeof devices)[number]) => {
     const { browser, os } = parseUserAgent(device.userAgent);
@@ -616,7 +675,8 @@ export default function AccountSecurity() {
               <CardDescription>
                 <Trans>
                   Where you're signed in. Sign out of any device you don't
-                  recognize.
+                  recognize — from a device you've used for longer than that
+                  session.
                 </Trans>
               </CardDescription>
             </div>
@@ -693,17 +753,19 @@ export default function AccountSecurity() {
                         <Badge variant="green">
                           <Trans>This device</Trans>
                         </Badge>
+                      ) : device.canRevoke ? (
+                        <IconButton
+                          onClick={() => setConfirmRevoke(device)}
+                          aria-label={t`Sign out device`}
+                          type="button"
+                          variant="ghost"
+                          icon={<LuLogOut />}
+                          className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                        />
                       ) : (
-                        canRevoke && (
-                          <IconButton
-                            onClick={() => setConfirmRevoke(device)}
-                            aria-label={t`Sign out device`}
-                            type="button"
-                            variant="ghost"
-                            icon={<LuLogOut />}
-                            className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                          />
-                        )
+                        <span className="text-xs text-muted-foreground">
+                          <Trans>Newer device</Trans>
+                        </span>
                       )}
                     </HStack>
                   </HStack>
