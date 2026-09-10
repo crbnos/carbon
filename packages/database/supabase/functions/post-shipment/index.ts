@@ -8,6 +8,10 @@ import { requirePermissions } from "../lib/supabase.ts";
 import type { Database, Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import {
+  buildJournalLineDimensionInserts,
+  type JournalDimensionMeta,
+} from "../shared/journal-dimensions.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -1819,6 +1823,44 @@ serve(async (req: Request) => {
               ? await getDefaultPostingGroup(client, companyId)
               : null;
 
+            // GL dimensions for the return shipment journal (item, item group,
+            // customer, customer type, location).
+            const [company, customer] = accountingEnabled
+              ? await Promise.all([
+                  client
+                    .from("company")
+                    .select("companyGroupId")
+                    .eq("id", companyId)
+                    .single(),
+                  client
+                    .from("customer")
+                    .select("id, customerTypeId")
+                    .eq("id", salesReturnOrder.data.customerId)
+                    .eq("companyId", companyId)
+                    .single(),
+                ])
+              : [null, null];
+            const dimensions =
+              accountingEnabled && company?.data?.companyGroupId
+                ? await client
+                    .from("dimension")
+                    .select("id, entityType")
+                    .eq("companyGroupId", company.data.companyGroupId)
+                    .eq("active", true)
+                    .in("entityType", [
+                      "CustomerType",
+                      "Customer",
+                      "ItemPostingGroup",
+                      "Item",
+                      "Location",
+                    ])
+                : null;
+            const dimensionMap = new Map<string, string>();
+            for (const dim of dimensions?.data ?? []) {
+              if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+            }
+            const customerTypeId = customer?.data?.customerTypeId ?? null;
+
             const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
               [];
             const trackedEntityUpdates: Record<
@@ -1942,6 +1984,9 @@ serve(async (req: Request) => {
                 Database["public"]["Tables"]["journalLine"]["Insert"],
                 "journalId"
               >[] = [];
+              // Index-parallel to journalLineInserts: dimension #i belongs to
+              // journal line #i.
+              const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
 
               for (const [itemId, quantity] of Object.entries(
                 itemShipmentQuantities
@@ -2009,6 +2054,18 @@ serve(async (req: Request) => {
                     journalLineReference,
                     companyId,
                   });
+                  // Two journal lines were pushed for this item — one
+                  // dimension meta entry each, index-aligned.
+                  const meta = {
+                    itemId,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === itemId)
+                        ?.itemPostingGroupId ?? null,
+                    locationId: shipment.data.locationId,
+                    customerId: salesReturnOrder.data.customerId,
+                    customerTypeId,
+                  };
+                  journalLineDimensionsMeta.push(meta, { ...meta });
                 }
               }
 
@@ -2043,7 +2100,7 @@ serve(async (req: Request) => {
                   })
                   .returning(["id"])
                   .executeTakeFirstOrThrow();
-                await trx
+                const journalLineResults = await trx
                   .insertInto("journalLine")
                   .values(
                     journalLineInserts.map((line) => ({
@@ -2051,7 +2108,22 @@ serve(async (req: Request) => {
                       journalId: journalResult.id,
                     }))
                   )
+                  .returning(["id"])
                   .execute();
+
+                const journalLineDimensionInserts =
+                  buildJournalLineDimensionInserts({
+                    journalLineIds: journalLineResults.map((jl) => jl.id),
+                    meta: journalLineDimensionsMeta,
+                    dimensionMap,
+                    companyId,
+                  });
+                if (journalLineDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(journalLineDimensionInserts)
+                    .execute();
+                }
               }
 
               if (itemLedgerInserts.length > 0) {
@@ -2169,6 +2241,44 @@ serve(async (req: Request) => {
               ? await getDefaultPostingGroup(client, companyId)
               : null;
 
+            // GL dimensions for the return shipment journal (item, item group,
+            // supplier, supplier type, location).
+            const [company, supplier] = accountingEnabled
+              ? await Promise.all([
+                  client
+                    .from("company")
+                    .select("companyGroupId")
+                    .eq("id", companyId)
+                    .single(),
+                  client
+                    .from("supplier")
+                    .select("id, supplierTypeId")
+                    .eq("id", purchaseReturnOrder.data.supplierId)
+                    .eq("companyId", companyId)
+                    .single(),
+                ])
+              : [null, null];
+            const dimensions =
+              accountingEnabled && company?.data?.companyGroupId
+                ? await client
+                    .from("dimension")
+                    .select("id, entityType")
+                    .eq("companyGroupId", company.data.companyGroupId)
+                    .eq("active", true)
+                    .in("entityType", [
+                      "SupplierType",
+                      "Supplier",
+                      "ItemPostingGroup",
+                      "Item",
+                      "Location",
+                    ])
+                : null;
+            const dimensionMap = new Map<string, string>();
+            for (const dim of dimensions?.data ?? []) {
+              if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+            }
+            const supplierTypeId = supplier?.data?.supplierTypeId ?? null;
+
             const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
               [];
             const trackedEntityUpdates: Record<
@@ -2183,6 +2293,17 @@ serve(async (req: Request) => {
               string,
               { quantityShipped: number; updatedBy: string }
             > = {};
+            // A batch returned in part is split at post: the shelf entity keeps
+            // its id and is decremented, the shipped portion departs as a new
+            // Consumed child (mirrors the Sales Order path).
+            const trackedEntitySplits: {
+              entity: NonNullable<typeof shipmentLineTracking.data>[number];
+              drawQuantity: number;
+              storageUnitId: string | null;
+              itemId: string | null;
+              ledgerIndex: number;
+            }[] = [];
+            const splitChildEdges: { childId: string; quantity: number }[] = [];
 
             for (const shipmentLine of shipmentLines.data) {
               if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
@@ -2242,26 +2363,32 @@ serve(async (req: Request) => {
                   companyId,
                 });
               } else {
-                // One ledger row per entity: the entities must account for
-                // the full shipped quantity or cost/stock relief diverges
-                // from what the line claims.
+                // Draw the shipped quantity from the linked entities. A fully
+                // drawn entity is Consumed whole; a batch drawn in part is
+                // split (below, in the transaction). The linked entities must
+                // be able to cover the shipped quantity.
                 const entitySum = lineEntities.reduce(
                   (sum, entity) => sum + Number(entity.quantity ?? 0),
                   0
                 );
-                if (Math.abs(entitySum - shippedQuantity) > 0.00001) {
+                if (entitySum + 0.00001 < shippedQuantity) {
                   throw new Error(
                     `Shipment line ${shipmentLine.id}: tracked entities account for ${entitySum} of ${shippedQuantity} shipped — assign tracking before posting`
                   );
                 }
-                itemShipmentQuantities[shipmentLine.itemId] =
-                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
-                  entitySum;
+                let remaining = shippedQuantity;
                 for (const entity of lineEntities) {
+                  if (remaining <= 0.00001) break;
+                  const entityQty = Number(entity.quantity ?? 0);
+                  const draw = Math.min(entityQty, remaining);
+                  remaining -= draw;
+                  itemShipmentQuantities[shipmentLine.itemId] =
+                    (itemShipmentQuantities[shipmentLine.itemId] ?? 0) + draw;
+                  const ledgerIndex = itemLedgerInserts.length;
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
-                    quantity: round(-(entity.quantity ?? 0)),
+                    quantity: round(-draw),
                     locationId: shipmentLine.locationId,
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
@@ -2273,10 +2400,22 @@ serve(async (req: Request) => {
                     createdBy: userId,
                     companyId,
                   });
-                  trackedEntityUpdates[entity.id] = {
-                    status: "Consumed",
-                    quantity: entity.quantity ?? 0,
-                  };
+                  if (draw + 0.00001 >= entityQty) {
+                    trackedEntityUpdates[entity.id] = {
+                      status: "Consumed",
+                      quantity: entityQty,
+                    };
+                  } else {
+                    // Partial → split at post; the negative ledger row above is
+                    // retargeted to the departing child in the transaction.
+                    trackedEntitySplits.push({
+                      entity,
+                      drawQuantity: draw,
+                      storageUnitId: shipmentLine.storageUnitId,
+                      itemId: shipmentLine.itemId,
+                      ledgerIndex,
+                    });
+                  }
                 }
               }
             }
@@ -2323,10 +2462,99 @@ serve(async (req: Request) => {
                 );
               }
 
+              // Split any batch returned in part: keep the shelf entity's id
+              // (decremented), depart the shipped portion as a new Consumed
+              // child, and retarget the negative Purchase Return Shipment
+              // ledger row onto that child.
+              for (const split of trackedEntitySplits) {
+                const parent = split.entity;
+                const parentAttributes =
+                  (parent.attributes as TrackedEntityAttributes | null) ?? {};
+                const childId = nanoid();
+                const built = buildBatchSplitRecords({
+                  parent: {
+                    id: parent.id,
+                    readableId: parent.readableId,
+                    quantity: Number(parent.quantity ?? 0),
+                    sourceDocument: parent.sourceDocument,
+                    sourceDocumentId: parent.sourceDocumentId,
+                    sourceDocumentReadableId: parent.sourceDocumentReadableId,
+                    itemId: parent.itemId ?? null,
+                    expirationDate: parent.expirationDate ?? null,
+                    attributes: parentAttributes as Record<string, unknown>,
+                  },
+                  drawQuantity: split.drawQuantity,
+                  childId,
+                  splitActivityId: nanoid(),
+                  activitySourceDocument: "Shipment",
+                  activitySourceDocumentId: shipmentId,
+                  bin: {
+                    storageUnitId: split.storageUnitId,
+                    locationId: shipment.data.locationId,
+                  },
+                  itemLedgerItemId: split.itemId,
+                  companyId,
+                  userId,
+                  postingDate: today,
+                  childStatus: "Consumed",
+                });
+
+                await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    ...built.activityInsert,
+                    sourceDocumentReadableId: shipment.data.shipmentId,
+                    createdAt: today,
+                  })
+                  .execute();
+                await trx
+                  .insertInto("trackedEntity")
+                  .values(built.childEntityInsert)
+                  .execute();
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values(built.activityInputInsert)
+                  .execute();
+                await trx
+                  .insertInto("trackedActivityOutput")
+                  .values(built.activityOutputInsert)
+                  .execute();
+
+                const retainedAttributes = {
+                  ...parentAttributes,
+                } as Record<string, unknown>;
+                delete retainedAttributes["Shipment"];
+                delete retainedAttributes["Shipment Line"];
+                delete retainedAttributes["Shipment Line Index"];
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({
+                    quantity: built.parentUpdate.quantity,
+                    attributes: retainedAttributes as Json,
+                  })
+                  .where("id", "=", parent.id)
+                  .execute();
+
+                itemLedgerInserts.push(
+                  ...built.ledgerInserts.map((ledger) => ({
+                    ...ledger,
+                    quantity: round(ledger.quantity),
+                  }))
+                );
+                itemLedgerInserts[split.ledgerIndex].trackedEntityId = childId;
+                splitChildEdges.push({
+                  childId,
+                  quantity: split.drawQuantity,
+                });
+              }
+
               const journalLineInserts: Omit<
                 Database["public"]["Tables"]["journalLine"]["Insert"],
                 "journalId"
               >[] = [];
+              // Index-parallel to journalLineInserts: dimension #i belongs to
+              // journal line #i.
+              const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
 
               for (const [itemId, quantity] of Object.entries(
                 itemShipmentQuantities
@@ -2395,6 +2623,18 @@ serve(async (req: Request) => {
                     journalLineReference,
                     companyId,
                   });
+                  // Two journal lines were pushed for this item — one
+                  // dimension meta entry each, index-aligned.
+                  const meta = {
+                    itemId,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === itemId)
+                        ?.itemPostingGroupId ?? null,
+                    locationId: shipment.data.locationId,
+                    supplierId: purchaseReturnOrder.data.supplierId,
+                    supplierTypeId,
+                  };
+                  journalLineDimensionsMeta.push(meta, { ...meta });
                 }
               }
 
@@ -2424,7 +2664,7 @@ serve(async (req: Request) => {
                   })
                   .returning(["id"])
                   .executeTakeFirstOrThrow();
-                await trx
+                const journalLineResults = await trx
                   .insertInto("journalLine")
                   .values(
                     journalLineInserts.map((line) => ({
@@ -2432,7 +2672,22 @@ serve(async (req: Request) => {
                       journalId: journalResult.id,
                     }))
                   )
+                  .returning(["id"])
                   .execute();
+
+                const journalLineDimensionInserts =
+                  buildJournalLineDimensionInserts({
+                    journalLineIds: journalLineResults.map((jl) => jl.id),
+                    meta: journalLineDimensionsMeta,
+                    dimensionMap,
+                    companyId,
+                  });
+                if (journalLineDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(journalLineDimensionInserts)
+                    .execute();
+                }
               }
 
               if (itemLedgerInserts.length > 0) {
@@ -2480,7 +2735,10 @@ serve(async (req: Request) => {
                 .where("id", "=", purchaseReturnOrderId)
                 .execute();
 
-              if (Object.keys(trackedEntityUpdates).length > 0) {
+              if (
+                Object.keys(trackedEntityUpdates).length > 0 ||
+                splitChildEdges.length > 0
+              ) {
                 const activity = await trx
                   .insertInto("trackedActivity")
                   .values({
@@ -2515,6 +2773,23 @@ serve(async (req: Request) => {
                         trackedActivityId: activityId,
                         trackedEntityId: id,
                         quantity: update.quantity ?? 0,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
+                      })
+                      .execute();
+                  }
+                }
+                // The Consumed children departed by a split relieve on this
+                // same Return Shipment activity.
+                if (activityId) {
+                  for (const edge of splitChildEdges) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId: activityId,
+                        trackedEntityId: edge.childId,
+                        quantity: edge.quantity,
                         companyId,
                         createdBy: userId,
                         createdAt: today,
@@ -3683,6 +3958,30 @@ serve(async (req: Request) => {
                 (originalJournalLines.data ?? []).length > 0 &&
                 accountingPeriodId
               ) {
+                const originalLines = originalJournalLines.data ?? [];
+                // Carry the original lines' GL dimensions onto the reversing
+                // lines so the void mirrors the posting.
+                const originalDimensions = await client
+                  .from("journalLineDimension")
+                  .select("journalLineId, dimensionId, valueId")
+                  .in(
+                    "journalLineId",
+                    originalLines.map((l) => l.id)
+                  )
+                  .eq("companyId", companyId);
+                const dimensionsByLine = new Map<
+                  string,
+                  { dimensionId: string; valueId: string }[]
+                >();
+                for (const dim of originalDimensions.data ?? []) {
+                  const list = dimensionsByLine.get(dim.journalLineId) ?? [];
+                  list.push({
+                    dimensionId: dim.dimensionId,
+                    valueId: dim.valueId,
+                  });
+                  dimensionsByLine.set(dim.journalLineId, list);
+                }
+
                 const journalEntryId = await getNextSequence(
                   trx,
                   "journalEntry",
@@ -3704,10 +4003,10 @@ serve(async (req: Request) => {
                   })
                   .returning(["id"])
                   .executeTakeFirstOrThrow();
-                await trx
+                const journalLineResults = await trx
                   .insertInto("journalLine")
                   .values(
-                    (originalJournalLines.data ?? []).map((line) => ({
+                    originalLines.map((line) => ({
                       accountId: line.accountId,
                       description: `VOID: ${line.description ?? ""}`,
                       amount: -line.amount,
@@ -3724,7 +4023,33 @@ serve(async (req: Request) => {
                       companyId,
                     }))
                   )
+                  .returning(["id"])
                   .execute();
+
+                const voidDimensionInserts: {
+                  journalLineId: string;
+                  dimensionId: string;
+                  valueId: string;
+                  companyId: string;
+                }[] = [];
+                journalLineResults.forEach((jl, index) => {
+                  const originalId = originalLines[index]?.id;
+                  if (!originalId) return;
+                  for (const dim of dimensionsByLine.get(originalId) ?? []) {
+                    voidDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dim.dimensionId,
+                      valueId: dim.valueId,
+                      companyId,
+                    });
+                  }
+                });
+                if (voidDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(voidDimensionInserts)
+                    .execute();
+                }
               }
 
               const voidActivity = await trx
@@ -3931,6 +4256,30 @@ serve(async (req: Request) => {
                 (originalJournalLines.data ?? []).length > 0 &&
                 accountingPeriodId
               ) {
+                const originalLines = originalJournalLines.data ?? [];
+                // Carry the original lines' GL dimensions onto the reversing
+                // lines so the void mirrors the posting.
+                const originalDimensions = await client
+                  .from("journalLineDimension")
+                  .select("journalLineId, dimensionId, valueId")
+                  .in(
+                    "journalLineId",
+                    originalLines.map((l) => l.id)
+                  )
+                  .eq("companyId", companyId);
+                const dimensionsByLine = new Map<
+                  string,
+                  { dimensionId: string; valueId: string }[]
+                >();
+                for (const dim of originalDimensions.data ?? []) {
+                  const list = dimensionsByLine.get(dim.journalLineId) ?? [];
+                  list.push({
+                    dimensionId: dim.dimensionId,
+                    valueId: dim.valueId,
+                  });
+                  dimensionsByLine.set(dim.journalLineId, list);
+                }
+
                 const journalEntryId = await getNextSequence(
                   trx,
                   "journalEntry",
@@ -3952,10 +4301,10 @@ serve(async (req: Request) => {
                   })
                   .returning(["id"])
                   .executeTakeFirstOrThrow();
-                await trx
+                const journalLineResults = await trx
                   .insertInto("journalLine")
                   .values(
-                    (originalJournalLines.data ?? []).map((line) => ({
+                    originalLines.map((line) => ({
                       accountId: line.accountId,
                       description: `VOID: ${line.description ?? ""}`,
                       amount: -line.amount,
@@ -3972,7 +4321,33 @@ serve(async (req: Request) => {
                       companyId,
                     }))
                   )
+                  .returning(["id"])
                   .execute();
+
+                const voidDimensionInserts: {
+                  journalLineId: string;
+                  dimensionId: string;
+                  valueId: string;
+                  companyId: string;
+                }[] = [];
+                journalLineResults.forEach((jl, index) => {
+                  const originalId = originalLines[index]?.id;
+                  if (!originalId) return;
+                  for (const dim of dimensionsByLine.get(originalId) ?? []) {
+                    voidDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dim.dimensionId,
+                      valueId: dim.valueId,
+                      companyId,
+                    });
+                  }
+                });
+                if (voidDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(voidDimensionInserts)
+                    .execute();
+                }
               }
 
               for await (const [lineId, shipped] of shippedByLine) {

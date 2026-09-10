@@ -47,7 +47,7 @@ export default function usePurchasingSubmodules() {
           table: "purchaseOrder"
         },
         {
-          name: t`Supplier Returns`,
+          name: t`Returns`,
           to: path.to.purchaseReturnOrders,
           icon: <LuUndo2 />,
           table: "purchaseReturnOrder"

@@ -9,6 +9,12 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalHeader,
+  ModalTitle,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -48,9 +54,22 @@ export default function PurchaseReturnOrderExplorer() {
   }>(path.to.purchaseReturnOrder(orderId));
   const permissions = usePermissions();
 
+  const chooseSourceDisclosure = useDisclosure();
   const newLineDisclosure = useDisclosure();
   const fromDocumentDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
+
+  const canAddFromReceipt = !!routeData?.purchaseReturnOrder?.supplierId;
+
+  const onChooseManual = () => {
+    chooseSourceDisclosure.onClose();
+    newLineDisclosure.onOpen();
+  };
+
+  const onChooseFromReceipt = () => {
+    chooseSourceDisclosure.onClose();
+    fromDocumentDisclosure.onOpen();
+  };
   const [deleteLine, setDeleteLine] = useState<PurchaseReturnOrderLine | null>(
     null
   );
@@ -115,7 +134,7 @@ export default function PurchaseReturnOrderExplorer() {
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
                   variant="secondary"
-                  onClick={newLineDisclosure.onOpen}
+                  onClick={chooseSourceDisclosure.onOpen}
                 >
                   <Trans>Add Line Item</Trans>
                 </Button>
@@ -123,7 +142,7 @@ export default function PurchaseReturnOrderExplorer() {
             </Empty>
           )}
         </VStack>
-        <div className="w-full flex border-t border-border p-4 gap-2">
+        <div className="w-full flex border-t border-border p-4">
           <Tooltip>
             <TooltipTrigger className="flex-1">
               <Button
@@ -132,7 +151,7 @@ export default function PurchaseReturnOrderExplorer() {
                 isDisabled={isDisabled}
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
-                onClick={newLineDisclosure.onOpen}
+                onClick={chooseSourceDisclosure.onOpen}
               >
                 <Trans>Add Line Item</Trans>
               </Button>
@@ -149,27 +168,71 @@ export default function PurchaseReturnOrderExplorer() {
               </HStack>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <IconButton
-                aria-label={t`Add lines from a receipt`}
-                icon={<LuFileInput />}
-                variant="ghost"
-                className="text-muted-foreground"
-                isDisabled={
-                  isDisabled || !routeData?.purchaseReturnOrder?.supplierId
-                }
-                onClick={fromDocumentDisclosure.onOpen}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <span>
-                <Trans>Add lines from a receipt</Trans>
-              </span>
-            </TooltipContent>
-          </Tooltip>
         </div>
       </VStack>
+      {chooseSourceDisclosure.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) chooseSourceDisclosure.onClose();
+          }}
+        >
+          <ModalContent size="small">
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Add Line Item</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>Choose how to add lines to this return.</Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <VStack spacing={2}>
+                <button
+                  type="button"
+                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!canAddFromReceipt}
+                  onClick={onChooseFromReceipt}
+                >
+                  <LuFileInput className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                  <VStack spacing={0} className="min-w-0">
+                    <span className="text-sm font-medium">
+                      <Trans>Add from receipt</Trans>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {canAddFromReceipt ? (
+                        <Trans>
+                          Select posted receipt lines from this supplier to
+                          return.
+                        </Trans>
+                      ) : (
+                        <Trans>
+                          Set a supplier on this return to add from a receipt.
+                        </Trans>
+                      )}
+                    </span>
+                  </VStack>
+                </button>
+                <button
+                  type="button"
+                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50"
+                  onClick={onChooseManual}
+                >
+                  <LuCirclePlus className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                  <VStack spacing={0} className="min-w-0">
+                    <span className="text-sm font-medium">
+                      <Trans>Add manually</Trans>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      <Trans>Enter an item and quantity yourself.</Trans>
+                    </span>
+                  </VStack>
+                </button>
+              </VStack>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      )}
       {newLineDisclosure.isOpen && (
         <PurchaseReturnOrderLineForm
           initialValues={lineInitialValues}

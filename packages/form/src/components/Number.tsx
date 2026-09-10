@@ -90,6 +90,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           })}
           formatOptions={formatOptions}
           isDisabled={isDisabled}
+          isReadOnly={isReadOnly}
         >
           <NumberInputGroup className="relative">
             <NumberInput

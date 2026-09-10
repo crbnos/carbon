@@ -335,11 +335,17 @@ msgstr "{resourceCount} resources · {reservationCount} reservations · {jobCoun
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} permissions"
 
+msgid "{selectedCount} selected"
+msgstr "{selectedCount} selected"
+
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 
 msgid "{total} phases to go live"
 msgstr "{total} phases to go live"
+
+msgid "{totalCount} results"
+msgstr "{totalCount} results"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unit} other {# units}}"
@@ -1333,6 +1339,9 @@ msgstr "Add Feature"
 msgid "Add from library…"
 msgstr "Add from library…"
 
+msgid "Add from receipt"
+msgstr "Add from receipt"
+
 msgid "Add Group"
 msgstr "Add Group"
 
@@ -1351,14 +1360,14 @@ msgstr "Add Line Item"
 msgid "Add Lines"
 msgstr "Add Lines"
 
-msgid "Add lines from a receipt"
-msgstr "Add lines from a receipt"
-
 msgid "Add lines from a shipment"
 msgstr "Add lines from a shipment"
 
 msgid "Add lines from document"
 msgstr "Add lines from document"
+
+msgid "Add manually"
+msgstr "Add manually"
 
 msgid "Add match"
 msgstr "Add match"
@@ -1609,6 +1618,9 @@ msgstr "All Locations"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
+
+msgid "All returnable lines"
+msgstr "All returnable lines"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "All rows imported — {inserted} inserted, {updated} updated."
@@ -2856,6 +2868,9 @@ msgstr "Batchable process"
 msgid "Batches"
 msgstr "Batches"
 
+msgid "Batches to return"
+msgstr "Batches to return"
+
 msgid "Batching"
 msgstr "Batching"
 
@@ -3472,6 +3487,9 @@ msgstr "Choose a serial number"
 
 msgid "Choose another file"
 msgstr "Choose another file"
+
+msgid "Choose how to add lines to this return."
+msgstr "Choose how to add lines to this return."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
@@ -6672,6 +6690,9 @@ msgstr "Enter a batch number before setting the expiration date"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Enter a quantity between 1 and {0}."
+
+msgid "Enter an item and quantity yourself."
+msgstr "Enter an item and quantity yourself."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Enter and approve vendor bills against a PO (three-way match)"
@@ -10276,6 +10297,9 @@ msgstr "More overtime"
 msgid "Morning, {name}."
 msgstr "Morning, {name}."
 
+msgid "Most recent — search to find more"
+msgstr "Most recent — search to find more"
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Most things get caught and resolved here. Name it plainly."
 
@@ -10843,6 +10867,9 @@ msgstr "No available tracked entities found"
 msgid "No batches"
 msgstr "No batches"
 
+msgid "No batches selected yet."
+msgstr "No batches selected yet."
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "No BOM input has a shelf-life policy"
 
@@ -11176,6 +11203,9 @@ msgstr "No returnable lines for this customer"
 msgid "No returnable lines for this supplier"
 msgstr "No returnable lines for this supplier"
 
+msgid "No returnable lines match your search"
+msgstr "No returnable lines match your search"
+
 msgid "No rows here."
 msgstr "No rows here."
 
@@ -11184,6 +11214,9 @@ msgstr "No rules assigned"
 
 msgid "No scheduled work in this window"
 msgstr "No scheduled work in this window"
+
+msgid "No serial numbers selected yet."
+msgstr "No serial numbers selected yet."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "No shifts configured — assuming Mon–Fri, 8h days"
@@ -12335,8 +12368,14 @@ msgstr "Pick Order"
 msgid "Pick serials/batches to return"
 msgstr "Pick serials/batches to return"
 
+msgid "Pick the batches on hand that were received from this supplier."
+msgstr "Pick the batches on hand that were received from this supplier."
+
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Pick the bin that needs stock, then pick the bins to pull it from."
+
+msgid "Pick the serial numbers on hand that were received from this supplier."
+msgstr "Pick the serial numbers on hand that were received from this supplier."
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
@@ -13013,6 +13052,9 @@ msgstr "Purchase Price Variance (default)"
 
 msgid "Purchase Qty"
 msgstr "Purchase Qty"
+
+msgid "Purchase Return"
+msgstr "Purchase Return"
 
 msgid "Purchase Tax Payable"
 msgstr "Purchase Tax Payable"
@@ -14482,6 +14524,9 @@ msgstr "Sales Orders"
 msgid "Sales Person"
 msgstr "Sales Person"
 
+msgid "Sales Return"
+msgstr "Sales Return"
+
 msgid "Sales Revenue"
 msgstr "Sales Revenue"
 
@@ -14725,6 +14770,9 @@ msgstr "Search by Jira issue title..."
 
 msgid "Search by linear issue title..."
 msgstr "Search by linear issue title..."
+
+msgid "Search by receipt, PO, or item"
+msgstr "Search by receipt, PO, or item"
 
 msgid "Search customers and types..."
 msgstr "Search customers and types..."
@@ -14970,6 +15018,9 @@ msgstr "Select operation"
 msgid "Select operations"
 msgstr "Select operations"
 
+msgid "Select posted receipt lines from this supplier to return."
+msgstr "Select posted receipt lines from this supplier to return."
+
 msgid "Select Printer"
 msgstr "Select Printer"
 
@@ -15106,6 +15157,9 @@ msgstr "Serial Numbers"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Serial numbers are only generated for serial- or batch-tracked items."
 
+msgid "Serial numbers to return"
+msgstr "Serial numbers to return"
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Serial or Batch Tracking Required"
 
@@ -15123,9 +15177,6 @@ msgstr "Serialize & sell your parts"
 
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Serials and batches on hand that were received from this supplier"
-
-msgid "Serials/batches to return"
-msgstr "Serials/batches to return"
 
 msgid "Series"
 msgstr "Series"
@@ -15159,6 +15210,9 @@ msgstr "Services"
 
 msgid "Session locked"
 msgstr "Session locked"
+
+msgid "Set a supplier on this return to add from a receipt."
+msgstr "Set a supplier on this return to add from a receipt."
 
 msgid "Set a target"
 msgstr "Set a target"
@@ -15453,6 +15507,9 @@ msgstr "Show Customer IDs"
 
 msgid "Show Durations"
 msgstr "Show Durations"
+
+msgid "Show more"
+msgstr "Show more"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Show one inventory number the floor and office both trust"

@@ -39355,10 +39355,10 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
           },
           {
             $ref: "#/parameters/select"
@@ -39576,10 +39576,10 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -39751,10 +39751,10 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.scrapAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
           },
           {
-            $ref: "#/parameters/rowFilter.accountDefault.intercompanyPayablesAccount"
+            $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -101104,6 +101104,61 @@ export default {
         tags: ["(rpc) sync_create_supplier_type_group"]
       }
     },
+    "/rpc/get_returnable_receipt_lines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                limit_count: {
+                  format: "integer",
+                  type: "integer"
+                },
+                offset_count: {
+                  format: "integer",
+                  type: "integer"
+                },
+                purchase_order_id: {
+                  format: "text",
+                  type: "string"
+                },
+                search: {
+                  format: "text",
+                  type: "string"
+                },
+                supplier_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "supplier_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_returnable_receipt_lines"]
+      }
+    },
     "/rpc/sync_upload_document_transaction": {
       post: {
         parameters: [
@@ -107806,10 +107861,10 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Sales Return Receipt",
-            "Purchase Return Shipment",
             "Opening Balance",
-            "Sales Return Shipment"
+            "Sales Return Receipt",
+            "Sales Return Shipment",
+            "Purchase Return Shipment"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -109847,7 +109902,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -109896,7 +109951,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -120049,10 +120104,10 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Sales Return Receipt",
-            "Purchase Return Shipment",
             "Opening Balance",
-            "Sales Return Shipment"
+            "Sales Return Receipt",
+            "Sales Return Shipment",
+            "Purchase Return Shipment"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -122443,13 +122498,13 @@ export default {
           format: "text",
           type: "string"
         },
-        salesReturnsAccount: {
+        intercompanyPayablesAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
         },
-        intercompanyPayablesAccount: {
+        salesReturnsAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
@@ -132821,10 +132876,10 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Sales Return Receipt",
-            "Purchase Return Shipment",
             "Opening Balance",
-            "Sales Return Shipment"
+            "Sales Return Receipt",
+            "Sales Return Shipment",
+            "Purchase Return Shipment"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -168356,14 +168411,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.accountDefault.salesReturnsAccount": {
-      name: "salesReturnsAccount",
+    "rowFilter.accountDefault.intercompanyPayablesAccount": {
+      name: "intercompanyPayablesAccount",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.accountDefault.intercompanyPayablesAccount": {
-      name: "intercompanyPayablesAccount",
+    "rowFilter.accountDefault.salesReturnsAccount": {
+      name: "salesReturnsAccount",
       required: false,
       in: "query",
       type: "string"

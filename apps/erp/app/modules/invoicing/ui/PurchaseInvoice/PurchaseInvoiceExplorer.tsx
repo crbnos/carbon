@@ -333,7 +333,6 @@ function PurchaseInvoiceLineItem({
         <HStack
           className={cn(
             "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            "border-b border-border",
             isSelected && "bg-accent/60 hover:bg-accent/50"
           )}
         >

@@ -70,21 +70,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Resolve readable ids for the linked source documents — one embedded
-  // select per link, run in parallel.
+  // Resolve the linked source documents' ids + readable ids — one embedded
+  // select per link, run in parallel. The internal id lets the line header
+  // link straight to the source document.
+  let receiptId: string | null = null;
   let receiptReadableId: string | null = null;
+  let purchaseOrderId: string | null = null;
   let purchaseOrderReadableId: string | null = null;
+  let purchaseInvoiceId: string | null = null;
   let purchaseInvoiceReadableId: string | null = null;
   const readableIdLookups: PromiseLike<void>[] = [];
   if (line.data.receiptLineId) {
     readableIdLookups.push(
       client
         .from("receiptLine")
-        .select("receipt(receiptId)")
+        .select("receipt(id, receiptId)")
         .eq("id", line.data.receiptLineId)
         .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
+          receiptId = result.data?.receipt?.id ?? null;
           receiptReadableId = result.data?.receipt?.receiptId ?? null;
         })
     );
@@ -93,11 +98,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     readableIdLookups.push(
       client
         .from("purchaseOrderLine")
-        .select("purchaseOrder(purchaseOrderId)")
+        .select("purchaseOrder(id, purchaseOrderId)")
         .eq("id", line.data.purchaseOrderLineId)
         .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
+          purchaseOrderId = result.data?.purchaseOrder?.id ?? null;
           purchaseOrderReadableId =
             result.data?.purchaseOrder?.purchaseOrderId ?? null;
         })
@@ -114,6 +120,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .maybeSingle()
         .then(async (invoiceLine) => {
           if (invoiceLine.data?.invoiceId) {
+            purchaseInvoiceId = invoiceLine.data.invoiceId;
             const invoice = await client
               .from("purchaseInvoice")
               .select("invoiceId")
@@ -146,8 +153,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     returnableEntities: returnableEntities.data ?? [],
     linkage: {
+      receiptId,
       receiptReadableId,
+      purchaseOrderId,
       purchaseOrderReadableId,
+      purchaseInvoiceId,
       purchaseInvoiceReadableId
     }
   };

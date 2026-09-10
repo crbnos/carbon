@@ -70959,14 +70959,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -72624,14 +72624,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -76324,14 +76324,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -82281,6 +82281,32 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_returnable_receipt_lines: {
+        Args: {
+          company_id: string
+          limit_count?: number
+          offset_count?: number
+          purchase_order_id?: string
+          search?: string
+          supplier_id: string
+        }
+        Returns: {
+          alreadyReturned: number
+          itemId: string
+          itemName: string
+          itemReadableId: string
+          itemTrackingType: string
+          purchaseOrderLineId: string
+          purchaseOrderReadableId: string
+          receiptLineId: string
+          receiptReadableId: string
+          receivedQuantity: number
+          returnableQuantity: number
+          totalCount: number
+          unitOfMeasureCode: string
+          unitPrice: number
+        }[]
+      }
       get_sales_order_lines_by_customer_id: {
         Args: { customer_id: string }
         Returns: {
@@ -83554,10 +83580,10 @@ export type Database = {
         | "Debit Memo"
         | "Non-Conformance"
         | "Inbound Inspection"
-        | "Sales Return Receipt"
-        | "Purchase Return Shipment"
         | "Opening Balance"
+        | "Sales Return Receipt"
         | "Sales Return Shipment"
+        | "Purchase Return Shipment"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -84981,10 +85007,10 @@ export const Constants = {
         "Debit Memo",
         "Non-Conformance",
         "Inbound Inspection",
-        "Sales Return Receipt",
-        "Purchase Return Shipment",
         "Opening Balance",
+        "Sales Return Receipt",
         "Sales Return Shipment",
+        "Purchase Return Shipment",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [

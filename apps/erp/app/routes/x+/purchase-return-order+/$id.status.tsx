@@ -5,7 +5,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   cancelPurchaseReturnOrder,
-  completePurchaseReturnOrder
+  completePurchaseReturnOrder,
+  reopenPurchaseReturnOrder
 } from "~/modules/purchasing";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -22,9 +23,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const status = formData.get("status");
 
-  // Shipment-driven statuses are never set manually — only Cancelled and
-  // Completed are valid manual transitions.
-  if (status !== "Cancelled" && status !== "Completed") {
+  // Shipment-driven statuses are never set manually — only Cancelled, Completed,
+  // and Draft (reopen a confirmed return) are valid manual transitions.
+  if (status !== "Cancelled" && status !== "Completed" && status !== "Draft") {
     throw redirect(
       requestReferrer(request) ?? path.to.purchaseReturnOrderDetails(id),
       await flash(request, error(null, "Invalid status"))
@@ -40,8 +41,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         companyId,
         userId
       });
-    } else {
+    } else if (status === "Completed") {
       await completePurchaseReturnOrder(getDatabaseClient(), {
+        id,
+        companyId,
+        userId
+      });
+    } else {
+      await reopenPurchaseReturnOrder(getDatabaseClient(), {
         id,
         companyId,
         userId
@@ -67,7 +74,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       success(
         status === "Cancelled"
           ? "Cancelled return order"
-          : "Completed return order"
+          : status === "Completed"
+            ? "Completed return order"
+            : "Reopened return order"
       )
     )
   );

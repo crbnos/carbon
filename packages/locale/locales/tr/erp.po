@@ -335,11 +335,17 @@ msgstr "{resourceCount} kaynaklar · {reservationCount} rezervasyonlar · {jobCo
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} izinleri"
 
+msgid "{selectedCount} selected"
+msgstr ""
+
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} aşama şirketinizi Carbon'da canlı hale getirmek için. Her biri bir kontrol noktasında sona erer."
 
 msgid "{total} phases to go live"
 msgstr "{total} aşama canlı yayına alınacak"
+
+msgid "{totalCount} results"
+msgstr ""
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# birim} other {# birimler}}"
@@ -1333,6 +1339,9 @@ msgstr "Özellik Ekle"
 msgid "Add from library…"
 msgstr "Kütüphaneden ekle…"
 
+msgid "Add from receipt"
+msgstr ""
+
 msgid "Add Group"
 msgstr "Grup Ekle"
 
@@ -1351,14 +1360,14 @@ msgstr "Satır Ekle"
 msgid "Add Lines"
 msgstr "Satır Ekle"
 
-msgid "Add lines from a receipt"
-msgstr ""
-
 msgid "Add lines from a shipment"
 msgstr ""
 
 msgid "Add lines from document"
 msgstr "Belgeden satır ekle"
+
+msgid "Add manually"
+msgstr ""
 
 msgid "Add match"
 msgstr "Eşleştirme ekle"
@@ -1609,6 +1618,9 @@ msgstr "Tüm Konumlar"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
+
+msgid "All returnable lines"
+msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
@@ -2856,6 +2868,9 @@ msgstr "Toplu işlenebilir işlem"
 msgid "Batches"
 msgstr "Partiler"
 
+msgid "Batches to return"
+msgstr ""
+
 msgid "Batching"
 msgstr "Partileme"
 
@@ -3472,6 +3487,9 @@ msgstr "Bir seri numarası seçin"
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
+
+msgid "Choose how to add lines to this return."
+msgstr ""
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
@@ -6672,6 +6690,9 @@ msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1 ile {0} arasında bir miktar girin."
+
+msgid "Enter an item and quantity yourself."
+msgstr ""
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Bir satın alma siparişine (PO) karşı satıcı faturalarını girin ve onaylayın (üçlü eşleştirme)"
@@ -10276,6 +10297,9 @@ msgstr "Daha fazla fazla mesai"
 msgid "Morning, {name}."
 msgstr "Sabah, {name}."
 
+msgid "Most recent — search to find more"
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Çoğu şey burada yakalanır ve çözülür. Açıkça adlandırın."
 
@@ -10843,6 +10867,9 @@ msgstr "Kullanılabilir izlenen varlık bulunamadı"
 msgid "No batches"
 msgstr "Parti yok"
 
+msgid "No batches selected yet."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
@@ -11176,6 +11203,9 @@ msgstr ""
 msgid "No returnable lines for this supplier"
 msgstr ""
 
+msgid "No returnable lines match your search"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Burada satır yok."
 
@@ -11184,6 +11214,9 @@ msgstr "Atanmış kural yok"
 
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
+
+msgid "No serial numbers selected yet."
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
@@ -12335,8 +12368,14 @@ msgstr "Seçim Sırası"
 msgid "Pick serials/batches to return"
 msgstr "İade edilecek seri numaraları/partileri seç"
 
+msgid "Pick the batches on hand that were received from this supplier."
+msgstr ""
+
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Stok ihtiyacı olan gözü seçin, ardından stoku çekeceğiniz gözleri seçin."
+
+msgid "Pick the serial numbers on hand that were received from this supplier."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
@@ -13013,6 +13052,9 @@ msgstr "Satın alma fiyat sapması (varsayılan)"
 
 msgid "Purchase Qty"
 msgstr "Satın Alma Miktarı"
+
+msgid "Purchase Return"
+msgstr ""
 
 msgid "Purchase Tax Payable"
 msgstr "Satın Alma Vergisi Ödenecek (varsayılan)"
@@ -14482,6 +14524,9 @@ msgstr "Satış Siparişleri"
 msgid "Sales Person"
 msgstr "Satış Temsilcisi"
 
+msgid "Sales Return"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "Satış Hasılat"
 
@@ -14725,6 +14770,9 @@ msgstr "Jira sorunu başlığı ile ara..."
 
 msgid "Search by linear issue title..."
 msgstr "Linear sorunu başlığı ile ara..."
+
+msgid "Search by receipt, PO, or item"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "Müşterileri ve türleri ara..."
@@ -14970,6 +15018,9 @@ msgstr "Operasyonu seç"
 msgid "Select operations"
 msgstr "Operasyon seç"
 
+msgid "Select posted receipt lines from this supplier to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "Yazıcı Seçin"
 
@@ -15106,6 +15157,9 @@ msgstr "Seri Numaraları"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Seri numaraları yalnızca seri- veya batch-izlenen öğeler için oluşturulur."
 
+msgid "Serial numbers to return"
+msgstr ""
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Seri veya Parti Takibi Gerekli"
 
@@ -15123,9 +15177,6 @@ msgstr "Parçalarınızı seri hale getirin ve satın"
 
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Bu tedarikçiden alınan eldeki seri numaralar ve partiler"
-
-msgid "Serials/batches to return"
-msgstr "İade edilecek Seri Numaralar/Partiler"
 
 msgid "Series"
 msgstr "Seri"
@@ -15159,6 +15210,9 @@ msgstr "Hizmetler"
 
 msgid "Session locked"
 msgstr "Oturum Kilitli"
+
+msgid "Set a supplier on this return to add from a receipt."
+msgstr ""
 
 msgid "Set a target"
 msgstr "Hedef belirle"
@@ -15453,6 +15507,9 @@ msgstr "Müşteri Kimliklerini Göster"
 
 msgid "Show Durations"
 msgstr "Süreleri Göster"
+
+msgid "Show more"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Tüm tarafların güvendiği tek bir envanter numarası göster"

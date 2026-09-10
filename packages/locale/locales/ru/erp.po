@@ -335,11 +335,17 @@ msgstr "{resourceCount} ресурсов · {reservationCount} резервир�
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} прав доступа"
 
+msgid "{selectedCount} selected"
+msgstr ""
+
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} этапов для запуска вашей организации на Carbon. Каждый завершается контрольной точкой."
 
 msgid "{total} phases to go live"
 msgstr "{total} этапов до запуска"
+
+msgid "{totalCount} results"
+msgstr ""
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
@@ -1333,6 +1339,9 @@ msgstr "Добавить функцию"
 msgid "Add from library…"
 msgstr "Добавить из библиотеки…"
 
+msgid "Add from receipt"
+msgstr ""
+
 msgid "Add Group"
 msgstr "Добавить группу"
 
@@ -1351,14 +1360,14 @@ msgstr "Добавить позицию"
 msgid "Add Lines"
 msgstr "Добавить строки"
 
-msgid "Add lines from a receipt"
-msgstr ""
-
 msgid "Add lines from a shipment"
 msgstr ""
 
 msgid "Add lines from document"
 msgstr "Добавить строки из документа"
+
+msgid "Add manually"
+msgstr ""
 
 msgid "Add match"
 msgstr "Добавить совпадение"
@@ -1609,6 +1618,9 @@ msgstr "Все местоположения"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
+
+msgid "All returnable lines"
+msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
@@ -2856,6 +2868,9 @@ msgstr "Пакетируемый процесс"
 msgid "Batches"
 msgstr "Партии"
 
+msgid "Batches to return"
+msgstr ""
+
 msgid "Batching"
 msgstr "Объединение в серии"
 
@@ -3472,6 +3487,9 @@ msgstr "Выберите серийный номер"
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
+
+msgid "Choose how to add lines to this return."
+msgstr ""
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
@@ -6672,6 +6690,9 @@ msgstr "Введите номер серии перед установкой д�
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Введите количество от 1 до {0}."
+
+msgid "Enter an item and quantity yourself."
+msgstr ""
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Введите и утвердите счета от поставщиков по заказу на покупку (трехстороннее сопоставление)"
@@ -10276,6 +10297,9 @@ msgstr "Больше переработки"
 msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
 
+msgid "Most recent — search to find more"
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Большинство проблем выявляются и решаются здесь. Называйте их четко."
 
@@ -10843,6 +10867,9 @@ msgstr "Не найдено доступных отслеживаемых объ
 msgid "No batches"
 msgstr "Нет серий"
 
+msgid "No batches selected yet."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
@@ -11176,6 +11203,9 @@ msgstr ""
 msgid "No returnable lines for this supplier"
 msgstr ""
 
+msgid "No returnable lines match your search"
+msgstr ""
+
 msgid "No rows here."
 msgstr "Нет строк здесь."
 
@@ -11184,6 +11214,9 @@ msgstr "Нет назначенных правил"
 
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
+
+msgid "No serial numbers selected yet."
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
@@ -12335,8 +12368,14 @@ msgstr "Порядок комплектации"
 msgid "Pick serials/batches to return"
 msgstr "Выбрать серийные номера/партии для возврата"
 
+msgid "Pick the batches on hand that were received from this supplier."
+msgstr ""
+
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Выберите ячейку, которой нужен запас, затем выберите ячейки, из которых его извлечь."
+
+msgid "Pick the serial numbers on hand that were received from this supplier."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -13013,6 +13052,9 @@ msgstr "Отклонение цены закупки (по умолчанию)"
 
 msgid "Purchase Qty"
 msgstr "Кол-во покупки"
+
+msgid "Purchase Return"
+msgstr ""
 
 msgid "Purchase Tax Payable"
 msgstr "Налог на покупку подлежащий уплате (по умолчанию)"
@@ -14482,6 +14524,9 @@ msgstr "Заказы покупателей"
 msgid "Sales Person"
 msgstr "Менеджер по продажам"
 
+msgid "Sales Return"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "Выручка от продаж"
 
@@ -14725,6 +14770,9 @@ msgstr "Поиск по названию задачи Jira..."
 
 msgid "Search by linear issue title..."
 msgstr "Поиск по названию задачи Linear..."
+
+msgid "Search by receipt, PO, or item"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "Поиск покупателей и типов..."
@@ -14970,6 +15018,9 @@ msgstr "Выбрать операцию"
 msgid "Select operations"
 msgstr "Выберите операции"
 
+msgid "Select posted receipt lines from this supplier to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "Выберите принтер"
 
@@ -15106,6 +15157,9 @@ msgstr "Серийные номера"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
 
+msgid "Serial numbers to return"
+msgstr ""
+
 msgid "Serial or Batch Tracking Required"
 msgstr "Требуется отслеживание по серийному номеру или партии"
 
@@ -15123,9 +15177,6 @@ msgstr "Сериализуйте и продавайте свои детали"
 
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "Серийные номера и партии на складе, полученные от этого поставщика"
-
-msgid "Serials/batches to return"
-msgstr "Серийные номера/партии для возврата"
 
 msgid "Series"
 msgstr "Серия"
@@ -15159,6 +15210,9 @@ msgstr "Услуги"
 
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
+
+msgid "Set a supplier on this return to add from a receipt."
+msgstr ""
 
 msgid "Set a target"
 msgstr "Установить цель"
@@ -15453,6 +15507,9 @@ msgstr "Показывать ID Покупателей"
 
 msgid "Show Durations"
 msgstr "Показать длительность"
+
+msgid "Show more"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Показать один номер инвентаря, которому доверяют и цех, и офис"

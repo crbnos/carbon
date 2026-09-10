@@ -16,6 +16,10 @@ import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
+  buildJournalLineDimensionInserts,
+  type JournalDimensionMeta,
+} from "../shared/journal-dimensions.ts";
+import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
@@ -87,7 +91,7 @@ serve(async (req: Request) => {
           .select("id, entityType")
           .eq("companyGroupId", companyGroupId)
           .eq("active", true)
-          .in("entityType", ["SupplierType", "Supplier", "ItemPostingGroup", "Item", "Location", "Process", "FixedAssetClass"]),
+          .in("entityType", ["SupplierType", "Supplier", "CustomerType", "Customer", "ItemPostingGroup", "Item", "Location", "Process", "FixedAssetClass"]),
       ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
@@ -2369,6 +2373,17 @@ serve(async (req: Request) => {
           ? await getDefaultPostingGroup(client, companyId)
           : null;
 
+        // Customer type for the return-receipt journal's GL dimensions.
+        const customer = accountingEnabled
+          ? await client
+              .from("customer")
+              .select("id, customerTypeId")
+              .eq("id", salesReturnOrder.data.customerId)
+              .eq("companyId", companyId)
+              .single()
+          : null;
+        const customerTypeId = customer?.data?.customerTypeId ?? null;
+
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
         const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
@@ -2377,6 +2392,9 @@ serve(async (req: Request) => {
           Database["public"]["Tables"]["journalLine"]["Insert"],
           "journalId"
         >[] = [];
+        // Index-parallel to journalLineInserts: dimension #i belongs to
+        // journal line #i.
+        const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
         const returnLineUpdates: Record<
           string,
           { quantityReceived: number; updatedBy: string }
@@ -2595,6 +2613,18 @@ serve(async (req: Request) => {
               journalLineReference,
               companyId,
             });
+            // Two journal lines were pushed for this line — one dimension meta
+            // entry each, index-aligned.
+            const meta = {
+              itemId: receiptLine.itemId,
+              itemPostingGroupId:
+                itemCosts.data.find((c) => c.itemId === receiptLine.itemId)
+                  ?.itemPostingGroupId ?? null,
+              locationId: receiptLine.locationId,
+              customerId: salesReturnOrder.data.customerId,
+              customerTypeId,
+            };
+            journalLineDimensionsMeta.push(meta, { ...meta });
           }
 
           const existingUpdate = returnLineUpdates[returnLine.id];
@@ -2722,7 +2752,7 @@ serve(async (req: Request) => {
               .returning(["id"])
               .executeTakeFirstOrThrow();
 
-            await trx
+            const journalLineResults = await trx
               .insertInto("journalLine")
               .values(
                 journalLineInserts.map((line) => ({
@@ -2730,7 +2760,22 @@ serve(async (req: Request) => {
                   journalId: journalResult.id,
                 }))
               )
+              .returning(["id"])
               .execute();
+
+            const journalLineDimensionInserts =
+              buildJournalLineDimensionInserts({
+                journalLineIds: journalLineResults.map((jl) => jl.id),
+                meta: journalLineDimensionsMeta,
+                dimensionMap,
+                companyId,
+              });
+            if (journalLineDimensionInserts.length > 0) {
+              await trx
+                .insertInto("journalLineDimension")
+                .values(journalLineDimensionInserts)
+                .execute();
+            }
           }
 
           if (itemLedgerInserts.length > 0) {

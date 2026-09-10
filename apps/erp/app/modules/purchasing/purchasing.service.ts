@@ -3624,6 +3624,53 @@ export async function confirmPurchaseReturnOrder(
 }
 
 /**
+ * Reopen a confirmed supplier return back to Draft so its lines can be edited.
+ * THROWS. Row-locked so a shipment posting racing this reopen serializes:
+ * only a "Confirmed" return (nothing shipped back yet) may reopen — once any
+ * quantity has shipped ("Partially Shipped"/"Shipped") or the return is
+ * terminal ("Completed"/"Cancelled"), reopening would strand shipped stock.
+ *
+ * No cap is released: a Draft return still counts as authorized against its
+ * source lines (the confirm check excludes only "Cancelled"), so the
+ * authorization it holds is unchanged — only its editability.
+ */
+export async function reopenPurchaseReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseReturnOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!order) throw new Error("Return order not found");
+    // Confirmed → Draft (un-confirm) and Cancelled → Draft (revive). A Cancelled
+    // return has no shipments and nothing shipped (the cancel guard enforces
+    // that), so reviving it to Draft is safe.
+    if (!["Confirmed", "Cancelled"].includes(order.status)) {
+      throw new Error(
+        `Only a confirmed or cancelled return can be reopened — this one is ${order.status}`
+      );
+    }
+
+    await trx
+      .updateTable("purchaseReturnOrder")
+      .set({
+        status: "Draft",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/**
  * Cancel a supplier return. THROWS. A Kysely transaction that locks the order
  * row first — post-shipment re-checks the order status under the same lock, so
  * a shipment posting racing this cancel serializes: whichever commits first
@@ -3846,120 +3893,34 @@ export async function shortClosePurchaseReturnOrderLine(
  * their reversible remainders (received − already authorized on non-cancelled
  * supplier returns). BC's "Show Reversible Lines Only".
  */
+/**
+ * Returnable receipt lines for a supplier, searched + paginated in the database
+ * via the get_returnable_receipt_lines RPC. The `received − already-authorized
+ * > 0` filter, the text search (receipt #, PO #, item readable id, item name),
+ * the recency ordering, and pagination all run in SQL so the "Add lines from
+ * receipt" modal stays responsive when a supplier has thousands of receipt
+ * lines. Each row carries `totalCount` — the size of the full returnable set
+ * before limit/offset — so the UI can page through the rest.
+ */
 export async function getReturnableLinesForSupplier(
   client: SupabaseClient<Database>,
   companyId: string,
   supplierId: string,
-  args?: { purchaseOrderId?: string }
+  args?: {
+    purchaseOrderId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
 ) {
-  let receiptsQuery = client
-    .from("receipt")
-    .select("id, receiptId, sourceDocumentId, sourceDocumentReadableId")
-    .eq("companyId", companyId)
-    .eq("supplierId", supplierId)
-    .eq("sourceDocument", "Purchase Order")
-    .eq("status", "Posted");
-
-  if (args?.purchaseOrderId) {
-    receiptsQuery = receiptsQuery.eq("sourceDocumentId", args.purchaseOrderId);
-  }
-
-  const receipts = await receiptsQuery;
-  if (receipts.error) return { data: null, error: receipts.error };
-  const receiptIds = (receipts.data ?? []).map((r) => r.id);
-  if (receiptIds.length === 0) {
-    return { data: [], error: null };
-  }
-  const receiptById = new Map((receipts.data ?? []).map((r) => [r.id, r]));
-
-  const receiptLines = await client
-    .from("receiptLine")
-    .select(
-      "id, receiptId, lineId, itemId, receivedQuantity, unitOfMeasure, item(name, readableIdWithRevision, itemTrackingType)"
-    )
-    .in("receiptId", receiptIds)
-    .eq("companyId", companyId);
-  if (receiptLines.error) return { data: null, error: receiptLines.error };
-
-  const receiptLineIds = (receiptLines.data ?? []).map((l) => l.id);
-  if (receiptLineIds.length === 0) {
-    return { data: [], error: null };
-  }
-
-  // Commercial basis comes from the linked purchase order line, converted to
-  // inventory units (PO line prices are per purchase unit).
-  const purchaseOrderLineIds = [
-    ...new Set(
-      (receiptLines.data ?? []).map((l) => l.lineId).filter(Boolean) as string[]
-    )
-  ];
-
-  const [authorized, purchaseOrderLines] = await Promise.all([
-    client
-      .from("purchaseReturnOrderLine")
-      .select("receiptLineId, quantity, purchaseReturnOrder!inner(status)")
-      .in("receiptLineId", receiptLineIds)
-      .eq("companyId", companyId)
-      .neq("purchaseReturnOrder.status", "Cancelled"),
-    purchaseOrderLineIds.length > 0
-      ? client
-          .from("purchaseOrderLine")
-          .select("id, supplierUnitPrice, conversionFactor")
-          .in("id", purchaseOrderLineIds)
-          .eq("companyId", companyId)
-      : Promise.resolve({ data: [], error: null })
-  ]);
-
-  if (authorized.error) return { data: null, error: authorized.error };
-  if (purchaseOrderLines.error) {
-    return { data: null, error: purchaseOrderLines.error };
-  }
-
-  const authorizedByReceiptLine = new Map<string, number>();
-  for (const row of authorized.data ?? []) {
-    if (!row.receiptLineId) continue;
-    authorizedByReceiptLine.set(
-      row.receiptLineId,
-      (authorizedByReceiptLine.get(row.receiptLineId) ?? 0) +
-        Number(row.quantity)
-    );
-  }
-
-  const purchaseOrderLineById = new Map(
-    (purchaseOrderLines.data ?? []).map((l) => [l.id, l])
-  );
-
-  const rows = (receiptLines.data ?? [])
-    .map((line) => {
-      const received = Number(line.receivedQuantity ?? 0);
-      const alreadyReturned = authorizedByReceiptLine.get(line.id) ?? 0;
-      const poLine = line.lineId
-        ? purchaseOrderLineById.get(line.lineId)
-        : null;
-      const receipt = receiptById.get(line.receiptId);
-      return {
-        receiptLineId: line.id,
-        receiptReadableId: receipt?.receiptId ?? "",
-        purchaseOrderReadableId: receipt?.sourceDocumentReadableId ?? "",
-        purchaseOrderLineId: line.lineId,
-        itemId: line.itemId,
-        itemReadableId: line.item?.readableIdWithRevision ?? "",
-        itemName: line.item?.name ?? "",
-        itemTrackingType: line.item?.itemTrackingType ?? "Inventory",
-        receivedQuantity: received,
-        alreadyReturned,
-        returnableQuantity: Math.max(0, received - alreadyReturned),
-        // supplierUnitPrice: the return order + credit memo are in the
-        // supplier's currency; unitPrice is the base-currency generated column
-        unitPrice:
-          Number(poLine?.supplierUnitPrice ?? 0) /
-          Number(poLine?.conversionFactor ?? 1),
-        unitOfMeasureCode: line.unitOfMeasure
-      };
-    })
-    .filter((row) => row.returnableQuantity > EPSILON);
-
-  return { data: rows, error: null };
+  return client.rpc("get_returnable_receipt_lines", {
+    company_id: companyId,
+    supplier_id: supplierId,
+    purchase_order_id: args?.purchaseOrderId || undefined,
+    search: args?.search?.trim() || undefined,
+    limit_count: args?.limit ?? 5,
+    offset_count: args?.offset ?? 0
+  });
 }
 
 /**
@@ -3994,6 +3955,26 @@ export async function getReturnableEntitiesForSupplier(
     .eq("itemId", itemId)
     .eq("status", "Available")
     .in("attributes ->> Receipt", receiptIds);
+}
+
+/**
+ * The Available tracked entities that came in on ONE receipt line, for the item.
+ * Used to pre-select the batch/serial when a return line is added from a specific
+ * receipt — provenance is the `Receipt Line` attribute stamped at receipt.
+ */
+export async function getReturnableEntitiesForReceiptLine(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string,
+  receiptLineId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("id, readableId, quantity, status")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .eq("status", "Available")
+    .eq("attributes ->> Receipt Line", receiptLineId);
 }
 
 /**

@@ -98,10 +98,25 @@ slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnRe
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
 - **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
-  Cr Inventory / Dr GR/IR). SO path: COGS
+  Cr Inventory / Dr GR/IR; the `create` edge fn seeds the shipment's tracked entities from
+  `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
+  quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
   fulfillment, and **splits** batch tracked entities when shipped qty < entity qty.
+**GL dimensions on return journals.** Every return-flow journal (post-shipment
+`Sales Return Order` + `Purchase Return Order`, post-receipt `Sales Return Order`)
+attaches automatic `journalLineDimension` rows — item, item posting group
+(`itemCost.itemPostingGroupId`), party (supplier/customer + type), and location —
+built index-parallel to the journal lines and emitted through the shared pure
+`buildJournalLineDimensionInserts` (`functions/shared/journal-dimensions.ts`), gated
+by the company group's configured `dimension` rows. The journalLine insert must
+`.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
+original lines' dimensions onto the reversing lines (read `journalLineDimension` by
+`journalLineId`, re-attach by position) so a void mirrors the posting. `post-memo`
+already carries the party dimensions; its legs are aggregate so no per-item dimension
+applies.
+
 - **`void`** (post fn, `type: "void"`): requires `status === "Posted"`; receipt also blocks if
   `invoiced` (and only PO-sourced receipts can void). Posts reversing `itemLedger` + `journalLine`s,
   rolls back source-document quantities, restores tracked entities to `Available`, sets `status: "Voided"`.

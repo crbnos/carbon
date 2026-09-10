@@ -3,6 +3,9 @@ import {
   Button,
   Checkbox,
   HStack,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,12 +17,13 @@ import {
   NumberInput,
   ScrollArea,
   toast,
-  useMount,
+  useDebounce,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { LuSearch } from "react-icons/lu";
 import { useFetcher, useParams, useRevalidator } from "react-router";
 import type { loader as returnableLinesLoader } from "~/routes/x+/purchase-return-order+/returnable-lines";
 import { path } from "~/utils/path";
@@ -27,6 +31,23 @@ import { path } from "~/utils/path";
 // The static segment outranks the `$id` param, so this resolves to
 // routes/x+/purchase-return-order+/returnable-lines.tsx.
 const returnableLinesUrl = path.to.purchaseReturnOrderReturnableLines;
+
+const PAGE_SIZE = 5;
+
+type ReturnableLine = Awaited<
+  ReturnType<typeof returnableLinesLoader>
+>["lines"][number];
+
+// A selected line is snapshotted in full (not just its quantity) so it still
+// submits after the search term changes and it scrolls out of the visible set.
+type SelectedLine = {
+  itemId: string;
+  unitPrice: number;
+  unitOfMeasureCode: string | null;
+  purchaseOrderLineId: string | null;
+  returnableQuantity: number;
+  quantity: number;
+};
 
 type ReturnableReceiptLinesModalProps = {
   supplierId: string;
@@ -46,65 +67,97 @@ const ReturnableReceiptLinesModal = ({
   const fetcher = useFetcher<typeof returnableLinesLoader>();
   const revalidator = useRevalidator();
 
-  useMount(() => {
-    const params = new URLSearchParams({ supplierId });
+  const [searchInput, setSearchInput] = useState("");
+  // `search` is the committed (debounced) term that actually drives the query.
+  const [search, setSearch] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+
+  const commitSearch = useDebounce((value: string) => {
+    setSearch(value);
+    setLimit(PAGE_SIZE); // a new search resets paging; selections persist
+  }, 400);
+
+  // Re-query whenever the term or the page size changes. The list is replaced
+  // (limit grows cumulatively) rather than appended, which keeps `selected`
+  // — keyed by receiptLineId — untouched across loads.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable; re-run only on query inputs
+  useEffect(() => {
+    const params = new URLSearchParams({
+      supplierId,
+      limit: String(limit)
+    });
     if (purchaseOrderId) params.set("purchaseOrderId", purchaseOrderId);
+    if (search.trim()) params.set("search", search.trim());
     fetcher.load(`${returnableLinesUrl}?${params.toString()}`);
-  });
+  }, [supplierId, purchaseOrderId, search, limit]);
 
   const lines = fetcher.data?.lines ?? [];
+  const totalCount = fetcher.data?.totalCount ?? 0;
+  const hasMore = totalCount > lines.length;
 
-  // receiptLineId -> selected quantity. Clamping here is UX only — the
-  // authoritative cap is the confirm-time row-locked validation in
-  // confirmPurchaseReturnOrder.
-  const [selected, setSelected] = useState<Record<string, number>>({});
+  const [selected, setSelected] = useState<Record<string, SelectedLine>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggle = (receiptLineId: string, returnableQuantity: number) => {
+  const selectedCount = Object.values(selected).filter(
+    (line) => line.quantity > 0
+  ).length;
+
+  const toggle = (line: ReturnableLine) => {
     setSelected((prev) => {
-      if (receiptLineId in prev) {
-        const { [receiptLineId]: _removed, ...rest } = prev;
+      if (line.receiptLineId in prev) {
+        const { [line.receiptLineId]: _removed, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [receiptLineId]: returnableQuantity };
+      return {
+        ...prev,
+        [line.receiptLineId]: {
+          itemId: line.itemId,
+          unitPrice: line.unitPrice,
+          unitOfMeasureCode: line.unitOfMeasureCode,
+          purchaseOrderLineId: line.purchaseOrderLineId,
+          returnableQuantity: line.returnableQuantity,
+          quantity: line.returnableQuantity
+        }
+      };
     });
   };
 
-  const setQuantity = (
-    receiptLineId: string,
-    value: number,
-    returnableQuantity: number
-  ) => {
-    const clamped = Math.max(
-      0,
-      Math.min(Number.isFinite(value) ? value : 0, returnableQuantity)
-    );
-    setSelected((prev) => ({ ...prev, [receiptLineId]: clamped }));
+  const setQuantity = (receiptLineId: string, value: number) => {
+    setSelected((prev) => {
+      const current = prev[receiptLineId];
+      if (!current) return prev;
+      const clamped = Math.max(
+        0,
+        Math.min(Number.isFinite(value) ? value : 0, current.returnableQuantity)
+      );
+      return { ...prev, [receiptLineId]: { ...current, quantity: clamped } };
+    });
   };
 
   const onSubmit = async () => {
-    const rows = lines.filter(
-      (line) =>
-        line.receiptLineId in selected && selected[line.receiptLineId] > 0
+    // Submit ALL selected lines, not just the ones currently visible under the
+    // active search — hence the full snapshot in `selected`.
+    const rows = Object.entries(selected).filter(
+      ([, line]) => line.quantity > 0
     );
     if (rows.length === 0) return;
 
     setIsSubmitting(true);
     try {
       let addedCount = 0;
-      for (const row of rows) {
+      for (const [receiptLineId, line] of rows) {
         const formData = new FormData();
         formData.append("purchaseReturnOrderId", orderId);
-        formData.append("itemId", row.itemId);
-        formData.append("quantity", String(selected[row.receiptLineId]));
-        formData.append("unitPrice", String(row.unitPrice));
-        if (row.unitOfMeasureCode) {
-          formData.append("unitOfMeasureCode", row.unitOfMeasureCode);
+        formData.append("itemId", line.itemId);
+        formData.append("quantity", String(line.quantity));
+        formData.append("unitPrice", String(line.unitPrice));
+        if (line.unitOfMeasureCode) {
+          formData.append("unitOfMeasureCode", line.unitOfMeasureCode);
         }
-        if (row.purchaseOrderLineId) {
-          formData.append("purchaseOrderLineId", row.purchaseOrderLineId);
+        if (line.purchaseOrderLineId) {
+          formData.append("purchaseOrderLineId", line.purchaseOrderLineId);
         }
-        formData.append("receiptLineId", row.receiptLineId);
+        formData.append("receiptLineId", receiptLineId);
 
         const response = await fetch(
           path.to.newPurchaseReturnOrderLine(orderId),
@@ -146,6 +199,8 @@ const ReturnableReceiptLinesModal = ({
     }
   };
 
+  const isLoading = fetcher.state !== "idle";
+
   return (
     <Modal
       open
@@ -166,95 +221,140 @@ const ReturnableReceiptLinesModal = ({
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          {fetcher.state !== "idle" && !fetcher.data ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              <Trans>Loading returnable lines...</Trans>
-            </p>
-          ) : lines.length === 0 ? (
-            <VStack spacing={1} className="py-6 items-center">
-              <p className="text-sm text-muted-foreground text-center">
-                <Trans>No returnable lines for this supplier</Trans>
+          <VStack spacing={3} className="w-full">
+            <InputGroup className="w-full">
+              <InputLeftElement>
+                <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
+              </InputLeftElement>
+              <Input
+                value={searchInput}
+                placeholder={t`Search by receipt, PO, or item`}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  commitSearch(e.target.value);
+                }}
+              />
+            </InputGroup>
+
+            {isLoading && !fetcher.data ? (
+              <p className="text-sm text-muted-foreground py-6 text-center w-full">
+                <Trans>Loading returnable lines...</Trans>
               </p>
-              <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
-                <Trans>
-                  Lines appear here once a purchase order receipt has been
-                  posted, and only for quantities not already authorized on
-                  another supplier return. Use Add Line Item for a blind return.
-                </Trans>
-              </p>
-            </VStack>
-          ) : (
-            <ScrollArea className="max-h-[50dvh] w-full">
-              <VStack spacing={2} className="w-full">
-                {lines.map((line) => {
-                  const isSelected = line.receiptLineId in selected;
-                  return (
-                    <HStack
-                      key={line.receiptLineId}
-                      className="w-full justify-between p-3 border rounded-lg"
-                    >
-                      <HStack spacing={3} className="min-w-0">
-                        <Checkbox
-                          isChecked={isSelected}
-                          onCheckedChange={() =>
-                            toggle(line.receiptLineId, line.returnableQuantity)
-                          }
-                        />
-                        <VStack spacing={0} className="min-w-0 items-start">
-                          <span className="text-sm font-medium truncate">
-                            {line.itemReadableId}
-                          </span>
-                          <span className="text-xs text-muted-foreground truncate">
-                            {line.itemName}
-                          </span>
-                          <HStack spacing={1}>
-                            {line.receiptReadableId ? (
-                              <span className="text-xs text-muted-foreground">
-                                {line.receiptReadableId}
-                                {line.purchaseOrderReadableId
-                                  ? ` · ${line.purchaseOrderReadableId}`
-                                  : ""}
+            ) : lines.length === 0 ? (
+              <VStack spacing={1} className="py-6 items-center">
+                <p className="text-sm text-muted-foreground text-center">
+                  {search.trim() ? (
+                    <Trans>No returnable lines match your search</Trans>
+                  ) : (
+                    <Trans>No returnable lines for this supplier</Trans>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
+                  <Trans>
+                    Lines appear here once a purchase order receipt has been
+                    posted, and only for quantities not already authorized on
+                    another supplier return. Use Add Line Item for a blind
+                    return.
+                  </Trans>
+                </p>
+              </VStack>
+            ) : (
+              <>
+                <HStack className="w-full justify-between px-1">
+                  <span className="text-xs text-muted-foreground">
+                    {search.trim() ? (
+                      t`${totalCount} results`
+                    ) : hasMore ? (
+                      <Trans>Most recent — search to find more</Trans>
+                    ) : (
+                      <Trans>All returnable lines</Trans>
+                    )}
+                  </span>
+                  {selectedCount > 0 && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {t`${selectedCount} selected`}
+                    </span>
+                  )}
+                </HStack>
+                <ScrollArea className="max-h-[50dvh] w-full">
+                  <VStack spacing={2} className="w-full">
+                    {lines.map((line) => {
+                      const isSelected = line.receiptLineId in selected;
+                      return (
+                        <HStack
+                          key={line.receiptLineId}
+                          className="w-full justify-between p-3 border rounded-lg"
+                        >
+                          <HStack spacing={3} className="min-w-0">
+                            <Checkbox
+                              isChecked={isSelected}
+                              onCheckedChange={() => toggle(line)}
+                            />
+                            <VStack spacing={0} className="min-w-0 items-start">
+                              <span className="text-sm font-medium truncate">
+                                {line.itemReadableId}
                               </span>
-                            ) : (
-                              <Badge variant="secondary">
-                                <Trans>Blind</Trans>
-                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate">
+                                {line.itemName}
+                              </span>
+                              <HStack spacing={1}>
+                                {line.receiptReadableId ? (
+                                  <span className="text-xs text-muted-foreground">
+                                    {line.receiptReadableId}
+                                    {line.purchaseOrderReadableId
+                                      ? ` · ${line.purchaseOrderReadableId}`
+                                      : ""}
+                                  </span>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    <Trans>Blind</Trans>
+                                  </Badge>
+                                )}
+                              </HStack>
+                            </VStack>
+                          </HStack>
+                          <HStack spacing={4}>
+                            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+                              {line.returnableQuantity}{" "}
+                              <Trans>returnable</Trans>
+                            </span>
+                            {isSelected && (
+                              <NumberField
+                                formatOptions={INPUT_FORMAT.quantity}
+                                step={INPUT_STEP.quantity}
+                                value={selected[line.receiptLineId]?.quantity}
+                                onChange={(value) =>
+                                  setQuantity(line.receiptLineId, value)
+                                }
+                              >
+                                <NumberInput
+                                  className="min-w-[100px]"
+                                  size="sm"
+                                  min={0}
+                                  max={line.returnableQuantity}
+                                />
+                              </NumberField>
                             )}
                           </HStack>
-                        </VStack>
-                      </HStack>
-                      <HStack spacing={4}>
-                        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                          {line.returnableQuantity} <Trans>returnable</Trans>
-                        </span>
-                        {isSelected && (
-                          <NumberField
-                            formatOptions={INPUT_FORMAT.quantity}
-                            step={INPUT_STEP.quantity}
-                            value={selected[line.receiptLineId]}
-                            onChange={(value) =>
-                              setQuantity(
-                                line.receiptLineId,
-                                value,
-                                line.returnableQuantity
-                              )
-                            }
-                          >
-                            <NumberInput
-                              className="min-w-[100px]"
-                              size="sm"
-                              min={0}
-                              max={line.returnableQuantity}
-                            />
-                          </NumberField>
-                        )}
-                      </HStack>
-                    </HStack>
-                  );
-                })}
-              </VStack>
-            </ScrollArea>
-          )}
+                        </HStack>
+                      );
+                    })}
+                  </VStack>
+                </ScrollArea>
+                {hasMore && (
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    isLoading={isLoading}
+                    isDisabled={isLoading}
+                    onClick={() => setLimit((current) => current + PAGE_SIZE)}
+                  >
+                    <Trans>Show more</Trans>
+                  </Button>
+                )}
+              </>
+            )}
+          </VStack>
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>
@@ -262,11 +362,7 @@ const ReturnableReceiptLinesModal = ({
           </Button>
           <Button
             isLoading={isSubmitting}
-            isDisabled={
-              isSubmitting ||
-              Object.values(selected).filter((quantity) => quantity > 0)
-                .length === 0
-            }
+            isDisabled={isSubmitting || selectedCount === 0}
             onClick={onSubmit}
           >
             <Trans>Add Lines</Trans>

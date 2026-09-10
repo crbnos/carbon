@@ -52,7 +52,7 @@ export default function useSalesSubmodules() {
           table: "salesOrder"
         },
         {
-          name: t`RMAs`,
+          name: t`Returns`,
           to: path.to.salesReturnOrders,
           icon: <LuUndo2 />,
           table: "salesReturnOrder"

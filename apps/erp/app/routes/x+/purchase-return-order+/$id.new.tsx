@@ -6,6 +6,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   getPurchaseReturnOrder,
+  getReturnableEntitiesForReceiptLine,
   isPurchaseReturnOrderLocked,
   purchaseReturnOrderLineValidator,
   setPurchaseReturnOrderLineTrackedEntities,
@@ -115,12 +116,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  if (trackedEntityIds && trackedEntityIds.length > 0) {
+  // Pre-select the batch/serial to send back. When the user picked entities
+  // explicitly, honor those; otherwise, if the line was added from a specific
+  // receipt line that holds exactly one Available entity (the common batch
+  // case), select it automatically so it flows onto the shipment.
+  let entityIdsToSet = trackedEntityIds ?? [];
+  if (entityIdsToSet.length === 0 && d.receiptLineId) {
+    const returnable = await getReturnableEntitiesForReceiptLine(
+      client,
+      companyId,
+      d.itemId,
+      d.receiptLineId
+    );
+    if (!returnable.error && returnable.data?.length === 1) {
+      entityIdsToSet = [returnable.data[0].id];
+    }
+  }
+
+  if (entityIdsToSet.length > 0) {
     const setEntities = await setPurchaseReturnOrderLineTrackedEntities(
       client,
       createLine.data.id,
       companyId,
-      trackedEntityIds,
+      entityIdsToSet,
       userId
     );
     if (setEntities.error) {

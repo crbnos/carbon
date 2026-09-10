@@ -335,11 +335,17 @@ msgstr "{resourceCount} 个资源 · {reservationCount} 个预留 · {jobCount} 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
 
+msgid "{selectedCount} selected"
+msgstr ""
+
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
 
 msgid "{total} phases to go live"
 msgstr "{total}个阶段即可正式运行"
+
+msgid "{totalCount} results"
+msgstr ""
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
@@ -1333,6 +1339,9 @@ msgstr "添加功能"
 msgid "Add from library…"
 msgstr "从库中添加…"
 
+msgid "Add from receipt"
+msgstr ""
+
 msgid "Add Group"
 msgstr "添加组"
 
@@ -1351,14 +1360,14 @@ msgstr "添加行项目"
 msgid "Add Lines"
 msgstr "添加行"
 
-msgid "Add lines from a receipt"
-msgstr ""
-
 msgid "Add lines from a shipment"
 msgstr ""
 
 msgid "Add lines from document"
 msgstr "从文档添加行"
+
+msgid "Add manually"
+msgstr ""
 
 msgid "Add match"
 msgstr "添加匹配"
@@ -1609,6 +1618,9 @@ msgstr "所有位置"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
+
+msgid "All returnable lines"
+msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
@@ -2856,6 +2868,9 @@ msgstr "可批处理的工序"
 msgid "Batches"
 msgstr "批次"
 
+msgid "Batches to return"
+msgstr ""
+
 msgid "Batching"
 msgstr "分批"
 
@@ -3472,6 +3487,9 @@ msgstr "选择序列号"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
+
+msgid "Choose how to add lines to this return."
+msgstr ""
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
@@ -6672,6 +6690,9 @@ msgstr "在设置到期日期前输入生产批次号"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
+
+msgid "Enter an item and quantity yourself."
+msgstr ""
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入和审批供应商账单与采购单进行三单匹配"
@@ -10276,6 +10297,9 @@ msgstr "更多加班"
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
 
+msgid "Most recent — search to find more"
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
 
@@ -10843,6 +10867,9 @@ msgstr "未找到可用的追踪实体"
 msgid "No batches"
 msgstr "无生产批次"
 
+msgid "No batches selected yet."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
 
@@ -11176,6 +11203,9 @@ msgstr ""
 msgid "No returnable lines for this supplier"
 msgstr ""
 
+msgid "No returnable lines match your search"
+msgstr ""
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
@@ -11184,6 +11214,9 @@ msgstr "没有已分配的规则"
 
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
+
+msgid "No serial numbers selected yet."
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
@@ -12335,8 +12368,14 @@ msgstr "拣货单"
 msgid "Pick serials/batches to return"
 msgstr "选择要退货的序列号/批次"
 
+msgid "Pick the batches on hand that were received from this supplier."
+msgstr ""
+
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "选择需要库存的料箱，然后选择要从中拣货的料箱。"
+
+msgid "Pick the serial numbers on hand that were received from this supplier."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -13013,6 +13052,9 @@ msgstr "采购价格差异（默认）"
 
 msgid "Purchase Qty"
 msgstr "采购数量"
+
+msgid "Purchase Return"
+msgstr ""
 
 msgid "Purchase Tax Payable"
 msgstr "应付采购税（默认）"
@@ -14482,6 +14524,9 @@ msgstr "销售订单"
 msgid "Sales Person"
 msgstr "销售人员"
 
+msgid "Sales Return"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "销售收入"
 
@@ -14725,6 +14770,9 @@ msgstr "按 Jira 问题标题搜索..."
 
 msgid "Search by linear issue title..."
 msgstr "按线性问题标题搜索..."
+
+msgid "Search by receipt, PO, or item"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
@@ -14970,6 +15018,9 @@ msgstr "选择操作"
 msgid "Select operations"
 msgstr "选择工序"
 
+msgid "Select posted receipt lines from this supplier to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "选择打印机"
 
@@ -15106,6 +15157,9 @@ msgstr "序列号"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
+msgid "Serial numbers to return"
+msgstr ""
+
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
 
@@ -15123,9 +15177,6 @@ msgstr "序列化并销售您的零件"
 
 msgid "Serials and batches on hand that were received from this supplier"
 msgstr "从该供应商收到的现有序列号和批次"
-
-msgid "Serials/batches to return"
-msgstr "待退货的序列号/批次"
 
 msgid "Series"
 msgstr "序列"
@@ -15159,6 +15210,9 @@ msgstr "服务"
 
 msgid "Session locked"
 msgstr "会话已锁定"
+
+msgid "Set a supplier on this return to add from a receipt."
+msgstr ""
 
 msgid "Set a target"
 msgstr "设置目标"
@@ -15453,6 +15507,9 @@ msgstr "显示客户ID"
 
 msgid "Show Durations"
 msgstr "显示时长"
+
+msgid "Show more"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "显示一个楼层和办公室都信任的库存数字"

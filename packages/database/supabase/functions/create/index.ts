@@ -7,7 +7,7 @@ import z from "npm:zod@^4.5.4";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
+import { Database, Json } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);
@@ -2197,6 +2197,45 @@ serve(async (req: Request) => {
           throw new Error("No lines to ship");
         }
 
+        // Carry the batches/serials picked on each return line onto the
+        // shipment's tracked entities, so the shipment already knows what to
+        // send back (post-shipment reads entities via attributes ->> Shipment).
+        const returnLineIds = purchaseReturnOrderLines.data.map((l) => l.id);
+        const lineTrackedEntities = await client
+          .from("purchaseReturnOrderLineTrackedEntity")
+          .select("purchaseReturnOrderLineId, trackedEntity(id, attributes)")
+          .in("purchaseReturnOrderLineId", returnLineIds)
+          .eq("companyId", companyId);
+        if (lineTrackedEntities.error)
+          throw new Error(lineTrackedEntities.error.message);
+
+        const entitiesByReturnLine = new Map<
+          string,
+          { id: string; attributes: Record<string, unknown> | null }[]
+        >();
+        for (const row of lineTrackedEntities.data ?? []) {
+          const entity = row.trackedEntity;
+          if (!entity) continue;
+          const list =
+            entitiesByReturnLine.get(row.purchaseReturnOrderLineId) ?? [];
+          list.push({
+            id: entity.id,
+            attributes: entity.attributes as Record<string, unknown> | null,
+          });
+          entitiesByReturnLine.set(row.purchaseReturnOrderLineId, list);
+        }
+
+        // Re-source path: clear the shipment tag off any entity previously
+        // stamped for this shipment before re-stamping the current selection.
+        const staleEntities = hasShipment
+          ? await client
+              .from("trackedEntity")
+              .select("id, attributes")
+              .eq("companyId", companyId)
+              .eq("attributes ->> Shipment", shipment.data!.id)
+          : { data: [], error: null };
+        if (staleEntities.error) throw new Error(staleEntities.error.message);
+
         const result = await db.transaction().execute(async (trx) => {
           const shipmentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -2242,7 +2281,7 @@ serve(async (req: Request) => {
             .where("shipmentId", "=", id)
             .execute();
 
-          await trx
+          const insertedLines = await trx
             .insertInto("shipmentLine")
             .values(
               shipmentLineItems.map((lineItem) => ({
@@ -2250,7 +2289,46 @@ serve(async (req: Request) => {
                 shipmentId: id,
               }))
             )
+            .returning(["id", "lineId"])
             .execute();
+
+          // Strip the shipment tag off entities left over from a prior source.
+          for (const entity of staleEntities.data ?? []) {
+            const attrs = {
+              ...((entity.attributes as Record<string, unknown> | null) ?? {}),
+            };
+            delete attrs["Shipment"];
+            delete attrs["Shipment Line"];
+            delete attrs["Shipment Line Index"];
+            await trx
+              .updateTable("trackedEntity")
+              .set({ attributes: attrs as Json })
+              .where("id", "=", entity.id)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          // Stamp each return line's picked entities onto its shipment line, so
+          // the batch/serial flows through to posting. post-shipment splits a
+          // batch when the shipped quantity is less than the entity's quantity.
+          for (const shipmentLine of insertedLines) {
+            const entities = shipmentLine.lineId
+              ? entitiesByReturnLine.get(shipmentLine.lineId)
+              : undefined;
+            for (const entity of entities ?? []) {
+              const attrs = {
+                ...(entity.attributes ?? {}),
+                Shipment: id,
+                "Shipment Line": shipmentLine.id,
+              };
+              await trx
+                .updateTable("trackedEntity")
+                .set({ attributes: attrs as Json })
+                .where("id", "=", entity.id)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+          }
 
           return { id };
         });

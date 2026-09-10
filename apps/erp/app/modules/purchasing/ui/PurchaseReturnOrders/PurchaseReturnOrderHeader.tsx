@@ -20,6 +20,7 @@ import {
   LuEllipsisVertical,
   LuFile,
   LuGitCompare,
+  LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
   LuTrash,
@@ -62,6 +63,7 @@ const PurchaseReturnOrderHeader = () => {
   const status = purchaseReturnOrder.status;
 
   const replacementFetcher = useFetcher<{ success: boolean }>();
+  const statusFetcher = useFetcher<{ success: boolean }>();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isCreatingDocument = navigation.state !== "idle";
@@ -91,7 +93,7 @@ const PurchaseReturnOrderHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide">
+      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
@@ -116,6 +118,25 @@ const PurchaseReturnOrderHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem
+                  disabled={
+                    !["Confirmed", "Cancelled"].includes(status ?? "") ||
+                    statusFetcher.state !== "idle" ||
+                    !canUpdate
+                  }
+                  onClick={() => {
+                    statusFetcher.submit(
+                      { status: "Draft" },
+                      {
+                        method: "post",
+                        action: path.to.purchaseReturnOrderStatus(id)
+                      }
+                    );
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                  <Trans>Reopen</Trans>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   destructive
                   disabled={
