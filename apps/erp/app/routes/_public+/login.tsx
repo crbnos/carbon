@@ -18,6 +18,7 @@ import {
   verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import { recordLogin } from "@carbon/auth/login-history.server";
 import {
   clearAuthCookies,
@@ -192,17 +193,22 @@ export async function action({ request }: ActionFunctionArgs) {
       // Genuine completed login — clear any accumulated lockout state.
       await lockout.reset(email);
       // Records the userLogin row AND emits the login_success auth event.
+      const { deviceId, setCookie: deviceCookie } =
+        await ensureDeviceId(request);
       await recordLogin({
         request,
         userId: authSession.userId,
         email,
         accessToken: authSession.accessToken,
         method: "bypass",
-        app: "erp"
+        app: "erp",
+        deviceId
       });
       const sessionCookie = await setAuthSession(request, { authSession });
+      const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+      if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
       return redirect(path.to.authenticatedRoot, {
-        headers: [["Set-Cookie", sessionCookie]]
+        headers
       });
     }
   }

@@ -74,6 +74,31 @@ export async function getLoginHistory(
     .limit(limit);
 }
 
+/**
+ * When this device was FIRST seen for this user, or null if never.
+ *
+ * This is the device's age, and the whole basis of the revoke gate: a device
+ * may only end sessions that began after it first appeared. Null means
+ * unrecognised — no cookie, a tampered one, or a genuinely new browser — which
+ * can revoke nothing but itself.
+ */
+export async function getDeviceFirstSeenAt(
+  client: SupabaseClient<Database>,
+  userId: string,
+  deviceId: string | null
+): Promise<string | null> {
+  if (!deviceId) return null;
+  const { data } = await client
+    .from("userLogin")
+    .select("createdAt")
+    .eq("userId", userId)
+    .eq("deviceId", deviceId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return data?.createdAt ?? null;
+}
+
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,
   userId: string,

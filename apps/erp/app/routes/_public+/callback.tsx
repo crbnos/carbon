@@ -9,6 +9,7 @@ import {
 import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import {
   deriveLoginMethod,
   recordLogin
@@ -331,13 +332,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // SSO is a login mint point like any other — record it here, because this
     // branch returns before the shared recordLogin call below.
+    const { deviceId: ssoDeviceId, setCookie: ssoDeviceCookie } =
+      await ensureDeviceId(request);
     await recordLogin({
       request,
       userId: authSession.userId,
       email: authSession.email,
       accessToken: authSession.accessToken,
       method: "sso",
-      app: "erp"
+      app: "erp",
+      deviceId: ssoDeviceId
     });
 
     // The IdP owns MFA for SSO sessions, including controlled environments
@@ -345,11 +349,13 @@ export async function action({ request }: ActionFunctionArgs) {
     authSession.mfaVerified = true;
 
     const ssoSessionCookie = await setAuthSession(request, { authSession });
+    const ssoHeaders: [string, string][] = [
+      ["Set-Cookie", ssoSessionCookie],
+      ["Set-Cookie", setCompanyId(ssoCompanyId)]
+    ];
+    if (ssoDeviceCookie) ssoHeaders.push(["Set-Cookie", ssoDeviceCookie]);
     return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
-      headers: [
-        ["Set-Cookie", ssoSessionCookie],
-        ["Set-Cookie", setCompanyId(ssoCompanyId)]
-      ]
+      headers: ssoHeaders
     });
   }
 
@@ -379,13 +385,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
+    const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
     await recordLogin({
       request,
       userId: authSession.userId,
       email: authSession.email,
       accessToken: authSession.accessToken,
       method: deriveLoginMethod(authSession.accessToken),
-      app: "erp"
+      app: "erp",
+      deviceId
     });
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
@@ -395,8 +403,10 @@ export async function action({ request }: ActionFunctionArgs) {
         authSession,
         redirectTo
       });
+      const mfaHeaders: [string, string][] = [["Set-Cookie", pendingCookie]];
+      if (deviceCookie) mfaHeaders.push(["Set-Cookie", deviceCookie]);
       return redirect(path.to.mfa, {
-        headers: [["Set-Cookie", pendingCookie]]
+        headers: mfaHeaders
       });
     }
 
@@ -404,6 +414,7 @@ export async function action({ request }: ActionFunctionArgs) {
       authSession
     });
     const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+    if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
 
     // Only finalize the active company for single-company (and portal-only)
     // users. Multi-company users must actively choose: we leave the companyId

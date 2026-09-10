@@ -14,8 +14,8 @@ challenge exists anywhere in this design.
 - [x] Task 4: Regenerate database types
 - [x] Task 5: `device.server.ts` — signed device cookie
 - [x] Task 6: Store `deviceId` on login; report first-sighting
-- [ ] Task 7: Thread the device cookie through all six login call sites
-- [ ] Task 8: `getDeviceFirstSeenAt` service function
+- [x] Task 7: Thread the device cookie through all six login call sites
+- [x] Task 8: `getDeviceFirstSeenAt` service function
 - [ ] Task 9: Enforce the gate in the `security.tsx` action
 - [ ] Task 10: Surface the gate in the "Your devices" UI
 - [ ] Task 11: New-device email template + sender

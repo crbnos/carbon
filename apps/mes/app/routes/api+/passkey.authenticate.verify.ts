@@ -2,6 +2,7 @@ import { assertIsPost, error, isAuthProviderEnabled } from "@carbon/auth";
 import { signInWithPasskey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import { recordLogin } from "@carbon/auth/login-history.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
@@ -136,13 +137,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
+    const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
     await recordLogin({
       request,
       userId: credRow.userId,
       email: authUser.user.email,
       accessToken: authSession.accessToken,
       method: "passkey",
-      app: "mes"
+      app: "mes",
+      deviceId
     });
 
     const safeRedirect =
@@ -159,8 +162,10 @@ export async function action({ request }: ActionFunctionArgs) {
         authSession,
         redirectTo: safeRedirect
       });
+      const mfaHeaders: [string, string][] = [["Set-Cookie", pendingCookie]];
+      if (deviceCookie) mfaHeaders.push(["Set-Cookie", deviceCookie]);
       return redirect(path.to.mfa, {
-        headers: [["Set-Cookie", pendingCookie]]
+        headers: mfaHeaders
       });
     }
 
@@ -168,11 +173,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // MES has no company picker (shop floor): always stamp the resolved company
     // cookie, matching the magic-link callback rather than ERP's <=1 gating.
+    const headers: [string, string][] = [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", setCompanyId(authSession.companyId)]
+    ];
+    if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
     return redirect(safeRedirect, {
-      headers: [
-        ["Set-Cookie", sessionCookie],
-        ["Set-Cookie", setCompanyId(authSession.companyId)]
-      ]
+      headers
     });
   } catch {
     return data(error(null, "Sign-in failed. Please try again."), {

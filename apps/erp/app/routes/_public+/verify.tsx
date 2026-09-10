@@ -4,6 +4,7 @@ import {
   createEmailAuthAccount,
   signInWithEmail
 } from "@carbon/auth/auth.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import { recordLogin } from "@carbon/auth/login-history.server";
 import {
   flash,
@@ -121,13 +122,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Record the first sign-in (fire-and-forget: recordLogin never throws).
+  const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
   await recordLogin({
     request,
     userId: authSession.userId,
     email,
     accessToken: authSession.accessToken,
     method: "verification_code",
-    app: "erp"
+    app: "erp",
+    deviceId
   });
 
   const sessionCookie = await setAuthSession(request, {
@@ -137,8 +140,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // Set the authentication session
   const onboardingUrl = redirectTo || path.to.onboarding.root;
 
+  const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+  if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
+
   return redirect(onboardingUrl, {
-    headers: [["Set-Cookie", sessionCookie]]
+    headers
   });
 }
 
