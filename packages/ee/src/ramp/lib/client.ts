@@ -353,9 +353,26 @@ export class RampClient {
         page?: { next?: string | null };
       }>("GET", path, { searchParams: search });
 
-      const rows = (page.data ?? []).map(
-        (row) => schema.parse(row) as z.infer<TSchema>
-      );
+      // Parse PER ROW: one malformed row (a missing `id`, a non-integer minor
+      // amount) must not throw and abort the whole page — which would also skip
+      // every later page. Skip + log the reject and make progress on the rest.
+      const rows: Array<z.infer<TSchema>> = [];
+      for (const row of page.data ?? []) {
+        const parsed = schema.safeParse(row);
+        if (parsed.success) {
+          rows.push(parsed.data as z.infer<TSchema>);
+        } else {
+          const rowId =
+            row && typeof row === "object" && "id" in row
+              ? (row as { id?: unknown }).id
+              : undefined;
+          console.warn(
+            `Ramp listPaginated: skipping malformed row from ${path}` +
+              (rowId !== undefined ? ` (id=${String(rowId)})` : ""),
+            parsed.error.issues
+          );
+        }
+      }
       yield rows;
 
       const next = page.page?.next;
@@ -434,9 +451,13 @@ export class RampClient {
 
   // ---- Accounting connection ----
 
-  createAccountingConnection<T = unknown>(body: unknown): Promise<T> {
+  createAccountingConnection<T = unknown>(
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<T> {
     return this.request<T>("POST", "/developer/v1/accounting/connection", {
-      body
+      body,
+      idempotencyKey
     });
   }
 
@@ -524,8 +545,14 @@ export class RampClient {
    * vendor (`/accounting/vendors`, for coding), whose id a PO/bill rejects.
    * Requires `country` + `business_vendor_contacts: [{ email }]`.
    */
-  createSpendVendor<T = unknown>(body: unknown): Promise<T> {
-    return this.request<T>("POST", "/developer/v1/vendors", { body });
+  createSpendVendor<T = unknown>(
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<T> {
+    return this.request<T>("POST", "/developer/v1/vendors", {
+      body,
+      idempotencyKey
+    });
   }
 
   // ---- Business entities (for the required PO `entity_id`) ----
@@ -536,8 +563,14 @@ export class RampClient {
 
   // ---- Purchase orders ----
 
-  createPurchaseOrder<T = unknown>(body: unknown): Promise<T> {
-    return this.request<T>("POST", "/developer/v1/purchase-orders", { body });
+  createPurchaseOrder<T = unknown>(
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<T> {
+    return this.request<T>("POST", "/developer/v1/purchase-orders", {
+      body,
+      idempotencyKey
+    });
   }
 
   patchPurchaseOrder<T = unknown>(id: string, body: unknown): Promise<T> {
@@ -555,12 +588,23 @@ export class RampClient {
 
   // ---- Bills (draft push) ----
 
-  createDraftBill<T = unknown>(body: unknown): Promise<T> {
-    return this.request<T>("POST", "/developer/v1/bills/drafts", { body });
+  createDraftBill<T = unknown>(
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<T> {
+    return this.request<T>("POST", "/developer/v1/bills/drafts", {
+      body,
+      idempotencyKey
+    });
   }
 
-  submitDraftBill<T = unknown>(id: string): Promise<T> {
-    return this.request<T>("POST", `/developer/v1/bills/drafts/${id}/submit`);
+  submitDraftBill<T = unknown>(
+    id: string,
+    idempotencyKey?: string
+  ): Promise<T> {
+    return this.request<T>("POST", `/developer/v1/bills/drafts/${id}/submit`, {
+      idempotencyKey
+    });
   }
 
   /**
@@ -575,8 +619,14 @@ export class RampClient {
 
   // ---- Webhooks ----
 
-  createWebhook<T = unknown>(body: unknown): Promise<T> {
-    return this.request<T>("POST", "/developer/v1/webhooks", { body });
+  createWebhook<T = unknown>(
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<T> {
+    return this.request<T>("POST", "/developer/v1/webhooks", {
+      body,
+      idempotencyKey
+    });
   }
 
   deleteWebhook<T = unknown>(id: string): Promise<T> {

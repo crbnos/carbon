@@ -839,12 +839,20 @@ async function buildBillLines(
     });
   }
 
+  // `account` (chart of accounts) is scoped by companyGroupId, NOT companyId —
+  // it has no companyId column, so filtering by it errored and made every coded
+  // bill fail "Failed to verify accounts". Mirror the card-transaction builder:
+  // scope to the group (the ids are Carbon's pushed account.id, so group-scoping
+  // is both correct and tenant-safe).
   const accountIds = [...new Set(lines.map((line) => line.accountId))];
-  const { data: accounts, error } = await ctx.client
+  let accountQuery = ctx.client
     .from("account")
     .select("id")
-    .eq("companyId", ctx.companyId)
     .in("id", accountIds);
+  if (ctx.companyGroupId) {
+    accountQuery = accountQuery.eq("companyGroupId", ctx.companyGroupId);
+  }
+  const { data: accounts, error } = await accountQuery;
   if (error) {
     return { error: `Failed to verify accounts: ${error.message}` };
   }
@@ -1598,12 +1606,20 @@ async function buildGlLinesFromItems(
       description: item.memo ?? null
     });
   }
+  // `account` (chart of accounts) is scoped by companyGroupId, NOT companyId —
+  // it has no companyId column, so filtering by it errored and made every coded
+  // reimbursement fail "Failed to verify accounts". Mirror the card-transaction
+  // builder: scope to the group (the ids are Carbon's pushed account.id, so
+  // group-scoping is both correct and tenant-safe).
   const accountIds = [...new Set(lines.map((line) => line.accountId))];
-  const { data: accounts, error } = await ctx.client
+  let accountQuery = ctx.client
     .from("account")
     .select("id")
-    .eq("companyId", ctx.companyId)
     .in("id", accountIds);
+  if (ctx.companyGroupId) {
+    accountQuery = accountQuery.eq("companyGroupId", ctx.companyGroupId);
+  }
+  const { data: accounts, error } = await accountQuery;
   if (error) return { error: `Failed to verify accounts: ${error.message}` };
   const known = new Set((accounts ?? []).map((row) => row.id));
   if (accountIds.some((id) => !known.has(id))) return { error: uncoded };
@@ -2746,17 +2762,22 @@ export const rampSyncFunction = inngest.createFunction(
             for (const row of poRows) {
               if (row.updatedAt) allUpdatedAt.push(row.updatedAt);
               try {
-                const action = await pushPurchaseOrder(ctx.mapping, ramp, {
-                  id: row.id,
-                  readableId: row.purchaseOrderId,
-                  status: row.status,
-                  supplier:
-                    supplierById.get(row.supplierId) ??
-                    emptyRampVendorSupplier(row.supplierId, null),
-                  currencyCode: row.currencyCode ?? ctx.baseCurrency,
-                  entityId: rampEntityId,
-                  lines: linesByPo.get(row.id) ?? []
-                });
+                const action = await pushPurchaseOrder(
+                  ctx.mapping,
+                  ramp,
+                  {
+                    id: row.id,
+                    readableId: row.purchaseOrderId,
+                    status: row.status,
+                    supplier:
+                      supplierById.get(row.supplierId) ??
+                      emptyRampVendorSupplier(row.supplierId, null),
+                    currencyCode: row.currencyCode ?? ctx.baseCurrency,
+                    entityId: rampEntityId,
+                    lines: linesByPo.get(row.id) ?? []
+                  },
+                  companyId
+                );
                 if (action === "archived") result.purchaseOrders.archived += 1;
                 else if (action === "created" || action === "patched")
                   result.purchaseOrders.pushed += 1;

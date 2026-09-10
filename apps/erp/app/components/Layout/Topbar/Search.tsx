@@ -137,7 +137,6 @@ export const SearchModal = () => {
     loadRecentSearches();
   }, [storageKey]);
 
-  const recentPaths = new Set(recentResults.map((r) => r.to));
   const searchResults = input.length >= 2 ? (fetcher.data?.results ?? []) : [];
   const loading = fetcher.state === "loading";
   const isEntityTypeFiltered = typeFilter !== "all";
@@ -157,13 +156,19 @@ export const SearchModal = () => {
       : recentResults
   ).filter((r) => matchesInput(r.name));
 
+  // Only suppress a navigation item when its recent is actually SHOWN. Building
+  // the exclusion set from all recents (including ones hidden by the active type
+  // chip or the input filter) would drop a matching nav item while its recent
+  // isn't visible either — leaving the target unreachable from search.
+  const visibleRecentPaths = new Set(visibleRecentResults.map((r) => r.to));
+
   // Flat module › submodule navigation. Hidden when filtering by entity type
   // (entity results only), and links already surfaced as recents are dropped.
   const visibleNavItems = isEntityTypeFiltered
     ? []
     : navItems.filter(
         (item) =>
-          !recentPaths.has(item.to) &&
+          !visibleRecentPaths.has(item.to) &&
           matchesInput(`${item.module} ${item.name}`)
       );
 

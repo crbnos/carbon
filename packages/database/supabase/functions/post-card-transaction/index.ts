@@ -265,6 +265,21 @@ serve(async (req: Request) => {
           postingDate
         );
       } catch (periodErr) {
+        // Only a Locked or Closed target period should shift the posting date
+        // to the next open period. Any other failure (a transient
+        // "Failed to fetch accounting period" query error, or a re-thrown
+        // period-insert error) must propagate untouched: shifting on those
+        // would write a WRONG postingDate + accountingPeriodId while the row is
+        // already flipped to Posted, which then needs a void + repost to
+        // recover. Discriminate on the exact messages get-accounting-period.ts
+        // throws for the Locked/Closed cases.
+        const message =
+          periodErr instanceof Error ? periodErr.message : String(periodErr);
+        const isLockedOrClosedPeriod =
+          message.includes("accounting period is closed") ||
+          message.includes("accounting period is locked");
+        if (!isLockedOrClosedPeriod) throw periodErr;
+
         const shifted = await getFirstDayOfNextOpenPeriod(
           client,
           companyId,

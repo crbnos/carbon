@@ -1,6 +1,7 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  clearRampConnectionMetadata,
   ensureRampConnection,
   ensureRampWebhook,
   getRampIntegration,
@@ -108,29 +109,45 @@ export async function rampOnUpdate(companyId: string): Promise<void> {
 export async function rampOnUninstall(companyId: string): Promise<void> {
   const serviceRole = getCarbonServiceRole();
   const integration = await getRampIntegration(serviceRole, companyId);
-  if (!integration) return;
 
-  const { client, metadata } = integration;
+  if (integration) {
+    const { client, metadata } = integration;
 
-  if (metadata.webhookId) {
+    if (metadata.webhookId) {
+      try {
+        await client.deleteWebhook(metadata.webhookId);
+      } catch (err) {
+        // Tolerate a missing webhook (already deleted).
+        console.error(
+          `[ramp] failed to delete webhook on uninstall (company ${companyId}): ${
+            (err as Error).message
+          }`
+        );
+      }
+    }
+
     try {
-      await client.deleteWebhook(metadata.webhookId);
+      await client.deleteAccountingConnection();
     } catch (err) {
-      // Tolerate a missing webhook (already deleted).
+      // Tolerate — the connection may already be gone.
       console.error(
-        `[ramp] failed to delete webhook on uninstall (company ${companyId}): ${
+        `[ramp] failed to delete accounting connection on uninstall (company ${companyId}): ${
           (err as Error).message
         }`
       );
     }
   }
 
+  // Clear the stored `webhookId`/`connectionId` so a later reinstall re-creates
+  // both at Ramp instead of trusting ids that were torn down here. Runs even
+  // when the integration row is already deactivated (the read above returns null
+  // then, since it gates on `active`) — `clearRampConnectionMetadata` reads the
+  // row directly, so a deactivated-but-present row is still cleared.
   try {
-    await client.deleteAccountingConnection();
+    await clearRampConnectionMetadata(serviceRole, companyId);
   } catch (err) {
-    // Tolerate — the connection may already be gone.
     console.error(
-      `[ramp] failed to delete accounting connection on uninstall (company ${companyId}): ${
+      `[ramp] failed to clear stored webhook/connection metadata on uninstall (company ${companyId}): ${
         (err as Error).message
       }`
     );

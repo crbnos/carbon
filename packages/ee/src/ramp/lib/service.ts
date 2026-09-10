@@ -186,9 +186,89 @@ export async function advanceRampCursor(
   });
 }
 
+/**
+ * Clear the stored `webhookId` and `connectionId` from the (secret-free)
+ * metadata column. Called on uninstall so a later reinstall re-creates both at
+ * Ramp instead of trusting ids that no longer exist there. Leaves every sibling
+ * key (cursors, account-mapping config, vaulted secrets) untouched.
+ */
+export async function clearRampConnectionMetadata(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string
+): Promise<void> {
+  await updateStoredRampMetadata(serviceRole, companyId, (metadata) => {
+    delete metadata.webhookId;
+    delete metadata.connectionId;
+  });
+}
+
 // /********************************************************\
 // *                     Connection                        *
 // \********************************************************/
+
+/**
+ * Build a {@link RampClient} wired for OAuth2 token refresh: it carries Carbon's
+ * OAuth app credentials (from env, needed to run the `refresh_token` grant) and
+ * an `onTokensRefreshed` hook that persists a refreshed oauth2 access token back
+ * to the vault. Shared by every caller that constructs a client so none of them
+ * builds one that cannot refresh an expired oauth2 token.
+ */
+function buildRampClient(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  credentials: RampCredentials
+): RampClient {
+  // Carbon's OAuth app — read lazily from process.env (importing @carbon/env
+  // here would eagerly validate unrelated required vars and break server-only
+  // tests).
+  const rampClientId = process.env.RAMP_CLIENT_ID;
+  const rampClientSecret = process.env.RAMP_CLIENT_SECRET;
+  const oauthApp =
+    rampClientId && rampClientSecret
+      ? { clientId: rampClientId, clientSecret: rampClientSecret }
+      : undefined;
+
+  return new RampClient(credentials, {
+    oauthApp,
+    // Only oauth2 connections refresh; client-credentials mint fresh tokens.
+    onTokensRefreshed:
+      credentials.type === "oauth2"
+        ? (tokens) => persistRefreshedRampTokens(serviceRole, companyId, tokens)
+        : undefined
+  });
+}
+
+/**
+ * Persist a refreshed oauth2 access token + expiry. Re-reads the LATEST stored
+ * metadata (and re-resolves its vaulted secrets) immediately before writing, so
+ * a token refresh cannot clobber sibling metadata — cursors, `webhookId`,
+ * `connectionId` — that another operation wrote after the client was built.
+ * Only the two token fields are overwritten; Ramp does not rotate the refresh
+ * token, so it is left untouched.
+ */
+async function persistRefreshedRampTokens(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  tokens: { accessToken: string; expiresAt: string }
+): Promise<void> {
+  const stored = await readStoredRampMetadata(serviceRole, companyId);
+  if (!stored) return;
+  const latest = await resolveIntegrationSecrets(
+    serviceRole,
+    companyId,
+    RAMP,
+    stored
+  );
+  const current = latest as { credentials?: Record<string, unknown> };
+  await persistIntegrationSecrets(serviceRole, companyId, RAMP, {
+    ...latest,
+    credentials: {
+      ...(current.credentials ?? {}),
+      accessToken: tokens.accessToken,
+      expiresAt: tokens.expiresAt
+    }
+  });
+}
 
 /**
  * Load the company's Ramp integration — a ready {@link RampClient} plus parsed
@@ -212,37 +292,11 @@ export async function getRampIntegration(
   const parsed = RampIntegrationMetadataSchema.safeParse(resolved);
   if (!parsed.success) return null;
 
-  // Carbon's OAuth app — needed to refresh oauth2 access tokens. Read lazily
-  // from process.env (importing @carbon/env here would eagerly validate
-  // unrelated required vars and break server-only tests).
-  const rampClientId = process.env.RAMP_CLIENT_ID;
-  const rampClientSecret = process.env.RAMP_CLIENT_SECRET;
-  const oauthApp =
-    rampClientId && rampClientSecret
-      ? { clientId: rampClientId, clientSecret: rampClientSecret }
-      : undefined;
-
-  const client = new RampClient(parsed.data.credentials, {
-    oauthApp,
-    // Persist a refreshed access token + expiry back to the vault (Ramp does not
-    // rotate the refresh token, so it is left untouched). Only relevant to oauth2.
-    onTokensRefreshed:
-      parsed.data.credentials.type === "oauth2"
-        ? async ({ accessToken, expiresAt }) => {
-            const current = resolved as {
-              credentials?: Record<string, unknown>;
-            };
-            await persistIntegrationSecrets(serviceRole, companyId, RAMP, {
-              ...resolved,
-              credentials: {
-                ...(current.credentials ?? {}),
-                accessToken,
-                expiresAt
-              }
-            });
-          }
-        : undefined
-  });
+  const client = buildRampClient(
+    serviceRole,
+    companyId,
+    parsed.data.credentials
+  );
 
   return { client, metadata: parsed.data };
 }
@@ -297,7 +351,16 @@ export async function ensureRampConnection(
   if (metadata.connectionId) return { connectionId: metadata.connectionId };
 
   const connection = RampAccountingConnectionSchema.parse(
-    await client.createAccountingConnection({ remote_provider_name: "Carbon" })
+    await client.createAccountingConnection(
+      { remote_provider_name: "Carbon" },
+      // Entity-scoped idempotency key — one accounting connection per company, so
+      // a retried install cannot create a second one at Ramp.
+      buildRampIdempotencyKey({
+        companyId,
+        operation: "createAccountingConnection",
+        scope: companyId
+      })
+    )
   );
   const connectionId = connection.connection_id ?? connection.id;
   if (!connectionId) {
@@ -662,20 +725,48 @@ export async function ensureRampWebhook(
 
   if (parsed.data.webhookId) return { webhookId: parsed.data.webhookId };
 
-  const client = new RampClient(parsed.data.credentials);
-  const created = RampWebhookCreateResponseSchema.parse(
-    await client.createWebhook({
-      endpoint_url: `${originUrl}/api/webhook/ramp/${companyId}`,
-      event_types: [...RAMP_WEBHOOK_EVENT_TYPES]
-    })
+  // Build via the shared helper so an oauth2 connection whose access token has
+  // expired can refresh it before the webhook call (a bare `new RampClient` has
+  // no OAuth app and would throw on an expired token).
+  const client = buildRampClient(
+    serviceRole,
+    companyId,
+    parsed.data.credentials
   );
+  const created = RampWebhookCreateResponseSchema.parse(
+    await client.createWebhook(
+      {
+        endpoint_url: `${originUrl}/api/webhook/ramp/${companyId}`,
+        event_types: [...RAMP_WEBHOOK_EVENT_TYPES]
+      },
+      // Entity-scoped idempotency key — one webhook per company connection, so a
+      // retried install cannot register a duplicate webhook at Ramp.
+      buildRampIdempotencyKey({
+        companyId,
+        operation: "createWebhook",
+        scope: companyId
+      })
+    )
+  );
+
+  // The webhook route fails closed without a stored signing secret (401), and a
+  // persisted `webhookId` makes this function skip re-creation forever. So
+  // refuse to persist a webhook Ramp returned without a secret — leaving the
+  // metadata clean means the next run re-creates one we can actually verify.
+  if (!created.secret) {
+    throw new Error(
+      "Ramp did not return a webhook signing secret; not persisting the webhook"
+    );
+  }
 
   // Re-vault the FULL secret bag (the vault RPC replaces, not merges) plus the
   // new webhookSecret; persistIntegrationSecrets strips secrets back out and
   // writes `webhookId` to the plaintext column.
-  const next: Record<string, unknown> = { ...resolved, webhookId: created.id };
-  if (created.secret) next.webhookSecret = created.secret;
-  await persistIntegrationSecrets(serviceRole, companyId, RAMP, next);
+  await persistIntegrationSecrets(serviceRole, companyId, RAMP, {
+    ...resolved,
+    webhookId: created.id,
+    webhookSecret: created.secret
+  });
 
   return { webhookId: created.id };
 }
@@ -779,12 +870,16 @@ export async function resolveRampSupplier(
     if (mapped) return mapped;
   }
 
-  // 2. Case-insensitive exact name match.
+  // 2. Case-insensitive exact name match. `vendor.name` comes from Ramp, so its
+  // `%`/`_` must be escaped before `ilike` — otherwise a merchant like
+  // "50% Off Supply" becomes a wildcard pattern and matches an unrelated
+  // supplier, linking the two permanently.
+  const escapedName = vendor.name.replace(/[\\%_]/g, (m) => `\\${m}`);
   const { data: matches } = await serviceRole
     .from("supplier")
     .select("id")
     .eq("companyId", companyId)
-    .ilike("name", vendor.name)
+    .ilike("name", escapedName)
     .limit(1);
   let supplierId = matches?.[0]?.id ?? null;
 
@@ -1114,6 +1209,31 @@ async function findRampSpendVendor(
 }
 
 /**
+ * The single Ramp spend vendor whose name EXACTLY (case-insensitively) matches
+ * `name`, or null when there is none — OR more than one. A vendor name is not an
+ * identity key: two Ramp vendors can share one, and binding a Carbon supplier to
+ * an arbitrary same-named vendor would push its bills under the wrong Ramp
+ * vendor. An ambiguous name therefore falls through to a create instead of
+ * linking.
+ */
+async function findUniqueRampSpendVendorByName(
+  client: RampClient,
+  name: string
+): Promise<RampVendor | null> {
+  const target = name.trim().toLowerCase();
+  if (!target) return null;
+  let match: RampVendor | null = null;
+  for await (const page of client.listVendors({ name })) {
+    for (const vendor of page) {
+      if ((vendor.name ?? "").trim().toLowerCase() !== target) continue;
+      if (match) return null; // more than one exact match → ambiguous
+      match = vendor;
+    }
+  }
+  return match;
+}
+
+/**
  * Resolve the Ramp SPEND-vendor id a PO/bill `vendor_id` needs for a Carbon
  * supplier — matching first, creating only as a last resort (option B):
  *
@@ -1133,7 +1253,8 @@ async function findRampSpendVendor(
 export async function resolveOrCreateRampSpendVendor(
   mapping: ExternalIntegrationMappingService,
   client: RampClient,
-  supplier: RampVendorSupplier
+  supplier: RampVendorSupplier,
+  companyId?: string
 ): Promise<string | null> {
   const existing = await mapping.getExternalId("vendor", supplier.id, RAMP);
   if (existing) return existing;
@@ -1141,15 +1262,15 @@ export async function resolveOrCreateRampSpendVendor(
   const name = (supplier.name ?? "").trim();
   if (!name) return null;
 
+  // Prefer an exact identity match on our own external_vendor_id. Fall back to a
+  // name match ONLY when it is unambiguous — exactly one Ramp vendor carries
+  // this exact (case-insensitive) name — since a shared name is not an identity
+  // key and would otherwise link this supplier to the wrong Ramp vendor.
   const byExternal = await findRampSpendVendor(client, {
     external_vendor_id: supplier.id
   });
-  const byName = byExternal ?? (await findRampSpendVendor(client, { name }));
   const matched =
-    byExternal ??
-    (byName && (byName.name ?? "").trim().toLowerCase() === name.toLowerCase()
-      ? byName
-      : null);
+    byExternal ?? (await findUniqueRampSpendVendorByName(client, name));
   if (matched?.id) {
     await mapping.link("vendor", supplier.id, RAMP, matched.id, {
       createdBy: "system"
@@ -1171,32 +1292,44 @@ export async function resolveOrCreateRampSpendVendor(
   // type"). `state` is required for US and lives at the vendor top level.
   let created: { id?: string } | null;
   try {
-    created = (await client.createSpendVendor({
-      name,
-      country,
-      ...(address?.stateProvince ? { state: address.stateProvince } : {}),
-      external_vendor_id: supplier.id,
-      business_vendor_contacts: {
-        email,
-        ...(contact?.firstName ? { first_name: contact.firstName } : {}),
-        ...(contact?.lastName ? { last_name: contact.lastName } : {}),
-        ...(contact?.phone ? { phone: contact.phone } : {})
-      },
-      ...(address?.line1 && address.city && address.postalCode
-        ? {
-            address: {
-              address_line_1: address.line1,
-              ...(address.line2 ? { address_line_2: address.line2 } : {}),
-              city: address.city,
-              postal_code: address.postalCode,
-              ...(address.stateProvince
-                ? { state: address.stateProvince }
-                : {}),
-              country
+    created = (await client.createSpendVendor(
+      {
+        name,
+        country,
+        ...(address?.stateProvince ? { state: address.stateProvince } : {}),
+        external_vendor_id: supplier.id,
+        business_vendor_contacts: {
+          email,
+          ...(contact?.firstName ? { first_name: contact.firstName } : {}),
+          ...(contact?.lastName ? { last_name: contact.lastName } : {}),
+          ...(contact?.phone ? { phone: contact.phone } : {})
+        },
+        ...(address?.line1 && address.city && address.postalCode
+          ? {
+              address: {
+                address_line_1: address.line1,
+                ...(address.line2 ? { address_line_2: address.line2 } : {}),
+                city: address.city,
+                postal_code: address.postalCode,
+                ...(address.stateProvince
+                  ? { state: address.stateProvince }
+                  : {}),
+                country
+              }
             }
-          }
-        : {})
-    })) as { id?: string } | null;
+          : {})
+      },
+      // Entity-scoped idempotency key (keyed on the Carbon supplier id) so a
+      // retried push cannot create a duplicate Ramp spend vendor. Only when the
+      // caller supplied a companyId (the helper needs it to derive the key).
+      companyId
+        ? buildRampIdempotencyKey({
+            companyId,
+            operation: "createSpendVendor",
+            scope: supplier.id
+          })
+        : undefined
+    )) as { id?: string } | null;
   } catch (createError) {
     console.error(
       `[RAMP] failed to create Ramp spend vendor for supplier "${name}" (${supplier.id})`,
@@ -1226,7 +1359,8 @@ export async function resolveOrCreateRampSpendVendor(
 export async function pushPurchaseOrder(
   mapping: ExternalIntegrationMappingService,
   client: RampClient,
-  po: RampPurchaseOrderPush
+  po: RampPurchaseOrderPush,
+  companyId?: string
 ): Promise<"created" | "patched" | "archived" | "skipped"> {
   const existingRampPoId = await mapping.getExternalId(
     "purchaseOrder",
@@ -1249,7 +1383,8 @@ export async function pushPurchaseOrder(
   const rampVendorId = await resolveOrCreateRampSpendVendor(
     mapping,
     client,
-    po.supplier
+    po.supplier,
+    companyId
   );
 
   const lineItems = po.lines.map((line) => ({
@@ -1267,15 +1402,27 @@ export async function pushPurchaseOrder(
     return "patched";
   }
 
-  const created = (await client.createPurchaseOrder({
-    purchase_order_number: po.readableId,
-    external_id: po.id,
-    three_way_match_enabled: false,
-    ...(po.currencyCode ? { currency: po.currencyCode } : {}),
-    ...(po.entityId ? { entity_id: po.entityId } : {}),
-    ...(rampVendorId ? { vendor_id: rampVendorId } : {}),
-    line_items: lineItems
-  })) as { id?: string } | null;
+  const created = (await client.createPurchaseOrder(
+    {
+      purchase_order_number: po.readableId,
+      external_id: po.id,
+      three_way_match_enabled: false,
+      ...(po.currencyCode ? { currency: po.currencyCode } : {}),
+      ...(po.entityId ? { entity_id: po.entityId } : {}),
+      ...(rampVendorId ? { vendor_id: rampVendorId } : {}),
+      line_items: lineItems
+    },
+    // Entity-scoped idempotency key (keyed on the Carbon purchase-order id) so a
+    // retried push cannot create a duplicate Ramp PO. Only when the caller
+    // supplied a companyId (the helper needs it to derive the key).
+    companyId
+      ? buildRampIdempotencyKey({
+          companyId,
+          operation: "createPurchaseOrder",
+          scope: po.id
+        })
+      : undefined
+  )) as { id?: string } | null;
   const rampPoId = created?.id ?? null;
   if (!rampPoId) {
     throw new Error(
@@ -1313,7 +1460,8 @@ export async function pushInvoiceDraftBill(
   const rampVendorId = await resolveOrCreateRampSpendVendor(
     mapping,
     client,
-    invoice.supplier
+    invoice.supplier,
+    companyId
   );
   if (!rampVendorId) return "skipped";
 
@@ -1342,19 +1490,30 @@ export async function pushInvoiceDraftBill(
   // TODO(task-1): confirm the POST /bills/drafts body — line_items shape (amount
   // as minor units vs decimal, accounting_field_selections) and the PDF-attach
   // field name (document_urls here is a placeholder).
-  const created = (await client.createDraftBill({
-    vendor_id: rampVendorId,
-    invoice_number: invoiceNumber,
-    ...(invoice.currencyCode ? { invoice_currency: invoice.currencyCode } : {}),
-    ...(invoice.dateIssued ? { issued_at: invoice.dateIssued } : {}),
-    ...(invoice.dateDue ? { due_at: invoice.dateDue } : {}),
-    remote_id: invoice.id,
-    ...(documentUrls ? { document_urls: documentUrls } : {}),
-    line_items: invoice.lines.map((line) => ({
-      memo: line.description ?? undefined,
-      amount: line.amount
-    }))
-  })) as { id?: string } | null;
+  const created = (await client.createDraftBill(
+    {
+      vendor_id: rampVendorId,
+      invoice_number: invoiceNumber,
+      ...(invoice.currencyCode
+        ? { invoice_currency: invoice.currencyCode }
+        : {}),
+      ...(invoice.dateIssued ? { issued_at: invoice.dateIssued } : {}),
+      ...(invoice.dateDue ? { due_at: invoice.dateDue } : {}),
+      remote_id: invoice.id,
+      ...(documentUrls ? { document_urls: documentUrls } : {}),
+      line_items: invoice.lines.map((line) => ({
+        memo: line.description ?? undefined,
+        amount: line.amount
+      }))
+    },
+    // Entity-scoped idempotency key (keyed on the Carbon purchase-invoice id) so a
+    // retried push cannot create a duplicate draft bill at Ramp.
+    buildRampIdempotencyKey({
+      companyId,
+      operation: "createDraftBill",
+      scope: invoice.id
+    })
+  )) as { id?: string } | null;
   const draftId = created?.id ?? null;
   if (!draftId) {
     throw new Error(
@@ -1364,7 +1523,16 @@ export async function pushInvoiceDraftBill(
 
   // TODO(task-1): confirm whether submit returns the draft id or a promoted bill
   // id; store WHICH id the submit returns (falls back to the draft id).
-  const submitted = (await client.submitDraftBill(draftId)) as {
+  const submitted = (await client.submitDraftBill(
+    draftId,
+    // Entity-scoped idempotency key (keyed on the Ramp draft-bill id) so a retried
+    // submit cannot promote/duplicate the bill twice at Ramp.
+    buildRampIdempotencyKey({
+      companyId,
+      operation: "submitDraftBill",
+      scope: draftId
+    })
+  )) as {
     id?: string;
   } | null;
   const billId = submitted?.id ?? draftId;

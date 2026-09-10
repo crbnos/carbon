@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { formatDate } from "@carbon/utils";
+import { formatDate, formatMoney } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -15,7 +15,7 @@ import {
 } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyDecimalsLookup } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   cardTransactionStatus,
@@ -35,7 +35,11 @@ const CardTransactionsTable = memo(
   ({ data, count }: CardTransactionsTableProps) => {
     const { t } = useLingui();
     const { locale } = useLocale();
-    const currencyFormatter = useCurrencyFormatter();
+    // Each transaction carries its own currencyCode (a company can hold cards in
+    // several currencies), so the amount is formatted per row from a decimals
+    // lookup rather than a single-currency hook — and there is no cross-currency
+    // total, which would sum unlike units into a meaningless number.
+    const currencyDecimals = useCurrencyDecimalsLookup();
 
     const columns = useMemo<ColumnDef<CardTransactionRow>[]>(
       () => [
@@ -105,15 +109,21 @@ const CardTransactionsTable = memo(
         {
           accessorKey: "amount",
           header: t`Amount`,
-          cell: (item) => (
-            <span className="tabular-nums">
-              {currencyFormatter.format(item.getValue<number>())}
-            </span>
-          ),
+          cell: ({ row }) => {
+            const code = row.original.currencyCode || "USD";
+            return (
+              <span className="tabular-nums">
+                {formatMoney(
+                  row.original.amount,
+                  locale,
+                  code,
+                  currencyDecimals(code)
+                )}
+              </span>
+            );
+          },
           meta: {
-            icon: <LuCoins />,
-            renderTotal: true,
-            formatter: currencyFormatter.format
+            icon: <LuCoins />
           }
         },
         {
@@ -123,7 +133,7 @@ const CardTransactionsTable = memo(
           meta: { icon: <LuCreditCard /> }
         }
       ],
-      [t, locale, currencyFormatter]
+      [t, locale, currencyDecimals]
     );
 
     return (
