@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPrivateIp, normalizeIp } from "./ip";
+import { getClientIp, isPrivateIp, normalizeIp } from "./ip";
 
 describe("normalizeIp", () => {
   it("strips the IPv4-mapped IPv6 prefix", () => {
@@ -44,5 +44,60 @@ describe("isPrivateIp", () => {
     expect(isPrivateIp("8.8.8.8")).toBe(false);
     expect(isPrivateIp("2001:db8::1")).toBe(false);
     expect(isPrivateIp(null)).toBe(false);
+  });
+});
+
+describe("getClientIp", () => {
+  const req = (headers: Record<string, string>) =>
+    new Request("https://erp.example.com/", { headers });
+
+  it("returns the rightmost hop when no proxies are trusted", () => {
+    expect(getClientIp(req({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" }))).toBe(
+      "10.0.0.1"
+    );
+  });
+
+  it("skips a trusted proxy count to reach the real client", () => {
+    expect(
+      getClientIp(req({ "x-forwarded-for": "9.9.9.9, 1.2.3.4, 10.0.0.1" }), {
+        trustedProxyCount: 1
+      })
+    ).toBe("1.2.3.4");
+  });
+
+  it("ignores a client-seeded leftmost hop", () => {
+    expect(
+      getClientIp(req({ "x-forwarded-for": "evil, 1.2.3.4" }), {
+        trustedProxyCount: 0
+      })
+    ).toBe("1.2.3.4");
+  });
+
+  it("skips explicitly trusted proxy addresses", () => {
+    expect(
+      getClientIp(req({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" }), {
+        trustedProxyIps: ["10.0.0.1"]
+      })
+    ).toBe("1.2.3.4");
+  });
+
+  it("strips an ALB port suffix", () => {
+    expect(getClientIp(req({ "x-forwarded-for": "1.2.3.4:53819" }))).toBe(
+      "1.2.3.4"
+    );
+  });
+
+  it("normalizes IPv4-mapped IPv6", () => {
+    expect(getClientIp(req({ "x-forwarded-for": "::ffff:127.0.0.1" }))).toBe(
+      "127.0.0.1"
+    );
+  });
+
+  it("falls back to x-real-ip when the chain is absent", () => {
+    expect(getClientIp(req({ "x-real-ip": "1.2.3.4" }))).toBe("1.2.3.4");
+  });
+
+  it("returns null when no address headers are present", () => {
+    expect(getClientIp(req({}))).toBeNull();
   });
 });
