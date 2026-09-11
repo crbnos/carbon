@@ -14,7 +14,7 @@
 - [x] Task 7: Make card post/void transactional and idempotent
 - [x] Task 8: Validate Ramp monetary payloads and inbound policy
 - [x] Task 9: Use stable outbound cursors and resumable payments
-- [ ] Task 10: Refresh documentation and run final gates
+- [x] Task 10: Refresh documentation and run final gates
 - [x] Task 11: Split the Ramp jobs coordinator below the nuclear size gate
 - [x] Task 12: Split the Ramp service below the nuclear size gate
 - [x] Task 13: Make card ingestion transactional and retry-safe
@@ -390,11 +390,13 @@ git diff --check
 # Expected: every command exits 0, with no missing translations or compatibility verdicts.
 ```
 
-**Result:** EE 1,137/1,137, Jobs 634/634 runnable tests (six DB-gated skips), Auth 44/44,
-all five scoped typechecks, full lint, four dataset checks, backup compatibility, the
-nine-target production build, and `git diff --check` passed. The explicit Ramp database
-suite passed separately with all six tests enabled. The post-refactor browser retry was
-blocked at the external Cloudflare challenge; the earlier isolated run passed the Ramp
-settings, owned/cross-tenant detail, and void/reversal checks.
+**Result:** EE 1,157/1,157; Jobs 648/648 runnable tests (26 intentional skips across three
+files); Auth 44/44; all five scoped typechecks; full lint; four dataset checks; backup
+compatibility; the nine-target production build; and `git diff --check` passed. Lint and
+build retained the repository's existing non-fatal diagnostics. The explicit Ramp database
+suites passed separately for card staging, bill staging, payment/reimbursement staging, and
+card post/void transactions. The post-refactor browser retry was blocked at the external
+Cloudflare challenge; the earlier isolated run passed the Ramp settings, owned/cross-tenant
+detail, and void/reversal checks.
 
 **Out of scope:** Claiming unverified Ramp API contracts are production-verified.
