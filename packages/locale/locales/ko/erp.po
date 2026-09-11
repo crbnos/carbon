@@ -4300,6 +4300,9 @@ msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 연결을 저장할 수 없습니다"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp 연결을 저장할 수 없습니다"
+
 msgid "Count"
 msgstr "실사"
 
@@ -6797,6 +6800,9 @@ msgstr "환율 업데이트 시간"
 
 msgid "Exchange Rates"
 msgstr "환율"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "액세스 권한을 얻기 위한 인증 코드 교환에 실패했습니다. 다시 연결해 보세요."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "인증 코드를 액세스 토큰으로 교환하지 못했습니다. 다시 연결해 보세요."
@@ -11524,6 +11530,9 @@ msgstr "미결 예약 정비"
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
 
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp 연동을 열고 다시 연결하여 설정을 완료해 보세요."
+
 msgid "Open the Setup Map"
 msgstr "설정 맵 열기"
 
@@ -13114,6 +13123,21 @@ msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 �
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp에서 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp가 연결되었지만 설정이 완료되지 않았습니다"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp에서 연결을 거부했습니다"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp에서 인증 코드를 반환하지 않았습니다"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp에서 인증을 거부했습니다"
+
 msgid "Rate"
 msgstr "환율"
 
@@ -13861,6 +13885,9 @@ msgstr "복원 재시도"
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "연동으로 돌아가 Ramp를 다시 연결하세요."
 
 msgid "Returned"
 msgstr "반환됨"
@@ -16289,6 +16316,9 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Ramp에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
 msgid "The backup job reported this error."
 msgstr "백업 작업이 이 오류를 보고했습니다."
 
@@ -16795,6 +16825,9 @@ msgstr "견적이 생성되었습니다"
 msgid "The quote will be copied with a revision suffix"
 msgstr "견적이 리비전 접미사와 함께 복사됩니다"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp 연결 만료됨"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "구매하고 소비하는 원자재 재고 및 자재 마스터"
 
@@ -16834,6 +16867,9 @@ msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으�
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
 
 msgid "The restore job reported this error."
 msgstr "복원 작업이 이 오류를 보고했습니다."

@@ -4300,6 +4300,9 @@ msgstr "Impossible de reprogrammer le travail. Veuillez réessayer."
 msgid "Couldn't save the Onshape connection"
 msgstr "Impossible d'enregistrer la connexion Onshape"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Impossible d’enregistrer la connexion Ramp"
+
 msgid "Count"
 msgstr "Nombre"
 
@@ -6797,6 +6800,9 @@ msgstr "Taux de change mis à jour à"
 
 msgid "Exchange Rates"
 msgstr "Taux de change"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "L’échange du code d’autorisation pour obtenir l’accès a échoué. Essayez de vous reconnecter."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "L'échange du code d'autorisation contre un jeton d'accès a échoué. Réessayez de vous connecter."
@@ -11524,6 +11530,9 @@ msgstr "Planifiés ouverts"
 msgid "Open task details"
 msgstr "Ouvrir les détails de la tâche"
 
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ouvrez l’intégration Ramp et essayez de vous reconnecter pour terminer la configuration."
+
 msgid "Open the Setup Map"
 msgstr "Ouvrir la carte de configuration"
 
@@ -13114,6 +13123,21 @@ msgstr "soulevez-le tôt et soulevez-le clairement. Un problème identifié à l
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp a autorisé la connexion, mais son enregistrement a échoué. Essayez de vous reconnecter."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp est connecté, mais la configuration n’a pas abouti"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp a refusé la connexion"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp n’a pas renvoyé de code d’autorisation"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp a rejeté l’autorisation"
+
 msgid "Rate"
 msgstr "Taux"
 
@@ -13861,6 +13885,9 @@ msgstr "Réessayer l'annulation"
 
 msgid "Return Home"
 msgstr "Retour à l'accueil"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Retournez dans Intégrations et reconnectez Ramp."
 
 msgid "Returned"
 msgstr "Retourné"
@@ -16289,6 +16316,9 @@ msgstr "L'enregistrement d'ajout seul de tout mouvement de stock; le stock dispo
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connecter."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "L’autorisation a été refusée dans Ramp. Essayez de vous reconnecter."
+
 msgid "The backup job reported this error."
 msgstr "Le travail de sauvegarde a signalé cette erreur."
 
@@ -16795,6 +16825,9 @@ msgstr "Le devis a été créé"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Le devis sera copié avec un suffixe de révision"
 
+msgid "The Ramp connection expired"
+msgstr "La connexion Ramp a expiré"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Le stock brut et le master matériel que vous achetez et consommez"
 
@@ -16834,6 +16867,9 @@ msgstr "L'en-cours résiduel qu'un ordre de fabrication a laissé à la clôture
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "La réponse d'Onshape ne contenait pas les paramètres requis. Réessayez de vous connecter."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "La réponse de Ramp ne contenait pas les paramètres requis. Essayez de vous reconnecter."
 
 msgid "The restore job reported this error."
 msgstr "Le travail de restauration a signalé cette erreur."

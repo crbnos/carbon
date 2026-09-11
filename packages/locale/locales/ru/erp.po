@@ -4300,6 +4300,9 @@ msgstr "Не удалось перепланировать задание. По�
 msgid "Couldn't save the Onshape connection"
 msgstr "Не удалось сохранить подключение к Onshape"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Не удалось сохранить подключение к Ramp"
+
 msgid "Count"
 msgstr "Количество"
 
@@ -6797,6 +6800,9 @@ msgstr "Валютный курс обновлен в"
 
 msgid "Exchange Rates"
 msgstr "Валютные курсы"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Не удалось обменять код авторизации на токен доступа. Попробуйте подключиться снова."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Не удалось обменять код авторизации на токен доступа. Повторите попытку подключения."
@@ -11524,6 +11530,9 @@ msgstr "Открытые запланированные"
 msgid "Open task details"
 msgstr "Открыть детали задачи"
 
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Откройте интеграцию Ramp и попробуйте подключиться снова, чтобы завершить настройку."
+
 msgid "Open the Setup Map"
 msgstr "Открыть карту настройки"
 
@@ -13114,6 +13123,21 @@ msgstr "поднимайте проблемы рано и говорите о н
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp авторизовал подключение, но сохранить его не удалось. Попробуйте подключиться снова."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp подключен, но настройка не завершена"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp отклонил подключение"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp не вернул код авторизации"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp отклонил авторизацию"
+
 msgid "Rate"
 msgstr "Курс"
 
@@ -13861,6 +13885,9 @@ msgstr "Повторить восстановление"
 
 msgid "Return Home"
 msgstr "Вернуться на главную"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Вернитесь в раздел «Интеграции» и снова подключите Ramp."
 
 msgid "Returned"
 msgstr "Возвращено"
@@ -16289,6 +16316,9 @@ msgstr "Журнал доступного только для добавлени
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Авторизация была отклонена в Ramp. Попробуйте подключиться снова."
+
 msgid "The backup job reported this error."
 msgstr "Задача резервного копирования сообщила об этой ошибке."
 
@@ -16795,6 +16825,9 @@ msgstr "Предложение было создано"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Коммерческое предложение будет скопировано с суффиксом ревизии."
 
+msgid "The Ramp connection expired"
+msgstr "Срок действия подключения Ramp истек"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Сырьё и материалы, которые вы покупаете и используете"
 
@@ -16834,6 +16867,9 @@ msgstr "Остаточное незавершенное производство
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "В ответе Onshape отсутствовали обязательные параметры. Повторите попытку подключения."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "В ответе Ramp отсутствовали обязательные параметры. Попробуйте подключиться снова."
 
 msgid "The restore job reported this error."
 msgstr "Задача восстановления сообщила об этой ошибке."
