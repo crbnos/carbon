@@ -14081,6 +14081,9 @@ msgstr "资源"
 msgid "Resources"
 msgstr "资源"
 
+msgid "Responsible employee"
+msgstr ""
+
 msgid "Responsible Employee"
 msgstr "负责员工"
 

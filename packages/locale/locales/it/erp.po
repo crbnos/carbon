@@ -14081,6 +14081,9 @@ msgstr "risorse"
 msgid "Resources"
 msgstr "Risorse"
 
+msgid "Responsible employee"
+msgstr ""
+
 msgid "Responsible Employee"
 msgstr "Dipendente Responsabile"
 

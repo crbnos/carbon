@@ -14081,6 +14081,9 @@ msgstr "संसाधन"
 msgid "Resources"
 msgstr "संसाधन"
 
+msgid "Responsible employee"
+msgstr ""
+
 msgid "Responsible Employee"
 msgstr "जिम्मेदार कर्मचारी"
 

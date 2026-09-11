@@ -14081,6 +14081,9 @@ msgstr "ресурсы"
 msgid "Resources"
 msgstr "Ресурсы"
 
+msgid "Responsible employee"
+msgstr ""
+
 msgid "Responsible Employee"
 msgstr "Ответственный сотрудник"
 

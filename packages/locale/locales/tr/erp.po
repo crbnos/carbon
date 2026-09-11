@@ -14081,6 +14081,9 @@ msgstr "kaynaklar"
 msgid "Resources"
 msgstr "Kaynaklar"
 
+msgid "Responsible employee"
+msgstr ""
+
 msgid "Responsible Employee"
 msgstr "Sorumlu Çalışan"
 
