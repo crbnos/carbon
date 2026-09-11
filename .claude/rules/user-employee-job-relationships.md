@@ -79,11 +79,27 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - `userToCompany.role` (membership type) is distinct from `employeeType` (which permission set);
   don't conflate "role" the enum with "role" the job title (`employeeJob.title`).
 - Permission company-ID array `"0"` means "all companies" — don't string-match a literal company id only.
-- Deactivating an employee (`deactivateEmployee` in `users.server.ts`) removes the company from
-  `userPermission.permissions`, deletes the `userToCompany` and `employeeJob` rows, sets
-  `employee.active = false`, and invalidates the Redis claims cache. It does **not** clear
-  `user.active` or scrub stored userId references (assignee columns, `workCenterEmployee`,
-  notification-group settings arrays).
+- Deactivating an employee (`deactivateEmployee` in `packages/auth/src/services/users.server.ts`)
+  removes the company from `userPermission.permissions`, deletes the `userToCompany` row and every
+  `membership` in groups owned by that company, and sets `employee.active = false`.
+  It does **not** clear `user.active`, delete the `employee` or `employeeJob` rows, or scrub stored
+  userId references (assignee columns, `workCenterEmployee`, notification-group settings arrays).
+- **The claims cache is invalidated by the deactivate\* functions themselves**, not by their
+  callers. `deactivateEmployee`/`Customer`/`Supplier` each `redis.del(getPermissionCacheKey(userId))`
+  on success, and `deactivateUser` deletes it again after delegating. That matters because
+  `requirePermissions` reads the cache (1h TTL) before the database, and the `create*Account`
+  rollback paths in the ERP call the role-specific functions directly rather than going through
+  `deactivateUser` — a caller that skipped the invalidation would leave revoked grants live.
+  `employeeJob` is kept on purpose — it is org placement, not access — so title, start date,
+  department, shift, manager, location, tags and custom fields survive a deactivate/re-invite
+  round trip.
+- Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
+  rows rather than failing: it refuses only when the existing `employee` row is `active`, and writes
+  through `upsertEmployee`/`upsertEmployeeJob` on `(id, companyId)`. Re-activation happens on invite
+  acceptance — `activateEmployee` restores the employee-type `membership` the deactivation removed
+  (the `sync_add_employee_to_type_group` trigger fires on INSERT only, so an UPDATE cannot rely on
+  it) and only then flips `active` back to true, so a failed restore leaves the invite unaccepted
+  and retryable rather than an active employee outside their type's group.
 - Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved
   recipients against `userToCompany` for the notification's company — a missing membership row
   (i.e. a deactivated user) is dropped before any in-app/email/Slack delivery, regardless of how
