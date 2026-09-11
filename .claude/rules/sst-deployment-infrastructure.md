@@ -11,7 +11,7 @@ paths:
 
 SST is **still used** — it is the managed, multi-tenant cloud deployment path.
 The self-hosted single-VPS Docker **Swarm** stack (see
-[contrib-deployment-swarm.md](contrib-deployment-swarm.md)) is a separate,
+[the self-host deployment README](../../contrib/deploying/simple-docker-caddy/README.md)) is a separate,
 alternative deployment, not a replacement. Both build from the same root `Dockerfile`.
 
 ## What SST deploys (`sst.config.ts`)
@@ -28,7 +28,8 @@ alternative deployment, not a replacement. Both build from the same root `Docker
     `process.env.URL_MES ?? "mes.itar.carbon.ms"`, cert `CERT_ARN_MES`.
   - Both: LB ports `80/http`+`443/https` → `3000/http`, `dns: false`, health
     check at `/health` (set both via `loadBalancer.health` and a `transform.target`
-    override), `idleTimeout: 600`, scaling `min 1 / max 10`, 70% CPU / 80% mem.
+    override), `idleTimeout: 600`, scaling `min 1 / max 10`, request count 500,
+    70% CPU / 80% mem.
     Image tag is `${IMAGE_TAG}` (was hardcoded `:latest` in the old doc — stale).
 - **WAF** (`aws.wafv2.WebAcl` `AppAlbWebAcl`, scope `REGIONAL`): rate-limit rule
   1000 req/IP/5min + `AWSManagedRulesCommonRuleSet`. Default action allow. It is
@@ -78,7 +79,7 @@ Triggers on push to `main` touching `apps/erp/**`, `apps/mes/**`, `packages/**`
 SST deploy does **not** run DB migrations. Migrations live in
 `ci/src/migrations.ts` (script `ci:migrations`), a separate workspace fan-out over
 the `workspaces` table. (The self-host path runs migrations as an ephemeral Swarm
-job instead — see [contrib-deployment-swarm.md](contrib-deployment-swarm.md).)
+job instead — see [the self-host deployment README](../../contrib/deploying/simple-docker-caddy/README.md).)
 
 ## Env vars passed to the services (`sst.config.ts` `environment`)
 Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SECRET`/
@@ -87,9 +88,16 @@ Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SE
 `NODE_ENV=production`, `VERCEL_ENV=production`, `VERCEL_URL` (set to the app host —
 there is no real Vercel deploy, this is just an env shim). ERP additionally gets
 `OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `CLOUDFLARE_TURNSTILE_*`, `STRIPE_*`,
-`SLACK_*`, `JIRA_*`, `QUICKBOOKS_*`, `XERO_*`, `ONSHAPE_*`, `AUTH_PROVIDERS`; MES is
+`SLACK_*`, `JIRA_*`, `QUICKBOOKS_*`, `XERO_*`, `ONSHAPE_*`, `RAMP_CLIENT_ID`,
+`RAMP_CLIENT_SECRET`, `AUTH_PROVIDERS`; MES is
 the leaner subset (no Stripe/Slack/Jira/QuickBooks/Xero/OpenAI). Autodesk vars are
 gone (Autodesk code removed).
+
+Ramp's client id/secret originate on the `workspaces` row as `ramp_client_id` /
+`ramp_client_secret`; `ci/src/deploy.ts` copies them into the per-workspace process
+environment, and only `CarbonERPService.environment` forwards them to the container.
+OAuth state uses the already-required `SESSION_SECRET`, so there is no extra Ramp state
+secret to provision.
 
 ## /health
 `apps/{erp,mes}/app/routes/_public+/health.tsx` — used by the ECS/ALB health checks

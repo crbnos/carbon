@@ -299,8 +299,10 @@ recovers the merchant (vendor), the receipt and the dimensions the journal path
 dropped. Entity type `charge` (`AccountingEntityType`, `ENTITY_DEFINITIONS`,
 `DEFAULT_SYNC_CONFIG`, `SyncConfigSchema`); table map `cardTransaction → charge`
 (`events/sync-tables.ts`); subscription `{ table: "cardTransaction", INSERT/UPDATE }`
-in `COMMON_PUSH_TABLES` for all three providers; event trigger attached by migration
-`20260910183955` (no subscription backfill — convergence). Syncers:
+in `COMMON_PUSH_TABLES` for all three providers; the event trigger and tenant-safe
+`supplierId` relationship are converged by
+`20260911041045_reconcile-ramp-card-transactions.sql` (no subscription backfill —
+runtime subscription convergence). Syncers:
 `providers/rillet/entities/charge.ts` (`RilletChargeSyncer`, reference), plus the Xero
 and QBO adapters cloned from their bill syncers. Costing lines come from the shared
 `loadCardTransactionCostingLines` (`core/document-costing.ts`): the posted journal's
@@ -352,6 +354,23 @@ supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
 `merchant` by Ramp `merchant_id` → case-insensitive name → auto-create tagged
 "Card Merchant"); the existing vendor syncers carry it to the provider via
 `ensureDependencySynced("vendor")`.
+
+**Ramp bill payments and reimbursements are staged transactionally.**
+`ramp-sync-bill.ts` owns the bill-payment drain/confirm family and delegates each item to
+`syncRampBillPayment` in `ramp-sync-payment.ts`. `stageRampPaymentDraft` writes or resumes
+the Draft `payment`, `invoiceSettlement`, and Ramp mapping in one Kysely transaction while
+preserving the stored source-FX snapshot; `createOrResumeRampPayment` posts and accepts an
+ambiguous edge-function response only when a tenant-scoped reread shows the payment is
+Posted. Card-backed bill payments are confirmed without an AP payment because the card
+transaction already represents the cash movement.
+`ramp-sync-reimbursement-family.ts` owns listing and confirmation and delegates an item to
+`syncRampReimbursement` in `ramp-sync-reimbursement.ts`. The staging helper uses an
+advisory lock scoped to the company and Ramp reimbursement id, then
+`stageOrResumeRampReimbursementInvoice` atomically writes or repairs the supplier
+interaction, Draft purchase invoice, delivery, all lines, and mapping. It may adopt only
+a uniquely identifiable legacy untracked Draft. The family confirms Ramp only after the
+invoice, and the payment when Ramp-paid, are observably Posted. Do not split either staged
+write set into Supabase-client calls; those calls do not form a transaction.
 
 **Rillet reimbursements.** A purchase invoice to an "Employee" supplier (what the
 Ramp reimbursement sync creates) is ALWAYS written to `POST /reimbursements`, Rillet's

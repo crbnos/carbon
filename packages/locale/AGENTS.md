@@ -1,49 +1,55 @@
 # @carbon/locale
 
-i18n runtime — Lingui integration, locale resolution, language config, and the `LocaleProvider` that activates translations.
+Lingui runtime, locale selection, and per-render catalog activation for ERP and MES.
 
 ## Always
 
-- **Use `useLingui` from `@lingui/react/macro`** in components: `const { t } = useLingui();` then `` t`string` ``. Use `<Trans>` from `@lingui/react/macro` for JSX. Use `msg` from `@lingui/core/macro` only for `MessageDescriptor` creation (breadcrumbs, glossary terms).
-- **Keep `supportedLanguages` in sync** — adding a locale requires updating both `lingui.config.js` (root) and `packages/locale/src/config.ts` (`supportedLanguages` + `languageNativeLabels`).
-- **Run extraction after adding strings**: `pnpm lingui:extract` then `pnpm translate` to LLM-fill translations, then `pnpm lingui:clean` to strip diff-noisy headers.
-- **`LocaleProvider` is the only active i18n instance** — it creates a per-render Lingui runtime via `setupI18n()`. The global `@lingui/core` singleton is never activated.
+- MUST translate component strings with `useLingui()` or `<Trans>` from `@lingui/react/macro`.
+- MUST use `msg` from `@lingui/core/macro` only to create `MessageDescriptor` values such as breadcrumbs.
+- MUST update `lingui.config.js`, `supportedLanguages`, and `languageNativeLabels` together when adding a locale.
+- MUST run extraction and translation after adding user-facing strings; commit `.po` catalogs, not compiled output.
+- MUST keep `LocaleProvider` as the active Lingui runtime. It creates and activates a per-render `setupI18n()` instance.
 
 ## Ask First
 
-- Adding a new supported language
-- Changing `resolveLanguage` fallback logic or `defaultLanguage` behavior
-- Modifying `LocaleProvider` rendering (it's mounted in every app's `root.tsx`)
+- Adding/removing a supported language or changing `defaultLanguage`/`resolveLanguage()` fallback behavior.
+- Changing `LocaleProvider`; every app mounts it from `root.tsx`.
+- Changing catalog source globs because ERP and MES share React/form/printing messages.
 
 ## Never
 
-- `import { t } from "@lingui/core/macro"` in app code — this calls the global singleton which is never activated, causing SSR crashes
-- Commit compiled `.mjs` files — they're gitignored (`packages/locale/locales/**/*.mjs`) and regenerated at build
-- Hardcode locale strings — always use `msg`/`t`/`<Trans>` so extraction picks them up
+- Never call `t` imported from `@lingui/core/macro`; it targets the unactivated global singleton and can crash SSR.
+- Never hardcode translatable UI copy outside `msg`, `useLingui().t`, or `<Trans>`.
+- Never commit `packages/locale/locales/**/*.mjs`; builds regenerate them.
+- Never treat `locales/nl/` as supported. Dutch catalogs are orphaned until `nl` is added to both runtime and Lingui config.
 
 ## Validation Commands
 
 ```bash
+pnpm --filter @carbon/locale test
 pnpm --filter @carbon/locale typecheck
-pnpm lingui:check          # extract + compile (root script)
-pnpm lingui:extract        # update .po files
+pnpm lingui:check
 ```
 
 ## Key Exports
 
-```typescript
-import { LocaleProvider, supportedLanguages, resolveLanguage, defaultLanguage,
-         languageNativeLabels, localeCookieName } from "@carbon/locale";
-```
+| Subpath | Provides |
+|---------|----------|
+| `.` | `LocaleProvider`, `SupportedLanguage`, `supportedLanguages`, `languageNativeLabels`, `defaultLanguage`, `localeCookieName`, `resolveLanguage`, `getSortedLanguageSelectOptions` |
 
-- `LocaleProvider` — wraps app in Lingui `I18nProvider` with per-render runtime
-- `resolveLanguage(locale)` — normalizes locale string to `SupportedLanguage`
-- `supportedLanguages` — `["en","fr","de","es","it","ja","pl","pt","ru","zh","hi","tr"]`
-- Catalogs live at `packages/locale/locales/{locale}/{erp,mes}.po`
+Supported runtime locales are `en`, `fr`, `de`, `es`, `it`, `ja`, `pl`, `pt`, `ru`, `zh`, `hi`, `tr`, and `ko`. Catalogs live at `packages/locale/locales/{locale}/{erp,mes}.po`.
+
+## Catalog Workflow
+
+1. Mark with `useLingui().t`, `<Trans>`, or `msg`.
+2. Run `pnpm lingui:extract`.
+3. Run `pnpm translate` to fill non-English catalogs using the approved glossary.
+4. Run `pnpm lingui:clean` to remove diff-noisy headers/origin references.
+5. Run `pnpm lingui:compile` or `pnpm lingui:check`; generated `.mjs` remains untracked.
 
 ## Cross-References
 
-- `.claude/rules/i18n-lingui-system.md` — full i18n system docs, marking patterns, gotchas
-- `lingui.config.js` (root) — catalog config, source paths, locale list
-- `@carbon/glossary` — terms use `msg` descriptors for i18n
-- `apps/{erp,mes}/app/services/lingui.server.ts` — server-side catalog loading
+- `.claude/rules/i18n-lingui-system.md` — catalog sources, macro patterns, server loading, and gotchas.
+- `lingui.config.js` — source paths and locale catalog definitions.
+- `packages/locale/locales/glossary.json` and `@carbon/glossary` — approved manufacturing terminology.
+- `apps/{erp,mes}/app/services/lingui.server.ts` — request-language resolution and catalog loading.

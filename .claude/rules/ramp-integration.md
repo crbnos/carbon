@@ -1,11 +1,12 @@
 ---
 paths:
   - packages/ee/src/ramp/**
-  - packages/jobs/src/inngest/functions/integrations/ramp-sync.ts
+  - packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts
   - packages/jobs/src/inngest/functions/integrations/ramp-sweep.ts
   - packages/database/supabase/functions/post-card-transaction/**
   - apps/erp/app/modules/invoicing/ui/CardTransaction/**
   - apps/erp/app/routes/x+/invoicing+/card-transactions*.tsx
+  - apps/erp/app/routes/api+/integrations.ramp.oauth.ts
   - apps/erp/app/routes/api+/webhook.ramp.$companyId.ts
 ---
 
@@ -58,9 +59,9 @@ providers, which own the data and mirror it out.
 ## Pieces
 
 - **Config** — `packages/ee/src/ramp/config.tsx`: `defineIntegration` (id `"ramp"`,
-  category "Spend Management", `active: true`). `RampSettingsSchema` is flat: connection
-  (`clientId`, optional `clientSecret` — blank means "keep the vaulted secret",
-  `environment` production|sandbox, optional `entityId`), account mapping
+  category "Spend Management", active only when public `RAMP_CLIENT_ID` is configured).
+  The UI connection is the production OAuth `oauth` block; the form carries no customer
+  client credentials. `RampSettingsSchema` is flat: optional `entityId`, account mapping
   (`cardLiabilityAccountId` + `statementBankAccountId` **required**;
   `cashbackIncomeAccountId`, `reimbursementBankAccountId` optional),
   `codingAccountScope` (`"expense"` default | `"all"` — which accounts Ramp's coding
@@ -71,8 +72,10 @@ providers, which own the data and mirror it out.
 - **Client** — `lib/client.ts`: `RampClient` over the Ramp Developer API v1. Host is
   `https://api.ramp.com` (production) or `https://demo-api.ramp.com` (sandbox), chosen
   from `credentials.environment`. `client_credentials` grant mints/caches a bearer token
-  (`POST /developer/v1/token`, Basic auth, re-mint under 60s remaining); `oauth2` returns
-  the stored token and throws if expired (refresh not implemented). `listPaginated`
+  (`POST /developer/v1/token`, Basic auth, re-mint under 60s remaining). `oauth2` exchanges
+  authorization codes and refreshes within the same margin; `buildRampClient` supplies the
+  Carbon OAuth app plus an `onTokensRefreshed` callback that atomically persists the new
+  access token and expiry. Ramp does not rotate the refresh token. `listPaginated`
   drains cursor pages (`page.next`, `page_size=100`) parsing each row with a passthrough
   zod schema. Errors: `RampApiError` (parses the `error_v2` envelope) and
   `RampRateLimitError` (429 → parsed `Retry-After`); **no in-client retries** — retries
@@ -86,14 +89,16 @@ providers, which own the data and mirror it out.
   `currency.decimalPlaces`, never a literal). `RampIntegrationMetadataSchema` is the shape
   stored on `companyIntegration.metadata` (see Metadata below). `RampCredentialsSchema` is
   a discriminated union on `type` (`client_credentials` | `oauth2`).
-- **Service** — `lib/service.ts` (`@carbon/ee/ramp.server`): the server-only glue. Every
-  function takes a **service-role** supabase client + `companyId`, resolves vaulted
-  secrets (`resolveIntegrationSecrets`), and builds a `RampClient`. Key exports:
-  `getRampIntegration`, `ensureRampConnection`, `pushChartOfAccounts`, `pushCostCenters`,
-  `ensureRampWebhook`, `completeWebhookVerification`, `advanceRampCursor`, `confirmSyncs`,
-  `resolveRampSupplier`, `resolveEmployeeSupplier`, `scaleRepaymentLines` (pure),
-  `pushPurchaseOrder`, `pushInvoiceDraftBill`, `archiveRampBillForInvoice`. Plus pure
-  helpers `rampClassificationForClass` and `chunk`.
+- **Server domains** — `lib/service.ts` is a stable compatibility facade, not an
+  implementation monolith. `connection.ts` owns metadata reads, client construction, OAuth
+  exchange and the accounting connection; `chart-of-accounts.ts` and `cost-centers.ts` own
+  coding-master convergence; `suppliers.ts` owns accounting/merchant/employee supplier
+  resolution; `spend.ts` owns Ramp spend vendors, PO push and draft-bill push/archive;
+  `sync-confirmation.ts` owns confirm payloads; `webhooks.ts` owns remote webhook lifecycle;
+  and `state.ts` owns atomic metadata/Vault patches. `lib/index.ts` plus the facade preserve
+  the public `@carbon/ee/ramp.server` contract. Pure allocation, coding, money and signature
+  helpers remain in their named modules. Service-role operations take the caller's client and
+  company id; pure helpers do not pretend to require database context.
 - **Webhook signature** — `lib/webhook.ts`: `verifyRampWebhookSignature({signature, body,
   secret})` — HMAC-SHA256 over the RAW body, base64, constant-time compare, fail-closed.
   Consumed by the webhook route (see "The webhook route" below).
@@ -101,21 +106,25 @@ providers, which own the data and mirror it out.
   `rampHealthcheck`, registered in `packages/ee/src/hooks.server.ts` under `ramp`. Cloned
   from the Rillet hook shape.
 
-## Auth: client-credentials AND OAuth (Connect flow)
+## Auth: signed Connect flow + token refresh
 
-`RampCredentialsSchema` (`lib/models.ts`) is a discriminated union on `type`:
-`client_credentials` (`clientId`/`clientSecret`) and `oauth2`
-(`accessToken`/`refreshToken`/`expiresAt`). **Both are wired.**
+`RampCredentialsSchema` (`lib/models.ts`) retains both `client_credentials` and `oauth2`
+for stored-data compatibility, but the settings UI exposes only OAuth Connect.
 
 - **OAuth "Connect to Ramp" (production, primary)**: `config.tsx` declares an
   `oauth` block, so `IntegrationCard` renders a one-click Connect that redirects
-  to `https://api.ramp.com/v1/authorize` (scopes incl. `offline_access`). The
-  callback `apps/erp/app/routes/api+/integrations.ramp.oauth.ts` calls
-  `exchangeRampOAuthCode` → stores `type: "oauth2"` creds via
-  `upsertCompanyIntegration` (vaults access+refresh) → `rampOnInstall`. Account
-  mapping happens afterwards in the Details drawer. Carbon's OAuth app id/secret
+  to `https://app.ramp.com/v1/authorize` (scopes incl. `offline_access`). The settings
+  loader first calls `issueOAuthState({integrationId:"ramp",userId,companyId})` from
+  `@carbon/auth/oauth-state.server`; the random nonce and binding fields live in the
+  signed, HttpOnly, 10-minute `carbon-oauth-state` cookie. The callback consumes and
+  destroys that cookie before code exchange, rejecting expiry, replay, or integration/
+  user/company mismatch with stable `invalid-state` UI copy. It then calls
+  `exchangeRampOAuthCode` → `patchRampOAuthCredentials` → `rampOnInstall`. The patch
+  replaces only OAuth-owned paths, preserves settings/runtime state, and stores access +
+  refresh tokens in Vault. Account mapping happens afterwards in the Details drawer.
+  Carbon's OAuth app id/secret
   are env (`RAMP_CLIENT_ID`/`RAMP_CLIENT_SECRET`), read lazily from `process.env`
-  in `service.ts` (never `import "@carbon/env"` there — it eagerly validates
+  in `connection.ts` (never `import "@carbon/env"` there — it eagerly validates
   unrelated required vars and breaks server-only tests).
 - **Token refresh**: `RampClient.getAccessToken` runs the `refresh_token` grant
   when an oauth2 access token is within the refresh margin. Ramp does NOT rotate
@@ -123,19 +132,20 @@ providers, which own the data and mirror it out.
   persists the new access token + expiry only. The OAuth app creds are passed
   into `RampClient` via its `RampClientOptions` (client.ts stays env-free — it is
   client-bundled). Pinned by `lib/__tests__/client.test.ts`.
-- **client-credentials (advanced / sandbox / self-hosted)**: the `clientId`/
-  `clientSecret` settings are now optional; a customer creating their own API app
-  still works. All sandbox verification to date used this path.
+- **Legacy client credentials**: `RampClient` can still read existing
+  `client_credentials` metadata, but `RampSettingsSchema` has no id/secret fields and the
+  UI cannot create a new client-credentials install.
 
 ## Install / converge (hooks.server.ts)
 
-`convergeRamp` runs on install (with a fired initial sync) and on every settings save
-(`onUpdate`, no initial sync): validate credentials up front via `client.getBusiness()`
-(a bad client id/secret fails the install with a clear message), then
-`ensureRampConnection` → `pushChartOfAccounts` → `pushCostCenters` → `ensureRampWebhook`.
-Install additionally fires `trigger("ramp-sync", { companyId, reason: "install" })` — and
-does so through a **lazy runtime `import("@carbon/jobs")`** because `jobs → ee` is the only
-allowed dependency direction (ee must never import jobs).
+`convergeRamp` runs on install and every settings save. It validates credentials with
+`client.getBusiness()`, ensures the accounting connection, and best-effort registers the
+webhook first. A fresh OAuth callback has no required accounts, so it returns here: it does
+**not** push master data or start financial sync before both `cardLiabilityAccountId` and
+`statementBankAccountId` exist. Once configured, it validates an optional `entityId`, pushes
+CoA/cost centers, and fires `trigger("ramp-sync", {companyId, reason})`. A reconnect whose
+atomic OAuth patch preserved valid mappings may therefore converge immediately. The trigger
+uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the dependency direction.
 
 - `pushChartOfAccounts` pushes active, non-group accounts as Ramp coding options
   (`POST /accounting/accounts`, `id` = Carbon `account.id`, batched at
@@ -181,32 +191,43 @@ allowed dependency direction (ee must never import jobs).
   worktree against the sandbox) fails the install hook — adopt the existing connection id
   (`GET /accounting/connection`) into `metadata.connectionId` by hand until it self-heals.
 - `ensureRampWebhook` is idempotent (skips when `metadata.webhookId` set); on create it
-  persists `webhookId` to the plaintext metadata column and the returned signing `secret`
-  to the vault (`webhookSecret`) via `persistIntegrationSecrets` (the vault RPC REPLACES,
-  so the full secret bag is re-vaulted).
+  writes `webhookId` and the vaulted `webhookSecret` together through `patchRampWebhook`.
 - `rampOnUninstall` best-effort deletes the webhook and the accounting connection
-  (tolerating already-gone). `rampHealthcheck` = `getBusiness()` succeeds AND at least one
+  (tolerating already-gone), then `clearRampConnectionState` removes connection/webhook
+  ids and the webhook secret without disturbing OAuth credentials/settings/cursors.
+  `rampHealthcheck` = `getBusiness()` succeeds AND at least one
   accounting connection is `linked`/`active`/`connected`.
 
 ## Metadata (`companyIntegration.metadata`, id `ramp`)
 
-`RampIntegrationMetadata`: `credentials` (vaulted secrets resolved on read),
+`RampIntegrationMetadata`: `credentials` (access/refresh/client secrets vaulted and resolved on read),
 `cardLiabilityAccountId`, `statementBankAccountId`, `cashbackIncomeAccountId`,
 `reimbursementBankAccountId`, `entityId`, `connectionId`, `webhookId`, `webhookSecret`,
 `sync` (the five flags), and **`cursors`**:
 `cursors.repaymentsRepaidAt`, `cursors.purchaseOrderPushUpdatedAt`,
-`cursors.invoicePushUpdatedAt`. Non-secret keys (`connectionId`, `webhookId`, cursors)
-are written via a read-merge-write against the raw metadata column
-(`updateStoredRampMetadata` / `advanceRampCursor`) so no sibling key or vaulted secret is
-clobbered; secret keys go through `persistIntegrationSecrets`.
+`cursors.invoicePushUpdatedAt`.
 
-## The sync loop (`ramp-sync.ts`, Inngest)
+All Ramp writes go through `upsert_company_integration_patch`, exposed by
+`patchIntegrationState` and the operation-specific functions in `lib/state.ts`. The RPC is
+service-role-only, takes flat dot-path patch/removal maps, advisory-locks the logical
+`(companyId,integrationId)` key, locks an existing row, and writes plaintext metadata,
+Vault, `secretRef`, activation, and audit fields in one PostgreSQL transaction. Settings
+owns only entity/account/scope/toggle paths; OAuth owns its credential set; refresh owns
+access token + expiry; connection/webhook and each cursor own only their paths. Never
+reintroduce raw read/merge/write or a whole-object Vault replacement.
 
-`rampSyncFunction` (id `ramp-sync`, event `carbon/ramp-sync`, trigger key `"ramp-sync"` in
-`packages/lib/src/trigger.ts`; `retries: 2`, `concurrency: { key companyId, limit 1 }`).
-One function per company; each Ramp **family** is its own `step.run` wrapped in try/catch
-so one family's failure never aborts the others (FAMILY-FAILURE ISOLATION). Families, in
-order:
+## The sync loop (`ramp-sync*.ts`, Inngest)
+
+`ramp-sync.ts` is the thin durable coordinator for `rampSyncFunction` (id `ramp-sync`, event
+`carbon/ramp-sync`, trigger key `"ramp-sync"` in `packages/lib/src/trigger.ts`; `retries: 2`,
+`concurrency: { key companyId, limit 1 }`). It creates `RampSyncContext`, runs the fixed
+`step.run` sequence, totals failures, and notifies. Business workflows live in
+`ramp-sync-card.ts`, `ramp-sync-bill.ts`, `ramp-sync-reimbursement-family.ts`,
+`ramp-sync-repayment.ts`, and `ramp-sync-outbound.ts`; shared tenant/currency/file helpers
+live in `ramp-sync-shared.ts`. Pure policy and cursor contracts remain in their dedicated
+files, while `ramp-sync-payment.ts` and `ramp-sync-reimbursement.ts` own transactional
+staging/resume behavior. Family modules contain their own failure isolation, so one family
+does not abort the others. Durable steps remain, in order:
 
 | Step | Family | Becomes | syncType (confirm) |
 |------|--------|---------|--------------------|
@@ -221,10 +242,16 @@ order:
 
 Card families create a **Draft** `cardTransaction` (+ lines), post it via the
 `post-card-transaction` edge function, link the mapping, and attach Ramp receipts
-(non-fatal). Bills/reimbursements insert a Draft `purchaseInvoice` (or convert a mapped
-PO for a PO-linked bill) and post it via `post-purchase-invoice`; bill payments and
-Ramp-paid reimbursements post an AP `payment` via `post-payment`. All writes attribute to
-`"system"`. Gating: `metadata.sync.pull*` flags; `cardLiabilityAccountId` (required for
+(non-fatal). Bills insert a Draft `purchaseInvoice` (or convert a mapped PO for a
+PO-linked bill) and post it via `post-purchase-invoice`. Bill payments delegate to
+`syncRampBillPayment` in `ramp-sync-payment.ts`: the Draft payment, settlement, and Ramp
+mapping are staged atomically, the stored source-FX snapshot is retained on resume, and
+success requires a tenant-scoped reread showing Posted. Reimbursements delegate to
+`syncRampReimbursement` in `ramp-sync-reimbursement.ts`: a company/Ramp-id advisory lock
+serializes the atomic supplier-interaction + Draft invoice + delivery + lines + mapping
+stage, and Ramp-paid rows also require their AP payment to be observably Posted before
+confirm. All writes attribute to `"system"`. Gating: `metadata.sync.pull*` flags;
+`cardLiabilityAccountId` (required for
 every card family); `statementBankAccountId` (transfers, bill payments, repayments);
 `cashbackIncomeAccountId` (cashbacks). A configured `entityId` is enforced locally on
 every inbound row before mapping or writes; only endpoints with a verified query contract
@@ -235,7 +262,7 @@ ambiguous values fail that item instead of becoming zero. The currency's authori
 `decimalPlaces` is read once per code and cached.
 
 **FX (foreign-per-base convention).** `exchangeRate` everywhere here is the
-`get_exchange_rate` foreign-per-base rate (`getExchangeRate(ctx, code)`, cached;
+`get_exchange_rate` foreign-per-base rate (`getRampExchangeRate(ctx, code)`, cached;
 base → 1). A missing/invalid currency precision or exchange rate fails the affected
 item; Ramp sync never guesses two decimals or posts foreign currency at par. The card
 journal converts document→base by DIVIDING via the shared `toBaseAmount`
@@ -315,11 +342,14 @@ repayment with no source basis is rejected rather than fabricated. Funding:
 ### Outbound: the draft-bill-only rule
 
 `ramp-outbound` (gated by `pushPurchaseOrders` / `pushInvoices`) is cursor-driven
-(`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`, same failed-holds-back shape):
+(`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`). These string metadata slots hold
+JSON-encoded `[updatedAt,id]` keysets; legacy timestamp-only values replay their boundary
+inclusively. Each page advances only across its contiguous successful prefix, so a failed
+row and every row after it remain eligible on the next run.
 
 - **POs** (`pushPurchaseOrder`): Completed/Closed mapped POs are archived; released POs
-  ensure a Ramp vendor then create (carrying `remote_id: po.id` for Ramp's bill-matching)
-  or PATCH.
+  ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
+  bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO.
 - **Invoices** (`pushInvoiceDraftBill`): posted invoices still Open/Partially Paid, not
   already mapped in either direction, not an Employee-supplier reimbursement, are pushed
   as a **draft bill then SUBMITted** (`POST /bills/drafts` + `/submit`, landing in Ramp
@@ -340,36 +370,35 @@ company with an ACTIVE `ramp` integration and fires one `carbon/ramp-sync`
 disabled webhook delivery becomes ≤1h of staleness, never permanent loss. `ramp-sync` is
 idempotent, so re-firing is safe.
 
-## cardTransaction schema (migration `20260820143726_ramp-integration.sql`)
+## cardTransaction schema (migration `20260911041045_reconcile-ramp-card-transactions.sql`)
 
-A payment-shaped document that **deliberately mirrors the `payment` sibling**, NOT the
-composite-PK table template: **single-column TEXT PK** (`xid()`), Draft→Posted→Voided
-lifecycle. Migration also seeds the `integration` registry row (`ramp`), adds the journal
-enum values `'Card Transaction'` (to `journalEntrySourceType` + `journalLineDocumentType`),
-the `cardTransactionType` (Charge/Credit/Payment/Cashback/Repayment) and
-`cardTransactionStatus` (Draft/Posted/Voided) enums, and a per-company `cardTransaction`
-sequence (`CARD-%{yyyy}-%{mm}-`). The migration is **not transactional and must be
-idempotent** (every statement guarded) — the deploy runner retries a failed file over
-partial state.
+The forward, retry-safe reconciliation migration supersedes the three branch-only Ramp
+schema migrations. Both `cardTransaction` and `cardTransactionLine` use composite
+`(id, companyId)` primary keys with `id()` defaults. The parent, supplier, and cost-center
+relationships are tenant-composite; account triggers require header and line accounts to
+belong to the company's `companyGroupId`. It also converges the Ramp registry row, journal
+enum values, document enums, indexes, RLS, event trigger, and the per-company
+`CARD-%{yyyy}-%{mm}-` sequence.
 
 - `cardTransaction`: `cardTransactionId` (readable, unique per company), `type`, `status`,
   `integration` (default `'ramp'`), `cardAccountId` (NOT NULL FK `account`), `offsetAccountId`
   (nullable FK), merchant/holder/last4/memo, `transactionDate`/`postingDate` (DATE),
   `currencyCode`, `exchangeRate`, `amount` (`>= 0`), `journalId`, posted/voided audit.
   CHECK: Payment/Cashback/Repayment require an `offsetAccountId`; Charge/Credit use lines.
-- `cardTransactionLine`: codes an `amount` to an `accountId` (+ optional `costCenterId`),
-  `sequence`, `ON DELETE CASCADE` from the header.
-- RLS on both is gated by the **invoicing** module permissions (mirrors `payment` /
-  `invoiceSettlement`). DELETE is restricted to `Draft`; line writes additionally require
-  the parent header to be Draft.
+- `cardTransactionLine`: codes an `amount` to an `accountId` (+ optional tenant-composite
+  `costCenterId`), `sequence`, and a same-company parent with `ON DELETE CASCADE`.
+- RLS on both is gated by **invoicing** permissions. The lifecycle trigger allows only
+  Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided audit fields. The line
+  trigger locks the same parent row as posting and refuses mutation unless it is Draft, so
+  line edits and post/void serialize rather than race.
 
 ## Card transactions → the accounting provider
 
-Since `20260910183955_ramp-card-transaction-supplier-and-event-trigger.sql`,
-`cardTransaction` carries **`supplierId`** and an **event trigger**
-(`attach_event_trigger('cardTransaction', …)`, the `payment` precedent). The card
+The forward reconciliation migration gives `cardTransaction` a tenant-composite
+**`supplierId`** foreign key and an **event trigger**
+(`attach_event_trigger('cardTransaction', …)`). The card
 family resolves the Ramp merchant to a Carbon supplier before posting —
-`resolveMerchantSupplier` (`lib/service.ts`): mapping-first under entityType
+`resolveMerchantSupplier` (`lib/suppliers.ts`): mapping-first under entityType
 `"merchant"` keyed by Ramp `merchant_id`, then a case-insensitive `supplier.name`
 match, then auto-create tagged with the `"Card Merchant"` supplier type (it delegates to
 `resolveRampSupplier`, which now takes `{ entityType, supplierTypeId }`). A transaction
@@ -384,9 +413,16 @@ rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider
 
 `packages/database/supabase/functions/post-card-transaction/` (registered in
 `config.toml`, `verify_jwt = true`). `{ type: "post" | "void", cardTransactionId, userId,
-companyId }`. Kysely transaction with a `FOR UPDATE` lock + status re-assert (TOCTOU guard).
+companyId }`. `postCardTransactionTransaction` opens one Kysely transaction and performs
+the tenant-scoped header `FOR UPDATE` as its first read; every settings, company, line,
+account, period, journal, dimension, and lifecycle write stays inside that transaction.
+Repeated post of Posted or void of Voided returns the stored journal id without another
+journal. The database parent-locking line trigger takes the same lock, closing the line-edit
+race.
 
-- **post**: only from Draft. Resolves the accounting period (shifts a Locked/Closed period
+- **post**: only from Draft. Requires company settings/config, active non-group posting
+  accounts in the company group, a Liability card account, Asset payment offset, Revenue
+  cashback offset, and company-scoped cost centers. Resolves the accounting period (shifts a Locked/Closed period
   forward to the next open period, writing the shifted `postingDate` back). When
   `companySettings.accountingEnabled`, builds the journal (`sourceType`/`documentType`
   `'Card Transaction'`) and writes cost-center `journalLineDimension`s against the
@@ -396,8 +432,11 @@ companyId }`. Kysely transaction with a `FOR UPDATE` lock + status re-assert (TO
   active Cost Center dimension") rather than posting a balanced journal that silently
   lost the tag — `pushCostCenters` creates the row for installed integrations, so this
   only fires for a company posting card transactions without the Ramp converge.
-- **void**: only from Posted. Emits a reversing journal (negated amounts, carrying the
-  original lines' dimensions) and flips to Voided.
+- **void**: only from Posted. When a journal exists, requires accounting enabled and proves
+  the original company-scoped journal is Posted, source type `Card Transaction`, and every
+  line points back to this document. It writes a new Posted reversal with negated amounts
+  and copied dimensions, then flips the document to Voided. Documents posted while
+  accounting was disabled have no journal and void without fabricating one.
 
 ### The journal builder (`build-card-transaction-journal.ts`)
 
@@ -424,7 +463,9 @@ account is **always booked as a LIABILITY** (a credit card is money owed). The f
   "post-card-transaction", { type: "void" })`).
 - Components: `apps/erp/app/modules/invoicing/ui/CardTransaction/` —
   `CardTransactionsTable.tsx`, `CardTransactionStatus.tsx`, `index.ts`. Service:
-  `getCardTransaction` / `getCardTransactions` in `invoicing.service.ts`.
+  `getCardTransaction(client, companyId, id)` / `getCardTransactions` in
+  `invoicing.service.ts`. Detail, line, document, and cost-center reads are company-scoped;
+  account labels are resolved only from the authenticated company's group.
 
 ## The webhook route
 
@@ -447,13 +488,15 @@ correctness guarantee**; the webhook is latency only.
 - **One active connection per company.** The metadata carries a single `connectionId` /
   `webhookId`; `ensureRampConnection` creates one connection (`remote_provider_name:
   "Carbon"`) and reuses it — there is no multi-connection support.
-- **Sandbox** = `demo-api.ramp.com` (`RAMP_SANDBOX_HOST`), selected by the
-  `environment: "sandbox"` setting. Client-credentials tokens are minted per host.
-- **`// TODO(task-1)` field-name uncertainties**: numerous Ramp API strings/shapes
-  (sync-status values, `payment_method`/reimbursement-`state`/repayment-`status` enums,
-  bill `vendor` shape, whether transaction `amount` is minor-units, several POST bodies,
-  the webhook signing encoding) are documented defaults pending live-sandbox verification.
-  Grep `TODO(task-1)` in `packages/ee/src/ramp/**` and `ramp-sync.ts` before relying on a
-  specific value.
+- **Sandbox** = `demo-api.ramp.com` (`RAMP_SANDBOX_HOST`) for a stored legacy
+  `client_credentials` record. The current Connect UI creates production OAuth records and
+  exposes no environment selector.
+- **`// TODO(task-1)` API uncertainties remain narrowly source-marked**: paid-bill and
+  repayment enum values, the bill vendor and draft-bill payload/submit shapes, converted
+  PO-line reconciliation, the all-connections/accounts endpoints, and the webhook
+  challenge/signing contract. Transaction amount/coding behavior is verified and is not
+  part of that unresolved list. Grep `TODO(task-1)` in `packages/ee/src/ramp/**` and
+  `packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts` before relying on one
+  of the remaining values.
 - There is **no `apps/erp/app/modules/invoicing/AGENTS.md`** to cross-reference.
 - **User-facing docs (`docs/`) are a separate follow-up** — not written here.
