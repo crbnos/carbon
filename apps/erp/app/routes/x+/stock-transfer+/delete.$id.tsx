@@ -8,6 +8,7 @@ import {
   getStockTransfer,
   isStockTransferLocked
 } from "~/modules/inventory";
+import { friendlyConstraintError } from "~/utils/errors";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -33,14 +34,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const mutation = await deleteStockTransfer(client, id);
   if (mutation.error) {
+    const message = friendlyConstraintError(mutation.error, {
+      entityName: "Stock transfer"
+    });
     return data(
       {
         success: false
       },
-      await flash(
-        request,
-        error(mutation.error, "Failed to delete stock transfer")
-      )
+      await flash(request, error(mutation.error, message))
     );
   }
 
