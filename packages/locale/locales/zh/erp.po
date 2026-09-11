@@ -2444,6 +2444,10 @@ msgstr "你确定要向这些用户发送邀请吗？"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "你确定要向此用户发送邀请吗？"
 
+#. placeholder {0}: initialValues.memoId
+msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "您确定要作废此采购发票吗？此操作将反转所有财务交易，无法撤销。"
 
@@ -18890,6 +18894,10 @@ msgstr "在用户的公开资料中可见"
 
 msgid "Void"
 msgstr "作废"
+
+#. placeholder {0}: initialValues.memoId
+msgid "Void {0}"
+msgstr ""
 
 msgid "Void Invoice"
 msgstr "作废发票"

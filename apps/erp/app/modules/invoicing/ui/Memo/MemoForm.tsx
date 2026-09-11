@@ -41,7 +41,7 @@ import {
   Supplier,
   TextArea
 } from "~/components/Form";
-import { ConfirmDelete } from "~/components/Modals";
+import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
@@ -65,7 +65,6 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
   );
   const permissions = usePermissions();
   const post = useFetcher();
-  const voidFetcher = useFetcher();
   const isEditing = Boolean(initialValues.id);
   const status = initialValues.status as
     | "Draft"
@@ -76,6 +75,7 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
   const canMutate = permissions.can("update", "invoicing");
   const canDelete = permissions.can("delete", "invoicing");
   const deleteModal = useDisclosure();
+  const voidModal = useDisclosure();
 
   // Party type is a UI-only toggle — NOT a validator field. It switches which of
   // customerId/supplierId is shown; the hidden one stays empty. A memo can be for
@@ -138,14 +138,8 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
                   <Button
                     leftIcon={<LuTicketX />}
                     variant="destructive"
-                    isLoading={voidFetcher.state !== "idle"}
                     isDisabled={!canMutate}
-                    onClick={() =>
-                      voidFetcher.submit(null, {
-                        method: "post",
-                        action: path.to.memoVoid(initialValues.id!)
-                      })
-                    }
+                    onClick={voidModal.onOpen}
                   >
                     <Trans>Void</Trans>
                   </Button>
@@ -260,6 +254,18 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
           text={t`Are you sure you want to delete ${initialValues.memoId}? This cannot be undone.`}
           onCancel={deleteModal.onClose}
           onSubmit={deleteModal.onClose}
+        />
+      )}
+      {voidModal.isOpen && (
+        <Confirm
+          action={path.to.memoVoid(initialValues.id!)}
+          isOpen={voidModal.isOpen}
+          title={t`Void ${initialValues.memoId}`}
+          text={t`Are you sure you want to void ${initialValues.memoId}? This reverses its ledger entries and cannot be undone.`}
+          confirmText={t`Void`}
+          confirmVariant="destructive"
+          onCancel={voidModal.onClose}
+          onSubmit={voidModal.onClose}
         />
       )}
     </>

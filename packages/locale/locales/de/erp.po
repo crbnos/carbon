@@ -2444,6 +2444,10 @@ msgstr "Sind Sie sicher, dass Sie eine Einladung an diese Benutzer senden möcht
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Sind Sie sicher, dass Sie eine Einladung an diesen Benutzer senden möchten?"
 
+#. placeholder {0}: initialValues.memoId
+msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Sind Sie sicher, dass Sie diese Eingangsrechnung stornieren möchten? Diese Aktion kehrt alle Finanztransaktionen um und kann nicht rückgängig gemacht werden."
 
@@ -18890,6 +18894,10 @@ msgstr "Sichtbar im öffentlichen Profil eines Benutzers"
 
 msgid "Void"
 msgstr "Stornieren"
+
+#. placeholder {0}: initialValues.memoId
+msgid "Void {0}"
+msgstr ""
 
 msgid "Void Invoice"
 msgstr "Rechnung stornieren"

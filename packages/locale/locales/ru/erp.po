@@ -2444,6 +2444,10 @@ msgstr "Вы уверены, что хотите отправить пригла
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Вы уверены, что хотите отправить приглашение этому пользователю?"
 
+#. placeholder {0}: initialValues.memoId
+msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Вы уверены, что хотите аннулировать этот счет-фактуру полученный? Это действие отменит все финансовые операции и не может быть отменено."
 
@@ -18890,6 +18894,10 @@ msgstr "Видно в общедоступном профиле пользова
 
 msgid "Void"
 msgstr "Аннулировать"
+
+#. placeholder {0}: initialValues.memoId
+msgid "Void {0}"
+msgstr ""
 
 msgid "Void Invoice"
 msgstr "Аннулировать счет-фактуру"

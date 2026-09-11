@@ -2444,6 +2444,10 @@ msgstr "Czy na pewno chcesz wysłać zaproszenie do tych użytkowników?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Czy na pewno chcesz wysłać zaproszenie temu użytkownikowi?"
 
+#. placeholder {0}: initialValues.memoId
+msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Czy chcesz unieważnić tę fakturę zakupu? Ta czynność odwróci wszystkie transakcje finansowe i nie można jej cofnąć."
 
@@ -18890,6 +18894,10 @@ msgstr "Widoczne w publicznym profilu użytkownika"
 
 msgid "Void"
 msgstr "Unieważnij"
+
+#. placeholder {0}: initialValues.memoId
+msgid "Void {0}"
+msgstr ""
 
 msgid "Void Invoice"
 msgstr "Unieważnij fakturę"

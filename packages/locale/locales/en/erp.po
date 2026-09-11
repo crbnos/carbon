@@ -2444,6 +2444,10 @@ msgstr "Are you sure you want to send an invite to these users?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Are you sure you want to send an invite to this user?"
 
+#. placeholder {0}: initialValues.memoId
+msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+msgstr "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 
@@ -18890,6 +18894,10 @@ msgstr "Visible on a user's public profile"
 
 msgid "Void"
 msgstr "Void"
+
+#. placeholder {0}: initialValues.memoId
+msgid "Void {0}"
+msgstr "Void {0}"
 
 msgid "Void Invoice"
 msgstr "Void Invoice"

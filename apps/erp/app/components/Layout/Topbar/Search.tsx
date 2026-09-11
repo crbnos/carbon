@@ -296,16 +296,28 @@ export const SearchModal = () => {
                             <RxMagnifyingGlass className="w-4 h-4 text-muted-foreground" />
                           )}
                         </ResultIconContainer>
-                        <VStack spacing={0} className="flex-1 min-w-0">
-                          <span className="font-medium truncate">
-                            {result.name}
-                          </span>
-                          {result.description && (
-                            <span className="text-sm text-muted-foreground truncate">
-                              {result.description}
+                        {result.module && !result.entityType ? (
+                          <span className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+                            <span className="text-muted-foreground capitalize truncate">
+                              {result.module}
                             </span>
-                          )}
-                        </VStack>
+                            <LuChevronRight className="w-3 h-3 flex-shrink-0 text-muted-foreground/60" />
+                            <span className="text-foreground truncate">
+                              {result.name}
+                            </span>
+                          </span>
+                        ) : (
+                          <VStack spacing={0} className="flex-1 min-w-0">
+                            <span className="font-medium truncate">
+                              {result.name}
+                            </span>
+                            {result.description && (
+                              <span className="text-sm text-muted-foreground truncate">
+                                {result.description}
+                              </span>
+                            )}
+                          </VStack>
+                        )}
                         <button
                           type="button"
                           onClick={(e) => removeRecentSearch(result.to, e)}
