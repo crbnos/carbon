@@ -339,7 +339,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} 已选择"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
@@ -348,7 +348,7 @@ msgid "{total} phases to go live"
 msgstr "{total}个阶段即可正式运行"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} 个结果"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
@@ -1343,10 +1343,10 @@ msgid "Add from library…"
 msgstr "从库中添加…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "从收货添加"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "从发货添加"
 
 msgid "Add Group"
 msgstr "添加组"
@@ -1370,7 +1370,7 @@ msgid "Add lines from document"
 msgstr "从文档添加行"
 
 msgid "Add manually"
-msgstr ""
+msgstr "手动添加"
 
 msgid "Add match"
 msgstr "添加匹配"
@@ -1623,7 +1623,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "所有可退货行"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
@@ -2878,7 +2878,7 @@ msgid "Batches"
 msgstr "批次"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "要退货的生产批次"
 
 msgid "Batching"
 msgstr "分批"
@@ -3498,7 +3498,7 @@ msgid "Choose another file"
 msgstr "选择另一个文件"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "选择如何向此退货添加行。"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
@@ -6693,7 +6693,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "自己输入物料和数量。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入和审批供应商账单与采购单进行三单匹配"
@@ -9451,10 +9451,10 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "一旦采购订单收货已过账，行将出现在此处，且仅适用于尚未在另一份供应商退货上授权的数量。使用添加行项进行盲退货。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "一旦销售订单发货已过账，行将出现在此处，且仅适用于尚未在另一个RMA上授权的数量。使用添加行项进行盲退货。"
 
 msgid "Lines need internal part numbers"
 msgstr "行需要内部零件号"
@@ -10311,7 +10311,7 @@ msgid "Morning, {name}."
 msgstr "早上，{name}。"
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "最近的 — 搜索以查找更多"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
@@ -10760,7 +10760,7 @@ msgid "New Workflow"
 msgstr "新工作流"
 
 msgid "Newer device"
-msgstr ""
+msgstr "较新设备"
 
 msgid "Newest first"
 msgstr "最新优先"
@@ -10884,7 +10884,7 @@ msgid "No batches"
 msgstr "无生产批次"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "尚未选择生产批次。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
@@ -11217,13 +11217,13 @@ msgid "No results found"
 msgstr "未找到结果"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "此客户没有可退货行"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "此供应商没有可退货行"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "没有可退货行与您的搜索匹配"
 
 msgid "No rows here."
 msgstr "这里没有行。"
@@ -11235,7 +11235,7 @@ msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "尚未选择序列号。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
@@ -12397,13 +12397,13 @@ msgid "Pick serials/batches to return"
 msgstr "选择要退货的序列号/批次"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "拣货该供应商收到的现有生产批次。"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "选择需要库存的料箱，然后选择要从中拣货的料箱。"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "拣货该供应商收到的现有序列号。"
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -13082,7 +13082,7 @@ msgid "Purchase Qty"
 msgstr "采购数量"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "采购退货"
 
 msgid "Purchase Tax Payable"
 msgstr "应付采购税（默认）"
@@ -14568,7 +14568,7 @@ msgid "Sales Person"
 msgstr "销售人员"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "销售退货"
 
 msgid "Sales Revenue"
 msgstr "销售收入"
@@ -14815,10 +14815,10 @@ msgid "Search by linear issue title..."
 msgstr "按线性问题标题搜索..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "按收货、采购订单或物料搜索"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "按发货、销售订单或物料搜索"
 
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
@@ -15065,10 +15065,10 @@ msgid "Select operations"
 msgstr "选择工序"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "选择来自此供应商的已过账收货行以退货。"
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "选择发往此客户的已过账发货行以退货。"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -15204,7 +15204,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "要退货的序列号"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
@@ -15261,10 +15261,10 @@ msgid "Session locked"
 msgstr "会话已锁定"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "在此退货上设置客户以从发货添加。"
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "在此退货上设置供应商以从收货添加。"
 
 msgid "Set a target"
 msgstr "设置目标"
@@ -15555,10 +15555,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "显示可用生产批次号"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "显示可用追踪号"
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
@@ -15567,7 +15567,7 @@ msgid "Show Durations"
 msgstr "显示时长"
 
 msgid "Show more"
-msgstr ""
+msgstr "显示更多"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "显示一个楼层和办公室都信任的库存数字"
@@ -19403,7 +19403,7 @@ msgid "Where you want to grow"
 msgstr "你想要成长的地方"
 
 msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr ""
+msgstr "您登录所在位置。注销您不认识的任何设备 — 仅从您使用时间较长的设备中注销。"
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "金额是按行价格的百分比解释，还是按固定货币金额解释。"

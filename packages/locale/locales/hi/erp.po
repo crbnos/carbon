@@ -339,7 +339,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} अनुमतियाँ"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} चयनित"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "आपकी कंपनी को Carbon पर लाइव करने के लिए {total} चरण। प्रत्येक एक चेकपॉइंट पर समाप्त होता है।"
@@ -348,7 +348,7 @@ msgid "{total} phases to go live"
 msgstr "{total} चरण लाइव होने के लिए"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} परिणाम"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# इकाई} other {# इकाइयाँ}}"
@@ -1343,10 +1343,10 @@ msgid "Add from library…"
 msgstr "लाइब्रेरी से जोड़ें…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "प्राप्ति से जोड़ें"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "शिपमेंट से जोड़ें"
 
 msgid "Add Group"
 msgstr "समूह जोड़ें"
@@ -1370,7 +1370,7 @@ msgid "Add lines from document"
 msgstr "दस्तावेज़ से लाइनें जोड़ें"
 
 msgid "Add manually"
-msgstr ""
+msgstr "मैन्युअल रूप से जोड़ें"
 
 msgid "Add match"
 msgstr "मिलान जोड़ें"
@@ -1623,7 +1623,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "सभी चुने गए समूहों के सदस्य और चुने गए व्यक्ति अनुरोधों को अनुमोदित कर सकेंगे"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "सभी रिटर्न योग्य पंक्तियाँ"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
@@ -2878,7 +2878,7 @@ msgid "Batches"
 msgstr "बैच"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "रिटर्न करने के लिए बैच"
 
 msgid "Batching"
 msgstr "बैचिंग"
@@ -3498,7 +3498,7 @@ msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "इस रिटर्न में पंक्तियों को जोड़ने का तरीका चुनें।"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
@@ -6693,7 +6693,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1 और {0} के बीच मात्रा दर्ज करें।"
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "PO के विरुद्ध विक्रेता बिलों को दर्ज करें और अनुमोदित करें (थ्री-वे मिलान)"
@@ -9451,10 +9451,10 @@ msgid "Lines"
 msgstr "पंक्तियाँ"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "एक बार क्रय आदेश प्राप्ति पोस्ट किए जाने के बाद पंक्तियाँ यहाँ दिखाई देती हैं, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य आपूर्तिकर्ता रिटर्न पर अधिकृत नहीं हैं। ब्लाइंड रिटर्न के लिए लाइन आइटम जोड़ें का उपयोग करें।"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "एक बार विक्रय आदेश शिपमेंट पोस्ट किए जाने के बाद पंक्तियाँ यहाँ दिखाई देती हैं, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य RMA पर अधिकृत नहीं हैं। ब्लाइंड रिटर्न के लिए लाइन आइटम जोड़ें का उपयोग करें।"
 
 msgid "Lines need internal part numbers"
 msgstr "लाइनों को आंतरिक भाग संख्याओं की आवश्यकता है"
@@ -10311,7 +10311,7 @@ msgid "Morning, {name}."
 msgstr "सुबह, {name}।"
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "सबसे हाल ही में — अधिक खोजने के लिए खोजें"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "अधिकांश चीजें यहां पकड़ी जाती हैं और हल की जाती हैं। इसे स्पष्ट रूप से नाम दें।"
@@ -10760,7 +10760,7 @@ msgid "New Workflow"
 msgstr "नया वर्कफ़्लो"
 
 msgid "Newer device"
-msgstr ""
+msgstr "नई डिवाइस"
 
 msgid "Newest first"
 msgstr "नवीनतम पहले"
@@ -10884,7 +10884,7 @@ msgid "No batches"
 msgstr "कोई बैच नहीं"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "अभी कोई बैच चयनित नहीं है।"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
@@ -11217,13 +11217,13 @@ msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "इस ग्राहक के लिए कोई रिटर्न योग्य पंक्तियाँ नहीं"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "इस आपूर्तिकर्ता के लिए कोई रिटर्न योग्य पंक्तियाँ नहीं"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "कोई रिटर्न योग्य पंक्तियाँ आपकी खोज से मेल नहीं खाती"
 
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
@@ -11235,7 +11235,7 @@ msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "अभी कोई सीरियल नंबर चयनित नहीं है।"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "कोई पारियाँ कॉन्फ़िगर नहीं — सोमवार–शुक्रवार, 8 घंटे की दिन मानी जा रही है"
@@ -12397,13 +12397,13 @@ msgid "Pick serials/batches to return"
 msgstr "रिटर्न करने के लिए सीरीज/बैच चुनें"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "इस आपूर्तिकर्ता से प्राप्त हाथ पर मौजूद बैच की पिकिंग करें।"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "स्टॉक की जरूरत वाली बिन को चुनें, फिर उन बिन को चुनें जहां से स्टॉक खींचना है।"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "इस आपूर्तिकर्ता से प्राप्त हाथ पर मौजूद सीरियल नंबर की पिकिंग करें।"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -13082,7 +13082,7 @@ msgid "Purchase Qty"
 msgstr "खरीद मात्रा"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "क्रय रिटर्न"
 
 msgid "Purchase Tax Payable"
 msgstr "खरीद कर देय (डिफ़ॉल्ट)"
@@ -14568,7 +14568,7 @@ msgid "Sales Person"
 msgstr "विक्रय प्रतिनिधि"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "विक्रय रिटर्न"
 
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
@@ -14815,10 +14815,10 @@ msgid "Search by linear issue title..."
 msgstr "Linear समस्या शीर्षक द्वारा खोजें..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "प्राप्ति, PO या आइटम द्वारा खोजें"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "शिपमेंट, विक्रय आदेश या आइटम द्वारा खोजें"
 
 msgid "Search customers and types..."
 msgstr "ग्राहकों और प्रकारों को खोजें..."
@@ -15065,10 +15065,10 @@ msgid "Select operations"
 msgstr "संचालन चुनें"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "इस आपूर्तिकर्ता से रिटर्न करने के लिए पोस्ट की गई प्राप्ति पंक्तियों को चुनें।"
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "इस ग्राहक को रिटर्न करने के लिए पोस्ट की गई शिपमेंट पंक्तियों को चुनें।"
 
 msgid "Select Printer"
 msgstr "प्रिंटर चुनें"
@@ -15204,7 +15204,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "रिटर्न करने के लिए सीरियल नंबर"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "सीरियल या बैच ट्रैकिंग आवश्यक है"
@@ -15261,10 +15261,10 @@ msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "शिपमेंट से जोड़ने के लिए इस रिटर्न पर ग्राहक सेट करें।"
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "प्राप्ति से जोड़ने के लिए इस रिटर्न पर आपूर्तिकर्ता सेट करें।"
 
 msgid "Set a target"
 msgstr "लक्ष्य निर्धारित करें"
@@ -15555,10 +15555,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "उपलब्ध बैच नंबर दिखाएँ"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "उपलब्ध ट्रैकिंग नंबर दिखाएँ"
 
 msgid "Show Customer IDs"
 msgstr "ग्राहक आईडी दिखाएं"
@@ -15567,7 +15567,7 @@ msgid "Show Durations"
 msgstr "अवधि दिखाएं"
 
 msgid "Show more"
-msgstr ""
+msgstr "और अधिक दिखाएँ"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "एक इन्वेंटरी नंबर दिखाएं जिस पर फ्लोर और ऑफिस दोनों को विश्वास है"
@@ -19403,7 +19403,7 @@ msgid "Where you want to grow"
 msgstr "जहां आप बढ़ना चाहते हैं"
 
 msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr ""
+msgstr "जहाँ आप साइन इन हैं। किसी भी डिवाइस से साइन आउट करें जिसे आप नहीं पहचानते — एक ऐसी डिवाइस से जिसे आप उस सेशन से अधिक समय तक उपयोग करते हैं।"
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "क्या राशि को लाइन मूल्य के प्रतिशत के रूप में या एक निश्चित मुद्रा राशि के रूप में समझा जाता है।"
