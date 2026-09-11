@@ -16,7 +16,12 @@
 - Phase 3 (plan): DONE — `.ai/plans/2026-09-11-demand-forecast-consumption.md`. 10 tasks: pure fn+tests → migration (2 columns + quantityToConsume view column + 3 function forks) → types → runMrp wiring → planning-actions + getItemDemand + settings card + grid annotation (parallelizable) → docs sync → gates + /test (5 browser scenarios). Two spec corrections made during planning: get_inventory_quantities forks 20260716142907 (true newest), and upsertDemandProjections needs no change (PostgREST upserts preserve absent columns).
 
 - GATE RESOLVED: Brad approved spec + plan ("let's execute") — 2026-09-11.
-- Phase 4 (execute): started.
+- Phase 4 (execute): DONE — 9 tasks, 9 commits (e24cc547b6 pure fn, 322288b5be migration+types, 42c3a86f5c runMrp wiring, 201a87040b planning-actions, 69747ad71a docs, 9a154bfdda settings card, a592b29b80 item chart, e91aae491e grid annotation, 2f99cf4255 translations). Tasks 5-8 dispatched as parallel subagents.
+- Phase 5 (test): DONE — data+browser e2e on the satellite dev company. Settings "Forecast Consumption" card renders (defaults 4/1). Seeded 3 projections on item_XNY7 against its existing SO lines, ran real MRP via /api/mrp, and proved through get_production_planning: (A) same-week forecast 30 + SO 30 → net 30 not 60, consumed 30; (C) forecast 20 + SO 30 → net 30, consumed 20; (B gap) forecast 30 in an SO-less week + SO 30 the next week → SO reached back and consumed 30, net 0 that week / 30 the next, no double-count; (D) window set to 0/0 → gap forecast no longer consumed (setting is live), same-week still nets. Demand Forecasts grid renders. Test data + settings restored.
+- Session note: hit a Haiku session rate limit mid-translate; resumed next session, finished the fill (0 missing). crbn/ERP dev server needed a restart via ./packages/dev/bin/crbn up (crbn not on non-interactive PATH). db:check:backups needs SUPABASE_DB_URL with 127.0.0.1 not localhost (node-pg IPv6 quirk).
+
+## Outcome
+- All 10 plan tasks complete and committed on mrp-action-suggestions (10 commits total incl. translations). Feature verified end-to-end. Not pushed / no PR opened (awaiting Brad). Self-review next.
 
 ## Outcome
 - (pending)

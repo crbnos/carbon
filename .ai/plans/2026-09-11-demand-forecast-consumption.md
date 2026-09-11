@@ -22,7 +22,7 @@ persisted as `demandProjection.consumedQuantity`, subtracted with
 - [x] Task 7: Settings service fn + planning settings card (committed; + ui/Planning barrel export)
 - [x] Task 8: Consumed annotation in the forecast edit grid (committed; useQuantityFormatter is a callable, not Intl — used directly)
 - [x] Task 9: Docs/rules/spec sync (committed with design artifacts; KB regenerated from docs source per agent-knowledge-base rule)
-- [ ] Task 10: Validation gates + browser verification
+- [x] Task 10: Validation gates + browser verification — @carbon/ee tests (1012 pass), erp+ee typecheck, biome lint, db:check:datasets (4 green), db:check:backups (restorable, via IPv4 URL — localhost→IPv6 quirk), /translate (0 missing, linguito clean). Browser+DB e2e on satellite: settings card renders (4/1); cases A/B/C/D proven through real runMrp + get_production_planning (consumedQuantity persisted, RPC nets, gap heals via backward window, 0/0 setting live); Demand Forecasts grid renders. Test data cleaned up.
 
 ## Dependencies
 - Task 1 is independent (pure TS, no generated types) — may run in parallel with Task 2.
