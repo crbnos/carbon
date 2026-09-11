@@ -10,11 +10,13 @@ import {
   getCompanySettings,
   getItemPostingGroupResponsibilities,
   setDefaultResponsibleEmployee,
+  setForecastConsumptionWindow,
   setLocationResponsibleEmployee,
   setRescheduleToleranceDays,
   upsertItemPostingGroupResponsibility
 } from "~/modules/settings";
 import {
+  ForecastConsumptionCard,
   RescheduleToleranceCard,
   ResponsibleEmployeeCard
 } from "~/modules/settings/ui/Planning";
@@ -62,6 +64,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultResponsibleEmployee:
       companySettings.data.defaultResponsibleEmployee ?? null,
     rescheduleToleranceDays: companySettings.data.rescheduleToleranceDays ?? 7,
+    forecastConsumptionBackwardPeriods:
+      companySettings.data.forecastConsumptionBackwardPeriods ?? 4,
+    forecastConsumptionForwardPeriods:
+      companySettings.data.forecastConsumptionForwardPeriods ?? 1,
     locations: locations.data ?? [],
     itemGroups: itemGroups.data ?? [],
     responsibilities: responsibilities.data ?? []
@@ -70,6 +76,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const employeeIdValidator = z.string().optional();
 const toleranceValidator = z.coerce.number().int().min(0).max(365);
+const consumptionValidator = z.coerce.number().int().min(0).max(52);
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -164,6 +171,32 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       return { success: true, message: "Reschedule tolerance updated" };
     }
+    case "setForecastConsumption": {
+      const backward = consumptionValidator.safeParse(
+        formData.get("backwardPeriods")
+      );
+      const forward = consumptionValidator.safeParse(
+        formData.get("forwardPeriods")
+      );
+      if (!backward.success || !forward.success) {
+        return {
+          success: false,
+          message: "Consumption window must be between 0 and 52 weeks"
+        };
+      }
+      const result = await setForecastConsumptionWindow(client, {
+        companyId,
+        backwardPeriods: backward.data,
+        forwardPeriods: forward.data
+      });
+      if (result.error) {
+        return {
+          success: false,
+          message: "Failed to update forecast consumption"
+        };
+      }
+      return { success: true, message: "Forecast consumption updated" };
+    }
     default:
       return { success: false, message: `Unknown intent '${String(intent)}'` };
   }
@@ -173,6 +206,8 @@ export default function PlanningSettingsRoute() {
   const {
     defaultResponsibleEmployee,
     rescheduleToleranceDays,
+    forecastConsumptionBackwardPeriods,
+    forecastConsumptionForwardPeriods,
     locations,
     itemGroups,
     responsibilities
@@ -189,6 +224,10 @@ export default function PlanningSettingsRoute() {
         </Heading>
         <RescheduleToleranceCard
           rescheduleToleranceDays={rescheduleToleranceDays}
+        />
+        <ForecastConsumptionCard
+          backwardPeriods={forecastConsumptionBackwardPeriods}
+          forwardPeriods={forecastConsumptionForwardPeriods}
         />
         <ResponsibleEmployeeCard
           defaultResponsibleEmployee={defaultResponsibleEmployee}

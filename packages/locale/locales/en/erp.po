@@ -80,6 +80,10 @@ msgstr "{0} already started"
 msgid "{0} cells with deltas"
 msgstr "{0} cells with deltas"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} consumed"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped

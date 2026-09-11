@@ -1684,3 +1684,16 @@ export async function setRescheduleToleranceDays(
     .update({ rescheduleToleranceDays: args.days })
     .eq("id", args.companyId);
 }
+
+export async function setForecastConsumptionWindow(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; backwardPeriods: number; forwardPeriods: number }
+) {
+  return client
+    .from("companySettings")
+    .update({
+      forecastConsumptionBackwardPeriods: args.backwardPeriods,
+      forecastConsumptionForwardPeriods: args.forwardPeriods
+    })
+    .eq("id", args.companyId);
+}

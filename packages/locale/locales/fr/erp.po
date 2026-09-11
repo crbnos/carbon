@@ -80,6 +80,10 @@ msgstr "{0} déjà commencé"
 msgid "{0} cells with deltas"
 msgstr "{0} cellules avec écarts"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr ""
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped

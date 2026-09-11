@@ -80,6 +80,10 @@ msgstr "{0}은 이미 시작됨"
 msgid "{0} cells with deltas"
 msgstr "{0}개 셀에 변경사항 있음"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr ""
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
