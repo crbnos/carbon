@@ -311,7 +311,7 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs --filter=@carbon/ee
 **Verify:**
 ```bash
 pnpm --filter @carbon/jobs test
-RUN_RAMP_DB_TESTS=true pnpm --filter @carbon/jobs exec vitest run src/inngest/functions/integrations/ramp-sync-payment.integration.test.ts src/inngest/functions/integrations/ramp-sync-reimbursement.integration.test.ts
+RUN_RAMP_DB_TESTS=true pnpm --filter @carbon/jobs exec vitest run src/inngest/functions/integrations/ramp-sync-transaction.integration.test.ts
 pnpm exec turbo run typecheck --filter=@carbon/jobs --filter=@carbon/ee
 # Expected: all runnable jobs tests and all six real-DB tests pass; both typechecks exit 0.
 ```
@@ -339,7 +339,7 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs --filter=@carbon/ee
 **Verify:**
 ```bash
 pnpm --filter @carbon/ee test
-pnpm --filter @carbon/ee exec vitest run src/ramp/lib/__tests__/service.test.ts src/ramp/lib/__tests__/service-production.test.ts
+pnpm --filter @carbon/ee exec vitest run src/ramp/lib/__tests__/service.test.ts src/ramp/lib/__tests__/spend.test.ts
 pnpm exec turbo run typecheck --filter=@carbon/ee --filter=@carbon/jobs
 # Expected: the full EE suite and characterization tests pass; both typechecks exit 0.
 ```
@@ -371,7 +371,7 @@ commit with its own regression coverage:
 **Verification:** Focused unit, integration, real-database, Deno, and scoped typecheck gates
 are recorded in the commits. Task 10 reruns the aggregate branch gates after these changes.
 
-## Tasks 19–31: Final nuclear-review corrections
+## Tasks 19–32: Final nuclear-review corrections
 
 **Depends on:** Tasks 5–9 and 13–18
 
@@ -410,6 +410,9 @@ The ten Must Fixes and two independently identified risks landed separately:
 31. `7c0555d90c` — outbound PO pages preload PO/vendor mappings in two reads and drain one
     paginated Ramp vendor snapshot only when needed. Created vendors update the page cache;
     mixed create/patch/archive behavior and per-item provider-failure isolation remain intact.
+32. `86aa49b217` — archive-on-settlement reads invoice statuses in bounded batches so mappings
+    beyond PostgREST's row cap remain visible. A lookup failure aborts the archive phase before
+    provider writes, and individual archive failures increment the family failure count.
 
 **Verification evidence:** Each commit includes targeted regression coverage. The discriminator
 suite recorded 20 red failures followed by 36 passing cases; archive recorded seven failures
@@ -421,7 +424,7 @@ Task 10 records final branch-wide verification separately.
 
 ## Task 10: Refresh documentation and run final gates
 
-**Depends on:** Tasks 2–9 and 11–31
+**Depends on:** Tasks 2–9 and 11–32
 **Files:**
 - Modify: `.claude/rules/ramp-integration.md`
 - Modify: `.claude/rules/accounting-sync-handlers.md`
@@ -451,7 +454,7 @@ git diff --check
 # Expected: every command exits 0, with no missing translations or compatibility verdicts.
 ```
 
-**Earlier result (before Tasks 19–30):** EE 1,157/1,157; Jobs 648/648 runnable tests (26 intentional skips across three
+**Earlier result (before Tasks 19–32):** EE 1,157/1,157; Jobs 648/648 runnable tests (26 intentional skips across three
 files); Auth 44/44; all five scoped typechecks; full lint; four dataset checks; backup
 compatibility; the nine-target production build; and `git diff --check` passed. Lint and
 build retained the repository's existing non-fatal diagnostics. The explicit Ramp database

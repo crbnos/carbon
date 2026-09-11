@@ -1,7 +1,7 @@
 # Ramp Integration — Transaction Sync (Cards, Bills, Payments, Reimbursements)
 
-> Status: implemented; remaining provider-contract uncertainties are explicitly marked in
-> `.claude/rules/ramp-integration.md` and the source `TODO(task-1)` comments.
+> Status: active implementation; provider-contract release gates and remaining uncertainties
+> are explicitly marked in `.claude/rules/ramp-integration.md` and source comments.
 > Author: Brad Barbin + Claude
 > Date: 2026-08-20
 > Research: `.ai/research/ramp-transaction-sync.md`
@@ -19,11 +19,12 @@ correctness floor; the webhook is a latency hint.
 
 Cleared, coded card spend becomes `cardTransaction`: Charge/Credit journals move between coded
 accounts and the mapped card liability; Payment/Cashback/Repayment types settle or reverse that
-liability. Ramp bills become posted `purchaseInvoice` records. Non-card bill payments become
-posted AP `payment` + `invoiceSettlement` records; card-backed bill payments are confirmed
-without a second payment. Reimbursements become employee-supplier purchase invoices and, when
-Ramp-paid, AP payments. Carbon also pushes released POs and eligible posted purchase invoices to
-Ramp, where invoices enter the approval flow as submitted drafts.
+liability. Ramp bills become posted `purchaseInvoice` records. Bill payments on an explicitly
+supported bank rail become posted AP `payment` + `invoiceSettlement` records;
+one-time-card-delivery payments are confirmed without a second payment. Reimbursements become
+employee-supplier purchase invoices and, when Ramp-paid, AP payments. Carbon pushes released POs
+to Ramp. Posted purchase-invoice export remains disabled until the draft-bill API contract is
+sandbox-verified.
 
 New connections use Carbon's production OAuth Connect flow. Existing stored client-credentials
 records remain readable, but the UI does not create them.
@@ -103,7 +104,7 @@ its own Inngest step so one failure does not abort the other families.
 | Paid bill payments | Posted AP payment + settlement unless card-backed | `BILL_PAYMENT_SYNC` |
 | Reimbursements `SYNC_READY` | Posted employee-supplier invoice, plus payment when Ramp-paid | `REIMBURSEMENT_SYNC` |
 | Repayments from cursor | Posted Repayment `cardTransaction` | none exposed |
-| Outbound Carbon rows | Ramp PO or submitted draft bill; archive settled bill | none |
+| Outbound Carbon rows | Ramp PO; draft-bill export release-gated; archive settled mapped bill | none |
 
 All inbound rows are locally checked against the optional configured `entityId` before writes;
 only endpoints with a verified query contract receive a remote `entity_id` filter. Account and
@@ -218,16 +219,19 @@ The builder uses natural-balance-signed `credit()`/`debit()` amounts:
   operations and tracking field/option mappings.
 - Released POs are created with `external_id: po.id`, required currency/entity fields, and an
   entity-scoped idempotency key; mapped POs PATCH, while mapped Completed/Closed POs archive.
-- Eligible purchase invoices use `/bills/drafts` followed by submit. The integration never uses
-  the auto-approved bill-create path. Mapped Paid/Voided Carbon invoices archive remotely.
+- Purchase-invoice export is fail-closed before any provider I/O until the draft-bill and submit
+  contract is sandbox-verified. Once that explicit code gate is enabled, the prepared path uses
+  `/bills/drafts` followed by submit and never the auto-approved bill-create path. Mapped
+  Paid/Voided Carbon invoices archive remotely; status reads are bounded so mappings beyond
+  PostgREST's row cap are not omitted, and lookup/archive failures are reported by the family.
 - An absent outbound entity setting currently falls back to the first Ramp business entity. This
   remains a documented multi-entity hardening gap.
 
 ## Webhook and sweep
 
-The webhook resolves the active integration and vaulted secret. A challenge probe is handled
-before signature validation because it may be unsigned; ordinary deliveries require a valid
-HMAC-SHA256 signature over the raw body. Payloads are nudges only: the route triggers
+The webhook resolves the active integration and vaulted secret. Every request, including a
+challenge, requires a valid HMAC-SHA256 signature over the raw body; only a signed-body challenge
+is accepted. Payloads are nudges only: the route triggers
 `ramp-sync`, which re-fetches authoritative state. Header/signing/challenge details remain
 source-marked for provider verification.
 
@@ -242,8 +246,9 @@ enqueue fails.
 - Reimbursements use employee-as-supplier purchase invoices and payments.
 - Cost centers are the v1 pushed line dimension; items, customers, and suppliers are not Ramp
   coding dimensions.
-- Carbon POs and eligible invoices push automatically when their flags are enabled; invoices are
-  submitted drafts so Ramp approval remains authoritative.
+- Carbon POs push automatically when enabled. The invoice flag retains retry eligibility, but
+  draft-bill export fails closed until its provider contract is sandbox-verified and the code
+  release gate is explicitly enabled.
 - Optional entity filter; blank means all inbound entities. The outbound first-entity fallback is
   retained only as an explicit hardening gap.
 - Invoicing module and permissions own card transactions.
@@ -253,10 +258,12 @@ enqueue fails.
 ## Verification and remaining risk
 
 Automated coverage includes Ramp client/model/service/coding/money/state/hooks tests, cursor and
-policy tests, atomic payment/reimbursement tests, real-database transaction integration tests,
-post-card-transaction integration tests, OAuth state/callback tests, and accounting-provider
-charge tests. Connected verification is still required wherever source carries
-`TODO(task-1)`, notably some bill/repayment enum and payload shapes and the webhook contract.
+policy tests, atomic card/bill/payment/reimbursement tests, real-database transaction integration
+tests, post-card-transaction integration tests, OAuth state/callback tests, and
+accounting-provider charge tests. Connected verification is still required for the draft-bill
+payload/submit identity, repayment funding beyond documented `ach`, and the exact webhook
+signing/challenge contract. Bill-payment methods and reimbursement states use explicit supported
+sets checked against the 2026-09-11 provider schema; unknown values fail closed.
 
 Other retained risks:
 
@@ -279,3 +286,5 @@ Other retained risks:
   and transactional Ramp payment/reimbursement staging. Removed the obsolete client-credentials
   setup, immediate-install-sync, read/merge/write metadata, single-column card key, and
   non-atomic posting descriptions.
+- 2026-09-11: Recorded the signed-challenge requirement, supported financial discriminators,
+  bounded archive status reads, and the fail-closed draft-bill release gate.
