@@ -613,6 +613,10 @@ const PurchaseOrderLineForm = ({
                           replenishmentSystem={
                             isOutsideProcessing ? undefined : "Buy"
                           }
+                          // itemId is optional on the schema object and made
+                          // required by a refine, so the field can't infer its
+                          // own requiredness — every item-typed line needs one.
+                          isOptional={false}
                           onChange={(value) => {
                             onItemChange(value?.value as string);
                           }}
@@ -623,7 +627,6 @@ const PurchaseOrderLineForm = ({
                           label={t`Description`}
                           name="description"
                           value={itemData.description}
-                          isOptional={false}
                         />
 
                         <InputControlled

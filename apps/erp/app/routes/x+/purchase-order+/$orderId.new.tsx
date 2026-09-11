@@ -112,7 +112,9 @@ export default function NewPurchaseOrderLineRoute() {
     inventoryUnitOfMeasureCode: "",
     itemId: "",
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as MethodItemType,
+    // See PurchaseOrderExplorer — "Item" is the picker's generic mode and is
+    // not a valid line type.
+    purchaseOrderLineType: "Part" as MethodItemType,
     purchaseQuantity: 1,
     purchaseUnitOfMeasureCode: "",
     requiredDate: undefined,
