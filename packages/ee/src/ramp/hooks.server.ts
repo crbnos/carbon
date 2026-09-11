@@ -22,13 +22,13 @@ import {
  */
 async function convergeRamp(
   companyId: string,
-  opts: { fireInitialSync: boolean }
+  opts: { syncReason: "install" | "settings-update" }
 ): Promise<void> {
   const serviceRole = getCarbonServiceRole();
   const integration = await getRampIntegration(serviceRole, companyId);
   if (!integration) return;
 
-  const { client } = integration;
+  const { client, metadata } = integration;
 
   // Validate credentials up front so a bad clientId/secret fails the install
   // with a clear message rather than deep inside a push.
@@ -43,18 +43,6 @@ async function convergeRamp(
   }
 
   await ensureRampConnection(serviceRole, companyId);
-  await pushChartOfAccounts(serviceRole, companyId);
-  // Converge the cost-center ("project") field + its options. It re-runs on
-  // every ramp-sync too, so a Ramp-side rejection here must NOT abort the OAuth
-  // connect — log and continue so the integration installs.
-  try {
-    await pushCostCenters(serviceRole, companyId);
-  } catch (err) {
-    console.warn(
-      `[ramp] cost-center push failed for company ${companyId}; continuing install`,
-      err
-    );
-  }
   // The webhook is latency, not correctness — the hourly `ramp-sweep` is the
   // correctness guarantee. Ramp can't reach a non-public dev host
   // (erp.<branch>.dev), so webhook registration will fail locally; that must not
@@ -68,43 +56,81 @@ async function convergeRamp(
     );
   }
 
-  if (opts.fireInitialSync) {
-    // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
-    // never the reverse), so the `ramp-sync` task — registered in
-    // packages/jobs/src/inngest/index.ts + packages/lib/src/trigger.ts — is
-    // reached via a lazy runtime import resolved through the app that owns both
-    // packages. The non-literal specifier keeps TS from resolving/type-checking a
-    // module ee cannot see.
-    // A failure to enqueue the initial sync must not fail the connect — the
-    // hourly `ramp-sweep` fires `ramp-sync` for every active company regardless.
+  // OAuth creates the credential-bearing integration row before the user maps
+  // the two accounts required by the card families. Establish connectivity,
+  // but do not push master data or launch finance until that setup is complete.
+  if (!metadata.cardLiabilityAccountId || !metadata.statementBankAccountId) {
+    return;
+  }
+
+  if (metadata.entityId) {
+    let response: unknown;
     try {
-      const jobsModule = "@carbon/jobs";
-      const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
-        trigger: (
-          task: string,
-          payload: { companyId: string; reason: string }
-        ) => Promise<unknown>;
-      };
-      await jobs.trigger("ramp-sync", { companyId, reason: "install" });
-    } catch (err) {
-      console.warn(
-        `[ramp] initial sync enqueue failed for company ${companyId}; the hourly sweep will cover it`,
-        err
+      response = await client.getEntities();
+    } catch (error) {
+      throw new Error(`Could not validate Ramp entity ${metadata.entityId}`, {
+        cause: error
+      });
+    }
+
+    if (!extractEntityIds(response).has(metadata.entityId)) {
+      throw new Error(
+        `Ramp entity ${metadata.entityId} is not available to this connection`
       );
     }
+  }
+
+  await pushChartOfAccounts(serviceRole, companyId);
+  // Converge the cost-center ("project") field + its options. It re-runs on
+  // every ramp-sync too, so a Ramp-side rejection here must not abort a valid
+  // connection — log and continue so the hourly sweep can retry it.
+  try {
+    await pushCostCenters(serviceRole, companyId);
+  } catch (err) {
+    console.warn(
+      `[ramp] cost-center push failed for company ${companyId}; continuing convergence`,
+      err
+    );
+  }
+
+  // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
+  // never the reverse), so the `ramp-sync` task — registered in
+  // packages/jobs/src/inngest/index.ts + packages/lib/src/trigger.ts — is
+  // reached via a lazy runtime import resolved through the app that owns both
+  // packages. The non-literal specifier keeps TS from resolving/type-checking a
+  // module ee cannot see.
+  // A failure to enqueue the initial sync must not fail the connect — the
+  // hourly `ramp-sweep` fires `ramp-sync` for every active company regardless.
+  try {
+    const jobsModule = "@carbon/jobs";
+    const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
+      trigger: (
+        task: string,
+        payload: { companyId: string; reason: string }
+      ) => Promise<unknown>;
+    };
+    await jobs.trigger("ramp-sync", {
+      companyId,
+      reason: opts.syncReason
+    });
+  } catch (err) {
+    console.warn(
+      `[ramp] initial sync enqueue failed for company ${companyId}; the hourly sweep will cover it`,
+      err
+    );
   }
 }
 
 export async function rampOnInstall(companyId: string): Promise<void> {
-  await convergeRamp(companyId, { fireInitialSync: true });
+  await convergeRamp(companyId, { syncReason: "install" });
 }
 
 /**
- * Settings-save on an already-installed integration: re-converge without a fresh
- * initial sync. `ensureRampWebhook` skips the webhook re-create when one exists.
+ * Settings-save on an already-installed integration: re-converge and launch a
+ * sync only after the required account and optional entity settings validate.
  */
 export async function rampOnUpdate(companyId: string): Promise<void> {
-  await convergeRamp(companyId, { fireInitialSync: false });
+  await convergeRamp(companyId, { syncReason: "settings-update" });
 }
 
 export async function rampOnUninstall(companyId: string): Promise<void> {
@@ -178,6 +204,28 @@ function extractConnections(response: unknown): Array<{ status?: string }> {
     if (Array.isArray(obj.data)) return obj.data as Array<{ status?: string }>;
   }
   return [];
+}
+
+/** Extract entity ids from Ramp's `{ data }`, `{ entities }`, or bare-array shape. */
+function extractEntityIds(response: unknown): Set<string> {
+  let rows: unknown[] = [];
+  if (Array.isArray(response)) {
+    rows = response;
+  } else if (response && typeof response === "object") {
+    const value = response as { data?: unknown; entities?: unknown };
+    if (Array.isArray(value.data)) rows = value.data;
+    else if (Array.isArray(value.entities)) rows = value.entities;
+  }
+
+  return new Set(
+    rows.flatMap((row) =>
+      row &&
+      typeof row === "object" &&
+      typeof (row as { id?: unknown }).id === "string"
+        ? [(row as { id: string }).id]
+        : []
+    )
+  );
 }
 
 export async function rampHealthcheck(
