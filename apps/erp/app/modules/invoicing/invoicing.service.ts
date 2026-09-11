@@ -1433,12 +1433,14 @@ export async function getPayments(
 
 export async function getCardTransaction(
   client: SupabaseClient<Database>,
+  companyId: string,
   id: string
 ) {
   return client
     .from("cardTransaction")
     .select("*, cardTransactionLine(*)")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 }
 

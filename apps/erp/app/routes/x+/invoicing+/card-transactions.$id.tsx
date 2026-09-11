@@ -29,14 +29,17 @@ import { CardTransactionStatus, getCardTransaction } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "invoicing"
+    }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const cardTransaction = await getCardTransaction(client, id);
+  const cardTransaction = await getCardTransaction(client, companyId, id);
   if (cardTransaction.error || !cardTransaction.data) {
     throw redirect(
       path.to.cardTransactions,
@@ -61,10 +64,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? client
           .from("account")
           .select("id, number, name")
-          .eq("companyId", companyId)
+          .eq("companyGroupId", companyGroupId)
           .in("id", [...new Set(accountIds)])
       : Promise.resolve({
-          data: [] as { id: string; number: string; name: string }[]
+          data: [] as { id: string; number: string; name: string }[],
+          error: null
         }),
     client
       .from("document")
@@ -72,6 +76,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .ilike("path", `${companyId}/card-transaction/${id}/%`)
   ]);
+
+  const auxiliaryError = accounts.error ?? receipts.error;
+  if (auxiliaryError) {
+    throw redirect(
+      path.to.cardTransactions,
+      await flash(
+        request,
+        error(auxiliaryError, "Failed to load card transaction")
+      )
+    );
+  }
 
   const accountsById = Object.fromEntries(
     (accounts.data ?? []).map((account) => [account.id, account])
