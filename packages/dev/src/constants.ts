@@ -8,6 +8,14 @@ export const COMPOSE_DEV_FILE = "packages/dev/docker/docker-compose.dev.yml";
 // back to it when COMPOSE_DEV_FILE is absent so existing checkouts keep working.
 export const COMPOSE_DEV_FILE_LEGACY = "docker-compose.dev.yml";
 
+/**
+ * The generated per-worktree env file, relative to the worktree root. Every
+ * compose invocation must pass it as `--env-file`: the compose file
+ * interpolates `${DOMAIN}` and `${INNGEST_TLS_HOST}` into `extra_hosts`, which
+ * compose rejects outright when they're blank.
+ */
+export const ENV_LOCAL_FILE = ".env.local";
+
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [
   { value: "erp", label: "ERP", hint: "main app" },

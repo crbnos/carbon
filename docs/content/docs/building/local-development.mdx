@@ -44,6 +44,8 @@ Carbon is a **pnpm + Turborepo** monorepo, the ERP and MES apps plus their share
 | Command | What it does |
 | --- | --- |
 | `crbn up` | Boot the compose stack and apps. |
+| `crbn up --app erp,mes` | Run exactly these apps, skipping the picker. Repeatable; ids are `erp`, `mes`, `assembler`, `email`. |
+| `crbn up --all` | Launch every app without the picker. |
 | `crbn up --no-portless` | Localhost mode: fixed ports (API `54321`, ERP `3000`, MES `3001`). |
 | `crbn up --no-apps` | Services only: Postgres, Kong, Supabase, Inngest, mail. |
 | `crbn up --no-migrate` | Skip database migrations on boot. |

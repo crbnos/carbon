@@ -441,6 +441,8 @@ crbn — Carbon dev CLI
 
   Stack:
     crbn up                         Boot compose stack + apps.
+    crbn up --app erp,mes           Run only these apps, skipping the picker.
+                                    Repeatable; ids: erp, mes, assembler, email.
     crbn up --all                   Launch all apps without the picker.
     crbn up --no-portless           Localhost mode (API:54321 ERP:3000 MES:3001).
     crbn up --borrow                Reuse another worktree's containers.
