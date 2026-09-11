@@ -248,11 +248,13 @@ export async function deactivateEmployee(
         .update({ active: false })
         .eq("id", userId)
         .eq("companyId", companyId),
-      serviceRole
-        .from("employeeJob")
-        .delete()
-        .eq("id", userId)
-        .eq("companyId", companyId),
+      // "employeeJob" is deliberately left in place. It carries org placement —
+      // title, start date, department, shift, manager, location, tags, custom
+      // fields — none of which grants access; membership ("userToCompany"),
+      // permissions, and "employee".active are what gate it, and all three are
+      // cleared here. Deleting the row made deactivation lossy: nothing in the
+      // re-invite path can reconstruct it, so a revoked employee who was later
+      // re-invited came back with their placement silently blanked.
       ...(groupIds.length > 0
         ? [
             serviceRole

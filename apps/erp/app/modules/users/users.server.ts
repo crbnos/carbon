@@ -241,7 +241,7 @@ async function activateEmployee(
     .update({ active: true })
     .eq("id", userId)
     .eq("companyId", companyId)
-    .select("id");
+    .select("id, employeeTypeId");
 
   if (!result.error && (!result.data || result.data.length === 0)) {
     return {
@@ -250,6 +250,41 @@ async function activateEmployee(
         message: `Employee record not found for user ${userId} in company ${companyId}. The record may have been deleted during deactivation.`
       }
     };
+  }
+
+  // Deactivation drops every membership in groups owned by this company,
+  // including the employee-type group. The trigger that seeds that membership
+  // (sync_add_employee_to_type_group) fires on INSERT only, and reactivation is
+  // an UPDATE, so it has to be restored here or the user returns outside their
+  // employee-type group. Best-effort: a missing group membership must not fail
+  // an otherwise valid invite acceptance.
+  const employeeTypeId = result.data?.[0]?.employeeTypeId;
+  if (!result.error && employeeTypeId) {
+    // uq_membership spans (groupId, memberGroupId, memberUserId) and
+    // memberGroupId is null for user rows, so NULLS DISTINCT leaves nothing for
+    // an upsert to conflict against — check before inserting.
+    const existingMembership = await client
+      .from("membership")
+      .select("id")
+      .eq("groupId", employeeTypeId)
+      .eq("memberUserId", userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!existingMembership.data) {
+      const membershipInsert = await client
+        .from("membership")
+        .insert({ groupId: employeeTypeId, memberUserId: userId });
+
+      if (membershipInsert.error) {
+        logger.error("Failed to restore employee type group membership", {
+          userId,
+          companyId,
+          employeeTypeId,
+          error: membershipInsert.error
+        });
+      }
+    }
   }
 
   return result;
@@ -491,6 +526,7 @@ export async function createEmployeeAccount(
   const user = await getUserByEmail(email);
   let userId = "";
   let isNewUser = false;
+  let isReactivation = false;
 
   if (user.data) {
     userId = user.data.id;
@@ -504,17 +540,25 @@ export async function createEmployeeAccount(
 
     const existingEmployee = await client
       .from("employee")
-      .select("id")
+      .select("id, active")
       .eq("id", userId)
       .eq("companyId", companyId)
       .maybeSingle();
 
-    if (existingEmployee.data) {
+    // Only an *active* employee is genuinely already a member. An inactive row
+    // is the residue of a deactivation or a revoked invite: deactivation keeps
+    // the "employee" row (and now the "employeeJob" row too), so refusing here
+    // dead-ended re-adding someone — the blocking record is also hidden by the
+    // employee list's default Active/Invited filter, leaving no way to act on
+    // the error. The writes below upsert so this path reuses those rows.
+    if (existingEmployee.data?.active) {
       return {
         success: false,
         message: "This user is already an employee in this company"
       };
     }
+
+    isReactivation = Boolean(existingEmployee.data);
   } else {
     isNewUser = true;
     const resolvedId = await resolveAuthUserId(email);
@@ -540,14 +584,22 @@ export async function createEmployeeAccount(
   }
 
   const code = crypto.randomUUID();
+  // Reusing surviving rows is an UPDATE, and the RLS policies on "employee" and
+  // "employeeJob" gate updates behind users_update / people_update while this
+  // route is gated on users_create. Re-adding someone is the same authorization
+  // decision as adding them the first time — the UPDATE is an artifact of
+  // keeping the rows on deactivation, not a wider grant — so the reuse path
+  // writes with the service role the invite already uses, scoped by id +
+  // companyId. A first-time create still writes under the caller's RLS client.
+  const accountWriteClient = isReactivation ? serviceRole : client;
   const [employeeInsert, jobInsert, inviteInsert] = await Promise.all([
-    insertEmployee(client, {
+    upsertEmployee(accountWriteClient, {
       id: userId,
       employeeTypeId: employeeType,
       active: false,
       companyId
     }),
-    insertEmployeeJob(client, {
+    upsertEmployeeJob(accountWriteClient, {
       id: userId,
       companyId,
       locationId
@@ -882,6 +934,47 @@ export async function insertEmployee(
   employee: EmployeeInsert
 ) {
   return client.from("employee").insert([employee]).select("*").single();
+}
+
+/**
+ * Insert, or reuse the row a previous deactivation left behind. Re-adding
+ * someone who was deactivated or had their invite revoked has to write over
+ * that row — it survives deactivation, so a plain insert hits the (id,
+ * companyId) primary key. Re-asserts the employee type chosen on the form;
+ * active stays false until the invite is accepted.
+ */
+async function upsertEmployee(
+  client: SupabaseClient<Database>,
+  employee: EmployeeInsert
+) {
+  return client
+    .from("employee")
+    .upsert([employee], { onConflict: "id, companyId" })
+    .select("*")
+    .single();
+}
+
+/**
+ * The "employeeJob" counterpart. Deactivation keeps this row so org placement
+ * survives, which means re-adding someone hits its (id, companyId) primary key
+ * too. Only the columns passed here are written on conflict, so title, start
+ * date, department, shift, manager, tags and custom fields carry through a
+ * deactivate/re-invite round trip. Kept local rather than added to
+ * people.service.ts — every export there is also published as an MCP tool.
+ */
+async function upsertEmployeeJob(
+  client: SupabaseClient<Database>,
+  job: {
+    id: string;
+    companyId: string;
+    locationId?: string;
+  }
+) {
+  return client
+    .from("employeeJob")
+    .upsert(job, { onConflict: "id, companyId" })
+    .select("*")
+    .single();
 }
 
 export async function insertInvite(
