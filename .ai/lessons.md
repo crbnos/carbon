@@ -1604,3 +1604,13 @@ full-screen ERP route.
 **Rule:** Persist completion metadata only after a successful provider response or a specifically documented idempotent response contract. Error text, status guesses, and hoped-for remote state are not confirmation; propagate unknown failures so the workflow remains retryable.
 
 **Applies to:** Ramp bill archival and every external integration that records a local completion flag after a remote mutation.
+
+## Prerequisite lookup failures must hold outbound cursors
+
+**Context:** Ramp outbound purchase-order and invoice families batch-load suppliers and supplier types before deciding whether and how to export each document.
+
+**Problem:** Query errors were treated like empty results. The workflow could skip documents, misclassify an Employee reimbursement as a vendor bill, and still advance the family cursor beyond the unread data.
+
+**Rule:** Distinguish an empty successful lookup from a failed lookup. If data required for eligibility or payload construction cannot be read, fail the family before remote effects and keep its cursor unchanged so the same page replays after recovery.
+
+**Applies to:** Ramp outbound suppliers and classifications, and every cursor-based exporter with prerequisite database reads.

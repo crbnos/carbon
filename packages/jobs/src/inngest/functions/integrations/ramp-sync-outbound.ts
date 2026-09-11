@@ -88,13 +88,16 @@ async function loadRampVendorSuppliers(
   const ids = [...new Set(supplierIds.filter(Boolean))];
   if (ids.length === 0) return map;
 
-  const { data } = await ctx.client
+  const { data, error } = await ctx.client
     .from("supplier")
     .select(
       "id, name, supplierTypeId, supplierContact!supplier_purchasingContactId_fkey(contact(email, firstName, lastName, mobilePhone, homePhone, workPhone)), supplierLocation!supplierLocation_supplierId_fkey(address(countryCode, addressLine1, addressLine2, city, stateProvince, postalCode))"
     )
     .eq("companyId", ctx.companyId)
     .in("id", ids);
+  if (error) {
+    throw new Error(`Failed to load Ramp vendor suppliers: ${error.message}`);
+  }
 
   for (const row of (data ?? []) as unknown as SupplierVendorRow[]) {
     const contact = row.supplierContact?.contact ?? null;
@@ -377,6 +380,11 @@ export async function syncRampOutbound(
             .select("id, name")
             .eq("companyId", companyId)
             .in("id", typeIds);
+          if (types.error) {
+            throw new Error(
+              `Failed to classify Ramp invoice supplier types: ${types.error.message}`
+            );
+          }
           for (const type of types.data ?? []) {
             if (type.name === "Employee") employeeTypeIds.add(type.id);
           }
