@@ -129,6 +129,9 @@ export async function persistIntegrationSecrets(
 ): Promise<Json> {
   const { config, secrets } = splitSecrets(integrationId, metadata);
 
+  // `secrets` is a PARTIAL bag — splitSecrets omits untouched masked fields — so
+  // the RPC MERGES it into the stored bag (an omitted secret keeps its value).
+  // A full replace silently wiped a multi-secret integration's other credential.
   if (Object.keys(secrets).length > 0) {
     const { error } = await serviceClient.rpc("upsert_integration_secret", {
       p_company_id: companyId,
