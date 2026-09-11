@@ -18,7 +18,9 @@ import {
 } from "./ramp-sync-shared";
 
 const REPAYMENT_REPAID_STATUS = "REPAID";
-const REPAYMENT_STATEMENT_CREDIT_FUNDING = "STATEMENT_CREDIT";
+// Repayment.funding_method is a free string; only "ach" is demonstrated by
+// Ramp's OpenAPI example (2026-09-11). Do not guess an offset for other values.
+const REPAYMENT_BANK_FUNDING = "ach";
 
 function instantMinusOneSecond(iso: string): string {
   const ms = Date.parse(iso);
@@ -96,6 +98,12 @@ export async function syncRampRepayments(
         if (!isRampEntityInScope(entityId, repayment.entity_id)) continue;
         if (repayment.status !== REPAYMENT_REPAID_STATUS) continue;
         const repaidAt = repayment.repaid_at ?? null;
+        if (repayment.funding_method !== REPAYMENT_BANK_FUNDING) {
+          failed += 1;
+          if (repaidAt) failedRepaidAt.push(repaidAt);
+          result.error ??= `Repayment ${repayment.id} has unsupported funding method: ${repayment.funding_method || "missing"}`;
+          continue;
+        }
 
         // Idempotency: already synced (no Ramp confirm exists — mapping is it).
         const existing = await ctx.mapping.getEntityId(
@@ -207,12 +215,7 @@ export async function syncRampRepayments(
           decimals
         );
 
-        // Funding: bank deposit → statement bank; statement credit → card
-        // liability. TODO(task-1): confirm the funding_method enum values.
-        const offsetAccountId =
-          repayment.funding_method === REPAYMENT_STATEMENT_CREDIT_FUNDING
-            ? cardLiabilityAccountId
-            : (metadata.statementBankAccountId as string);
+        const offsetAccountId = metadata.statementBankAccountId;
 
         const transactionDate = repaidAt?.slice(0, 10);
         if (!transactionDate) {

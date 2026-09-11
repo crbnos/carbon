@@ -37,11 +37,23 @@ export type RampBillPaymentDependencies = {
   invoiceDeepLinkUrl: (invoiceRowId: string) => string;
 };
 
-// TODO(task-1): confirm Ramp's card payment_method enum values.
+// ApiBillPayment.payment_method in Ramp's OpenAPI contract (2026-09-11).
 const CARD_PAYMENT_METHODS = new Set([
   "CARD",
   "ONE_TIME_CARD",
+  "ONE_TIME_CARD_DELIVERY",
   "AUTOMATIC_CARD_PAYMENT"
+]);
+const BANK_PAYMENT_METHODS = new Set([
+  "ACH",
+  "CHECK",
+  "DIRECT_DEBIT",
+  "DOMESTIC_WIRE",
+  "FED_NOW",
+  "INTERNATIONAL",
+  "LOCAL_BANK_TRANSFER",
+  "RTP",
+  "SWIFT"
 ]);
 
 export async function ensureRampPaymentPosted(deps: {
@@ -219,6 +231,14 @@ export async function syncRampBillPayment(
   const method = payment.payment_method ?? "";
   if (CARD_PAYMENT_METHODS.has(method)) {
     return { skip: { id: paymentRampId, referenceId: paymentRampId } };
+  }
+  if (!BANK_PAYMENT_METHODS.has(method)) {
+    return {
+      fail: {
+        id: paymentRampId,
+        message: `Unsupported Ramp bill payment method: ${method || "missing"}`
+      }
+    };
   }
 
   const invoiceId = await deps.getMappedInvoiceId(bill.id);

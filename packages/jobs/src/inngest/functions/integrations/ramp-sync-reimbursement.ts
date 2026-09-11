@@ -71,8 +71,19 @@ export type RampReimbursementDependencies = {
   invoiceDeepLinkUrl: (invoiceRowId: string) => string;
 };
 
-// TODO(task-1): confirm which state distinguishes Ramp-paid from manual payout.
-const REIMBURSEMENT_PAID_STATES = new Set(["REIMBURSED", "PAID", "PAID_OUT"]);
+// Reimbursement.state in Ramp's OpenAPI contract (2026-09-11). Only verified
+// Ramp-paid states authorize a bank settlement; other payment/export states
+// remain unsupported until their accounting semantics are established.
+const REIMBURSEMENT_PAID_STATES = new Set([
+  "REIMBURSED",
+  "REIMBURSED_VIA_PUSH"
+]);
+const REIMBURSEMENT_INVOICE_ONLY_STATES = new Set([
+  "APPROVED",
+  "AWAITING_PAYMENT",
+  "AWAITING_PUSH_PAYMENT",
+  "MANUALLY_REIMBURSED"
+]);
 
 async function loadDraftStructure(
   tx: KyselyTx,
@@ -530,9 +541,16 @@ export async function syncRampReimbursement(
   deps: RampReimbursementDependencies,
   reimbursement: RampReimbursement
 ): Promise<{ ok: SyncItem } | { fail: FailItem }> {
-  const isRampPaid = reimbursement.state
-    ? REIMBURSEMENT_PAID_STATES.has(reimbursement.state)
-    : false;
+  const state = reimbursement.state ?? "";
+  const isRampPaid = REIMBURSEMENT_PAID_STATES.has(state);
+  if (!isRampPaid && !REIMBURSEMENT_INVOICE_ONLY_STATES.has(state)) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: `Unsupported Ramp reimbursement state: ${state || "missing"}`
+      }
+    };
+  }
   const mapping = createMappingService(deps.db, deps.companyId);
   const mappedInvoiceId = await mapping.getEntityId(
     "ramp",
