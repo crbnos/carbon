@@ -157,7 +157,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     return { success: true };
-  } catch (_err) {
+  } catch (err) {
+    logger.error("Paperless Parts webhook failed", {
+      companyId,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined
+    });
     return data({ success: false }, { status: 500 });
   }
 }
