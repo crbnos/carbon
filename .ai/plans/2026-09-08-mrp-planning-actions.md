@@ -125,9 +125,18 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
    ALTER TABLE "itemPlanning"    ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
    ALTER TABLE "location"        ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
    ALTER TABLE "companySettings" ADD COLUMN IF NOT EXISTS "defaultResponsibleEmployee" TEXT REFERENCES "user"("id");
-   ALTER TABLE "companySettings" ADD COLUMN IF NOT EXISTS "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
+   ALTER TABLE "companySettings" ADD COLUMN IF NOT EXISTS "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7
+     CHECK ("rescheduleToleranceDays" >= 0);
    ```
-6b. **Location-specific item-group ownership table** (the "location → item group" tier — the same group can have a different owner per location, so it is NOT a column on `itemPostingGroup`). **Before writing the composite FKs, verify the PK shape** of `location` and `itemPostingGroup`: `psql`-inspect or grep their creating migrations. Carbon convention is composite PK `("id","companyId")` (unlike `item`, whose PK is `id` alone — see the `item has single-column PK` lesson). If either is single-column, use a single-column FK on `id` + a `companyId` FK instead of the composite FK. Then:
+   The tolerance comparison is **strictly greater than** everywhere (`gap > rescheduleToleranceDays` fires; `≤` is suppressed) — engine, tests, and acceptance all use the same `>`.
+6b. **Location-specific item-group ownership table** (the "location → item group" tier — the same group can have a different owner per location, so it is NOT a column on `itemPostingGroup`). **Composite-FK prerequisites (verified 2026-09-11):** `location` already has `UNIQUE ("id","companyId")` (`location_id_companyId_key`, added by `20260905132037_job-operation-batching.sql:159`), but **`itemPostingGroup`'s PK is `("id")` alone** (`20230330024716_parts.sql:69`) with no `("id","companyId")` unique — the composite FK below FAILS without one. Add it first, idempotently:
+   ```sql
+   DO $$ BEGIN
+     ALTER TABLE "itemPostingGroup"
+       ADD CONSTRAINT "itemPostingGroup_id_companyId_key" UNIQUE ("id", "companyId");
+   EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL; END $$;
+   ```
+   Then:
    ```sql
    CREATE TABLE IF NOT EXISTS "itemPostingGroupResponsibility" (
        "id" TEXT NOT NULL DEFAULT id('pgr'),
@@ -150,7 +159,11 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
    CREATE INDEX IF NOT EXISTS "itemPostingGroupResponsibility_companyId_idx" ON "itemPostingGroupResponsibility" ("companyId");
    CREATE INDEX IF NOT EXISTS "itemPostingGroupResponsibility_createdBy_idx" ON "itemPostingGroupResponsibility" ("createdBy");
    ```
-   Add the four RLS policies to this table (SELECT via `get_companies_with_employee_role()`; INSERT/UPDATE/DELETE via `get_companies_with_employee_permission('settings_update')`), same form as the `planningAction` block above.
+   Then **explicitly enable RLS** — policies are inert without it — and add the four policies (SELECT via `get_companies_with_employee_role()`; INSERT/UPDATE/DELETE via `get_companies_with_employee_permission('settings_update')`), same form as the `planningAction` block above:
+   ```sql
+   ALTER TABLE "public"."itemPostingGroupResponsibility" ENABLE ROW LEVEL SECURITY;
+   ```
+   Include a cross-company access test in the browser-verification pass (a user of company A must not read/write company B's responsibility rows).
 7. Apply locally: `pnpm db:migrate`.
 
 **Verify:**
@@ -306,20 +319,21 @@ pnpm --filter @carbon/ee test
    - Call the RPCs `get_purchasing_planning` and `get_production_planning` (via `client.rpc(...)`) → per-item rows with `reorderingPolicy`, reorder params, `week1..weekN` projections, `quantityToOrder`, `preferredSupplierId`, `suppliers`.
    - **Order/Make actions:** run `computePlanningOrders` (Task 3) per item from its projections+params → dated suggestions. Buy items (`replenishmentSystem != 'Make'`) → `Order` (+ `supplierId` = preferred); Make items → `Make`. Carry `policyName`/`triggerValues`/`isASAP`.
    - **Change actions:** query the `openPurchaseOrderLines` and `openProductionOrders` views for the company/location. Per (itemId, locationId), match open orders to net requirements greedily by date:
-     - an open order whose matched requirement date is earlier than its own date by > `rescheduleToleranceDays` → **Expedite** (`suggestedDate` = requirement date, target = the PO line / job);
-     - later by > tolerance → **Defer**;
+     - an open order whose matched requirement date is earlier than its own date by **strictly more than** `rescheduleToleranceDays` → **Expedite** (`suggestedDate` = requirement date, target = the PO line / job);
+     - later by strictly more than the tolerance → **Defer** (a gap ≤ tolerance never fires — the `>` comparison is canonical everywhere including tests);
      - open order quantity < requirement (after order-multiple rounding) → **Increase**; > requirement → **Decrease**;
      - open order with no remaining requirement → **Cancel**.
-     - Set `requiresManualAction`: for a PO line, true when `isPurchaseOrderLocked(status)` / `orderDate IS NOT NULL` (`purchasing.models.ts` `PURCHASE_ORDER_LOCKED_STATUSES`); for a job, true when `status = 'Ready'` or later (`ACTIVE_JOB_STATUSES` beyond Planned — treat `Ready`/`In Progress`/`Paused` as committed).
+     - **Exactly ONE action per target document.** Date and qty rules can both match the same PO line/job; emit only the single highest-priority action per target: **Cancel** (mutually exclusive — no requirement) → **Expedite/Defer** (date) → **Increase/Decrease** (qty). Suppress the lower-priority action *before* the diff-write; a target needing both gets the date action now and the qty action on a later run.
+     - Set `requiresManualAction`: for a PO line, true **only** when `isPurchaseOrderLocked(status)` (`purchasing.models.ts` `PURCHASE_ORDER_LOCKED_STATUSES`). Do **NOT** gate on `orderDate` — `insertPurchaseOrder` defaults `orderDate` to today, so it is non-null even on freshly planned POs and would flag every one. For a job, true when `status = 'Ready'` or later (treat `Ready`/`In Progress`/`Paused` as committed; `Draft`/`Planned` are not).
    - Resolve `assignee` via the Task 5 bulk resolver.
 2. **Diff-write** in a Kysely transaction on the natural key `(companyId, itemId, locationId, type, periodId, COALESCE(poLineId, jobId, ''))`:
    - matched `Open` row → UPDATE in place (suggested qty/date/reason/isASAP/requiresManualAction refreshed; `assignee` re-resolved ONLY when `assigneeOverridden = false`; bump `updatedAt`/`updatedBy` only on real change);
    - matched `Dismissed` row → leave dismissed UNLESS suggestion changed materially (qty beyond order-multiple rounding, or date beyond `rescheduleToleranceDays`) → set back to `Open`;
-   - `Open` row with no matching computed action → delete;
+   - `Open` **or `Dismissed`** row with no matching computed action → **delete** (retire). A lingering Dismissed row whose need vanished would otherwise occupy the natural key and block a fresh Open row if the same need returns — a returning need is a new situation and must re-surface;
    - `Actioned` rows → ignore (excluded by the partial-unique predicate).
    - Batch 500/statement.
-3. Wire into `runMrp` (`mrp.ts`): after the existing `db.transaction().execute(...)` at line 937 returns, call `await generatePlanningActions(client, db, { companyId, userId })` inside a try/catch that logs and swallows (forecast/actuals are already committed; actions regenerate next run). `userId` is the payload's `userId`.
-4. Test `planning-actions.test.ts`: (a) an item short of coverage with no open order → one `Order`/`Make`; (b) an open PO due > tolerance late → `Expedite` referencing the PO line; (c) date mismatch within tolerance → no change action; (d) two consecutive runs on identical inputs → identical rows (diff-write idempotency); (e) a `Dismissed` row survives an unchanged run; (f) a locked/sent PO → `requiresManualAction = true`. Use injected fixtures / a test DB per the package's existing test setup.
+3. Wire into `runMrp` (`mrp.ts`): after the existing `db.transaction().execute(...)` at line 937 returns, call `await generatePlanningActions(client, db, { companyId, userId })` and let any error **propagate** — do NOT catch-and-swallow. A generation failure must fail the run so callers report it (the scheduled Inngest job already try/catches per company and logs; the manual `api/mrp` route surfaces the error to the user) instead of reporting success with stale actions; the already-committed forecasts are fine and actions self-heal on the next successful run. `userId` is the payload's `userId`. **Audit actor:** the scheduled path passes `userId: "system"`, which is a real seeded `user` row (`20230123004317_companies-rls.sql:76` inserts `('system', 'system@carbonos.dev', …)`), so the `createdBy` FK is satisfied on every deployment — assert this in the test below rather than assuming it.
+4. Test `planning-actions.test.ts`: (a) an item short of coverage with no open order → one `Order`/`Make`; (b) an open PO due > tolerance late → `Expedite` referencing the PO line; (c) a date gap of **exactly** the tolerance → no message; tolerance+1 day → message (boundary pins the strict `>`); (d) two consecutive runs on identical inputs → identical rows (diff-write idempotency); (e) a `Dismissed` row survives an unchanged run; a `Dismissed` row whose need vanished is **deleted**, and the returning need creates a fresh `Open` row; (f) `requiresManualAction`: false for `Draft` and `Planned` PO statuses, true for each `PURCHASE_ORDER_LOCKED_STATUSES` value; (g) an open PO wrong on BOTH date and qty → exactly ONE action (the date action) for that target; (h) a run with `userId: "system"` writes actions whose `createdBy = 'system'` satisfies the FK (scheduled-path proof). Use injected fixtures / a test DB per the package's existing test setup.
 
 **Verify:**
 ```bash
@@ -342,7 +356,7 @@ If the open-order-to-requirement matching cannot be made deterministic from the 
 - Copy from (precedent): `getPurchasingPlanning` (`purchasing.service.ts:460`) for the `GenericQueryFilters` + `client.from(...)`/`client.rpc(...)` shape; `assign()` in `apps/erp/app/modules/shared/shared.server.ts` for assignment
 
 **Steps:**
-1. `getPlanningActions(client, { companyId, locationId, replenishmentSystem: "Buy" | "Make", filters })` — selects `planningAction` joined to item (readable id, name) for the location, filtered to `status <> 'Actioned'` by default, honoring `GenericQueryFilters` (assignee, type, status, search, sorts, pagination). Buy page passes the Buy set (`type IN ('Order','Expedite','Defer','Cancel','Increase','Decrease')` for items whose `replenishmentSystem != 'Make'`); Make page the Make set. Returns raw `{ data, error }`.
+1. `getPlanningActions(client, { companyId, locationId, replenishmentSystem: "Buy" | "Make", filters })` — selects `planningAction` joined to item (readable id, name) for the location, filtered to `status <> 'Actioned'` by default, honoring `GenericQueryFilters` (assignee, type, status, search, sorts, pagination). **Also join through `purchaseOrderLine` to select the parent `purchaseOrderId` (+ its readable id)** — `planningAction` stores the LINE id, and `path.to.purchaseOrder(...)` needs the PO id, so "Review on PO" navigation would otherwise be a broken link. Include the job's readable id for the job case. Buy page passes the Buy set (`type IN ('Order','Expedite','Defer','Cancel','Increase','Decrease')` for items whose `replenishmentSystem != 'Make'`); Make page the Make set. Returns raw `{ data, error }`.
 2. `dismissPlanningAction(client, { ids, userId })` — set `status = 'Dismissed'`, `updatedBy`, `updatedAt` for the ids (bulk).
 3. `markPlanningActionActioned(client, { ids, userId })` — set `status = 'Actioned'` (called by the apply route after a successful apply — Task 8).
 4. Assignment reuses the shared **`assign()`** service against `table: "planningAction"` (the column is named `assignee`), and additionally sets `assigneeOverridden = true`. Add a small `assignPlanningAction(client, { id, assignee, userId })` that does both in one update (do NOT route through `api/assign`, because that path also fires table→NotificationEvent mapping we don't want here; a dedicated fn keeps it quiet). Confirm no `NotificationEvent` is wired for `planningAction` in `api+/assign.ts`.
@@ -367,23 +381,24 @@ pnpm exec turbo run typecheck --filter=erp
 - Copy from (precedent): the existing `action === "order"` branch in each `planning.update.tsx`; `shortClosePurchaseOrderLine` / `updateJobStatus` / `updateJobOperationDueDate` / `notifyScheduleInputsChanged` for change execution
 
 **Steps:**
-1. Extend each `planning.update` action switch beyond `"order"`. Keep `"order"` (Order/Make create) exactly as-is. Add branches for `"expedite" | "defer" | "increase" | "decrease" | "cancel"`, each carrying the `planningActionId` and the target ref.
-2. **Commitment gate in the route** (defense-in-depth; the engine already flagged it): before mutating, re-read the target document's status. If the PO is locked (`isPurchaseOrderLocked`) / `orderDate` set, or the job status is `Ready`+, **refuse the auto-apply** and return `{ requiresManualAction: true }` (the UI navigates instead — Task 11). Otherwise:
+1. Extend each `planning.update` action switch beyond `"order"`. Keep `"order"` (Order/Make create) exactly as-is. Add branches for `"expedite" | "defer" | "increase" | "decrease" | "cancel"`. **Wire representation:** route discriminators are lowercase; the client maps the stored enum through ONE explicit map before submit (`{ Order: "order", Make: "order", Expedite: "expedite", Defer: "defer", Increase: "increase", Decrease: "decrease", Cancel: "cancel" }` — a raw `Order` must never reach `action === "order"` unmapped or it falls into the unknown-action branch).
+2. **Bind to the persisted action first (IDOR guard — CWE-639).** Each change-action branch receives ONLY a `planningActionId`. Before any mutation the route loads the `planningAction` by **id AND companyId**, requires `status = 'Open'`, and takes the action **type, target reference (`purchaseOrderLineId`/`jobId`), `suggestedDate`, and `suggestedQuantity` from the stored row** — never from the request body. Reject id-not-found, cross-company, non-Open, or type-mismatch requests. Every subsequent target lookup and update is `companyId`-scoped.
+3. **Commitment gate in the route** (defense-in-depth; the engine already flagged it): re-read the target document's status. If the PO is locked (**`isPurchaseOrderLocked(status)` only — do NOT check `orderDate`, which `insertPurchaseOrder` defaults to today even for planned POs**), or the job status is `Ready`+, **refuse the auto-apply** and return `{ requiresManualAction: true }` (the UI navigates instead — Task 11). Otherwise:
    - Expedite/Defer on a PO line → `updatePurchaseOrderLineSchedule({ lineId, requiredDate: suggestedDate })`.
    - Increase/Decrease on a PO line → `updatePurchaseOrderLineSchedule({ lineId, purchaseQuantity: suggestedQuantity })`.
    - Cancel on a PO line → `shortClosePurchaseOrderLine(db, { lineId, purchaseOrderId, companyId, userId, intent: "close" })`.
-   - Expedite/Defer on a job → `updateJobOperationDueDate` for the driving op and/or `updateJob({ dueDate })`, then `notifyScheduleInputsChanged(companyId, "reorder", reason, jobId)` (there is no `"job"` kind — use `"reorder"`).
+   - Expedite/Defer on a job → **exactly one path**: `updateJob({ dueDate: suggestedDate })` (the job's demand target; it recomputes priority), then `notifyScheduleInputsChanged(companyId, "reorder", reason, jobId)` (there is no `"job"` kind — use `"reorder"`). Do NOT call `updateJobOperationDueDate` — that pins an *operation* need-by and sets `manuallyScheduled`, a different input — and never write `jobOperation` dates directly.
    - Increase/Decrease on a job → `updateJob({ quantity })` then `recalculateJobRequirements`.
    - Cancel on a job → `updateJobStatus({ id, companyId, status: "Cancelled", updatedBy })`.
-3. On success, call `markPlanningActionActioned(client, { ids: [planningActionId], userId })`.
-4. Preserve the JSON-body + `action`-discriminator contract and the plain-object return shape (no redirect) both routes use today.
+4. On success, call `markPlanningActionActioned(client, { ids: [planningActionId], userId })`.
+5. Preserve the JSON-body + `action`-discriminator contract and the plain-object return shape (no redirect) both routes use today.
 
 **Verify:**
 ```bash
 pnpm exec turbo run typecheck --filter=erp
 # Expected: clean typecheck; unknown-action default branch still errors.
 ```
-If a job-side reschedule cannot be expressed through `notifyScheduleInputsChanged` + `updateJobOperationDueDate` without touching scheduler internals, STOP and report — do not write `jobOperation` dates directly.
+If a job-side reschedule cannot be expressed as `updateJob({ dueDate })` + `notifyScheduleInputsChanged` without touching scheduler internals, STOP and report — do not write `jobOperation` dates directly, and do not repurpose `updateJobOperationDueDate` (it pins an operation need-by, a different input).
 
 **Out of scope:** the automated reopen + supplier-notification / change-order flow for committed POs (deferred — the gate just navigates).
 
@@ -437,6 +452,7 @@ pnpm exec turbo run typecheck --filter=erp
    Each returns `{ success, message }` (no redirect; fetcher + toast).
 4. Register the settings link + `path.to.settingsPlanning`.
 5. Settings writers go in the appropriate settings service (`setResponsibleEmployeeDefault`, `setLocationResponsibleEmployee`, `upsertItemPostingGroupResponsibility`).
+6. Expose **`rescheduleToleranceDays`** on the same screen as a plain number field (its own small card above the ownership card), zod-validated `z.number().int().min(0).max(365)` in the mutation (the DB `CHECK (>= 0)` is the backstop; a negative value would make every gap actionable).
 
 **Verify:**
 ```bash
@@ -459,7 +475,7 @@ pnpm exec turbo run typecheck --filter=erp
 **Steps:**
 1. Loader: alongside the existing `getPurchasingPlanning`/`getProductionPlanning` projection query, call `getPlanningActions(...)` for the location + replenishment set and pass the rows to the table.
 2. Columns: add **action type**, **suggested date**, **suggested qty**, **reason** (rendered from `triggerValues`/`policyName`), **assignee** (render the `Assignee` inline control with `table="planningAction"` — but wire its onChange to the quiet `assignPlanningAction` route, not the notification-firing `api/assign`; simplest: a dedicated fetcher POST), **status**, and an urgency flag from `isASAP`. Give the type and status columns `meta.filter` static options; give assignee a static filter of people so **"my actions"** is a filter value (default the page to the current user via the initial filter/search params).
-3. Row primary control: **Apply** (submits to the extended `planning.update` route with the row's `type`, target ref, and `planningActionId`) — EXCEPT when `requiresManualAction`, where the control is **"Review on PO/Job"** and links to `path.to.purchaseOrder(id)` / `path.to.job(id)`.
+3. Row primary control: **Apply** — submits to the extended `planning.update` route with the row's **`planningActionId` and the mapped lowercase `action`** (via the Task 8 enum→wire map; e.g. `Expedite` → `"expedite"`) and NOTHING else: the server derives type, target, and proposal values from the persisted row (Task 8 IDOR bind). EXCEPT when `requiresManualAction`, where the control is **"Review on PO/Job"** and links to `path.to.purchaseOrder(purchaseOrderId)` using the **parent PO id from Task 7's join** (never the stored `purchaseOrderLineId` — that link would 404) / `path.to.job(jobId)`.
 4. Bulk (reuse `withSelectableRows` + `renderActions`): **Apply selected**, **Assign selected**, **Dismiss selected** (the latter two POST to the new services). Keep the existing "Recalculate" MRP button.
 5. Keep the live 48-week projection columns exactly as they are.
 

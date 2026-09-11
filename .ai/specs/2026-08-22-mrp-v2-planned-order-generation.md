@@ -145,7 +145,8 @@ Ownership ladder (tree: **company default → location → location-specific ite
 ALTER TABLE "itemPlanning"    ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per item+location (most specific leaf)
 ALTER TABLE "location"        ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per location
 ALTER TABLE "companySettings" ADD COLUMN "defaultResponsibleEmployee" TEXT REFERENCES "user"("id"); -- company default (all)
-ALTER TABLE "companySettings" ADD COLUMN "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7;
+ALTER TABLE "companySettings" ADD COLUMN "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7
+  CHECK ("rescheduleToleranceDays" >= 0);  -- negative would make every gap actionable
 
 -- The "location > item group" tier. Item-group ownership is LOCATION-SPECIFIC — the
 -- same group can have a different owner at each location — so it is NOT a column on
@@ -164,8 +165,10 @@ CREATE TABLE "itemPostingGroupResponsibility" (
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     PRIMARY KEY ("id", "companyId"),
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
-    -- composite FKs assume location/itemPostingGroup have PK ("id","companyId") — the
-    -- plan's migration task verifies PK shape first (item.id is single-column; these are not).
+    -- Composite-FK prerequisites (verified 2026-09-11): "location" already has
+    -- UNIQUE ("id","companyId") (20260905132037_job-operation-batching.sql), but
+    -- "itemPostingGroup"'s PK is ("id") ALONE (parts.sql:69) — the migration must first
+    -- add an idempotent UNIQUE ("id","companyId") on itemPostingGroup or this FK fails.
     CONSTRAINT "itemPostingGroupResponsibility_location_fkey"
       FOREIGN KEY ("locationId", "companyId") REFERENCES "location"("id", "companyId") ON DELETE CASCADE,
     CONSTRAINT "itemPostingGroupResponsibility_group_fkey"
@@ -174,9 +177,10 @@ CREATE TABLE "itemPostingGroupResponsibility" (
 );
 ```
 
-`itemPostingGroupResponsibility` gets the four standard RLS policies (SELECT via
-`get_companies_with_employee_role()`; writes via `settings_update`, since it is
-configured on the settings screen).
+`itemPostingGroupResponsibility` has RLS **explicitly enabled**
+(`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` — policies are inert without it) plus the
+four standard policies (SELECT via `get_companies_with_employee_role()`; writes via
+`settings_update`, since it is configured on the settings screen).
 
 `planningAction` gets the four standard RLS policies — SELECT via
 `get_companies_with_employee_role()`, writes via `production_*`/`purchasing_*` (mirroring
@@ -190,7 +194,7 @@ convention).
 tree it is **all → location → item group**, with a per-item leaf override on top (and the
 per-message assignee override on top of that):
 
-```
+```text
 itemPlanning.responsibleEmployee                     -- this item at this location (leaf override)
   ?? itemPostingGroupResponsibility[location, group] -- the item's group AT THIS LOCATION
   ?? location.responsibleEmployee                     -- this location
@@ -223,19 +227,32 @@ from the printer `AssignmentsCard` (P1.7).
 ## P1.4 Engine changes (`runMrp`)
 
 `runMrp` already computes period-phased net requirements per (item, location). Phase 1
-adds a step inside the existing atomic Phase-7 Kysely transaction that **diff-writes**
-`planningAction` rows. For each (item, location, period):
+adds a generation step that **diff-writes** `planningAction` rows in **its own atomic
+Kysely transaction, immediately after the Phase-7 transaction commits** (it reads the
+planning RPCs, which see only committed data, so it cannot live inside Phase-7 itself).
+A generation failure **propagates to the caller** — `runMrp` reports the run failed
+rather than succeeding with stale actions; the already-committed forecasts are correct
+and the actions self-heal on the next successful run. For each (item, location, period):
 
 - **No open supply covers the net requirement** → **`Order`** (Buy item) or **`Make`**
   (Make item). `suggestedQuantity` = the lot-sized reorder quantity (the same number the
   grid shows today, via the shared sizing function — P1.8 "sizing home"); `suggestedDate`
   = the need date; `supplierId` = preferred supplier for Buy.
-- **An open PO-line/job covers it on the wrong date**, gap > `rescheduleToleranceDays` →
-  **`Expedite`** (needs to be earlier) or **`Defer`** (later). `suggestedDate` = the
-  recommended new date; the target ref points at the open document.
+- **An open PO-line/job covers it on the wrong date**, gap **strictly greater than**
+  `rescheduleToleranceDays` (a gap ≤ tolerance is suppressed; the same `>` comparison is
+  used everywhere — engine, tests, acceptance) → **`Expedite`** (needs to be earlier) or
+  **`Defer`** (later). `suggestedDate` = the recommended new date; the target ref points
+  at the open document.
 - **An open order's quantity no longer matches** the requirement (after lot/order-multiple
   rounding) → **`Increase`** or **`Decrease`**.
 - **An open order has no remaining requirement** → **`Cancel`**.
+- **One action per target document.** Date and quantity rules can both match the same
+  open PO-line/job; the engine emits only the **single highest-priority** action per
+  target: **Cancel** (no remaining requirement — mutually exclusive with the rest) →
+  **Expedite/Defer** (date) → **Increase/Decrease** (quantity). A target needing both a
+  date and a qty change gets the date action; the qty change surfaces on a later run
+  once the date is fixed (SAP folds qty into reschedule the same way). This is MRP-v2's
+  "single highest-priority message on the line" rule applied to Phase 1.
 
 Each row carries the resolved assignee (P1.3), the `reason`/`policyName`/`triggerValues`
 attribution (computed by the sizing logic, discarded today), the `isASAP` urgency flag
@@ -250,7 +267,10 @@ run). On the natural key `(item, location, type, period, target document)`:
 - a matched **Dismissed** row stays dismissed **unless** the suggestion changed materially
   (qty beyond rounding, or date beyond `rescheduleToleranceDays`), in which case it
   re-opens;
-- an unmatched **Open** row whose need has vanished is **closed**;
+- an unmatched **Open** *or* **Dismissed** row whose need has vanished is **deleted**
+  (retired) — a dismissal suppresses a *persisting* need; once the need disappears the
+  row must not linger, or its natural key would block a fresh Open row if the same need
+  returns later. A returning need is a new situation and re-surfaces as a new Open row;
 - **Actioned** rows are terminal and ignored — if the same need recurs, a fresh row is
   created.
 
@@ -268,7 +288,7 @@ it. No new execution engine.
 |---|---|
 | **Order** | Reuse the existing `planning.update` `"order"` path (group by supplier+period, find-or-create a `Planned` PO, merge lines); stamp the assignee onto the PO. |
 | **Make** | Reuse the existing production `planning.update` job-creation path. |
-| **Expedite / Defer** | Uncommitted target — PO line: update `requiredDate`; job: route through the scheduler (`notifyScheduleInputsChanged` / `updateJobOperationDueDate`). |
+| **Expedite / Defer** | Uncommitted target — PO line: update `requiredDate`. Job: update the **job's demand target** via `updateJob({ dueDate: suggestedDate })`, then `notifyScheduleInputsChanged(companyId, "reorder", reason, jobId)` so the scheduler re-plans. Never `updateJobOperationDueDate` (that pins an *operation* need-by and sets `manuallyScheduled` — a different input) and never direct `jobOperation` date writes. |
 | **Increase / Decrease** | Uncommitted — update `purchaseQuantity` (PO) or the job qty via existing services. |
 | **Cancel** | Uncommitted — cancel/remove the PO line, or cancel the job, via existing services. |
 
@@ -281,18 +301,33 @@ renegotiate + notify supplier); the UI shows **"Review on PO/Job"** instead of o
 apply. An **automated reopen + supplier-notification / change-order flow is explicitly
 deferred** — a separate feature.
 
+**Apply binds to the persisted action (IDOR guard).** The apply route receives only a
+`planningActionId`. The server loads the `planningAction` by **id + companyId**, requires
+`status = 'Open'`, and executes from the row's **stored** type, target reference, and
+proposal values — never from client-supplied targets or quantities. Mismatched or
+non-Open requests are rejected; every target lookup and mutation is `companyId`-scoped.
+
 Applied → the row flips to **`Actioned`** (next run won't recreate it). A buyer may also
 **`Dismiss`** (won't recur until the underlying need changes materially). Both are
 available in bulk.
 
-> Implementation note (verify when planning): the exact PO status marking "sent to the
-> supplier" and whether a reopen action already exists must be confirmed against the
-> purchasing module; the gate keys off that status.
+> Commitment-gate facts (verified): "sent to supplier" = `isPurchaseOrderLocked(status)`
+> (`PURCHASE_ORDER_LOCKED_STATUSES` = To Receive / To Receive and Invoice / To Invoice /
+> Completed / Closed, `purchasing.models.ts`). Do **not** gate on `orderDate` —
+> `insertPurchaseOrder` defaults it to today, so it is set even on freshly planned POs
+> and would flag every one `requiresManualAction`. Jobs are committed at status
+> `Ready` or later (`Ready`/`In Progress`/`Paused`); `Draft`/`Planned` are uncommitted.
+> A reopen path exists (`reopenPurchaseOrderAsRevision`) for the manual flow.
 
 ## P1.6 Noise gating
 
 A single company-level **`rescheduleToleranceDays`** (default **7** = one weekly bucket)
-gates Expedite/Defer: a date mismatch smaller than the tolerance raises no message.
+gates Expedite/Defer. **Canonical boundary: a message fires only when the date gap is
+strictly greater than the tolerance (`gap > rescheduleToleranceDays`); a gap ≤ tolerance
+is suppressed.** The same comparison is used in the engine, the tests, and the acceptance
+criteria — at exactly 7 days, nothing fires. The column carries a `CHECK (>= 0)` (a
+negative value would make every gap actionable) and the settings mutation validates
+`0–365`.
 Because Carbon already buckets planning by week, sub-week noise is invisible anyway. **No
 separate quantity dampener in Phase 1** — Carbon's existing `orderMultiple`/`lotSize`/
 min-max-OQ rounding absorbs trivial qty deltas; a dampener is a later add if churn
@@ -366,7 +401,8 @@ Phase 1 is forward-compatible with the `plannedOrder` design below:
       **Defer**; both reference the `purchaseOrderLineId`.
 - [ ] An open order whose qty falls short / exceeds the requirement yields **Increase** /
       **Decrease**; an open order with no remaining requirement yields **Cancel**.
-- [ ] A date mismatch **within** `rescheduleToleranceDays` yields **no** message.
+- [ ] A date mismatch **≤** `rescheduleToleranceDays` yields **no** message; a mismatch
+      **strictly greater** fires (boundary test at exactly the tolerance value).
 - [ ] `responsibleEmployee` resolves item → item-group → location → company; the engine
       stamps the resolved user as `assignee`; an unset ladder leaves the action
       Unassigned. Setting the item-group employee routes all that group's actions to
@@ -1660,3 +1696,16 @@ except `api+/planning.what-if.ts`.
   `itemPostingGroup` into a sparse `itemPostingGroupResponsibility` table keyed
   `(companyId, locationId, itemPostingGroupId)`, mirroring the printer AssignmentsCard
   inheritance tree. Updated §P1.2 (data model), §P1.3 (resolver), §P1.8, §P1.11.
+- 2026-09-11: **CodeRabbit review round (PR #1601) folded in.** Generation runs in its
+  own atomic transaction after Phase-7 and failures **propagate** (no swallow); **one
+  action per target** precedence (Cancel → Expedite/Defer → Increase/Decrease); vanished
+  **Dismissed** rows are deleted (retired) so the natural key can't block a returning
+  need; tolerance boundary fixed as strictly `>` with `CHECK (>= 0)` + 0–365 validation;
+  commitment gate keys on `isPurchaseOrderLocked(status)` only (NOT `orderDate`, which
+  defaults to today on insert); apply **binds to the persisted action** by id+companyId
+  with `status='Open'` (IDOR guard); job Expedite/Defer = `updateJob({dueDate})` +
+  `notifyScheduleInputsChanged("reorder")`, never operation-date writes;
+  `itemPostingGroup` needs `UNIQUE ("id","companyId")` before the responsibility FK
+  (verified: PK is `("id")` alone); explicit `ENABLE ROW LEVEL SECURITY` on
+  `itemPostingGroupResponsibility`; scheduled runs' `userId: "system"` is a real seeded
+  user row (`20230123004317_companies-rls.sql`).
