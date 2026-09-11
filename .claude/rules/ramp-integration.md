@@ -29,7 +29,9 @@ providers, which own the data and mirror it out.
 > - Transaction **`amount` is DEPRECATED and a major-unit (dollar) FLOAT** — read
 >   `entity_amount.value` (signed integer minor-units/cents) instead. The old code read
 >   `amount` as cents and understated every card charge 100×. `RampSignedAmount` =
->   `{ currency, value }`; `toMinorUnits` handles both it and `CurrencyAmount` (`{amount}`).
+>   `{ currency, value }`; `parseVerifiedRampMinorAmount` accepts the verified integer-minor
+>   object shapes, while `normalizeRampCardTransactionAmount` handles that preferred field
+>   and the deprecated major-unit card fallback without conflating their units.
 > - Transaction **coding lives on `line_items[].accounting_field_selections[]`** (mirrored
 >   in `accounting_categories`), NOT top-level `accounting_field_selections` (which is `[]`).
 >   The selection's **type is at `category_info.type`** (`GL_ACCOUNT`/`COST_CENTER`), its
@@ -180,12 +182,12 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
   `20260228024512` backfill). Runs on install / settings save AND as the
   `ramp-cost-centers` step of every `ramp-sync`, so a new cost center reaches Ramp
   within ≤1h.
-- Every purchase invoice the sync creates (bill AND reimbursement) gets a bare
-  `purchaseInvoiceDelivery` row (`createPurchaseInvoiceDelivery`, PK = invoice id) right
-  after the header — `post-purchase-invoice` reads it with `.single()` and refuses to post
-  without it ("Failed to fetch purchase invoice delivery"). Neither path inserted it until
-  2026-09-10 (hit live replaying the insert shape by hand; the demo sandbox's bills and
-  reimbursements are uncoded, so the pull itself could not be exercised end to end).
+- Every purchase invoice the sync creates (bill AND reimbursement) gets its required
+  `purchaseInvoiceDelivery` row in the same database transaction as the header, lines, and
+  mapping — `post-purchase-invoice` reads it with `.single()` and refuses to post without it.
+  Standalone invoices use a bare delivery; a single-PO bill preserves the mapped order's
+  delivery metadata. The demo sandbox's bills and reimbursements were uncoded when this was
+  implemented, so the complete inbound pull still needs live verification.
 - `ensureRampConnection` only CREATES (when `metadata.connectionId` is unset). A fresh Carbon
   DB pointed at a Ramp business that already has a Carbon connection (a re-install, a new
   worktree against the sandbox) fails the install hook — adopt the existing connection id
@@ -225,9 +227,13 @@ reintroduce raw read/merge/write or a whole-object Vault replacement.
 `ramp-sync-card.ts`, `ramp-sync-bill.ts`, `ramp-sync-reimbursement-family.ts`,
 `ramp-sync-repayment.ts`, and `ramp-sync-outbound.ts`; shared tenant/currency/file helpers
 live in `ramp-sync-shared.ts`. Pure policy and cursor contracts remain in their dedicated
-files, while `ramp-sync-payment.ts` and `ramp-sync-reimbursement.ts` own transactional
-staging/resume behavior. Family modules contain their own failure isolation, so one family
-does not abort the others. Durable steps remain, in order:
+files. Transactional staging/resume lives in `ramp-sync-card-stage.ts`,
+`ramp-sync-bill-stage.ts` (with PO-line policy in `ramp-sync-bill-po.ts`),
+`ramp-sync-payment.ts`, and `ramp-sync-reimbursement.ts`.
+Family modules contain their own failure isolation, so one family does not abort the others;
+drain exceptions increment that family's `failed` count and appear in its `error`, while
+confirm failures appear as `confirmError` and are included in the coordinator's final issue
+total. Durable steps remain, in order:
 
 | Step | Family | Becomes | syncType (confirm) |
 |------|--------|---------|--------------------|
@@ -240,10 +246,14 @@ does not abort the others. Durable steps remain, in order:
 | `ramp-repayments` | repayments (`from_repaid_at` cursor) | `cardTransaction` Repayment | *(no Ramp confirm)* |
 | `ramp-outbound` | Carbon POs + posted invoices | Ramp POs + draft bills; archive settled | *(no confirm)* |
 
-Card families create a **Draft** `cardTransaction` (+ lines), post it via the
-`post-card-transaction` edge function, link the mapping, and attach Ramp receipts
-(non-fatal). Bills insert a Draft `purchaseInvoice` (or convert a mapped PO for a
-PO-linked bill) and post it via `post-purchase-invoice`. Bill payments delegate to
+Card families use `stageOrResumeRampCardTransaction` to advisory-lock the company/Ramp id
+and atomically create or resume the **Draft** `cardTransaction`, lines, and mapping before
+posting it through `post-card-transaction`. A missing or ambiguous edge response succeeds
+only when a tenant-scoped reread observes `Posted`; Ramp receipts are then stored on the
+Carbon transaction best-effort. Bills likewise use `stageOrResumeRampBill` to atomically
+stage the supplier interaction, Draft `purchaseInvoice`, delivery, lines, and mapping
+before `post-purchase-invoice`; an ambiguous response is accepted only after observing
+`Posted`. Bill payments delegate to
 `syncRampBillPayment` in `ramp-sync-payment.ts`: the Draft payment, settlement, and Ramp
 mapping are staged atomically, the stored source-FX snapshot is retained on resume, and
 success requires a tenant-scoped reread showing Posted. Reimbursements delegate to
@@ -266,11 +276,13 @@ ambiguous values fail that item instead of becoming zero. The currency's authori
 base → 1). A missing/invalid currency precision or exchange rate fails the affected
 item; Ramp sync never guesses two decimals or posts foreign currency at par. The card
 journal converts document→base by DIVIDING via the shared `toBaseAmount`
-(`build-card-transaction-journal.ts`) — NOT multiplying. Inbound bills/
-reimbursements write the document amount to `purchaseInvoiceLine.supplierUnitPrice`
-+ the resolved `exchangeRate` on both header and lines (NEVER the generated
-`unitPrice`/`totalAmount`, which are `supplier* / exchangeRate` and rejected on
-write); `post-purchase-invoice` then posts the generated base `unitPrice`.
+(`build-card-transaction-journal.ts`) — NOT multiplying. Standalone inbound bill and
+reimbursement lines use quantity one and write the document amount to
+`purchaseInvoiceLine.supplierUnitPrice`; a linked-PO bill preserves its covered quantity and
+stores `supplierUnitPrice = document amount / covered quantity`. Both forms store the
+resolved `exchangeRate` on header and lines (NEVER write the generated `unitPrice`/
+`totalAmount`, which are `supplier* / exchangeRate`); `post-purchase-invoice` then posts the
+generated base `unitPrice`.
 Outbound pushes send DOCUMENT currency under the `currency`/`invoice_currency`
 label — PO push uses `purchaseOrderLine.supplierUnitPrice` (already document),
 draft-bill push converts the generated base `totalAmount` back via
@@ -314,10 +326,13 @@ spaces); bill payments → `payment`.
 
 ### Dedupe / short-circuit rules
 
-- **Bills** (`syncBill`): mapping-first; then Carbon-born short-circuit (`bill.remote_id`
-  resolves to an existing `purchaseInvoice` → link + skip); then a duplicate guard on
-  `(supplierId, supplierReference)` → link + skip; PO-linked bills convert the first mapped
-  Carbon PO via the `convert` edge function.
+- **Bills** (`syncBill`): a company/Ramp-id advisory lock serializes the atomic staging
+  transaction. Carbon-born `bill.remote_id` may identify an existing invoice, and a legacy
+  `(supplierId, supplierReference)` match is adopted only when it identifies one untracked
+  Draft; a posted reference collision fails closed. A bill tied entirely to one mapped
+  Carbon PO stages from that PO with exact line provenance and quantity reconciliation,
+  respecting existing reservations. Multi-PO bills deliberately stage as standalone
+  invoices instead of guessing a conversion target.
 - **Bill payments** (`syncBillPayment`): a bill paid by a **Ramp card** (`payment_method`
   in `CARD_PAYMENT_METHODS`) is **confirmed WITHOUT posting an AP payment** — the card
   spend already routes through the card-transaction sync, so posting a payment would
@@ -405,8 +420,10 @@ match, then auto-create tagged with the `"Card Merchant"` supplier type (it dele
 with no merchant name still posts with `supplierId` null. A Posted `Charge` (and, where
 the provider can represent a refund, `Credit`) with a supplier is then pushed to the
 accounting provider as its native **card-charge object** (Rillet charge, QBO Purchase,
-Xero SPEND bank transaction) with the merchant, receipt and cost-center dimension, and
-its journal is DOC_BACKED-excluded per row; everything else stays a journal entry. Full
+Xero SPEND bank transaction) with the merchant and cost-center dimension, and its journal
+is DOC_BACKED-excluded per row; everything else stays a journal entry. Ramp receipts remain
+attached to the Carbon transaction; only the Rillet adapter currently uploads them to the
+provider. Full
 rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider objects".
 
 ## post-card-transaction edge function
@@ -491,10 +508,11 @@ correctness guarantee**; the webhook is latency only.
 - **Sandbox** = `demo-api.ramp.com` (`RAMP_SANDBOX_HOST`) for a stored legacy
   `client_credentials` record. The current Connect UI creates production OAuth records and
   exposes no environment selector.
-- **`// TODO(task-1)` API uncertainties remain narrowly source-marked**: paid-bill and
-  repayment enum values, the bill vendor and draft-bill payload/submit shapes, converted
-  PO-line reconciliation, the all-connections/accounts endpoints, and the webhook
-  challenge/signing contract. Transaction amount/coding behavior is verified and is not
+- **`// TODO(task-1)` API uncertainties remain narrowly source-marked**: reimbursement
+  paid-state, bill sync/payment and card payment-method enums, repayment funding enum and
+  amount shape, the draft-bill payload/submit identity, the all-connections/accounts
+  endpoints, and the webhook challenge/signing contract. Transaction amount/coding behavior
+  and converted PO-line reconciliation are implemented and are not
   part of that unresolved list. Grep `TODO(task-1)` in `packages/ee/src/ramp/**` and
   `packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts` before relying on one
   of the remaining values.

@@ -295,8 +295,10 @@ entry — Rillet `POST /charges`, QBO `Purchase` with `PaymentType: "CreditCard"
 `BankTransactions` `Type: "SPEND"` on the `CREDITCARD` bank account. Every one of them
 derives the same posting Carbon's `Card Transaction` journal already books (debit the
 coded lines, credit the card liability), so the switch carries no GL-drift risk and
-recovers the merchant (vendor), the receipt and the dimensions the journal path
-dropped. Entity type `charge` (`AccountingEntityType`, `ENTITY_DEFINITIONS`,
+recovers the merchant (vendor) and dimensions the journal path dropped. Ramp receipts stay
+on Carbon `document` rows; Rillet additionally uploads them best-effort after create, while
+the Xero and QBO charge adapters do not currently attach remote files. Entity type `charge`
+(`AccountingEntityType`, `ENTITY_DEFINITIONS`,
 `DEFAULT_SYNC_CONFIG`, `SyncConfigSchema`); table map `cardTransaction → charge`
 (`events/sync-tables.ts`); subscription `{ table: "cardTransaction", INSERT/UPDATE }`
 in `COMMON_PUSH_TABLES` for all three providers; the event trigger and tenant-safe
@@ -332,18 +334,24 @@ the spend reaches the provider as exactly one of the two, never both and never n
 synced journals are never re-planned (`reconcileJournal` skips covered rows).
 Statuses: `SWEPT_CHARGE_STATUSES = ["Posted", "Voided"]`; the sweep pages
 `cardTransaction` by `transactionDate` (+ `voidedAt` for late voids) filtered to
-`type IN ('Charge','Credit')`. Void: Rillet `DELETE /charges/{id}` (**live-verified 2026-09-10**: mapping tombstoned
-`{voided: true}`, GET → 404, and the void journal records `Excluded/DOC_BACKED/charge`); Xero POSTs the bank
-transaction with `Status: DELETED` (**VERIFY** — the minimal body is unverified on a
-sandbox); **QBO has no void path yet** — a mapped Voided charge closes truthfully as
-Skipped with a reason and a `TODO(charge-void)` in `QboChargeSyncer.shouldSync`
-spelling out the `POST /purchase?operation=delete` + tombstone flow. QBO's
+`type IN ('Charge','Credit')`. `ChargeSyncerBase` handles the lifecycle uniformly: a
+successful create is mapped before the batch advances; a mapped Void invokes the provider's
+native delete and tombstones the mapping only after the provider confirms it. Rillet uses
+`DELETE /charges/{id}` (**live-verified 2026-09-10**: GET → 404); Xero rereads the complete
+bank transaction and POSTs that resource with `Status: DELETED`; QBO performs the required
+`POST /purchase?operation=delete` with its current `SyncToken`. The Xero/QBO paths follow their official
+contracts but still need live sandbox verification. A Voided charge without a durable remote
+id fails closed as `UNCONFIRMED_REMOTE_VOID` for manual provider verification rather than
+claiming success. QBO's
 `DepartmentRef` is header-level on a `Purchase` (only `ClassRef` is per line) and its
 `TxnDate` is the posting date (already period-shifted by the Ramp sync). Both
-adapters use provider-prefixed local types (`XeroCardCharge`, `QboCardCharge`) because
-`providers/index.ts` re-exports every provider — hoisting one `CardCharge` to `core/`
-is the obvious follow-up. Receipts
-(the `document` rows the Ramp sync stored) are attached best-effort after create.
+adapters use provider-prefixed aliases (`XeroCardCharge`, `QboCardCharge`) of the shared
+`CardChargeSource` in `core/card-charge-source.ts`; the shared loader batches tenant- and
+provider-scoped local rows for one drain. Create retry identity is provider-specific and
+stable: Rillet's entity-scoped idempotency key, Xero's deterministic Carbon `Reference` lookup
+plus its six-minute idempotency key, and QBO's deterministic `requestid`. QBO retains sparse
+updates with `SyncToken` retry. Each successful item links immediately, so a later item failure
+cannot lose the earlier remote identity.
 
 **Rillet charge — live-verified 2026-09-10 on the sandbox** (`.ai/plans/2026-09-10-ramp-project-coding-and-rillet-charge-sync.md` Part C): `POST /charges` lands with `vendor_id` (the merchant vendor, JIT-synced), one item per coded line (`account_code`, amount, `fields[]` = the auto-provisioned Cost Center Field + value), `charge_date` = transaction date, `impact_date` = posting date, both `external_references`. Two preconditions a customer must meet, both surfaced truthfully rather than guessed: (1) every account on the charge must be mapped (Account Mapping tab → "Match by code"), else Warning `UNMAPPED_ACCOUNTS` naming the ids; (2) **the Carbon account chosen as Ramp's card liability must map to a Rillet account of subtype "Credit Card"** — Rillet rejects anything else with `400 "Account <code> is not a credit card account"` (recorded as Failed with that message; remap and Retry). Rillet IS in `CHARGE_CREDIT_PROVIDERS`: a `Credit` (Delta refund) posts as a charge whose items are negative and its journal records `Excluded/DOC_BACKED/charge` — one representation, never both (before the flip it verifiably closed Skipped with the journal pushed instead, so the mirror holds both ways).
 The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-generic and
@@ -355,7 +363,13 @@ supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
 "Card Merchant"); the existing vendor syncers carry it to the provider via
 `ensureDependencySynced("vendor")`.
 
-**Ramp bill payments and reimbursements are staged transactionally.**
+**Ramp inbound financial records are staged transactionally.** Card transactions and bills
+advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
+rows, and mapping before calling the posting edge function; ambiguous responses require a
+tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance
+and quantity, while multi-PO bills remain standalone instead of choosing an arbitrary order.
+
+Bill payments and reimbursements follow the same rule.
 `ramp-sync-bill.ts` owns the bill-payment drain/confirm family and delegates each item to
 `syncRampBillPayment` in `ramp-sync-payment.ts`. `stageRampPaymentDraft` writes or resumes
 the Draft `payment`, `invoiceSettlement`, and Ramp mapping in one Kysely transaction while
@@ -419,6 +433,8 @@ is dead config for Rillet only, left in place for the capped providers.
 - The event-queue drainer (`events/queue.ts`) archives unknown-`handlerType` messages to pgmq's dead-letter table (`pgmq.a_event_system`) instead of crash-looping the whole drain (v4 F8) — a poison message can no longer wedge ALL event processing.
 - `ContactSyncer.getRemoteId` checks both `customer` and `vendor` mappings (one Xero Contact backs both).
 - Transaction syncers (PO, invoice, bill) use `ensureDependencySynced(type, localId)` for JIT dependency syncing (e.g. push the customer before its invoice); `dependsOn` is declared in `ENTITY_DEFINITIONS`.
-- DELETE sync is not implemented anywhere yet.
+- DELETE is entity-specific rather than generic: mapped documents/payments and native card
+  charges implement provider-aware void/delete paths where supported; unsupported or
+  unconfirmed deletes fail or park visibly and never receive a false tombstone.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
 </content>

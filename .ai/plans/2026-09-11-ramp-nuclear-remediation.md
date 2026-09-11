@@ -14,13 +14,19 @@
 - [x] Task 7: Make card post/void transactional and idempotent
 - [x] Task 8: Validate Ramp monetary payloads and inbound policy
 - [x] Task 9: Use stable outbound cursors and resumable payments
-- [x] Task 10: Refresh documentation and run final gates
+- [ ] Task 10: Refresh documentation and run final gates
 - [x] Task 11: Split the Ramp jobs coordinator below the nuclear size gate
 - [x] Task 12: Split the Ramp service below the nuclear size gate
+- [x] Task 13: Make card ingestion transactional and retry-safe
+- [x] Task 14: Harden the card-posting transaction boundary
+- [x] Task 15: Page outbound document-line reads
+- [x] Task 16: Make inbound bill staging transactional and provenance-safe
+- [x] Task 17: Surface family drain failures
+- [x] Task 18: Make provider charge create/void retry-safe
 
 ## Dependencies
 
-Tasks 2 and 5 are independent. Task 3 depends on its migration being applied and generated. Task 4 depends on Tasks 2–3. Task 6 depends on Task 5. Task 7 depends on Task 5. Task 8 is independent. Task 9 depends on Tasks 3 and 8. Tasks 11–12 depend on the completed behavioral fixes and preserve their contracts. Task 10's final gates depend on all implementation and nuclear-refactor tasks.
+Tasks 2 and 5 are independent. Task 3 depends on its migration being applied and generated. Task 4 depends on Tasks 2–3. Task 6 depends on Task 5. Task 7 depends on Task 5. Task 8 is independent. Task 9 depends on Tasks 3 and 8. Tasks 11–12 depend on the completed behavioral fixes and preserve their contracts. Tasks 13–18 are the findings from the follow-up nuclear review and depend on the relevant earlier foundations. Task 10's final gates depend on all implementation and nuclear-refactor tasks.
 
 ---
 
@@ -327,9 +333,34 @@ pnpm exec turbo run typecheck --filter=@carbon/ee --filter=@carbon/jobs
 
 **Out of scope:** Redesigning the Ramp client or changing the facade contract.
 
+## Tasks 13–18: Follow-up nuclear-review hardening
+
+**Depends on:** Tasks 5–9 and 11–12
+
+The follow-up review found six cross-cutting correctness gaps. Each landed as an isolated
+commit with its own regression coverage:
+
+1. `01e0fec3c5` — card ingestion now advisory-locks and atomically stages the Draft header,
+   lines, and mapping; retries resume and ambiguous posts require an observed `Posted` row.
+2. `7b7f561247` — the card-post edge requires invoicing-update permission, avoids nested line
+   locks, uses the shared accounting-period resolver, and scopes its fault trigger.
+3. `7b29e22ca7` — outbound purchase-order, invoice, and journal document-line reads paginate
+   beyond the Supabase 1,000-row response limit.
+4. `aa95b5ff84` — inbound bills stage atomically; single-PO conversion preserves exact line
+   provenance and quantities, multi-PO bills remain standalone, and legacy adoption is
+   restricted to one untracked Draft.
+5. `432b3b28cb` — every family exposes drain/confirm errors and accumulates rather than
+   overwrites failure counts, so the coordinator notification cannot report false success.
+6. `30e5f1f81d` — charge create retries use deterministic provider identities, successful
+   batch items link immediately, and Rillet/Xero/QBO native void paths fail closed unless
+   the remote operation is confirmed.
+
+**Verification:** Focused unit, integration, real-database, Deno, and scoped typecheck gates
+are recorded in the commits. Task 10 reruns the aggregate branch gates after these changes.
+
 ## Task 10: Refresh documentation and run final gates
 
-**Depends on:** Tasks 2–9 and 11–12
+**Depends on:** Tasks 2–9 and 11–18
 **Files:**
 - Modify: `.claude/rules/ramp-integration.md`
 - Modify: `.claude/rules/accounting-sync-handlers.md`
