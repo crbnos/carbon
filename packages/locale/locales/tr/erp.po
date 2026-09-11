@@ -8641,6 +8641,9 @@ msgstr "Gruptan miras alınır: bu hesabın dağıtılmamış kârlara kapanıp 
 msgid "Inherited from the parent group."
 msgstr "Ana gruptan devralınan."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Giriş"
 

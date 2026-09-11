@@ -8641,6 +8641,9 @@ msgstr "Heredado del grupo: si esta cuenta se cierra a Resultados acumulados (in
 msgid "Inherited from the parent group."
 msgstr "Heredado del grupo padre."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Entrada"
 

@@ -8641,6 +8641,9 @@ msgstr "Odziedziczone z grupy: czy to konto zamyka się do zysków zatrzymanych 
 msgid "Inherited from the parent group."
 msgstr "Odziedziczone z grupy nadrzędnej."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Dane wejściowe"
 

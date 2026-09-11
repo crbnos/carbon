@@ -8641,6 +8641,9 @@ msgstr "समूह से विरासत में मिली: क्य
 msgid "Inherited from the parent group."
 msgstr "मूल समूह से विरासत में मिला।"
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "इनपुट"
 

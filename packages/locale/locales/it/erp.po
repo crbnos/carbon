@@ -8641,6 +8641,9 @@ msgstr "Ereditato dal gruppo: se questo conto si chiude agli utili non distribui
 msgid "Inherited from the parent group."
 msgstr "Ereditato dal gruppo padre."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Input"
 

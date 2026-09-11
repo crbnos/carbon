@@ -8641,6 +8641,9 @@ msgstr "グループから継承：このアカウントが利益剰余金 (収�
 msgid "Inherited from the parent group."
 msgstr "親グループから継承。"
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "入力"
 

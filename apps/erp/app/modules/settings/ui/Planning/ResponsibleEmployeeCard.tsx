@@ -210,11 +210,12 @@ function OwnershipRow({
   options: { value: string; label: string }[];
   onChange: (employeeId: string) => void;
 }) {
+  const { t } = useLingui();
   const placeholder = value
     ? undefined
     : inheritedName
-      ? `inherits ${inheritedName}`
-      : "Unassigned";
+      ? t`inherits ${inheritedName}`
+      : t`Unassigned`;
 
   return (
     <div

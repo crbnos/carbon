@@ -8641,6 +8641,9 @@ msgstr "Geerbt aus der Gruppe: ob dieses Konto zum Gewinnvortrag (Erträge) gesc
 msgid "Inherited from the parent group."
 msgstr "Geerbt aus der übergeordneten Gruppe."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Eingabe"
 

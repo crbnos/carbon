@@ -164,22 +164,26 @@ const PlanningActionsTable = memo(
       });
     };
 
+    // Order/Make rows flow through the existing order drawer, and committed
+    // targets link out for review — neither is batch-applyable here.
+    const isApplyable = (row: PlanningAction) => {
+      const wire = WIRE_ACTION[row.type];
+      return (
+        !row.requiresManualAction && wire !== undefined && wire !== "order"
+      );
+    };
+
     const applyActions = (rows: PlanningAction[]) => {
-      // one request per wire action — the route dispatches on a single action
-      const byWire = new Map<string, string[]>();
-      for (const row of rows) {
-        if (row.requiresManualAction) continue;
-        const wire = WIRE_ACTION[row.type];
-        if (!wire) continue;
-        if (wire === "order") continue; // Order/Make flow through the existing order drawer
-        byWire.set(wire, [...(byWire.get(wire) ?? []), row.id]);
-      }
-      for (const [wire, planningActionIds] of byWire) {
-        submit({ action: wire, planningActionIds });
-      }
+      // ONE batched request — a fetcher holds a single in-flight submission,
+      // so one request per wire action superseded all but the last. The route
+      // derives each row's behavior from its own persisted type.
+      const planningActionIds = rows.filter(isApplyable).map((row) => row.id);
+      if (planningActionIds.length === 0) return;
+      submit({ action: "apply", planningActionIds });
     };
 
     const selectedRows = visible.filter((a) => selected.has(a.id));
+    const applyableSelectedCount = selectedRows.filter(isApplyable).length;
 
     if (openActions.length === 0) return null;
 
@@ -228,10 +232,12 @@ const PlanningActionsTable = memo(
             <HStack spacing={2} className="pt-2">
               <Button
                 size="sm"
-                isDisabled={fetcher.state !== "idle"}
+                isDisabled={
+                  applyableSelectedCount === 0 || fetcher.state !== "idle"
+                }
                 onClick={() => applyActions(selectedRows)}
               >
-                {t`Apply`} · {selectedRows.length}
+                {t`Apply`} · {applyableSelectedCount}
               </Button>
               <Button
                 size="sm"

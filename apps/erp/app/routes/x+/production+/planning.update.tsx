@@ -418,6 +418,10 @@ export async function action({ request }: ActionFunctionArgs) {
     // released job (Ready or later) is never silently edited. Job dates flow
     // through updateJob (recomputes priority) + notifyScheduleInputsChanged —
     // never jobOperation date writes.
+    // "apply" batches a mixed selection in ONE request (the client has a
+    // single fetcher, so per-type requests would supersede each other) — each
+    // row's own persisted type decides what happens to it.
+    case "apply":
     case "expedite":
     case "defer":
     case "increase":
@@ -441,6 +445,7 @@ export async function action({ request }: ActionFunctionArgs) {
         decrease: "Decrease",
         cancel: "Cancel"
       };
+      const changeActionTypes = new Set(Object.values(wireToType));
 
       const COMMITTED_JOB_STATUSES = ["Ready", "In Progress", "Paused"];
 
@@ -462,9 +467,15 @@ export async function action({ request }: ActionFunctionArgs) {
           errors.push(`Planning action ${planningActionId} is not open`);
           continue;
         }
-        if (wireToType[action] !== row.type) {
+        if (
+          action === "apply"
+            ? !changeActionTypes.has(row.type)
+            : wireToType[action] !== row.type
+        ) {
           errors.push(
-            `Planning action ${planningActionId} is a ${row.type}, not ${wireToType[action]}`
+            action === "apply"
+              ? `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+              : `Planning action ${planningActionId} is a ${row.type}, not ${wireToType[action]}`
           );
           continue;
         }
@@ -498,7 +509,7 @@ export async function action({ request }: ActionFunctionArgs) {
           continue;
         }
 
-        if (action === "cancel") {
+        if (row.type === "Cancel") {
           const cancel = await updateJobStatus(client, {
             id: job.data.id,
             companyId,
@@ -511,7 +522,7 @@ export async function action({ request }: ActionFunctionArgs) {
             );
             continue;
           }
-        } else if (action === "expedite" || action === "defer") {
+        } else if (row.type === "Expedite" || row.type === "Defer") {
           const update = await updateJob(client, {
             id: job.data.id,
             updatedBy: userId,
@@ -562,12 +573,25 @@ export async function action({ request }: ActionFunctionArgs) {
         applied.push(planningActionId);
       }
 
+      // Committed targets are not failures, but "Applied 0" with a success
+      // toast is a lie — surface the manual-review count, and only report
+      // success when something was actually applied (or nothing needed review).
+      const manualCount = requiresManualAction.length;
+      const messageParts = [
+        `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
+      ];
+      if (manualCount > 0) {
+        messageParts.push(
+          `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
+        );
+      }
+      if (errors.length > 0) {
+        messageParts.push(`${errors.length} failed`);
+      }
       return {
-        success: errors.length === 0,
-        message:
-          errors.length === 0
-            ? `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
-            : `Applied ${applied.length}; ${errors.length} failed`,
+        success:
+          errors.length === 0 && !(applied.length === 0 && manualCount > 0),
+        message: messageParts.join("; "),
         applied,
         requiresManualAction,
         errors: errors.length > 0 ? errors : undefined

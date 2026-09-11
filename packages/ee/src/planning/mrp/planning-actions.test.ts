@@ -375,6 +375,38 @@ describe("diffPlanningActions", () => {
     expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
   });
 
+  it("triggerValues equality ignores jsonb key order (idempotency)", () => {
+    // jsonb returns keys length-then-bytewise; the candidate builds them in
+    // insertion order — identical values must not produce an update.
+    const diff = diffPlanningActions({
+      existing: [
+        {
+          ...existing,
+          triggerValues: { reorderPoint: 5, leadTime: 14, projectedStock: 2 }
+        }
+      ],
+      candidates: [
+        {
+          ...candidate,
+          triggerValues: { projectedStock: 2, reorderPoint: 5, leadTime: 14 }
+        }
+      ],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+
+  it("triggerValues equality still detects a changed value", () => {
+    const diff = diffPlanningActions({
+      existing: [{ ...existing, triggerValues: { safetyStock: 10 } }],
+      candidates: [{ ...candidate, triggerValues: { safetyStock: 12 } }],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff.updates).toEqual([
+      { id: "pla-1", patch: { triggerValues: { safetyStock: 12 } } }
+    ]);
+  });
+
   it("inserts a new candidate, deletes a vanished row", () => {
     const diff = diffPlanningActions({
       existing: [existing],

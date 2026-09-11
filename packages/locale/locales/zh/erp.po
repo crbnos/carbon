@@ -8641,6 +8641,9 @@ msgstr "从公司继承：此账户是结转至未分配利润（收益）还是
 msgid "Inherited from the parent group."
 msgstr "从父组继承。"
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "输入"
 

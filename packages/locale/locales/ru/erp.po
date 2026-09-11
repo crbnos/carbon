@@ -8641,6 +8641,9 @@ msgstr "Унаследовано из группы: закрывается ли 
 msgid "Inherited from the parent group."
 msgstr "Унаследовано от родительской группы."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Ввод"
 

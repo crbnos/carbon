@@ -364,6 +364,40 @@ export type PlanningActionDiff = {
 };
 
 /**
+ * JSON-value equality independent of object key order. Postgres jsonb returns
+ * keys in length-then-bytewise order while candidates build insertion-ordered
+ * literals, so a raw JSON.stringify comparison re-patched identical
+ * triggerValues on every run — breaking the two-identical-runs-produce-zero-
+ * changes invariant and churning updatedAt/updatedBy.
+ */
+export function jsonEquals(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (
+    typeof a !== "object" ||
+    typeof b !== "object" ||
+    a === null ||
+    b === null
+  ) {
+    return false;
+  }
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+      return false;
+    }
+    return a.every((value, index) => jsonEquals(value, b[index]));
+  }
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) =>
+    jsonEquals(
+      (a as Record<string, unknown>)[key],
+      (b as Record<string, unknown>)[key]
+    )
+  );
+}
+
+/**
  * Diff-write plan: never delete-and-recreate — assignment and dismissal state
  * must survive a run. Two identical consecutive runs produce zero changes.
  */
@@ -423,8 +457,10 @@ export function diffPlanningActions(args: {
       patch.reason = candidate.reason;
     }
     if (
-      JSON.stringify(current.triggerValues ?? null) !==
-      JSON.stringify(candidate.triggerValues ?? null)
+      !jsonEquals(
+        current.triggerValues ?? null,
+        candidate.triggerValues ?? null
+      )
     ) {
       patch.triggerValues = candidate.triggerValues;
     }

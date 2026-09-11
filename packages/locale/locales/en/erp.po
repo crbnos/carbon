@@ -8641,6 +8641,9 @@ msgstr "Inherited from the group: whether this account closes to retained earnin
 msgid "Inherited from the parent group."
 msgstr "Inherited from the parent group."
 
+msgid "inherits {inheritedName}"
+msgstr "inherits {inheritedName}"
+
 msgid "Input"
 msgstr "Input"
 

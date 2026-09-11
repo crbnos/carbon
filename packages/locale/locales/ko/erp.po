@@ -8641,6 +8641,9 @@ msgstr "그룹에서 상속됨: 이 계정이 이익잉여금(수익)으로 종�
 msgid "Inherited from the parent group."
 msgstr "상위 그룹에서 상속됨."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "입력"
 

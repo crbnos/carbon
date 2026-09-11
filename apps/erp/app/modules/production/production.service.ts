@@ -9921,6 +9921,14 @@ export async function getPlanningActions(
       : Promise.resolve({ data: [], error: null })
   ]);
 
+  // A failed enrichment must not degrade to empty lookups: a committed row
+  // with a null purchaseOrderId/jobId loses its review link and falls through
+  // to an Apply button that does nothing.
+  const enrichmentError = items.error ?? poLines.error ?? jobs.error;
+  if (enrichmentError) {
+    return { data: null, count: 0, error: enrichmentError };
+  }
+
   const itemById = new Map((items.data ?? []).map((i) => [i.id, i] as const));
   const poLineById = new Map(
     (poLines.data ?? []).map((l) => [l.id, l] as const)

@@ -8641,6 +8641,9 @@ msgstr "Hérité du groupe : si ce compte se ferme sur le report à nouveau (pro
 msgid "Inherited from the parent group."
 msgstr "Hérité du groupe parent."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Entrée"
 

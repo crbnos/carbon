@@ -8641,6 +8641,9 @@ msgstr "Herdado do grupo: se esta conta se encerra em lucros acumulados (receita
 msgid "Inherited from the parent group."
 msgstr "Herdado do grupo pai."
 
+msgid "inherits {inheritedName}"
+msgstr ""
+
 msgid "Input"
 msgstr "Entrada"
 
