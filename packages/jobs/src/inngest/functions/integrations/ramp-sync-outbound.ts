@@ -2,6 +2,7 @@ import type { Database } from "@carbon/database";
 import {
   archiveRampBillForInvoice,
   patchRampCursor,
+  prepareRampPurchaseOrderBatch,
   pushInvoiceDraftBill,
   pushPurchaseOrder,
   type RampClient,
@@ -252,6 +253,20 @@ export async function syncRampOutbound(
           linesByPo.set(line.purchaseOrderId, list);
         }
 
+        const prerequisites = await prepareRampPurchaseOrderBatch(
+          ctx.mapping,
+          ramp,
+          poIds,
+          poRows
+            .filter(
+              (row) => row.status !== "Completed" && row.status !== "Closed"
+            )
+            .map(
+              (row) =>
+                supplierById.get(row.supplierId) ??
+                emptyRampVendorSupplier(row.supplierId, null)
+            )
+        );
         const failedIds = new Set<string>();
         for (const row of poRows) {
           try {
@@ -269,7 +284,8 @@ export async function syncRampOutbound(
                 entityId: rampEntityId,
                 lines: linesByPo.get(row.id) ?? []
               },
-              companyId
+              companyId,
+              prerequisites
             );
             if (action === "archived") result.purchaseOrders.archived += 1;
             else if (action === "created" || action === "patched")

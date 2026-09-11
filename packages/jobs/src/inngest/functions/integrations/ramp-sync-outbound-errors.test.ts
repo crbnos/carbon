@@ -149,7 +149,10 @@ function fixture(family: Family, failedLookup?: Lookup) {
     },
     decimalsCache: new Map([["USD", 2]]),
     exchangeRateCache: new Map(),
-    mapping: { getAllByIntegration: vi.fn(async () => []) }
+    mapping: {
+      getAllByIntegration: vi.fn(async () => []),
+      getByEntities: vi.fn(async () => new Map())
+    }
   } as unknown as RampSyncContext;
   return {
     ctx,
@@ -160,7 +163,11 @@ function fixture(family: Family, failedLookup?: Lookup) {
     rows,
     table,
     cursorKey,
-    ramp: {} as RampClient
+    ramp: {
+      async *listVendors() {
+        yield [];
+      }
+    } as unknown as RampClient
   };
 }
 

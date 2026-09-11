@@ -93,6 +93,76 @@ export type RampVendorSupplier = {
   } | null;
 };
 
+export type RampPurchaseOrderBatch = {
+  purchaseOrderIds: Map<string, string>;
+  vendorIds: Map<string, string>;
+  vendorsByExternalId: Map<string, RampVendor>;
+  vendorsByName: Map<string, RampVendor | null>;
+  vendorLookup: { ok: true } | { ok: false; error: unknown };
+};
+
+function indexSpendVendor(batch: RampPurchaseOrderBatch, vendor: RampVendor) {
+  if (
+    typeof vendor.external_vendor_id === "string" &&
+    !batch.vendorsByExternalId.has(vendor.external_vendor_id)
+  ) {
+    batch.vendorsByExternalId.set(vendor.external_vendor_id, vendor);
+  }
+  const name = (vendor.name ?? "").trim().toLowerCase();
+  if (name)
+    batch.vendorsByName.set(
+      name,
+      batch.vendorsByName.has(name) ? null : vendor
+    );
+}
+
+/** One mapping read per entity kind and one paginated provider snapshot per PO page. */
+export async function prepareRampPurchaseOrderBatch(
+  mapping: ExternalIntegrationMappingService,
+  client: RampClient,
+  purchaseOrderIds: string[],
+  suppliers: RampVendorSupplier[]
+): Promise<RampPurchaseOrderBatch> {
+  const uniqueSuppliers = [
+    ...new Map(suppliers.map((supplier) => [supplier.id, supplier])).values()
+  ];
+  const [poMappings, vendorMappings] = await Promise.all([
+    mapping.getByEntities("purchaseOrder", purchaseOrderIds, RAMP),
+    mapping.getByEntities(
+      "vendor",
+      uniqueSuppliers.map((supplier) => supplier.id),
+      RAMP
+    )
+  ]);
+  const batch: RampPurchaseOrderBatch = {
+    purchaseOrderIds: new Map(
+      [...poMappings].map(([id, row]) => [id, row.externalId])
+    ),
+    vendorIds: new Map(
+      [...vendorMappings].map(([id, row]) => [id, row.externalId])
+    ),
+    vendorsByExternalId: new Map(),
+    vendorsByName: new Map(),
+    vendorLookup: { ok: true }
+  };
+  if (
+    uniqueSuppliers.some(
+      (supplier) => !batch.vendorIds.has(supplier.id) && supplier.name?.trim()
+    )
+  ) {
+    try {
+      for await (const page of client.listVendors()) {
+        for (const vendor of page) indexSpendVendor(batch, vendor);
+      }
+    } catch (error) {
+      // Mapped vendors and archive-only orders can still proceed. Only a PO
+      // needing this provider lookup inherits the error and holds the cursor.
+      batch.vendorLookup = { ok: false, error };
+    }
+  }
+  return batch;
+}
+
 /** First Ramp spend vendor matching a filter (`external_vendor_id` or `name`), or null. */
 async function findRampSpendVendor(
   client: RampClient,
@@ -150,27 +220,35 @@ export async function resolveOrCreateRampSpendVendor(
   mapping: ExternalIntegrationMappingService,
   client: RampClient,
   supplier: RampVendorSupplier,
-  companyId?: string
+  companyId?: string,
+  batch?: RampPurchaseOrderBatch
 ): Promise<string | null> {
-  const existing = await mapping.getExternalId("vendor", supplier.id, RAMP);
+  const existing = batch
+    ? batch.vendorIds.get(supplier.id)
+    : await mapping.getExternalId("vendor", supplier.id, RAMP);
   if (existing) return existing;
 
   const name = (supplier.name ?? "").trim();
   if (!name) return null;
+  if (batch && !batch.vendorLookup.ok) throw batch.vendorLookup.error;
 
   // Prefer an exact identity match on our own external_vendor_id. Fall back to a
   // name match ONLY when it is unambiguous — exactly one Ramp vendor carries
   // this exact (case-insensitive) name — since a shared name is not an identity
   // key and would otherwise link this supplier to the wrong Ramp vendor.
-  const byExternal = await findRampSpendVendor(client, {
-    external_vendor_id: supplier.id
-  });
+  const byExternal = batch
+    ? batch.vendorsByExternalId.get(supplier.id)
+    : await findRampSpendVendor(client, { external_vendor_id: supplier.id });
   const matched =
-    byExternal ?? (await findUniqueRampSpendVendorByName(client, name));
+    byExternal ??
+    (batch
+      ? batch.vendorsByName.get(name.toLowerCase())
+      : await findUniqueRampSpendVendorByName(client, name));
   if (matched?.id) {
     await mapping.link("vendor", supplier.id, RAMP, matched.id, {
       createdBy: "system"
     });
+    batch?.vendorIds.set(supplier.id, matched.id);
     return matched.id;
   }
 
@@ -240,6 +318,14 @@ export async function resolveOrCreateRampSpendVendor(
   await mapping.link("vendor", supplier.id, RAMP, rampVendorId, {
     createdBy: "system"
   });
+  if (batch) {
+    batch.vendorIds.set(supplier.id, rampVendorId);
+    indexSpendVendor(batch, {
+      id: rampVendorId,
+      name,
+      external_vendor_id: supplier.id
+    });
+  }
   return rampVendorId;
 }
 
@@ -256,13 +342,12 @@ export async function pushPurchaseOrder(
   mapping: ExternalIntegrationMappingService,
   client: RampClient,
   po: RampPurchaseOrderPush,
-  companyId?: string
+  companyId?: string,
+  batch?: RampPurchaseOrderBatch
 ): Promise<"created" | "patched" | "archived" | "skipped"> {
-  const existingRampPoId = await mapping.getExternalId(
-    "purchaseOrder",
-    po.id,
-    RAMP
-  );
+  const existingRampPoId = batch
+    ? batch.purchaseOrderIds.get(po.id)
+    : await mapping.getExternalId("purchaseOrder", po.id, RAMP);
 
   // Completed / Closed POs with a mapping → archive; without one → nothing to do.
   if (po.status === "Completed" || po.status === "Closed") {
@@ -280,7 +365,8 @@ export async function pushPurchaseOrder(
     mapping,
     client,
     po.supplier,
-    companyId
+    companyId,
+    batch
   );
 
   const lineItems = po.lines.map((line) => ({
@@ -329,6 +415,7 @@ export async function pushPurchaseOrder(
   await mapping.link("purchaseOrder", po.id, RAMP, rampPoId, {
     createdBy: "system"
   });
+  batch?.purchaseOrderIds.set(po.id, rampPoId);
   return "created";
 }
 

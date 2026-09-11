@@ -42,12 +42,14 @@ export {
 export type {
   RampInvoicePush,
   RampInvoicePushLine,
+  RampPurchaseOrderBatch,
   RampPurchaseOrderPush,
   RampPurchaseOrderPushLine,
   RampVendorSupplier
 } from "./spend";
 export {
   archiveRampBillForInvoice,
+  prepareRampPurchaseOrderBatch,
   pushInvoiceDraftBill,
   pushPurchaseOrder,
   resolveOrCreateRampSpendVendor
