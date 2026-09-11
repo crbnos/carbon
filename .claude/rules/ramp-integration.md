@@ -436,7 +436,12 @@ enum values, document enums, indexes, RLS, event trigger, and the per-company
 - RLS on both is gated by **invoicing** permissions. The lifecycle trigger allows only
   Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided audit fields. The line
   trigger locks the same parent row as posting and refuses mutation unless it is Draft, so
-  line edits and post/void serialize rather than race.
+  line edits and post/void serialize rather than race. Migration
+  `20260911130527_enforce-card-transaction-lifecycle-audit.sql` adds the stored state
+  invariant: Draft requires the journal and all posting/void audit fields to be null;
+  Posted requires `postingDate`, `postedAt`, and `postedBy` with void audit fields null;
+  Voided requires both posting and void audit fields. `journalId` remains optional for
+  Posted/Voided because accounting-disabled companies do not create a journal.
 
 ## Card transactions → the accounting provider
 

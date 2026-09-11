@@ -168,6 +168,10 @@ group. RLS uses invoicing permissions.
 The lifecycle trigger permits Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided
 audit fields. The line trigger locks the same parent row and accepts mutations only while Draft,
 so line edits serialize with posting/voiding. Header account fields cannot change after Draft.
+Migration `20260911130527_enforce-card-transaction-lifecycle-audit.sql` also stores the complete
+status/audit invariant as a validated CHECK: Draft has no journal or posting/void audit values;
+Posted has `postingDate`, `postedAt`, and `postedBy` but no void audit values; Voided has both
+posting and void audit values. Posted/Voided may have no `journalId` when accounting is disabled.
 
 Key header fields are the readable `cardTransactionId`, type/status, liability and optional
 offset accounts, merchant/holder/card metadata, dates, currency/rate/amount, optional supplier,

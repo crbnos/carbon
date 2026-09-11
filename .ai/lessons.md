@@ -1694,3 +1694,13 @@ full-screen ERP route.
 **Rule:** Chunk unbounded identifier sets below transport and response limits, finish all prerequisite reads before remote writes, and count every failed remote mutation in the owning family result.
 
 **Applies to:** Ramp settlement archival and any integration that joins unbounded mappings to API-backed status reads before external side effects.
+
+## Lifecycle transitions need a stored state invariant
+
+**Context:** Card transactions use triggers to restrict Draft edits and the Draft→Posted→Voided transition sequence, while imports and test cleanup can intentionally bypass ordinary triggers.
+
+**Problem:** Transition guards constrained how a row could change but did not guarantee that every stored status had its required audit shape. A status-only write could leave a Posted or Voided row without its actor and timestamp evidence.
+
+**Rule:** Pair lifecycle transition guards with a validated database CHECK that defines every legal stored state. Fail migration preflight with row identities when existing data violates the invariant; never fabricate missing audit actors or timestamps.
+
+**Applies to:** Card transactions and any auditable document lifecycle whose writers can bypass ordinary triggers or write status and audit fields independently.
