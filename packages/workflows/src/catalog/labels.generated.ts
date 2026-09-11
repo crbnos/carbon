@@ -239,6 +239,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.location.name": msg`Name`,
   "entity.location.postalCode": msg`Postal code`,
   "entity.location.requiresStaffing": msg`Requires staffing`,
+  "entity.location.responsibleEmployee": msg`Responsible employee`,
   "entity.location.stateProvince": msg`State province`,
   "entity.location.tags": msg`Tags`,
   "entity.location.timezone": msg`Timezone`,

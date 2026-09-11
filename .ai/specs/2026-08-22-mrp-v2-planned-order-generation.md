@@ -1,17 +1,464 @@
 # MRP v2: Live Planned-Order MRP — Generation, Cascade, Capacity & Simulation
 
-> Status: draft
+> Status: draft (phased — **Phase 1 active**)
 > Author: Brad Barbin (with Claude)
-> Date: 2026-08-22
-> Scope: **game-changer v1** — everything in this spec ships in v1. That includes the
-> full standard MRP feature set (planned orders, pegging, action messages over open
-> orders, planning time fence/auto-firm, period-of-supply lot-sizing, worklist QoL),
-> the five differentiators (continuous event-driven regeneration, capacity-honest
-> netting + rough-cut capacity, what-if/CTP simulation, a self-explaining plan,
-> workflow-programmable release), **and the calm-by-default layer** (§9) that keeps
-> all of that enjoyable: one-click release, a worklist that never moves under the
-> planner, confidence-gated exceptions, bucket-attributed capacity, and autopilot
-> safety rails. The only explicitly post-v1 items are listed in **Deferred**.
+> Date: 2026-08-22 (re-scoped into phases 2026-09-08)
+> Scope: **now phased.** Originally written as a single "game-changer v1" that shipped
+> everything at once. As of **2026-09-08** (Brad) it is re-scoped into delivery phases
+> so the highest-value, lowest-complexity slice ships first:
+>
+> - **Phase 1 — Planning Action Messages & Buyer/Planner Assignment (ships first; fully
+>   specified in §P1 below).** MRP stops emitting only "Order": it emits a full set of
+>   assignable, dismissible **planning actions** — `Order`, `Make`, `Expedite`,
+>   `Defer`, `Cancel`, `Increase`, `Decrease` — persisted in a focused `planningAction`
+>   table and routed to a responsible buyer/planner via an inheritance ladder. Built on
+>   the **current** per-item netting; **no** planned-order cascade, **no** Firm
+>   lifecycle, **no** capacity/simulation. This is the 80/20.
+> - **Phases 2+ — the full planned-order vision (everything from "## TLDR" / "Proposed
+>   Solution" onward, now DEFERRED).** The multi-level planned-order cascade +
+>   lot-sizing, the Planned→Firm→Released lifecycle, pegging, continuous regen,
+>   rough-cut capacity, what-if/CTP, the self-explaining plan, programmable release, and
+>   the calm-by-default layer (§9). All of that design is preserved below as the
+>   phase-2+ record; Phase 1's `planningAction` table is forward-compatible with it
+>   (see §P1.9).
+>
+> **Read §P1 first for what ships now.** Everything after "## TLDR" describes Phases 2+
+> unless §P1 cites it.
+
+# §P1 — Phase 1: Planning Action Messages & Buyer/Planner Assignment (ships first)
+
+> **This is Phase 1 — the slice that ships now.** Resolved with Brad on 2026-09-08 (run
+> record: `.ai/runs/2026-09-08-mrp-planning-actions.md`; research:
+> `.ai/research/mrp-planning-actions.md` — SAP, Dynamics 365 SCM + Business Central,
+> NetSuite, Epicor, Infor SyteLine/LN). Everything from "## TLDR" onward is the Phase 2+
+> vision, deferred.
+
+## P1.0 TLDR
+
+Today MRP emits exactly one suggestion — **Order** — computed live in SQL
+(`calculate_quantity_to_order`) and thrown away on every page load. Phase 1 makes MRP
+emit the **full set of planning actions every ERP has** — `Order`, `Make`, `Expedite`,
+`Defer`, `Cancel`, `Increase`, `Decrease` — **persists** them in a focused
+`planningAction` table, and **routes each to a responsible buyer/planner** resolved
+through an inheritance ladder (item → item group → location → company). A buyer opens
+the planning page filtered to *"my actions"* and works a queue: one-click apply on
+uncommitted supply, review-on-document for anything already sent to a supplier.
+
+Phase 1 deliberately builds on the **current** per-item netting. It does **not** include
+the multi-level planned-order cascade, the Planned→Firm→Released lifecycle, rough-cut
+capacity, or what-if/CTP — those are Phases 2+ (the rest of this spec). This is the
+80/20: the whole user-visible outcome (a full, assignable action worklist) at a fraction
+of the full-vision build.
+
+## P1.1 Scope — what Phase 1 does and does not do
+
+**Does:**
+
+- Emit and **persist** the seven `planningActionType` values as assignable, dismissible
+  rows, refreshed each MRP run (diff-write).
+- Compute **change actions** (Expedite/Defer/Cancel/Increase/Decrease) by comparing
+  **real open POs/jobs** against net requirements — the SAP "reschedule/cancel on a
+  firmed receipt" model.
+- Resolve a **`responsibleEmployee`** per action via the inheritance ladder, stamp it as
+  the row's assignee, and let a lead reassign per row (bulk-capable).
+- Let a buyer **act** on a message: apply directly on uncommitted supply, navigate to the
+  document on committed supply.
+- Gate reschedule noise with a single company tolerance.
+
+**Does NOT (deferred to Phases 2+):**
+
+- The multi-level **planned-order cascade** (a parent's reorder need generating child
+  demand before a job exists — the original MRP-v2 problem statement). Phase 1 Order/Make
+  actions come from the **current** per-item reorder + demand netting, unchanged.
+- The **Planned → Firm → Released** lifecycle, pegging tables, `planningRun`/
+  `planningState`, continuous event-driven regen, rough-cut capacity, what-if/CTP,
+  programmable release, and the §9 calm-by-default layer.
+- A dedicated **advisory/warning** channel (below-safety-stock alerts, excess-stock,
+  master-data-broken). Phase 1 is **actionable-only**; urgency is a flag, conditions live
+  in each action's `reason`/`triggerValues`.
+
+## P1.2 Data model
+
+One new table, two new enums, four new `responsibleEmployee` columns, one tolerance
+column. Standard Carbon conventions (composite PK, `id('…')` default, audit columns, four
+RLS policies, `companyId` scoping; RLS uses `get_companies_with_employee_role()` /
+`get_companies_with_employee_permission()`).
+
+```sql
+CREATE TYPE "planningActionType" AS ENUM
+  ('Order', 'Make', 'Expedite', 'Defer', 'Cancel', 'Increase', 'Decrease');
+CREATE TYPE "planningActionStatus" AS ENUM ('Open', 'Dismissed', 'Actioned');
+
+CREATE TABLE "planningAction" (
+    "id" TEXT NOT NULL DEFAULT id('pla'),
+    "companyId" TEXT NOT NULL,
+
+    "itemId" TEXT NOT NULL,
+    "locationId" TEXT NOT NULL,
+    "periodId" TEXT NOT NULL,                          -- weekly bucket (get-or-create)
+    "type" "planningActionType" NOT NULL,
+    "status" "planningActionStatus" NOT NULL DEFAULT 'Open',
+
+    "suggestedQuantity" NUMERIC NOT NULL,              -- lot-sized order qty (Order/Make) or target qty (Increase/Decrease)
+    "suggestedDate" DATE NOT NULL,                     -- recommended due date for the action
+    "isASAP" BOOLEAN NOT NULL DEFAULT false,           -- urgency: release/need date already in the past
+
+    -- Target of a CHANGE action (exactly one set; both NULL for Order/Make):
+    "purchaseOrderLineId" TEXT,
+    "jobId" TEXT,
+    "requiresManualAction" BOOLEAN NOT NULL DEFAULT false, -- target committed (sent PO / released job) → "Review on document"
+
+    -- Suggestion attribution (the "why"; computed today, discarded today):
+    "supplierId" TEXT,                                 -- resolved/preferred supplier for an Order
+    "policyName" TEXT,
+    "reason" TEXT,
+    "triggerValues" JSONB,                             -- {projectedStock, safetyStock, reorderPoint, reorderQuantity, lotSize, leadTime}
+
+    -- Assignment:
+    "assignee" TEXT REFERENCES "user"("id"),           -- resolved responsibleEmployee snapshot; overridable
+    "assigneeOverridden" BOOLEAN NOT NULL DEFAULT false, -- true once a human reassigns; regen won't re-resolve it
+
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
+
+    PRIMARY KEY ("id", "companyId"),
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+    -- + CHECK: purchaseOrderLineId/jobId both NULL for Order|Make; exactly one set otherwise
+);
+CREATE INDEX "planningAction_companyId_idx" ON "planningAction" ("companyId");
+CREATE INDEX "planningAction_assignee_idx"  ON "planningAction" ("companyId", "assignee");
+CREATE INDEX "planningAction_item_loc_idx"  ON "planningAction" ("companyId", "itemId", "locationId");
+CREATE INDEX "planningAction_status_idx"    ON "planningAction" ("companyId", "status");
+-- Deterministic regen identity (diff-write): one non-terminal action per
+-- (item, location, type, period, target document)
+CREATE UNIQUE INDEX "planningAction_natural_key_idx" ON "planningAction"
+  ("companyId", "itemId", "locationId", "type", "periodId",
+   COALESCE("purchaseOrderLineId", "jobId", ''))
+  WHERE "status" <> 'Actioned';
+```
+
+Ownership ladder (tree: **company default → location → location-specific item group → item**) + the tolerance scalar:
+
+```sql
+ALTER TABLE "itemPlanning"    ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per item+location (most specific leaf)
+ALTER TABLE "location"        ADD COLUMN "responsibleEmployee" TEXT REFERENCES "user"("id"); -- per location
+ALTER TABLE "companySettings" ADD COLUMN "defaultResponsibleEmployee" TEXT REFERENCES "user"("id"); -- company default (all)
+ALTER TABLE "companySettings" ADD COLUMN "rescheduleToleranceDays" INTEGER NOT NULL DEFAULT 7
+  CHECK ("rescheduleToleranceDays" >= 0);  -- negative would make every gap actionable
+
+-- The "location > item group" tier. Item-group ownership is LOCATION-SPECIFIC — the
+-- same group can have a different owner at each location — so it is NOT a column on
+-- itemPostingGroup; it is a sparse per-(location, group) assignment table (the printer
+-- AssignmentsCard tree: location default → per-work-center override, here location →
+-- per-item-group override). Rows exist only for configured cells.
+CREATE TABLE "itemPostingGroupResponsibility" (
+    "id" TEXT NOT NULL DEFAULT id('pgr'),
+    "companyId" TEXT NOT NULL,
+    "locationId" TEXT NOT NULL,
+    "itemPostingGroupId" TEXT NOT NULL,
+    "responsibleEmployee" TEXT REFERENCES "user"("id"),
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY ("id", "companyId"),
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+    -- Composite-FK prerequisites (verified 2026-09-11): "location" already has
+    -- UNIQUE ("id","companyId") (20260905132037_job-operation-batching.sql), but
+    -- "itemPostingGroup"'s PK is ("id") ALONE (parts.sql:69) — the migration must first
+    -- add an idempotent UNIQUE ("id","companyId") on itemPostingGroup or this FK fails.
+    CONSTRAINT "itemPostingGroupResponsibility_location_fkey"
+      FOREIGN KEY ("locationId", "companyId") REFERENCES "location"("id", "companyId") ON DELETE CASCADE,
+    CONSTRAINT "itemPostingGroupResponsibility_group_fkey"
+      FOREIGN KEY ("itemPostingGroupId", "companyId") REFERENCES "itemPostingGroup"("id", "companyId") ON DELETE CASCADE,
+    CONSTRAINT "itemPostingGroupResponsibility_unique" UNIQUE ("companyId", "locationId", "itemPostingGroupId")
+);
+```
+
+`itemPostingGroupResponsibility` has RLS **explicitly enabled**
+(`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` — policies are inert without it) plus the
+four standard policies (SELECT via `get_companies_with_employee_role()`; writes via
+`settings_update`, since it is configured on the settings screen).
+
+`planningAction` gets the four standard RLS policies — SELECT via
+`get_companies_with_employee_role()`, writes via `production_*`/`purchasing_*` (mirroring
+the two planning pages). Any view surfacing `itemPostingGroup`/`location`/`itemPlanning`
+is DROP/recreated with `SELECT *` to pick up the new column (per the view-redefinition
+convention).
+
+## P1.3 Ownership resolution (the inheritance ladder)
+
+`responsibleEmployee` for an item+location resolves **most-specific first**. Drawn as a
+tree it is **all → location → item group**, with a per-item leaf override on top (and the
+per-message assignee override on top of that):
+
+```text
+itemPlanning.responsibleEmployee                     -- this item at this location (leaf override)
+  ?? itemPostingGroupResponsibility[location, group] -- the item's group AT THIS LOCATION
+  ?? location.responsibleEmployee                     -- this location
+  ?? companySettings.defaultResponsibleEmployee       -- company default (all, the root)
+  ?? NULL                                             -- Unassigned
+```
+
+- `itemPostingGroupId` lives on **`itemCost`** (not `item`), so the resolver joins
+  `item → itemCost.itemPostingGroupId`, then looks up
+  `itemPostingGroupResponsibility` by `(companyId, locationId, itemPostingGroupId)` — the
+  item-group tier is **location-specific** (same group, potentially different owner per
+  location).
+- It is a **hierarchical inheritance tree, not a free classification matrix.** Although
+  the item-group tier is keyed by `(location, group)`, it is the exact shape of the
+  printer `AssignmentsCard` tree (location default → per-work-center override): a **sparse**
+  set of configured cells that each fall back up the tree, resolved by one shared
+  function. This is deliberately different from the removed N×M posting-group matrix
+  (`20260229000000_drop-posting-groups.sql`), which was an independent customer-type ×
+  item-group cross-product with no inheritance. Here every tier inherits from the tier
+  above and returns the first non-null.
+- The engine stamps the resolved value onto each `planningAction.assignee` at write time.
+  A human reassignment (P1.7) sets `assigneeOverridden = true`; subsequent regens leave
+  that row's assignee alone.
+
+One **unified** `responsibleEmployee` covers both buy and make — the item's
+`replenishmentSystem` decides which worklist (purchasing vs production) an action shows
+on; the owner is the same person either way. Configured in a new settings screen cloned
+from the printer `AssignmentsCard` (P1.7).
+
+## P1.4 Engine changes (`runMrp`)
+
+`runMrp` already computes period-phased net requirements per (item, location). Phase 1
+adds a generation step that **diff-writes** `planningAction` rows in **its own atomic
+Kysely transaction, immediately after the Phase-7 transaction commits** (it reads the
+planning RPCs, which see only committed data, so it cannot live inside Phase-7 itself).
+A generation failure **propagates to the caller** — `runMrp` reports the run failed
+rather than succeeding with stale actions; the already-committed forecasts are correct
+and the actions self-heal on the next successful run. For each (item, location, period):
+
+- **No open supply covers the net requirement** → **`Order`** (Buy item) or **`Make`**
+  (Make item). `suggestedQuantity` = the lot-sized reorder quantity (the same number the
+  grid shows today, via the shared sizing function — P1.8 "sizing home"); `suggestedDate`
+  = the need date; `supplierId` = preferred supplier for Buy.
+- **An open PO-line/job covers it on the wrong date**, gap **strictly greater than**
+  `rescheduleToleranceDays` (a gap ≤ tolerance is suppressed; the same `>` comparison is
+  used everywhere — engine, tests, acceptance) → **`Expedite`** (needs to be earlier) or
+  **`Defer`** (later). `suggestedDate` = the recommended new date; the target ref points
+  at the open document.
+- **An open order's quantity no longer matches** the requirement (after lot/order-multiple
+  rounding) → **`Increase`** or **`Decrease`**.
+- **An open order has no remaining requirement** → **`Cancel`**.
+- **One action per target document.** Date and quantity rules can both match the same
+  open PO-line/job; the engine emits only the **single highest-priority** action per
+  target: **Cancel** (no remaining requirement — mutually exclusive with the rest) →
+  **Expedite/Defer** (date) → **Increase/Decrease** (quantity). A target needing both a
+  date and a qty change gets the date action; the qty change surfaces on a later run
+  once the date is fixed (SAP folds qty into reschedule the same way). This is MRP-v2's
+  "single highest-priority message on the line" rule applied to Phase 1.
+
+Each row carries the resolved assignee (P1.3), the `reason`/`policyName`/`triggerValues`
+attribution (computed by the sizing logic, discarded today), the `isASAP` urgency flag
+(start/need date already past), and `requiresManualAction` (target already committed —
+P1.5).
+
+**Diff-write, never delete-and-recreate** (assignment + dismissal state must survive a
+run). On the natural key `(item, location, type, period, target document)`:
+
+- a matched **Open** row is **updated in place** (suggested qty/date/reason refreshed;
+  `assignee` re-resolved only when `assigneeOverridden = false`);
+- a matched **Dismissed** row stays dismissed **unless** the suggestion changed materially
+  (qty beyond rounding, or date beyond `rescheduleToleranceDays`), in which case it
+  re-opens;
+- an unmatched **Open** *or* **Dismissed** row whose need has vanished is **deleted**
+  (retired) — a dismissal suppresses a *persisting* need; once the need disappears the
+  row must not linger, or its natural key would block a fresh Open row if the same need
+  returns later. A returning need is a new situation and re-surfaces as a new Open row;
+- **Actioned** rows are terminal and ignored — if the same need recurs, a fresh row is
+  created.
+
+Two consecutive unchanged runs are therefore idempotent (no churn of assignments or
+dismissals). The current unconditional `supplyForecast` delete stays as-is for now
+(Phase 2 removes it); the live `quantityToOrder` SQL suggestion is superseded on the
+suggestion path (P1.6) while the weekly projection columns (`week1…weekN`) stay live.
+
+## P1.5 Acting on a message
+
+The `planningAction` row is a **recommendation**; the existing owning subsystem executes
+it. No new execution engine.
+
+| Type | On apply |
+|---|---|
+| **Order** | Reuse the existing `planning.update` `"order"` path (group by supplier+period, find-or-create a `Planned` PO, merge lines); stamp the assignee onto the PO. |
+| **Make** | Reuse the existing production `planning.update` job-creation path. |
+| **Expedite / Defer** | Uncommitted target — PO line: update `requiredDate`. Job: update the **job's demand target** via `updateJob({ dueDate: suggestedDate })`, then `notifyScheduleInputsChanged(companyId, "reorder", reason, jobId)` so the scheduler re-plans. Never `updateJobOperationDueDate` (that pins an *operation* need-by and sets `manuallyScheduled` — a different input) and never direct `jobOperation` date writes. |
+| **Increase / Decrease** | Uncommitted — update `purchaseQuantity` (PO) or the job qty via existing services. |
+| **Cancel** | Uncommitted — cancel/remove the PO line, or cancel the job, via existing services. |
+
+**Commitment gate.** A change action's target may be **committed** — a PO already sent to
+the supplier, or a job already released to the floor. Then the action is flagged
+`requiresManualAction = true`: the message still surfaces the recommendation ("this sent
+PO should pull in to Sep 12") but **does not silently edit** the document. Acting on it
+**navigates the buyer to the PO/job** to handle through the existing workflow (reopen +
+renegotiate + notify supplier); the UI shows **"Review on PO/Job"** instead of one-click
+apply. An **automated reopen + supplier-notification / change-order flow is explicitly
+deferred** — a separate feature.
+
+**Apply binds to the persisted action (IDOR guard).** The apply route receives only a
+`planningActionId`. The server loads the `planningAction` by **id + companyId**, requires
+`status = 'Open'`, and executes from the row's **stored** type, target reference, and
+proposal values — never from client-supplied targets or quantities. Mismatched or
+non-Open requests are rejected; every target lookup and mutation is `companyId`-scoped.
+
+Applied → the row flips to **`Actioned`** (next run won't recreate it). A buyer may also
+**`Dismiss`** (won't recur until the underlying need changes materially). Both are
+available in bulk.
+
+> Commitment-gate facts (verified): "sent to supplier" = `isPurchaseOrderLocked(status)`
+> (`PURCHASE_ORDER_LOCKED_STATUSES` = To Receive / To Receive and Invoice / To Invoice /
+> Completed / Closed, `purchasing.models.ts`). Do **not** gate on `orderDate` —
+> `insertPurchaseOrder` defaults it to today, so it is set even on freshly planned POs
+> and would flag every one `requiresManualAction`. Jobs are committed at status
+> `Ready` or later (`Ready`/`In Progress`/`Paused`); `Draft`/`Planned` are uncommitted.
+> A reopen path exists (`reopenPurchaseOrderAsRevision`) for the manual flow.
+
+## P1.6 Noise gating
+
+A single company-level **`rescheduleToleranceDays`** (default **7** = one weekly bucket)
+gates Expedite/Defer. **Canonical boundary: a message fires only when the date gap is
+strictly greater than the tolerance (`gap > rescheduleToleranceDays`); a gap ≤ tolerance
+is suppressed.** The same comparison is used in the engine, the tests, and the acceptance
+criteria — at exactly 7 days, nothing fires. The column carries a `CHECK (>= 0)` (a
+negative value would make every gap actionable) and the settings mutation validates
+`0–365`.
+Because Carbon already buckets planning by week, sub-week noise is invisible anyway. **No
+separate quantity dampener in Phase 1** — Carbon's existing `orderMultiple`/`lotSize`/
+min-max-OQ rounding absorbs trivial qty deltas; a dampener is a later add if churn
+appears. (In/out split and per-item tolerance overrides are later refinements.)
+
+## P1.7 UI
+
+Extend the **two existing planning pages** — no new module or page. Files:
+`apps/erp/app/routes/x+/{purchasing,production}+/planning.tsx`,
+`apps/erp/app/modules/{purchasing,production}/ui/Planning/`.
+
+- **Planning pages:** keep the live 48-week projection grid; the suggestion/action column
+  now reads persisted `planningAction` rows. New columns: **action type**, **suggested
+  date/qty**, **reason** (from `triggerValues`), **assignee**, **status**, urgency flag.
+  Each row's primary control is **Apply** (one-click; bulk via the existing
+  multi-select) — except `requiresManualAction` rows, which show **"Review on PO/Job"**
+  and navigate.
+- **Filters:** **assignee** (default *"my actions"* = current user — the buyer's
+  cockpit), plus action type and status. **Bulk assign** and **bulk accept/dismiss** via
+  the existing multi-select.
+- **Assignment control:** the existing **`Assignee`** component per row, pre-filled from
+  the resolved `responsibleEmployee`, reassignable inline (sets `assigneeOverridden`).
+- **Settings — one new screen** cloned from the printer `AssignmentsCard`
+  (`settings/ui/Printing/`): a **company-default** row, a list of all **locations**, and a
+  list of all **item groups**, each with an `Employee` picker and an inherited-placeholder
+  ("inherits {default}") when unset. Per-**item** override lives on the item's existing
+  **Planning tab** (`responsibleEmployee`).
+- **Deferred:** a unified cross-module "all my actions" cockpit (each page filtered to the
+  user already is their queue).
+
+Suggestions are **as-fresh-as-the-last-run** (3-hour cron + the existing manual
+"Recalculate" button), not recomputed per page load — the correct ERP model and the
+prerequisite for persistence/assignment.
+
+## P1.8 Phase 1 Design Decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Persistence | **New focused `planningAction` table** (not the Phase-2 `plannedOrder` lifecycle) | Assignment + dismissal require persistence; the full planned-order lifecycle is deferred. All action types in one table so the worklist is uniform. |
+| Firm lifecycle | **None in v1** | Carbon converts a suggestion straight into a real `Planned` PO/job; no unfirmed tier needed for action messages. Planned→Firm→Released is Phase 2. |
+| Action enum | **`Order\|Make\|Expedite\|Defer\|Cancel\|Increase\|Decrease`** (directional, user-facing) | Direction-in-the-type reads best for a buyer (SAP/D365/Epicor); Increase/Decrease included per Brad. Advisory/warning types excluded (actionable-only). |
+| Change-action source | **Real open POs/jobs vs net requirement** | SAP's reschedule/cancel-on-firmed-receipt model; needs no planned-order layer. |
+| Assignment | **Unified `responsibleEmployee` inheritance tree** all → location → location-specific item group → item, + per-row assignee override | Auto-routes on day one (SAP MRP-controller / Epicor Buyer-ID). The item-group tier is location-specific (sparse `itemPostingGroupResponsibility` table), mirroring the printer AssignmentsCard tree — an inheritance hierarchy, not the removed N×M classification matrix. |
+| Acting | **Recommendation; existing subsystem executes.** Apply on uncommitted supply; navigate on committed | Committed = external commitment (sent PO / released job); silent edits there are wrong. Change-order/notify automation deferred. |
+| Noise gating | **One company `rescheduleToleranceDays` (7)**, no qty dampener | 80/20 — date reschedules are the dominant noise; qty deltas already partly rounded. |
+| Suggestion source of truth | **Persisted `planningAction`**; keep live projection columns | Grid and worklist can't disagree; refreshes per run (assignment prerequisite). |
+| Reorder-sizing home | **Pure TS function shared by engine + client** (four existing policies) | The engine must produce the Order/Make quantity the grid shows; today the logic is duplicated in SQL (`calculate_quantity_to_order`) + client (`calculateOrders`). Aligns with the Phase-2 `computePlannedOrderQuantity` decision; POQ not required for Phase 1. |
+| UI | **Extend the two existing planning pages** + one printer-style settings screen | Copy precedent; no new module. |
+
+## P1.9 Relationship to the Phase 2 planned-order model
+
+Phase 1 is forward-compatible with the `plannedOrder` design below:
+
+- Phase 2's `plannedOrder.exceptionType` (`Release/Expedite/DeExpedite/Cancel/…`) is the
+  same action vocabulary; Phase 1's `planningActionType` uses user-facing names for the
+  same concepts (`Order/Make` ≈ `Release` + planned-order generation; `Defer` ≈
+  `DeExpedite`).
+- When Phase 2 lands the cascade + lifecycle, a `planningAction` can gain an optional
+  `plannedOrderId` reference (an Order/Make action becomes "release this planned order"),
+  while change actions keep targeting real open documents. The assignment ladder,
+  worklist, filters, and acting-on-messages built in Phase 1 are reused unchanged.
+- Nothing in Phase 1 has to be torn out for Phase 2.
+
+## P1.10 Phase 1 Acceptance Criteria
+
+- [ ] An MRP run writes `planningAction` rows: a Buy item short of coverage yields an
+      **Order** (qty = the grid's lot-sized quantity, `supplierId` = preferred); a Make
+      item yields a **Make**.
+- [ ] An open PO due later than the net requirement (gap > `rescheduleToleranceDays`)
+      yields an **Expedite** with `suggestedDate`; an open PO due too early yields a
+      **Defer**; both reference the `purchaseOrderLineId`.
+- [ ] An open order whose qty falls short / exceeds the requirement yields **Increase** /
+      **Decrease**; an open order with no remaining requirement yields **Cancel**.
+- [ ] A date mismatch **≤** `rescheduleToleranceDays` yields **no** message; a mismatch
+      **strictly greater** fires (boundary test at exactly the tolerance value).
+- [ ] `responsibleEmployee` resolves item → item-group → location → company; the engine
+      stamps the resolved user as `assignee`; an unset ladder leaves the action
+      Unassigned. Setting the item-group employee routes all that group's actions to
+      them; a per-item override wins.
+- [ ] Reassigning an action in the UI sets `assigneeOverridden`; the next run does not
+      overwrite that assignee, but still refreshes suggested qty/date.
+- [ ] Two consecutive runs with unchanged inputs produce **byte-identical**
+      `planningAction` rows (diff-write); a **Dismissed** action stays dismissed across a
+      run unless its suggestion changes materially; an **Actioned** action is not
+      recreated.
+- [ ] Applying an **Order** on an uncommitted plan creates/merges a `Planned` PO (the
+      existing behavior) and flips the action to **Actioned**; applying **Expedite** on a
+      Draft/Planned PO line edits its `requiredDate`.
+- [ ] A change action whose target PO is already **sent** is flagged
+      `requiresManualAction`; the worklist shows **"Review on PO"** and navigates to the
+      PO instead of editing it.
+- [ ] The planning pages render the new columns; the **"my actions"** filter defaults to
+      the current user; bulk apply/assign/dismiss work via multi-select.
+- [ ] The settings screen lists company default + every location + every item group with
+      inherited-placeholders; the item Planning tab has a `responsibleEmployee` field.
+- [ ] Gates: `pnpm --filter @carbon/ee test` (action-message generation + resolver +
+      sizing) green; scoped ERP typecheck green; `pnpm run generate:types` committed;
+      browser verification of the worklist + settings on the satellite dataset.
+
+## P1.11 Phase 1 Open Questions
+
+> All resolved with Brad 2026-09-08 (run record:
+> `.ai/runs/2026-09-08-mrp-planning-actions.md`). Kept as the decision record.
+
+- [x] **Scope vs the full MRP-v2 build?** — **Phased.** Ship action messages +
+      assignment first (Phase 1); defer the planned-order cascade/lifecycle/capacity/
+      simulation to Phases 2+ of this spec.
+- [x] **Persistence: full plannedOrder lifecycle or focused table?** — **Focused
+      `planningAction` table, no Firm lifecycle**, diff-write, all types persisted.
+- [x] **Assignment axis?** — **Unified `responsibleEmployee` inheritance tree**
+      all → location → **location-specific** item group → item + per-row assignee
+      override (2026-09-09 refinement: the item-group tier is per-location, stored in a
+      sparse `itemPostingGroupResponsibility` table — a printer-style inheritance tree,
+      not the removed N×M matrix).
+- [x] **Enum names + Increase/Decrease in v1?** — **`Order|Make|Expedite|Defer|Cancel|
+      Increase|Decrease`**; Increase/Decrease **included**.
+- [x] **Advisory exceptions in v1?** — **Actionable-only**; urgency is a flag, conditions
+      in `reason`/`triggerValues`; warning channel deferred.
+- [x] **Tolerance?** — **One company `rescheduleToleranceDays` (7)**, no qty dampener.
+- [x] **Acting on committed vs uncommitted supply?** — **Apply on uncommitted; navigate
+      ("Review on document") on committed**; automated reopen+notify deferred.
+- [x] **Keep or replace the live grid?** — **Keep projection columns; persisted
+      `planningAction` is the suggestion source of truth** (refresh per run).
+- [x] **UI surface?** — **Extend the two existing planning pages** + one printer-style
+      settings screen; unified cockpit deferred.
+
+---
+
+> **Everything below is the Phase 2+ vision** — the full planned-order MRP. Preserved as
+> the design record; **not** what ships in Phase 1. Where Phase 1 diverges, §P1 above is
+> authoritative.
 
 ## TLDR
 
@@ -1094,6 +1541,9 @@ except `api+/planning.what-if.ts`.
 
 > All resolved 2026-08-22 (Brad accepted the recommendations). Kept as the decision
 > record.
+>
+> **Note (2026-09-08):** the questions in this section belong to the **Phase 2+** vision.
+> **Phase 1's** open questions and their resolutions live in **§P1.11**.
 
 - [x] **Materialize-on-release vs keep materialize-on-Make?** — **Resolved: true
       planned-order layer.** Real `job`/PO created only on Release; Planned orders are
@@ -1223,3 +1673,45 @@ except `api+/planning.what-if.ts`.
   with `location.planningTimeFenceDays` as the plant default — SAP/Oracle/Dynamics
   all fence per item, and `itemPlanning` already owns the planning-behavior fields
   (`reorderingPolicy`, accumulation/rescheduling periods).
+- 2026-09-08: **Re-scoped into phases** (Brad). The single "game-changer v1" is split
+  so the 80/20 slice ships first. Added **§P1 — Phase 1: Planning Action Messages &
+  Buyer/Planner Assignment**: a focused persisted `planningAction` table (enums
+  `planningActionType` = Order/Make/Expedite/Defer/Cancel/Increase/Decrease,
+  `planningActionStatus`), a unified `responsibleEmployee` inheritance ladder
+  (item → item-group → location → company; new columns on `itemPlanning`,
+  `itemPostingGroup`, `location`, `companySettings`) with per-row assignee override, a
+  single `companySettings.rescheduleToleranceDays` (default 7) noise gate, diff-write
+  regen, commitment-gated apply (auto-apply on uncommitted supply, "Review on
+  document" on sent POs / released jobs), the two existing planning pages extended
+  with a "my actions" worklist, and one printer-style ownership settings screen. All
+  Phase-1 open questions resolved with Brad (§P1.11). The prior "game-changer v1"
+  (planned-order cascade + Planned→Firm→Released lifecycle, pegging, continuous regen,
+  rough-cut capacity, what-if/CTP, self-explaining plan, programmable release, §9
+  calm-by-default) is retained below as **Phases 2+**, deferred. Research:
+  `.ai/research/mrp-planning-actions.md`; run record:
+  `.ai/runs/2026-09-08-mrp-planning-actions.md`.
+- 2026-09-09: **Ladder refinement** (Brad): the item-group tier is now
+  **location-specific** — the tree is **all → location → item group** (per-item leaf +
+  per-message assignee still on top). Item-group ownership moves off a column on
+  `itemPostingGroup` into a sparse `itemPostingGroupResponsibility` table keyed
+  `(companyId, locationId, itemPostingGroupId)`, mirroring the printer AssignmentsCard
+  inheritance tree. Updated §P1.2 (data model), §P1.3 (resolver), §P1.8, §P1.11.
+- 2026-09-11: **CodeRabbit review round (PR #1601) folded in.** Generation runs in its
+  own atomic transaction after Phase-7 and failures **propagate** (no swallow); **one
+  action per target** precedence (Cancel → Expedite/Defer → Increase/Decrease); vanished
+  **Dismissed** rows are deleted (retired) so the natural key can't block a returning
+  need; tolerance boundary fixed as strictly `>` with `CHECK (>= 0)` + 0–365 validation;
+  commitment gate keys on `isPurchaseOrderLocked(status)` only (NOT `orderDate`, which
+  defaults to today on insert); apply **binds to the persisted action** by id+companyId
+  with `status='Open'` (IDOR guard); job Expedite/Defer = `updateJob({dueDate})` +
+  `notifyScheduleInputsChanged("reorder")`, never operation-date writes;
+  `itemPostingGroup` needs `UNIQUE ("id","companyId")` before the responsibility FK
+  (verified: PK is `("id")` alone); explicit `ENABLE ROW LEVEL SECURITY` on
+  `itemPostingGroupResponsibility`; scheduled runs' `userId: "system"` is a real seeded
+  user row (`20230123004317_companies-rls.sql`).
+
+- **2026-09-11**: `demandProjection` now DOES gain a column — `consumedQuantity`
+  (forecast consumption, migration `20260911150012`), superseding this spec's
+  "demandProjection gains no columns" scope note (§ suggested projections, ~line
+  1230; that section's own scope is unchanged — suggestions still write ordinary
+  rows). Design + rationale: `.ai/specs/2026-09-11-demand-forecast-consumption.md`.

@@ -53,6 +53,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  // Map MRP-written consumed quantities to week indexes (display-only)
+  const consumedValues: Record<number, number> = {};
+  periods.forEach((period, index) => {
+    const row = existingProjections.data?.find((f) => f.periodId === period.id);
+    if (row?.consumedQuantity && row.consumedQuantity > 0) {
+      consumedValues[index] = row.consumedQuantity;
+    }
+  });
+
   const initialValues = {
     itemId,
     locationId,
@@ -61,7 +70,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     periods,
-    initialValues
+    initialValues,
+    consumedValues
   };
 }
 
@@ -136,13 +146,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditProjectionRoute() {
-  const { initialValues } = useLoaderData<typeof loader>();
+  const { initialValues, consumedValues } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
 
   return (
     <DemandProjectionsForm
       initialValues={initialValues}
+      consumedValues={consumedValues}
       isEditing
       onClose={() => navigate(-1)}
     />

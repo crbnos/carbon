@@ -16,15 +16,18 @@ import {
   splitKey
 } from "@carbon/database/mrp-engine";
 import { buildSupersessionRedirectMap } from "@carbon/database/supersession-pick";
+import { round } from "@carbon/utils";
 import {
   type CalendarDate,
   parseDate,
   startOfWeek
 } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { consumeForecast } from "./forecast-consumption.ts";
+import { generatePlanningActions } from "./planning-actions.ts";
 
 const logger = getFunctionLogger("mrp");
 
@@ -180,6 +183,22 @@ export async function runMrp(
       throw new Error("Failed to load purchase order lines");
     if (demandProjections.error)
       throw new Error("Failed to load demand projections");
+
+    // Forecast-consumption window (weekly periods): how far an actual reaches
+    // to consume forecast beyond its own week — backward first, then forward.
+    const consumptionSettings = await client
+      .from("companySettings")
+      .select(
+        "forecastConsumptionBackwardPeriods, forecastConsumptionForwardPeriods"
+      )
+      .eq("id", companyId)
+      .maybeSingle();
+    const consumptionWindow = {
+      backwardPeriods:
+        consumptionSettings.data?.forecastConsumptionBackwardPeriods ?? 4,
+      forwardPeriods:
+        consumptionSettings.data?.forecastConsumptionForwardPeriods ?? 1
+    };
 
     // Bulk-load item metadata
     const [allItems, allReplenishments] = await Promise.all([
@@ -434,52 +453,50 @@ export async function runMrp(
     type DemandForecastSourceInsert =
       Database["public"]["Tables"]["demandForecastSource"]["Insert"];
 
-    // Demand projections. Do NOT net firm job/PO supply here — supply is
-    // credited exactly once by explodeBom's running balance (which receives
-    // jobAndPoSupplyByLocationPeriodItem below). Netting here as well would
-    // double-count supply and under-drive child demand.
-    for (const projection of demandProjections.data ?? []) {
-      // locationId is part of the demandForecast primary key (hence NOT NULL)
-      // and an FK to location; a null one would write locationId="" and violate
-      // demandForecast_locationId_fkey, aborting the run.
-      if (
-        !projection.itemId ||
-        !projection.forecastQuantity ||
-        !projection.locationId
-      )
-        continue;
-
-      const netDemand = projection.forecastQuantity;
-
-      if (netDemand > 0) {
-        const key = makeKey(
-          projection.locationId ?? "",
-          projection.periodId,
-          projection.itemId
-        );
-        grossDemand.set(key, (grossDemand.get(key) ?? 0) + netDemand);
-
-        // Seed top-level contributor for this projection. Use the projection's
-        // surrogate id (added in 20260527115843_demand-projection-source.sql).
-        const projectionId = projection.id;
-        if (projectionId && projection.itemId) {
-          const contributors = topLevelContributors.get(key) ?? [];
-          contributors.push({
-            sourceType: "Demand Projection",
-            demandProjectionId: projectionId,
-            parentItemId: projection.itemId,
-            quantity: netDemand
-          });
-          topLevelContributors.set(key, contributors);
-        }
-      }
-    }
+    // Forecast-consumption prelude. The projections loop moved BELOW the two
+    // actual-demand loops so their quantities can consume the forecast before
+    // it enters gross demand. Actuals consume at their own period first, then
+    // backward/forward per the company window (consumeForecast).
+    const periodIndexById = new Map<string, number>();
+    periods.forEach((p: DemandPeriod, index: number) => {
+      if (p.id) periodIndexById.set(p.id, index);
+    });
+    // locationId␟itemId (makeLocationItemKey) -> periodIndex -> consuming qty
+    const consumptionActuals = new Map<string, Map<number, number>>();
+    const addConsumption = (
+      locationId: string,
+      itemId: string,
+      periodId: string,
+      quantity: number
+    ) => {
+      const periodIndex = periodIndexById.get(periodId);
+      if (periodIndex === undefined || quantity <= 0) return;
+      const key = makeLocationItemKey(locationId, itemId);
+      const byPeriod = consumptionActuals.get(key) ?? new Map<number, number>();
+      byPeriod.set(periodIndex, (byPeriod.get(periodIndex) ?? 0) + quantity);
+      consumptionActuals.set(key, byPeriod);
+    };
+    // Persisted in Phase 7 for EVERY loaded projection row (0 included, so a
+    // stale consumedQuantity from a prior run is always overwritten).
+    const consumptionUpdates: Array<{
+      itemId: string;
+      locationId: string;
+      periodId: string;
+      consumedQuantity: number;
+    }> = [];
 
     // Sales order lines
     for (const line of salesOrderLines.data ?? []) {
       // A null locationId would write demandForecast/demandActual with
       // locationId="" and violate their locationId FK — skip (see above).
-      if (!line.itemId || !line.quantityToSend || !line.locationId) continue;
+      // quantityToConsume is the line's PRE-job-dedup open quantity: an MTO
+      // line fully covered by its linked job has quantityToSend 0 but must
+      // still consume the forecast that predicted it — otherwise the forecast
+      // remainder drives phantom stock production on top of the job.
+      const quantityToSend = line.quantityToSend ?? 0;
+      const quantityToConsume = line.quantityToConsume ?? 0;
+      if (!line.itemId || !line.locationId) continue;
+      if (quantityToSend <= 0 && quantityToConsume <= 0) continue;
 
       const promiseDate = line.promisedDate
         ? parseDate(line.promisedDate)
@@ -487,8 +504,16 @@ export async function runMrp(
       const period = findPeriod(promiseDate, today, periods);
       if (!period) continue;
 
+      addConsumption(
+        line.locationId,
+        line.itemId,
+        period.id,
+        quantityToConsume
+      );
+      if (quantityToSend <= 0) continue;
+
       const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
-      grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToSend);
+      grossDemand.set(key, (grossDemand.get(key) ?? 0) + quantityToSend);
 
       const actualKey = makeActualKey(
         line.itemId,
@@ -498,7 +523,7 @@ export async function runMrp(
       );
       salesDemandByKey.set(
         actualKey,
-        (salesDemandByKey.get(actualKey) ?? 0) + line.quantityToSend
+        (salesDemandByKey.get(actualKey) ?? 0) + quantityToSend
       );
 
       if (line.id && line.itemId) {
@@ -507,7 +532,7 @@ export async function runMrp(
           sourceType: "Sales Order",
           salesOrderLineId: line.id,
           parentItemId: line.itemId,
-          quantity: line.quantityToSend
+          quantity: quantityToSend
         });
         topLevelContributors.set(key, contributors);
       }
@@ -523,6 +548,14 @@ export async function runMrp(
       const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
       const period = findPeriod(requiredDate, today, periods);
       if (!period) continue;
+
+      // Real dependent demand consumes component-level forecast too.
+      addConsumption(
+        line.locationId,
+        line.itemId,
+        period.id,
+        line.quantityToIssue
+      );
 
       const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
       grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToIssue);
@@ -547,6 +580,87 @@ export async function runMrp(
           quantity: line.quantityToIssue
         });
         topLevelContributors.set(key, contributors);
+      }
+    }
+
+    // Demand projections, net of forecast consumption. Do NOT net firm job/PO
+    // supply here — supply is credited exactly once by explodeBom's running
+    // balance (which receives jobAndPoSupplyByLocationPeriodItem below);
+    // netting it here as well would double-count supply and under-drive child
+    // demand. Consumption is a different reconciliation: the actual DEMAND
+    // accumulated above consumes the forecast (own period, then backward/
+    // forward per the company window), so forecast and actuals never
+    // double-count. Only the unconsumed remainder enters gross demand.
+    // Consumption runs BEFORE the Phase 4.5 supersession redirect on purpose:
+    // the read paths (planning RPCs) do not redirect projections/actuals
+    // either, so netting on authored identity keeps engine and grid agreeing.
+    const projectionsByLocationItem = new Map<
+      string,
+      Array<Database["public"]["Tables"]["demandProjection"]["Row"]>
+    >();
+    for (const projection of demandProjections.data ?? []) {
+      // locationId is part of the demandForecast primary key (hence NOT NULL)
+      // and an FK to location; a null one would write locationId="" and violate
+      // demandForecast_locationId_fkey, aborting the run.
+      if (!projection.itemId || !projection.locationId) continue;
+      const locationItemKey = makeLocationItemKey(
+        projection.locationId,
+        projection.itemId
+      );
+      const rows = projectionsByLocationItem.get(locationItemKey) ?? [];
+      rows.push(projection);
+      projectionsByLocationItem.set(locationItemKey, rows);
+    }
+
+    for (const [locationItemKey, rows] of projectionsByLocationItem) {
+      const forecast = new Map<number, number>();
+      for (const projection of rows) {
+        const periodIndex = periodIndexById.get(projection.periodId);
+        if (periodIndex === undefined) continue;
+        forecast.set(
+          periodIndex,
+          (forecast.get(periodIndex) ?? 0) + (projection.forecastQuantity ?? 0)
+        );
+      }
+
+      const { consumedByPeriod, remainderByPeriod } = consumeForecast({
+        forecast,
+        actuals: consumptionActuals.get(locationItemKey) ?? new Map(),
+        window: consumptionWindow
+      });
+
+      for (const projection of rows) {
+        const { itemId, locationId, periodId } = projection;
+        if (!itemId || !locationId) continue;
+        const periodIndex = periodIndexById.get(periodId);
+        if (periodIndex === undefined) continue;
+
+        consumptionUpdates.push({
+          itemId,
+          locationId,
+          periodId,
+          consumedQuantity: round(consumedByPeriod.get(periodIndex) ?? 0)
+        });
+
+        const remainder = remainderByPeriod.get(periodIndex) ?? 0;
+        if (remainder <= 0) continue;
+
+        const key = makeKey(locationId, periodId, itemId);
+        grossDemand.set(key, (grossDemand.get(key) ?? 0) + remainder);
+
+        // Seed top-level contributor for this projection. Use the projection's
+        // surrogate id (added in 20260527110002_demand-forecast-source.sql).
+        const projectionId = projection.id;
+        if (projectionId) {
+          const contributors = topLevelContributors.get(key) ?? [];
+          contributors.push({
+            sourceType: "Demand Projection",
+            demandProjectionId: projectionId,
+            parentItemId: itemId,
+            quantity: remainder
+          });
+          topLevelContributors.set(key, contributors);
+        }
       }
     }
 
@@ -1028,7 +1142,38 @@ export async function runMrp(
             )
             .execute();
         }
+
+        // Persist forecast consumption in batches — an UPDATE, not an upsert,
+        // so a projection deleted mid-run can never be resurrected by the
+        // write phase. Every loaded projection has a row here (0 included),
+        // so stale consumption from a prior run is always overwritten.
+        for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
+          const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
+          await sql`
+            UPDATE "demandProjection" AS dp
+            SET "consumedQuantity" = v."consumedQuantity"::numeric,
+                "updatedAt" = ${datetime.timestamp()},
+                "updatedBy" = ${userId}
+            FROM (VALUES ${sql.join(
+              batch.map(
+                (r) =>
+                  sql`(${r.itemId}, ${r.locationId}, ${r.periodId}, ${r.consumedQuantity})`
+              )
+            )}) AS v("itemId", "locationId", "periodId", "consumedQuantity")
+            WHERE dp."itemId" = v."itemId"
+              AND dp."locationId" = v."locationId"
+              AND dp."periodId" = v."periodId"
+              AND dp."companyId" = ${companyId}
+          `.execute(trx);
+        }
       });
+
+      // Persist the planning action messages (spec §P1) in their own atomic
+      // transaction AFTER the forecast/actual write commits — the planning
+      // RPCs it reads see only committed data. Errors PROPAGATE: the run must
+      // not report success with stale actions (forecasts are committed and
+      // correct; actions self-heal on the next successful run).
+      await generatePlanningActions(client, db, { companyId, userId });
 
       return { success: true };
     } catch (err) {

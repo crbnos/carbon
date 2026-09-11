@@ -80,6 +80,10 @@ msgstr "{0} 已启动"
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} 已消耗"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
@@ -336,7 +340,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} 已选择"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
@@ -345,7 +349,7 @@ msgid "{total} phases to go live"
 msgstr "{total}个阶段即可正式运行"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} 个结果"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
@@ -1340,10 +1344,10 @@ msgid "Add from library…"
 msgstr "从库中添加…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "从收货添加"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "从发货添加"
 
 msgid "Add Group"
 msgstr "添加组"
@@ -1367,7 +1371,7 @@ msgid "Add lines from document"
 msgstr "从文档添加行"
 
 msgid "Add manually"
-msgstr ""
+msgstr "手动添加"
 
 msgid "Add match"
 msgstr "添加匹配"
@@ -1620,7 +1624,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "所有可退货行"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
@@ -1642,6 +1646,9 @@ msgstr "所有时间"
 
 msgid "All tools"
 msgstr "所有工具"
+
+msgid "All types"
+msgstr "所有类型"
 
 msgid "All Types"
 msgstr "所有类型"
@@ -2490,6 +2497,9 @@ msgstr "截至："
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "作为公司所有者，您可以将所有权转移给另一名员工。这将给予他们对账单和管理设置的完全访问权限。"
 
+msgid "ASAP"
+msgstr "尽快"
+
 msgid "Ascending"
 msgstr "升序"
 
@@ -2561,6 +2571,9 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign"
+msgstr "分配"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
@@ -2569,6 +2582,9 @@ msgstr "分配给"
 
 msgid "Assign to Groups"
 msgstr "分配给组"
+
+msgid "Assign to..."
+msgstr "分配给..."
 
 msgid "Assigned"
 msgstr "已分配"
@@ -2875,7 +2891,7 @@ msgid "Batches"
 msgstr "批次"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "要退货的生产批次"
 
 msgid "Batching"
 msgstr "分批"
@@ -3495,7 +3511,7 @@ msgid "Choose another file"
 msgstr "选择另一个文件"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "选择如何向此退货添加行。"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
@@ -3679,6 +3695,9 @@ msgstr "公司"
 
 msgid "Company"
 msgstr "公司"
+
+msgid "Company default"
+msgstr "公司默认值"
 
 msgid "Company group"
 msgstr "公司集团"
@@ -3974,6 +3993,12 @@ msgstr "耗材"
 
 msgid "Consumables"
 msgstr "耗材"
+
+msgid "Consume forecast backward (weeks)"
+msgstr "向后消耗预测（周数）"
+
+msgid "Consume forecast forward (weeks)"
+msgstr "向前消耗预测（周数）"
 
 msgid "Consumed"
 msgstr "已消耗"
@@ -5073,6 +5098,9 @@ msgstr "休息日"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日常问题和上线后的超级护理"
+
+msgid "days"
+msgstr "天"
 
 msgid "Days"
 msgstr "天数"
@@ -6690,7 +6718,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "手动输入物料和数量。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入和审批供应商账单与采购单进行三单匹配"
@@ -7711,6 +7739,9 @@ msgstr "用于任何事项。他们会调配合适的人员。"
 msgid "Forecast"
 msgstr "预测"
 
+msgid "Forecast Consumption"
+msgstr "预测消耗"
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "预测方法: <0>{0}</0>。此行不是从活跃工单派生的，因此没有可用的父源。"
@@ -8610,6 +8641,9 @@ msgstr "从公司继承：此账户是结转至未分配利润（收益）还是
 msgid "Inherited from the parent group."
 msgstr "从父组继承。"
 
+msgid "inherits {inheritedName}"
+msgstr "继承自 {inheritedName}"
+
 msgid "Input"
 msgstr "输入"
 
@@ -9442,10 +9476,10 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "采购订单收货过账后，行才会在此显示，且仅针对尚未在其他供应商退货上授权的数量。盲目退货请使用添加行项目。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "销售订单发货过账后，行才会在此显示，且仅针对尚未在其他 RMA 上授权的数量。盲目退货请使用添加行项目。"
 
 msgid "Lines need internal part numbers"
 msgstr "行需要内部零件号"
@@ -10299,7 +10333,7 @@ msgid "Morning, {name}."
 msgstr "早上，{name}。"
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "最近的 — 搜索以查找更多"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
@@ -10357,6 +10391,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr "MRP 仅在现有订单的日期严格偏离超过此天数时建议移动它。较小的间隙被抑制以保持工作清单的安静。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
@@ -10365,6 +10402,9 @@ msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机�
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
+
+msgid "My actions"
+msgstr "我的计划行动"
 
 msgid "My Documents"
 msgstr "我的文档"
@@ -10825,6 +10865,9 @@ msgstr "没有账户与您的搜索匹配"
 msgid "No action needed"
 msgstr "无需操作"
 
+msgid "No actions assigned to you"
+msgstr "没有分配给您的计划行动"
+
 msgid "No actions found."
 msgstr "未找到操作。"
 
@@ -10869,7 +10912,7 @@ msgid "No batches"
 msgstr "无生产批次"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "尚未选择生产批次。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
@@ -11129,6 +11172,9 @@ msgstr "还没有付款。"
 msgid "No planned or recorded time."
 msgstr "没有计划或记录的时间。"
 
+msgid "No planning actions"
+msgstr "没有计划行动"
+
 msgid "No planning data"
 msgstr "没有计划数据"
 
@@ -11202,13 +11248,13 @@ msgid "No results found"
 msgstr "未找到结果"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "此客户无可退货行"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "此供应商无可退货行"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "没有可退货行与您的搜索匹配"
 
 msgid "No rows here."
 msgstr "这里没有行。"
@@ -11220,7 +11266,7 @@ msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "尚未选择序列号。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
@@ -12376,13 +12422,13 @@ msgid "Pick serials/batches to return"
 msgstr "选择要退货的序列号/批次"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "拣货从此供应商收到的现有生产批次。"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "选择需要库存的料箱，然后选择要从中拣货的料箱。"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "拣货从此供应商收到的现有序列号。"
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -12478,6 +12524,12 @@ msgstr "已计划时间"
 
 msgid "Planning"
 msgstr "计划"
+
+msgid "Planning Actions"
+msgstr "计划行动"
+
+msgid "Planning Ownership"
+msgstr "计划所有权"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "计划将建议的补货数量舍入至该数字的整数倍。"
@@ -13061,7 +13113,7 @@ msgid "Purchase Qty"
 msgstr "采购数量"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "采购退货"
 
 msgid "Purchase Tax Payable"
 msgstr "应付采购税（默认）"
@@ -13971,6 +14023,9 @@ msgstr "需要维修"
 msgid "Requires staffing"
 msgstr "需要人工配置"
 
+msgid "Reschedule Tolerance"
+msgstr "重新安排容差"
+
 msgid "Reserve floor"
 msgstr "储备下限"
 
@@ -14028,6 +14083,12 @@ msgstr "资源"
 
 msgid "Resources"
 msgstr "资源"
+
+msgid "Responsible employee"
+msgstr "负责员工"
+
+msgid "Responsible Employee"
+msgstr "负责员工"
 
 msgid "Restock"
 msgstr "补货"
@@ -14206,6 +14267,12 @@ msgstr "查看和创建"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
+
+msgid "Review on Job"
+msgstr "工单上的评审"
+
+msgid "Review on PO"
+msgstr "采购订单上的评审"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "评审期间的资产负债表和利润表，并确认数字正确。这是手动签核——一旦您评审完毕即标记为完成。"
@@ -14547,7 +14614,7 @@ msgid "Sales Person"
 msgstr "销售人员"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "销售退货"
 
 msgid "Sales Revenue"
 msgstr "销售收入"
@@ -14794,10 +14861,10 @@ msgid "Search by linear issue title..."
 msgstr "按线性问题标题搜索..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "按收货、采购订单或物料搜索"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "按发货、销售订单或物料搜索"
 
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
@@ -15044,10 +15111,10 @@ msgid "Select operations"
 msgstr "选择工序"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "从该供应商选择已过账的收货行以退货。"
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "选择发送给该客户的已过账发货行以退货。"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -15183,7 +15250,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "要退货的序列号"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
@@ -15237,10 +15304,10 @@ msgid "Session locked"
 msgstr "会话已锁定"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "在此退货上设置客户以从发货中添加。"
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "在此退货上设置供应商以从收货中添加。"
 
 msgid "Set a target"
 msgstr "设置目标"
@@ -15531,10 +15598,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "显示可用批次号"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "显示可用的追踪号"
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
@@ -15543,7 +15610,7 @@ msgid "Show Durations"
 msgstr "显示时长"
 
 msgid "Show more"
-msgstr ""
+msgstr "显示更多"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "显示一个楼层和办公室都信任的库存数字"
@@ -16169,6 +16236,9 @@ msgstr "建议匹配"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "由最后一次MRP运行建议。应用作用于未提交的供应；发送的订单链接以供评审。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -19219,6 +19289,9 @@ msgstr "当 {name} 更改时"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "当成品的保质期设置为计算时，选择哪些已消耗的输入项用于计算。"
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr "当销售订单或工单进入某一周（该周没有剩余预测）时，它将从之前最多指定周数及之后消耗预测，而不是重复计算需求。将两者设置为0可将净额限制在同一周。"
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "当序列号或批次过期时,以及之后使用时会发生什么 — 公司政策可以警告、阻止或使用覆盖阻止。"
 
@@ -19404,6 +19477,9 @@ msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "谁必须审批报价单、订单和采购——以及何时"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继承其地点。最具体的分配优先，每个物料可以在其计划选项卡上覆盖。"
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "谁应该接收与维护相关的维护工单的通知？"

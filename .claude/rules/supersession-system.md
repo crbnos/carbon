@@ -1,7 +1,7 @@
 paths:
   - "packages/database/supabase/functions/lib/supersession-pick.ts"
   - "packages/database/supabase/functions/get-method/**"
-  - "packages/database/supabase/functions/mrp/**"
+  - "packages/ee/src/planning/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
 
@@ -21,7 +21,7 @@ Do not assume one rule. Each answers something different, deliberately.
 
 | Consumer | Source | Question |
 |---|---|---|
-| **MRP** (`mrp/index.ts`) | live, every run | what should we BUY? |
+| **MRP** (`runMrp`, `@carbon/ee/planning` — `packages/ee/src/planning/mrp/mrp.ts`) | live, every run | what should we replenish (buy or make), and how should existing supply change? |
 | **Job creation** (`get-method`) | live at creation, then **frozen** | what does this job consume? |
 | **Picking** (`inventory/supersession-pick.ts`) | live, at pick time | what do we pull off the shelf? |
 
