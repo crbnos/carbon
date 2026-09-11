@@ -594,6 +594,23 @@
       ]
     },
     {
+      "slug": "docs/reference/devices",
+      "title": "Your devices",
+      "description": "Every live session on your account across ERP and MES, what Carbon records about each sign-in, and how to sign out a device you don't recognize.",
+      "keywords": ["your", "devices", "docs", "reference"],
+      "headings": [
+        "Reading the list",
+        "Signing a device out",
+        "The record behind the card",
+        "Troubleshooting",
+        "A row says \"Unknown device\" with no location",
+        "The rows read \"Local network\" or \"Unknown location\"",
+        "The device I signed out is still on screen",
+        "\"Sign out other devices\" is disabled",
+        "Two identical rows"
+      ]
+    },
+    {
       "slug": "docs/reference/dimensions",
       "title": "Dimensions & cost centers",
       "description": "Tag axes on journal lines that slice the general ledger without multiplying the chart of accounts.",

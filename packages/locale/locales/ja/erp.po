@@ -248,6 +248,9 @@ msgstr "{apOverduePct}%の買掛金"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
 
+msgid "{browser} on {os}"
+msgstr "{browser}の{os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
@@ -336,7 +339,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 個の権限"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount}件が選択されました"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}つのフェーズでご利用開始までご案内します。各フェーズはチェックポイントで終了します。"
@@ -345,7 +348,7 @@ msgid "{total} phases to go live"
 msgstr "{total}個のフェーズをライブにする"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount}件の結果"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
@@ -1340,10 +1343,10 @@ msgid "Add from library…"
 msgstr "ライブラリから追加…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "入荷から追加"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "出荷から追加"
 
 msgid "Add Group"
 msgstr "グループを追加"
@@ -1367,7 +1370,7 @@ msgid "Add lines from document"
 msgstr "ドキュメントから行を追加"
 
 msgid "Add manually"
-msgstr ""
+msgstr "手動で追加"
 
 msgid "Add match"
 msgstr "マッチを追加"
@@ -1620,7 +1623,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "すべての返品対象の明細"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
@@ -2875,7 +2878,7 @@ msgid "Batches"
 msgstr "バッチ"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "返品するバッチ"
 
 msgid "Batching"
 msgstr "バッチ処理"
@@ -3495,7 +3498,7 @@ msgid "Choose another file"
 msgstr "別のファイルを選択"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "このリターンに明細を追加する方法を選択します。"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
@@ -6690,7 +6693,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "品目と数量を自分で入力してください。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "発注書に対する仕入先請求書を入力して承認します（三点照合）"
@@ -6892,6 +6895,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
+
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "現在使用中のセッション以外のすべてのセッションがサインアウトされます。他のデバイスは次のページロード時に1分以内にログインページに戻されます。"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
@@ -9242,6 +9248,9 @@ msgstr "言語"
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
 
+msgid "Last active"
+msgstr "最後のアクティビティ"
+
 msgid "Last Activity"
 msgstr "最終更新"
 
@@ -9442,10 +9451,10 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "発注書の入荷が転記済になった後、明細がここに表示されます。別の仕入先返品で既に認可されていない数量のみが対象です。ブラインド返品には「明細品目を追加」を使用してください。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "受注の出荷が転記済になった後、明細がここに表示されます。別のRMAで既に認可されていない数量のみが対象です。ブラインド返品には「明細品目を追加」を使用してください。"
 
 msgid "Lines need internal part numbers"
 msgstr "明細には社内部品番号が必要です"
@@ -9555,6 +9564,9 @@ msgstr "読み込み中…"
 
 msgid "Local"
 msgstr "ローカル"
+
+msgid "Local network"
+msgstr "ローカルネットワーク"
 
 msgid "location"
 msgstr "場所"
@@ -10299,7 +10311,7 @@ msgid "Morning, {name}."
 msgstr "朝、{name}さん。"
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "最新 — 検索でさらに見つける"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "ほとんどのことはここで発見され、解決されます。明確に名前を付けてください。"
@@ -10747,6 +10759,9 @@ msgstr "新規作業区"
 msgid "New Workflow"
 msgstr "新規ワークフロー"
 
+msgid "Newer device"
+msgstr "新しいデバイス"
+
 msgid "Newest first"
 msgstr "最新順"
 
@@ -10869,7 +10884,7 @@ msgid "No batches"
 msgstr "バッチなし"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "バッチがまだ選択されていません。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
@@ -11202,13 +11217,13 @@ msgid "No results found"
 msgstr "検索結果が見つかりません"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "この得意先に対する返品対象の明細がありません"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "この仕入先に対する返品対象の明細がありません"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "検索に一致する返品対象の明細がありません"
 
 msgid "No rows here."
 msgstr "ここに行はありません。"
@@ -11220,7 +11235,7 @@ msgid "No scheduled work in this window"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "シリアル番号がまだ選択されていません。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "シフトが構成されていません — 月～金、8時間営業を想定"
@@ -11230,6 +11245,9 @@ msgstr "出荷がまだありません"
 
 msgid "No shortcuts available on this page."
 msgstr "このページではショートカットはありません。"
+
+msgid "No signed-in devices found."
+msgstr "サインインしたデバイスが見つかりません。"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
@@ -11594,6 +11612,9 @@ msgstr "1つの共有段取りプラス各メンバーの加工時間（労務�
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "1つの共有段取りプラス最長メンバーの加工時間（労務と機械のいずれか大きい方）、メンバーは同時に実行"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "アカウント上のサインイン済みブラウザまたはデバイス。サインインが完了すると作成され、最大7日間のアクティビティが続きます。ログアウト時、アカウント→セキュリティからそのデバイスをサインアウトしたとき、または有効期限が切れたときに終了します。"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "製造指図の工順の1つのステップ。工法と作業区を指定し、段取り、労務、機械時間とそのレートを独自に保有しています。"
@@ -12376,13 +12397,13 @@ msgid "Pick serials/batches to return"
 msgstr "返品するシリアル/バッチを選択"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "この仕入先から受け取ったバッチをピッキングします。"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "在庫が必要なビンを選択してから、引き出すビンを選択します。"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "この仕入先から受け取ったシリアル番号をピッキングします。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -13061,7 +13082,7 @@ msgid "Purchase Qty"
 msgstr "購入数量"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "仕入返品"
 
 msgid "Purchase Tax Payable"
 msgstr "仕入税金支払い（デフォルト）"
@@ -14547,7 +14568,7 @@ msgid "Sales Person"
 msgstr "営業担当者"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "販売返品"
 
 msgid "Sales Revenue"
 msgstr "販売売上高"
@@ -14794,10 +14815,10 @@ msgid "Search by linear issue title..."
 msgstr "Linear イシュータイトルで検索..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "入荷、PO、または品目で検索"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "出荷、受注、または品目で検索"
 
 msgid "Search customers and types..."
 msgstr "得意先とタイプを検索..."
@@ -15044,10 +15065,10 @@ msgid "Select operations"
 msgstr "作業を選択"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "この仕入先からの転記済の入荷明細を選択して返品します。"
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "この得意先への転記済の出荷明細を選択して返品します。"
 
 msgid "Select Printer"
 msgstr "プリンターを選択"
@@ -15183,7 +15204,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "返品するシリアル番号"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "シリアルまたはバッチ追跡が必要です"
@@ -15233,14 +15254,17 @@ msgstr "サービス"
 msgid "Services"
 msgstr "サービス"
 
+msgid "Session"
+msgstr "セッション"
+
 msgid "Session locked"
 msgstr "セッションがロック中"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "このリターンに得意先を設定して出荷から追加します。"
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "このリターンに仕入先を設定して入荷から追加します。"
 
 msgid "Set a target"
 msgstr "ターゲットを設定"
@@ -15531,10 +15555,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "仕入先リスト、仕入先フォーム、ドロップダウンで読みやすい仕入先IDカラムを表示します。仕入先はどちらの方法でも内部的に識別されます。"
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "利用可能なバッチ番号を表示"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "利用可能なトラッキング番号を表示"
 
 msgid "Show Customer IDs"
 msgstr "得意先IDを表示"
@@ -15543,7 +15567,7 @@ msgid "Show Durations"
 msgstr "期間を表示"
 
 msgid "Show more"
-msgstr ""
+msgstr "さらに表示"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "床と事務所の両方が信頼できる1つの在庫番号を表示する"
@@ -15616,8 +15640,17 @@ msgstr "ログアウト"
 msgid "Sign Out"
 msgstr "サインアウト"
 
+msgid "Sign out all other devices"
+msgstr "他のすべてのデバイスからサインアウト"
+
+msgid "Sign out device"
+msgstr "デバイスをサインアウト"
+
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
+
+msgid "Sign out other devices"
+msgstr "他のデバイスからサインアウト"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
@@ -16063,7 +16096,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripeには既にこのメールアドレスの得意先があります"
+msgstr "Stripeには既にこのメールアドレスを持つカスタマーがあります"
 
 msgid "Stripe Due Date"
 msgstr "Stripe支払期日"
@@ -17492,8 +17525,14 @@ msgstr "この担当者はメールアドレスを持っていません"
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
 
+msgid "This device"
+msgstr "このデバイス"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "これはそのデバイスのセッションを終了します。サインインしたままにはできず、次のページロード時に1分以内にログインページに戻されます。"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "このファイルはもう利用できないか、またはそれをダウンロードする権限がありません。"
@@ -17515,7 +17554,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "この請求書には使用可能な支払期日がありません— Stripeのものを選択してください。"
+msgstr "この請求書には使用可能な支払期限がありません。Stripeの支払期限を選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
@@ -17688,7 +17727,7 @@ msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
 msgid "This version is published"
-msgstr "このバージョンは公開済です"
+msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
@@ -18277,10 +18316,16 @@ msgstr "工程で回復不可能として報告された単位数（理由付き
 msgid "Unknown"
 msgstr "不明"
 
+msgid "Unknown device"
+msgstr "不明なデバイス"
+
 msgid "unknown error"
 msgstr "不明なエラー"
 
 msgid "unknown location"
+msgstr "不明な場所"
+
+msgid "Unknown location"
 msgstr "不明な場所"
 
 msgid "Unlimited functional support"
@@ -19357,6 +19402,9 @@ msgstr "今日のあなたの状況"
 msgid "Where you want to grow"
 msgstr "成長したい場所"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
+msgstr "サインインしている場所です。認識していないデバイスからサインアウトしてください — そのセッション期間より長く使用しているデバイスから実行してください。"
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "金額を明細価格に対する割合として解釈するか、固定の通貨額として解釈するか。"
 
@@ -19705,6 +19753,9 @@ msgstr "あなたのデータはアクセス可能で、適切にクリーンで
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "データは変更されませんでした — 復元が完了できない場合、復元は何も変更する前に停止します。"
+
+msgid "Your devices"
+msgstr "あなたのデバイス"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS プロバイダーはレコード名にドメインを自動的に追加する場合があります。その場合は、その前の部分のみを入力してください（例：_carbon-challenge または任意のサブドメイン付き）。"

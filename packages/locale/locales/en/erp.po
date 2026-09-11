@@ -248,6 +248,9 @@ msgstr "{apOverduePct}% of payables"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% of receivables"
 
+msgid "{browser} on {os}"
+msgstr "{browser} on {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
@@ -6893,6 +6896,9 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 
@@ -9242,6 +9248,9 @@ msgstr "Language"
 msgid "Last 6 Months"
 msgstr "Last 6 Months"
 
+msgid "Last active"
+msgstr "Last active"
+
 msgid "Last Activity"
 msgstr "Last Activity"
 
@@ -9555,6 +9564,9 @@ msgstr "Loading…"
 
 msgid "Local"
 msgstr "Local"
+
+msgid "Local network"
+msgstr "Local network"
 
 msgid "location"
 msgstr "location"
@@ -10747,6 +10759,9 @@ msgstr "New Work Center"
 msgid "New Workflow"
 msgstr "New Workflow"
 
+msgid "Newer device"
+msgstr "Newer device"
+
 msgid "Newest first"
 msgstr "Newest first"
 
@@ -11231,6 +11246,9 @@ msgstr "No shipments yet"
 msgid "No shortcuts available on this page."
 msgstr "No shortcuts available on this page."
 
+msgid "No signed-in devices found."
+msgstr "No signed-in devices found."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
 
@@ -11594,6 +11612,9 @@ msgstr "One shared setup plus each member's run time — the greater of its labo
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
@@ -15233,6 +15254,9 @@ msgstr "services"
 msgid "Services"
 msgstr "Services"
 
+msgid "Session"
+msgstr "Session"
+
 msgid "Session locked"
 msgstr "Session locked"
 
@@ -15616,8 +15640,17 @@ msgstr "Sign out"
 msgid "Sign Out"
 msgstr "Sign Out"
 
+msgid "Sign out all other devices"
+msgstr "Sign out all other devices"
+
+msgid "Sign out device"
+msgstr "Sign out device"
+
 msgid "Sign out instead"
 msgstr "Sign out instead"
+
+msgid "Sign out other devices"
+msgstr "Sign out other devices"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Sign-off review before moving to the next step"
@@ -17492,8 +17525,14 @@ msgstr "This contact has no email address"
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."
 
+msgid "This device"
+msgstr "This device"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "This file is no longer available, or you don't have permission to download it."
@@ -18277,11 +18316,17 @@ msgstr "Units reported as unrecoverable at an operation, with a reason — the a
 msgid "Unknown"
 msgstr "Unknown"
 
+msgid "Unknown device"
+msgstr "Unknown device"
+
 msgid "unknown error"
 msgstr "unknown error"
 
 msgid "unknown location"
 msgstr "unknown location"
+
+msgid "Unknown location"
+msgstr "Unknown location"
 
 msgid "Unlimited functional support"
 msgstr "Unlimited functional support"
@@ -19357,6 +19402,9 @@ msgstr "Where you are today"
 msgid "Where you want to grow"
 msgstr "Where you want to grow"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
+msgstr "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 
@@ -19709,6 +19757,9 @@ msgstr "Your data is accessible and reasonably clean"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Your data was not changed — the restore stops before touching anything if it can't complete."
+
+msgid "Your devices"
+msgstr "Your devices"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."

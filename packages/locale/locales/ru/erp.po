@@ -248,6 +248,9 @@ msgstr "{apOverduePct}% кредиторской задолженности"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% дебиторской задолженности"
 
+msgid "{browser} on {os}"
+msgstr "{browser} на {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
@@ -336,7 +339,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} прав доступа"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} выбрано"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} этапов для запуска вашей организации на Carbon. Каждый завершается контрольной точкой."
@@ -345,7 +348,7 @@ msgid "{total} phases to go live"
 msgstr "{total} этапов до запуска"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} результатов"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
@@ -1340,10 +1343,10 @@ msgid "Add from library…"
 msgstr "Добавить из библиотеки…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "Добавить из поступления"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "Добавить из отгрузки"
 
 msgid "Add Group"
 msgstr "Добавить группу"
@@ -1367,7 +1370,7 @@ msgid "Add lines from document"
 msgstr "Добавить строки из документа"
 
 msgid "Add manually"
-msgstr ""
+msgstr "Добавить вручную"
 
 msgid "Add match"
 msgstr "Добавить совпадение"
@@ -1620,7 +1623,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "Все возвратные строки"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
@@ -2875,7 +2878,7 @@ msgid "Batches"
 msgstr "Партии"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "Серии для возврата"
 
 msgid "Batching"
 msgstr "Объединение в серии"
@@ -3495,7 +3498,7 @@ msgid "Choose another file"
 msgstr "Выбрать другой файл"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "Выберите способ добавления строк в этот возврат."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
@@ -6690,7 +6693,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "Введите количество от 1 до {0}."
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "Введите номенклатуру и количество самостоятельно."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Введите и утвердите счета от поставщиков по заказу на покупку (трехстороннее сопоставление)"
@@ -6892,6 +6895,9 @@ msgstr "Каждая требуемая задача должна быть Го�
 
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
+
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "Все сеансы, кроме используемого вами сейчас, будут закрыты. Другие устройства будут возвращены на страницу входа в течение минуты после их следующей загрузки страницы."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Все работающие в любой день недели, который вы выберете, остаются после смены на количество часов, которые вы установите. Затронуты только отделы и смены, по которым вы фильтруете."
@@ -9242,6 +9248,9 @@ msgstr "Язык"
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
 
+msgid "Last active"
+msgstr "Последняя активность"
+
 msgid "Last Activity"
 msgstr "Последняя активность"
 
@@ -9442,10 +9451,10 @@ msgid "Lines"
 msgstr "Строки"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "Строки появляются здесь после проведения поступления, и только для количеств, не авторизованных в другом возврате поставщику. Используйте Добавить строку для слепого возврата."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "Строки появляются здесь после проведения отгрузки, и только для количеств, не авторизованных в другой RMA. Используйте Добавить строку для слепого возврата."
 
 msgid "Lines need internal part numbers"
 msgstr "Строки требуют внутренние номера деталей"
@@ -9555,6 +9564,9 @@ msgstr "Загрузка…"
 
 msgid "Local"
 msgstr "Местный"
+
+msgid "Local network"
+msgstr "Локальная сеть"
 
 msgid "location"
 msgstr "расположение"
@@ -10299,7 +10311,7 @@ msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "Последний — выполните поиск, чтобы найти дополнительные"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Большинство проблем выявляются и решаются здесь. Называйте их четко."
@@ -10747,6 +10759,9 @@ msgstr "Новый рабочий центр"
 msgid "New Workflow"
 msgstr "Новый рабочий процесс"
 
+msgid "Newer device"
+msgstr "Новое устройство"
+
 msgid "Newest first"
 msgstr "Сначала новые"
 
@@ -10869,7 +10884,7 @@ msgid "No batches"
 msgstr "Нет серий"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "Серии не выбраны."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
@@ -11202,13 +11217,13 @@ msgid "No results found"
 msgstr "Результатов не найдено"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "Нет возвратных строк для этого покупателя"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "Нет возвратных строк для этого поставщика"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "Нет возвратных строк, соответствующих вашему поиску"
 
 msgid "No rows here."
 msgstr "Нет строк здесь."
@@ -11220,7 +11235,7 @@ msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "Серийные номера не выбраны."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
@@ -11230,6 +11245,9 @@ msgstr "Никаких отправок пока нет"
 
 msgid "No shortcuts available on this page."
 msgstr "На этой странице сочетания клавиш недоступны."
+
+msgid "No signed-in devices found."
+msgstr "Подписанные устройства не найдены."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -11594,6 +11612,9 @@ msgstr "Одна общая наладка плюс время обработк�
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "Одна общая наладка плюс время обработки самого длительного изделия — большее значение из его труда и станка — так как изделия обрабатываются вместе"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "На вашей учетной записи один браузер или устройство с входом, созданное при завершении входа и действующее до семи дней активности; оно завершается при выходе, при выходе этого устройства из Account → Security или при истечении."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
@@ -12376,13 +12397,13 @@ msgid "Pick serials/batches to return"
 msgstr "Выбрать серийные номера/партии для возврата"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "Отберите серии, полученные от этого поставщика."
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Выберите ячейку, которой нужен запас, затем выберите ячейки, из которых его извлечь."
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "Отберите серийные номера, полученные от этого поставщика."
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -13061,7 +13082,7 @@ msgid "Purchase Qty"
 msgstr "Кол-во покупки"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "Возврат поставщику"
 
 msgid "Purchase Tax Payable"
 msgstr "Налог на покупку подлежащий уплате (по умолчанию)"
@@ -14547,7 +14568,7 @@ msgid "Sales Person"
 msgstr "Менеджер по продажам"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "Возврат покупателя"
 
 msgid "Sales Revenue"
 msgstr "Выручка от продаж"
@@ -14794,10 +14815,10 @@ msgid "Search by linear issue title..."
 msgstr "Поиск по названию задачи Linear..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "Поиск по поступлению, заказу поставщику или номенклатуре"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "Поиск по отгрузке, заказу покупателя или номенклатуре"
 
 msgid "Search customers and types..."
 msgstr "Поиск покупателей и типов..."
@@ -15044,10 +15065,10 @@ msgid "Select operations"
 msgstr "Выберите операции"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "Выберите проведенные строки поступления от этого поставщика для возврата."
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "Выберите проведенные строки отгрузки этому покупателю для возврата."
 
 msgid "Select Printer"
 msgstr "Выберите принтер"
@@ -15183,7 +15204,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "Серийные номера для возврата"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Требуется отслеживание по серийному номеру или партии"
@@ -15233,14 +15254,17 @@ msgstr "услуги"
 msgid "Services"
 msgstr "Услуги"
 
+msgid "Session"
+msgstr "Сеанс"
+
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "Установите покупателя для этого возврата, чтобы добавить из отгрузки."
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "Установите поставщика для этого возврата, чтобы добавить из поступления."
 
 msgid "Set a target"
 msgstr "Установить цель"
@@ -15531,10 +15555,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "Показать доступные номера серий"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "Показать доступные номера отслеживания"
 
 msgid "Show Customer IDs"
 msgstr "Показывать ID Покупателей"
@@ -15543,7 +15567,7 @@ msgid "Show Durations"
 msgstr "Показать длительность"
 
 msgid "Show more"
-msgstr ""
+msgstr "Показать дополнительно"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Показать один номер инвентаря, которому доверяют и цех, и офис"
@@ -15616,8 +15640,17 @@ msgstr "Выход"
 msgid "Sign Out"
 msgstr "Выход"
 
+msgid "Sign out all other devices"
+msgstr "Выйти из всех остальных устройств"
+
+msgid "Sign out device"
+msgstr "Выйти из устройства"
+
 msgid "Sign out instead"
 msgstr "Вместо этого выйти"
+
+msgid "Sign out other devices"
+msgstr "Выйти из других устройств"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Подтверждение рассмотрения перед переходом к следующему шагу"
@@ -16063,7 +16096,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "В Stripe уже есть клиент с этим адресом электронной почты"
+msgstr "В Stripe уже есть клиент с этой электронной почтой"
 
 msgid "Stripe Due Date"
 msgstr "Срок выполнения Stripe"
@@ -17492,8 +17525,14 @@ msgstr "Это контактное лицо не имеет адреса эле
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
 
+msgid "This device"
+msgstr "Это устройство"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была подделана."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "Это завершает сеанс этого устройства — оно больше не может оставаться в системе и возвращается на страницу входа в течение минуты после следующей загрузки страницы."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Этот файл больше недоступен, или у вас нет права доступа для его скачивания."
@@ -17515,7 +17554,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить отправку нового приглашения на вашу электронную почту."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Этот счет не имеет пригодной даты платежа — выберите одну для Stripe."
+msgstr "У этого счета-фактуры нет пригодной даты платежа — выберите один для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
@@ -18277,11 +18316,17 @@ msgstr "Единицы, объявленные неремонтируемыми 
 msgid "Unknown"
 msgstr "Неизвестно"
 
+msgid "Unknown device"
+msgstr "Неизвестное устройство"
+
 msgid "unknown error"
 msgstr "неизвестная ошибка"
 
 msgid "unknown location"
 msgstr "неизвестное местоположение"
+
+msgid "Unknown location"
+msgstr "Неизвестное местоположение"
 
 msgid "Unlimited functional support"
 msgstr "Неограниченная функциональная поддержка"
@@ -19357,6 +19402,9 @@ msgstr "Где вы находитесь сегодня"
 msgid "Where you want to grow"
 msgstr "Где вы хотите расти"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
+msgstr "Где вы вошли. Выйдите из любого устройства, которое вы не распознаете — с устройства, которое вы использовали дольше, чем этот сеанс."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Интерпретируется ли сумма как процент от цены строки или как фиксированная сумма в валюте."
 
@@ -19705,6 +19753,9 @@ msgstr "Ваши данные доступны и находятся в отно
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Ваши данные не были изменены — восстановление останавливается перед внесением изменений, если оно не может быть завершено."
+
+msgid "Your devices"
+msgstr "Ваши устройства"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Ваш поставщик DNS может автоматически добавить ваш домен к имени записи — если это так, введите только часть перед ней (например, _carbon-challenge плюс любой поддомен)."

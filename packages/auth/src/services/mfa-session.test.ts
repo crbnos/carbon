@@ -12,6 +12,14 @@ vi.mock("@carbon/kv", () => ({
   }
 }));
 
+// destroyAuthSession's best-effort GoTrue revocation pulls in the supabase
+// client factory; stub it so the module chain never reads real env.
+vi.mock("../lib/supabase/client.server", () => ({
+  getCarbonServiceRole: vi.fn(() => ({
+    auth: { admin: { signOut: vi.fn().mockResolvedValue({ error: null }) } }
+  }))
+}));
+
 vi.mock("../config/env", () => ({
   DOMAIN: "localhost",
   CarbonEdition: "Community",

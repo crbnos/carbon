@@ -18,7 +18,7 @@ Profile is the one card everyone shares; the form itself warns *"This informatio
 
 Sign-in is a magic link, Google or Microsoft OAuth, or a passkey — there is no password. Which methods exist is a deployment-wide choice, not a per-user one.
 
-**Account → Security** is where you manage your own credentials. Add a passkey through your browser's WebAuthn prompt to sign in with Face ID, Touch ID, or your device PIN; rename each one so you can tell devices apart; remove one to revoke that device. Each row shows when it was added and last used. The same screen holds the authenticator-app card — see `docs/reference/two-factor` for setup, enforcement, and recovery.
+**Account → Security** is where you manage your own credentials. Add a passkey through your browser's WebAuthn prompt to sign in with Face ID, Touch ID, or your device PIN; rename each one so you can tell devices apart; remove one to revoke that device. Each row shows when it was added and last used. The same screen holds the authenticator-app card — see `docs/reference/two-factor` for setup, enforcement, and recovery. It also carries the **"Your devices"** card, which lists every live session on your account across ERP and MES and lets you sign any of them out; see `docs/reference/devices`.
 
 A passkey is tied to a device. Register a second one up front, or you'll be falling back to the magic-link email when the first device goes missing.
 

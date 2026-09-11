@@ -248,6 +248,9 @@ msgstr "{apOverduePct}% देय राशि का"
 msgid "{arOverduePct}% of receivables"
 msgstr "प्राप्य राशि का {arOverduePct}%"
 
+msgid "{browser} on {os}"
+msgstr "{browser} पर {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
@@ -336,7 +339,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} अनुमतियाँ"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} चयनित"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "आपकी कंपनी को Carbon पर लाइव करने के लिए {total} चरण। प्रत्येक एक चेकपॉइंट पर समाप्त होता है।"
@@ -345,7 +348,7 @@ msgid "{total} phases to go live"
 msgstr "{total} चरण लाइव होने के लिए"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} परिणाम"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# इकाई} other {# इकाइयाँ}}"
@@ -1340,10 +1343,10 @@ msgid "Add from library…"
 msgstr "लाइब्रेरी से जोड़ें…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "प्राप्ति से जोड़ें"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "शिपमेंट से जोड़ें"
 
 msgid "Add Group"
 msgstr "समूह जोड़ें"
@@ -1367,7 +1370,7 @@ msgid "Add lines from document"
 msgstr "दस्तावेज़ से लाइनें जोड़ें"
 
 msgid "Add manually"
-msgstr ""
+msgstr "मैन्युअल रूप से जोड़ें"
 
 msgid "Add match"
 msgstr "मिलान जोड़ें"
@@ -1620,7 +1623,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "सभी चुने गए समूहों के सदस्य और चुने गए व्यक्ति अनुरोधों को अनुमोदित कर सकेंगे"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "सभी रिटर्न योग्य पंक्तियाँ"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
@@ -2875,7 +2878,7 @@ msgid "Batches"
 msgstr "बैच"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "रिटर्न करने के लिए बैच"
 
 msgid "Batching"
 msgstr "बैचिंग"
@@ -3495,7 +3498,7 @@ msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "इस रिटर्न में पंक्तियों को जोड़ने का तरीका चुनें।"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
@@ -6690,7 +6693,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1 और {0} के बीच मात्रा दर्ज करें।"
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "PO के विरुद्ध विक्रेता बिलों को दर्ज करें और अनुमोदित करें (थ्री-वे मिलान)"
@@ -6892,6 +6895,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
+
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "आपके द्वारा अभी उपयोग किए जा रहे को छोड़कर हर सत्र साइन आउट हो जाएगा। अन्य डिवाइस अपने अगले पृष्ठ लोड के एक मिनट के भीतर लॉगिन पृष्ठ पर लौट आएंगे।"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
@@ -9242,6 +9248,9 @@ msgstr "भाषा"
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
 
+msgid "Last active"
+msgstr "अंतिम सक्रिय"
+
 msgid "Last Activity"
 msgstr "अंतिम गतिविधि"
 
@@ -9442,10 +9451,10 @@ msgid "Lines"
 msgstr "पंक्तियाँ"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "एक बार क्रय आदेश प्राप्ति पोस्ट किए जाने के बाद पंक्तियाँ यहाँ दिखाई देती हैं, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य आपूर्तिकर्ता रिटर्न पर अधिकृत नहीं हैं। ब्लाइंड रिटर्न के लिए लाइन आइटम जोड़ें का उपयोग करें।"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "एक बार विक्रय आदेश शिपमेंट पोस्ट किए जाने के बाद पंक्तियाँ यहाँ दिखाई देती हैं, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य RMA पर अधिकृत नहीं हैं। ब्लाइंड रिटर्न के लिए लाइन आइटम जोड़ें का उपयोग करें।"
 
 msgid "Lines need internal part numbers"
 msgstr "लाइनों को आंतरिक भाग संख्याओं की आवश्यकता है"
@@ -9555,6 +9564,9 @@ msgstr "लोड हो रहा है…"
 
 msgid "Local"
 msgstr "स्थानीय"
+
+msgid "Local network"
+msgstr "स्थानीय नेटवर्क"
 
 msgid "location"
 msgstr "स्थान"
@@ -10299,7 +10311,7 @@ msgid "Morning, {name}."
 msgstr "सुबह, {name}।"
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "सबसे हाल ही में — अधिक खोजने के लिए खोजें"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "अधिकांश चीजें यहां पकड़ी जाती हैं और हल की जाती हैं। इसे स्पष्ट रूप से नाम दें।"
@@ -10747,6 +10759,9 @@ msgstr "नया वर्क सेंटर"
 msgid "New Workflow"
 msgstr "नया वर्कफ़्लो"
 
+msgid "Newer device"
+msgstr "नई डिवाइस"
+
 msgid "Newest first"
 msgstr "नवीनतम पहले"
 
@@ -10869,7 +10884,7 @@ msgid "No batches"
 msgstr "कोई बैच नहीं"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "अभी कोई बैच चयनित नहीं है।"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
@@ -11202,13 +11217,13 @@ msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "इस ग्राहक के लिए कोई रिटर्न योग्य पंक्तियाँ नहीं"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "इस आपूर्तिकर्ता के लिए कोई रिटर्न योग्य पंक्तियाँ नहीं"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "कोई रिटर्न योग्य पंक्तियाँ आपकी खोज से मेल नहीं खाती"
 
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
@@ -11220,7 +11235,7 @@ msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "अभी कोई सीरियल नंबर चयनित नहीं है।"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "कोई पारियाँ कॉन्फ़िगर नहीं — सोमवार–शुक्रवार, 8 घंटे की दिन मानी जा रही है"
@@ -11230,6 +11245,9 @@ msgstr "अभी कोई शिपमेंट नहीं"
 
 msgid "No shortcuts available on this page."
 msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं है।"
+
+msgid "No signed-in devices found."
+msgstr "कोई साइन इन किए गए डिवाइस नहीं मिले।"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -11594,6 +11612,9 @@ msgstr "एक साझा सेटअप और प्रत्येक स�
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "एक साझा सेटअप और सबसे लंबे सदस्य का रन समय — इसके श्रम और मशीन में से अधिकतम — क्योंकि सदस्य एक साथ चलते हैं"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "आपके खाते पर एक साइन इन किया गया ब्राउज़र या डिवाइस, साइन-इन पूरा होने पर बनाया गया और गतिविधि के सात दिनों तक चलने वाला; यह तब समाप्त होता है जब आप लॉगआउट करते हैं, जब आप उस डिवाइस को खाता → सुरक्षा से साइन आउट करते हैं, या जब यह समाप्त हो जाता है।"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "एक जॉब की रूटिंग में एक चरण, एक प्रक्रिया और एक वर्क सेंटर का नाम देते हुए और अपने स्वयं के सेटअप, श्रम, मशीन समय और दरें शामिल करते हुए।"
@@ -12376,13 +12397,13 @@ msgid "Pick serials/batches to return"
 msgstr "रिटर्न करने के लिए सीरीज/बैच चुनें"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "इस आपूर्तिकर्ता से प्राप्त हाथ पर मौजूद बैच की पिकिंग करें।"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "स्टॉक की जरूरत वाली बिन को चुनें, फिर उन बिन को चुनें जहां से स्टॉक खींचना है।"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "इस आपूर्तिकर्ता से प्राप्त हाथ पर मौजूद सीरियल नंबर की पिकिंग करें।"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -13061,7 +13082,7 @@ msgid "Purchase Qty"
 msgstr "खरीद मात्रा"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "क्रय रिटर्न"
 
 msgid "Purchase Tax Payable"
 msgstr "खरीद कर देय (डिफ़ॉल्ट)"
@@ -14547,7 +14568,7 @@ msgid "Sales Person"
 msgstr "विक्रय प्रतिनिधि"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "विक्रय रिटर्न"
 
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
@@ -14794,10 +14815,10 @@ msgid "Search by linear issue title..."
 msgstr "Linear समस्या शीर्षक द्वारा खोजें..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "प्राप्ति, PO या आइटम द्वारा खोजें"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "शिपमेंट, विक्रय आदेश या आइटम द्वारा खोजें"
 
 msgid "Search customers and types..."
 msgstr "ग्राहकों और प्रकारों को खोजें..."
@@ -15044,10 +15065,10 @@ msgid "Select operations"
 msgstr "संचालन चुनें"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "इस आपूर्तिकर्ता से रिटर्न करने के लिए पोस्ट की गई प्राप्ति पंक्तियों को चुनें।"
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "इस ग्राहक को रिटर्न करने के लिए पोस्ट की गई शिपमेंट पंक्तियों को चुनें।"
 
 msgid "Select Printer"
 msgstr "प्रिंटर चुनें"
@@ -15183,7 +15204,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "रिटर्न करने के लिए सीरियल नंबर"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "सीरियल या बैच ट्रैकिंग आवश्यक है"
@@ -15233,14 +15254,17 @@ msgstr "सेवाएं"
 msgid "Services"
 msgstr "सेवाएं"
 
+msgid "Session"
+msgstr "सत्र"
+
 msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "शिपमेंट से जोड़ने के लिए इस रिटर्न पर ग्राहक सेट करें।"
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "प्राप्ति से जोड़ने के लिए इस रिटर्न पर आपूर्तिकर्ता सेट करें।"
 
 msgid "Set a target"
 msgstr "लक्ष्य निर्धारित करें"
@@ -15531,10 +15555,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "उपलब्ध बैच नंबर दिखाएँ"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "उपलब्ध ट्रैकिंग नंबर दिखाएँ"
 
 msgid "Show Customer IDs"
 msgstr "ग्राहक आईडी दिखाएं"
@@ -15543,7 +15567,7 @@ msgid "Show Durations"
 msgstr "अवधि दिखाएं"
 
 msgid "Show more"
-msgstr ""
+msgstr "और अधिक दिखाएँ"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "एक इन्वेंटरी नंबर दिखाएं जिस पर फ्लोर और ऑफिस दोनों को विश्वास है"
@@ -15616,8 +15640,17 @@ msgstr "साइन आउट"
 msgid "Sign Out"
 msgstr "साइन आउट"
 
+msgid "Sign out all other devices"
+msgstr "सभी अन्य डिवाइस से साइन आउट करें"
+
+msgid "Sign out device"
+msgstr "डिवाइस से साइन आउट करें"
+
 msgid "Sign out instead"
 msgstr "बजाय इसके साइन आउट करें"
+
+msgid "Sign out other devices"
+msgstr "अन्य डिवाइस से साइन आउट करें"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "अगले चरण में जाने से पहले साइन-ऑफ समीक्षा"
@@ -16069,7 +16102,7 @@ msgid "Stripe Due Date"
 msgstr "Stripe देय तारीख"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
+msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क में भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
@@ -17492,8 +17525,14 @@ msgstr "इस संपर्क के पास कोई ईमेल पत
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
 
+msgid "This device"
+msgstr "यह डिवाइस"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसमें छेड़छाड़ की गई है।"
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "यह उस डिवाइस के सत्र को समाप्त करता है — यह अब साइन इन रहने में सक्षम नहीं है और अपने अगले पृष्ठ लोड के एक मिनट के भीतर लॉगिन पृष्ठ पर लौट आता है।"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "यह फाइल अब उपलब्ध नहीं है, या आपके पास इसे डाउनलोड करने की अनुमति नहीं है।"
@@ -18277,10 +18316,16 @@ msgstr "एक ऑपरेशन पर अपूरणीय के रूप 
 msgid "Unknown"
 msgstr "अज्ञात"
 
+msgid "Unknown device"
+msgstr "अज्ञात डिवाइस"
+
 msgid "unknown error"
 msgstr "अज्ञात त्रुटि"
 
 msgid "unknown location"
+msgstr "अज्ञात स्थान"
+
+msgid "Unknown location"
 msgstr "अज्ञात स्थान"
 
 msgid "Unlimited functional support"
@@ -18335,7 +18380,7 @@ msgid "Unposted Documents"
 msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unpublish"
-msgstr "अप्रकाशित करें"
+msgstr "प्रकाशन रद्द करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"
@@ -19357,6 +19402,9 @@ msgstr "आप आज कहाँ हैं"
 msgid "Where you want to grow"
 msgstr "जहां आप बढ़ना चाहते हैं"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
+msgstr "जहाँ आप साइन इन हैं। किसी भी डिवाइस से साइन आउट करें जिसे आप नहीं पहचानते — एक ऐसी डिवाइस से जिसे आप उस सेशन से अधिक समय तक उपयोग करते हैं।"
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "क्या राशि को लाइन मूल्य के प्रतिशत के रूप में या एक निश्चित मुद्रा राशि के रूप में समझा जाता है।"
 
@@ -19709,6 +19757,9 @@ msgstr "आपका डेटा सुलभ है और उचित रू
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "आपका डेटा परिवर्तित नहीं किया गया — पुनर्स्थापन पूरा न हो सके तो किसी भी चीज़ को छूने से पहले रुक जाता है।"
+
+msgid "Your devices"
+msgstr "आपके डिवाइस"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"

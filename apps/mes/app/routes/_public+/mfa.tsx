@@ -1,4 +1,5 @@
 import { assertIsPost, error, RATE_LIMIT, safeRedirect } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -24,6 +25,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
+import { parseUserAgent } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { LuCircleAlert } from "react-icons/lu";
@@ -41,6 +43,7 @@ import {
 } from "react-router";
 import { z } from "zod";
 
+import { sendNewDeviceEmail } from "~/services/device-email.server";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -109,6 +112,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       error(null, "Invalid or expired code"),
       await flash(request, error(null, "Invalid or expired code"))
+    );
+  }
+
+  // The new-device alert lands here, not at the callback: until the second
+  // factor cleared, the sign-in had not actually happened.
+  if (result.isNewDevice && result.authSession.companyId) {
+    const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+    await sendNewDeviceEmail(
+      getCarbonServiceRole(),
+      result.authSession.companyId,
+      result.authSession.userId,
+      browser && os
+        ? `${browser} on ${os}`
+        : (browser ?? os ?? "Unknown device")
     );
   }
 

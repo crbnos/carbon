@@ -1,0 +1,141 @@
+---
+title: Your devices
+description: See every device signed in to your account across ERP and MES, sign out the ones you don't recognize, and get an email when a new device signs in.
+---
+
+The **"Your devices"** card on **Account → Security** lists every device currently signed in to your
+account, across both the ERP and the shop-floor MES. Sign out any you don't recognize.
+
+## Reading the list
+
+Your own device is first, badged **"This device"**. Each row shows:
+
+<FieldTable>
+  <Field name="Device">Browser and operating system, read from the sign-in. Phones and tablets get a phone icon. Unclassifiable sign-ins read "Unknown device".</Field>
+  <Field name="Location and IP">Approximate city and country, with the IP beside it. Private addresses read "Local network"; with no location available, "Unknown location".</Field>
+  <Field name="Last active">When that device last renewed its sign-in. Renewal is automatic while the app is open, so this can trail real activity by up to an hour.</Field>
+  <Field name="App">An ERP or MES badge. MES has no account screen, so shop-floor sessions are managed here.</Field>
+</FieldTable>
+
+<Callout type="info" title="Two browsers on one computer look alike">
+Two browsers on the same machine share an operating system and an IP, so their rows read almost
+identically. Tell them apart by **"Last active"** and by the **"This device"** badge, which always marks
+the browser you're reading from.
+</Callout>
+
+## Signing out a device
+
+Press the sign-out icon on a row. Carbon confirms, naming the device, and states what happens: the
+session *"can no longer stay signed in and is returned to the login page within a minute of its next
+page load."*
+
+**"Sign out other devices"** does the same to every device at once, except the one you're on.
+
+Three things to know:
+
+- **It isn't instant.** The signed-out device lands on the login page within a minute of its next page
+  load. Its ability to stay signed in dies immediately, so it cannot renew itself in the meantime.
+- **Your own row has no sign-out button.** Use **Log out** from the avatar menu for that.
+- **Idle devices drop off by themselves** after seven days without use.
+
+## Why some devices say "Newer device"
+
+You can sign out a device only if the browser you're using has been on the account **longer** than that
+device's session. When it hasn't, the row shows **"Newer device"** instead of a sign-out button.
+
+This keeps a stolen session from locking you out. An attacker signs in on a browser Carbon has never
+seen, so they can't touch anything older than their break-in. Your everyday laptop, known to the account
+for months, can still sign them out.
+
+<Callout type="info" title="It measures the browser, not the sign-in">
+Signing out and back in this morning doesn't weaken your laptop. What counts is how long Carbon has
+recognized the **browser**, which is the day you first signed in on it.
+</Callout>
+
+<Callout type="warn" title="Clearing cookies resets a browser">
+Carbon recognizes a browser by a cookie set the first time you sign in there. Clearing cookies, private
+browsing, or switching browsers makes it a device Carbon is meeting for the first time, so older
+sessions may show **"Newer device"**. Use a browser you've had longer, or wait for the new one to age
+past the sessions you want to end.
+</Callout>
+
+**"Sign out other devices"** is all or nothing: it's disabled while any row reads **"Newer device"**, and
+also when yours is the only device.
+
+## The new-device email
+
+The first time your account is signed into from a browser Carbon hasn't seen, you get an email:
+**"A new device signed in to your Carbon account"**. It names the device and the time, and links back to
+this card. If it was you, do nothing.
+
+- **One email per device, not per sign-in.** A laptop you use daily is announced once.
+- **Both apps trigger it**, including MES.
+- **It ignores notification settings.** This is a security receipt, not a notification, so nothing can
+  switch it off. It's the one message that reaches you when someone else is in your account.
+- **It carries no IP or location.** Those are approximate at best and unavailable on self-hosted
+  installs, so a security alert shouldn't lean on them. Open this card for those details.
+
+With two-factor on, the email waits until the code is entered. A sign-in abandoned at the prompt never
+completed, so announcing it would only teach you to ignore the alert.
+
+## What Carbon records
+
+Every completed sign-in is recorded: the app, the IP, the approximate location, and the device. That
+history is what the card reads from.
+
+- **Only you can read it.** No other user, in any company, can see your sign-ins.
+- **Nobody can rewrite it, including you.** Rows are written by the system and can't be edited or
+  deleted from a signed-in session, so the record can't be forged or scrubbed by someone who got in.
+- **It keeps ninety days**, which also bounds how long your IP addresses are stored. One entry per
+  device outlives that: the first sign-in from each browser, which is the date the **"Newer device"**
+  rule measures against.
+
+<Cards>
+  <Card title="Your account" href="/docs/reference/account">Passkeys, profile, and the rest of Account → Security.</Card>
+  <Card title="Two-factor authentication" href="/docs/reference/two-factor">Authenticator setup, and company-wide enforcement.</Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### A row shows "Newer device" instead of a sign-out button
+The current browser's first recorded sign-in is later than that session's start, so the device-age gate
+refuses. Posting the revoke directly returns 403 with "Sign out from a device you've used for longer".
+The gate is `deviceFirstSeenAt < session.startedAt`, evaluated in both the loader and the action through
+the same `getDevices` helper (`apps/erp/app/routes/x+/account+/security.tsx`). Causes: cookies cleared,
+private browsing, a different browser, or a genuinely new machine.
+
+### "Sign out other devices" is disabled
+Either no other session is live, or at least one row reads "Newer device". The bulk revoke is
+all-or-nothing and refuses when any single session is out of reach.
+
+### The device cookie
+Recognition is a signed, httpOnly cookie named `carbon-device`, set at every login mint point, valid 365
+days so it outlives the 7-day session cookie (`packages/auth/src/services/device.server.ts`). Its id is
+stored on the sign-in row as `deviceId`. Per-browser, not per-machine: two browsers on one laptop are two
+devices.
+
+### No new-device email arrived
+It sends only on the first completed sign-in per device, so a browser already in the history stays quiet.
+With two-factor enabled it's deferred until the code is entered, and a sign-in abandoned at the prompt
+never sends. Accounts with no company membership are skipped, because the send is company-scoped. Subject:
+"A new device signed in to your Carbon account".
+
+### A row says "Unknown device" with no location
+The sign-in predates the device details Carbon now records, or its user agent wasn't classifiable. The
+session is real. Sign it out if you don't recognize it.
+
+### Rows read "Local network" or "Unknown location"
+"Local network" means a private or loopback address, normal for local development and on-premise
+networks. "Unknown location" means no geolocation was available at the network edge, expected for
+self-hosted installs. Location data is populated on Carbon Cloud.
+
+### The device I signed out is still on screen
+Revocation takes effect on its next page load, within a minute. The sixty-second window is the
+security-check cache. Its credentials are already dead; it cannot renew, and any navigation lands on the
+login page.
+
+### A sign-in stuck at the two-factor prompt
+It still holds a session and appears in the list until it expires. It does not earn the browser any
+standing on the account, so failing at the prompt cannot make a device count as recognized.
+</AgentContext>

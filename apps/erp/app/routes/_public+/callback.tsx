@@ -9,6 +9,11 @@ import {
 import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
+import {
+  deriveLoginMethod,
+  recordLogin
+} from "@carbon/auth/login-history.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
@@ -36,6 +41,7 @@ import {
   LoadingBars,
   VStack
 } from "@carbon/react";
+import { parseUserAgent } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -49,7 +55,18 @@ import {
 } from "react-router";
 import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
+import { sendNewDeviceEmail } from "~/services/mfa-email.server";
 import { path } from "~/utils/path";
+
+/**
+ * Device label for the new-device alert: "Chrome on macOS", or whichever half
+ * we could parse. Never the raw user agent.
+ */
+function deviceLabelFor(request: Request): string {
+  const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+  if (browser && os) return `${browser} on ${os}`;
+  return browser ?? os ?? "Unknown device";
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -325,16 +342,40 @@ export async function action({ request }: ActionFunctionArgs) {
 
     await new AccountLockout({ redis }).reset(authSession.email);
 
+    // SSO is a login mint point like any other — record it here, because this
+    // branch returns before the shared recordLogin call below.
+    const { deviceId: ssoDeviceId, setCookie: ssoDeviceCookie } =
+      await ensureDeviceId(request);
+    const ssoLogin = await recordLogin({
+      request,
+      userId: authSession.userId,
+      email: authSession.email,
+      accessToken: authSession.accessToken,
+      method: "sso",
+      app: "erp",
+      deviceId: ssoDeviceId
+    });
+    if (ssoLogin.isNewDevice) {
+      await sendNewDeviceEmail(
+        serviceRole,
+        ssoCompanyId,
+        authSession.userId,
+        deviceLabelFor(request)
+      );
+    }
+
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
     authSession.mfaVerified = true;
 
     const ssoSessionCookie = await setAuthSession(request, { authSession });
+    const ssoHeaders: [string, string][] = [
+      ["Set-Cookie", ssoSessionCookie],
+      ["Set-Cookie", setCompanyId(ssoCompanyId)]
+    ];
+    if (ssoDeviceCookie) ssoHeaders.push(["Set-Cookie", ssoDeviceCookie]);
     return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
-      headers: [
-        ["Set-Cookie", ssoSessionCookie],
-        ["Set-Cookie", setCompanyId(ssoCompanyId)]
-      ]
+      headers: ssoHeaders
     });
   }
 
@@ -362,15 +403,48 @@ export async function action({ request }: ActionFunctionArgs) {
     // before the TOTP gate so an MFA-enrolled user's counter clears too.
     await new AccountLockout({ redis }).reset(authSession.email);
 
+    // Record the sign-in (fire-and-forget: recordLogin never throws) before
+    // the TOTP gate — first-factor success is the login fact being recorded.
+    // Resolved first so the row can be marked pending: a login still facing a
+    // TOTP challenge must not age the device or count as a sighting until
+    // completeMfaChallenge clears it.
+    const mfaPending = await userHasVerifiedTotpFactor(authSession.userId);
+    const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
+    const login = await recordLogin({
+      request,
+      userId: authSession.userId,
+      email: authSession.email,
+      accessToken: authSession.accessToken,
+      method: deriveLoginMethod(authSession.accessToken),
+      app: "erp",
+      deviceId,
+      mfaPending
+    });
+
+    // A user with no company membership yet gets no alert — the send needs a
+    // companyId, and they have nothing to protect. Held back while MFA is
+    // pending: the alert belongs to the sign-in that actually succeeds, and
+    // /mfa sends it there.
+    if (login.isNewDevice && companyId && !mfaPending) {
+      await sendNewDeviceEmail(
+        serviceRole,
+        companyId,
+        authSession.userId,
+        deviceLabelFor(request)
+      );
+    }
+
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.
-    if (await userHasVerifiedTotpFactor(authSession.userId)) {
+    if (mfaPending) {
       const pendingCookie = await setPendingMfaSession(request, {
         authSession,
         redirectTo
       });
+      const mfaHeaders: [string, string][] = [["Set-Cookie", pendingCookie]];
+      if (deviceCookie) mfaHeaders.push(["Set-Cookie", deviceCookie]);
       return redirect(path.to.mfa, {
-        headers: [["Set-Cookie", pendingCookie]]
+        headers: mfaHeaders
       });
     }
 
@@ -378,6 +452,7 @@ export async function action({ request }: ActionFunctionArgs) {
       authSession
     });
     const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+    if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
 
     // Only finalize the active company for single-company (and portal-only)
     // users. Multi-company users must actively choose: we leave the companyId

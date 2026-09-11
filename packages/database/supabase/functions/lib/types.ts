@@ -61496,6 +61496,87 @@ export type Database = {
           },
         ]
       }
+      userLogin: {
+        Row: {
+          app: string
+          city: string | null
+          country: string | null
+          createdAt: string
+          deviceId: string | null
+          id: string
+          ipAddress: string | null
+          method: string
+          mfaPending: boolean
+          sessionId: string | null
+          userAgent: string | null
+          userId: string
+        }
+        Insert: {
+          app: string
+          city?: string | null
+          country?: string | null
+          createdAt?: string
+          deviceId?: string | null
+          id?: string
+          ipAddress?: string | null
+          method: string
+          mfaPending?: boolean
+          sessionId?: string | null
+          userAgent?: string | null
+          userId: string
+        }
+        Update: {
+          app?: string
+          city?: string | null
+          country?: string | null
+          createdAt?: string
+          deviceId?: string | null
+          id?: string
+          ipAddress?: string | null
+          method?: string
+          mfaPending?: boolean
+          sessionId?: string | null
+          userAgent?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       userModulePreference: {
         Row: {
           companyId: string
@@ -70999,14 +71080,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -76357,14 +76438,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -76918,14 +76999,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -82840,6 +82921,10 @@ export type Database = {
       }
       prevent_posted_sales_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      prune_user_login_history: {
+        Args: { p_cutoff: string; p_user_id: string }
         Returns: undefined
       }
       purchaseLineDimensionPivot: {

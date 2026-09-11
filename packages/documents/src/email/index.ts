@@ -3,6 +3,7 @@ import ImplementationHubEmail from "./ImplementationHubEmail";
 import InviteEmail from "./InviteEmail";
 import MfaEnabledEmail from "./MfaEnabledEmail";
 import MfaRequiredEmail from "./MfaRequiredEmail";
+import NewDeviceEmail from "./NewDeviceEmail";
 import NotificationEmail from "./NotificationEmail";
 import PurchaseOrderEmail from "./PurchaseOrderEmail";
 import QuoteEmail from "./QuoteEmail";
@@ -24,6 +25,7 @@ export {
   InviteEmail,
   MfaEnabledEmail,
   MfaRequiredEmail,
+  NewDeviceEmail,
   NotificationEmail,
   PurchaseOrderEmail,
   QuoteEmail,

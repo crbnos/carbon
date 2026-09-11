@@ -248,6 +248,9 @@ msgstr "{apOverduePct}% de contas a pagar"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% de contas a receber"
 
+msgid "{browser} on {os}"
+msgstr "{browser} em {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considere apontar esta peça diretamente para o sucessor final."
 
@@ -336,7 +339,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} permissões"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} selecionados"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} fases para colocar sua empresa ao vivo no Carbon. Cada uma termina em um checkpoint."
@@ -345,7 +348,7 @@ msgid "{total} phases to go live"
 msgstr "{total} fases para entrar em produção"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} resultados"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unidade} other {# unidades}}"
@@ -1340,10 +1343,10 @@ msgid "Add from library…"
 msgstr "Adicionar da biblioteca…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "Adicionar do recebimento"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "Adicionar da remessa"
 
 msgid "Add Group"
 msgstr "Adicionar Grupo"
@@ -1367,7 +1370,7 @@ msgid "Add lines from document"
 msgstr "Adicionar linhas do documento"
 
 msgid "Add manually"
-msgstr ""
+msgstr "Adicionar manualmente"
 
 msgid "Add match"
 msgstr "Adicionar correspondência"
@@ -1620,7 +1623,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "Todos os membros dos grupos selecionados e indivíduos selecionados poderão aprovar solicitações"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "Todas as linhas devolvíveis"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Todas as linhas importadas — {inserted} inseridas, {updated} atualizadas."
@@ -2875,7 +2878,7 @@ msgid "Batches"
 msgstr "Lotes"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "Lotes de produção para devolver"
 
 msgid "Batching"
 msgstr "Lotes de Produção"
@@ -3495,7 +3498,7 @@ msgid "Choose another file"
 msgstr "Escolher outro arquivo"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "Escolha como adicionar linhas a esta devolução."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Escolha o que aparece na ficha de acompanhamento impressa."
@@ -6690,7 +6693,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "Digite uma quantidade entre 1 e {0}."
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "Digite um item e a quantidade você mesmo."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Insira e aprove faturas de fornecedores em relação a um pedido de compra (conciliação de três vias)"
@@ -6892,6 +6895,9 @@ msgstr "Cada tarefa necessária deve estar Feita ou Ignorada antes que o períod
 
 msgid "Every row was imported successfully."
 msgstr "Cada linha foi importada com sucesso."
+
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "Todas as sessões, exceto a que você está usando agora, serão desconectadas. Outros dispositivos são retornados à página de login dentro de um minuto do seu próximo carregamento de página."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Todos que trabalham em qualquer dia da semana que você escolher ficam além do seu turno pelas horas que você definir. Apenas os departamentos e turnos que você está filtrando são afetados."
@@ -9242,6 +9248,9 @@ msgstr "Idioma"
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
 
+msgid "Last active"
+msgstr "Ativo por último"
+
 msgid "Last Activity"
 msgstr "Última atividade"
 
@@ -9442,10 +9451,10 @@ msgid "Lines"
 msgstr "Linhas"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "Linhas aparecem aqui após um recebimento de pedido de compra ter sido contabilizado, e apenas para quantidades não autorizadas em outra devolução de fornecedor. Para uma devolução cega, use Adicionar item de linha."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "Linhas aparecem aqui após uma remessa de pedido de venda ter sido contabilizada, e apenas para quantidades não autorizadas em outra RMA. Para uma devolução cega, use Adicionar item de linha."
 
 msgid "Lines need internal part numbers"
 msgstr "As linhas precisam de números de peça internos"
@@ -9555,6 +9564,9 @@ msgstr "Carregando…"
 
 msgid "Local"
 msgstr "Local"
+
+msgid "Local network"
+msgstr "Rede local"
 
 msgid "location"
 msgstr "localização"
@@ -10299,7 +10311,7 @@ msgid "Morning, {name}."
 msgstr "Bom dia, {name}."
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "Mais recente — pesquise para encontrar mais"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "A maioria das coisas é detectada e resolvida aqui. Nomeie-a claramente."
@@ -10747,6 +10759,9 @@ msgstr "Novo Centro de Trabalho"
 msgid "New Workflow"
 msgstr "Novo fluxo de trabalho"
 
+msgid "Newer device"
+msgstr "Dispositivo mais novo"
+
 msgid "Newest first"
 msgstr "Mais recente primeiro"
 
@@ -10869,7 +10884,7 @@ msgid "No batches"
 msgstr "Nenhum lote de produção"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "Nenhum lote de produção selecionado ainda."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Nenhuma entrada de BOM tem uma política de vida útil"
@@ -11202,13 +11217,13 @@ msgid "No results found"
 msgstr "Nenhum resultado encontrado"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "Nenhuma linha devolvível para este cliente"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "Nenhuma linha devolvível para este fornecedor"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "Nenhuma linha devolvível corresponde à sua pesquisa"
 
 msgid "No rows here."
 msgstr "Nenhuma linha aqui."
@@ -11220,7 +11235,7 @@ msgid "No scheduled work in this window"
 msgstr "Nenhum trabalho programado nesta janela"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "Nenhum número de série selecionado ainda."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Nenhum turno configurado — assumindo segunda–sexta, dias de 8h"
@@ -11230,6 +11245,9 @@ msgstr "Sem envios ainda"
 
 msgid "No shortcuts available on this page."
 msgstr "Nenhum atalho disponível nesta página."
+
+msgid "No signed-in devices found."
+msgstr "Nenhum dispositivo conectado encontrado."
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Nenhum número único e confiável para inventário ou status do trabalho"
@@ -11594,6 +11612,9 @@ msgstr "Um setup compartilhado mais o tempo de execução de cada membro — o m
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "Um setup compartilhado mais o tempo de execução do membro mais longo — o maior entre sua mão de obra e máquina — já que os membros executam juntos"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "Um navegador conectado ou dispositivo na sua conta, criado quando um login é concluído e durando até sete dias de atividade; termina quando você faz logout, quando você desconecta esse dispositivo em Conta → Segurança, ou quando expira."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Uma operação no roteiro de produção de uma ordem, nomeando um processo e um centro de trabalho, e carregando seu próprio Setup, mão de obra, tempos de máquina e taxas."
@@ -12376,13 +12397,13 @@ msgid "Pick serials/batches to return"
 msgstr "Selecione números de série/lotes para devolver"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "Separe os lotes de produção disponíveis que foram recebidos deste fornecedor."
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Separe o compartimento que precisa de estoque, depois separe os compartimentos para puxar o estoque deles."
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "Separe os números de série disponíveis que foram recebidos deste fornecedor."
 
 msgid "Pick tracked item"
 msgstr "Selecionar item rastreado"
@@ -13061,7 +13082,7 @@ msgid "Purchase Qty"
 msgstr "Qtd. de Compra"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "Devolução de Compra"
 
 msgid "Purchase Tax Payable"
 msgstr "Imposto de Compra a Pagar (padrão)"
@@ -14547,7 +14568,7 @@ msgid "Sales Person"
 msgstr "Pessoa de Vendas"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "Devolução de Venda"
 
 msgid "Sales Revenue"
 msgstr "Receita de Vendas"
@@ -14794,10 +14815,10 @@ msgid "Search by linear issue title..."
 msgstr "Pesquisar por título do problema Linear..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "Pesquisar por recebimento, PO ou item"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "Pesquisar por remessa, pedido de venda ou item"
 
 msgid "Search customers and types..."
 msgstr "Pesquisar clientes e tipos..."
@@ -15044,10 +15065,10 @@ msgid "Select operations"
 msgstr "Selecionar operações"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "Selecione linhas de recebimento contabilizadas deste fornecedor para devolver."
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "Selecione linhas de remessa contabilizadas para este cliente para devolver."
 
 msgid "Select Printer"
 msgstr "Selecionar Impressora"
@@ -15183,7 +15204,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Números de série são gerados apenas para itens rastreados por série ou lote."
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "Números de série para devolver"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Rastreamento Serial ou em Lote Obrigatório"
@@ -15233,14 +15254,17 @@ msgstr "serviços"
 msgid "Services"
 msgstr "Serviços"
 
+msgid "Session"
+msgstr "Sessão"
+
 msgid "Session locked"
 msgstr "Sessão bloqueada"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "Defina um cliente nesta devolução para adicionar de uma remessa."
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "Defina um fornecedor nesta devolução para adicionar de um recebimento."
 
 msgid "Set a target"
 msgstr "Defina uma meta"
@@ -15531,10 +15555,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "Mostrar uma coluna de ID de Fornecedor legível na lista de fornecedores, formulários de fornecedor e menus suspensos. Os fornecedores ainda são identificados internamente de qualquer forma."
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "Mostrar números de lotes de produção disponíveis"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "Mostrar números de rastreamento disponíveis"
 
 msgid "Show Customer IDs"
 msgstr "Mostrar IDs de Cliente"
@@ -15543,7 +15567,7 @@ msgid "Show Durations"
 msgstr "Mostrar Durações"
 
 msgid "Show more"
-msgstr ""
+msgstr "Mostrar mais"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Mostrar um número de inventário que o chão de fábrica e o escritório confiam"
@@ -15616,8 +15640,17 @@ msgstr "Sair"
 msgid "Sign Out"
 msgstr "Sair"
 
+msgid "Sign out all other devices"
+msgstr "Desconecte todos os outros dispositivos"
+
+msgid "Sign out device"
+msgstr "Desconectar dispositivo"
+
 msgid "Sign out instead"
 msgstr "Sair em vez disso"
+
+msgid "Sign out other devices"
+msgstr "Desconectar outros dispositivos"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisão de aprovação antes de passar para a próxima etapa"
@@ -16063,7 +16096,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "O Stripe já possui um cliente com este e-mail"
+msgstr "Stripe já tem um cliente com este email"
 
 msgid "Stripe Due Date"
 msgstr "Data de Vencimento Stripe"
@@ -17492,8 +17525,14 @@ msgstr "Este contato não possui endereço de e-mail"
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Este terceiro não tem nada pendente — o pagamento será registrado em conta."
 
+msgid "This device"
+msgstr "Este dispositivo"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este link de download é inválido ou foi alterado."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "Isso encerra a sessão desse dispositivo — ele não pode mais permanecer conectado e é retornado à página de login dentro de um minuto do seu próximo carregamento de página."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Este arquivo não está mais disponível, ou você não tem permissão para baixá-lo."
@@ -17515,7 +17554,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Este convite para participar de {0} expirou. Você pode solicitar que um novo convite seja enviado para seu e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Esta fatura não tem uma data de vencimento utilizável — escolha uma para o Stripe."
+msgstr "Este recibo não tem uma data de vencimento utilizável — escolha um para Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta fatura será cobrada do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-o no painel Stripe."
@@ -17688,7 +17727,7 @@ msgid "This version cannot be opened"
 msgstr "Esta versão não pode ser aberta"
 
 msgid "This version is published"
-msgstr "Esta versão é publicada."
+msgstr "Esta versão foi publicada"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versão está publicada. Crie uma nova versão para editar."
@@ -18277,11 +18316,17 @@ msgstr "Unidades reportadas como irrecuperáveis em uma operação, com um motiv
 msgid "Unknown"
 msgstr "Desconhecido"
 
+msgid "Unknown device"
+msgstr "Dispositivo desconhecido"
+
 msgid "unknown error"
 msgstr "erro desconhecido"
 
 msgid "unknown location"
 msgstr "localização desconhecida"
+
+msgid "Unknown location"
+msgstr "Local desconhecido"
 
 msgid "Unlimited functional support"
 msgstr "Suporte funcional ilimitado"
@@ -19357,6 +19402,9 @@ msgstr "Onde você está hoje"
 msgid "Where you want to grow"
 msgstr "Onde você quer crescer"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
+msgstr "Onde você está conectado. Desconecte-se de qualquer dispositivo que você não reconheça — em um dispositivo que você usou por mais tempo que essa sessão."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Se o valor é interpretado como uma porcentagem do preço da linha ou como um valor fixo em moeda."
 
@@ -19705,6 +19753,9 @@ msgstr "Os seus dados são acessíveis e razoavelmente limpos"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Seus dados não foram alterados — a restauração para antes de fazer qualquer alteração se não conseguir ser concluída."
+
+msgid "Your devices"
+msgstr "Seus dispositivos"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Seu provedor de DNS pode anexar automaticamente seu domínio ao nome do registro — se for o caso, digite apenas a parte anterior (por exemplo, _carbon-challenge mais qualquer subdomínio)."

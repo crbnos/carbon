@@ -41,7 +41,18 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "sales_updateSalesOrderFavorite",
   "sales_updateSalesRFQFavorite",
   "purchasing_updateSupplierQuoteFavorite",
-  "resources_insertTrainingCompletion"
+  "resources_insertTrainingCompletion",
+  // Session management. `revokeSession` runs a raw DELETE on auth.sessions with
+  // no gate of its own — the device-age check and the "you cannot end your own
+  // session" guard both live in the x+/account+/security ROUTE, which no API/MCP
+  // call passes through, so exposing it hands any key the power to sign the
+  // owner out. The three readers leak session ids, IPs, geo and user agents for
+  // the same reason. All four take the dispatcher-injected `userId`, so they are
+  // reachable by any company key acting as that user.
+  "account_revokeSession",
+  "account_getActiveSessions",
+  "account_getLoginHistory",
+  "account_getDeviceFirstSeenAt"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {
