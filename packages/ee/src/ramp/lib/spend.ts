@@ -12,6 +12,12 @@ import type { RampVendor } from "./models";
 // *          Outbound push (POs, draft bills)             *
 // \********************************************************/
 
+// Release gate, intentionally not a customer setting or environment override.
+// Existing installs commonly have pushInvoices=true. Enable only after the
+// draft body's monetary units/coding/PDF fields and submit's returned identity
+// are verified and pinned by contract tests. PO push and bill archive are separate.
+const RAMP_DRAFT_BILL_CONTRACT_VERIFIED = false;
+
 /** A Carbon purchase-order line, shaped for a Ramp PO push. */
 export type RampPurchaseOrderPushLine = {
   id: string;
@@ -337,6 +343,8 @@ export async function pushPurchaseOrder(
  * The CALLER filters candidates (no existing `("bill")` mapping in either
  * direction, not an Employee-supplier reimbursement, view-status Open/Partially
  * Paid). Returns `"pushed"` or `"skipped"` (vendor without a name).
+ * Currently fails closed at the release gate before any vendor/document/provider
+ * I/O; the caller must retain this invoice's cursor position for a future retry.
  */
 export async function pushInvoiceDraftBill(
   serviceRole: SupabaseClient<Database>,
@@ -345,6 +353,11 @@ export async function pushInvoiceDraftBill(
   client: RampClient,
   invoice: RampInvoicePush & { supplier: RampVendorSupplier }
 ): Promise<"pushed" | "skipped"> {
+  if (!RAMP_DRAFT_BILL_CONTRACT_VERIFIED) {
+    throw new Error(
+      "Ramp draft-bill export is disabled until its API contract is verified"
+    );
+  }
   // A bill REQUIRES a `vendor_id`, so a supplier we can't match/create a Ramp
   // spend vendor for is skipped (needs a name, and to create: an email + country).
   const rampVendorId = await resolveOrCreateRampSpendVendor(

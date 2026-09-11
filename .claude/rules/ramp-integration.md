@@ -370,6 +370,12 @@ row and every row after it remain eligible on the next run.
   as a **draft bill then SUBMITted** (`POST /bills/drafts` + `/submit`, landing in Ramp
   "Pending approval"). **An auto-approved `POST /bills` is NEVER used** — draft + submit
   only, so a human approves in Ramp. Best-effort attaches the invoice PDF.
+  **Release-gated off:** `spend.ts` keeps `RAMP_DRAFT_BILL_CONTRACT_VERIFIED = false`
+  until monetary units, coding, PDF fields, and the submit response's bill identity
+  have verified contract tests. The gate runs before any vendor/document/provider
+  I/O and applies even to existing `pushInvoices: true` installs; it has no customer
+  setting or environment override. Blocked exports count as failures and retain the
+  cursor for retry. Purchase-order push and archive-on-settlement remain available.
 - **Archive-on-settlement**: a pushed bill whose Carbon invoice is now Paid/Voided is
   archived and the mapping stamped `archived: true` so it never re-fires.
 
