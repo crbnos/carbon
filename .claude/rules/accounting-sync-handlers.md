@@ -303,7 +303,7 @@ the Xero and QBO charge adapters do not currently attach remote files. Entity ty
 (`events/sync-tables.ts`); subscription `{ table: "cardTransaction", INSERT/UPDATE }`
 in `COMMON_PUSH_TABLES` for all three providers; the event trigger and tenant-safe
 `supplierId` relationship are converged by
-`20260911041045_reconcile-ramp-card-transactions.sql` (no subscription backfill —
+`20260911150050_reconcile-ramp-card-transactions-forward.sql` (no subscription backfill —
 runtime subscription convergence). Syncers:
 `providers/rillet/entities/charge.ts` (`RilletChargeSyncer`, reference), plus the Xero
 and QBO adapters cloned from their bill syncers. Costing lines come from the shared

@@ -37,10 +37,9 @@ export function withErrorHandling<T extends Record<string, unknown>>(
 ) {
   return async (params: T) => {
     try {
-      logger.info("Executing handler", { fallbackMessage });
-      const result = await handler(params);
-      logger.info("Handler completed successfully");
-      return result;
+      // No info logging here — each handler logs its own invocation/result;
+      // this wrapper only reports the throw path.
+      return await handler(params);
     } catch (error) {
       logger.error("Error in handler", {
         fallbackMessage,

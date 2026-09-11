@@ -250,177 +250,189 @@ export const SearchModal = () => {
 
           {/* Results */}
           <CommandList className="flex-1 max-h-none overflow-y-auto px-2 py-2">
-            {loading || isDebouncing ? (
-              <SearchEmptyState type="loading" />
-            ) : !hasAnyResults ? (
-              <SearchEmptyState type="no-results" query={input} />
-            ) : (
+            {/* Recent Searches */}
+            {visibleRecentResults.length > 0 && (
               <>
-                {/* Recent Searches */}
-                {visibleRecentResults.length > 0 && (
-                  <>
-                    <CommandGroup
-                      heading={
-                        <Subheading
-                          variant="heavy"
-                          className="flex items-center gap-1.5"
-                        >
-                          <LuClock className="w-3 h-3" />
-                          <Trans>Recent</Trans>
-                        </Subheading>
-                      }
-                      key="recent"
+                <CommandGroup
+                  heading={
+                    <Subheading
+                      variant="heavy"
+                      className="flex items-center gap-1.5"
                     >
-                      {visibleRecentResults.map((result, index) => {
-                        const ModuleIcon = result.module
-                          ? getModuleIcon(result.module)
-                          : undefined;
-                        return (
-                          <CommandItem
-                            key={`${result.to}-${nanoid()}-${index}`}
-                            onSelect={() =>
-                              onSelect(
-                                result,
-                                result.entityType,
-                                result.module,
-                                result.description
-                              )
-                            }
-                            value={`:${result.to}`}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg group"
-                          >
-                            <ResultIconContainer entityType={result.entityType}>
-                              {result.entityType ? (
-                                <ResultIcon entityType={result.entityType} />
-                              ) : ModuleIcon ? (
-                                <ModuleIcon className="w-4 h-4 text-muted-foreground" />
-                              ) : (
-                                <RxMagnifyingGlass className="w-4 h-4 text-muted-foreground" />
-                              )}
-                            </ResultIconContainer>
-                            <VStack spacing={0} className="flex-1 min-w-0">
-                              <span className="font-medium truncate">
-                                {result.name}
-                              </span>
-                              {result.description && (
-                                <span className="text-sm text-muted-foreground truncate">
-                                  {result.description}
-                                </span>
-                              )}
-                            </VStack>
-                            <button
-                              type="button"
-                              onClick={(e) => removeRecentSearch(result.to, e)}
-                              className="flex-shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <LuX className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                    <CommandSeparator className="my-2" />
-                  </>
-                )}
-
-                {/* Module › Submodule navigation. A flat list, always rendered
-                    before the search-index results. Hidden when filtering by
-                    entity type. */}
-                {visibleNavItems.length > 0 && (
-                  <>
-                    <CommandGroup
-                      heading={
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          <Trans>Navigation</Trans>
-                        </span>
-                      }
-                      key="navigation"
-                    >
-                      {visibleNavItems.map((item, index) => (
-                        <CommandItem
-                          key={`${item.to}-${index}`}
-                          onSelect={() =>
-                            onSelect(
-                              { to: item.to, name: item.name },
-                              undefined,
-                              item.module
-                            )
-                          }
-                          value={`nav:${item.to}:${index}`}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg group"
-                        >
-                          <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground [&>svg]:w-4 [&>svg]:h-4">
-                            {item.iconElement ? (
-                              item.iconElement
-                            ) : item.moduleIcon ? (
-                              <item.moduleIcon className="w-4 h-4" />
-                            ) : null}
-                          </div>
-                          <span className="flex flex-1 items-center gap-1.5 min-w-0 text-sm">
-                            <span className="whitespace-nowrap text-muted-foreground">
-                              {item.module}
-                            </span>
-                            <LuChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40" />
-                            <span className="truncate font-medium text-foreground">
-                              {item.name}
-                            </span>
-                          </span>
-                          <LuCornerDownLeft className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                    {searchResults.length > 0 && (
-                      <CommandSeparator className="my-2" />
-                    )}
-                  </>
-                )}
-
-                {/* Search Results (from the per-company search index) */}
-                {searchResults.length > 0 && (
-                  <CommandGroup
-                    heading={
-                      <Subheading variant="heavy">
-                        <Trans>Results</Trans>
-                      </Subheading>
-                    }
-                    key="search"
-                  >
-                    {searchResults.map((result) => (
+                      <LuClock className="w-3 h-3" />
+                      <Trans>Recent</Trans>
+                    </Subheading>
+                  }
+                  key="recent"
+                >
+                  {visibleRecentResults.map((result, index) => {
+                    const ModuleIcon = result.module
+                      ? getModuleIcon(result.module)
+                      : undefined;
+                    return (
                       <CommandItem
-                        key={`${result.id}-${nanoid()}`}
-                        value={`${input}${result.id}`}
+                        key={`${result.to}-${nanoid()}-${index}`}
                         onSelect={() =>
                           onSelect(
-                            {
-                              to: result.link,
-                              name: result.title
-                            },
+                            result,
                             result.entityType,
-                            undefined,
-                            result.description!
+                            result.module,
+                            result.description
                           )
                         }
-                        className="flex items-center gap-3 px-3 py-3 rounded-lg group"
+                        value={`:${result.to}`}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg group"
                       >
                         <ResultIconContainer entityType={result.entityType}>
-                          <ResultIcon entityType={result.entityType} />
-                        </ResultIconContainer>
-                        <VStack spacing={0} className="flex-1 min-w-0">
-                          <span className="font-medium text-foreground truncate">
-                            {result.title}
-                          </span>
-                          {result.description && (
-                            <span className="text-sm text-muted-foreground truncate">
-                              {result.description}
-                            </span>
+                          {result.entityType ? (
+                            <ResultIcon entityType={result.entityType} />
+                          ) : ModuleIcon ? (
+                            <ModuleIcon className="w-4 h-4 text-muted-foreground" />
+                          ) : (
+                            <RxMagnifyingGlass className="w-4 h-4 text-muted-foreground" />
                           )}
-                        </VStack>
-                        <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </ResultIconContainer>
+                        {result.module && !result.entityType ? (
+                          <span className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+                            <span className="text-muted-foreground capitalize truncate">
+                              {result.module}
+                            </span>
+                            <LuChevronRight className="w-3 h-3 flex-shrink-0 text-muted-foreground/60" />
+                            <span className="text-foreground truncate">
+                              {result.name}
+                            </span>
+                          </span>
+                        ) : (
+                          <VStack spacing={0} className="flex-1 min-w-0">
+                            <span className="font-medium truncate">
+                              {result.name}
+                            </span>
+                            {result.description && (
+                              <span className="text-sm text-muted-foreground truncate">
+                                {result.description}
+                              </span>
+                            )}
+                          </VStack>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => removeRecentSearch(result.to, e)}
+                          className="flex-shrink-0 p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <LuX className="w-4 h-4 text-muted-foreground" />
+                        </button>
                       </CommandItem>
-                    ))}
-                  </CommandGroup>
+                    );
+                  })}
+                </CommandGroup>
+                <CommandSeparator className="my-2" />
+              </>
+            )}
+
+            {/* Module › Submodule navigation. A flat list, always rendered
+                before the search-index results. Hidden when filtering by
+                entity type. */}
+            {visibleNavItems.length > 0 && (
+              <>
+                <CommandGroup
+                  heading={
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Trans>Navigation</Trans>
+                    </span>
+                  }
+                  key="navigation"
+                >
+                  {visibleNavItems.map((item, index) => (
+                    <CommandItem
+                      key={`${item.to}-${index}`}
+                      onSelect={() =>
+                        onSelect(
+                          { to: item.to, name: item.name },
+                          undefined,
+                          item.module
+                        )
+                      }
+                      value={`nav:${item.to}:${index}`}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg group"
+                    >
+                      <div className="flex-shrink-0 w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground [&>svg]:w-4 [&>svg]:h-4">
+                        {item.iconElement ? (
+                          item.iconElement
+                        ) : item.moduleIcon ? (
+                          <item.moduleIcon className="w-4 h-4" />
+                        ) : null}
+                      </div>
+                      <span className="flex flex-1 items-center gap-1.5 min-w-0 text-sm">
+                        <span className="whitespace-nowrap text-muted-foreground">
+                          {item.module}
+                        </span>
+                        <LuChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40" />
+                        <span className="truncate font-medium text-foreground">
+                          {item.name}
+                        </span>
+                      </span>
+                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                {(loading || isDebouncing || searchResults.length > 0) && (
+                  <CommandSeparator className="my-2" />
                 )}
               </>
+            )}
+
+            {/* Live Search Results — always after module navigation. Shows
+                loading state in place while the search request is pending. */}
+            {loading || isDebouncing ? (
+              <SearchEmptyState type="loading" />
+            ) : searchResults.length > 0 ? (
+              <CommandGroup
+                heading={
+                  <Subheading variant="heavy">
+                    <Trans>Results</Trans>
+                  </Subheading>
+                }
+                key="search"
+              >
+                {searchResults.map((result) => (
+                  <CommandItem
+                    key={`${result.id}-${nanoid()}`}
+                    value={`${input}${result.id}`}
+                    onSelect={() =>
+                      onSelect(
+                        {
+                          to: result.link,
+                          name: result.title
+                        },
+                        result.entityType,
+                        undefined,
+                        result.description!
+                      )
+                    }
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg group"
+                  >
+                    <ResultIconContainer entityType={result.entityType}>
+                      <ResultIcon entityType={result.entityType} />
+                    </ResultIconContainer>
+                    <VStack spacing={0} className="flex-1 min-w-0">
+                      <span className="font-medium text-foreground truncate">
+                        {result.title}
+                      </span>
+                      {result.description && (
+                        <span className="text-sm text-muted-foreground truncate">
+                          {result.description}
+                        </span>
+                      )}
+                    </VStack>
+                    <LuChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ) : null}
+
+            {/* Nothing matched anywhere and the search has settled */}
+            {!loading && !isDebouncing && !hasAnyResults && (
+              <SearchEmptyState type="no-results" query={input} />
             )}
           </CommandList>
 

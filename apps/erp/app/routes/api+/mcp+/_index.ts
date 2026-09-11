@@ -5,6 +5,7 @@ import {
 } from "@carbon/auth/client.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
+import { withLogContext } from "@carbon/logger/middleware.server";
 import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
@@ -158,21 +159,28 @@ async function resolveAuth(request: Request): Promise<{
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
 
-  // The agent is told what "today" is; it has to be the company's day, not the
-  // server's, or every relative-date tool call it makes lands a day off.
-  const server = createMcpServer(
-    ctx,
-    datetime
-      .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
-      .toString()
-  );
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-    enableJsonResponse: true
-  });
+  // Stamp the authenticated identity into the logging context so every log
+  // line in this request carries it alongside the middleware's requestId.
+  const response = await withLogContext(
+    { companyId: ctx.companyId, userId: ctx.userId, authKind: ctx.authKind },
+    async () => {
+      // The agent is told what "today" is; it has to be the company's day, not
+      // the server's, or every relative-date tool call it makes lands a day off.
+      const server = createMcpServer(
+        ctx,
+        datetime
+          .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
+          .toString()
+      );
+      const transport = new WebStandardStreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+        enableJsonResponse: true
+      });
 
-  await server.connect(transport);
-  const response = await transport.handleRequest(authedRequest);
+      await server.connect(transport);
+      return transport.handleRequest(authedRequest);
+    }
+  );
 
   return addCorsHeaders(response);
 }

@@ -85,9 +85,41 @@ registered individually:
 
 | Tool | Purpose |
 |------|---------|
-| `search_tools` | Discover tool names. Filters: `query`, `module`, `classification` (`READ`/`WRITE`/`DESTRUCTIVE`), `limit`/`offset`. Reads `tool-metadata.json`. |
-| `describe_tool` | Return the JSON-Schema + classification + description for one tool name. |
+| `search_tools` | Relevance-ranked discovery (see "Catalog search" below). Filters: `query`, `module` (substring), `classification` (`READ`/`WRITE`/`DESTRUCTIVE`), `limit`/`offset`. |
+| `describe_tool` | Full contract for one `name` or up to 10 `names`: description, permission scope, list-op marker, input schema AND response schema. |
 | `call_tool` | Execute any ERP tool: `{ name, arguments }`. `arguments` may arrive as a JSON string and is normalized to an object. |
+
+### Catalog search (`lib/catalog-search.ts`)
+
+`search_tools` runs BM25 full-text search via **zbsearch** (pnpm catalog dep;
+in-process, index built lazily once per process over `tool-metadata.json`),
+not substring filtering. The typed, tested logic lives OUTSIDE the
+`@ts-nocheck` server.ts:
+
+- Indexed fields with boosts: raw `name` (4), camelCase-split `tokens` (3),
+  `description` (1.5), schema property names `fields` (0.5) — so a query can
+  find a tool by a field it accepts (`unitPrice`). Prefix expansion is on;
+  when a query matches nothing, a second pass runs with `tolerance: 1`
+  (typo forgiveness) — the engine can't do both at once.
+- `SEARCH_ALIASES` expands domain abbreviations ADDITIVELY before the index
+  is queried (`rma`→return, `po`→purchase order, `shelf`→storage unit,
+  `bom`→method material, …). Curate it there; the original token always
+  still participates.
+- `module` keeps substring semantics ("sale" matches "sales") by resolving to
+  concrete names for the enum `where` filter. Filter-only calls (no `query`)
+  bypass the index and keep metadata order.
+- Output is one line per tool — `name [READ] (requiredParams, +N optional)`
+  (`formatParamSummary`, `lib/describe-format.ts`); the description line only
+  renders when it differs from the name-derived text
+  (`deriveNameDescription`). `describe_tool` output (`formatToolDescription`)
+  adds `Permission:` and, for list ops (`isListOperation`), the default page
+  size, plus the compact response schema when the generator derived one.
+- Server instructions live in `lib/instructions.ts` (module list + interpolated
+  `MCP_DEFAULT_LIMIT`), importable by tests without server.ts's auth/env chain.
+- Pinned by `lib/catalog-search.test.ts` and `lib/describe-format.test.ts`;
+  `lib/manifest.ts` carries its own copies of the meta-tool descriptions
+  (pinned >40 chars by `manifest.test.ts`) — keep them in sync with
+  `server.ts` by hand.
 
 ### Response formatting is token-lean BY CONTRACT (`lib/format-result.ts`)
 
@@ -100,13 +132,26 @@ HTTP/agent/workflow callers of `callOperation` are untouched:
   "… N more rows omitted" marker — the backstop for the unpaginated `get*List`
   (fetchAll) operations. A paginated read short of its total appends
   `(showing R of C rows)` from the envelope's `count`.
-- `call_tool` INJECTS the pagination PAIR — `limit: MCP_DEFAULT_LIMIT` (25) AND
-  `offset: 0` — into a **list operation's** args for whichever of the two the
-  caller omits (`isListOperation` on the manifest entry; both the flat body and
-  the `{ args: {...} }` wrapper, and the argless call). The pair matters:
-  `setGenericQueryFilters` applies its `.range()` only when BOTH are integers,
-  so a bare `limit` (injected or caller-supplied) silently paginated nothing
-  and an argless list read returned up to PostgREST's 1000-row cap.
+- **List paging splits on the manifest's `paginates` flag** (generator body
+  scan for `setGenericQueryFilters(`/`.range(`, same mechanism as
+  `functionBodyDeletes`; in `ManifestEntry` AND the committed digest, so a flip
+  is review-visible). Of ~536 list-shaped ops, only ~127 page natively.
+  - `paginates: true` (search-style `get*`): `call_tool` INJECTS the pagination
+    PAIR — `limit: MCP_DEFAULT_LIMIT` (25) AND `offset: 0` — for whichever of
+    the two the caller omits (flat body, `{ args: {...} }` wrapper, and the
+    argless call). The pair matters: `setGenericQueryFilters` applies its
+    `.range()` only when BOTH are integers, so a bare `limit` silently
+    paginated nothing and an argless read returned up to PostgREST's 1000-row
+    cap.
+  - `paginates: false` (fetchAll `get*List`): limit/offset are INERT in the
+    service — it always reads the full set (it feeds UI dropdowns). The caller's
+    paging used to be silently ignored (`limit: 1` returned every row); now
+    `call_tool` captures it (defaults 25/0) and pages the RESPONSE via
+    `pageMcpListResult` (`format-result.ts`), with the full total in the
+    "(showing R of C rows)" line. `describe_tool` says so explicitly and steers
+    to the DB-side paginating sibling when one exists (`paginatingSibling`:
+    `getJobsList` → `getJobs`). The full read is the service's design, not a
+    regression — the DB cost is identical to every dropdown load.
 - `describe_tool` prints the schema compactly, and the generator strips
   `pattern` wherever a sibling `format` exists (`stripRedundantPatterns` —
   zod's email conversion emits a ~200-char regex next to `format: "email"`).
@@ -271,6 +316,16 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   destructive-by-omission and the client must treat it as such; everything else →
   `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
   in `lib/types.ts`).
+- **Description** precedence: a function-level **JSDoc** on the service export
+  (first sentence, `@tag`s stripped, trailing period removed, leading letter
+  lowercased unless it starts an acronym, capped ~160 chars —
+  `extractJsdocSummary` in `scripts/lib/service-metadata.ts`) beats the
+  `DESCRIPTION_OVERRIDES` table, which beats the de-camelCased name
+  (`generateDescription`). ~130 services already carry one. Descriptions flow
+  to the public OpenAPI `summary` and the docs pages (which capitalize and
+  append a period — hence the normalization), and are NOT part of the digest,
+  so a description change is invisible in review by design. Pinned by
+  `apps/erp/test/mcp-jsdoc-description.test.ts`.
 - **injectAuth** (`computeInjectAuth`): keyed off the **name verb, not the
   classification** — only `READ` takes `["companyId"]`. `upsert|create|insert|
   add|new|copy|duplicate|generate*` → `["companyId","createdBy","updatedBy"]`;

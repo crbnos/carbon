@@ -296,6 +296,7 @@ const Item = ({
             ref={triggerRef}
             options={options}
             {...props}
+            isReadOnly={isReadOnly}
             inline={props.inline ? ItemPreview : undefined}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {

@@ -33,6 +33,20 @@ export function stripNulls(value: unknown): unknown {
 }
 
 /**
+ * Page a fetchAll list result at the MCP boundary. The `get*List` services
+ * ignore limit/offset entirely (`paginates: false` in the manifest), so the
+ * caller's paging is applied to the full result here — the slice plus the
+ * original total, which `formatMcpResult` reports as "(showing R of C rows)".
+ */
+export function pageMcpListResult(
+  data: unknown,
+  { limit, offset }: { limit: number; offset: number }
+): { rows: unknown; total?: number } {
+  if (!Array.isArray(data)) return { rows: data };
+  return { rows: data.slice(offset, offset + limit), total: data.length };
+}
+
+/**
  * Serialize a call_tool result for the MCP text response. `count` is the
  * operation's total-row count when the read was paginated — surfaced so an
  * agent pages deliberately instead of assuming it saw everything.

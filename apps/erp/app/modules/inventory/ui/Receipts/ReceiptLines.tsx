@@ -84,6 +84,7 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { ReturnEntityForm } from "./ReturnEntityForm";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -594,8 +595,24 @@ function ReceiptLineItem({
           </div>
         </div>
       </div>
-      {line.requiresBatchTracking && (
-        <>
+      {line.requiresBatchTracking &&
+        (receipt?.sourceDocument === "Sales Return Order" ? (
+          <ReturnEntityForm
+            receipt={receipt}
+            line={line}
+            trackingType="batch"
+            isReadOnly={isReadOnly}
+          >
+            <BatchForm
+              receipt={receipt}
+              line={line}
+              isReadOnly={isReadOnly}
+              tracking={tracking}
+              batchProperties={batchProperties}
+              itemShelfLife={itemShelfLife}
+            />
+          </ReturnEntityForm>
+        ) : (
           <BatchForm
             receipt={receipt}
             line={line}
@@ -604,19 +621,36 @@ function ReceiptLineItem({
             batchProperties={batchProperties}
             itemShelfLife={itemShelfLife}
           />
-        </>
-      )}
-      {line.requiresSerialTracking && (
-        <SerialForm
-          receipt={receipt}
-          line={line}
-          serialNumbers={serialNumbers}
-          isReadOnly={isReadOnly}
-          onSerialNumbersChange={onSerialNumbersChange}
-          itemShelfLife={itemShelfLife}
-          tracking={tracking}
-        />
-      )}
+        ))}
+      {line.requiresSerialTracking &&
+        (receipt?.sourceDocument === "Sales Return Order" ? (
+          <ReturnEntityForm
+            receipt={receipt}
+            line={line}
+            trackingType="serial"
+            isReadOnly={isReadOnly}
+          >
+            <SerialForm
+              receipt={receipt}
+              line={line}
+              serialNumbers={serialNumbers}
+              isReadOnly={isReadOnly}
+              onSerialNumbersChange={onSerialNumbersChange}
+              itemShelfLife={itemShelfLife}
+              tracking={tracking}
+            />
+          </ReturnEntityForm>
+        ) : (
+          <SerialForm
+            receipt={receipt}
+            line={line}
+            serialNumbers={serialNumbers}
+            isReadOnly={isReadOnly}
+            onSerialNumbersChange={onSerialNumbersChange}
+            itemShelfLife={itemShelfLife}
+            tracking={tracking}
+          />
+        ))}
       {(line.requiresBatchTracking || line.requiresSerialTracking) && (
         <>
           <Suspense fallback={null}>

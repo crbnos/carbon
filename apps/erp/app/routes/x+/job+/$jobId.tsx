@@ -176,7 +176,7 @@ export default function JobRoute() {
                 </div>
               }
               content={
-                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
                   <Outlet />
                 </div>
               }

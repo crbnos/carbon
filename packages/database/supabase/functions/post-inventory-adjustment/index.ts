@@ -997,6 +997,9 @@ serve(async (req: Request) => {
               sourceDocumentId: itemId,
               sourceDocumentReadableId:
                 itemResult.data.readableIdWithRevision ?? undefined,
+              // Every by-item consumer filters on this column (notably the
+              // sales-return picker); omitting it made this stock unreturnable.
+              itemId,
               readableId: readableId ?? null,
               quantity: signedQuantity,
               status: "Available",

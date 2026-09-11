@@ -155,7 +155,7 @@ high-water policy, capped before the earliest failed item.
 ## Card transaction data and tenant boundary
 
 The base Ramp migration is `20260820143726_ramp-integration.sql`; the authoritative forward
-schema convergence is `20260911041045_reconcile-ramp-card-transactions.sql`. The latter is
+schema convergence is `20260911150050_reconcile-ramp-card-transactions-forward.sql`. The latter is
 retry-safe and reconciles the registry row, enum values, indexes, sequence, event trigger, RLS,
 constraints, and lifecycle guards.
 
@@ -168,7 +168,7 @@ group. RLS uses invoicing permissions.
 The lifecycle trigger permits Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided
 audit fields. The line trigger locks the same parent row and accepts mutations only while Draft,
 so line edits serialize with posting/voiding. Header account fields cannot change after Draft.
-Migration `20260911130527_enforce-card-transaction-lifecycle-audit.sql` also stores the complete
+Migration `20260911150058_enforce-card-transaction-lifecycle-audit-forward.sql` also stores the complete
 status/audit invariant as a validated CHECK: Draft has no journal or posting/void audit values;
 Posted has `postingDate`, `postedAt`, and `postedBy` but no void audit values; Voided has both
 posting and void audit values. Posted/Voided may have no `journalId` when accounting is disabled.

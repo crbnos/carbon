@@ -1078,7 +1078,15 @@ const Table = <T extends object>({
         isEmpty={isTableEmpty}
         importCSV={importCSV}
         pagination={pagination}
-        primaryAction={primaryAction}
+        primaryAction={
+          // The empty-state ("No data exists") renders `primaryAction` too. When
+          // it will, omit it from the header so only ONE copy mounts — a second
+          // mount of the same `New` trips its `isSoleNew` guard and silently
+          // drops the keyboard shortcut badge + binding on both.
+          rows.length === 0 && !isLoading && !emptyState && !hasFilters
+            ? undefined
+            : primaryAction
+        }
         headerActions={headerActions}
         renderActions={renderActions}
         selectedRows={selectedRows}

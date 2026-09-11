@@ -143,6 +143,8 @@ interface ParsedParam {
 interface ParsedFunction {
   name: string;
   params: ParsedParam[];
+  /** Body of a JSDoc block comment immediately preceding the export, if any. */
+  jsdoc?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,6 +267,41 @@ function destructuredParamName(raw: string, existing: ParsedParam[]): string {
   return `${base}${i}`;
 }
 
+/** The body of a JSDoc block whose closing marker directly precedes `index`. */
+function precedingJsdoc(content: string, index: number): string | undefined {
+  const before = content.slice(0, index);
+  const end = before.lastIndexOf("*/");
+  if (end === -1 || before.slice(end + 2).trim() !== "") return undefined;
+  const start = before.lastIndexOf("/**", end);
+  if (start === -1) return undefined;
+  return before.slice(start + 3, end);
+}
+
+/**
+ * Reduce a function-level JSDoc body to a one-line tool description: the prose
+ * before the first `@tag`, first sentence only, whitespace collapsed. The
+ * trailing period is stripped and the leading letter lowercased (unless it
+ * starts an acronym) to match the name-derived convention — the docs site
+ * capitalizes and appends its own period, so a sentence-cased summary would
+ * render doubled there.
+ */
+export function extractJsdocSummary(raw: string): string | undefined {
+  const prose = raw
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*?\s?/, ""))
+    .join("\n");
+  const beforeTags = prose.split(/^\s*@\w/m)[0];
+  const text = beforeTags.replace(/\s+/g, " ").trim();
+  if (!text) return undefined;
+  const sentence = text.match(/^(.*?[.!?])(?:\s|$)/)?.[1] ?? text;
+  const normalized = sentence.replace(/[.!?]+$/, "").trim();
+  if (!normalized) return undefined;
+  const cased = /^[A-Z][a-z]/.test(normalized)
+    ? normalized.charAt(0).toLowerCase() + normalized.slice(1)
+    : normalized;
+  return cased.length > 160 ? `${cased.slice(0, 159).trimEnd()}…` : cased;
+}
+
 function parseExportedFunctions(content: string): ParsedFunction[] {
   const results: ParsedFunction[] = [];
   const regex = /export\s+(?:async\s+)?function\s+(\w+)\s*\(/g;
@@ -272,12 +309,13 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
 
   while ((match = regex.exec(content)) !== null) {
     const name = match[1];
+    const jsdoc = precedingJsdoc(content, match.index);
     const openParen = match.index + match[0].length - 1;
     const closeParen = findMatchingBrace(content, openParen);
     const rawParams = content.substring(openParen + 1, closeParen).trim();
 
     if (!rawParams) {
-      results.push({ name, params: [] });
+      results.push({ name, params: [], jsdoc });
       continue;
     }
 
@@ -336,7 +374,7 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
       });
     }
 
-    results.push({ name, params });
+    results.push({ name, params, jsdoc });
   }
 
   return results;
@@ -1090,6 +1128,22 @@ function functionBodyDeletes(content: string, funcName: string): boolean {
   return /\.delete\s*\(/.test(stripped) || /\.deleteFrom\s*\(/.test(stripped);
 }
 
+/**
+ * Whether the service itself applies limit/offset — `setGenericQueryFilters`
+ * (the canonical pager) or a direct `.range(`. A list operation without either
+ * ignores pagination args entirely (the fetchAll `get*List` reads), so the MCP
+ * layer pages the response instead. Same body-scan mechanism (and shadowed-
+ * wrapper first-match caveat) as `functionBodyDeletes`.
+ */
+function functionBodyPaginates(content: string, funcName: string): boolean {
+  const body = extractFunctionBody(content, funcName);
+  if (body === null) return false;
+  const stripped = stripComments(body);
+  return (
+    /setGenericQueryFilters\s*\(/.test(stripped) || /\.range\s*\(/.test(stripped)
+  );
+}
+
 function extractFunctionBody(content: string, funcName: string): string | null {
   const regex = new RegExp(
     `export\\s+(?:async\\s+)?function\\s+${funcName}\\s*\\(`
@@ -1571,8 +1625,12 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const injectAuth =
         INJECT_AUTH_OVERRIDES[toolName] ||
         computeInjectAuth(func.name, classification);
+      // A JSDoc on the function itself beats the override table (code closest
+      // wins); the de-camelCased name remains the fallback.
       const description =
-        DESCRIPTION_OVERRIDES[toolName] || generateDescription(func.name);
+        (func.jsdoc && extractJsdocSummary(func.jsdoc)) ||
+        DESCRIPTION_OVERRIDES[toolName] ||
+        generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
       const permission = derivePermission(
         toolName,
@@ -1596,6 +1654,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       }
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
+      const paginates = functionBodyPaginates(content, func.name);
 
       allTools.push({
         name: toolName,
@@ -1606,6 +1665,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         serviceParams,
         injectAuth,
         permission,
+        paginates,
         schema,
         ...(responseSchema ? { responseSchema } : {}),
       });

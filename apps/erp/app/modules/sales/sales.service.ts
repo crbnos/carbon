@@ -5,7 +5,12 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
-import { datetime, round } from "@carbon/utils";
+import {
+  datetime,
+  EPSILON,
+  getSalesReturnOrderStatus,
+  round
+} from "@carbon/utils";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -18,7 +23,7 @@ import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getExchangeRate } from "../accounting";
+import { getCurrencyByCode, getExchangeRate } from "../accounting";
 import type {
   operationParameterValidator,
   operationStepValidator,
@@ -51,11 +56,15 @@ import type {
   quoteShipmentValidator,
   quoteStatusType,
   quoteValidator,
+  returnReasonValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
   salesOrderStatusType,
   salesOrderValidator,
+  salesReturnOrderLineValidator,
+  salesReturnOrderStatusType,
+  salesReturnOrderValidator,
   salesRFQStatusType,
   salesRfqLineValidator,
   salesRfqValidator,
@@ -1610,22 +1619,49 @@ export async function getSalesOrderRelatedItems(
   salesOrderId: string,
   opportunityId: string
 ) {
-  const [jobs, shipments, invoices] = await Promise.all([
-    client.from("job").select("*").eq("salesOrderId", salesOrderId),
-    client
-      .from("shipment")
-      .select("*, shipmentLine(*)")
-      .eq("opportunityId", opportunityId),
-    client
-      .from("salesInvoice")
-      .select("id, invoiceId, status")
-      .eq("opportunityId", opportunityId)
-  ]);
+  const [jobs, shipments, invoices, returnOrders, lineLinkedReturns] =
+    await Promise.all([
+      client.from("job").select("*").eq("salesOrderId", salesOrderId),
+      client
+        .from("shipment")
+        .select("*, shipmentLine(*)")
+        .eq("opportunityId", opportunityId),
+      client
+        .from("salesInvoice")
+        .select("id, invoiceId, status")
+        .eq("opportunityId", opportunityId),
+      // RMAs linked at the header level
+      client
+        .from("salesReturnOrder")
+        .select("id, salesReturnOrderId, status")
+        .eq("salesOrderId", salesOrderId),
+      // RMAs linked only through their lines (salesOrderLineId provenance)
+      client
+        .from("salesReturnOrderLine")
+        .select(
+          "salesReturnOrder!salesReturnOrderLine_salesReturnOrderId_fkey(id, salesReturnOrderId, status), salesOrderLine!inner(salesOrderId)"
+        )
+        .eq("salesOrderLine.salesOrderId", salesOrderId)
+    ]);
+
+  // Union of header-linked and line-linked, de-duplicated by id
+  const returnsById = new Map<
+    string,
+    { id: string; salesReturnOrderId: string; status: string }
+  >();
+  for (const row of returnOrders.data ?? []) {
+    returnsById.set(row.id, row);
+  }
+  for (const row of lineLinkedReturns.data ?? []) {
+    const order = row.salesReturnOrder;
+    if (order) returnsById.set(order.id, order);
+  }
 
   return {
     jobs: jobs.data ?? [],
     shipments: shipments.data ?? [],
-    invoices: invoices.data ?? []
+    invoices: invoices.data ?? [],
+    salesReturnOrders: Array.from(returnsById.values())
   };
 }
 
@@ -3681,6 +3717,9 @@ export async function upsertQuote(
 
     if (customerPayment.error) return customerPayment;
     if (customerShipping.error) return customerShipping;
+    // Without this the quote is inserted with a null opportunityId, and its
+    // detail page then fails to load for good.
+    if (opportunity.error) return opportunity;
 
     const {
       paymentTermId,
@@ -5635,6 +5674,9 @@ export async function upsertSalesOrder(
 
   if (customerPayment.error) return customerPayment;
   if (customerShipping.error) return customerShipping;
+  // Without this the sales order is inserted with a null opportunityId, and its
+  // detail page then fails to load for good.
+  if (opportunity.error) return opportunity;
 
   const {
     paymentTermId,
@@ -6154,4 +6196,1520 @@ export async function updateSalesRFQLineOrder(
         .execute();
     }
   });
+}
+
+// ─── Sales Return Orders (RMAs) ───
+
+export async function getReturnReasons(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("returnReason")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getReturnReasonsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("returnReason")
+    .select("id, name, inventoryValueZero")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getReturnReason(
+  client: SupabaseClient<Database>,
+  returnReasonId: string
+) {
+  return client
+    .from("returnReason")
+    .select("*")
+    .eq("id", returnReasonId)
+    .single();
+}
+
+export async function upsertReturnReason(
+  client: SupabaseClient<Database>,
+  returnReason:
+    | (Omit<z.infer<typeof returnReasonValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof returnReasonValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in returnReason) {
+    return client
+      .from("returnReason")
+      .insert([returnReason])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("returnReason")
+    .update({
+      ...sanitize(returnReason),
+      inventoryValueZero: returnReason.inventoryValueZero,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", returnReason.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteReturnReason(
+  client: SupabaseClient<Database>,
+  returnReasonId: string
+) {
+  return client.from("returnReason").delete().eq("id", returnReasonId);
+}
+
+export async function getSalesReturnOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+    customerId: string | null;
+  }
+) {
+  let query = client
+    .from("salesReturnOrders")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `salesReturnOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof salesReturnOrderStatusType)[number]
+    );
+  }
+
+  if (args.customerId) {
+    query = query.eq("customerId", args.customerId);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string
+) {
+  return client
+    .from("salesReturnOrders")
+    .select("*")
+    .eq("id", salesReturnOrderId)
+    .single();
+}
+
+export async function getSalesReturnOrderLines(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("salesReturnOrderLine")
+    .select(
+      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType, thumbnailPath)"
+    )
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .order("lineNumber");
+}
+
+export async function getSalesReturnOrderLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client
+    .from("salesReturnOrderLine")
+    .select("*")
+    .eq("id", lineId)
+    .single();
+}
+
+export async function getSalesReturnOrderLineTrackedEntities(
+  client: SupabaseClient<Database>,
+  lineIds: string[]
+) {
+  return client
+    .from("salesReturnOrderLineTrackedEntity")
+    .select("*, trackedEntity(id, readableId, status, quantity)")
+    .in("salesReturnOrderLineId", lineIds);
+}
+
+export async function insertSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    customerId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    salesReturnOrderId?: string;
+    orderDate: string;
+    customerLocationId?: string;
+    customerContactId?: string;
+    customerReference?: string;
+    locationId?: string;
+    salesOrderId?: string;
+    currencyCode?: string;
+    expirationDate?: string;
+    assignee?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; salesReturnOrderId: string } | null;
+  error: PostgrestError | null;
+}> {
+  let salesReturnOrderId: string;
+  if (input.salesReturnOrderId) {
+    salesReturnOrderId = input.salesReturnOrderId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "salesReturnOrder",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({ message: "Failed to generate RMA sequence" } as PostgrestError)
+      };
+    }
+    salesReturnOrderId = seq.data;
+  }
+
+  let currencyCode = input.currencyCode;
+  if (!currencyCode) {
+    const [customer, company] = await Promise.all([
+      client
+        .from("customer")
+        .select("currencyCode")
+        .eq("id", input.customerId)
+        .single(),
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", input.companyId)
+        .single()
+    ]);
+    currencyCode =
+      customer.data?.currencyCode ?? company.data?.baseCurrencyCode ?? "USD";
+  }
+
+  let exchangeRate = 1;
+  if (currencyCode) {
+    // Main's currency refactor: rates come from the get_exchange_rate RPC
+    // (base=1, per-company override, else global market store) — the old
+    // currency.exchangeRate column was dropped.
+    const exchangeRateResult = await getExchangeRate(
+      client,
+      input.companyId,
+      currencyCode
+    );
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
+    }
+    exchangeRate = exchangeRateResult.data;
+  }
+
+  const order = await client
+    .from("salesReturnOrder")
+    .insert({
+      salesReturnOrderId,
+      customerId: input.customerId,
+      customerLocationId: input.customerLocationId,
+      customerContactId: input.customerContactId,
+      customerReference: input.customerReference ?? null,
+      locationId: input.locationId,
+      salesOrderId: input.salesOrderId,
+      currencyCode,
+      exchangeRate,
+      orderDate: input.orderDate,
+      expirationDate: input.expirationDate,
+      assignee: input.assignee,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      customFields: input.customFields
+    })
+    .select("id, salesReturnOrderId")
+    .single();
+
+  return order;
+}
+
+export async function updateSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  salesReturnOrder: Omit<
+    z.infer<typeof salesReturnOrderValidator>,
+    "id" | "salesReturnOrderId" | "status"
+  > & {
+    id: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  const { id, ...update } = salesReturnOrder;
+  return client
+    .from("salesReturnOrder")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function upsertSalesReturnOrderLine(
+  client: SupabaseClient<Database>,
+  line:
+    | (Omit<
+        z.infer<typeof salesReturnOrderLineValidator>,
+        "id" | "trackedEntityIds"
+      > & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<
+        z.infer<typeof salesReturnOrderLineValidator>,
+        "id" | "trackedEntityIds"
+      > & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in line) {
+    const existing = await client
+      .from("salesReturnOrderLine")
+      .select("lineNumber")
+      .eq("salesReturnOrderId", line.salesReturnOrderId)
+      .eq("companyId", line.companyId)
+      .order("lineNumber", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return client
+      .from("salesReturnOrderLine")
+      .insert([
+        {
+          ...line,
+          lineNumber: (existing.data?.lineNumber ?? 0) + 1
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  const { id, ...update } = line;
+  return client
+    .from("salesReturnOrderLine")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deleteSalesReturnOrder(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string
+) {
+  return client.from("salesReturnOrder").delete().eq("id", salesReturnOrderId);
+}
+
+export async function deleteSalesReturnOrderLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client.from("salesReturnOrderLine").delete().eq("id", lineId);
+}
+
+export async function getSalesReturnOrderReceipts(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("receipt")
+    .select("id, receiptId, status, postingDate, createdAt")
+    .eq("sourceDocumentId", salesReturnOrderId)
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getSalesReturnOrderCredits(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("memo")
+    .select("id, memoId, status, amount, currencyCode, memoDate, postingDate")
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getSalesReturnOrderIssues(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceSalesReturnOrderLine")
+    .select(
+      "id, salesReturnOrderLineId, nonConformance(id, nonConformanceId, name, status)"
+    )
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Confirm an RMA. The reversible-quantity cap is a transactional invariant:
+ * the governing SOURCE rows (shipment/SO/invoice lines) are row-locked so two
+ * concurrent confirms against the same source line serialize, and the
+ * aggregates are re-read under that lock (replaceInvoiceSettlements pattern).
+ */
+export async function confirmSalesReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId }: { id: string; companyId: string },
+  userId: string
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("salesReturnOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!order) throw new Error("Return order not found");
+    if (order.status !== "Draft") {
+      throw new Error(
+        `Cannot confirm a return order in ${order.status} status`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("salesReturnOrderLine")
+      .select([
+        "id",
+        "lineNumber",
+        "quantity",
+        "salesOrderLineId",
+        "shipmentLineId",
+        "salesInvoiceLineId"
+      ])
+      .where("salesReturnOrderId", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+
+    if (lines.length === 0) {
+      throw new Error("Cannot confirm a return order with no lines");
+    }
+
+    // Reversible caps, checked per source-line link under a row lock on the
+    // governing source row. Blind lines (no links) skip the check.
+    const checks: {
+      lineNumbers: number[];
+      requested: number;
+      linkColumn: "shipmentLineId" | "salesOrderLineId" | "salesInvoiceLineId";
+      linkId: string;
+    }[] = [];
+
+    const byLink = new Map<string, (typeof checks)[number]>();
+    for (const line of lines) {
+      const linkColumn = line.shipmentLineId
+        ? ("shipmentLineId" as const)
+        : line.salesOrderLineId
+          ? ("salesOrderLineId" as const)
+          : line.salesInvoiceLineId
+            ? ("salesInvoiceLineId" as const)
+            : null;
+      if (!linkColumn) continue;
+      const linkId = line[linkColumn]!;
+      const key = `${linkColumn}:${linkId}`;
+      const existing = byLink.get(key);
+      if (existing) {
+        existing.requested += Number(line.quantity);
+        existing.lineNumbers.push(line.lineNumber);
+      } else {
+        const check = {
+          lineNumbers: [line.lineNumber],
+          requested: Number(line.quantity),
+          linkColumn,
+          linkId
+        };
+        byLink.set(key, check);
+        checks.push(check);
+      }
+    }
+
+    for (const check of checks) {
+      // Lock the governing source row, then read its shipped/sent base.
+      let base = 0;
+      if (check.linkColumn === "shipmentLineId") {
+        const src = await trx
+          .selectFrom("shipmentLine")
+          .select(["shippedQuantity"])
+          .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        base = Number(src?.shippedQuantity ?? 0);
+      } else if (check.linkColumn === "salesOrderLineId") {
+        const src = await trx
+          .selectFrom("salesOrderLine")
+          .select(["quantitySent"])
+          .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        base = Number(src?.quantitySent ?? 0);
+      } else {
+        const src = await trx
+          .selectFrom("salesInvoiceLine")
+          .select(["quantity"])
+          .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        base = Number(src?.quantity ?? 0);
+      }
+
+      // Everything already authorized against this source line by OTHER
+      // non-cancelled return orders (re-read under the source-row lock).
+      // An SO-line check must ALSO count returns linked via a shipment line
+      // OF that SO line: shipment-linked and SO-linked returns draw on the
+      // same shipped base, and per-column counting let the two link types
+      // jointly over-authorize the same goods. (A line carrying both links
+      // matches the OR once — rows are counted, not columns.) The
+      // shipment-line check deliberately does NOT count SO-linked returns the
+      // other way: they cannot be attributed to one shipment line of a
+      // multi-shipment SO line, and blocking on them would refuse legitimate
+      // returns.
+      let siblingShipmentLineIds: string[] = [];
+      if (check.linkColumn === "salesOrderLineId") {
+        const shipmentLinesOfSoLine = await trx
+          .selectFrom("shipmentLine")
+          .select(["id"])
+          .where("lineId", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .execute();
+        siblingShipmentLineIds = shipmentLinesOfSoLine.map((r) => r.id);
+      }
+
+      const others = await trx
+        .selectFrom("salesReturnOrderLine")
+        .innerJoin(
+          "salesReturnOrder",
+          "salesReturnOrder.id",
+          "salesReturnOrderLine.salesReturnOrderId"
+        )
+        .select(({ fn }) => [
+          fn
+            .coalesce(fn.sum("salesReturnOrderLine.quantity"), sql<number>`0`)
+            .as("authorized")
+        ])
+        .where((eb) =>
+          siblingShipmentLineIds.length > 0
+            ? eb.or([
+                eb(
+                  `salesReturnOrderLine.${check.linkColumn}`,
+                  "=",
+                  check.linkId
+                ),
+                eb(
+                  "salesReturnOrderLine.shipmentLineId",
+                  "in",
+                  siblingShipmentLineIds
+                )
+              ])
+            : eb(`salesReturnOrderLine.${check.linkColumn}`, "=", check.linkId)
+        )
+        .where("salesReturnOrderLine.companyId", "=", companyId)
+        .where("salesReturnOrder.status", "!=", "Cancelled")
+        .where("salesReturnOrder.id", "!=", id)
+        .executeTakeFirst();
+
+      const alreadyAuthorized = Number(others?.authorized ?? 0);
+      const cap = base - alreadyAuthorized;
+      if (check.requested > cap + EPSILON) {
+        throw new Error(
+          `Line ${check.lineNumbers.join(", ")}: cannot authorize ${
+            check.requested
+          } — only ${Math.max(0, cap)} of ${base} remains returnable for the linked document line`
+        );
+      }
+    }
+
+    // Confirm releases the RMA for receiving. Status is derived, not fixed — a
+    // fresh confirm from Draft has nothing received, so it lands on "To Receive",
+    // but deriving keeps this consistent with the receipt/short-close paths.
+    const { status } = getSalesReturnOrderStatus(
+      lines.map((line) => ({
+        quantity: line.quantity,
+        quantityReceived: 0,
+        closedComplete: false
+      }))
+    );
+
+    await trx
+      .updateTable("salesReturnOrder")
+      .set({
+        status,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/**
+ * Cancel an RMA. THROWS. A Kysely transaction that locks the order row first —
+ * post-receipt re-checks the order status under the same lock, so a receipt
+ * posting racing this cancel serializes: whichever commits first wins, and the
+ * loser sees the new state instead of producing a Cancelled order with
+ * received stock (whose caps a fresh RMA would then double-authorize).
+ */
+/**
+ * Reopen an RMA to Draft so its lines can be edited again. THROWS. Row-locks the
+ * order (serializes against a concurrent receipt posting). To Receive → Draft
+ * (un-confirm) and Cancelled → Draft (revive; the cancel guard enforces no
+ * receipt exists and nothing received, so reviving is safe). "To Receive" no
+ * longer implies nothing received (it also covers partially received), so the
+ * nothing-received invariant is enforced on the line quantities directly.
+ */
+export async function reopenSalesReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("salesReturnOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!order) throw new Error("Return order not found");
+    if (!["To Receive", "Cancelled"].includes(order.status)) {
+      throw new Error(
+        `Only a to-receive or cancelled return can be reopened — this one is ${order.status}`
+      );
+    }
+
+    // "To Receive" can be partially received; reopening one that has received
+    // stock would strand it. Refuse unless nothing has been received yet.
+    if (order.status === "To Receive") {
+      const receivedLines = await trx
+        .selectFrom("salesReturnOrderLine")
+        .select(["quantityReceived"])
+        .where("salesReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (receivedLines.some((l) => Number(l.quantityReceived) > EPSILON)) {
+        throw new Error(
+          "Cannot reopen: quantity has already been received. Void the receipt first."
+        );
+      }
+    }
+
+    await trx
+      .updateTable("salesReturnOrder")
+      .set({
+        status: "Draft",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+export async function cancelSalesReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("salesReturnOrder")
+      .select(["status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Return order not found");
+    if (["Completed", "Cancelled"].includes(order.status)) {
+      throw new Error(`Cannot cancel a return order in ${order.status} status`);
+    }
+
+    const [receipts, lines] = await Promise.all([
+      trx
+        .selectFrom("receipt")
+        .select(["id"])
+        .where("sourceDocumentId", "=", id)
+        .where("sourceDocument", "=", "Sales Return Order")
+        .where("companyId", "=", companyId)
+        .where("status", "!=", "Voided")
+        .execute(),
+      trx
+        .selectFrom("salesReturnOrderLine")
+        .select(["quantityReceived"])
+        .where("salesReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+
+    if (receipts.length > 0) {
+      throw new Error(
+        "Cannot cancel: a receipt exists for this return order. Delete or void it first."
+      );
+    }
+    if (lines.some((l) => Number(l.quantityReceived) > 0)) {
+      throw new Error("Cannot cancel: quantity has already been received");
+    }
+
+    await trx
+      .updateTable("salesReturnOrder")
+      .set({
+        status: "Cancelled",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/**
+ * Short-close ("stop expecting") an RMA line — the shortClosePurchaseOrderLine
+ * mechanic. The header status is derived from the lines afterwards, so
+ * short-closing the last open line completes the RMA (there is no separate
+ * manual Complete action, mirroring the Purchase Order). Disposition is tracked
+ * independently and does not gate completion.
+ */
+export async function shortCloseSalesReturnOrderLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    salesReturnOrderId,
+    companyId,
+    userId,
+    intent
+  }: {
+    lineId: string;
+    salesReturnOrderId: string;
+    companyId: string;
+    userId: string;
+    intent: "close" | "reopen";
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("salesReturnOrderLine")
+      .select(["id"])
+      .where("id", "=", lineId)
+      .where("salesReturnOrderId", "=", salesReturnOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    if (!line) throw new Error("Return order line not found");
+
+    await trx
+      .updateTable("salesReturnOrderLine")
+      .set({
+        closedComplete: intent === "close",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const [order, lines] = await Promise.all([
+      trx
+        .selectFrom("salesReturnOrder")
+        .select(["status"])
+        .where("id", "=", salesReturnOrderId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      trx
+        .selectFrom("salesReturnOrderLine")
+        .select(["quantity", "quantityReceived", "closedComplete"])
+        .where("salesReturnOrderId", "=", salesReturnOrderId)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+
+    // Recompute in both the To Receive and Completed working states: short-closing
+    // the last open line completes the RMA, and reopening a line on a completed
+    // RMA drops it back to To Receive.
+    if (!order || !["To Receive", "Completed"].includes(order.status)) {
+      return;
+    }
+
+    const { status } = getSalesReturnOrderStatus(lines);
+
+    if (status !== order.status) {
+      await trx
+        .updateTable("salesReturnOrder")
+        .set({
+          status,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", salesReturnOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+  });
+}
+
+/**
+ * "From document" picker source: posted shipment lines for the customer with
+ * their reversible remainders (shipped − already authorized on non-cancelled
+ * RMAs). BC's "Show Reversible Lines Only".
+ */
+/**
+ * Returnable shipment lines for a customer, searched + paginated in the database
+ * via the get_returnable_shipment_lines RPC. The `shipped − already-authorized
+ * > 0` filter, the text search (shipment #, sales order #, item readable id,
+ * item name), the recency ordering, and pagination all run in SQL so the "Add
+ * lines from shipment" modal stays responsive when a customer has thousands of
+ * shipment lines. Each row carries `totalCount` — the size of the full
+ * returnable set before limit/offset — so the UI can page through the rest.
+ */
+export async function getReturnableLinesForCustomer(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string,
+  args?: {
+    salesOrderId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
+) {
+  return client.rpc("get_returnable_shipment_lines", {
+    company_id: companyId,
+    customer_id: customerId,
+    sales_order_id: args?.salesOrderId || undefined,
+    search: args?.search?.trim() || undefined,
+    limit_count: args?.limit ?? 5,
+    offset_count: args?.offset ?? 0
+  });
+}
+
+/**
+ * Entity picker source for RMA lines: serials/batches shipped to this
+ * customer (Consumed entities tagged with a posted shipment's id — the
+ * attributes->>X query pattern from getTrackedEntitiesByMakeMethodId).
+ */
+export async function getShippedTrackedEntitiesForCustomer(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string,
+  itemId: string
+) {
+  // Entity-first, then verify the shipments: the old shape fetched EVERY
+  // posted shipment id for the customer unpaged (PostgREST silently caps at
+  // 1000 rows, and the .in() list has a URL-length ceiling), so a high-volume
+  // customer's picker silently missed candidates. The item's Consumed
+  // entities are the small, relevant set; their shipment ids are verified in
+  // chunks.
+  const entities = await fetchAllFromTable<{
+    id: string;
+    readableId: string | null;
+    quantity: number;
+    status: Database["public"]["Enums"]["trackedEntityStatus"];
+    attributes: Json;
+  }>(
+    client,
+    "trackedEntity",
+    "id, readableId, quantity, status, attributes",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("itemId", itemId)
+        .eq("status", "Consumed")
+  );
+  if (entities.error) return { data: null, error: entities.error };
+
+  const entityShipmentIds = [
+    ...new Set(
+      (entities.data ?? [])
+        .map(
+          (entity) =>
+            (entity.attributes as Record<string, unknown> | null)?.["Shipment"]
+        )
+        .filter((value): value is string => typeof value === "string")
+    )
+  ];
+  if (entityShipmentIds.length === 0) return { data: [], error: null };
+
+  const customerShipmentIds = new Set<string>();
+  const CHUNK = 300;
+  for (let i = 0; i < entityShipmentIds.length; i += CHUNK) {
+    const chunk = entityShipmentIds.slice(i, i + CHUNK);
+    const shipments = await client
+      .from("shipment")
+      .select("id")
+      .in("id", chunk)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .eq("status", "Posted");
+    if (shipments.error) return { data: null, error: shipments.error };
+    for (const shipment of shipments.data ?? []) {
+      customerShipmentIds.add(shipment.id);
+    }
+  }
+
+  return {
+    data: (entities.data ?? []).filter((entity) => {
+      const shipmentId = (
+        entity.attributes as Record<string, unknown> | null
+      )?.["Shipment"];
+      return (
+        typeof shipmentId === "string" && customerShipmentIds.has(shipmentId)
+      );
+    }),
+    error: null
+  };
+}
+
+/**
+ * Per-line creditable pool = received − already credited. Draft memos count
+ * against the pool (two Drafts must not double-credit); the VIEW's displayed
+ * quantityCredited still derives from Posted memos only.
+ */
+export async function getCreditableQuantities(
+  client: SupabaseClient<Database>,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  const lines = await client
+    .from("salesReturnOrderLine")
+    .select("id, lineNumber, quantityReceived, unitPrice, restockFeePercent")
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .order("lineNumber");
+  if (lines.error) return { data: null, error: lines.error };
+  const lineIds = (lines.data ?? []).map((l) => l.id);
+  if (lineIds.length === 0) return { data: [], error: null };
+
+  const credits = await client
+    .from("salesReturnOrderCreditLine")
+    .select("salesReturnOrderLineId, quantity, memo!inner(status)")
+    .in("salesReturnOrderLineId", lineIds)
+    .eq("companyId", companyId)
+    .neq("memo.status", "Voided");
+  if (credits.error) return { data: null, error: credits.error };
+
+  const creditedByLine = new Map<string, number>();
+  for (const row of credits.data ?? []) {
+    creditedByLine.set(
+      row.salesReturnOrderLineId,
+      (creditedByLine.get(row.salesReturnOrderLineId) ?? 0) +
+        Number(row.quantity)
+    );
+  }
+
+  return {
+    data: (lines.data ?? []).map((line) => {
+      const received = Number(line.quantityReceived);
+      const credited = creditedByLine.get(line.id) ?? 0;
+      return {
+        salesReturnOrderLineId: line.id,
+        lineNumber: line.lineNumber,
+        quantityReceived: received,
+        quantityCredited: credited,
+        creditableQuantity: Math.max(0, received - credited),
+        unitPrice: Number(line.unitPrice),
+        restockFeePercent: Number(line.restockFeePercent)
+      };
+    }),
+    error: null
+  };
+}
+
+/**
+ * Issue Credit: one AR memo (direction Credit, linked via
+ * memo.salesReturnOrderId) + per-line salesReturnOrderCreditLine breakdown.
+ * The creditable cap (received − already credited over NON-VOIDED memos —
+ * Drafts count so two drafts can't double-credit) is validated inside the
+ * transaction under a row lock on the RMA lines. Amount is rounded ONCE at
+ * the currency's decimals (settlement boundary). Returns the memo id.
+ */
+export async function createSalesReturnOrderCredit(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    salesReturnOrderId,
+    companyId,
+    companyGroupId,
+    userId,
+    memoDate,
+    lines
+  }: {
+    salesReturnOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    memoDate: string;
+    lines: { salesReturnOrderLineId: string; quantity: number }[];
+  }
+) {
+  const order = await client
+    .from("salesReturnOrder")
+    .select(
+      "id, status, customerId, currencyCode, exchangeRate, salesReturnOrderId"
+    )
+    .eq("id", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) throw new Error("Return order not found");
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    throw new Error(
+      `Cannot issue credit for a return order in ${order.data.status} status`
+    );
+  }
+
+  const currency = await getCurrencyByCode(
+    client,
+    companyGroupId,
+    order.data.currencyCode
+  );
+  const decimalPlaces = currency.data?.decimalPlaces ?? 2;
+
+  const seq = await client.rpc("get_next_sequence", {
+    sequence_name: "creditMemo",
+    company_id: companyId
+  });
+  if (seq.error || !seq.data) {
+    throw new Error("Failed to allocate credit memo number");
+  }
+  const memoId = seq.data;
+
+  const requested = new Map(
+    lines
+      .filter((l) => l.quantity > 0)
+      .map((l) => [l.salesReturnOrderLineId, l.quantity])
+  );
+  if (requested.size === 0) {
+    throw new Error("Nothing to credit");
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const orderLines = await trx
+      .selectFrom("salesReturnOrderLine")
+      .select([
+        "id",
+        "lineNumber",
+        "quantityReceived",
+        "unitPrice",
+        "restockFeePercent"
+      ])
+      .where("salesReturnOrderId", "=", salesReturnOrderId)
+      .where("companyId", "=", companyId)
+      .where("id", "in", [...requested.keys()])
+      .forUpdate()
+      .execute();
+
+    if (orderLines.length !== requested.size) {
+      throw new Error(
+        "One or more credit lines do not belong to this return order"
+      );
+    }
+
+    const credited = await trx
+      .selectFrom("salesReturnOrderCreditLine")
+      .innerJoin("memo", "memo.id", "salesReturnOrderCreditLine.memoId")
+      .select(({ fn }) => [
+        "salesReturnOrderCreditLine.salesReturnOrderLineId",
+        fn
+          .coalesce(
+            fn.sum("salesReturnOrderCreditLine.quantity"),
+            sql<number>`0`
+          )
+          .as("credited")
+      ])
+      .where("salesReturnOrderCreditLine.salesReturnOrderLineId", "in", [
+        ...requested.keys()
+      ])
+      .where("salesReturnOrderCreditLine.companyId", "=", companyId)
+      .where("memo.status", "!=", "Voided")
+      .groupBy("salesReturnOrderCreditLine.salesReturnOrderLineId")
+      .execute();
+    const creditedByLine = new Map(
+      credited.map((row) => [row.salesReturnOrderLineId, Number(row.credited)])
+    );
+
+    let total = 0;
+    const creditLineValues: {
+      memoId: string;
+      salesReturnOrderLineId: string;
+      quantity: number;
+      unitPrice: number;
+      restockFee: number;
+      companyId: string;
+      createdBy: string;
+    }[] = [];
+
+    for (const line of orderLines) {
+      const quantity = requested.get(line.id)!;
+      const received = Number(line.quantityReceived ?? 0);
+      const alreadyCredited = creditedByLine.get(line.id) ?? 0;
+      const creditable = received - alreadyCredited;
+      if (quantity > creditable + EPSILON) {
+        throw new Error(
+          `Line ${line.lineNumber}: cannot credit ${quantity} — only ${Math.max(
+            0,
+            creditable
+          )} of ${received} received remains creditable`
+        );
+      }
+      const unitPrice = Number(line.unitPrice ?? 0);
+      const feePercent = Number(line.restockFeePercent ?? 0);
+      const gross = quantity * unitPrice;
+      const restockFee = gross * feePercent;
+      total += gross - restockFee;
+      creditLineValues.push({
+        memoId: "", // filled after the memo insert
+        salesReturnOrderLineId: line.id,
+        quantity,
+        unitPrice,
+        restockFee,
+        companyId,
+        createdBy: userId
+      });
+    }
+
+    if (total <= 0) {
+      throw new Error("Credit amount must be positive");
+    }
+
+    const memo = await trx
+      .insertInto("memo")
+      .values({
+        memoId,
+        direction: "Credit",
+        status: "Draft",
+        customerId: order.data.customerId,
+        memoDate,
+        currencyCode: order.data.currencyCode,
+        exchangeRate: order.data.exchangeRate ?? 1,
+        amount: round(total, decimalPlaces),
+        reference: order.data.salesReturnOrderId,
+        salesReturnOrderId,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .insertInto("salesReturnOrderCreditLine")
+      .values(creditLineValues.map((v) => ({ ...v, memoId: memo.id })))
+      .execute();
+
+    return memo.id;
+  });
+}
+
+/**
+ * Create Replacement Order: a draft sales order pre-filled from the RMA
+ * lines, priced via resolvePrice (user adjusts on the draft — e.g. to zero
+ * for warranty). One replacement per RMA; re-invoking returns the existing
+ * link. Rollback-by-delete on line failure (the insertSalesOrder pattern).
+ */
+export async function createReplacementSalesOrder(
+  client: SupabaseClient<Database>,
+  {
+    salesReturnOrderId,
+    companyId,
+    companyGroupId,
+    userId
+  }: {
+    salesReturnOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const order = await client
+    .from("salesReturnOrder")
+    .select("*")
+    .eq("id", salesReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) return { data: null, error: order.error };
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    return {
+      data: null,
+      error: {
+        message: `Cannot create a replacement for a ${order.data.status} return order`
+      } as PostgrestError
+    };
+  }
+  if (order.data.replacementSalesOrderId) {
+    return { data: { id: order.data.replacementSalesOrderId }, error: null };
+  }
+
+  const lines = await client
+    .from("salesReturnOrderLine")
+    .select("*, item(type)")
+    .eq("salesReturnOrderId", salesReturnOrderId)
+    .eq("companyId", companyId);
+  if (lines.error) return { data: null, error: lines.error };
+  if ((lines.data ?? []).length === 0) {
+    return {
+      data: null,
+      error: { message: "Return order has no lines" } as PostgrestError
+    };
+  }
+
+  const salesOrder = await insertSalesOrder(client, {
+    customerId: order.data.customerId,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    currencyCode: order.data.currencyCode,
+    customerContactId: order.data.customerContactId ?? undefined,
+    customerLocationId: order.data.customerLocationId ?? undefined,
+    locationId: order.data.locationId ?? undefined,
+    customerReference: order.data.salesReturnOrderId
+  });
+  if (salesOrder.error || !salesOrder.data) {
+    return { data: null, error: salesOrder.error };
+  }
+  const salesOrderId = salesOrder.data.id;
+
+  const lineTypeFor = (
+    itemType: string | null | undefined
+  ): Database["public"]["Enums"]["salesOrderLineType"] => {
+    switch (itemType) {
+      case "Part":
+      case "Material":
+      case "Tool":
+      case "Consumable":
+      case "Service":
+        return itemType;
+      default:
+        return "Part";
+    }
+  };
+
+  for (const line of lines.data ?? []) {
+    const price = await resolvePrice(client, companyId, {
+      customerId: order.data.customerId,
+      itemId: line.itemId,
+      quantity: Number(line.quantity)
+    });
+
+    const insertLine = await client.from("salesOrderLine").insert({
+      salesOrderId,
+      salesOrderLineType: lineTypeFor(line.item?.type),
+      itemId: line.itemId,
+      saleQuantity: Number(line.quantity),
+      unitPrice: price.finalPrice,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      companyId,
+      createdBy: userId
+    });
+
+    if (insertLine.error) {
+      await deleteSalesOrder(client, salesOrderId);
+      return { data: null, error: insertLine.error };
+    }
+  }
+
+  const link = await client
+    .from("salesReturnOrder")
+    .update({
+      replacementSalesOrderId: salesOrderId,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", salesReturnOrderId)
+    .eq("companyId", companyId);
+  if (link.error) return { data: null, error: link.error };
+
+  return { data: { id: salesOrderId }, error: null };
+}
+
+/**
+ * Set an RMA line's disposition. "Use As Is" additionally releases the line's
+ * returned (On Hold) tracked entities to Available and records one
+ * `trackedActivity` (+ one input per entity) for the genealogy — the same
+ * shape the NCR disposition writes. Scrap/Rework are set via Issue escalation
+ * (the line's issue route), not through this function's callers' UI, but the
+ * write itself is shared: those dispositions have no entity side effects here.
+ */
+export async function setSalesReturnOrderLineDisposition(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    companyId,
+    disposition,
+    userId
+  }: {
+    lineId: string;
+    companyId: string;
+    disposition: Database["public"]["Enums"]["disposition"];
+    userId: string;
+  }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const line = await client
+    .from("salesReturnOrderLine")
+    .select(
+      "id, salesReturnOrderId, quantityReceived, salesReturnOrder(status)"
+    )
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error) return { data: null, error: line.error };
+
+  const orderStatus = (line.data.salesReturnOrder as { status: string } | null)
+    ?.status;
+  // Only Cancelled blocks. Completed must not: post-receipt auto-completes
+  // the RMA on full receipt, and disposition is a post-receipt decision —
+  // blocking Completed left entities stuck On Hold forever.
+  if (orderStatus === "Cancelled") {
+    return {
+      data: null,
+      error: {
+        message: `Cannot change disposition on a ${orderStatus} return order`
+      } as PostgrestError
+    };
+  }
+
+  if (
+    disposition !== "Pending" &&
+    Number(line.data.quantityReceived ?? 0) <= 0
+  ) {
+    return {
+      data: null,
+      error: {
+        message: "Cannot set a disposition before any quantity is received"
+      } as PostgrestError
+    };
+  }
+
+  if (disposition !== "Use As Is") {
+    const update = await client
+      .from("salesReturnOrderLine")
+      .update({
+        disposition,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+    if (update.error) return { data: null, error: update.error };
+    return { data: { id: lineId }, error: null };
+  }
+
+  const order = await client
+    .from("salesReturnOrder")
+    .select("id, salesReturnOrderId")
+    .eq("id", line.data.salesReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) return { data: null, error: order.error };
+
+  // The line's returned entities: expected serials/batches linked to the line
+  // that are still On Hold from receipt...
+  const linked = await client
+    .from("salesReturnOrderLineTrackedEntity")
+    .select("trackedEntityId, trackedEntity(status)")
+    .eq("salesReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (linked.error) return { data: null, error: linked.error };
+
+  const linkedOnHoldIds = (linked.data ?? [])
+    .filter((row) => row.trackedEntity?.status === "On Hold")
+    .map((row) => row.trackedEntityId);
+
+  // ...plus blind returns: On Hold entities created at receipt against this
+  // RMA line's receipt lines, which have no salesReturnOrderLineTrackedEntity
+  // row because the customer never declared them up front.
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("sourceDocumentId", line.data.salesReturnOrderId)
+    .eq("companyId", companyId);
+  if (receipts.error) return { data: null, error: receipts.error };
+
+  let blindOnHoldIds: string[] = [];
+  const receiptIds = (receipts.data ?? []).map((receipt) => receipt.id);
+  if (receiptIds.length > 0) {
+    const receiptLines = await client
+      .from("receiptLine")
+      .select("id")
+      .in("receiptId", receiptIds)
+      .eq("lineId", lineId)
+      .eq("companyId", companyId);
+    if (receiptLines.error) return { data: null, error: receiptLines.error };
+
+    const receiptLineIds = (receiptLines.data ?? []).map((row) => row.id);
+    if (receiptLineIds.length > 0) {
+      const blind = await client
+        .from("trackedEntity")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("status", "On Hold")
+        .in("attributes ->> Receipt Line", receiptLineIds);
+      if (blind.error) return { data: null, error: blind.error };
+      blindOnHoldIds = (blind.data ?? []).map((entity) => entity.id);
+    }
+  }
+
+  const entityIds = Array.from(
+    new Set([...linkedOnHoldIds, ...blindOnHoldIds])
+  );
+
+  const entities =
+    entityIds.length > 0
+      ? await client
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", entityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (entities.error) return { data: null, error: entities.error };
+
+  // One transaction: a partially-applied release (entities Available with no
+  // genealogy record, or a flipped entity on a still-Pending line) is a bug.
+  try {
+    await db.transaction().execute(async (trx) => {
+      // The gathering reads above ran unlocked — re-check the order under a
+      // row lock so a Complete/Cancel that landed in between cannot be
+      // dispositioned over.
+      const lockedOrder = await trx
+        .selectFrom("salesReturnOrder")
+        .select(["status"])
+        .where("id", "=", line.data.salesReturnOrderId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirstOrThrow();
+      // Mirrors the pre-check: only Cancelled blocks disposition.
+      if (lockedOrder.status === "Cancelled") {
+        throw new Error(
+          `Cannot change disposition on a ${lockedOrder.status} return order`
+        );
+      }
+
+      await trx
+        .updateTable("salesReturnOrderLine")
+        .set({
+          disposition,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if (entityIds.length === 0) return;
+
+      // Flip only entities STILL On Hold — the condition re-checks inside the
+      // write itself, so an entity consumed or shipped elsewhere between the
+      // unlocked read and this transaction is never forced back to Available.
+      const flipped = await trx
+        .updateTable("trackedEntity")
+        .set({ status: "Available" })
+        .where("id", "in", entityIds)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "On Hold")
+        .returning(["id"])
+        .execute();
+      const flippedIds = new Set(flipped.map((row) => row.id));
+      if (flippedIds.size === 0) return;
+
+      const activity = await trx
+        .insertInto("trackedActivity")
+        .values({
+          type: "Disposition",
+          sourceDocument: "Sales Return Order",
+          sourceDocumentId: order.data.id,
+          sourceDocumentReadableId: order.data.salesReturnOrderId,
+          attributes: JSON.stringify({
+            "Sales Return Order": order.data.id,
+            Disposition: disposition,
+            Employee: userId
+          }),
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+
+      await trx
+        .insertInto("trackedActivityInput")
+        .values(
+          (entities.data ?? [])
+            .filter((entity) => flippedIds.has(entity.id))
+            .map((entity) => ({
+              trackedActivityId: activity.id,
+              trackedEntityId: entity.id,
+              quantity: Number(entity.quantity ?? 1),
+              companyId,
+              createdBy: userId
+            }))
+        )
+        .execute();
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: (err as Error).message } as PostgrestError
+    };
+  }
+
+  return { data: { id: lineId }, error: null };
 }

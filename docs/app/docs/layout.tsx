@@ -47,7 +47,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
   { label: "Getting started", slugs: ["onboarding"] },
   {
     label: "Sales",
-    slugs: ["quotes", "pricing", "sales-orders", "customer-portal"],
+    slugs: ["quotes", "pricing", "sales-orders", "rmas", "customer-portal"],
   },
   {
     label: "Items & engineering",
@@ -63,7 +63,12 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
   { label: "Planning", slugs: ["planning", "forecast", "reordering"] },
   {
     label: "Purchasing",
-    slugs: ["purchase-orders", "supplier-quotes", "suppliers-and-customers"],
+    slugs: [
+      "purchase-orders",
+      "supplier-returns",
+      "supplier-quotes",
+      "suppliers-and-customers",
+    ],
   },
   {
     label: "Production",

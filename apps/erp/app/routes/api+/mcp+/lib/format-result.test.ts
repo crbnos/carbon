@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatMcpResult, MCP_MAX_ROWS, stripNulls } from "./format-result";
+import {
+  formatMcpResult,
+  MCP_MAX_ROWS,
+  pageMcpListResult,
+  stripNulls
+} from "./format-result";
 
 describe("stripNulls", () => {
   it("drops null and undefined object entries, recursively", () => {
@@ -49,5 +54,36 @@ describe("formatMcpResult", () => {
 
   it("omits the count line when everything was returned", () => {
     expect(formatMcpResult([{ id: "a" }], 1)).toBe('[{"id":"a"}]');
+  });
+});
+
+describe("pageMcpListResult", () => {
+  const rows = Array.from({ length: 10 }, (_, i) => ({ id: i }));
+
+  it("slices to the requested page and reports the full total", () => {
+    expect(pageMcpListResult(rows, { limit: 3, offset: 0 })).toEqual({
+      rows: [{ id: 0 }, { id: 1 }, { id: 2 }],
+      total: 10
+    });
+    expect(pageMcpListResult(rows, { limit: 3, offset: 9 })).toEqual({
+      rows: [{ id: 9 }],
+      total: 10
+    });
+  });
+
+  it("passes non-array data through untouched", () => {
+    expect(pageMcpListResult({ id: "a" }, { limit: 3, offset: 0 })).toEqual({
+      rows: { id: "a" }
+    });
+  });
+
+  it("composes with formatMcpResult's showing line", () => {
+    const { rows: page, total } = pageMcpListResult(rows, {
+      limit: 1,
+      offset: 0
+    });
+    expect(formatMcpResult(page, total)).toBe(
+      '[{"id":0}]\n(showing 1 of 10 rows)'
+    );
   });
 });
