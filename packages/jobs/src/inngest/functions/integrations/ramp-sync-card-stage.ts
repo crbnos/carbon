@@ -61,6 +61,26 @@ export async function stageOrResumeRampCardTransaction(
     `.execute(tx);
 
     const mapping = createMappingService(tx, args.companyId);
+    const headerValues = {
+      type: args.type,
+      cardAccountId: args.cardAccountId,
+      offsetAccountId: args.offsetAccountId,
+      merchantName: args.merchantName,
+      supplierId: args.supplierId,
+      cardHolderName: args.cardHolderName,
+      memo: args.memo,
+      transactionDate: args.transactionDate,
+      postingDate: args.postingDate,
+      currencyCode: args.currencyCode,
+      exchangeRate: args.exchangeRate,
+      amount: args.amount
+    };
+    const lineValues = args.lines.map((line, index) => ({
+      ...line,
+      companyId: args.companyId,
+      sequence: index,
+      createdBy: args.actorId
+    }));
     const mapped = await mapping.getByExternalId(
       "ramp",
       args.rampId,
@@ -72,9 +92,36 @@ export async function stageOrResumeRampCardTransaction(
         .select(["id", "cardTransactionId", "status"])
         .where("id", "=", mapped.entityId)
         .where("companyId", "=", args.companyId)
+        .forUpdate()
         .executeTakeFirst();
       if (!existing) {
         throw new Error("Mapped Ramp card transaction no longer exists");
+      }
+      // Coding belongs to Ramp until posting succeeds. Lock the same header
+      // as the posting transaction so corrections cannot change a Posted row.
+      if (existing.status === "Draft") {
+        await tx
+          .updateTable("cardTransaction")
+          .set({ ...headerValues, updatedBy: args.actorId })
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+        await tx
+          .deleteFrom("cardTransactionLine")
+          .where("cardTransactionId", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+        if (lineValues.length > 0) {
+          await tx
+            .insertInto("cardTransactionLine")
+            .values(
+              lineValues.map((line) => ({
+                ...line,
+                cardTransactionId: existing.id
+              }))
+            )
+            .execute();
+        }
       }
       return {
         cardTransactionId: existing.id,
@@ -99,20 +146,9 @@ export async function stageOrResumeRampCardTransaction(
       .insertInto("cardTransaction")
       .values({
         cardTransactionId: sequence,
-        type: args.type,
+        ...headerValues,
         status: "Draft",
         integration: "ramp",
-        cardAccountId: args.cardAccountId,
-        offsetAccountId: args.offsetAccountId,
-        merchantName: args.merchantName,
-        supplierId: args.supplierId,
-        cardHolderName: args.cardHolderName,
-        memo: args.memo,
-        transactionDate: args.transactionDate,
-        postingDate: args.postingDate,
-        currencyCode: args.currencyCode,
-        exchangeRate: args.exchangeRate,
-        amount: args.amount,
         companyId: args.companyId,
         createdBy: args.actorId
       })
@@ -123,15 +159,9 @@ export async function stageOrResumeRampCardTransaction(
       await tx
         .insertInto("cardTransactionLine")
         .values(
-          args.lines.map((line, index) => ({
-            cardTransactionId: header.id,
-            companyId: args.companyId,
-            accountId: line.accountId,
-            costCenterId: line.costCenterId,
-            description: line.description,
-            amount: line.amount,
-            sequence: index,
-            createdBy: args.actorId
+          lineValues.map((line) => ({
+            ...line,
+            cardTransactionId: header.id
           }))
         )
         .execute();

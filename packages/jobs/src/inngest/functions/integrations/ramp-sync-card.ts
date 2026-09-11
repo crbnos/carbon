@@ -309,7 +309,33 @@ export async function createAndPostTransaction(
   };
 }
 
-/** Resume Draft mappings and reconfirm only observably Posted documents. */
+/** Batch mapping/status lookup so only finalized documents bypass staging. */
+async function loadCardMappings(ctx: RampSyncContext, rampIds: string[]) {
+  if (rampIds.length === 0)
+    return new Map<
+      string,
+      {
+        entityId: string;
+        status: Database["public"]["Enums"]["cardTransactionStatus"] | null;
+      }
+    >();
+  const rows = await ctx.db
+    .selectFrom("externalIntegrationMapping as mapping")
+    .leftJoin("cardTransaction as card", (join) =>
+      join
+        .onRef("card.id", "=", "mapping.entityId")
+        .onRef("card.companyId", "=", "mapping.companyId")
+    )
+    .select(["mapping.externalId", "mapping.entityId", "card.status"])
+    .where("mapping.companyId", "=", ctx.companyId)
+    .where("mapping.integration", "=", "ramp")
+    .where("mapping.entityType", "=", "cardTransaction")
+    .where("mapping.externalId", "in", rampIds)
+    .execute();
+  return new Map(rows.map((row) => [row.externalId, row]));
+}
+
+/** Reconfirm only observably Posted documents; Drafts must be restaged first. */
 async function reconfirmMapped(
   ctx: RampSyncContext,
   mapped: Array<{ rampId: string; entityId: string }>
@@ -343,36 +369,7 @@ async function reconfirmMapped(
       });
       continue;
     }
-    if (row.status === "Draft") {
-      const posted = await ctx.client.functions.invoke(
-        "post-card-transaction",
-        {
-          body: {
-            type: "post",
-            cardTransactionId: row.id,
-            userId: "system",
-            companyId: ctx.companyId
-          }
-        }
-      );
-      const observed = await ctx.client
-        .from("cardTransaction")
-        .select("status")
-        .eq("id", row.id)
-        .eq("companyId", ctx.companyId)
-        .maybeSingle();
-      if (observed.error || observed.data?.status !== "Posted") {
-        failed.push({
-          id: item.rampId,
-          message:
-            posted.error instanceof Error
-              ? posted.error.message
-              : (observed.error?.message ??
-                "Mapped Ramp card transaction is not observably Posted")
-        });
-        continue;
-      }
-    } else if (row.status !== "Posted") {
+    if (row.status !== "Posted") {
       failed.push({
         id: item.rampId,
         message: `Mapped Ramp card transaction is ${row.status} in Carbon`
@@ -415,15 +412,15 @@ export async function syncRampCardTransactions(
       sync_status: "SYNC_READY",
       ...rampEntityQuery(entityId)
     })) {
+      const mappings = await loadCardMappings(
+        ctx,
+        page.map((tx) => tx.id)
+      );
       for (const tx of page as RampTransaction[]) {
         if (!isRampEntityInScope(entityId, tx.entity_id)) continue;
-        const existing = await ctx.mapping.getEntityId(
-          "ramp",
-          tx.id,
-          "cardTransaction"
-        );
-        if (existing) {
-          mapped.push({ rampId: tx.id, entityId: existing });
+        const existing = mappings.get(tx.id);
+        if (existing && existing.status !== "Draft") {
+          mapped.push({ rampId: tx.id, entityId: existing.entityId });
           continue;
         }
 
@@ -537,8 +534,10 @@ export async function syncRampCardTransactions(
           receiptIds: tx.receipts ?? [],
           getReceipt: (id) => ramp.getReceipt(id)
         });
-        if ("ok" in outcome) successful.push(outcome.ok);
-        else failed.push(outcome.fail);
+        if ("ok" in outcome) {
+          successful.push(outcome.ok);
+          if (existing) result.reconfirmed++;
+        } else failed.push(outcome.fail);
       }
     }
   } catch (familyError) {
@@ -570,8 +569,8 @@ export async function syncRampCardTransactions(
         : String(confirmError);
   }
 
-  result.created = successful.length - reconfirmed.successful.length;
-  result.reconfirmed = reconfirmed.successful.length;
+  result.reconfirmed += reconfirmed.successful.length;
+  result.created = successful.length - result.reconfirmed;
   result.failed += failed.length;
   return result;
 }
@@ -599,15 +598,15 @@ export async function syncRampTransfers(
     for await (const page of ramp.listTransfers({
       sync_status: "SYNC_READY"
     })) {
+      const mappings = await loadCardMappings(
+        ctx,
+        page.map((transfer) => transfer.id)
+      );
       for (const transfer of page as RampTransfer[]) {
         if (!isRampEntityInScope(entityId, transfer.entity_id)) continue;
-        const existing = await ctx.mapping.getEntityId(
-          "ramp",
-          transfer.id,
-          "cardTransaction"
-        );
-        if (existing) {
-          mapped.push({ rampId: transfer.id, entityId: existing });
+        const existing = mappings.get(transfer.id);
+        if (existing && existing.status !== "Draft") {
+          mapped.push({ rampId: transfer.id, entityId: existing.entityId });
           continue;
         }
 
@@ -652,8 +651,10 @@ export async function syncRampTransfers(
           receiptIds: [],
           getReceipt: (id) => ramp.getReceipt(id)
         });
-        if ("ok" in outcome) successful.push(outcome.ok);
-        else failed.push(outcome.fail);
+        if ("ok" in outcome) {
+          successful.push(outcome.ok);
+          if (existing) result.reconfirmed++;
+        } else failed.push(outcome.fail);
       }
     }
   } catch (familyError) {
@@ -685,8 +686,8 @@ export async function syncRampTransfers(
         : String(confirmError);
   }
 
-  result.created = successful.length - reconfirmed.successful.length;
-  result.reconfirmed = reconfirmed.successful.length;
+  result.reconfirmed += reconfirmed.successful.length;
+  result.created = successful.length - result.reconfirmed;
   result.failed += failed.length;
   return result;
 }
@@ -715,15 +716,15 @@ export async function syncRampCashbacks(
     for await (const page of ramp.listCashbacks({
       sync_status: "SYNC_READY"
     })) {
+      const mappings = await loadCardMappings(
+        ctx,
+        page.map((cashback) => cashback.id)
+      );
       for (const cashback of page as RampCashback[]) {
         if (!isRampEntityInScope(entityId, cashback.entity_id)) continue;
-        const existing = await ctx.mapping.getEntityId(
-          "ramp",
-          cashback.id,
-          "cardTransaction"
-        );
-        if (existing) {
-          mapped.push({ rampId: cashback.id, entityId: existing });
+        const existing = mappings.get(cashback.id);
+        if (existing && existing.status !== "Draft") {
+          mapped.push({ rampId: cashback.id, entityId: existing.entityId });
           continue;
         }
 
@@ -768,8 +769,10 @@ export async function syncRampCashbacks(
           receiptIds: [],
           getReceipt: (id) => ramp.getReceipt(id)
         });
-        if ("ok" in outcome) successful.push(outcome.ok);
-        else failed.push(outcome.fail);
+        if ("ok" in outcome) {
+          successful.push(outcome.ok);
+          if (existing) result.reconfirmed++;
+        } else failed.push(outcome.fail);
       }
     }
   } catch (familyError) {
@@ -801,8 +804,8 @@ export async function syncRampCashbacks(
         : String(confirmError);
   }
 
-  result.created = successful.length - reconfirmed.successful.length;
-  result.reconfirmed = reconfirmed.successful.length;
+  result.reconfirmed += reconfirmed.successful.length;
+  result.created = successful.length - result.reconfirmed;
   result.failed += failed.length;
   return result;
 }

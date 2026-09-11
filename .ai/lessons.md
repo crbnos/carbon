@@ -1614,3 +1614,13 @@ full-screen ERP route.
 **Rule:** Distinguish an empty successful lookup from a failed lookup. If data required for eligibility or payload construction cannot be read, fail the family before remote effects and keep its cursor unchanged so the same page replays after recovery.
 
 **Applies to:** Ramp outbound suppliers and classifications, and every cursor-based exporter with prerequisite database reads.
+
+## Idempotent mappings do not make mutable Drafts immutable
+
+**Context:** Ramp retries find an existing external mapping before staging and posting a card transaction.
+
+**Problem:** Treating every mapping as completed caused a corrected provider record to post the stale Carbon Draft left by an earlier failed attempt. The mapping proved identity, not finalization.
+
+**Rule:** Branch retry behavior on the mapped entity's lifecycle state. Refresh a mutable Draft and its lines atomically under the same lock used for posting; only a finalized, observably Posted entity may bypass source normalization and be reconfirmed unchanged.
+
+**Applies to:** Ramp card transactions, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
