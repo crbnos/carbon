@@ -1362,6 +1362,29 @@
       ]
     },
     {
+      "slug": "docs/reference/rmas",
+      "title": "RMAs",
+      "description": "Customer return authorizations: receive shipped goods, disposition them, issue credit, and create replacements.",
+      "keywords": ["rmas", "docs", "reference"],
+      "headings": [
+        "What an RMA controls",
+        "Header fields",
+        "Line fields",
+        "Status",
+        "Tracked items and disposition",
+        "Credit and replacement orders",
+        "Related",
+        "Troubleshooting",
+        "\"Cannot confirm a return order with no lines\"",
+        "\"Line …: cannot authorize … — only … remains returnable for the linked document line\"",
+        "\"Cannot reopen: quantity has already been received. Void the receipt first.\"",
+        "\"Cannot cancel: a receipt exists for this return order. Delete or void it first.\"",
+        "\"Cannot void: a credit memo exists for this return order. Void it first.\"",
+        "\"Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead.\"",
+        "\"Configure at least one Issue Type and a location to escalate this line to an Issue\""
+      ]
+    },
+    {
       "slug": "docs/reference/routings",
       "title": "Routings",
       "description": "The ordered operations and work centers a part flows through to get made.",
@@ -1544,6 +1567,30 @@
         "Why is the Finalize or Send button disabled?",
         "Why is the supplier's \"Submit Quote\" button disabled (on the public link)?",
         "The supplier's link shows \"expired or is no longer valid\""
+      ]
+    },
+    {
+      "slug": "docs/reference/supplier-returns",
+      "title": "Supplier returns",
+      "description": "Return received goods to a supplier, preserve serial or batch identity, claim credit, and create a replacement PO.",
+      "keywords": ["supplier", "returns", "docs", "reference"],
+      "headings": [
+        "What a Supplier Return controls",
+        "Header fields",
+        "Line fields",
+        "Status",
+        "Tracked items",
+        "Supplier credit and replacements",
+        "Related",
+        "Troubleshooting",
+        "\"Cannot confirm a return order with no lines\"",
+        "\"Line …: cannot authorize … — only … remains returnable for the linked document line\"",
+        "\"Cannot reopen: quantity has already shipped. Void the shipment first.\"",
+        "\"Cannot cancel: a shipment exists for this return order. Delete or void it first.\"",
+        "\"Cannot void: a debit memo exists for this return order. Void it first.\"",
+        "\"Shipping can only be closed or reopened on a confirmed return order\"",
+        "\"Could not resolve a single supplier — select one explicitly\"",
+        "\"Return order confirmed, but the PDF could not be generated\""
       ]
     },
     {

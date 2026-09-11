@@ -1,6 +1,7 @@
 import { ERP_URL } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
   createIssueSlackThread,
   createSlackWebClient,
@@ -101,8 +102,22 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const { companyId, metadata } = integration.data?.[0];
-    const slackToken = (metadata as any)?.access_token as string;
+    const { companyId, metadata, secretRef } = integration.data?.[0];
+    // Secret material (access_token) lives in Supabase Vault; merge it back so
+    // we read the same shape as before. Fails closed when the vault ref is gone.
+    let slackToken: string | undefined;
+    try {
+      const resolved = (await resolveIntegrationSecrets(
+        serviceRole,
+        companyId,
+        "slack",
+        metadata,
+        secretRef
+      )) as { access_token?: string };
+      slackToken = resolved.access_token;
+    } catch (error) {
+      logger.error("Failed to resolve Slack integration secret", { error });
+    }
 
     if (!slackToken) {
       logger.error("Slack token not found");

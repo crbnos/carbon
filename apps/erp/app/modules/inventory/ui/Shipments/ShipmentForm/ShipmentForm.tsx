@@ -25,7 +25,8 @@ import {
   LuShoppingCart,
   LuTicketX,
   LuTrash,
-  LuTruck
+  LuTruck,
+  LuUndo2
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import {
@@ -373,6 +374,24 @@ function SourceDocumentLink({
         <Button variant="secondary" leftIcon={<LuTruck />} asChild>
           <Link to={path.to.warehouseTransferDetails(sourceDocumentId!)}>
             <Trans>Warehouse Transfer</Trans>
+          </Link>
+        </Button>
+      );
+    case "Purchase Return Order":
+      if (!permissions.can("view", "purchasing")) return null;
+      return (
+        <Button variant="secondary" leftIcon={<LuUndo2 />} asChild>
+          <Link to={path.to.purchaseReturnOrderDetails(sourceDocumentId!)}>
+            <Trans>Purchase Return</Trans>
+          </Link>
+        </Button>
+      );
+    case "Sales Return Order":
+      if (!permissions.can("view", "sales")) return null;
+      return (
+        <Button variant="secondary" leftIcon={<LuUndo2 />} asChild>
+          <Link to={path.to.salesReturnOrderDetails(sourceDocumentId!)}>
+            <Trans>Sales Return</Trans>
           </Link>
         </Button>
       );

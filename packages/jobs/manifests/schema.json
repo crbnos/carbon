@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-11T04:47:43.434Z",
+  "exportedAt": "2026-09-11T04:57:28.339Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -40,6 +40,7 @@
       "columns": [
         "laborAbsorptionAccount",
         "updatedBy",
+        "salesReturnsAccount",
         "laborAndMachineVarianceAccount",
         "rawMaterialsAccount",
         "workInProgressAccount",
@@ -2037,6 +2038,21 @@
       ]
     },
     {
+      "name": "returnReason",
+      "rows": 0,
+      "columns": [
+        "name",
+        "updatedAt",
+        "customFields",
+        "id",
+        "createdAt",
+        "inventoryValueZero",
+        "companyId",
+        "updatedBy",
+        "createdBy"
+      ]
+    },
+    {
       "name": "scrapReason",
       "rows": 0,
       "columns": [
@@ -2611,6 +2627,7 @@
         "description",
         "planConfidence",
         "fastener",
+        "rootStepId",
         "maxValue",
         "title",
         "createdAt",
@@ -4204,6 +4221,35 @@
       ]
     },
     {
+      "name": "salesReturnOrder",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "createdBy",
+        "expirationDate",
+        "status",
+        "customerId",
+        "customerReference",
+        "customFields",
+        "exchangeRate",
+        "createdAt",
+        "customerLocationId",
+        "updatedAt",
+        "assignee",
+        "updatedBy",
+        "internalNotes",
+        "salesReturnOrderId",
+        "orderDate",
+        "externalNotes",
+        "replacementSalesOrderId",
+        "locationId",
+        "currencyCode",
+        "salesOrderId",
+        "id",
+        "customerContactId"
+      ]
+    },
+    {
       "name": "salesRfq",
       "rows": 0,
       "columns": [
@@ -5126,37 +5172,6 @@
       ]
     },
     {
-      "name": "memo",
-      "rows": 0,
-      "columns": [
-        "postedAt",
-        "memoId",
-        "reference",
-        "postingDate",
-        "exchangeRate",
-        "updatedAt",
-        "currencyCode",
-        "id",
-        "amount",
-        "supplierId",
-        "customFields",
-        "direction",
-        "notes",
-        "status",
-        "voidedAt",
-        "voidedBy",
-        "memoDate",
-        "updatedBy",
-        "createdAt",
-        "reasonAccount",
-        "companyId",
-        "customerId",
-        "postedBy",
-        "journalId",
-        "createdBy"
-      ]
-    },
-    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5342,6 +5357,39 @@
         "id",
         "sortOrder",
         "companyId"
+      ]
+    },
+    {
+      "name": "nonConformancePurchaseReturnOrderLine",
+      "rows": 0,
+      "columns": [
+        "updatedBy",
+        "id",
+        "createdBy",
+        "quantity",
+        "nonConformanceId",
+        "updatedAt",
+        "createdAt",
+        "purchaseReturnOrderReadableId",
+        "purchaseReturnOrderId",
+        "purchaseReturnOrderLineId",
+        "companyId"
+      ]
+    },
+    {
+      "name": "nonConformanceSalesReturnOrderLine",
+      "rows": 0,
+      "columns": [
+        "salesReturnOrderReadableId",
+        "createdAt",
+        "salesReturnOrderLineId",
+        "salesReturnOrderId",
+        "companyId",
+        "updatedAt",
+        "id",
+        "updatedBy",
+        "createdBy",
+        "nonConformanceId"
       ]
     },
     {
@@ -5557,6 +5605,20 @@
         "createdAt",
         "userId",
         "type"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrderLineTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "createdAt",
+        "purchaseReturnOrderLineId",
+        "updatedAt",
+        "trackedEntityId"
       ]
     },
     {
@@ -5923,29 +5985,61 @@
       ]
     },
     {
-      "name": "invoiceSettlement",
+      "name": "salesReturnOrderLine",
       "rows": 0,
       "columns": [
-        "targetExchangeRate",
+        "quantityReceived",
         "id",
-        "writeOffAmount",
-        "targetMemoId",
-        "appliedDate",
-        "paymentId",
-        "createdAt",
-        "sourceExchangeRate",
-        "discountAmount",
-        "targetPurchaseInvoiceId",
-        "sourceAmount",
-        "fxGainLossAmount",
-        "createdBy",
-        "appliedViaPaymentId",
-        "sourcePaymentId",
-        "updatedBy",
-        "targetSalesInvoiceId",
-        "memoId",
+        "restockFeePercent",
+        "salesOrderLineId",
+        "unitPrice",
+        "returnReasonId",
         "companyId",
-        "appliedAmount"
+        "salesInvoiceLineId",
+        "salesReturnOrderId",
+        "closedComplete",
+        "customFields",
+        "createdBy",
+        "quantity",
+        "updatedAt",
+        "shipmentLineId",
+        "unitOfMeasureCode",
+        "itemId",
+        "lineNumber",
+        "disposition",
+        "updatedBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "salesReturnOrderLineTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "trackedEntityId",
+        "updatedAt",
+        "salesReturnOrderLineId",
+        "createdAt",
+        "companyId",
+        "quantity",
+        "updatedBy",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "salesReturnOrderCreditLine",
+      "rows": 0,
+      "columns": [
+        "unitPrice",
+        "companyId",
+        "quantity",
+        "salesReturnOrderLineId",
+        "restockFee",
+        "updatedAt",
+        "id",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
+        "memoId"
       ]
     },
     {
@@ -6300,6 +6394,137 @@
         "updatedAt",
         "id",
         "paymentComplete"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrder",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "companyId",
+        "supplierId",
+        "status",
+        "expirationDate",
+        "customFields",
+        "supplierReference",
+        "supplierLocationId",
+        "createdAt",
+        "exchangeRate",
+        "updatedAt",
+        "updatedBy",
+        "internalNotes",
+        "assignee",
+        "orderDate",
+        "purchaseReturnOrderId",
+        "externalNotes",
+        "replacementPurchaseOrderId",
+        "locationId",
+        "currencyCode",
+        "id",
+        "purchaseOrderId",
+        "supplierContactId"
+      ]
+    },
+    {
+      "name": "memo",
+      "rows": 0,
+      "columns": [
+        "postedAt",
+        "memoId",
+        "reference",
+        "postingDate",
+        "exchangeRate",
+        "updatedAt",
+        "currencyCode",
+        "id",
+        "amount",
+        "purchaseReturnOrderId",
+        "supplierId",
+        "customFields",
+        "direction",
+        "notes",
+        "status",
+        "voidedAt",
+        "voidedBy",
+        "memoDate",
+        "updatedBy",
+        "createdAt",
+        "reasonAccount",
+        "companyId",
+        "customerId",
+        "postedBy",
+        "salesReturnOrderId",
+        "journalId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "invoiceSettlement",
+      "rows": 0,
+      "columns": [
+        "targetExchangeRate",
+        "id",
+        "writeOffAmount",
+        "targetMemoId",
+        "appliedDate",
+        "paymentId",
+        "createdAt",
+        "sourceExchangeRate",
+        "discountAmount",
+        "targetPurchaseInvoiceId",
+        "sourceAmount",
+        "fxGainLossAmount",
+        "createdBy",
+        "appliedViaPaymentId",
+        "sourcePaymentId",
+        "updatedBy",
+        "targetSalesInvoiceId",
+        "memoId",
+        "companyId",
+        "appliedAmount"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrderLine",
+      "rows": 0,
+      "columns": [
+        "purchaseInvoiceLineId",
+        "purchaseReturnOrderId",
+        "createdBy",
+        "returnReasonId",
+        "unitPrice",
+        "purchaseOrderLineId",
+        "restockFeePercent",
+        "id",
+        "quantityShipped",
+        "updatedAt",
+        "updatedBy",
+        "lineNumber",
+        "closedComplete",
+        "itemId",
+        "unitOfMeasureCode",
+        "quantity",
+        "receiptLineId",
+        "customFields",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrderCreditLine",
+      "rows": 0,
+      "columns": [
+        "unitPrice",
+        "purchaseReturnOrderLineId",
+        "quantity",
+        "companyId",
+        "updatedAt",
+        "createdAt",
+        "id",
+        "restockFee",
+        "memoId",
+        "updatedBy",
+        "createdBy"
       ]
     },
     {

@@ -94,6 +94,13 @@ export const SALES_STATUS_COLOR_MAP = {
   Completed: "green"
 } as const satisfies Record<string, StatusColor>;
 
+export const SALES_RETURN_ORDER_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  "To Receive": "blue",
+  Completed: "green",
+  Cancelled: "red"
+} as const satisfies Record<string, StatusColor>;
+
 export const PURCHASE_ORDER_STATUS_COLOR_MAP = {
   Draft: "gray",
   Planned: "yellow",
@@ -105,6 +112,13 @@ export const PURCHASE_ORDER_STATUS_COLOR_MAP = {
   Completed: "green",
   Closed: "red",
   Rejected: "red"
+} as const satisfies Record<string, StatusColor>;
+
+export const PURCHASE_RETURN_ORDER_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  "To Ship": "blue",
+  Completed: "green",
+  Cancelled: "red"
 } as const satisfies Record<string, StatusColor>;
 
 export const RECEIPT_STATUS_COLOR_MAP = {
@@ -346,8 +360,10 @@ export const statusColorMaps = {
   jobOperationBatch: BATCH_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,
   salesOrder: SALES_STATUS_COLOR_MAP,
+  salesReturnOrder: SALES_RETURN_ORDER_STATUS_COLOR_MAP,
   salesRfq: SALES_RFQ_STATUS_COLOR_MAP,
   purchaseOrder: PURCHASE_ORDER_STATUS_COLOR_MAP,
+  purchaseReturnOrder: PURCHASE_RETURN_ORDER_STATUS_COLOR_MAP,
   purchasingRfq: PURCHASING_RFQ_STATUS_COLOR_MAP,
   supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP,
   receipt: RECEIPT_STATUS_COLOR_MAP,
