@@ -133,6 +133,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const orderCurrency = salesOrder.data?.currencyCode;
 
     for (const invoice of invoices.data ?? []) {
+      // A voided invoice was never billed — it must not inflate the invoiced
+      // total, nor contribute any payments to the paid total.
+      if (invoice.status === "Voided") {
+        continue;
+      }
+
       const invoiceTotal = invoice.invoiceTotal ?? 0;
       const invoiceCurrency = invoice.currencyCode;
 
@@ -147,9 +153,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
 
       invoicedAmount += invoiceTotal;
-      if (invoice.status === "Paid") {
-        paidAmount += invoiceTotal;
-      }
+
+      // Paid = the settled portion in document currency (invoiceTotal - balance
+      // from the salesInvoices view, which only counts posted payments/memos).
+      // A fully-Paid invoice reports balance 0, a partially-paid one reports its
+      // outstanding remainder — so partial payments are counted, not ignored.
+      const balance = invoice.balance ?? 0;
+      paidAmount += invoiceTotal - balance;
     }
   }
 

@@ -1285,7 +1285,7 @@
     {"name":"sales_getSalesOrderCustomerDetails","classification":"READ","paramCount":1,"schema":"d160a49d6787","response":"141326b70f84","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesOrderCustomers","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"fc7a0345fc53","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesOrderInvoiceLines","classification":"READ","paramCount":1,"schema":"d160a49d6787","response":"1ff852ae9154","injectAuth":"companyId","permission":"sales:view","paginates":false},
-    {"name":"sales_getSalesOrderInvoicesByIds","classification":"READ","paramCount":1,"schema":"d51ae9969843","response":"b06c9fe383e6","injectAuth":"companyId","permission":"sales:view","paginates":false},
+    {"name":"sales_getSalesOrderInvoicesByIds","classification":"READ","paramCount":1,"schema":"d51ae9969843","response":"7b2008a52299","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesOrderLine","classification":"READ","paramCount":1,"schema":"58e3c9762923","response":"680c6abfc2c8","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesOrderLines","classification":"READ","paramCount":1,"schema":"d160a49d6787","response":"12480eaf2ca4","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getSalesOrderLinesByItemId","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"12480eaf2ca4","injectAuth":"companyId","permission":"sales:view","paginates":false},
