@@ -88,6 +88,9 @@ function DispositionQuantityInput({
   // when the server rejects the change.
   const pending = fetcher.formData?.get("value");
   const value = typeof pending === "string" ? Number(pending) : quantity;
+  // One save at a time: the next edit waits for the previous save and its
+  // revalidation, so it carries the fresh quantity as expectedQuantity.
+  const isSaving = fetcher.state !== "idle";
 
   return (
     <NumberField
@@ -95,8 +98,10 @@ function DispositionQuantityInput({
       value={value}
       minValue={0}
       formatOptions={INPUT_FORMAT.quantity}
+      isReadOnly={isSaving}
       onChange={(next) => {
         if (
+          isSaving ||
           !Number.isFinite(next) ||
           next < 0 ||
           Math.abs(next - quantity) <= EPSILON
@@ -107,6 +112,7 @@ function DispositionQuantityInput({
         formData.append("id", nonConformanceItemId);
         formData.append("field", "quantity");
         formData.append("value", String(next));
+        formData.append("expectedQuantity", String(quantity));
         fetcher.submit(formData, {
           method: "post",
           action: path.to.updateIssueItem

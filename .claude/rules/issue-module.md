@@ -54,7 +54,10 @@ in the migrations — **newest wins**; core tables created in
   (`field: "quantity"`, user-scoped client so the audit log records the actor), which
   refuses rows with entity links (their quantity is the link sum) and any NCR with a
   `nonConformanceInspection` link (the reject already wrote off the lot, and
-  `closeIssue` restores `row.quantity` on Use As Is / Rework). **Split** works for a non-tracked row as a pure quantity split
+  `closeIssue` restores `row.quantity` on Use As Is / Rework). The write is a
+  compare-and-set on `expectedQuantity` (the quantity the client last saw), so a stale
+  save, or one racing a tracked-entity link (link writers also change the row
+  quantity), matches no row and is refused. **Split** works for a non-tracked row as a pure quantity split
   (`splitIssueItem` creates a new `Pending` row for the split-off quantity and shrinks
   the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
   rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.

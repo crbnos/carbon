@@ -74,6 +74,18 @@ export async function action({ request }: ActionFunctionArgs) {
           data: null
         };
       }
+      const expected = formData.get("expectedQuantity");
+      const expectedQuantity = Number(expected);
+      if (
+        typeof expected !== "string" ||
+        expected.trim() === "" ||
+        !Number.isFinite(expectedQuantity)
+      ) {
+        return {
+          error: { message: "Invalid expected quantity" },
+          data: null
+        };
+      }
       if (parent.error || !parent.data) {
         return {
           error: { message: "Issue item not found" },
@@ -123,7 +135,11 @@ export async function action({ request }: ActionFunctionArgs) {
         };
       }
 
-      return await client
+      // Compare-and-set on the quantity the client last saw. An older request
+      // that finishes after a newer one matches no row instead of overwriting
+      // it, and so does an edit that races a tracked-entity link — every link
+      // writer also changes the row quantity.
+      const updated = await client
         .from("nonConformanceItem")
         .update({
           quantity: round(quantity),
@@ -131,7 +147,22 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedAt: datetime.timestamp()
         })
         .eq("id", id)
-        .eq("companyId", companyId);
+        .eq("companyId", companyId)
+        .eq("quantity", expectedQuantity)
+        .select("id");
+      if (updated.error) {
+        return { error: updated.error, data: null };
+      }
+      if (!updated.data || updated.data.length === 0) {
+        return {
+          error: {
+            message:
+              "This quantity changed since the page loaded. Refresh and try again."
+          },
+          data: null
+        };
+      }
+      return updated;
     }
     default:
       return {
