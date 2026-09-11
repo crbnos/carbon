@@ -70,7 +70,7 @@ You don't create passwords for people. You **invite** them by email, and they se
 
 Because an invite is a real record, an employee has a clear **status** derived from it and their account (the `employees` view, `packages/database/supabase/migrations/20260529160000_employees-view-status.sql:16`):
 
-<StatusFlow>
+<StatusFlow entity="employeeAccount">
   <Status name="Invited">The invite has been sent but not yet accepted. The person can't sign in until they follow the link.</Status>
   <Status name="Active" accent>The invite was accepted and the account is live. This is the normal working state.</Status>
   <Status name="Inactive" terminal>The account has been deactivated, or the invite was revoked before acceptance. No access.</Status>

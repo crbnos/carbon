@@ -1,40 +1,20 @@
 /**
- * generate-agent-kb — build the in-app agent's read-only knowledge base from the docs site.
+ * Shared "docs as plain markdown" toolkit — the single definition of how a Carbon
+ * MDX page becomes component-free markdown a machine can read.
  *
- * The Fumadocs MDX under `docs/content/**` is the source of truth. The in-app agent
- * (apps/erp `modules/agent`) reads a flattened, component-stripped copy of every page from
- * `apps/erp/app/modules/agent/kb/<slug>.md`, plus a `manifest.json` keyword index that
- * `search_docs` scans. This script regenerates both and prunes stale files.
+ * Two consumers, one stripper (keep it that way):
+ *  - `docs/scripts/generate-agent-kb.ts` — the in-app agent's committed KB corpus.
+ *  - `docs/app/llms.txt` + `docs/app/llms-full.txt` — the public index/corpus for
+ *    AI crawlers and assistants (llmstxt.org convention).
  *
- * Committed output ships inside the erp Docker image, so the agent reads it with a bundled
- * import / fs read at runtime (no docs-app dependency). Mirrors the `generate-mcp.ts` pattern.
- *
- * Run it manually after editing docs/content, and commit the regenerated kb/ alongside
- * the docs change — same model as filling .po files before a commit. The check-and-commit
- * skill runs it automatically when docs/content or this script is in the change set.
- * See .ai/rules/agent-knowledge-base.md.
- *
- * Run:  pnpm run generate:agent-kb
+ * Everything here is pure (fs helpers take explicit paths); no app imports, so the
+ * repo-root tsx script can import it directly.
  */
 import fs from "node:fs";
 import path from "node:path";
 
-// Run from repo root via `pnpm run generate:agent-kb`.
-const ROOT = process.cwd();
-const CONTENT_DIR = path.join(ROOT, "docs/content");
-const KB_DIR = path.join(ROOT, "apps/erp/app/modules/agent/kb");
-const MANIFEST_PATH = path.join(KB_DIR, "manifest.json");
-
-type ManifestEntry = {
-  slug: string;
-  title: string;
-  description: string;
-  keywords: string[];
-  headings: string[];
-};
-
 /** Recursively collect every .mdx file under a directory. */
-function walkMdx(dir: string): string[] {
+export function walkMdx(dir: string): string[] {
   const out: string[] = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
@@ -45,14 +25,14 @@ function walkMdx(dir: string): string[] {
 }
 
 /** Split `---\n...\n---\n body` into raw frontmatter block + body. */
-function splitFrontmatter(raw: string): { fm: string; body: string } {
+export function splitFrontmatter(raw: string): { fm: string; body: string } {
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!m) return { fm: "", body: raw };
   return { fm: m[1], body: m[2] };
 }
 
 /** Read a single-line `key: value` (value may be quoted) from a frontmatter block. */
-function fmValue(fm: string, key: string): string {
+export function fmValue(fm: string, key: string): string {
   const line = fm.split("\n").find((l) => l.trimStart().startsWith(`${key}:`));
   if (!line) return "";
   let v = line.slice(line.indexOf(":") + 1).trim();
@@ -72,7 +52,7 @@ function fmValue(fm: string, key: string): string {
  * has a single definition — code samples containing `<Generic>` or `## comment` lines
  * are never mangled or mistaken for headings.
  */
-function splitByCodeFence(md: string): { code: boolean; text: string }[] {
+export function splitByCodeFence(md: string): { code: boolean; text: string }[] {
   const segments: { code: boolean; text: string }[] = [];
   let buf: string[] = [];
   let inCode = false;
@@ -102,7 +82,7 @@ function splitByCodeFence(md: string): { code: boolean; text: string }[] {
 }
 
 /** Strip MDX components down to plain markdown/text the LLM can read. */
-function stripComponents(body: string): string {
+export function stripComponents(body: string): string {
   // Only transform prose; leave fenced code blocks byte-for-byte intact.
   const out = splitByCodeFence(body)
     .map((seg) => (seg.code ? seg.text : stripComponentsFromProse(seg.text)))
@@ -148,7 +128,8 @@ function stripComponentsFromProse(body: string): string {
   out = out.replace(/<Figure\b[^>]*>[\s\S]*?<\/Figure>/g, "");
 
   // <AgentContext> is agent-only: invisible on the site (renders null), but its inner
-  // content is meant FOR this KB. Unwrap it — keep the content, drop the tags.
+  // content is meant FOR the machine-readable corpora. Unwrap it — keep the content,
+  // drop the tags.
   out = out.replace(/<\/?AgentContext\b[^>]*>/g, "");
 
   // Unwrap container components — keep the inner content, drop the tags.
@@ -169,8 +150,8 @@ function stripComponentsFromProse(body: string): string {
   return out;
 }
 
-/** Collect `##`/`###` heading texts for the search manifest (ignoring code blocks). */
-function headings(body: string): string[] {
+/** Collect `##`/`###` heading texts (ignoring code blocks). */
+export function headings(body: string): string[] {
   return splitByCodeFence(body)
     .filter((seg) => !seg.code)
     .flatMap((seg) => seg.text.split("\n"))
@@ -179,7 +160,7 @@ function headings(body: string): string[] {
 }
 
 /** Derive keywords from the title + slug segments (docs frontmatter has none). */
-function keywords(title: string, slug: string): string[] {
+export function keywords(title: string, slug: string): string[] {
   const words = `${title} ${slug.replace(/[/-]/g, " ")}`
     .toLowerCase()
     .split(/\s+/)
@@ -187,103 +168,34 @@ function keywords(title: string, slug: string): string[] {
   return Array.from(new Set(words));
 }
 
-function main() {
-  const files = walkMdx(CONTENT_DIR).sort();
-  const written = new Set<string>();
-  const manifest: ManifestEntry[] = [];
+export type CorpusPage = {
+  /** Content-relative slug, e.g. `docs/reference/quotes` or `guides/order`. */
+  slug: string;
+  title: string;
+  description: string;
+  /** Component-stripped markdown body. */
+  markdown: string;
+  headings: string[];
+};
 
-  for (const file of files) {
-    const raw = fs.readFileSync(file, "utf8");
-    const slug = path
-      .relative(CONTENT_DIR, file)
-      .replace(/\.mdx$/, "")
-      .split(path.sep)
-      .join("/");
-
-    const { fm, body } = splitFrontmatter(raw);
-    const title = fmValue(fm, "title") || slug;
-    const description = fmValue(fm, "description");
-    const clean = stripComponents(body);
-
-    const md = `# ${title}\n\n${description ? `> ${description}\n\n` : ""}${clean}\n`;
-    const outPath = path.join(KB_DIR, `${slug}.md`);
-    fs.mkdirSync(path.dirname(outPath), { recursive: true });
-    fs.writeFileSync(outPath, md, "utf8");
-    written.add(path.resolve(outPath));
-
-    manifest.push({
-      slug,
-      title,
-      description,
-      keywords: keywords(title, slug),
-      headings: headings(body),
+/** Read every page under a content dir as stripped markdown, sorted by slug. */
+export function readCorpus(contentDir: string): CorpusPage[] {
+  return walkMdx(contentDir)
+    .sort()
+    .map((file) => {
+      const raw = fs.readFileSync(file, "utf8");
+      const slug = path
+        .relative(contentDir, file)
+        .replace(/\.mdx$/, "")
+        .split(path.sep)
+        .join("/");
+      const { fm, body } = splitFrontmatter(raw);
+      return {
+        slug,
+        title: fmValue(fm, "title") || slug,
+        description: fmValue(fm, "description"),
+        markdown: stripComponents(body),
+        headings: headings(body),
+      };
     });
-  }
-
-  manifest.sort((a, b) => a.slug.localeCompare(b.slug));
-  fs.mkdirSync(KB_DIR, { recursive: true });
-  fs.writeFileSync(
-    MANIFEST_PATH,
-    `${JSON.stringify(
-      {
-        _comment:
-          "GENERATED by scripts/generate-agent-kb.ts from docs/content. Do not hand-edit — run `pnpm run generate:agent-kb`.",
-        docs: manifest,
-      },
-      null,
-      2
-    )}\n`,
-    "utf8"
-  );
-
-  // Drop a README so nobody hand-edits this folder. Added to `written` so the
-  // prune step below doesn't delete it.
-  const readmePath = path.join(KB_DIR, "README.md");
-  fs.writeFileSync(
-    readmePath,
-    `# Agent knowledge base (auto-generated — do not edit)
-
-Every file in this folder is generated from the docs site (\`docs/content/**\`) by
-\`scripts/generate-agent-kb.ts\`. It is the read-only corpus the in-app agent searches
-(\`search_docs\`) and reads (\`read_doc\`), bundled into the erp image so it ships with the app.
-
-**Do not edit these files by hand — your changes will be overwritten.**
-
-To update the content, edit the source docs under \`docs/content/\` and regenerate, then
-commit the result **in the same commit** as the docs change (same model as filling \`.po\`
-translations before committing):
-
-\`\`\`bash
-pnpm run generate:agent-kb
-\`\`\`
-
-The check-and-commit skill runs this automatically when \`docs/content/**\` or the generator
-is in the change set. See \`.ai/rules/agent-knowledge-base.md\`.
-`,
-    "utf8"
-  );
-  written.add(path.resolve(readmePath));
-
-  // Prune stale generated .md (source docs removed).
-  const pruned: string[] = [];
-  const walkKb = (dir: string) => {
-    if (!fs.existsSync(dir)) return;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const p = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walkKb(p);
-        if (fs.readdirSync(p).length === 0) fs.rmdirSync(p);
-      } else if (entry.name.endsWith(".md") && !written.has(path.resolve(p))) {
-        fs.rmSync(p);
-        pruned.push(path.relative(KB_DIR, p));
-      }
-    }
-  };
-  walkKb(KB_DIR);
-
-  console.log(`Wrote ${manifest.length} docs -> ${path.relative(ROOT, KB_DIR)}`);
-  console.log(`Manifest: ${path.relative(ROOT, MANIFEST_PATH)}`);
-  if (pruned.length) console.log(`Pruned ${pruned.length} stale: ${pruned.join(", ")}`);
 }
-
-main();

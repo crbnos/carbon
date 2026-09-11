@@ -1262,7 +1262,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "Добавить параметр (в обозревателе процедур)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати для прямой печати этикеток."
@@ -1277,7 +1277,7 @@ msgid "Add a step"
 msgstr "Добавить шаг"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "Добавить шаг или вопрос (в обозревателях процедур и обучения)"
 
 msgid "Add Ability"
 msgstr "Добавить способность"
@@ -1895,11 +1895,17 @@ msgstr "Применено"
 msgid "Applied amount for {0}"
 msgstr "Примененная сумма для {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
+
 msgid "Applied Date"
 msgstr "Дата применения"
 
 msgid "Applied To"
 msgstr "Применено к"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "Примененные суммы, скидки и списания указаны в базовой валюте организации ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Применяется к"
@@ -2444,9 +2450,11 @@ msgstr "Вы уверены, что хотите отправить пригла
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Вы уверены, что хотите отправить приглашение этому пользователю?"
 
-#. placeholder {0}: initialValues.memoId
-msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
-msgstr ""
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Вы уверены, что хотите аннулировать эту служебную записку? Это развернет ее бухгалтерские записи и применения. Это невозможно отменить."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Вы уверены, что хотите аннулировать этот платеж? Это развернет его бухгалтерские записи и применения. Это невозможно отменить."
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Вы уверены, что хотите аннулировать этот счет-фактуру полученный? Это действие отменит все финансовые операции и не может быть отменено."
@@ -3528,9 +3536,6 @@ msgstr "Очистить поисковый запрос"
 msgid "Clear selection"
 msgstr "Очистить выделение"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Погасите этот счет-фактуру кредитами и денежными средствами стороны. Кредиты применяются напрямую — проведение не требуется."
-
 msgid "Clear value"
 msgstr "Очистить значение"
 
@@ -4364,7 +4369,7 @@ msgstr "Не удалось прочитать документ: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "Не удалось запустить {0}: {1}"
 
 msgid "Could not save"
 msgstr "Не удалось сохранить"
@@ -4713,6 +4718,9 @@ msgstr "Кредитовый счет при поглощении накладн
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Счета кредита, используемые когда производственные затраты поглощаются незавершенным производством"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Суммы зачётов указаны в базовой валюте организации ({currency}). Зачёты учитываются после проведения этого платежа."
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
@@ -8722,6 +8730,9 @@ msgstr "инв"
 msgid "Inv Rate"
 msgstr "Курс счета"
 
+msgid "Invalid applications"
+msgstr "Недействительные применения"
+
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
 
@@ -9117,7 +9128,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Операции, датированные в эту дату или ранее, считаются заблокированными. Объединены с датой блокировки, указанной поставщиком, если обе существуют."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "Перейти к разделу на страницах деталей (те же модификаторы + буква раздела)"
 
 msgid "Just one"
 msgstr "Только один"
@@ -11058,6 +11069,9 @@ msgstr "Некого назначать"
 msgid "No open invoices"
 msgstr "Нет открытых счетов-фактур"
 
+msgid "No open memos"
+msgstr "Нет открытых служебных записок"
+
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
@@ -11575,11 +11589,11 @@ msgstr "Один набор цифр"
 msgid "One shared setup instead of one per operation"
 msgstr "Одна общая наладка вместо наладки на каждую операцию"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "Одна общая наладка плюс наибольший труд и машинное время — все детали выполняются вместе"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "Одна общая наладка плюс время обработки каждого изделия — большее значение из его труда и станка — в последовательности"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "Одна общая наладка плюс время обработки самого длительного изделия — большее значение из его труда и станка — так как изделия обрабатываются вместе"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
@@ -11764,6 +11778,9 @@ msgstr "операция"
 
 msgid "Operation"
 msgstr "Операция"
+
+msgid "Operation batch"
+msgstr "Серия операций"
 
 msgid "Operation lead time"
 msgstr "Срок поставки операции"
@@ -12187,6 +12204,9 @@ msgstr "Применение платежей"
 msgid "Payment Date"
 msgstr "Дата платежа"
 
+msgid "Payment from Customer"
+msgstr "Платеж от Покупателя"
+
 msgid "Payment ID"
 msgstr "ID платежа"
 
@@ -12208,11 +12228,14 @@ msgstr "Условия оплаты"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Условия оплаты, такие как Net 30 или оплата при получении"
 
+msgid "Payment to Supplier"
+msgstr "Платеж Поставщику"
+
 msgid "Payments"
 msgstr "Платежи"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Платежи и кредиты, применные к этому счету-фактуре. Нажмите на строку, чтобы открыть документ-основание."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Платежи и зачёты по этому счету-фактуре. Зачтённые суммы и курсовые разницы указаны в базовой валюте организации. Нажмите строку, чтобы открыть документ-основание."
 
 msgid "PDF"
 msgstr "PDF"
@@ -13520,8 +13543,8 @@ msgstr "Записать"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Зарегистрируйте кредит-ноту или дебет-ноту для покупателя или поставщика. Применения к конкретным счетам-фактурам добавляются после создания документа."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Зарегистрируйте денежные средства, полученные от покупателя (Поступление) или выплаченные поставщику (Выплата). Применения к конкретным счетам-фактурам добавляются после создания платежа."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Зафиксируйте платеж от покупателя, платеж поставщику или возврат. Применения на счета-фактуры или служебные записки добавляются после создания платежа."
 
 msgid "Record deleted"
 msgstr "Запись удалена"
@@ -13564,6 +13587,15 @@ msgstr "Обновить"
 
 msgid "Refresh exchange rate"
 msgstr "Обновить валютный курс"
+
+msgid "Refund from Supplier"
+msgstr "Возврат от Поставщика"
+
+msgid "Refund memos"
+msgstr "Служебные записки о возврате"
+
+msgid "Refund to Customer"
+msgstr "Возврат Покупателю"
 
 msgid "Regenerate"
 msgstr "Пересчитать"
@@ -13624,7 +13656,7 @@ msgstr "Запустить в работу"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "Запустить {0} серий"
 
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
@@ -13646,7 +13678,7 @@ msgstr "Выпущено"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "Запущено {0} серий"
 
 msgid "Released date"
 msgstr "Дата выпуска"
@@ -14124,8 +14156,14 @@ msgstr "Ред. {revision}"
 msgid "Revenue"
 msgstr "Выручка"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "Счет выручки от доставки, начисляемой покупателям"
+
 msgid "Revenue and expenses over a period"
 msgstr "Выручка и расходы за период"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Счет учета выручки, кредитуемый за доставку, взимаемую с покупателей, проводимый отдельной строкой; должен отличаться от счета Продажи по умолчанию."
 
 msgid "Reverse all inventory adjustments"
 msgstr "Отменить все корректировки запасов"
@@ -15050,9 +15088,6 @@ msgstr "Выберите поверхности"
 msgid "Select the groups that should complete this training"
 msgstr "Выберите группы, которые должны пройти это обучение"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "Выберите счета-фактуры, которые погашает этот платеж. Скидка и списание указаны в валюте счета-фактуры."
-
 msgid "Select value"
 msgstr "Выберите значение"
 
@@ -15443,6 +15478,12 @@ msgstr "Способы доставки"
 
 msgid "Shipping Notes"
 msgstr "Примечания к доставке"
+
+msgid "Shipping Revenue"
+msgstr "Выручка от доставки"
+
+msgid "Shipping Revenue (default)"
+msgstr "Выручка от доставки (по умолчанию)"
 
 msgid "Shipping Supplier"
 msgstr "Поставщик доставки"
@@ -16507,6 +16548,9 @@ msgstr "Процент налога"
 
 msgid "Tax Residual Value %"
 msgstr "Налоговая ликвидационная стоимость %"
+
+msgid "Tax Status"
+msgstr "Статус налога"
 
 msgid "Tax Useful Life (default)"
 msgstr "Налоговый срок полезного использования (по умолчанию)"
@@ -18323,6 +18367,9 @@ msgstr "Восстановить из списания {label}"
 msgid "Unshipped orders"
 msgstr "Невыполненные заказы"
 
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Неначатые операции заказа по одному группируемому процессу, собранные для совместного выполнения в рабочем центре, с общей наладкой и единым таймером, время которого распределяется по каждому заказу пропорционально количеству."
+
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"
 
@@ -18896,8 +18943,9 @@ msgid "Void"
 msgstr "Аннулировать"
 
 #. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
-msgstr ""
+msgstr "Аннулировать {0}"
 
 msgid "Void Invoice"
 msgstr "Аннулировать счет-фактуру"

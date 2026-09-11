@@ -2,13 +2,18 @@ import { ValidatedForm } from "@carbon/form";
 import type { TermId } from "@carbon/glossary";
 import { Badge, Button, HStack, LabelWithHelp } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { defaultAccountValidator } from "../../accounting.models";
 import type { AccountListItem } from "../../types";
+
+const formValidator = defaultAccountValidator.extend({
+  salesShippingRevenueAccount:
+    defaultAccountValidator.shape.salesShippingRevenueAccount.unwrap()
+});
 
 type BadgeType = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
 
@@ -53,6 +58,7 @@ const AccountDefaultsForm = ({
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
+  const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
 
   const isDisabled = !permissions.can("update", "accounting");
 
@@ -279,6 +285,13 @@ const AccountDefaultsForm = ({
             description: t`Default account for posting sales revenue from invoices`,
             badgeType: "Revenue",
             termId: "account-default-sales"
+          },
+          {
+            name: "salesShippingRevenueAccount",
+            label: t`Shipping Revenue`,
+            description: t`Revenue account for shipping charged to customers`,
+            badgeType: "Revenue",
+            termId: "account-default-sales-shipping-revenue"
           },
           {
             name: "salesDiscountAccount",
@@ -515,7 +528,7 @@ const AccountDefaultsForm = ({
 
   return (
     <ValidatedForm
-      validator={defaultAccountValidator}
+      validator={formValidator}
       method="post"
       action={path.to.accountingDefaults}
       defaultValues={initialValues}
@@ -587,7 +600,23 @@ const AccountDefaultsForm = ({
                       <div className="flex-shrink-0 w-64">
                         <Combobox
                           name={field.name}
-                          options={accountOptions[field.badgeType]}
+                          options={
+                            field.name === "salesShippingRevenueAccount"
+                              ? accountOptions.Revenue.filter(
+                                  (account) => account.value !== salesAccount
+                                )
+                              : accountOptions[field.badgeType]
+                          }
+                          onChange={
+                            field.name === "salesAccount"
+                              ? (account) =>
+                                  setSalesAccount(account?.value ?? "")
+                              : undefined
+                          }
+                          isRequired={
+                            field.name === "salesShippingRevenueAccount" ||
+                            undefined
+                          }
                           size="sm"
                         />
                       </div>

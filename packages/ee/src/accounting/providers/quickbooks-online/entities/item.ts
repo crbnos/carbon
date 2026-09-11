@@ -1,7 +1,10 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import type { Qbo, QboCreatePayload } from "../models";
+import { isQboDuplicateNameError } from "../provider";
 import {
   escapeQboQueryValue,
   loadQboAccountRefsById,
@@ -143,6 +146,121 @@ export function mapItemToQboItem(args: {
 }
 
 export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
+  private shippingItems = new Map<string, Promise<string>>();
+
+  public async ensureShippingItem(args: {
+    shippingAccountId: string;
+  }): Promise<string> {
+    let pending = this.shippingItems.get(args.shippingAccountId);
+    if (!pending) {
+      pending = this.resolveShippingItem(args.shippingAccountId).catch(
+        (error) => {
+          this.shippingItems.delete(args.shippingAccountId);
+          throw error;
+        }
+      );
+      this.shippingItems.set(args.shippingAccountId, pending);
+    }
+    return pending;
+  }
+
+  private async resolveShippingItem(
+    shippingAccountId: string
+  ): Promise<string> {
+    const incomeRef = (await this.getAccountRefsById()).get(shippingAccountId);
+    const fail = (reason: string): never => {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message: `Cannot provision Shipping Revenue item: ${reason}`,
+        metadata: { accountId: shippingAccountId, kind: "shipping" }
+      });
+    };
+    if (!incomeRef) fail("the shipping account has no QuickBooks mapping");
+    const name = `Carbon Shipping ${shippingAccountId}`;
+    if (name.length > QBO_NAME_MAX_LENGTH)
+      throw qboNameTooLongError({ entityLabel: "shipping item", name });
+    const payload: QboCreatePayload<Qbo.Item> = {
+      Name: name,
+      Description: "Customer shipping charges",
+      Type: "Service",
+      Active: true,
+      UnitPrice: 0,
+      IncomeAccountRef: incomeRef
+    };
+    const compatible = (item: Qbo.Item, requireAccount = true) => {
+      if (
+        item.Name !== name ||
+        item.Type !== "Service" ||
+        item.Active === false ||
+        (requireAccount && item.IncomeAccountRef?.value !== incomeRef!.value)
+      ) {
+        fail(
+          "an existing helper has an incompatible name, type, active state or revenue account"
+        );
+      }
+      return item;
+    };
+    const mappedId = await this.mappingService.getExternalId(
+      "shippingItem",
+      shippingAccountId,
+      this.provider.id
+    );
+    if (mappedId) {
+      const current = await this.qboProvider.getItem(mappedId);
+      if (!current) fail("the mapped helper no longer exists in QuickBooks");
+      compatible(current!, false);
+      if (
+        current!.IncomeAccountRef?.value !== incomeRef!.value ||
+        current!.UnitPrice !== 0
+      ) {
+        // Only an explicitly owned mapping may be reconverged. An unowned name
+        // match below is validated and never overwritten.
+        const updated = await updateWithSyncTokenRetry({
+          entityLabel: "shipping item",
+          remoteId: mappedId,
+          fetchCurrent: () => this.qboProvider.getItem(mappedId),
+          update: (syncToken) =>
+            this.qboProvider.updateItem({
+              ...payload,
+              Id: mappedId,
+              SyncToken: syncToken
+            })
+        });
+        return compatible(updated).Id;
+      }
+      return current!.Id;
+    }
+    const lookup = async () => {
+      const matches = await this.qboProvider.query<Qbo.Item>(
+        "Item",
+        `Name = '${escapeQboQueryValue(name)}'`
+      );
+      if (matches.length > 1) fail("the exact remote helper name is ambiguous");
+      return matches[0] ? compatible(matches[0]) : undefined;
+    };
+    let remote = await lookup();
+    if (!remote) {
+      try {
+        remote = compatible(await this.qboProvider.createItem(payload));
+      } catch (error) {
+        if (!isQboDuplicateNameError(error)) throw error;
+        remote = await lookup();
+        if (!remote) throw error;
+      }
+    }
+    await withTriggersDisabled(this.database, async (tx) => {
+      await createMappingService(tx, this.companyId).link(
+        "shippingItem",
+        shippingAccountId,
+        this.provider.id,
+        remote!.Id,
+        { metadata: { accountId: shippingAccountId, kind: "shipping" } }
+      );
+    });
+    return remote.Id;
+  }
+
   // Cached per instance — a drain reuses one syncer across its claimed
   // operations, so mappings and account defaults are fetched at most once
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;

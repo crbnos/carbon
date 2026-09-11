@@ -9,9 +9,12 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
-  verifyAuthSession
+  turnstileSiteKey,
+  verifyAuthSession,
+  verifyLoginCaptcha
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -31,6 +34,7 @@ import {
   Heading,
   ItarLoginDisclaimer,
   Separator,
+  TurnstileChallenge,
   toast,
   useMount,
   VStack
@@ -75,12 +79,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
-      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth },
+      {
+        hasOutlookAuth,
+        hasGoogleAuth,
+        hasPasskeyAuth,
+        hasSsoAuth,
+        turnstileSiteKey
+      },
       { headers: cookieHeaders }
     );
   }
 
-  return { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth };
+  return {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    hasPasskeyAuth,
+    hasSsoAuth,
+    turnstileSiteKey
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -108,7 +124,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email } = validation.data;
+  const { email, turnstileToken } = validation.data;
+
+  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
+  if (captchaError) {
+    return data(
+      error(null, captchaError),
+      await flash(request, error(null, captchaError))
+    );
+  }
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
   // above, keyed by the normalized email. Rejects with a GENERIC message that
@@ -164,14 +188,21 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    const magicLink = await sendMagicLink(email, turnstileToken);
 
-    if (!magicLink) {
+    if (magicLink.error) {
+      logAuthEvent("login_failed", {
+        actor: email,
+        ip,
+        reason: "magic link send failed"
+      });
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
+    logAuthEvent("magic_link_sent", { actor: email, ip });
   } else {
     return data(
       { success: false, message: "Invalid email/password combination" },
@@ -184,8 +215,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   const { t } = useLingui();
-  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth } =
-    useLoaderData<typeof loader>();
+  const {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    hasPasskeyAuth,
+    hasSsoAuth,
+    turnstileSiteKey: siteKey
+  } = useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
@@ -195,6 +231,7 @@ export default function LoginRoute() {
     { success: true } | { success: false; message: string }
   >();
 
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
@@ -439,6 +476,7 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -513,7 +551,11 @@ export default function LoginRoute() {
               />
 
               <Submit
-                isDisabled={fetcher.state !== "idle" || ssoLoading}
+                isDisabled={
+                  fetcher.state !== "idle" ||
+                  ssoLoading ||
+                  (!!siteKey && !turnstileToken)
+                }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
                 size="lg"
@@ -523,6 +565,10 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
+              <TurnstileChallenge
+                siteKey={siteKey ?? undefined}
+                onToken={setTurnstileToken}
+              />
             </VStack>
           </ValidatedForm>
         )}

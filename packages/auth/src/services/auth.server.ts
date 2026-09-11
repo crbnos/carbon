@@ -15,10 +15,13 @@ import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
+  CLOUDFLARE_TURNSTILE_SECRET_KEY,
+  CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
+  SUPABASE_AUTH_CAPTCHA_ENABLED,
   VERCEL_URL
 } from "../config/env";
 import { getCarbon } from "../lib/supabase";
@@ -455,13 +458,93 @@ export async function sendInviteByEmail(
   });
 }
 
-export async function sendMagicLink(email: string) {
+const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+const CAPTCHA_FAILED_MESSAGE = "Bot verification failed. Please try again.";
+
+// Cloud with a real site key requires a Turnstile token on login.
+export const requiresTurnstile =
+  CarbonEdition === Edition.Cloud &&
+  Boolean(CLOUDFLARE_TURNSTILE_SITE_KEY) &&
+  CLOUDFLARE_TURNSTILE_SITE_KEY !== TURNSTILE_TEST_SITE_KEY;
+
+// For login loaders: render the widget whenever a key is configured — the
+// test key gives previews an auto-passing widget. Enforcement (requiresTurnstile)
+// is deliberately narrower, so a widget without enforcement is possible but
+// enforcement without a widget is not.
+export const turnstileSiteKey = CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
+
+export async function sendMagicLink(email: string, turnstileToken?: string) {
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${VERCEL_URL}/callback`
+      emailRedirectTo: `${VERCEL_URL}/callback`,
+      // GoTrue verifies the token itself when Supabase Auth captcha is on
+      ...(SUPABASE_AUTH_CAPTCHA_ENABLED && turnstileToken
+        ? { captchaToken: turnstileToken }
+        : {})
     }
   });
+}
+
+// Turnstile tokens are single-use, so exactly one side verifies: "gotrue"
+// sends verify in-app only when GoTrue won't; "app" sends (Resend, which
+// GoTrue never sees) only when the earlier "gotrue" gate stood down.
+// Returns a user-facing message on failure, null when the gate passes.
+export async function verifyLoginCaptcha(
+  turnstileToken: string | undefined,
+  ip: string,
+  send: "gotrue" | "app" = "gotrue"
+): Promise<string | null> {
+  if (!requiresTurnstile) return null;
+  const appVerifies =
+    send === "gotrue"
+      ? !SUPABASE_AUTH_CAPTCHA_ENABLED
+      : SUPABASE_AUTH_CAPTCHA_ENABLED;
+  if (!appVerifies) return null;
+  return (await verifyTurnstileToken(turnstileToken, ip))
+    ? null
+    : CAPTCHA_FAILED_MESSAGE;
+}
+
+export function getMagicLinkErrorMessage(error: { code?: string }): string {
+  switch (error.code) {
+    case "captcha_failed":
+      return CAPTCHA_FAILED_MESSAGE;
+    case "over_email_send_rate_limit":
+    case "over_request_rate_limit":
+      return "Too many sign-in attempts. Please try again later.";
+    default:
+      return "Failed to send magic link";
+  }
+}
+
+async function verifyTurnstileToken(
+  token: string | undefined,
+  remoteip: string
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(5000),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          secret: CLOUDFLARE_TURNSTILE_SECRET_KEY ?? "",
+          response: token ?? "",
+          // the client address, not the full x-forwarded-for proxy chain
+          remoteip: remoteip.split(",")[0]?.trim() ?? ""
+        })
+      }
+    );
+    const result = await response.json();
+    return Boolean(result.success);
+  } catch (e) {
+    log.error("Turnstile siteverify request failed", { error: e });
+    return false;
+  }
 }
 
 export async function signInWithBypassEmail(

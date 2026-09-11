@@ -52,6 +52,7 @@ import {
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
+  batchPlanBreakdown,
   convertDateStringToIsoString,
   convertKbToString,
   formatDate,
@@ -337,47 +338,62 @@ export const JobOperation = ({
   });
 
   // In batch mode the shared timer is judged against the batch's TOTAL plan:
-  // ONE shared setup (the largest member's — that is the point of batching) plus
-  // each member's labor/machine summed. `displayOperation` feeds the info-bar
-  // duration, the work-type toggle, the Times denominators, and controlsHeight
-  // so a batch timer reads against the whole batch, not one member. A batch
-  // with no planned time anywhere still gets a Machine timer (fallback of 1).
+  // ONE shared setup (the largest member's — that is the point of batching), the
+  // per-type labor/machine buckets (the `Times` denominators), and a wall-clock
+  // `duration` (setup + each member's run — the longer of its labor and machine
+  // — combined per the process's batch type), shared with the scheduler and the
+  // ERP surfaces via `@carbon/utils` `batchPlanBreakdown`. `displayOperation`
+  // feeds the info-bar duration, the work-type toggle, the Times denominators,
+  // and controlsHeight so a batch timer reads against the whole batch, not one
+  // member. A batch with no planned time anywhere still gets a Machine timer
+  // (fallback of 1).
   const displayOperation = useMemo<OperationWithDetails>(() => {
     if (!batch) return operation;
-    const totals = (batch.operations ?? []).reduce(
-      (acc, m) => {
-        try {
-          const d = makeDurations({
-            setupTime: m.setupTime ?? 0,
-            setupUnit: (m.setupUnit ?? "Total Minutes") as string,
-            laborTime: m.laborTime ?? 0,
-            laborUnit: (m.laborUnit ?? "Minutes/Piece") as string,
-            machineTime: m.machineTime ?? 0,
-            machineUnit: (m.machineUnit ?? "Minutes/Piece") as string,
-            operationQuantity: m.operationQuantity
-          });
-          acc.setupDuration = Math.max(acc.setupDuration, d.setupDuration);
-          acc.laborDuration += d.laborDuration;
-          acc.machineDuration += d.machineDuration;
-        } catch {
-          // A member without times contributes nothing.
-        }
-        return acc;
-      },
-      { setupDuration: 0, laborDuration: 0, machineDuration: 0 }
+    const durations = (batch.operations ?? []).map((m) => {
+      try {
+        const d = makeDurations({
+          setupTime: m.setupTime ?? 0,
+          setupUnit: (m.setupUnit ?? "Total Minutes") as string,
+          laborTime: m.laborTime ?? 0,
+          laborUnit: (m.laborUnit ?? "Minutes/Piece") as string,
+          machineTime: m.machineTime ?? 0,
+          machineUnit: (m.machineUnit ?? "Minutes/Piece") as string,
+          operationQuantity: m.operationQuantity
+        });
+        return {
+          setupDuration: d.setupDuration,
+          laborDuration: d.laborDuration,
+          machineDuration: d.machineDuration
+        };
+      } catch {
+        // A member without times contributes nothing.
+        return { setupDuration: 0, laborDuration: 0, machineDuration: 0 };
+      }
+    });
+    const plan = batchPlanBreakdown(
+      durations,
+      batch.process?.batchType ?? "Sequential"
     );
+    const totals = {
+      setupDuration: plan.setup,
+      laborDuration: plan.labor,
+      machineDuration: plan.machine
+    };
+    let duration = plan.total;
+    // No planned time anywhere → keep a drawable Machine timer so the operator
+    // can still record work (the total follows the fallback bucket).
     if (
       totals.setupDuration === 0 &&
       totals.laborDuration === 0 &&
       totals.machineDuration === 0
     ) {
       totals.machineDuration = 1;
+      duration = 1;
     }
     return {
       ...operation,
       ...totals,
-      duration:
-        totals.setupDuration + totals.laborDuration + totals.machineDuration
+      duration
     };
   }, [batch, operation]);
 

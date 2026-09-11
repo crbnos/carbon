@@ -736,6 +736,7 @@ export const accounts = [
   { key: "4020", number: "4020", name: "Sales Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4030", number: "4030", name: "Manufacturing Services Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4040", number: "4040", name: "Customer Payment Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4050", number: "4050", name: "Shipping Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4900", number: "4900", name: "Sales Returns", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // Other Income
@@ -799,6 +800,7 @@ export const accounts = [
 
 export const accountDefaults = {
   salesAccount: "4010",
+  salesShippingRevenueAccount: "4050",
   salesDiscountAccount: "4020",
   salesReturnsAccount: "4900",
   costOfGoodsSoldAccount: "5010",

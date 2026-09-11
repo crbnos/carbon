@@ -181,6 +181,15 @@ function makeBillDb(config: {
       orderBy: () => builder,
       async execute() {
         if (table === "journalLine") return config.journalLine;
+        if (table === "purchaseInvoiceLine")
+          return [
+            {
+              quantity: 1,
+              supplierUnitPrice: 100 * config.purchaseInvoice.exchangeRate,
+              supplierShippingCost: 0,
+              supplierTaxAmount: 0
+            }
+          ];
         if (table === "journalLineDimension") return [];
         if (table === "purchaseOrderLine") return [];
         if (table === "externalIntegrationMapping as m")
@@ -188,7 +197,11 @@ function makeBillDb(config: {
         return [];
       },
       async executeTakeFirst() {
-        if (table === "purchaseInvoice") return config.purchaseInvoice;
+        if (table === "purchaseInvoice")
+          return { ...config.purchaseInvoice, postingDate: "2026-09-07" };
+        if (table === "company")
+          return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+        if (table === "currency") return { decimalPlaces: 2 };
         if (table === "accountDefault") return config.accountDefault;
         return undefined;
       }
@@ -218,14 +231,14 @@ function makeBillSyncer(db: never, remoteId: string | null) {
 }
 
 describe("BillSyncer.mapToRemote (FX + guards)", () => {
-  const fxDb = () =>
+  const fxDb = (exchangeRate = 0.8) =>
     makeBillDb({
-      purchaseInvoice: { currencyCode: "EUR", exchangeRate: 2 },
+      purchaseInvoice: { currencyCode: "EUR", exchangeRate },
       journalLine: [
         {
           id: "jl-1",
           accountId: "acct_grir",
-          amount: 300,
+          amount: 100,
           description: "GR/IR Clearing",
           documentLineReference: null,
           accountClass: "Asset"
@@ -233,7 +246,7 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
         {
           id: "jl-2",
           accountId: "acct_ap",
-          amount: 300,
+          amount: 100,
           description: "Accounts Payable",
           documentLineReference: null,
           accountClass: "Liability"
@@ -255,15 +268,15 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
 
   it("pins CurrencyRate and replays transaction-currency amounts (AP excluded)", async () => {
     const payload = await makeBillSyncer(fxDb(), null).mapToRemote(
-      bill({ currencyCode: "EUR", exchangeRate: 2 })
+      bill({ currencyCode: "EUR", exchangeRate: 0.8 })
     );
 
     expect(payload.CurrencyCode).toBe("EUR");
-    expect(payload.CurrencyRate).toBe(2);
+    expect(payload.CurrencyRate).toBe(0.8);
     expect(payload.LineItems).toEqual([
       {
         Description: "GR/IR Clearing",
-        LineAmount: 150,
+        LineAmount: 80,
         AccountCode: "2125",
         TaxType: "NONE"
       }
@@ -271,6 +284,13 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
     // Tax-neutral replay: no totals sent (Xero computes from NONE-taxed lines).
     expect(payload.SubTotal).toBeUndefined();
     expect(payload.TotalTax).toBeUndefined();
+  });
+
+  it("pins a foreign identity rate instead of letting Xero choose a rate", async () => {
+    const payload = await makeBillSyncer(fxDb(1), null).mapToRemote(
+      bill({ currencyCode: "EUR", exchangeRate: 1 })
+    );
+    expect(payload.CurrencyRate).toBe(1);
   });
 
   it("lands a DOC_HAS_PAYMENTS Warning when re-pushing a paid bill", async () => {
@@ -293,4 +313,40 @@ describe("BillSyncer.mapToRemote (FX + guards)", () => {
     });
     expect(result).toContain("must be posted");
   });
+});
+
+it("refuses unsupported Xero bill monetary precision without changing principal", () => {
+  expect(() =>
+    buildXeroBillLineItems({
+      bill: bill(),
+      costingLines: [
+        {
+          id: "cost",
+          accountId: "acct_grir",
+          amount: 1.001,
+          description: "Subcent cost"
+        }
+      ],
+      accountCodesById: CODES
+    })
+  ).toThrow(/Xero.*precision|Xero.*decimal/i);
+});
+it.each([
+  false,
+  true
+])("opts into supported unit precision at the actual bill transport (batch=%s)", async (batch) => {
+  const syncer = makeBillSyncer({} as never, null) as any;
+  const requests: string[] = [];
+  syncer.provider.request = async (_method: string, url: string) => {
+    requests.push(url);
+    return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+  };
+  const payload = {
+    Type: "ACCPAY",
+    InvoiceNumber: "AP000001",
+    LineItems: [{ LineAmount: 10, AccountCode: "2125", TaxType: "NONE" }]
+  };
+  if (batch) await syncer.upsertRemoteBatch([{ localId: "pi_1", payload }]);
+  else await syncer.upsertRemote(payload, "pi_1");
+  expect(requests).toEqual(["/Invoices?unitdp=4"]);
 });

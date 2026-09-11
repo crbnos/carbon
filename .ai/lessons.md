@@ -1463,3 +1463,61 @@ full-screen ERP route.
 **Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
 
 **Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
+
+## Resolve adoption assumptions before designing accounting migration machinery
+
+**Context:** The accounting posting-corrections spec raised legacy open-balance migration concerns; the user clarified that accounting can be assumed unused.
+
+**Problem:** Designing calculation versions, correction journals, and cutover tooling before resolving adoption added unnecessary scope to a correctness fix.
+
+**Rule:** Use the user's explicit adoption premise to size compatibility work. For this spec, correct the monetary contract directly; do not add legacy-accounting machinery. An unused accounting module does not imply permission to delete operational records or reset a database.
+
+**Applies to:** `.ai/specs/2026-09-07-accounting-posting-corrections.md` and its implementation; other modules require their own adoption evidence.
+
+
+## Accounting review: carrying balances and source principal
+
+- **Context:** Mixed positive and negative invoice lines, high FX rates, and changes to account defaults during settlement and provider replay.
+- **Problem:** Summing control magnitudes invented FX; recovering document units from rounded base lost valid minor-unit balances; current defaults rewrote original account provenance.
+- **Rule:** Sum signed original control amounts, preserve exact document principal independently of carrying base, and identify original journal roles through the shared exhaustive vocabulary (including intercompany roles). Reject unknown effective principal rather than infer it; retain Draft reservation policy separately from Posted effectiveness.
+- **Applies to:** Invoice/payment/memo posting, open-balance readers, and accounting provider replay.
+
+## Apportion a document total, never concentrate its rounding residual
+
+**Context:** Sales invoices push to QuickBooks/Xero/Rillet as components (merchandise, add-ons, line shipping, header shipping), each rounded at the document currency's precision, and the sum must equal the authoritative document total.
+
+**Problem:** Rounding N components independently leaves a residual of up to N/2 minor units. Assigning that whole residual to one component broke that component's own percent/amount pair — a 20 x $1.99 @ 8.25% invoice gave one line $0.24 tax on $1.99 net (12.06% against a stated 8.25%). QuickBooks re-derives `round(net x percent)` within one minor unit and refused the invoice with `UNMAPPED_TAX_CODES`, a message blaming the customer's QuickBooks configuration, which they cannot act on. A randomised sweep put this at 1.6% of invoices; some cases produced a negative tax on positive revenue, which Xero accepts and posts.
+
+**Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
+
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, and any future provider document mapper.
+
+## Two halves of an intercompany trade must round at the same scale
+
+**Context:** `post-sales-invoice` and `post-purchase-invoice` each write an `intercompanyTransaction` row, and `generate_intercompany_matches` pairs them with `src."amount" = tgt."amount"` — exact NUMERIC equality, no tolerance.
+
+**Problem:** The seller began rounding its half at the document currency's settlement precision (2dp) while the buyer kept internal `SCALE` (5dp). A trade of 3 x 100.005 stored 300.02 against 300.015, so the pair sat `Unmatched` forever and eliminations silently never ran — consolidated income kept the intragroup profit, with no error anywhere.
+
+**Rule:** An amount used as a MATCHING KEY is not a settlement amount. Round both halves at internal `SCALE`. Before changing rounding anywhere, check whether the value is compared for equality by something else — a matcher, a tie-out, or a reconciliation — and change both sides together.
+
+**Applies to:** `calculateSalesIntercompanyAmount`, `post-purchase-invoice`'s IC amount, `generate_intercompany_matches`.
+
+## Prove provider accounting against its independent journal
+
+**Context:** The live Rillet E2E run accepted invoice payloads while ignoring their FX override and crediting deferred revenue.
+
+**Problem:** Request shape and HTTP success did not prove economic parity. AR_ONLY used provider FX; the supported REVENUE_RECOGNITION_ONLY scope accepted fixed document-to-base rates and same-day recognition.
+
+**Rule:** Verify returned account effects in the provider's independent GL, including recognition and voids. Treat Carbon's rate as document units per base unit, invert it for Rillet, and align recognition and FX dates with Carbon's posting date. Check voided mappings before create-idempotency shortcuts and retain durable deletion markers.
+
+**Applies to:** Rillet invoice/bill/payment adapters, native-void reconciliation, and future provider acceptance tests.
+
+## Seed UI-only controlled fields through the form defaults
+
+**Context:** Payment type choices combine counterparty and cash direction while the persisted paymentType remains Receipt or Disbursement.
+
+**Problem:** Passing only SelectControlled.value left the initial registered paymentKind empty in the real browser; unit mocks did not model form initialization. A composer also retained old targets after a saved header identity changed.
+
+**Rule:** Include a UI-only field's initial value in ValidatedForm defaults, and key stateful composers by the document/party/currency/direction identity whose data they hold. Verify the initial label and actual submitted fields in the browser.
+
+**Applies to:** PaymentForm, PaymentApplyTable, and other forms using derived presentation choices.

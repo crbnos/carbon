@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import {
@@ -8,7 +9,7 @@ import {
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
-import { JournalEntrySyncError, roundCurrency } from "../../../core/posting";
+import { JournalEntrySyncError } from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -17,6 +18,7 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import { assertXeroMoneyPrecision } from "../serialize";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -177,6 +179,7 @@ export function buildXeroBillLineItems(args: {
     });
   }
 
+  assertXeroMoneyPrecision(...args.costingLines.map((line) => line.amount));
   const nonTracked = args.nonTrackedItemIds;
   return args.costingLines.map((line) => {
     const attachItemCode =
@@ -185,7 +188,7 @@ export function buildXeroBillLineItems(args: {
         : null;
     return {
       Description: costingLineItemLabel(line) ?? line.description ?? undefined,
-      LineAmount: roundCurrency(line.amount),
+      LineAmount: line.amount,
       AccountCode: args.accountCodesById.get(line.accountId!)!,
       TaxType: "NONE",
       ...(attachItemCode ? { ItemCode: attachItemCode.slice(0, 30) } : {})
@@ -453,16 +456,6 @@ export class BillSyncer extends BaseEntitySyncer<
     return this.accountCodesByIdPromise;
   }
 
-  /** accountDefault.payablesAccount — the AP control line to exclude. */
-  private async getPayablesAccountId(): Promise<string | null> {
-    const defaults = await this.database
-      .selectFrom("accountDefault")
-      .select("payablesAccount")
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-    return defaults?.payablesAccount ?? null;
-  }
-
   // =================================================================
   // 5. TRANSFORMATION (Carbon -> Xero) — account-costed journal replay
   // =================================================================
@@ -484,35 +477,25 @@ export class BillSyncer extends BaseEntitySyncer<
       });
     }
 
-    // Get supplier's Xero ContactID - ensure supplier is synced first
-    let contactId = local.supplierExternalId;
-    if (!contactId && local.supplierId) {
-      contactId = await this.ensureDependencySynced("vendor", local.supplierId);
-    }
-
-    if (!contactId) {
-      throw new Error(
-        `Cannot sync bill ${local.id}: No supplier linked or supplier not synced to Xero`
-      );
-    }
-
     // Account-costed replay of the bill's posted Purchase Invoice journal.
-    const payablesAccountId = await this.getPayablesAccountId();
     const accountCodesById = await this.getAccountCodesById();
     const {
       lines: costingLines,
       currencyCode,
-      exchangeRate
+      exchangeRate,
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode
     } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
-      billId: local.id,
-      payablesAccountId
+      billId: local.id
     });
 
-    const transactionLines = toTransactionCurrencyLines(
-      costingLines,
-      exchangeRate
-    );
+    const transactionLines = toTransactionCurrencyLines(costingLines, {
+      exchangeRate,
+      documentTotal,
+      decimalPlaces
+    });
 
     const lineItems = buildXeroBillLineItems({
       bill: local,
@@ -524,6 +507,18 @@ export class BillSyncer extends BaseEntitySyncer<
       // account-costed lines carry the item in Description instead.
       nonTrackedItemIds: undefined
     });
+
+    // Get supplier's Xero ContactID - ensure supplier is synced first
+    let contactId = local.supplierExternalId;
+    if (!contactId && local.supplierId) {
+      contactId = await this.ensureDependencySynced("vendor", local.supplierId);
+    }
+
+    if (!contactId) {
+      throw new Error(
+        `Cannot sync bill ${local.id}: No supplier linked or supplier not synced to Xero`
+      );
+    }
 
     // Calculate due date: use dateDue if provided, otherwise default to Net 30
     let dueDate = local.dateDue;
@@ -548,8 +543,9 @@ export class BillSyncer extends BaseEntitySyncer<
       DueDate: dueDate,
       Status: CARBON_TO_XERO_STATUS[local.status],
       CurrencyCode: currencyCode,
-      // Pin the provider rate on FX bills (omit at parity rate 1).
-      CurrencyRate: exchangeRate !== 1 ? exchangeRate : undefined,
+      // Pin every foreign snapshot, including negotiated 1:1 rates.
+      CurrencyRate:
+        currencyCode !== baseCurrencyCode ? exchangeRate : undefined,
       // Tax-neutral replay: lines embed tax; let Xero compute totals from the
       // NONE-taxed line amounts (no SubTotal/TotalTax/Total conflict).
       LineItems: lineItems
@@ -563,6 +559,23 @@ export class BillSyncer extends BaseEntitySyncer<
   protected async mapToLocal(
     remote: Xero.Invoice
   ): Promise<Partial<Accounting.Bill>> {
+    const company = await this.database
+      .selectFrom("company")
+      .select("baseCurrencyCode")
+      .where("id", "=", this.companyId)
+      .executeTakeFirst();
+    const currencyCode = remote.CurrencyCode ?? company?.baseCurrencyCode;
+    if (!currencyCode || !company?.baseCurrencyCode)
+      throw new Error("Xero bill currency metadata is required");
+    const exchangeRate =
+      remote.CurrencyRate ??
+      (currencyCode === company.baseCurrencyCode ? 1 : null);
+    if (exchangeRate === null)
+      throw new Error("Xero foreign bill exchange rate is required");
+    assertExchangeRate(exchangeRate);
+    if (currencyCode === company.baseCurrencyCode && exchangeRate !== 1)
+      throw new Error("Base-currency bill requires identity exchange rate");
+
     // Determine Carbon status based on Xero status and amounts
     let status = XERO_TO_CARBON_STATUS[remote.Status];
 
@@ -618,13 +631,13 @@ export class BillSyncer extends BaseEntitySyncer<
       dateIssued: remote.Date ?? null,
       dateDue: remote.DueDate ?? null,
       datePaid: remote.Status === "PAID" ? new Date().toISOString() : null,
-      currencyCode: remote.CurrencyCode ?? "USD",
-      exchangeRate: remote.CurrencyRate ?? 1,
-      subtotal: remote.SubTotal ?? 0,
-      totalTax: remote.TotalTax ?? 0,
+      currencyCode,
+      exchangeRate,
+      subtotal: toBaseAmount(remote.SubTotal ?? 0, exchangeRate),
+      totalTax: toBaseAmount(remote.TotalTax ?? 0, exchangeRate),
       totalDiscount: 0,
-      totalAmount: remote.Total ?? 0,
-      balance: remote.AmountDue ?? 0,
+      totalAmount: toBaseAmount(remote.Total ?? 0, exchangeRate),
+      balance: toBaseAmount(remote.AmountDue ?? 0, exchangeRate),
       supplierReference: remote.Reference ?? null,
       lines,
       updatedAt: remote.UpdatedDateUTC
@@ -642,6 +655,11 @@ export class BillSyncer extends BaseEntitySyncer<
     data: Partial<Accounting.Bill>,
     remoteId: string
   ): Promise<string> {
+    if (!data.currencyCode || data.exchangeRate == null)
+      throw new Error(
+        "Bill currency and exchange rate are required before storing supplier amounts"
+      );
+    assertExchangeRate(data.exchangeRate);
     const existingLocalId = await this.getLocalId(remoteId);
 
     // Resolve supplier from Xero ContactID using mapping service
@@ -734,8 +752,8 @@ export class BillSyncer extends BaseEntitySyncer<
         dateIssued: data.dateIssued ?? null,
         dateDue: data.dateDue ?? null,
         datePaid: data.datePaid ?? null,
-        currencyCode: data.currencyCode ?? "USD",
-        exchangeRate: data.exchangeRate ?? 1,
+        currencyCode: data.currencyCode,
+        exchangeRate: data.exchangeRate,
         subtotal: data.subtotal ?? 0,
         totalTax: data.totalTax ?? 0,
         totalDiscount: data.totalDiscount ?? 0,
@@ -791,6 +809,7 @@ export class BillSyncer extends BaseEntitySyncer<
     await tx
       .deleteFrom("purchaseInvoiceLine")
       .where("invoiceId", "=", invoiceId)
+      .where("companyId", "=", this.companyId)
       .execute();
 
     if (lines.length === 0) return;
@@ -842,39 +861,33 @@ export class BillSyncer extends BaseEntitySyncer<
       .selectFrom("purchaseInvoice")
       .select(["companyId", "createdBy", "exchangeRate"])
       .where("id", "=", invoiceId)
+      .where("companyId", "=", this.companyId)
       .executeTakeFirstOrThrow();
 
-    // Insert new lines
-    for (const line of lines) {
+    const rows = lines.map((line) => {
       const itemId = line.itemCode
         ? (itemMap.get(line.itemCode) ?? null)
         : null;
 
-      await tx
-        .insertInto("purchaseInvoiceLine")
-        .values({
-          invoiceId,
-          companyId: invoice.companyId,
-          createdBy: invoice.createdBy,
-          description: line.description,
-          quantity: line.quantity,
-          unitPrice: line.unitPrice,
-          supplierUnitPrice: line.unitPrice,
-          itemId,
-          accountId: line.accountNumber
-            ? (accountIdMap.get(line.accountNumber) ?? null)
-            : null,
-          taxPercent: line.taxPercent,
-          taxAmount: line.taxAmount,
-          supplierTaxAmount: line.taxAmount ?? 0,
-          totalAmount: line.totalAmount,
-          supplierExtendedPrice: line.totalAmount,
-          exchangeRate: invoice.exchangeRate,
-          invoiceLineType: itemId ? "Part" : "G/L Account",
-          supplierShippingCost: 0
-        })
-        .execute();
-    }
+      return {
+        invoiceId,
+        companyId: invoice.companyId,
+        createdBy: invoice.createdBy,
+        description: line.description,
+        quantity: line.quantity,
+        supplierUnitPrice: line.unitPrice,
+        itemId,
+        accountId: line.accountNumber
+          ? (accountIdMap.get(line.accountNumber) ?? null)
+          : null,
+        taxPercent: line.taxPercent,
+        supplierTaxAmount: line.taxAmount ?? 0,
+        exchangeRate: invoice.exchangeRate,
+        invoiceLineType: itemId ? ("Part" as const) : ("G/L Account" as const),
+        supplierShippingCost: 0
+      };
+    });
+    await tx.insertInto("purchaseInvoiceLine").values(rows).execute();
   }
 
   // =================================================================
@@ -892,7 +905,9 @@ export class BillSyncer extends BaseEntitySyncer<
 
     const result = await this.xeroProvider.request<{
       Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices", { body: JSON.stringify({ Invoices: invoices }) });
+    }>("POST", "/Invoices?unitdp=4", {
+      body: JSON.stringify({ Invoices: invoices })
+    });
 
     if (result.error) {
       throwXeroApiError(
@@ -934,7 +949,9 @@ export class BillSyncer extends BaseEntitySyncer<
 
     const response = await this.xeroProvider.request<{
       Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices", { body: JSON.stringify({ Invoices: invoices }) });
+    }>("POST", "/Invoices?unitdp=4", {
+      body: JSON.stringify({ Invoices: invoices })
+    });
 
     if (response.error) {
       throwXeroApiError("batch upsert bills", response);

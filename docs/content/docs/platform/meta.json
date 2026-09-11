@@ -1,12 +1,5 @@
 {
   "title": "Platform",
   "defaultOpen": true,
-  "pages": [
-    "architecture",
-    "backups",
-    "demo-data",
-    "self-hosting",
-    "single-sign-on",
-    "licensing"
-  ]
+  "pages": ["self-hosting", "backups", "demo-data", "licensing"]
 }

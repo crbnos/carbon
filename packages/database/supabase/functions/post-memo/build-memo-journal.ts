@@ -1,8 +1,8 @@
 // Pure construction of the GL journal for posting a credit/debit memo. No DB, no
 // I/O, no clock — so it is unit-testable with `deno test`. The driver
-// (`index.ts`) resolves the control + reason account ids, the reason account's
-// class, the accounting period and `journalLineReference` (all impure), then
-// hands them here to compute the balanced two-line double-entry.
+// (`post-memo-transaction.ts`) resolves the control + reason account ids, the
+// reason account's class, the accounting period and `journalLineReference` (all
+// impure), then hands them here to compute the balanced double-entry.
 //
 // A memo is payment-shaped, NOT invoice-shaped: it moves an amount between the
 // party's AR/AP control account and a single chosen reason account. There are
@@ -32,6 +32,7 @@
 // the cost never reconcile and GRNI keeps a permanent residual.
 
 import { assertBalanced, round } from "../shared/precision.ts";
+import { toBaseAmount } from "../shared/accounting-currency.ts";
 import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
@@ -58,8 +59,9 @@ export interface BuildMemoJournalInput {
   // customer (AR) vs supplier (AP). Drives control account TYPE (asset/liability).
   isAR: boolean;
   direction: "Credit" | "Debit";
-  // memo.amount × memo.exchangeRate (base currency).
-  amountBase: number;
+  // Memo principal in document currency and its foreign-per-base snapshot.
+  amount: number;
+  exchangeRate: number;
   // Resolved once by the driver (nanoid) so this stays pure.
   journalLineReference: string;
   // receivables (AR) / payables (AP) control account.
@@ -68,11 +70,11 @@ export interface BuildMemoJournalInput {
   reasonAccountId: string;
   reasonAccountClass: string;
   // Supplier-return memos only. The reason leg (GRNI) must clear the EXACT
-  // amount the return shipment debited — the carried cost of the goods — not
-  // the amount the supplier agreed to credit. When the two differ, the
-  // difference is a purchase price variance and needs its own leg, or the
-  // suspense account never nets to zero. Omit both for every other memo and
-  // the entry stays the ordinary two-line shape.
+  // amount the return shipment debited — the carried cost of the goods, in
+  // BASE currency — not the amount the supplier agreed to credit. When the two
+  // differ, the difference is a purchase price variance and needs its own leg,
+  // or the suspense account never nets to zero. Omit both for every other memo
+  // and the entry stays the ordinary two-line shape.
   reasonAmountBase?: number;
   varianceAccountId?: string | null;
   // Overrides the reason leg's description. Defaults to "Credit memo" /
@@ -92,14 +94,15 @@ export interface BuildMemoJournalResult {
 const BALANCE_TOLERANCE = 0.01;
 
 export function buildMemoJournal(
-  input: BuildMemoJournalInput
+  input: BuildMemoJournalInput,
 ): BuildMemoJournalResult {
   const {
     memoId,
     companyId,
     isAR,
     direction,
-    amountBase,
+    amount,
+    exchangeRate,
     journalLineReference,
     controlAccountId,
     reasonAccountId,
@@ -111,14 +114,16 @@ export function buildMemoJournal(
 
   if (!controlAccountId) {
     throw new Error(
-      `Missing ${isAR ? "receivables" : "payables"} account default; cannot post memo to GL`
+      `Missing ${
+        isAR ? "receivables" : "payables"
+      } account default; cannot post memo to GL`,
     );
   }
 
-  const magnitude = round(Math.abs(amountBase));
-  if (magnitude < 0.0001) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error("Memo amount must be greater than 0 to post");
   }
+  const magnitude = toBaseAmount(amount, exchangeRate);
 
   const lines: MemoJournalLine[] = [];
   let signedDebitTotal = 0;
@@ -130,16 +135,15 @@ export function buildMemoJournal(
     description: string,
     // Defaults to the memo magnitude; only the reason and variance legs of a
     // supplier return pass their own.
-    lineMagnitude: number = magnitude
+    lineMagnitude: number = magnitude,
   ) => {
     signedDebitTotal += side === "debit" ? lineMagnitude : -lineMagnitude;
     lines.push({
       accountId,
       description,
-      amount:
-        side === "debit"
-          ? debit(accountType, lineMagnitude)
-          : credit(accountType, lineMagnitude),
+      amount: side === "debit"
+        ? debit(accountType, lineMagnitude)
+        : credit(accountType, lineMagnitude),
       quantity: 1,
       documentType: "Memo",
       documentId: memoId,
@@ -158,7 +162,7 @@ export function buildMemoJournal(
     controlIsDebit ? "debit" : "credit",
     controlType,
     controlAccountId,
-    isAR ? "Accounts Receivable" : "Accounts Payable"
+    isAR ? "Accounts Receivable" : "Accounts Payable",
   );
 
   // 2) Reason leg — always the inverse side of the control leg.
@@ -169,15 +173,16 @@ export function buildMemoJournal(
   // the control leg (AP) moves by what the supplier actually credited. When
   // those differ, the reason leg uses its own magnitude and the remainder
   // becomes leg 3.
-  const reasonMagnitude =
-    reasonAmountBase === undefined ? magnitude : round(Math.abs(reasonAmountBase));
+  const reasonMagnitude = reasonAmountBase === undefined
+    ? magnitude
+    : round(Math.abs(reasonAmountBase));
   pushLine(
     controlIsDebit ? "credit" : "debit",
     reasonType,
     reasonAccountId,
     reasonDescription ??
       (direction === "Credit" ? "Credit memo" : "Debit memo"),
-    reasonMagnitude
+    reasonMagnitude,
   );
 
   // 3) Variance leg — the plug that makes an unequal control/reason pair
@@ -188,7 +193,7 @@ export function buildMemoJournal(
   if (varianceMagnitude > 0.005) {
     if (!varianceAccountId) {
       throw new Error(
-        "Memo reason amount differs from the memo amount but no variance account was provided; cannot post an unbalanced memo"
+        "Memo reason amount differs from the memo amount but no variance account was provided; cannot post an unbalanced memo",
       );
     }
     // signedDebitTotal > 0 means debits currently exceed credits, so the plug
@@ -198,7 +203,7 @@ export function buildMemoJournal(
       "expense",
       varianceAccountId,
       "Purchase Price Variance",
-      varianceMagnitude
+      varianceMagnitude,
     );
   }
 
@@ -208,7 +213,7 @@ export function buildMemoJournal(
     signedDebitTotal,
     0,
     BALANCE_TOLERANCE,
-    "Memo journal (base currency)"
+    "Memo journal (base currency)",
   );
 
   return { lines, signedDebitTotal };

@@ -41,7 +41,7 @@ import {
   Supplier,
   TextArea
 } from "~/components/Form";
-import { Confirm, ConfirmDelete } from "~/components/Modals";
+import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
@@ -138,6 +138,7 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
                   <Button
                     leftIcon={<LuTicketX />}
                     variant="destructive"
+                    type="button"
                     isDisabled={!canMutate}
                     onClick={voidModal.onOpen}
                   >
@@ -246,6 +247,17 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
           </CardFooter>
         </Card>
       </ValidatedForm>
+      {voidModal.isOpen && (
+        <ConfirmDelete
+          action={path.to.memoVoid(initialValues.id!)}
+          name={initialValues.memoId ?? ""}
+          title={t`Void ${initialValues.memoId}`}
+          text={t`Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone.`}
+          deleteText={t`Void`}
+          onCancel={voidModal.onClose}
+          onSubmit={voidModal.onClose}
+        />
+      )}
       {deleteModal.isOpen && (
         <ConfirmDelete
           action={path.to.memoDelete(initialValues.id!)}
@@ -254,18 +266,6 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
           text={t`Are you sure you want to delete ${initialValues.memoId}? This cannot be undone.`}
           onCancel={deleteModal.onClose}
           onSubmit={deleteModal.onClose}
-        />
-      )}
-      {voidModal.isOpen && (
-        <Confirm
-          action={path.to.memoVoid(initialValues.id!)}
-          isOpen={voidModal.isOpen}
-          title={t`Void ${initialValues.memoId}`}
-          text={t`Are you sure you want to void ${initialValues.memoId}? This reverses its ledger entries and cannot be undone.`}
-          confirmText={t`Void`}
-          confirmVariant="destructive"
-          onCancel={voidModal.onClose}
-          onSubmit={voidModal.onClose}
         />
       )}
     </>

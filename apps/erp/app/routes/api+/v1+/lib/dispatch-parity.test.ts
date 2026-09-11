@@ -21,6 +21,8 @@ const spies = vi.hoisted(() => ({
   insertIssue: vi.fn(),
   insertPurchaseOrder: vi.fn(),
   insertSalesOrder: vi.fn(),
+  replaceInvoiceSettlements: vi.fn(),
+  applyCreditsToInvoices: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -40,7 +42,10 @@ vi.mock("~/modules/documents/documents.service", () => ({}));
 vi.mock("~/modules/inventory/inventory.service", () => ({
   generateInventoryCountLines: spies.generateInventoryCountLines
 }));
-vi.mock("~/modules/invoicing/invoicing.service", () => ({}));
+vi.mock("~/modules/invoicing/invoicing.service", () => ({
+  replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
+  applyCreditsToInvoices: spies.applyCreditsToInvoices
+}));
 vi.mock("~/modules/items/items.service", () => ({}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
@@ -133,7 +138,9 @@ const allSpies = [
   spies.insertJob,
   spies.insertIssue,
   spies.insertPurchaseOrder,
-  spies.insertSalesOrder
+  spies.insertSalesOrder,
+  spies.replaceInvoiceSettlements,
+  spies.applyCreditsToInvoices
 ];
 
 beforeEach(() => {
@@ -144,6 +151,66 @@ beforeEach(() => {
 });
 
 describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
+  it.each([
+    undefined,
+    "forged-user"
+  ])("attributes memo applications to the authenticated author (caller author: %s)", async (createdBy) => {
+    const input = {
+      paymentId: "payment-1",
+      appliedDate: "2026-09-09",
+      side: "purchase",
+      applications: [{ memoId: "memo-1", invoiceId: "invoice-1", amount: 30 }]
+    };
+    const result = await runDispatch(
+      "invoicing_applyCreditsToInvoices",
+      spies.applyCreditsToInvoices,
+      { ...input, ...(createdBy ? { createdBy } : {}) }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    expect(result.calls).toEqual([
+      [spies.FAKE_DB, { ...input, companyId: "c1", createdBy: "u1" }]
+    ]);
+  });
+
+  it.each([
+    undefined,
+    "forged-user"
+  ])("attributes replacement settlements to the authenticated author (caller author: %s)", async (createdBy) => {
+    const applications = [
+      {
+        targetPurchaseInvoiceId: "invoice-1",
+        appliedAmount: 90,
+        sourceAmount: 90,
+        discountAmount: 5,
+        writeOffAmount: 5,
+        targetExchangeRate: 1,
+        sourceExchangeRate: 1,
+        appliedDate: "2026-09-09"
+      }
+    ];
+    const result = await runDispatch(
+      "invoicing_replaceInvoiceSettlements",
+      spies.replaceInvoiceSettlements,
+      {
+        paymentId: "payment-1",
+        applications,
+        ...(createdBy ? { createdBy } : {})
+      }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    expect(result.calls).toEqual([
+      [
+        spies.FAKE_DB,
+        {
+          paymentId: "payment-1",
+          applications,
+          companyId: "c1",
+          createdBy: "u1"
+        }
+      ]
+    ]);
+  });
+
   // The `companyId` in a. and a2. is the fix for the `args` branch skipping
   // enrichWithAuthContext. getAccountLedger's args type REQUIRES companyId; without
   // the stamp it took neither its companyId nor its companyIds branch and the query

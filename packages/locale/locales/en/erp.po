@@ -1895,11 +1895,17 @@ msgstr "Applied"
 msgid "Applied amount for {0}"
 msgstr "Applied amount for {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Applied amounts are in company base currency ({baseCurrency})."
+
 msgid "Applied Date"
 msgstr "Applied Date"
 
 msgid "Applied To"
 msgstr "Applied To"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Applies to"
@@ -2444,9 +2450,11 @@ msgstr "Are you sure you want to send an invite to these users?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Are you sure you want to send an invite to this user?"
 
-#. placeholder {0}: initialValues.memoId
-msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
-msgstr "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
@@ -3527,9 +3535,6 @@ msgstr "Clear search query"
 
 msgid "Clear selection"
 msgstr "Clear selection"
-
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
 
 msgid "Clear value"
 msgstr "Clear value"
@@ -4713,6 +4718,9 @@ msgstr "Credit account when overhead is absorbed into WIP"
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
@@ -8722,6 +8730,9 @@ msgstr "inv"
 msgid "Inv Rate"
 msgstr "Inv Rate"
 
+msgid "Invalid applications"
+msgstr "Invalid applications"
+
 msgid "Invalid Invite"
 msgstr "Invalid Invite"
 
@@ -11058,6 +11069,9 @@ msgstr "No one to assign"
 msgid "No open invoices"
 msgstr "No open invoices"
 
+msgid "No open memos"
+msgstr "No open memos"
+
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
 
@@ -11575,11 +11589,11 @@ msgstr "One set of numbers"
 msgid "One shared setup instead of one per operation"
 msgstr "One shared setup instead of one per operation"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "One shared setup plus the longest labor and machine time — the members run together"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "One shared setup plus the summed labor and machine time"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
@@ -11764,6 +11778,9 @@ msgstr "operation"
 
 msgid "Operation"
 msgstr "Operation"
+
+msgid "Operation batch"
+msgstr "Operation batch"
 
 msgid "Operation lead time"
 msgstr "Operation lead time"
@@ -12187,6 +12204,9 @@ msgstr "Payment Applications"
 msgid "Payment Date"
 msgstr "Payment Date"
 
+msgid "Payment from Customer"
+msgstr "Payment from Customer"
+
 msgid "Payment ID"
 msgstr "Payment ID"
 
@@ -12208,11 +12228,14 @@ msgstr "Payment Terms"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Payment terms like Net 30 or due on receipt"
 
+msgid "Payment to Supplier"
+msgstr "Payment to Supplier"
+
 msgid "Payments"
 msgstr "Payments"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Payments and credits applied to this invoice. Click a row to open the source document."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 
 msgid "PDF"
 msgstr "PDF"
@@ -13520,8 +13543,8 @@ msgstr "Record"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 
 msgid "Record deleted"
 msgstr "Record deleted"
@@ -13564,6 +13587,15 @@ msgstr "Refresh"
 
 msgid "Refresh exchange rate"
 msgstr "Refresh exchange rate"
+
+msgid "Refund from Supplier"
+msgstr "Refund from Supplier"
+
+msgid "Refund memos"
+msgstr "Refund memos"
+
+msgid "Refund to Customer"
+msgstr "Refund to Customer"
 
 msgid "Regenerate"
 msgstr "Regenerate"
@@ -14124,8 +14156,14 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "Revenue"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "Revenue account for shipping charged to customers"
+
 msgid "Revenue and expenses over a period"
 msgstr "Revenue and expenses over a period"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
 
 msgid "Reverse all inventory adjustments"
 msgstr "Reverse all inventory adjustments"
@@ -15050,9 +15088,6 @@ msgstr "Select surfaces"
 msgid "Select the groups that should complete this training"
 msgstr "Select the groups that should complete this training"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-
 msgid "Select value"
 msgstr "Select value"
 
@@ -15443,6 +15478,12 @@ msgstr "Shipping Methods"
 
 msgid "Shipping Notes"
 msgstr "Shipping Notes"
+
+msgid "Shipping Revenue"
+msgstr "Shipping Revenue"
+
+msgid "Shipping Revenue (default)"
+msgstr "Shipping Revenue (default)"
 
 msgid "Shipping Supplier"
 msgstr "Shipping Supplier"
@@ -16507,6 +16548,9 @@ msgstr "Tax Percent"
 
 msgid "Tax Residual Value %"
 msgstr "Tax Residual Value %"
+
+msgid "Tax Status"
+msgstr "Tax Status"
 
 msgid "Tax Useful Life (default)"
 msgstr "Tax Useful Life (default)"
@@ -18323,6 +18367,9 @@ msgstr "Unscrap {label}"
 msgid "Unshipped orders"
 msgstr "Unshipped orders"
 
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Unsupported source document type: {sourceDocument}"
 
@@ -18896,6 +18943,7 @@ msgid "Void"
 msgstr "Void"
 
 #. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "Void {0}"
 

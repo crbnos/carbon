@@ -424,6 +424,7 @@ export function parseJournalEntrySyncEntityId(entityId: string): {
 
 export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   "UNMAPPED_ACCOUNTS",
+  "UNMAPPED_TAX_CODES",
   // A slot-configured dimension value on a journal line has no provider
   // option mapping (and autoCreate did not resolve it) while the company's
   // onUnmappedDimensionValue policy is "warn" — user-fixable by mapping

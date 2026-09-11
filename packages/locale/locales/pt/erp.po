@@ -1262,7 +1262,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Adicione uma seção de materiais que lista cada item na lista de materiais com sua quantidade."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "Adicionar um parâmetro (no explorador de procedimentos)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Adicione uma impressora nas configurações de impressão para imprimir etiquetas diretamente."
@@ -1277,7 +1277,7 @@ msgid "Add a step"
 msgstr "Adicionar uma etapa"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "Adicionar uma etapa ou pergunta (nos exploradores de procedimento e treinamento)"
 
 msgid "Add Ability"
 msgstr "Adicionar Capacidade"
@@ -1895,11 +1895,17 @@ msgstr "Aplicado"
 msgid "Applied amount for {0}"
 msgstr "Valor aplicado para {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "Os valores aplicados estão na moeda base da empresa ({baseCurrency})."
+
 msgid "Applied Date"
 msgstr "Data de Aplicação"
 
 msgid "Applied To"
 msgstr "Aplicado a"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "Os valores aplicados, os descontos e as baixas contábeis estão na moeda base da empresa ({baseCurrency})."
 
 msgid "Applies to"
 msgstr "Aplica-se a"
@@ -2444,9 +2450,11 @@ msgstr "Tem certeza de que deseja enviar um convite para estes usuários?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Tem certeza de que deseja enviar um convite para este usuário?"
 
-#. placeholder {0}: initialValues.memoId
-msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
-msgstr ""
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Tem certeza de que deseja anular este memorando? Isso reverterá seus lançamentos contábeis e aplicações. Isso não pode ser desfeito."
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "Tem certeza de que deseja anular este pagamento? Isso reverterá seus lançamentos contábeis e aplicações. Isso não pode ser desfeito."
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "Tem a certeza de que deseja anular esta fatura de compra? Esta ação reverterá todas as transações financeiras e não pode ser desfeita."
@@ -3528,9 +3536,6 @@ msgstr "Limpar consulta de pesquisa"
 msgid "Clear selection"
 msgstr "Limpar seleção"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "Liquidar esta fatura com os créditos contabilizados da parte, bem como caixa. Os créditos se aplicam diretamente — nenhuma contabilização necessária."
-
 msgid "Clear value"
 msgstr "Limpar valor"
 
@@ -4364,7 +4369,7 @@ msgstr "Não foi possível ler o documento: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "Não foi possível liberar {0}: {1}"
 
 msgid "Could not save"
 msgstr "Não foi possível salvar"
@@ -4713,6 +4718,9 @@ msgstr "Conta contábil de crédito quando custos indiretos são absorvidos em P
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "Contas contábeis de crédito usadas quando custos de manufatura são absorvidos em Produto em processo"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "Os valores de crédito estão na moeda base da empresa ({currency}). Os créditos entram em vigor quando este pagamento é contabilizado."
 
 msgid "Credit Memo"
 msgstr "Nota de crédito"
@@ -8722,6 +8730,9 @@ msgstr "inv"
 msgid "Inv Rate"
 msgstr "Taxa Inv"
 
+msgid "Invalid applications"
+msgstr "Aplicações inválidas"
+
 msgid "Invalid Invite"
 msgstr "Convite Inválido"
 
@@ -9117,7 +9128,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Diários datados nesta data ou antes são tratados como bloqueados. Mesclados com a data de bloqueio relatada pelo fornecedor quando ambos existem."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "Ir para uma seção em páginas de detalhes (mesmos modificadores + a letra da seção)"
 
 msgid "Just one"
 msgstr "Apenas um"
@@ -11058,6 +11069,9 @@ msgstr "Ninguém para atribuir"
 msgid "No open invoices"
 msgstr "Nenhuma fatura aberta"
 
+msgid "No open memos"
+msgstr "Sem memorandos abertos"
+
 msgid "No open orders for this item are available to link."
 msgstr "Nenhum pedido aberto para este item está disponível para vincular."
 
@@ -11575,11 +11589,11 @@ msgstr "Um conjunto de números"
 msgid "One shared setup instead of one per operation"
 msgstr "Um único setup compartilhado em vez de um por operação"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "Um Setup compartilhado mais os tempos mais longos de mão de obra e de máquina — os membros são executados juntos"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "Um setup compartilhado mais o tempo de execução de cada membro — o maior entre sua mão de obra e máquina — em sequência"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "Uma configuração compartilhada mais o tempo de trabalho e máquina somados"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "Um setup compartilhado mais o tempo de execução do membro mais longo — o maior entre sua mão de obra e máquina — já que os membros executam juntos"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Uma operação no roteiro de produção de uma ordem, nomeando um processo e um centro de trabalho, e carregando seu próprio Setup, mão de obra, tempos de máquina e taxas."
@@ -11764,6 +11778,9 @@ msgstr "operação"
 
 msgid "Operation"
 msgstr "Operação"
+
+msgid "Operation batch"
+msgstr "Lote de operação"
 
 msgid "Operation lead time"
 msgstr "Lead time da operação"
@@ -12187,6 +12204,9 @@ msgstr "Aplicações de Pagamento"
 msgid "Payment Date"
 msgstr "Data de Pagamento"
 
+msgid "Payment from Customer"
+msgstr "Pagamento do Cliente"
+
 msgid "Payment ID"
 msgstr "ID de Pagamento"
 
@@ -12208,11 +12228,14 @@ msgstr "Condições de Pagamento"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Condições de pagamento como Líquido 30 ou vencível no recebimento"
 
+msgid "Payment to Supplier"
+msgstr "Pagamento ao Fornecedor"
+
 msgid "Payments"
 msgstr "Pagamentos"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "Pagamentos e créditos aplicados a esta fatura. Clique em uma linha para abrir o documento de origem."
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "Pagamentos e créditos aplicados a esta fatura. Os valores aplicados e de variação cambial estão na moeda base da empresa. Clique em uma linha para abrir o documento de origem."
 
 msgid "PDF"
 msgstr "PDF"
@@ -13520,8 +13543,8 @@ msgstr "Gravar"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "Registre um memorando de crédito ou débito contra um cliente ou fornecedor. As aplicações a faturas específicas são adicionadas após a criação do memorando."
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "Registre caixa recebido de um cliente (Recebimento) ou pago a um fornecedor (Desembolso). Aplicações a faturas específicas são adicionadas após o pagamento ser criado."
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "Registre um pagamento do cliente, pagamento do fornecedor ou reembolso. As aplicações às faturas ou memorandos são adicionadas após o pagamento ser criado."
 
 msgid "Record deleted"
 msgstr "Registro eliminado"
@@ -13564,6 +13587,15 @@ msgstr "Atualizar"
 
 msgid "Refresh exchange rate"
 msgstr "Atualizar taxa de câmbio"
+
+msgid "Refund from Supplier"
+msgstr "Reembolso do Fornecedor"
+
+msgid "Refund memos"
+msgstr "Memorandos de Reembolso"
+
+msgid "Refund to Customer"
+msgstr "Reembolso para o Cliente"
 
 msgid "Regenerate"
 msgstr "Regenerar"
@@ -13624,7 +13656,7 @@ msgstr "Liberação"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "Liberar {0} lotes de produção"
 
 msgid "Release Batch"
 msgstr "Liberar lote de produção"
@@ -13646,7 +13678,7 @@ msgstr "Liberado"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "Liberados {0} lotes de produção"
 
 msgid "Released date"
 msgstr "Data de lançamento"
@@ -14124,8 +14156,14 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "Receita"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "Conta de receita de envio cobrado aos clientes"
+
 msgid "Revenue and expenses over a period"
 msgstr "Receita e despesas em um período"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "Conta contábil de receita creditada por frete cobrado dos clientes, contabilizada em sua própria linha; deve ser uma conta diferente do padrão de Vendas."
 
 msgid "Reverse all inventory adjustments"
 msgstr "Reverter todos os ajustes de estoque"
@@ -15050,9 +15088,6 @@ msgstr "Selecionar superfícies"
 msgid "Select the groups that should complete this training"
 msgstr "Selecione os grupos que devem concluir este treinamento"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "Selecione as faturas que este pagamento liquida. Desconto e baixa contábil estão na moeda da fatura."
-
 msgid "Select value"
 msgstr "Selecionar valor"
 
@@ -15443,6 +15478,12 @@ msgstr "Métodos de Envio"
 
 msgid "Shipping Notes"
 msgstr "Observações de envio"
+
+msgid "Shipping Revenue"
+msgstr "Receita de envio"
+
+msgid "Shipping Revenue (default)"
+msgstr "Receita de envio (padrão)"
 
 msgid "Shipping Supplier"
 msgstr "Fornecedor de Envio"
@@ -16507,6 +16548,9 @@ msgstr "Percentual de Imposto"
 
 msgid "Tax Residual Value %"
 msgstr "% Valor residual fiscal"
+
+msgid "Tax Status"
+msgstr "Status de Imposto"
 
 msgid "Tax Useful Life (default)"
 msgstr "Vida útil fiscal (padrão)"
@@ -18323,6 +18367,9 @@ msgstr "Recuperar da Sucata {label}"
 msgid "Unshipped orders"
 msgstr "Pedidos não enviados"
 
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "Operações da ordem não iniciadas em um processo em lote agrupadas para executar juntas em um centro de trabalho, compartilhando um setup e um cronômetro cujo tempo se divide de volta por ordem proporcionalmente à quantidade."
+
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo de documento de origem não suportado: {sourceDocument}"
 
@@ -18896,8 +18943,9 @@ msgid "Void"
 msgstr "Anular"
 
 #. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
-msgstr ""
+msgstr "Anular {0}"
 
 msgid "Void Invoice"
 msgstr "Anular Fatura"

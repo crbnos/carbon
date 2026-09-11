@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { datetime, round } from "@carbon/utils";
+import { datetime, round, toBaseAmount, toDocumentAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
@@ -12,6 +12,7 @@ import {
   computeEarlyPaymentDiscounts,
   getOpenPurchaseInvoicesForSupplier,
   getOpenSalesInvoicesForCustomer,
+  getPaymentCurrencyConfiguration,
   PaymentForm,
   paymentValidator,
   replaceInvoiceSettlements,
@@ -35,12 +36,21 @@ async function getSeedableOpenInvoices(
     paymentType === "Receipt"
       ? await getOpenSalesInvoicesForCustomer(client, companyId, partyId)
       : await getOpenPurchaseInvoicesForSupplier(client, companyId, partyId);
+  if (res.error) throw new Error(res.error.message);
   return res.data ?? [];
 }
 
-// Resolve the payment currency's decimals, then the early-payment discount per
-// invoice as of `asOfDate`. Returns an all-zero map (no discount) when the
-// currency can't be resolved, so a missing currency never blocks seeding.
+// Loader pre-fills the form. Query params:
+//   customerId  -> seeds counterparty + paymentType=Receipt
+//   supplierId  -> seeds counterparty + paymentType=Disbursement
+//   invoiceId   -> one or more; their open balances are summed into the total
+//                  and (on submit) one application is seeded per invoice
+//   amount      -> fallback total when no invoiceId is supplied
+// Early-payment discount per invoice as of `asOfDate`, in the invoice's DOCUMENT
+// currency. It is computed from `remainingDocument` rather than `balance`
+// (which is company base) so it lines up with the payment's cash total, which
+// is a document-currency amount. Returns an all-zero map when the currency
+// can't be resolved, so a missing currency never blocks seeding.
 async function getSeededDiscounts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -49,7 +59,7 @@ async function getSeededDiscounts(
   asOfDate: string,
   invoices: {
     id?: string | null;
-    balance?: number | null;
+    remainingDocument: number;
     dateIssued?: string | null;
     paymentTermId?: string | null;
   }[]
@@ -69,25 +79,17 @@ async function getSeededDiscounts(
     currencyDecimals,
     invoices: invoices.map((inv) => ({
       id: inv.id ?? "",
-      balance: Number(inv.balance ?? 0),
+      balance: inv.remainingDocument,
       dateIssued: inv.dateIssued ?? null,
       paymentTermId: inv.paymentTermId ?? null
     }))
   });
 }
 
-// Loader pre-fills the form. Query params:
-//   customerId  -> seeds counterparty + paymentType=Receipt
-//   supplierId  -> seeds counterparty + paymentType=Disbursement
-//   invoiceId   -> one or more; their open balances are summed into the total
-//                  and (on submit) one application is seeded per invoice
-//   amount      -> fallback total when no invoiceId is supplied
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
-    {
-      create: "invoicing"
-    }
+    { create: "invoicing" }
   );
 
   const url = new URL(request.url);
@@ -111,14 +113,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   let totalAmount = amount ? Number(amount) : 0;
 
+  // Resolved before seeding: the discount window is evaluated as of this date.
   const paymentDate = datetime
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
 
   // When seeded from invoices, the total and currency come from the invoices
-  // themselves (authoritative), not the URL amount. The seeded total is NET of
-  // any early-payment discount the invoice's terms grant as of the payment date,
-  // so a "2/10 net 30" invoice paid today pre-fills the discounted cash amount.
+  // themselves (authoritative), not the URL amount.
   if (invoiceIds.length > 0 && partyId) {
     const open = await getSeedableOpenInvoices(
       client,
@@ -129,7 +130,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const selected = open.filter((inv) => invoiceIds.includes(inv.id ?? ""));
     if (selected.length > 0) {
       currencyCode = selected[0].currencyCode ?? currencyCode;
-      exchangeRate = Number(selected[0].exchangeRate ?? 1);
+      exchangeRate = Number(selected[0].exchangeRate);
+      if (selected.some((inv) => inv.currencyCode !== currencyCode))
+        throw redirect(
+          path.to.payments,
+          await flash(
+            request,
+            error(null, "Selected invoices must use the same currency")
+          )
+        );
+      const configuration = await getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        currencyCode
+      );
+      // Net of any early-payment discount the invoice's terms grant as of the
+      // payment date, so a "2/10 net 30" invoice paid today pre-fills the
+      // discounted cash amount.
       const discounts = await getSeededDiscounts(
         client,
         companyId,
@@ -138,11 +155,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         paymentDate,
         selected
       );
-      totalAmount = selected.reduce(
-        (sum, inv) =>
-          sum +
-          round(Number(inv.balance ?? 0) - (discounts.get(inv.id ?? "") ?? 0)),
-        0
+      totalAmount = toDocumentAmount(
+        selected.reduce(
+          (sum, inv) =>
+            sum + inv.remainingDocument - (discounts.get(inv.id ?? "") ?? 0),
+          0
+        ),
+        1,
+        configuration.currencyDecimals
       );
     }
   }
@@ -168,9 +188,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "invoicing"
-    });
+    await requirePermissions(request, { create: "invoicing" });
 
   const formData = await request.formData();
   // Hidden field set by the loader so the action can seed applications without
@@ -183,6 +201,25 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(paymentValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  try {
+    await getPaymentCurrencyConfiguration(
+      client,
+      companyId,
+      validation.data.currencyCode
+    );
+  } catch (e) {
+    throw redirect(
+      path.to.paymentNew,
+      await flash(
+        request,
+        error(
+          e,
+          e instanceof Error ? e.message : "Invalid currency configuration"
+        )
+      )
+    );
   }
 
   let paymentId = validation.data.paymentId;
@@ -201,58 +238,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // branch must omit it so the table's xid() default generates the id.
   const { id: _omitId, ...paymentData } = validation.data;
 
-  // Resolve the seeded invoices + their early-payment discounts (as of the chosen
-  // payment date) BEFORE inserting, so the payment's cash total is derived from
-  // the SAME discounts the applications carry (applied + discount = balance).
-  // The loader's total is computed for today; recomputing here keeps the total in
-  // step when the user changed the payment date before submitting.
-  const isReceipt = validation.data.paymentType === "Receipt";
-  const seedPartyId = isReceipt
-    ? validation.data.customerId
-    : validation.data.supplierId;
-  let seededInvoices: Awaited<ReturnType<typeof getSeedableOpenInvoices>> = [];
-  let seededDiscounts = new Map<string, number>();
-  if (seedInvoiceIds.length > 0 && seedPartyId) {
-    const open = await getSeedableOpenInvoices(
-      client,
-      companyId,
-      validation.data.paymentType,
-      seedPartyId
-    );
-    seededInvoices = open.filter((inv) =>
-      seedInvoiceIds.includes(inv.id ?? "")
-    );
-    if (seededInvoices.length > 0) {
-      seededDiscounts = await getSeededDiscounts(
-        client,
-        companyId,
-        companyGroupId,
-        validation.data.currencyCode,
-        validation.data.paymentDate,
-        seededInvoices
-      );
-    }
-  }
-  const seededTotal =
-    seededInvoices.length > 0
-      ? round(
-          seededInvoices.reduce(
-            (sum, inv) =>
-              sum +
-              round(
-                Number(inv.balance ?? 0) -
-                  (seededDiscounts.get(inv.id ?? "") ?? 0)
-              ),
-            0
-          )
-        )
-      : null;
-
   const insert = await upsertPayment(client, {
     ...paymentData,
-    // Seeded-from-invoice payments take their cash total from the invoices
-    // (net of discount), authoritative over the form's pre-filled amount.
-    totalAmount: seededTotal ?? paymentData.totalAmount,
     paymentId,
     companyId,
     createdBy: userId,
@@ -265,32 +252,71 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Seed one application per selected invoice: appliedAmount = balance − discount
-  // and discountAmount = discount, so applied + discount = balance (settles the
-  // invoice in full without over-settling). The user can still adjust via the
-  // apply table.
-  if (seededInvoices.length > 0) {
+  // Seed one application per selected invoice for its full open balance. Each
+  // invoice's balance + rate are re-fetched server-side so the seed always
+  // reflects the current books. The user can still adjust via the apply table.
+  if (seedInvoiceIds.length > 0) {
+    const isReceipt = validation.data.paymentType === "Receipt";
+    const partyId = isReceipt
+      ? validation.data.customerId
+      : validation.data.supplierId;
     try {
-      await replaceInvoiceSettlements(getDatabaseClient(), {
-        paymentId: insert.data.id,
-        companyId,
-        createdBy: userId,
-        applications: seededInvoices.map((inv) => {
-          const discount = seededDiscounts.get(inv.id ?? "") ?? 0;
-          return {
-            targetSalesInvoiceId: isReceipt ? (inv.id ?? undefined) : undefined,
-            targetPurchaseInvoiceId: isReceipt
-              ? undefined
-              : (inv.id ?? undefined),
-            appliedAmount: round(Number(inv.balance ?? 0) - discount),
-            discountAmount: discount,
-            writeOffAmount: 0,
-            targetExchangeRate: Number(inv.exchangeRate ?? 1),
-            sourceExchangeRate: Number(validation.data.exchangeRate) || 1,
-            appliedDate: validation.data.paymentDate
-          };
-        })
-      });
+      const open = partyId
+        ? await getSeedableOpenInvoices(
+            client,
+            companyId,
+            validation.data.paymentType,
+            partyId
+          )
+        : [];
+      const selected = open.filter(
+        (inv) =>
+          seedInvoiceIds.includes(inv.id ?? "") &&
+          inv.currencyCode === validation.data.currencyCode
+      );
+      if (selected.length > 0) {
+        // Recomputed here rather than reused from the loader: the user may have
+        // changed the payment date before submitting, which moves the discount
+        // window. `applied + discount` still settles the invoice in full.
+        const discounts = await getSeededDiscounts(
+          client,
+          companyId,
+          companyGroupId,
+          validation.data.currencyCode,
+          validation.data.paymentDate,
+          selected
+        );
+        await replaceInvoiceSettlements(getDatabaseClient(), {
+          paymentId: insert.data.id,
+          companyId,
+          createdBy: userId,
+          applications: selected.map((inv) => {
+            // The discount is a DOCUMENT amount (see getSeededDiscounts).
+            // `sourceAmount` is document principal; `appliedAmount` and
+            // `discountAmount` are company base, so the base half is converted
+            // at the invoice's own rate.
+            const discountDocument = discounts.get(inv.id ?? "") ?? 0;
+            const discountBase = discountDocument
+              ? toBaseAmount(discountDocument, Number(inv.exchangeRate))
+              : 0;
+            return {
+              targetSalesInvoiceId: isReceipt
+                ? (inv.id ?? undefined)
+                : undefined,
+              targetPurchaseInvoiceId: isReceipt
+                ? undefined
+                : (inv.id ?? undefined),
+              appliedAmount: round(Number(inv.balance ?? 0) - discountBase),
+              sourceAmount: round(inv.remainingDocument - discountDocument),
+              discountAmount: discountBase,
+              writeOffAmount: 0,
+              targetExchangeRate: Number(inv.exchangeRate),
+              sourceExchangeRate: Number(validation.data.exchangeRate),
+              appliedDate: validation.data.paymentDate
+            };
+          })
+        });
+      }
     } catch (e) {
       // The payment was created (a Draft with no applications is valid), but
       // seeding failed. Send the user to the detail page to apply manually.

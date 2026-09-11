@@ -127,7 +127,7 @@ const PrimaryNavigation = () => {
         data-state={isOpen ? "expanded" : "collapsed"}
         className={cn(
           "bg-background py-2 group z-10 h-full w-full",
-          "flex flex-col justify-between data-[state=expanded]:border-r data-[state=expanded]:border-border",
+          "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onMouseEnter={

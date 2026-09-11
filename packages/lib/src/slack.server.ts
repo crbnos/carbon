@@ -32,7 +32,7 @@ class SlackClient {
         blocks
       });
     } catch (error) {
-      log.error("Error sending Slack message", { error });
+      log.error("Error sending Slack message", { channel, error });
     }
   }
 }

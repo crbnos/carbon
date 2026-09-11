@@ -1262,7 +1262,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr ""
+msgstr "एक पैरामीटर जोड़ें (कार्यविधि एक्सप्लोरर में)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "लेबल सीधे प्रिंट करने के लिए प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें।"
@@ -1277,7 +1277,7 @@ msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr ""
+msgstr "एक चरण या प्रश्न जोड़ें (कार्यविधि और प्रशिक्षण एक्सप्लोरर में)"
 
 msgid "Add Ability"
 msgstr "क्षमता जोड़ें"
@@ -1895,11 +1895,17 @@ msgstr "लागू"
 msgid "Applied amount for {0}"
 msgstr "{0} के लिए लागू राशि"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "लागू की गई राशि कंपनी की आधार मुद्रा ({baseCurrency}) में है।"
+
 msgid "Applied Date"
 msgstr "लागू तारीख"
 
 msgid "Applied To"
 msgstr "लागू किया गया"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "लागू की गई राशियाँ, छूट और बट्टे खाते की राशियाँ कंपनी की आधार मुद्रा ({baseCurrency}) में हैं।"
 
 msgid "Applies to"
 msgstr "लागू होता है"
@@ -2444,9 +2450,11 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस उपयोगकर्ता को आमंत्रण भेजना चाहते हैं?"
 
-#. placeholder {0}: initialValues.memoId
-msgid "Are you sure you want to void {0}? This reverses its ledger entries and cannot be undone."
-msgstr ""
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस ज्ञापन को अमान्य करना चाहते हैं? यह इसकी लेखांकन प्रविष्टियों और आवेदनों को उलट देगा। इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस भुगतान को अमान्य करना चाहते हैं? यह इसकी लेखांकन प्रविष्टियों और आवेदनों को उलट देगा। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "क्या आप इस क्रय चालान को अमान्य करना चाहते हैं? यह क्रिया सभी वित्तीय लेनदेन को उलट देगी और वापस नहीं की जा सकती।"
@@ -3528,9 +3536,6 @@ msgstr "खोज क्वेरी साफ करें"
 msgid "Clear selection"
 msgstr "चयन साफ करें"
 
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "इस चालान को पार्टी के पोस्ट किए गए क्रेडिट के साथ-साथ नकद से साफ़ करें। क्रेडिट सीधे लागू होते हैं — कोई पोस्टिंग की आवश्यकता नहीं है।"
-
 msgid "Clear value"
 msgstr "मान साफ़ करें"
 
@@ -4364,7 +4369,7 @@ msgstr "दस्तावेज़ नहीं पढ़ा जा सका: 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr ""
+msgstr "{0} को जारी नहीं किया जा सका: {1}"
 
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
@@ -4713,6 +4718,9 @@ msgstr "जब उपरिव्यय WIP में अवशोषित ह�
 
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "जब विनिर्माण लागत को WIP में अवशोषित किया जाता है तब उपयोग किए जाने वाले क्रेडिट खाते"
+
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "क्रेडिट राशियाँ कंपनी की आधार मुद्रा ({currency}) में हैं। यह भुगतान पोस्ट होने पर क्रेडिट लागू होते हैं।"
 
 msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
@@ -8722,6 +8730,9 @@ msgstr "इन्व"
 msgid "Inv Rate"
 msgstr "इनवॉइस दर"
 
+msgid "Invalid applications"
+msgstr "अमान्य आवंटन"
+
 msgid "Invalid Invite"
 msgstr "अमान्य निमंत्रण"
 
@@ -9117,7 +9128,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "इस तारीख को या इससे पहले दिनांकित जर्नल को लॉक माना जाता है। दोनों मौजूद होने पर प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ मर्ज किया जाता है।"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr ""
+msgstr "विस्तार पृष्ठों पर एक खंड पर जाएं (समान संशोधक + खंड का अक्षर)"
 
 msgid "Just one"
 msgstr "बस एक"
@@ -11058,6 +11069,9 @@ msgstr "असाइन करने के लिए कोई नहीं"
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
 
+msgid "No open memos"
+msgstr "कोई खुला ज्ञापन नहीं"
+
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
 
@@ -11575,11 +11589,11 @@ msgstr "एक ही संख्या का सेट"
 msgid "One shared setup instead of one per operation"
 msgstr "हर प्रक्रिया के बजाय एक साझा सेटअप"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "एक साझा सेटअप प्लस सबसे लंबा श्रम और मशीन समय — सदस्य एक साथ चलते हैं"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "एक साझा सेटअप और प्रत्येक सदस्य का रन समय — इसके श्रम और मशीन में से अधिकतम — अनुक्रम में"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "एक साझा सेटअप जमा श्रम और मशीन समय के साथ"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "एक साझा सेटअप और सबसे लंबे सदस्य का रन समय — इसके श्रम और मशीन में से अधिकतम — क्योंकि सदस्य एक साथ चलते हैं"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "एक जॉब की रूटिंग में एक चरण, एक प्रक्रिया और एक वर्क सेंटर का नाम देते हुए और अपने स्वयं के सेटअप, श्रम, मशीन समय और दरें शामिल करते हुए।"
@@ -11764,6 +11778,9 @@ msgstr "ऑपरेशन"
 
 msgid "Operation"
 msgstr "ऑपरेशन"
+
+msgid "Operation batch"
+msgstr "ऑपरेशन बैच"
 
 msgid "Operation lead time"
 msgstr "ऑपरेशन लीड टाइम"
@@ -12187,6 +12204,9 @@ msgstr "भुगतान अनुप्रयोग"
 msgid "Payment Date"
 msgstr "भुगतान तारीख"
 
+msgid "Payment from Customer"
+msgstr "ग्राहक से भुगतान"
+
 msgid "Payment ID"
 msgstr "भुगतान ID"
 
@@ -12208,11 +12228,14 @@ msgstr "भुगतान शर्तें"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30 जैसी भुगतान शर्तें या प्राप्ति पर देय"
 
+msgid "Payment to Supplier"
+msgstr "आपूर्तिकर्ता को भुगतान"
+
 msgid "Payments"
 msgstr "भुगतान"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "इस चालान पर लागू किए गए भुगतान और क्रेडिट। स्रोत दस्तावेज़ खोलने के लिए एक पंक्ति पर क्लिक करें।"
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
 
 msgid "PDF"
 msgstr "PDF"
@@ -13520,8 +13543,8 @@ msgstr "रिकॉर्ड करें"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "एक ग्राहक या आपूर्तिकर्ता के विरुद्ध एक जमा या नामे ज्ञापन दर्ज करें। विशिष्ट चालान के लिए आवेदन ज्ञापन बनाए जाने के बाद जोड़े जाते हैं।"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "एक ग्राहक से प्राप्त नकद (प्राप्ति) या एक आपूर्तिकर्ता को भुगतान की गई नकद (संवितरण) को दर्ज करें। विशिष्ट चालान के लिए आवेदन भुगतान बनाए जाने के बाद जोड़े जाते हैं।"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "एक ग्राहक भुगतान, आपूर्तिकर्ता भुगतान, या धनवापसी दर्ज करें। भुगतान बनाने के बाद चालान या ज्ञापन में आवेदन जोड़े जाते हैं।"
 
 msgid "Record deleted"
 msgstr "रिकॉर्ड हटाया गया"
@@ -13564,6 +13587,15 @@ msgstr "ताज़ा करें"
 
 msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
+
+msgid "Refund from Supplier"
+msgstr "आपूर्तिकर्ता से धनवापसी"
+
+msgid "Refund memos"
+msgstr "धनवापसी ज्ञापन"
+
+msgid "Refund to Customer"
+msgstr "ग्राहक को धनवापसी"
 
 msgid "Regenerate"
 msgstr "पुनर्जीवित करें"
@@ -13624,7 +13656,7 @@ msgstr "जारी करें"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr ""
+msgstr "{0} बैच जारी करें"
 
 msgid "Release Batch"
 msgstr "बैच जारी करें"
@@ -13646,7 +13678,7 @@ msgstr "जारी किया गया"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr ""
+msgstr "{0} बैच जारी किए गए"
 
 msgid "Released date"
 msgstr "जारी की गई तारीख"
@@ -14124,8 +14156,14 @@ msgstr "Rev {revision}"
 msgid "Revenue"
 msgstr "राजस्व"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "ग्राहकों से लिए गए शिपिंग शुल्क का राजस्व खाता"
+
 msgid "Revenue and expenses over a period"
 msgstr "एक अवधि में राजस्व और व्यय"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "ग्राहकों को चार्ज की गई शिपिंग के लिए जमा किया गया राजस्व लेजर खाता, अपनी पंक्ति पर पोस्ट किया गया; यह बिक्री डिफ़ॉल्ट से अलग खाता होना चाहिए।"
 
 msgid "Reverse all inventory adjustments"
 msgstr "सभी इन्वेंटरी समायोजन को उलट दें"
@@ -15050,9 +15088,6 @@ msgstr "सतहें चुनें"
 msgid "Select the groups that should complete this training"
 msgstr "उन समूहों का चयन करें जिन्हें इस प्रशिक्षण को पूरा करना चाहिए"
 
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "वह चालान चुनें जो यह भुगतान निपटाता है। छूट और बट्टे खाते चालान मुद्रा में हैं।"
-
 msgid "Select value"
 msgstr "मान चुनें"
 
@@ -15443,6 +15478,12 @@ msgstr "शिपिंग विधियां"
 
 msgid "Shipping Notes"
 msgstr "शिपिंग नोट्स"
+
+msgid "Shipping Revenue"
+msgstr "शिपिंग राजस्व"
+
+msgid "Shipping Revenue (default)"
+msgstr "शिपिंग राजस्व (डिफ़ॉल्ट)"
 
 msgid "Shipping Supplier"
 msgstr "शिपिंग आपूर्तिकर्ता"
@@ -16507,6 +16548,9 @@ msgstr "कर प्रतिशत"
 
 msgid "Tax Residual Value %"
 msgstr "कर अवशिष्ट मूल्य %"
+
+msgid "Tax Status"
+msgstr "कर स्थिति"
 
 msgid "Tax Useful Life (default)"
 msgstr "कर उपयोगी जीवन (डिफ़ॉल्ट)"
@@ -18323,6 +18367,9 @@ msgstr "अनस्क्रैप करें {label}"
 msgid "Unshipped orders"
 msgstr "अभी भेजे जाने वाले ऑर्डर"
 
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "एक बैच-योग्य प्रक्रिया पर शुरू न किए गए जॉब ऑपरेशन वर्क सेंटर पर एक साथ चलने के लिए समूहित, एक सेटअप और एक टाइमर साझा करते हुए जिसका समय प्रति जॉब मात्रा के अनुपात में वापस विभाजित होता है।"
+
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
 
@@ -18896,8 +18943,9 @@ msgid "Void"
 msgstr "अमान्य करें"
 
 #. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
-msgstr ""
+msgstr "अमान्य करें {0}"
 
 msgid "Void Invoice"
 msgstr "चालान अमान्य करें"

@@ -19,7 +19,7 @@ A material needs picking only when its lineside bin doesn't already cover the op
 
 A picking list header moves through four states. It starts at **"Draft"**, flips to **"In Progress"** on the first pick, and reaches **"Completed"** when every line is resolved. **"Cancelled"** is a terminal off-ramp.
 
-<StatusFlow>
+<StatusFlow entity="pickingList">
   <Status name="Draft">Generated and assigned, nothing picked yet.</Status>
   <Status name="In Progress">At least one line has been picked, or the list was reopened with prior progress.</Status>
   <Status name="Completed" accent>Every line is fully picked or Cancelled. The list locks.</Status>
@@ -30,7 +30,7 @@ The header status is *derived from its lines* by a database trigger, not set by 
 
 Each line carries its own status:
 
-<StatusFlow>
+<StatusFlow entity="pickingListLine">
   <Status name="Pending">Not yet picked. Still outstanding work.</Status>
   <Status name="Picked" accent>The pick quantity has been moved to the lineside bin.</Status>
   <Status name="Short">Picked less than required, and the shortage is acknowledged.</Status>

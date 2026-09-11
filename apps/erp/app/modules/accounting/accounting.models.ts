@@ -479,6 +479,12 @@ export const defaultBalanceSheetAccountValidator = z.object({
 
 export const defaultIncomeAcountValidator = z.object({
   salesAccount: z.string().min(1, { message: "Sales account is required" }),
+  salesShippingRevenueAccount: z
+    .string()
+    .min(1, {
+      message: "Shipping revenue account is required"
+    })
+    .optional(),
   salesDiscountAccount: z.string().min(1, {
     message: "Sales discount account is required"
   }),
