@@ -15,10 +15,12 @@ async function withAuthTransport(
   authenticatedClaims?: Record<string, unknown>,
 ) {
   const originalFetch = globalThis.fetch;
-  const variables = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
-  const previous = variables.map((key) => Deno.env.get(key));
-  Deno.env.set("SUPABASE_URL", "http://auth.invalid");
-  Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", serviceToken);
+  const originalEnvGet = Deno.env.get;
+  const testEnv = new Map([
+    ["SUPABASE_URL", "http://auth.invalid"],
+    ["SUPABASE_SERVICE_ROLE_KEY", serviceToken],
+  ]);
+  Deno.env.get = (key) => testEnv.get(key);
   globalThis.fetch = (input) => {
     const url = new URL(
       input instanceof Request ? input.url : input.toString(),
@@ -53,11 +55,7 @@ async function withAuthTransport(
     await run();
   } finally {
     globalThis.fetch = originalFetch;
-    variables.forEach((key, index) => {
-      const value = previous[index];
-      if (value === undefined) Deno.env.delete(key);
-      else Deno.env.set(key, value);
-    });
+    Deno.env.get = originalEnvGet;
   }
 }
 

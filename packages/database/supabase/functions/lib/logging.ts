@@ -52,7 +52,13 @@ function ensureConfigured(): void {
     .Deno?.env;
   if (!denoEnv) return;
 
-  const raw = denoEnv.get("LOG_LEVEL")?.toLowerCase().trim();
+  let raw: string | undefined;
+  try {
+    raw = denoEnv.get("LOG_LEVEL")?.toLowerCase().trim();
+  } catch {
+    // Permissionless test and tooling processes intentionally deny env access.
+    // They should receive the same default level as an unset LOG_LEVEL.
+  }
   const level: Level =
     raw && (LOG_LEVELS as readonly string[]).includes(raw)
       ? (raw as Level)
