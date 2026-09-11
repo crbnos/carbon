@@ -11,6 +11,7 @@ import {
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import { stageOrResumeRampCardTransaction } from "./ramp-sync-card-stage";
+import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled,
@@ -545,6 +546,7 @@ export async function syncRampCardTransactions(
       `[RAMP SYNC] ${companyId}: card transactions drain failed`,
       familyError
     );
+    recordRampFamilyError(result, familyError);
   }
 
   const reconfirmed = await reconfirmMapped(ctx, mapped);
@@ -570,7 +572,7 @@ export async function syncRampCardTransactions(
 
   result.created = successful.length - reconfirmed.successful.length;
   result.reconfirmed = reconfirmed.successful.length;
-  result.failed = failed.length;
+  result.failed += failed.length;
   return result;
 }
 
@@ -659,6 +661,7 @@ export async function syncRampTransfers(
       `[RAMP SYNC] ${companyId}: transfers drain failed`,
       familyError
     );
+    recordRampFamilyError(result, familyError);
   }
 
   const reconfirmed = await reconfirmMapped(ctx, mapped);
@@ -684,7 +687,7 @@ export async function syncRampTransfers(
 
   result.created = successful.length - reconfirmed.successful.length;
   result.reconfirmed = reconfirmed.successful.length;
-  result.failed = failed.length;
+  result.failed += failed.length;
   return result;
 }
 
@@ -774,6 +777,7 @@ export async function syncRampCashbacks(
       `[RAMP SYNC] ${companyId}: cashbacks drain failed`,
       familyError
     );
+    recordRampFamilyError(result, familyError);
   }
 
   const reconfirmed = await reconfirmMapped(ctx, mapped);
@@ -799,6 +803,6 @@ export async function syncRampCashbacks(
 
   result.created = successful.length - reconfirmed.successful.length;
   result.reconfirmed = reconfirmed.successful.length;
-  result.failed = failed.length;
+  result.failed += failed.length;
   return result;
 }

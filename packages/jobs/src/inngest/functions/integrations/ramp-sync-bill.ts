@@ -11,6 +11,7 @@ import {
   type RampBillLine,
   stageOrResumeRampBill
 } from "./ramp-sync-bill-stage";
+import { recordRampFamilyError } from "./ramp-sync-observability";
 import { syncRampBillPayment } from "./ramp-sync-payment";
 import {
   isRampEntityInScope,
@@ -455,6 +456,7 @@ export async function syncRampBills(
     }
   } catch (familyError) {
     console.error(`[RAMP SYNC] ${companyId}: bills drain failed`, familyError);
+    recordRampFamilyError(result, familyError);
   }
 
   try {
@@ -476,7 +478,7 @@ export async function syncRampBills(
 
   result.created = successful.length - reconfirmed;
   result.reconfirmed = reconfirmed;
-  result.failed = failed.length;
+  result.failed += failed.length;
   return result;
 }
 
@@ -548,6 +550,7 @@ export async function syncRampBillPayments(
       `[RAMP SYNC] ${companyId}: bill payments drain failed`,
       familyError
     );
+    recordRampFamilyError(result, familyError);
   }
 
   try {
@@ -569,6 +572,6 @@ export async function syncRampBillPayments(
 
   result.created = successful.length - reconfirmed;
   result.reconfirmed = reconfirmed;
-  result.failed = failed.length;
+  result.failed += failed.length;
   return result;
 }

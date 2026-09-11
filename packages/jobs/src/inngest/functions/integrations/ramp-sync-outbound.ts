@@ -16,6 +16,10 @@ import {
   rampKeysetFilter
 } from "./ramp-sync-cursor";
 import {
+  type RampFailureResult,
+  recordRampFamilyError
+} from "./ramp-sync-observability";
+import {
   loadRampPurchaseInvoiceLines,
   loadRampPurchaseOrderLines
 } from "./ramp-sync-outbound-lines";
@@ -170,7 +174,10 @@ export async function syncRampOutbound(
 ) {
   const { client, companyId, metadata } = ctx;
   const integrationRow = { data: { updatedAt: integrationUpdatedAt } };
-  const result = {
+  const result: {
+    purchaseOrders: RampFailureResult & { pushed: number; archived: number };
+    invoices: RampFailureResult & { pushed: number; archived: number };
+  } = {
     purchaseOrders: { pushed: 0, archived: 0, failed: 0 },
     invoices: { pushed: 0, failed: 0, archived: 0 }
   };
@@ -296,6 +303,7 @@ export async function syncRampOutbound(
         `[RAMP SYNC] ${companyId}: purchase-order push failed`,
         familyError
       );
+      recordRampFamilyError(result.purchaseOrders, familyError);
     }
   }
 
@@ -516,6 +524,7 @@ export async function syncRampOutbound(
         `[RAMP SYNC] ${companyId}: invoice push / archive failed`,
         familyError
       );
+      recordRampFamilyError(result.invoices, familyError);
     }
   }
 

@@ -4,6 +4,7 @@ import {
   type RampReimbursement
 } from "@carbon/ee/ramp.server";
 import { postPurchaseInvoice } from "./ramp-sync-bill";
+import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled
@@ -73,6 +74,7 @@ export async function syncRampReimbursements(
       `[RAMP SYNC] ${companyId}: reimbursements drain failed`,
       familyError
     );
+    recordRampFamilyError(result, familyError);
   }
 
   try {
@@ -93,6 +95,6 @@ export async function syncRampReimbursements(
   }
 
   result.created = successful.length;
-  result.failed = failed.length;
+  result.failed += failed.length;
   return result;
 }

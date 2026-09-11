@@ -26,6 +26,7 @@ export type FamilyResult = {
   created: number;
   reconfirmed: number;
   failed: number;
+  error?: string;
   confirmError?: string;
 };
 

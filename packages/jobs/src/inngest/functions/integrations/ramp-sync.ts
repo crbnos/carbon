@@ -22,6 +22,7 @@ import {
   syncRampCashbacks,
   syncRampTransfers
 } from "./ramp-sync-card";
+import { countRampSyncFailures } from "./ramp-sync-observability";
 import { syncRampOutbound } from "./ramp-sync-outbound";
 import { syncRampReimbursements } from "./ramp-sync-reimbursement-family";
 import { syncRampRepayments } from "./ramp-sync-repayment";
@@ -154,18 +155,19 @@ export const rampSyncFunction = inngest.createFunction(
       syncRampOutbound(ctx, ramp, integrationRow.data?.updatedAt)
     );
 
-    const totalFailed =
-      coaResult.failed +
-      costCenterResult.failed +
-      cardResult.failed +
-      transferResult.failed +
-      cashbackResult.failed +
-      billResult.failed +
-      billPaymentResult.failed +
-      reimbursementResult.failed +
-      repaymentResult.failed +
-      outboundResult.purchaseOrders.failed +
-      outboundResult.invoices.failed;
+    const totalFailed = countRampSyncFailures([
+      coaResult,
+      costCenterResult,
+      cardResult,
+      transferResult,
+      cashbackResult,
+      billResult,
+      billPaymentResult,
+      reimbursementResult,
+      repaymentResult,
+      outboundResult.purchaseOrders,
+      outboundResult.invoices
+    ]);
 
     if (totalFailed > 0) {
       await step.run("ramp-notify-failures", async () => {
@@ -179,7 +181,7 @@ export const rampSyncFunction = inngest.createFunction(
             companyId,
             documentId: "ramp",
             title: "Ramp sync needs attention",
-            body: `${totalFailed} item(s) failed to sync — review the Accounting tab in Ramp`,
+            body: `${totalFailed} issue(s) need attention — review the Accounting tab in Ramp`,
             recipient: { type: "user", userId: recipientId }
           });
         } catch (notifyError) {

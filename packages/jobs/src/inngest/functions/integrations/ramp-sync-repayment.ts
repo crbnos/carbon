@@ -5,6 +5,7 @@ import {
   scaleRepaymentLines
 } from "@carbon/ee/ramp.server";
 import { createAndPostTransaction } from "./ramp-sync-card";
+import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled
@@ -261,6 +262,7 @@ export async function syncRampRepayments(
       `[RAMP SYNC] ${companyId}: repayments drain failed`,
       familyError
     );
+    recordRampFamilyError(result, familyError);
   }
 
   // Advance the cursor to min(max(processed), min(failed) - 1s) so failed
@@ -272,6 +274,6 @@ export async function syncRampRepayments(
 
   result.created = created;
   result.reconfirmed = reconfirmed;
-  result.failed = failed;
+  result.failed += failed;
   return result;
 }
