@@ -9,7 +9,7 @@ import {
   type RampIntegrationMetadata,
   type RampVendorSupplier
 } from "@carbon/ee/ramp.server";
-import { toDocumentAmount } from "@carbon/utils";
+import { chunkArray, toDocumentAmount } from "@carbon/utils";
 import {
   decodeRampKeysetCursor,
   encodeRampKeysetCursor,
@@ -530,14 +530,24 @@ export async function syncRampOutbound(
       });
       if (notArchived.length > 0) {
         const settledIds = [...new Set(notArchived.map((m) => m.entityId))];
-        const statuses = await client
-          .from("purchaseInvoices")
-          .select("id, status")
-          .eq("companyId", companyId)
-          .in("id", settledIds);
-        const statusById = new Map(
-          (statuses.data ?? []).map((row) => [row.id, row.status])
-        );
+        const statusById = new Map<string, string | null>();
+        // Bound both the .in URL and response size. Mappings are unbounded;
+        // one status query would otherwise silently stop at PostgREST's cap.
+        for (const ids of chunkArray(settledIds, OUTBOUND_PAGE_SIZE)) {
+          const statuses = await client
+            .from("purchaseInvoices")
+            .select("id, status")
+            .eq("companyId", companyId)
+            .in("id", ids);
+          if (statuses.error) {
+            throw new Error(
+              `Failed to load Ramp invoice settlement statuses: ${statuses.error.message}`
+            );
+          }
+          for (const row of statuses.data ?? []) {
+            if (row.id) statusById.set(row.id, row.status);
+          }
+        }
         for (const m of notArchived) {
           const status = statusById.get(m.entityId);
           if (!status || !INVOICE_SETTLED_STATUSES.has(status)) continue;
@@ -545,6 +555,7 @@ export async function syncRampOutbound(
             await archiveRampBillForInvoice(ctx.mapping, ramp, m);
             result.invoices.archived += 1;
           } catch (archiveError) {
+            result.invoices.failed += 1;
             console.error(
               `[RAMP SYNC] ${companyId}: bill archive for invoice ${m.entityId} failed`,
               archiveError
