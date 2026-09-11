@@ -1,5 +1,6 @@
 import { round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
+import { scaleLinesToTotal, scaleRepaymentLines } from "../allocation";
 import { RAMP_COST_CENTER_FIELD_ID } from "../coding";
 import {
   buildCostCenterFieldBody,
@@ -14,8 +15,6 @@ import {
   type RampAccountMapping,
   type RampCostCenterMapping,
   rampClassificationForClass,
-  scaleLinesToTotal,
-  scaleRepaymentLines,
   toRampGlAccountPayload
 } from "../service";
 
@@ -68,17 +67,17 @@ describe("chunk", () => {
 });
 
 describe("scaleRepaymentLines", () => {
-  it("scales a 3-line original to a partial repayment, putting the rounding residual on the largest line so the sum equals the header exactly", () => {
+  it("scales a 3-line original to a partial repayment using bounded residual distribution", () => {
     const original = [
       { accountId: "a", amount: 10 },
       { accountId: "b", amount: 10 },
       { accountId: "c", amount: 13.33 }
     ];
-    // ratio = 11.11 / 33.33 ≈ 0.33333 → 3.33, 3.33, 4.44 (sum 11.10), residual
-    // 0.01 lands on the largest line (c → 4.45).
+    // ratio = 11.11 / 33.33 ≈ 0.33333 → 3.33, 3.33, 4.44 (sum 11.10).
+    // Hamilton distribution gives the residual to the most under-rounded line.
     const scaled = scaleRepaymentLines(original, 11.11, 33.33, 2);
 
-    expect(scaled.map((line) => line.amount)).toEqual([3.33, 3.33, 4.45]);
+    expect(scaled.map((line) => line.amount)).toEqual([3.34, 3.33, 4.44]);
 
     const sum = round(
       scaled.reduce((acc, line) => acc + line.amount, 0),
@@ -88,7 +87,16 @@ describe("scaleRepaymentLines", () => {
   });
 
   it("returns an empty list for no original lines", () => {
-    expect(scaleRepaymentLines([], 5, 10, 2)).toEqual([]);
+    expect(scaleRepaymentLines([], 0, 10, 2)).toEqual([]);
+  });
+
+  it("rejects a nonzero repayment with no source allocation basis", () => {
+    expect(() => scaleRepaymentLines([], 5, 10, 2)).toThrow(
+      "Cannot allocate a nonzero target without source lines"
+    );
+    expect(() =>
+      scaleRepaymentLines([{ accountId: "a", amount: 0 }], 5, 0, 2)
+    ).toThrow("Cannot allocate a nonzero target from a zero source total");
   });
 });
 
@@ -111,14 +119,14 @@ describe("scaleLinesToTotal", () => {
     expect(scaled.map((l) => l.amount)).toEqual([100, 50]);
   });
 
-  it("scales multiple lines proportionally, residual on the largest so the sum is exact", () => {
+  it("scales multiple lines proportionally using bounded residual distribution", () => {
     const lines = [
       { accountId: "a", amount: 10 },
       { accountId: "b", amount: 10 },
       { accountId: "c", amount: 13.33 }
     ];
     const scaled = scaleLinesToTotal(lines, 11.11, 2);
-    expect(scaled.map((l) => l.amount)).toEqual([3.33, 3.33, 4.45]);
+    expect(scaled.map((l) => l.amount)).toEqual([3.34, 3.33, 4.44]);
     const sum = round(
       scaled.reduce((acc, l) => acc + l.amount, 0),
       2
@@ -139,22 +147,30 @@ describe("scaleLinesToTotal", () => {
     });
   });
 
-  it("degrades a zero raw-sum to the target on the largest line", () => {
+  it("rejects a nonzero target when source lines sum to zero", () => {
     const lines = [
       { accountId: "a", amount: 0 },
       { accountId: "b", amount: 0 }
     ];
-    const scaled = scaleLinesToTotal(lines, 7, 2);
-    expect(
-      round(
-        scaled.reduce((acc, l) => acc + l.amount, 0),
-        2
-      )
-    ).toBe(7);
+    expect(() => scaleLinesToTotal(lines, 7, 2)).toThrow(
+      "Cannot allocate a nonzero target from a zero source total"
+    );
   });
 
   it("returns an empty list for no lines", () => {
-    expect(scaleLinesToTotal([], 5, 2)).toEqual([]);
+    expect(scaleLinesToTotal([], 0, 2)).toEqual([]);
+  });
+
+  it("rejects a nonzero target with no lines", () => {
+    expect(() => scaleLinesToTotal([], 5, 2)).toThrow(
+      "Cannot allocate a nonzero target without source lines"
+    );
+  });
+
+  it("rejects non-finite allocation inputs", () => {
+    expect(() =>
+      scaleLinesToTotal([{ accountId: "a", amount: Number.NaN }], 1, 2)
+    ).toThrow("Allocation inputs must be finite");
   });
 });
 

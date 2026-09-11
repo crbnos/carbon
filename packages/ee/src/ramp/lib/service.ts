@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -1659,131 +1658,6 @@ export async function resolveEmployeeSupplier(
   });
 
   return supplierId;
-}
-
-// /********************************************************\
-// *              Repayment line scaling                   *
-// \********************************************************/
-
-/** A card-transaction line to be scaled for a partial repayment. */
-export type RepaymentLineInput = {
-  accountId: string;
-  amount: number;
-  costCenterId?: string | null;
-  description?: string | null;
-};
-
-export type ScaledRepaymentLine = {
-  accountId: string;
-  amount: number;
-  costCenterId: string | null;
-  description: string | null;
-};
-
-/**
- * Scale a set of lines so their amounts sum EXACTLY to `target` (rounded at
- * `decimals`), putting the rounding residual on the largest-magnitude line.
- * PURE. Used to convert a Ramp transaction's line amounts — which come in the
- * MERCHANT currency — into the settlement currency the header (`entity_amount`)
- * is in: a foreign card charge otherwise fails post-card-transaction's
- * "lines must sum to the header" invariant. A no-op for a same-currency
- * transaction (ratio ≈ 1, residual 0). `rawSum === 0` degrades to a zero ratio
- * (the whole target lands as the residual on the largest line).
- */
-export function scaleLinesToTotal<T extends { amount: number }>(
-  lines: T[],
-  target: number,
-  decimals: number
-): T[] {
-  if (lines.length === 0) return [];
-
-  const rawSum = lines.reduce((acc, line) => acc + line.amount, 0);
-  const ratio = rawSum === 0 ? 0 : target / rawSum;
-
-  const scaled = lines.map((line) => ({
-    ...line,
-    amount: round(line.amount * ratio, decimals)
-  }));
-
-  const roundedTarget = round(target, decimals);
-  const sum = round(
-    scaled.reduce((acc, line) => acc + line.amount, 0),
-    decimals
-  );
-  const residual = round(roundedTarget - sum, decimals);
-
-  if (residual !== 0) {
-    let largest = 0;
-    let largestMagnitude = Math.abs(scaled[0]?.amount ?? 0);
-    for (let i = 1; i < scaled.length; i++) {
-      const magnitude = Math.abs(scaled[i]?.amount ?? 0);
-      if (magnitude > largestMagnitude) {
-        largest = i;
-        largestMagnitude = magnitude;
-      }
-    }
-    const largestLine = scaled[largest];
-    if (largestLine) {
-      largestLine.amount = round(largestLine.amount + residual, decimals);
-    }
-  }
-
-  return scaled;
-}
-
-/**
- * Scale a card transaction's original coding lines down to a (possibly partial)
- * repayment. Each line is scaled by `repaymentAmount / originalAmount` and
- * rounded at the currency's decimal places; the rounding residual is added to the
- * LARGEST-magnitude line so the scaled lines sum EXACTLY to the (rounded)
- * repayment amount — the invariant `post-card-transaction` asserts on the header.
- *
- * PURE + exported for unit testing. Uses the shared precision `round` (never a
- * bare `toFixed`/`Math.round`). `originalAmount === 0` degrades to a zero ratio
- * (the whole repayment lands as the residual on the first line) rather than
- * dividing by zero.
- */
-export function scaleRepaymentLines(
-  originalLines: RepaymentLineInput[],
-  repaymentAmount: number,
-  originalAmount: number,
-  decimals: number
-): ScaledRepaymentLine[] {
-  if (originalLines.length === 0) return [];
-
-  const ratio = originalAmount === 0 ? 0 : repaymentAmount / originalAmount;
-
-  const scaled: ScaledRepaymentLine[] = originalLines.map((line) => ({
-    accountId: line.accountId,
-    amount: round(line.amount * ratio, decimals),
-    costCenterId: line.costCenterId ?? null,
-    description: line.description ?? null
-  }));
-
-  const target = round(repaymentAmount, decimals);
-  const sum = round(
-    scaled.reduce((acc, line) => acc + line.amount, 0),
-    decimals
-  );
-  const residual = round(target - sum, decimals);
-
-  if (residual !== 0) {
-    let largest = 0;
-    let largestMagnitude = Math.abs(scaled[0]?.amount ?? 0);
-    for (let i = 1; i < scaled.length; i++) {
-      const magnitude = Math.abs(scaled[i]?.amount ?? 0);
-      if (magnitude > largestMagnitude) {
-        largest = i;
-        largestMagnitude = magnitude;
-      }
-    }
-    const largestLine = scaled[largest];
-    if (largestLine) {
-      largestLine.amount = round(largestLine.amount + residual, decimals);
-    }
-  }
-
-  return scaled;
 }
 
 // /********************************************************\

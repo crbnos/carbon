@@ -42,7 +42,8 @@ providers, which own the data and mirror it out.
 > - **Foreign-currency charge** — FIXED + live-verified: Ramp line amounts are in the
 >   MERCHANT currency but the header is settlement `entity_amount`, so
 >   `buildTransactionLines` scales the lines to the settlement total via the shared
->   `scaleLinesToTotal` (residual on the largest line; no-op for same-currency).
+>   `scaleLinesToTotal`. It uses the canonical bounded Hamilton allocator so no line
+>   absorbs more than one minor unit of residual; same-currency input is a no-op.
 > - **Outbound PO/bill push** — FIXED + live-verified (option B). PO create uses `external_id`
 >   (not `remote_id`) with required `currency` + `entity_id` (resolved from `metadata.entityId`
 >   or the business's first entity) + `three_way_match_enabled: false`; line items use
@@ -300,8 +301,9 @@ high-water mark IS the idempotency. `computeRepaymentCursor` advances to
 `min(max(processed), min(failed) − 1s)` so a failed item is re-listed next sweep — the
 cursor only advances over provably-covered work. Each repayment scales its ORIGINAL card
 transaction's coding lines by `repaymentAmount / originalAmount` via the pure
-`scaleRepaymentLines` (rounding residual lands on the largest-magnitude line so the scaled
-lines sum EXACTLY to the header — the invariant `post-card-transaction` asserts). Funding:
+`scaleRepaymentLines` (the canonical bounded allocator distributes residual by largest
+remainder so lines sum exactly to the header without distorting one line). A nonzero
+repayment with no source basis is rejected rather than fabricated. Funding:
 `STATEMENT_CREDIT` offsets the card liability; otherwise the statement bank account.
 
 ### Outbound: the draft-bill-only rule

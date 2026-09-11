@@ -1463,7 +1463,7 @@ full-screen ERP route.
 
 **Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
 
-**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, and any future provider document mapper.
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, Ramp card/repayment allocation, and any future provider document mapper.
 
 ## Two halves of an intercompany trade must round at the same scale
 
