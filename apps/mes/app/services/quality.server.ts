@@ -1,8 +1,10 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getDatabaseClient } from "~/services/database.server";
 import {
   getJobMakeMethod,
   getTrackedEntitiesByMakeMethodId,
@@ -54,6 +56,9 @@ export type CreateQualityIssueArgs = {
   nonConformanceTypeId?: string;
   priority?: "Low" | "Medium" | "High" | "Critical";
   quantity?: number;
+  // Links the source inspection in the same locked transaction as the
+  // disposition row, so the row is never visible without its inspection link.
+  inspectionId?: string;
 };
 
 // MES-owned NCR creation for a job operation: sequence, nonConformance insert,
@@ -153,7 +158,8 @@ export async function createQualityIssue(
       itemId: context.itemId,
       jobMakeMethodId: context.jobMakeMethodId,
       trackedEntityId: args.trackedEntityId,
-      quantity
+      quantity,
+      inspectionId: args.inspectionId
     })
   ]);
   const associationError =
@@ -630,28 +636,16 @@ export async function createInspectionRejectionIssue(
     name: issueTitle,
     description: `Auto-created from inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${failedFeaturesBlock}`,
     priority: "Medium",
-    quantity: Number(insp.lotSize ?? 1)
+    quantity: Number(insp.lotSize ?? 1),
+    // Link the source inspection to the issue so the ERP issue explorer can
+    // surface the origin and deep-link back to the inspection lot.
+    inspectionId
   });
 
   if (issue.error || !issue.data) {
     return {
       error: issue.error,
       message: issue.message ?? "Failed to create quality issue"
-    };
-  }
-
-  // Link the source inspection to the issue so the ERP issue explorer can
-  // surface the origin and deep-link back to the inspection lot.
-  const link = await serviceRole.from("nonConformanceInspection").insert({
-    nonConformanceId: issue.data.id,
-    inspectionId,
-    companyId,
-    createdBy: userId
-  });
-  if (link.error) {
-    return {
-      error: link.error,
-      message: "Quality issue created, but failed to link the inspection"
     };
   }
 
@@ -759,6 +753,10 @@ async function getIssueContext(
   };
 }
 
+// Writes the issue's disposition row, its entity links and (optionally) the
+// source inspection link in one transaction under the issue lock shared by
+// every disposition writer, so a concurrent quantity edit in the ERP can never
+// see the row without its links or inspection.
 async function linkIssueDispositionContext(
   client: ServiceRole,
   args: {
@@ -769,6 +767,7 @@ async function linkIssueDispositionContext(
     jobMakeMethodId: string | null;
     trackedEntityId?: string;
     quantity: number;
+    inspectionId?: string;
   }
 ): Promise<{ error: unknown | null }> {
   const {
@@ -778,16 +777,19 @@ async function linkIssueDispositionContext(
     itemId,
     jobMakeMethodId,
     trackedEntityId,
-    quantity
+    quantity,
+    inspectionId
   } = args;
 
-  if (!itemId) return { error: null };
+  if (!itemId && !inspectionId) return { error: null };
 
-  const trackedEntities = await getTrackedEntitiesForIssue(client, {
-    companyId,
-    jobMakeMethodId,
-    trackedEntityId
-  });
+  const trackedEntities = itemId
+    ? await getTrackedEntitiesForIssue(client, {
+        companyId,
+        jobMakeMethodId,
+        trackedEntityId
+      })
+    : { data: [], error: null };
 
   if (trackedEntities.error) {
     return { error: trackedEntities.error };
@@ -801,56 +803,72 @@ async function linkIssueDispositionContext(
         )
       : quantity;
 
-  const item = await client
-    .from("nonConformanceItem")
-    .insert({
-      nonConformanceId,
-      itemId,
-      quantity: itemQuantity,
-      disposition: "Pending",
-      companyId,
-      createdBy: userId
-    })
-    .select("id")
-    .single();
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        await lockIssueDispositions(trx, { nonConformanceId, companyId });
 
-  if (item.error || !item.data?.id) {
-    return { error: item.error ?? new Error("Failed to create issue item") };
+        if (inspectionId) {
+          await trx
+            .insertInto("nonConformanceInspection")
+            .values({
+              nonConformanceId,
+              inspectionId,
+              companyId,
+              createdBy: userId
+            })
+            .execute();
+        }
+
+        if (!itemId) return;
+
+        const item = await trx
+          .insertInto("nonConformanceItem")
+          .values({
+            nonConformanceId,
+            itemId,
+            quantity: itemQuantity,
+            disposition: "Pending",
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+
+        if (trackedEntities.data.length === 0) return;
+
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values(
+            trackedEntities.data.map((entity) => ({
+              nonConformanceId,
+              trackedEntityId: entity.id,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values(
+            trackedEntities.data.map((entity) => ({
+              nonConformanceItemId: item.id,
+              nonConformanceId,
+              trackedEntityId: entity.id,
+              quantity: Number(entity.quantity ?? quantity),
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      });
+  } catch (err) {
+    return { error: err };
   }
 
-  if (trackedEntities.data.length === 0) {
-    return { error: null };
-  }
-
-  const trackedEntityLinks = await client
-    .from("nonConformanceTrackedEntity")
-    .insert(
-      trackedEntities.data.map((entity) => ({
-        nonConformanceId,
-        trackedEntityId: entity.id,
-        companyId,
-        createdBy: userId
-      }))
-    );
-
-  if (trackedEntityLinks.error) {
-    return { error: trackedEntityLinks.error };
-  }
-
-  const dispositionLinks = await client
-    .from("nonConformanceItemTrackedEntity")
-    .insert(
-      trackedEntities.data.map((entity) => ({
-        nonConformanceItemId: item.data.id,
-        nonConformanceId,
-        trackedEntityId: entity.id,
-        quantity: Number(entity.quantity ?? quantity),
-        companyId,
-        createdBy: userId
-      }))
-    );
-
-  return { error: dispositionLinks.error };
+  return { error: null };
 }
 
 async function getTrackedEntitiesForIssue(
