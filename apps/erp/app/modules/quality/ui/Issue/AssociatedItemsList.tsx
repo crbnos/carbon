@@ -29,9 +29,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  NumberField,
+  NumberInput as NumberFieldInput,
   toast
 } from "@carbon/react";
-import { EPSILON } from "@carbon/utils";
+import { EPSILON, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -60,7 +62,61 @@ import { DispositionStatus } from "./DispositionStatus";
 type AssociatedItemsListProps = {
   associatedItems: IssueAssociationNode["children"];
   isDisabled?: boolean;
+  // True for an inspection-originated NCR: the reject already wrote off the
+  // lot quantity, which closeIssue restores on Use As Is / Rework.
+  isQuantityReadOnly?: boolean;
 };
+
+function DispositionQuantityInput({
+  nonConformanceItemId,
+  quantity
+}: {
+  nonConformanceItemId: string;
+  quantity: number;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher<typeof action>();
+
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data.error.message);
+    }
+  }, [fetcher.data]);
+
+  // Show the submitted value while the save is in flight; once the fetcher is
+  // idle this falls back to the loader's quantity, which also resets the field
+  // when the server rejects the change.
+  const pending = fetcher.formData?.get("value");
+  const value = typeof pending === "string" ? Number(pending) : quantity;
+
+  return (
+    <NumberField
+      aria-label={t`Quantity`}
+      value={value}
+      minValue={0}
+      formatOptions={INPUT_FORMAT.quantity}
+      onChange={(next) => {
+        if (
+          !Number.isFinite(next) ||
+          next < 0 ||
+          Math.abs(next - quantity) <= EPSILON
+        ) {
+          return;
+        }
+        const formData = new FormData();
+        formData.append("id", nonConformanceItemId);
+        formData.append("field", "quantity");
+        formData.append("value", String(next));
+        fetcher.submit(formData, {
+          method: "post",
+          action: path.to.updateIssueItem
+        });
+      }}
+    >
+      <NumberFieldInput size="sm" className="pr-2 tabular-nums" />
+    </NumberField>
+  );
+}
 
 type EntityLink = {
   id: string;
@@ -105,7 +161,8 @@ type MoveTarget = {
 
 export function AssociatedItemsList({
   associatedItems,
-  isDisabled = false
+  isDisabled = false,
+  isQuantityReadOnly = false
 }: AssociatedItemsListProps) {
   const [items] = useItems();
   const { t } = useLingui();
@@ -227,6 +284,9 @@ export function AssociatedItemsList({
   }
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
+  // Tracked rows (with entity links) derive their quantity from the links, so
+  // only link-less rows get the input; the update route enforces the same.
+  const canEditQuantity = canEdit && !isQuantityReadOnly;
   const blockingRows = dispositionableRows.filter(
     (r) => r.pending || r.sumMismatch
   );
@@ -345,9 +405,16 @@ export function AssociatedItemsList({
                     <span className="text-xs font-medium text-muted-foreground">
                       <Trans>Quantity</Trans>
                     </span>
-                    <span className="h-8 flex items-center text-sm tabular-nums">
-                      {r.quantity}
-                    </span>
+                    {canEditQuantity && r.links.length === 0 ? (
+                      <DispositionQuantityInput
+                        nonConformanceItemId={r.child.id as string}
+                        quantity={r.quantity}
+                      />
+                    ) : (
+                      <span className="h-8 flex items-center text-sm tabular-nums">
+                        {r.quantity}
+                      </span>
+                    )}
                   </div>
                   <ValidatedForm
                     defaultValues={{

@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { datetime, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { disposition } from "~/modules/quality/quality.models";
@@ -30,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const parent = await client
     .from("nonConformanceItem")
-    .select("nonConformance(status)")
+    .select("nonConformanceId, nonConformance(status)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
@@ -60,6 +61,78 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedAt: new Date().toISOString()
         })
         .eq("id", id);
+    case "quantity": {
+      const quantity = Number(value);
+      if (
+        value === null ||
+        value.trim() === "" ||
+        !Number.isFinite(quantity) ||
+        quantity < 0
+      ) {
+        return {
+          error: { message: "Quantity must be zero or more" },
+          data: null
+        };
+      }
+      if (parent.error || !parent.data) {
+        return {
+          error: { message: "Issue item not found" },
+          data: null
+        };
+      }
+
+      // A tracked row's quantity is the sum of its linked entities — editing
+      // it directly would break the closure link-sum check. An inspection-
+      // originated NCR already wrote off the lot at reject, and closeIssue
+      // restores row.quantity on Use As Is / Rework, so a changed quantity
+      // would restore a different amount than was written off.
+      const [links, inspections] = await Promise.all([
+        client
+          .from("nonConformanceItemTrackedEntity")
+          .select("id", { count: "exact", head: true })
+          .eq("nonConformanceItemId", id)
+          .eq("companyId", companyId),
+        client
+          .from("nonConformanceInspection")
+          .select("id", { count: "exact", head: true })
+          .eq("nonConformanceId", parent.data.nonConformanceId)
+          .eq("companyId", companyId)
+      ]);
+      if (links.error || inspections.error) {
+        return {
+          error: { message: "Failed to load issue item" },
+          data: null
+        };
+      }
+      if ((links.count ?? 0) > 0) {
+        return {
+          error: {
+            message:
+              "This row's quantity comes from its linked tracked entities. Split or move entities instead."
+          },
+          data: null
+        };
+      }
+      if ((inspections.count ?? 0) > 0) {
+        return {
+          error: {
+            message:
+              "Quantity is set by the rejected inspection lot and cannot be edited."
+          },
+          data: null
+        };
+      }
+
+      return await client
+        .from("nonConformanceItem")
+        .update({
+          quantity: round(quantity),
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", id)
+        .eq("companyId", companyId);
+    }
     default:
       return {
         error: { message: `Invalid field: ${field}` },

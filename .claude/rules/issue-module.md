@@ -49,8 +49,12 @@ in the migrations — **newest wins**; core tables created in
   (`Inventory` / `Non-Inventory`, e.g. a job-operation NCR from `apps/mes` or a
   rejected non-tracked inbound-inspection lot) — they carry a `quantity` and no
   `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
-  a quantity + disposition `Select` (no entity chips; "Move entities" stays gated on
-  `links.length > 0`). **Split** works for a non-tracked row as a pure quantity split
+  an inline-editable quantity + disposition `Select` (no entity chips; "Move entities"
+  stays gated on `links.length > 0`). The quantity saves through `item+/update.tsx`
+  (`field: "quantity"`, user-scoped client so the audit log records the actor), which
+  refuses rows with entity links (their quantity is the link sum) and any NCR with a
+  `nonConformanceInspection` link (the reject already wrote off the lot, and
+  `closeIssue` restores `row.quantity` on Use As Is / Rework). **Split** works for a non-tracked row as a pure quantity split
   (`splitIssueItem` creates a new `Pending` row for the split-off quantity and shrinks
   the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
   rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.
