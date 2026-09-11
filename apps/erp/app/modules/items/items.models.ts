@@ -623,7 +623,10 @@ export const itemPlanningValidator = z
     maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-    orderMultiple: zfd.numeric(z.number().min(1)).optional()
+    orderMultiple: zfd.numeric(z.number().min(1)).optional(),
+    // the ownership ladder's leaf override (spec §P1.3): this item at this
+    // location; empty = inherit item group → location → company default
+    responsibleEmployee: zfd.text(z.string().optional())
     // critical: zfd.checkbox(),
   })
   .refine(

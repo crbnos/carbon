@@ -22,8 +22,8 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
 - [x] Task 6: generatePlanningActions — derive+diff pure fns tested (833 ee tests), wired into runMrp post-Phase-7, errors propagate
 - [x] Task 7: getPlanningActions (flat queries + JS merge, parent PO id join) + dismiss/assign/mark-actioned services + PlanningAction type
 - [x] Task 8: planning.update extended (both routes) — IDOR bind by id+companyId+Open, commitment gates, updateJob+notify for jobs, shortClose for cancel, wire map lowercase
-- [ ] Task 9: `responsibleEmployee` field on the item Planning tab (all 4 item types)
-- [ ] Task 10: Ownership settings screen (clone printer `AssignmentsCard`)
+- [x] Task 9: responsibleEmployee on itemPlanningValidator + ItemPlanningForm (Employee picker, all 4 item types via shared form)
+- [x] Task 10: /x/settings/planning — ResponsibleEmployeeCard tree (company→location→item-group, inherited placeholders) + RescheduleToleranceCard (0–365), writers in settings.service, nav + path registered
 - [ ] Task 11: Worklist columns + "my actions" filter + bulk apply/assign/dismiss on both planning pages
 - [ ] Task 12: Browser verification via /test (satellite dataset)
 

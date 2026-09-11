@@ -3575,6 +3575,9 @@ msgstr "कंपनियां"
 msgid "Company"
 msgstr "कंपनी"
 
+msgid "Company default"
+msgstr ""
+
 msgid "Company group"
 msgstr "कंपनी समूह"
 
@@ -4925,6 +4928,9 @@ msgstr "छुट्टी"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "दिन-प्रतिदिन के प्रश्न और लॉन्च के बाद हाइपरकेयर"
+
+msgid "days"
+msgstr ""
 
 msgid "Days"
 msgstr "दिन"
@@ -10125,6 +10131,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
@@ -12178,6 +12187,9 @@ msgstr "योजनाबद्ध समय"
 msgid "Planning"
 msgstr "योजना"
 
+msgid "Planning Ownership"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "योजना राउंड इस संख्या के पूरे गुणज तक पुनः भरण का सुझाव दिया।"
 
@@ -13638,6 +13650,9 @@ msgstr "मरम्मत की आवश्यकता है"
 msgid "Requires staffing"
 msgstr "स्टाफिंग आवश्यक है"
 
+msgid "Reschedule Tolerance"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
 
@@ -13695,6 +13710,9 @@ msgstr "संसाधन"
 
 msgid "Resources"
 msgstr "संसाधन"
+
+msgid "Responsible Employee"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "बदलावों के साथ पुनर्स्थापना योग्य"
@@ -18868,6 +18886,9 @@ msgstr "कौन किस पर प्रशिक्षण पाता ह�
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "कोटेशन, ऑर्डर और खरीद को अनुमोदित करने के लिए कौन है — और कब"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr ""
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "रखरखाव कार्य के लिए सूचना कौन प्राप्त करे?"

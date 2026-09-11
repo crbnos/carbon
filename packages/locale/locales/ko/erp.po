@@ -3575,6 +3575,9 @@ msgstr "회사"
 msgid "Company"
 msgstr "회사"
 
+msgid "Company default"
+msgstr ""
+
 msgid "Company group"
 msgstr "회사 그룹"
 
@@ -4925,6 +4928,9 @@ msgstr "휴무일"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "도입 후 일상적인 질문 대응 및 하이퍼케어"
+
+msgid "days"
+msgstr ""
 
 msgid "Days"
 msgstr "일"
@@ -10125,6 +10131,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP(계획)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
 
@@ -12178,6 +12187,9 @@ msgstr "계획된 시간"
 msgid "Planning"
 msgstr "계획"
 
+msgid "Planning Ownership"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "계획은 제안된 보충 수량을 이 숫자의 배수로 반올림합니다."
 
@@ -13638,6 +13650,9 @@ msgstr "수리 필요"
 msgid "Requires staffing"
 msgstr "인력 필수"
 
+msgid "Reschedule Tolerance"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
 
@@ -13695,6 +13710,9 @@ msgstr "자원"
 
 msgid "Resources"
 msgstr "자원"
+
+msgid "Responsible Employee"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "변경 사항과 함께 복원 가능"
@@ -18868,6 +18886,9 @@ msgstr "누가 무엇을, 어떤 형식으로 교육받는지. 귀사가 할 일
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "누가 견적, 주문, 구매를 승인해야 하는지 — 그리고 언제"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr ""
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "유지보수 관련 유지보수 지시에 대한 알림을 받아야 하는 사람은 누구입니까?"

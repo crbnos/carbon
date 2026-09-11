@@ -14,6 +14,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   CustomFormFields,
+  Employee,
   Hidden,
   Number,
   Select as SelectForm,
@@ -29,7 +30,12 @@ import {
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
-  initialValues: z.infer<typeof itemPlanningValidator>;
+  // the DB row carries responsibleEmployee as string | null; the validator
+  // treats it as optional — accept both
+  initialValues: Omit<
+    z.infer<typeof itemPlanningValidator>,
+    "responsibleEmployee"
+  > & { responsibleEmployee?: string | null };
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
 };
@@ -167,6 +173,12 @@ const ItemPlanningForm = ({
               </>
             )}
             {/* <Boolean name="critical" label={t`Critical`} /> */}
+
+            <Employee
+              name="responsibleEmployee"
+              label={t`Responsible Employee`}
+              type="assignee"
+            />
 
             <CustomFormFields table="itemPlanning" />
           </div>

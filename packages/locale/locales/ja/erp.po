@@ -3575,6 +3575,9 @@ msgstr "企業"
 msgid "Company"
 msgstr "会社"
 
+msgid "Company default"
+msgstr ""
+
 msgid "Company group"
 msgstr "会社グループ"
 
@@ -4925,6 +4928,9 @@ msgstr "休日"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日々の質問とローンチ後のハイパーケア"
+
+msgid "days"
+msgstr ""
 
 msgid "Days"
 msgstr "日数"
@@ -10125,6 +10131,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
@@ -12178,6 +12187,9 @@ msgstr "予定時間"
 msgid "Planning"
 msgstr "計画"
 
+msgid "Planning Ownership"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "計画ラウンドは、この数の整数倍まで補充を提案しました。"
 
@@ -13638,6 +13650,9 @@ msgstr "修理が必要"
 msgid "Requires staffing"
 msgstr "スタッフが必要"
 
+msgid "Reschedule Tolerance"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "予備床"
 
@@ -13695,6 +13710,9 @@ msgstr "リソース"
 
 msgid "Resources"
 msgstr "リソース"
+
+msgid "Responsible Employee"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "変更ありで復元可能"
@@ -18868,6 +18886,9 @@ msgstr "誰が何をどのような形式で訓練を受けるか。あなたの
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "見積、注文、購買の承認が必要な人と時期"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr ""
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "保全関連の保全指示の通知を受け取る必要があるのは誰ですか？"

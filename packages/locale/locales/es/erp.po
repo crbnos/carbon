@@ -3575,6 +3575,9 @@ msgstr "Empresas"
 msgid "Company"
 msgstr "Empresa"
 
+msgid "Company default"
+msgstr ""
+
 msgid "Company group"
 msgstr "Grupo de empresas"
 
@@ -4925,6 +4928,9 @@ msgstr "Día libre"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Preguntas diarias e hipersoporte después del lanzamiento"
+
+msgid "days"
+msgstr ""
 
 msgid "Days"
 msgstr "Días"
@@ -10125,6 +10131,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planificación)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP se ejecuta automáticamente cada 3 horas, pero puedes ejecutarlo manualmente aquí."
 
@@ -12178,6 +12187,9 @@ msgstr "Tiempo planificado"
 msgid "Planning"
 msgstr "Planificación"
 
+msgid "Planning Ownership"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Las rondas de planificación sugirieron reabastecimiento hasta un múltiplo entero de este número."
 
@@ -13638,6 +13650,9 @@ msgstr "Requiere Reparación"
 msgid "Requires staffing"
 msgstr "Requiere personal"
 
+msgid "Reschedule Tolerance"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "Piso de reserva"
 
@@ -13695,6 +13710,9 @@ msgstr "recursos"
 
 msgid "Resources"
 msgstr "Recursos"
+
+msgid "Responsible Employee"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Restaurable con cambios"
@@ -18868,6 +18886,9 @@ msgstr "Quién recibe capacitación sobre qué, en qué formato. Tu parte: prote
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Quién debe aprobar cotizaciones, pedidos y compras — y cuándo"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr ""
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "¿Quién debe recibir notificaciones para órdenes de mantenimiento relacionadas?"

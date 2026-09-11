@@ -3575,6 +3575,9 @@ msgstr "Entreprises"
 msgid "Company"
 msgstr "Société"
 
+msgid "Company default"
+msgstr ""
+
 msgid "Company group"
 msgstr "Groupe de sociétés"
 
@@ -4925,6 +4928,9 @@ msgstr "Jour de repos"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Questions quotidiennes et hypercare après le lancement"
+
+msgid "days"
+msgstr ""
 
 msgid "Days"
 msgstr "Jours"
@@ -10125,6 +10131,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planification)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP s'exécute automatiquement toutes les 3 heures, mais vous pouvez l'exécuter manuellement ici."
 
@@ -12178,6 +12187,9 @@ msgstr "Temps planifié"
 msgid "Planning"
 msgstr "Planification"
 
+msgid "Planning Ownership"
+msgstr ""
+
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Les cycles de planification ont suggéré un réapprovisionnement jusqu'à un multiple entier de ce nombre."
 
@@ -13638,6 +13650,9 @@ msgstr "Nécessite une réparation"
 msgid "Requires staffing"
 msgstr "Nécessite du personnel"
 
+msgid "Reschedule Tolerance"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "Plancher de réserve"
 
@@ -13695,6 +13710,9 @@ msgstr "ressources"
 
 msgid "Resources"
 msgstr "Ressources"
+
+msgid "Responsible Employee"
+msgstr ""
 
 msgid "Restorable with changes"
 msgstr "Restaurable avec des modifications"
@@ -18868,6 +18886,9 @@ msgstr "Qui reçoit une formation sur quoi, dans quel format. Votre rôle : prot
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Qui doit approuver les devis, les commandes et les achats — et quand"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr ""
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "Qui devrait recevoir des notifications pour les interventions de maintenance ?"
