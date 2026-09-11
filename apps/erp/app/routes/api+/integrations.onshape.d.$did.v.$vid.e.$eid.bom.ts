@@ -51,8 +51,54 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const onshapeClient = result.client;
 
+  // The client sends the human-meaningful parameter MAP; the encoded string is built here
+  // through Onshape's own encoder (parameter ids are generated and values need encoding
+  // beyond URL-encoding, so it is never hand-assembled). An absent, empty, or
+  // unparseable map means "default configuration" — byte-identical to the request Carbon
+  // sent before this feature existed.
+  //
+  // Note the asymmetry with the configuration DETECTION route, and it is deliberate:
+  // detection failing is silent, but encoding failing is a visible error. If the user
+  // picked a configuration and Carbon cannot honor it, returning the default
+  // configuration's BOM would be a silently wrong import — the exact bug this exists to fix.
+  let configuration: string | undefined;
+  const rawConfiguration = new URL(request.url).searchParams.get(
+    "configuration"
+  );
+  if (rawConfiguration) {
+    try {
+      const parameterMap = JSON.parse(rawConfiguration) as Record<
+        string,
+        string | number | boolean
+      >;
+      const parameters = Object.entries(parameterMap).map(
+        ([parameterId, parameterValue]) => ({
+          parameterId,
+          parameterValue: String(parameterValue)
+        })
+      );
+      if (parameters.length > 0) {
+        const encoded = await onshapeClient.encodeConfiguration(
+          did,
+          eid,
+          parameters,
+          vid
+        );
+        configuration = encoded.encodedId;
+      }
+    } catch (error) {
+      logger.error("Failed to encode Onshape configuration for BOM", { error });
+      return {
+        data: [],
+        error: "Failed to encode the selected configuration"
+      };
+    }
+  }
+
   try {
-    const response = await onshapeClient.getBillOfMaterials(did, vid, eid);
+    const response = await onshapeClient.getBillOfMaterials(did, vid, eid, {
+      configuration
+    });
     if (
       "headers" in response &&
       Array.isArray(response.headers) &&

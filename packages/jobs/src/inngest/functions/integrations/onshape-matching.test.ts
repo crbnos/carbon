@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   escapeLikePattern,
+  hasCompetingConfiguration,
   releaseKey,
   sharedNumberSuffix
 } from "./onshape-matching";
@@ -73,5 +74,95 @@ describe("escapeLikePattern", () => {
 
   it("escapes every occurrence, not just the first", () => {
     expect(escapeLikePattern("_a_%b%")).toBe("\\_a\\_\\%b\\%");
+  });
+});
+
+describe("hasCompetingConfiguration", () => {
+  const configured = {
+    partNumber: "PRT-002033",
+    revision: "A",
+    configuration: "List_abc=Left"
+  };
+
+  it("is false when the revision carries no configuration", () => {
+    const unconfigured = { partNumber: "PRT-002033", revision: "A" };
+
+    expect(
+      hasCompetingConfiguration(unconfigured, [
+        unconfigured,
+        {
+          partNumber: "PRT-002033",
+          revision: "A",
+          configuration: "List_abc=Right"
+        }
+      ])
+    ).toBe(false);
+  });
+
+  it("is false for a single configured revision with no competitor", () => {
+    expect(hasCompetingConfiguration(configured, [configured])).toBe(false);
+  });
+
+  it("is false when the other revision carries the SAME configuration", () => {
+    expect(
+      hasCompetingConfiguration(configured, [
+        configured,
+        {
+          partNumber: "PRT-002033",
+          revision: "A",
+          configuration: "List_abc=Left"
+        }
+      ])
+    ).toBe(false);
+  });
+
+  it("is TRUE when another configuration shares the part number and revision", () => {
+    expect(
+      hasCompetingConfiguration(configured, [
+        configured,
+        {
+          partNumber: "PRT-002033",
+          revision: "A",
+          configuration: "List_abc=Right"
+        }
+      ])
+    ).toBe(true);
+  });
+
+  it("is false when the competing configuration is at a DIFFERENT revision", () => {
+    expect(
+      hasCompetingConfiguration(configured, [
+        configured,
+        {
+          partNumber: "PRT-002033",
+          revision: "B",
+          configuration: "List_abc=Right"
+        }
+      ])
+    ).toBe(false);
+  });
+
+  it("is false when the competing configuration is on a DIFFERENT part number", () => {
+    expect(
+      hasCompetingConfiguration(configured, [
+        configured,
+        {
+          partNumber: "PRT-002034",
+          revision: "A",
+          configuration: "List_abc=Right"
+        }
+      ])
+    ).toBe(false);
+  });
+
+  it("ignores competitors whose configuration is empty or absent", () => {
+    expect(
+      hasCompetingConfiguration(configured, [
+        configured,
+        { partNumber: "PRT-002033", revision: "A", configuration: "" },
+        { partNumber: "PRT-002033", revision: "A" },
+        { partNumber: "PRT-002033", revision: "A", configuration: null }
+      ])
+    ).toBe(false);
   });
 });

@@ -14,6 +14,7 @@ import {
 } from "./onshape-backfill";
 import {
   escapeLikePattern,
+  hasCompetingConfiguration,
   releaseKey,
   sharedNumberSuffix
 } from "./onshape-matching";
@@ -54,7 +55,8 @@ export interface OnshapeRevisionSyncResult {
     | "no-matching-item"
     | "ambiguous-item"
     | "revision-not-found"
-    | "asset-too-large"; // export exceeds Carbon's upload limits — permanent skip
+    | "asset-too-large" // export exceeds Carbon's upload limits — permanent skip
+    | "ambiguous-configuration"; // two configurations share this part number + revision
   itemId?: string;
   modelUploadId?: string | null;
   thumbnailAttached?: boolean; // Onshape-rendered thumbnail stored — no fallback event needed
@@ -107,6 +109,32 @@ export async function runOnshapeRevisionSync(
     return { synced: false, skippedReason: "revision-not-found" };
   }
   const revision = releasedRevision.revision;
+
+  // Refuse rather than overwrite. Carbon's join key has no configuration component, so
+  // two configurations released under the same part number + revision both resolve to one
+  // item and the attach helper's replace-not-append rule makes it last-writer-wins. A
+  // visible skip beats a silent geometry swap the customer only notices in the viewer.
+  if (hasCompetingConfiguration(releasedRevision, revisionList)) {
+    console.warn(
+      `runOnshapeRevisionSync: skipping ${input.partNumber} rev ${revision} — multiple configurations share this part number`,
+      {
+        configuration: releasedRevision.configuration,
+        competing: revisionList
+          .filter(
+            (candidate) =>
+              candidate.partNumber === releasedRevision.partNumber &&
+              candidate.revision === revision &&
+              !!candidate.configuration
+          )
+          .map((candidate) => candidate.configuration)
+      }
+    );
+    return {
+      synced: false,
+      skippedReason: "ambiguous-configuration",
+      releaseKey: releaseKey(input.partNumber, revision)
+    };
+  }
 
   // DRAWING (elementType 2): released as its own DRW-xxxx element. Export it as a
   // PDF and attach it to the MODEL item sharing its number (PRT-xxxx / ASM-xxxx)
