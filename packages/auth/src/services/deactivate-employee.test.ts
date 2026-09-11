@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Same simulation preamble as the sibling auth tests: @carbon/kv is wrapped in
 // withResilience(), and env is validated at import time, so both are stubbed
 // rather than requiring Redis and a full environment in the test run.
+const { redisDel } = vi.hoisted(() => ({
+  redisDel: vi.fn().mockResolvedValue(null)
+}));
+
 vi.mock("@carbon/kv", () => ({
   redis: {
     get: vi.fn().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(null),
+    del: redisDel,
     getdel: vi.fn().mockResolvedValue(null)
   }
 }));
@@ -79,6 +83,7 @@ function makeClient(reads: Record<string, unknown>) {
 
 beforeEach(() => {
   ops = [];
+  redisDel.mockClear();
 });
 
 describe("deactivateEmployee", () => {
@@ -117,6 +122,15 @@ describe("deactivateEmployee", () => {
       expect.objectContaining({ table: "membership", op: "delete" })
     );
     expect(result.success).toBe(true);
+  });
+
+  it("invalidates the cached claims itself, for callers that skip deactivateUser", async () => {
+    await deactivateEmployee(client(), USER, COMPANY);
+
+    // requirePermissions reads this cache (1h TTL) before the database, and the
+    // create*Account rollbacks call this function directly rather than through
+    // deactivateUser — so the invalidation has to live here.
+    expect(redisDel).toHaveBeenCalledWith(`permissions:${USER}`);
   });
 
   it("strips only the deactivating company from the permission map", async () => {

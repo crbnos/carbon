@@ -236,33 +236,43 @@ async function activateEmployee(
     companyId: string;
   }
 ) {
-  const result = await client
+  const notFound = {
+    data: null,
+    error: {
+      message: `Employee record not found for user ${userId} in company ${companyId}. The record may have been deleted during deactivation.`
+    }
+  };
+
+  // Read the employee type before flipping anything. Deactivation drops every
+  // membership in groups owned by this company, including the employee-type
+  // group, and the trigger that seeds it (sync_add_employee_to_type_group)
+  // fires on INSERT while reactivation is an UPDATE — so it has to be restored
+  // here or the user comes back outside their employee type's group.
+  // Restoring it BEFORE the activation means a failure leaves nothing
+  // half-done: acceptInvite stamps acceptedAt only when this returns cleanly,
+  // so the invite stays redeemable and a retry re-runs the whole step.
+  const employee = await client
     .from("employee")
-    .update({ active: true })
+    .select("id, employeeTypeId")
     .eq("id", userId)
     .eq("companyId", companyId)
-    .select("id, employeeTypeId");
+    .maybeSingle();
 
-  if (!result.error && (!result.data || result.data.length === 0)) {
-    return {
-      data: null,
-      error: {
-        message: `Employee record not found for user ${userId} in company ${companyId}. The record may have been deleted during deactivation.`
-      }
-    };
+  if (employee.error) {
+    return employee;
   }
 
-  // Deactivation drops every membership in groups owned by this company,
-  // including the employee-type group. The trigger that seeds that membership
-  // (sync_add_employee_to_type_group) fires on INSERT only, and reactivation is
-  // an UPDATE, so it has to be restored here or the user returns outside their
-  // employee-type group. Best-effort: a missing group membership must not fail
-  // an otherwise valid invite acceptance.
-  const employeeTypeId = result.data?.[0]?.employeeTypeId;
-  if (!result.error && employeeTypeId) {
+  if (!employee.data) {
+    return notFound;
+  }
+
+  const employeeTypeId = employee.data.employeeTypeId;
+  if (employeeTypeId) {
     // uq_membership spans (groupId, memberGroupId, memberUserId) and
     // memberGroupId is null for user rows, so NULLS DISTINCT leaves nothing for
-    // an upsert to conflict against — check before inserting.
+    // an upsert to conflict against — check before inserting. Two concurrent
+    // acceptances could still both insert; a unique key on
+    // (groupId, memberUserId) is the real fix and needs its own migration.
     const existingMembership = await client
       .from("membership")
       .select("id")
@@ -283,8 +293,20 @@ async function activateEmployee(
           employeeTypeId,
           error: membershipInsert.error
         });
+        return membershipInsert;
       }
     }
+  }
+
+  const result = await client
+    .from("employee")
+    .update({ active: true })
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .select("id");
+
+  if (!result.error && (!result.data || result.data.length === 0)) {
+    return notFound;
   }
 
   return result;

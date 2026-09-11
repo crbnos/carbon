@@ -193,6 +193,11 @@ export async function deactivateCustomer(
     reason: "deactivate"
   });
 
+  // Same ownership as the employee path below: invalidate here so the
+  // create*Account rollbacks, which call this directly, cannot leave revoked
+  // grants readable from cache.
+  await redis.del(getPermissionCacheKey(userId));
+
   return success("Sucessfully deactivated customer");
 }
 
@@ -292,6 +297,13 @@ export async function deactivateEmployee(
     ip,
     reason: "deactivate"
   });
+
+  // The permissions this function just revoked are cached in Redis, and
+  // `requirePermissions` reads that cache before the database. Invalidating
+  // here rather than only in `deactivateUser` covers the callers that reach
+  // this function directly — the create*Account rollback paths — which
+  // otherwise left a deactivated user's grants live until the 1h TTL.
+  await redis.del(getPermissionCacheKey(userId));
 
   return success("Sucessfully deactivated employee");
 }
@@ -510,6 +522,9 @@ export async function deactivateSupplier(
     ip,
     reason: "deactivate"
   });
+
+  // See deactivateEmployee: the direct callers own nothing, this function does.
+  await redis.del(getPermissionCacheKey(userId));
 
   return success("Sucessfully deactivated supplier");
 }
