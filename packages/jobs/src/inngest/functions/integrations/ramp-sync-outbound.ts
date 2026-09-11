@@ -434,7 +434,16 @@ export async function syncRampOutbound(
             // so this only rounds to settlement precision.
             const invoiceCurrency = row.currencyCode ?? ctx.baseCurrency;
             const invoiceRate =
-              row.exchangeRate && row.exchangeRate > 0 ? row.exchangeRate : 1;
+              invoiceCurrency === ctx.baseCurrency ? 1 : row.exchangeRate;
+            if (
+              typeof invoiceRate !== "number" ||
+              !Number.isFinite(invoiceRate) ||
+              invoiceRate <= 0
+            ) {
+              throw new Error(
+                `Invoice in ${invoiceCurrency} requires a finite positive exchange rate`
+              );
+            }
             const invoiceDecimals = await getRampCurrencyDecimals(
               ctx,
               invoiceCurrency
@@ -458,7 +467,7 @@ export async function syncRampOutbound(
                 id: invoiceRowId,
                 readableId: row.invoiceId ?? invoiceRowId,
                 supplierReference: row.supplierReference,
-                currencyCode: row.currencyCode,
+                currencyCode: invoiceCurrency,
                 dateIssued: row.dateIssued,
                 dateDue: row.dateDue,
                 supplier:

@@ -23,9 +23,11 @@ const previous = { updatedAt: "2026-09-10T00:00:00.000Z", id: "previous" };
 const updatedAt = "2026-09-11T00:00:00.000Z";
 
 /** Only database/provider I/O is substituted; the real family and keyset logic run. */
-function fixture(family: Family, failedLookup: Lookup) {
+function fixture(family: Family, failedLookup?: Lookup) {
   const errors = new Map<string, { message: string }>([
-    [failedLookup, { message: `${failedLookup} unavailable` }]
+    ...(failedLookup
+      ? [[failedLookup, { message: `${failedLookup} unavailable` }] as const]
+      : [])
   ]);
   const ids = family === "purchaseOrders" ? ["po_a", "po_b"] : ["pi_a", "pi_b"];
   const table =
@@ -155,18 +157,103 @@ function fixture(family: Family, failedLookup: Lookup) {
     filters,
     queries,
     ids,
+    rows,
     table,
     cursorKey,
     ramp: {} as RampClient
   };
 }
 
-describe("Ramp outbound prerequisite lookup failures", () => {
+describe("Ramp outbound prerequisites", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it.each([
+    null,
+    undefined,
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+    "1.25"
+  ])("holds foreign-currency invoices with invalid rate %s until corrected", async (exchangeRate) => {
+    const { ctx, ramp, rows, ids, cursorKey } = fixture("invoices");
+    ctx.decimalsCache.set("EUR", 2);
+    for (const invoice of rows.purchaseInvoices ?? []) {
+      invoice.currencyCode = "EUR";
+      invoice.exchangeRate = exchangeRate;
+    }
+
+    const failed = await syncRampOutbound(ctx, ramp, null);
+    expect(failed.invoices).toMatchObject({ pushed: 0, failed: 2 });
+    expect(pushInvoiceDraftBill).not.toHaveBeenCalled();
+    expect(patchRampCursor).not.toHaveBeenCalled();
+
+    for (const invoice of rows.purchaseInvoices ?? [])
+      invoice.exchangeRate = 1.25;
+    const recovered = await syncRampOutbound(ctx, ramp, null);
+    expect(recovered.invoices).toMatchObject({ pushed: 2, failed: 0 });
+    expect(pushInvoiceDraftBill).toHaveBeenCalledTimes(2);
+    for (const call of vi.mocked(pushInvoiceDraftBill).mock.calls) {
+      expect(call[4]).toMatchObject({
+        currencyCode: "EUR",
+        lines: [{ description: "Line", amount: 12.5 }]
+      });
+    }
+    expect(patchRampCursor).toHaveBeenCalledExactlyOnceWith(
+      ctx.client,
+      ctx.companyId,
+      cursorKey,
+      encodeRampKeysetCursor({ updatedAt, id: ids[1]! })
+    );
+  });
+
+  it.each([
+    null,
+    undefined,
+    0,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    2
+  ])("uses identity conversion for base-currency invoices despite stored rate %s", async (exchangeRate) => {
+    const { ctx, ramp, rows } = fixture("invoices");
+    for (const invoice of rows.purchaseInvoices ?? [])
+      invoice.exchangeRate = exchangeRate;
+
+    const result = await syncRampOutbound(ctx, ramp, null);
+    expect(result.invoices).toMatchObject({ pushed: 2, failed: 0 });
+    expect(pushInvoiceDraftBill).toHaveBeenCalledTimes(2);
+    for (const call of vi.mocked(pushInvoiceDraftBill).mock.calls) {
+      expect(call[4]).toMatchObject({
+        currencyCode: "USD",
+        lines: [{ description: "Line", amount: 10 }]
+      });
+    }
+    expect(patchRampCursor).toHaveBeenCalledOnce();
+  });
+
+  it("labels an invoice with no currency using the company base currency", async () => {
+    const { ctx, ramp, rows } = fixture("invoices");
+    ctx.baseCurrency = "CAD";
+    ctx.decimalsCache.set("CAD", 2);
+    for (const invoice of rows.purchaseInvoices ?? []) {
+      invoice.currencyCode = null;
+      invoice.exchangeRate = null;
+    }
+
+    const result = await syncRampOutbound(ctx, ramp, null);
+    expect(result.invoices).toMatchObject({ pushed: 2, failed: 0 });
+    for (const call of vi.mocked(pushInvoiceDraftBill).mock.calls) {
+      expect(call[4]).toMatchObject({
+        currencyCode: "CAD",
+        lines: [{ description: "Line", amount: 10 }]
+      });
+    }
+  });
 
   const cases = [
     { family: "purchaseOrders", lookup: "supplier" },
