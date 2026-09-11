@@ -5622,38 +5622,24 @@ export type Database = {
           },
           {
             foreignKeyName: "cardTransaction_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "contractors"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "cardTransaction_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "cardTransaction_supplierId_fkey"
-            columns: ["supplierId"]
+            columns: ["supplierId", "companyId"]
             isOneToOne: false
             referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "cardTransaction_supplierId_fkey"
-            columns: ["supplierId"]
+            columns: ["supplierId", "companyId"]
             isOneToOne: false
             referencedRelation: "supplier"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "cardTransaction_supplierId_fkey"
-            columns: ["supplierId"]
+            columns: ["supplierId", "companyId"]
             isOneToOne: false
             referencedRelation: "suppliers"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "cardTransaction_updatedBy_fkey"
@@ -5790,10 +5776,10 @@ export type Database = {
           },
           {
             foreignKeyName: "cardTransactionLine_cardTransactionId_fkey"
-            columns: ["cardTransactionId"]
+            columns: ["cardTransactionId", "companyId"]
             isOneToOne: false
             referencedRelation: "cardTransaction"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "cardTransactionLine_companyId_fkey"
@@ -5825,10 +5811,10 @@ export type Database = {
           },
           {
             foreignKeyName: "cardTransactionLine_costCenterId_fkey"
-            columns: ["costCenterId"]
+            columns: ["costCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "costCenter"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "cardTransactionLine_createdBy_fkey"

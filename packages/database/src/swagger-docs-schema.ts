@@ -120255,7 +120255,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
@@ -120360,7 +120360,7 @@ export default {
         },
         companyId: {
           description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -120389,8 +120389,6 @@ export default {
           format: "jsonb"
         },
         supplierId: {
-          description:
-            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -123550,20 +123548,18 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         },
         cardTransactionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `cardTransaction.id`.<fk table='cardTransaction' column='id'/>",
           format: "text",
           type: "string"
         },
         companyId: {
           description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -123574,8 +123570,6 @@ export default {
           type: "string"
         },
         costCenterId: {
-          description:
-            "Note:\nThis is a Foreign Key to `costCenter.id`.<fk table='costCenter' column='id'/>",
           format: "text",
           type: "string"
         },
