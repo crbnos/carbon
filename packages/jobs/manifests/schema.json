@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260910093006",
+  "schemaVersion": "20260911130000",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-10T09:58:59.067Z",
+  "exportedAt": "2026-09-11T12:46:13.101Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -40,6 +40,7 @@
       "columns": [
         "laborAbsorptionAccount",
         "updatedBy",
+        "salesReturnsAccount",
         "laborAndMachineVarianceAccount",
         "rawMaterialsAccount",
         "workInProgressAccount",
@@ -848,14 +849,14 @@
       "name": "gaugeType",
       "rows": 0,
       "columns": [
-        "id",
-        "createdBy",
-        "name",
-        "updatedBy",
-        "createdAt",
         "customFields",
         "companyId",
-        "updatedAt"
+        "updatedAt",
+        "createdAt",
+        "name",
+        "updatedBy",
+        "id",
+        "createdBy"
       ]
     },
     {
@@ -1268,7 +1269,7 @@
     {
       "name": "materialDimension",
       "rows": 0,
-      "columns": ["name", "isMetric", "companyId", "materialFormId", "id"]
+      "columns": ["isMetric", "name", "companyId", "materialFormId", "id"]
     },
     {
       "name": "materialSubstance",
@@ -1289,23 +1290,23 @@
     {
       "name": "materialFinish",
       "rows": 0,
-      "columns": ["companyId", "materialSubstanceId", "name", "id"]
+      "columns": ["companyId", "materialSubstanceId", "id", "name"]
     },
     {
       "name": "materialGrade",
       "rows": 0,
-      "columns": ["companyId", "name", "id", "materialSubstanceId"]
+      "columns": ["id", "materialSubstanceId", "companyId", "name"]
     },
     {
       "name": "materialType",
       "rows": 0,
       "columns": [
-        "code",
-        "materialSubstanceId",
-        "materialFormId",
-        "name",
         "id",
-        "companyId"
+        "companyId",
+        "name",
+        "materialFormId",
+        "code",
+        "materialSubstanceId"
       ]
     },
     {
@@ -1387,13 +1388,13 @@
       "rows": 0,
       "columns": [
         "createdBy",
-        "updatedAt",
         "createdAt",
         "companyId",
-        "updatedBy",
+        "updatedAt",
         "id",
-        "customFields",
-        "name"
+        "updatedBy",
+        "name",
+        "customFields"
       ]
     },
     {
@@ -1401,80 +1402,80 @@
       "rows": 0,
       "columns": [
         "createdAt",
-        "active",
-        "name",
         "updatedAt",
-        "id",
-        "systemType",
+        "name",
+        "active",
         "createdBy",
-        "companyId",
-        "updatedBy"
+        "systemType",
+        "id",
+        "updatedBy",
+        "companyId"
       ]
     },
     {
       "name": "nonConformanceType",
       "rows": 0,
       "columns": [
-        "name",
-        "customFields",
         "id",
         "updatedAt",
+        "name",
+        "customFields",
+        "createdBy",
         "createdAt",
         "companyId",
-        "updatedBy",
-        "createdBy"
+        "updatedBy"
       ]
     },
     {
       "name": "nonConformanceWorkflow",
       "rows": 0,
       "columns": [
-        "createdBy",
-        "description",
-        "content",
-        "requiredActionIds",
         "priority",
         "companyId",
         "updatedAt",
+        "content",
+        "description",
+        "createdBy",
+        "requiredActionIds",
+        "id",
+        "approvalRequirements",
+        "tags",
+        "source",
         "updatedBy",
         "createdAt",
         "name",
-        "active",
-        "approvalRequirements",
-        "id",
-        "tags",
-        "source"
+        "active"
       ]
     },
     {
       "name": "nonConformance",
       "rows": 0,
       "columns": [
-        "locationId",
-        "nonConformanceId",
-        "dueDate",
-        "createdAt",
-        "approvalRequirements",
-        "requiredActionIds",
+        "assignee",
+        "content",
+        "source",
+        "tags",
+        "updatedAt",
+        "closeDate",
+        "customFields",
+        "openDate",
+        "quantity",
+        "description",
+        "nonConformanceTypeId",
+        "name",
+        "companyId",
+        "priority",
         "updatedBy",
         "nonConformanceWorkflowId",
         "id",
         "createdBy",
         "status",
-        "quantity",
-        "description",
-        "name",
-        "nonConformanceTypeId",
-        "companyId",
-        "priority",
-        "source",
-        "assignee",
-        "content",
-        "tags",
-        "openDate",
-        "customFields",
-        "updatedAt",
-        "closeDate"
+        "nonConformanceId",
+        "locationId",
+        "dueDate",
+        "approvalRequirements",
+        "createdAt",
+        "requiredActionIds"
       ]
     },
     {
@@ -1533,39 +1534,39 @@
       "name": "nonConformanceApprovalTask",
       "rows": 0,
       "columns": [
-        "updatedBy",
-        "dueDate",
-        "createdAt",
-        "assignee",
         "status",
         "updatedAt",
         "approvalType",
-        "completedDate",
+        "assignee",
+        "createdAt",
+        "dueDate",
+        "updatedBy",
+        "nonConformanceId",
+        "createdBy",
+        "tags",
+        "notes",
+        "companyId",
         "id",
         "sortOrder",
-        "companyId",
-        "notes",
-        "tags",
-        "createdBy",
-        "nonConformanceId"
+        "completedDate"
       ]
     },
     {
       "name": "nonConformanceReviewer",
       "rows": 0,
       "columns": [
-        "status",
-        "nonConformanceId",
-        "companyId",
-        "completedDate",
-        "notes",
         "title",
         "createdAt",
         "updatedAt",
         "createdBy",
         "id",
         "updatedBy",
-        "assignee"
+        "assignee",
+        "status",
+        "nonConformanceId",
+        "companyId",
+        "notes",
+        "completedDate"
       ]
     },
     {
@@ -1880,35 +1881,35 @@
       "name": "procedure",
       "rows": 0,
       "columns": [
-        "id",
-        "companyId",
-        "createdBy",
-        "status",
-        "name",
-        "updatedBy",
-        "assignee",
-        "createdAt",
-        "updatedAt",
-        "version",
-        "description",
         "processId",
         "tags",
-        "content"
+        "description",
+        "content",
+        "version",
+        "updatedAt",
+        "updatedBy",
+        "name",
+        "createdAt",
+        "assignee",
+        "createdBy",
+        "companyId",
+        "id",
+        "status"
       ]
     },
     {
       "name": "procedureParameter",
       "rows": 0,
       "columns": [
+        "createdAt",
         "id",
         "updatedBy",
-        "createdAt",
-        "procedureId",
         "updatedAt",
+        "procedureId",
         "companyId",
+        "createdBy",
         "value",
-        "key",
-        "createdBy"
+        "key"
       ]
     },
     {
@@ -1986,6 +1987,21 @@
         "createdBy",
         "name",
         "reportKey"
+      ]
+    },
+    {
+      "name": "returnReason",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "inventoryValueZero",
+        "companyId",
+        "updatedBy",
+        "customFields",
+        "id",
+        "createdAt",
+        "name",
+        "updatedAt"
       ]
     },
     {
@@ -2145,16 +2161,16 @@
       "name": "slackDocumentThread",
       "rows": 0,
       "columns": [
-        "createdAt",
+        "updatedAt",
+        "id",
+        "threadTs",
+        "companyId",
+        "createdBy",
+        "updatedBy",
+        "channelId",
         "documentType",
         "documentId",
-        "channelId",
-        "updatedBy",
-        "createdBy",
-        "companyId",
-        "threadTs",
-        "updatedAt",
-        "id"
+        "createdAt"
       ]
     },
     {
@@ -2285,21 +2301,21 @@
       "name": "tableView",
       "rows": 0,
       "columns": [
+        "sortOrder",
+        "columnVisibility",
+        "id",
+        "sorts",
+        "columnPinning",
+        "filters",
+        "createdAt",
+        "name",
         "updatedBy",
         "type",
         "companyId",
         "columnOrder",
         "table",
         "createdBy",
-        "description",
-        "sortOrder",
-        "sorts",
-        "columnVisibility",
-        "id",
-        "filters",
-        "columnPinning",
-        "createdAt",
-        "name"
+        "description"
       ]
     },
     {
@@ -2362,16 +2378,16 @@
       "name": "trackedActivity",
       "rows": 0,
       "columns": [
-        "companyId",
+        "id",
+        "createdBy",
+        "attributes",
+        "type",
+        "createdAt",
+        "updatedBy",
+        "sourceDocumentReadableId",
         "sourceDocumentId",
         "sourceDocument",
-        "sourceDocumentReadableId",
-        "updatedBy",
-        "createdAt",
-        "type",
-        "attributes",
-        "id",
-        "createdBy"
+        "companyId"
       ]
     },
     {
@@ -2649,17 +2665,17 @@
       "name": "batchProperty",
       "rows": 0,
       "columns": [
-        "label",
-        "dataType",
-        "companyId",
-        "listOptions",
-        "itemId",
         "createdAt",
         "updatedAt",
+        "itemId",
+        "sortOrder",
         "createdBy",
         "id",
         "updatedBy",
-        "sortOrder"
+        "companyId",
+        "label",
+        "dataType",
+        "listOptions"
       ]
     },
     {
@@ -2687,8 +2703,8 @@
         "itemId",
         "id",
         "companyId",
-        "sortOrder",
         "name",
+        "sortOrder",
         "isUngrouped"
       ]
     },
@@ -2696,20 +2712,20 @@
       "name": "configurationParameter",
       "rows": 0,
       "columns": [
-        "updatedBy",
-        "itemId",
-        "sortOrder",
-        "createdAt",
-        "id",
-        "companyId",
-        "createdBy",
-        "listOptions",
-        "key",
         "label",
         "materialFormFilterId",
+        "key",
         "configurationParameterGroupId",
+        "updatedAt",
         "dataType",
-        "updatedAt"
+        "itemId",
+        "updatedBy",
+        "sortOrder",
+        "createdAt",
+        "companyId",
+        "id",
+        "createdBy",
+        "listOptions"
       ]
     },
     {
@@ -2728,18 +2744,18 @@
       "name": "demandForecast",
       "rows": 0,
       "columns": [
-        "updatedBy",
-        "forecastMethod",
-        "periodId",
-        "forecastQuantity",
-        "notes",
+        "confidence",
         "createdBy",
         "itemId",
         "updatedAt",
-        "confidence",
-        "locationId",
         "companyId",
-        "createdAt"
+        "createdAt",
+        "locationId",
+        "updatedBy",
+        "forecastMethod",
+        "notes",
+        "periodId",
+        "forecastQuantity"
       ]
     },
     {
@@ -3038,39 +3054,39 @@
       "name": "nonConformanceItem",
       "rows": 0,
       "columns": [
-        "createdAt",
-        "companyId",
         "itemId",
+        "companyId",
         "updatedAt",
-        "id",
-        "disposition",
-        "createdBy",
+        "createdAt",
         "nonConformanceId",
+        "updatedBy",
         "quantity",
-        "updatedBy"
+        "disposition",
+        "id",
+        "createdBy"
       ]
     },
     {
       "name": "procedureStep",
       "rows": 0,
       "columns": [
-        "fileTypes",
-        "required",
-        "updatedBy",
-        "createdBy",
-        "createdAt",
-        "name",
-        "description",
-        "type",
+        "maxValue",
+        "unitOfMeasureCode",
+        "companyId",
+        "procedureId",
+        "updatedAt",
+        "sortOrder",
+        "listValues",
         "minValue",
         "id",
-        "listValues",
-        "sortOrder",
-        "updatedAt",
-        "procedureId",
-        "companyId",
-        "unitOfMeasureCode",
-        "maxValue"
+        "type",
+        "description",
+        "name",
+        "createdAt",
+        "createdBy",
+        "updatedBy",
+        "required",
+        "fileTypes"
       ]
     },
     {
@@ -3158,20 +3174,20 @@
       "name": "trackedEntity",
       "rows": 0,
       "columns": [
-        "status",
-        "updatedBy",
-        "sourceDocument",
         "attributes",
+        "updatedBy",
+        "status",
+        "sourceDocument",
         "itemId",
         "sourceDocumentId",
-        "quantity",
-        "expirationDate",
         "createdBy",
         "companyId",
+        "quantity",
+        "expirationDate",
+        "sourceDocumentReadableId",
         "readableId",
         "createdAt",
-        "id",
-        "sourceDocumentReadableId"
+        "id"
       ]
     },
     {
@@ -3199,8 +3215,8 @@
         "createdBy",
         "id",
         "updatedAt",
-        "trackedEntityId",
         "companyId",
+        "trackedEntityId",
         "createdAt"
       ]
     },
@@ -3208,26 +3224,26 @@
       "name": "trackedActivityInput",
       "rows": 0,
       "columns": [
-        "updatedBy",
-        "trackedEntityId",
-        "createdAt",
-        "trackedActivityId",
-        "createdBy",
+        "companyId",
         "quantity",
-        "companyId"
+        "createdBy",
+        "trackedActivityId",
+        "createdAt",
+        "trackedEntityId",
+        "updatedBy"
       ]
     },
     {
       "name": "trackedActivityOutput",
       "rows": 0,
       "columns": [
-        "createdAt",
-        "quantity",
-        "companyId",
-        "updatedBy",
-        "trackedActivityId",
+        "trackedEntityId",
         "createdBy",
-        "trackedEntityId"
+        "trackedActivityId",
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "createdAt"
       ]
     },
     {
@@ -3326,22 +3342,22 @@
       "name": "warehouseTransfer",
       "rows": 0,
       "columns": [
-        "tags",
-        "transferId",
-        "updatedBy",
-        "notes",
-        "companyId",
+        "transferDate",
+        "createdBy",
         "id",
         "reference",
-        "createdBy",
-        "transferDate",
+        "companyId",
+        "notes",
+        "updatedBy",
+        "transferId",
+        "tags",
+        "customFields",
+        "status",
+        "createdAt",
+        "expectedReceiptDate",
         "toLocationId",
         "fromLocationId",
-        "updatedAt",
-        "expectedReceiptDate",
-        "createdAt",
-        "status",
-        "customFields"
+        "updatedAt"
       ]
     },
     {
@@ -3375,19 +3391,19 @@
       "name": "jobOperationBatch",
       "rows": 0,
       "columns": [
+        "status",
         "processId",
         "companyId",
-        "status",
-        "workCenterId",
         "updatedBy",
-        "updatedAt",
-        "readableId",
-        "createdBy",
+        "workCenterId",
         "notes",
-        "createdAt",
+        "createdBy",
+        "readableId",
+        "updatedAt",
+        "locationId",
         "id",
         "customFields",
-        "locationId"
+        "createdAt"
       ]
     },
     {
@@ -3650,24 +3666,24 @@
       "name": "warehouseTransferLine",
       "rows": 0,
       "columns": [
-        "toStorageUnitId",
-        "fromStorageUnitId",
-        "companyId",
-        "transferId",
+        "quantity",
+        "itemId",
+        "createdBy",
+        "customFields",
+        "fromLocationId",
+        "notes",
+        "shippedQuantity",
+        "updatedAt",
+        "createdAt",
         "updatedBy",
-        "receivedQuantity",
-        "unitOfMeasureCode",
+        "transferId",
+        "companyId",
+        "fromStorageUnitId",
+        "toStorageUnitId",
         "id",
         "toLocationId",
-        "fromLocationId",
-        "customFields",
-        "quantity",
-        "createdBy",
-        "itemId",
-        "createdAt",
-        "updatedAt",
-        "shippedQuantity",
-        "notes"
+        "unitOfMeasureCode",
+        "receivedQuantity"
       ]
     },
     {
@@ -3945,14 +3961,14 @@
       "name": "nonConformanceCustomer",
       "rows": 0,
       "columns": [
-        "customerId",
-        "companyId",
         "updatedAt",
+        "companyId",
+        "customerId",
         "createdAt",
-        "nonConformanceId",
         "updatedBy",
-        "id",
-        "createdBy"
+        "nonConformanceId",
+        "createdBy",
+        "id"
       ]
     },
     {
@@ -4054,16 +4070,16 @@
       "name": "nonConformanceSalesOrderLine",
       "rows": 0,
       "columns": [
-        "salesOrderReadableId",
-        "createdAt",
-        "salesOrderId",
-        "salesOrderLineId",
         "companyId",
-        "id",
         "updatedAt",
+        "id",
         "createdBy",
         "updatedBy",
-        "nonConformanceId"
+        "nonConformanceId",
+        "salesOrderReadableId",
+        "createdAt",
+        "salesOrderLineId",
+        "salesOrderId"
       ]
     },
     {
@@ -4133,6 +4149,35 @@
         "companyId",
         "id",
         "salesOrderId"
+      ]
+    },
+    {
+      "name": "salesReturnOrder",
+      "rows": 0,
+      "columns": [
+        "assignee",
+        "internalNotes",
+        "updatedBy",
+        "updatedAt",
+        "createdAt",
+        "exchangeRate",
+        "customerLocationId",
+        "customFields",
+        "customerReference",
+        "customerId",
+        "expirationDate",
+        "status",
+        "companyId",
+        "createdBy",
+        "customerContactId",
+        "id",
+        "salesOrderId",
+        "currencyCode",
+        "locationId",
+        "replacementSalesOrderId",
+        "externalNotes",
+        "salesReturnOrderId",
+        "orderDate"
       ]
     },
     {
@@ -4301,15 +4346,15 @@
       "name": "fulfillment",
       "rows": 0,
       "columns": [
-        "companyId",
-        "updatedBy",
-        "id",
-        "createdBy",
         "salesOrderLineId",
-        "jobId",
-        "createdAt",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "companyId",
+        "quantity",
         "type",
-        "quantity"
+        "createdAt",
+        "jobId"
       ]
     },
     {
@@ -4440,55 +4485,55 @@
       "name": "gauge",
       "rows": 0,
       "columns": [
-        "updatedBy",
+        "gaugeRole",
+        "gaugeCalibrationStatus",
+        "id",
+        "description",
+        "lastCalibrationDate",
+        "gaugeId",
+        "storageUnitId",
+        "gaugeStatus",
+        "gaugeTypeId",
         "serialNumber",
         "calibrationIntervalInMonths",
         "createdBy",
-        "locationId",
+        "updatedBy",
         "updatedAt",
+        "locationId",
         "companyId",
-        "supplierId",
-        "nextCalibrationDate",
-        "modelNumber",
         "createdAt",
         "customFields",
+        "nextCalibrationDate",
+        "supplierId",
+        "modelNumber",
         "dateAcquired",
-        "lastCalibrationStatus",
-        "gaugeCalibrationStatus",
-        "id",
-        "gaugeRole",
-        "description",
-        "storageUnitId",
-        "lastCalibrationDate",
-        "gaugeId",
-        "gaugeTypeId",
-        "gaugeStatus"
+        "lastCalibrationStatus"
       ]
     },
     {
       "name": "gaugeCalibrationRecord",
       "rows": 0,
       "columns": [
-        "customFields",
+        "calibrationAttempts",
+        "createdBy",
+        "requiresAction",
+        "humidity",
+        "supplierId",
+        "inspectionStatus",
+        "updatedBy",
+        "dateCalibrated",
+        "approvedBy",
+        "measurementStandard",
+        "requiresRepair",
         "id",
+        "customFields",
         "createdAt",
         "requiresAdjustment",
         "temperature",
-        "updatedAt",
         "gaugeId",
+        "updatedAt",
         "notes",
-        "companyId",
-        "requiresAction",
-        "createdBy",
-        "calibrationAttempts",
-        "supplierId",
-        "humidity",
-        "dateCalibrated",
-        "updatedBy",
-        "inspectionStatus",
-        "measurementStandard",
-        "approvedBy",
-        "requiresRepair"
+        "companyId"
       ]
     },
     {
@@ -4785,26 +4830,26 @@
       "name": "jobOperationDependency",
       "rows": 0,
       "columns": [
-        "createdAt",
+        "dependsOnId",
+        "operationId",
         "jobId",
         "companyId",
-        "operationId",
-        "dependsOnId"
+        "createdAt"
       ]
     },
     {
       "name": "jobOperationParameter",
       "rows": 0,
       "columns": [
-        "operationId",
-        "value",
-        "createdBy",
-        "companyId",
+        "updatedBy",
+        "id",
+        "createdAt",
         "key",
         "updatedAt",
-        "id",
-        "updatedBy",
-        "createdAt"
+        "companyId",
+        "value",
+        "operationId",
+        "createdBy"
       ]
     },
     {
@@ -4826,16 +4871,16 @@
       "name": "nonConformanceJobOperation",
       "rows": 0,
       "columns": [
-        "createdAt",
-        "jobOperationId",
-        "jobId",
         "jobReadableId",
-        "updatedBy",
-        "createdBy",
-        "nonConformanceId",
-        "companyId",
+        "jobId",
+        "jobOperationId",
+        "createdAt",
+        "id",
         "updatedAt",
-        "id"
+        "companyId",
+        "nonConformanceId",
+        "createdBy",
+        "updatedBy"
       ]
     },
     {
@@ -4920,15 +4965,15 @@
       "name": "jobOperationNote",
       "rows": 0,
       "columns": [
-        "createdAt",
-        "updatedBy",
         "companyId",
         "note",
-        "createdBy",
+        "updatedBy",
+        "createdAt",
+        "jobOperationId",
+        "updatedAt",
         "id",
         "productionQuantityId",
-        "updatedAt",
-        "jobOperationId"
+        "createdBy"
       ]
     },
     {
@@ -4952,44 +4997,44 @@
       "name": "jobOperationStep",
       "rows": 0,
       "columns": [
-        "updatedAt",
-        "companyId",
-        "name",
-        "minValue",
-        "listValues",
-        "id",
-        "maxValue",
-        "fileTypes",
-        "type",
-        "required",
-        "createdAt",
-        "nonConformanceActionId",
-        "description",
-        "unitOfMeasureCode",
-        "sortOrder",
         "nonConformanceInvestigationId",
         "operationId",
+        "sortOrder",
+        "updatedBy",
         "assemblyInstructionStepId",
         "createdBy",
-        "updatedBy"
+        "description",
+        "nonConformanceActionId",
+        "required",
+        "createdAt",
+        "unitOfMeasureCode",
+        "fileTypes",
+        "id",
+        "maxValue",
+        "type",
+        "name",
+        "companyId",
+        "updatedAt",
+        "listValues",
+        "minValue"
       ]
     },
     {
       "name": "jobOperationStepRecord",
       "rows": 0,
       "columns": [
-        "userValue",
-        "index",
-        "booleanValue",
-        "numericValue",
-        "createdAt",
-        "jobOperationStepId",
-        "updatedAt",
-        "id",
-        "companyId",
-        "value",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "value",
+        "companyId",
+        "updatedAt",
+        "jobOperationStepId",
+        "id",
+        "createdAt",
+        "numericValue",
+        "booleanValue",
+        "userValue",
+        "index"
       ]
     },
     {
@@ -5020,56 +5065,25 @@
       "name": "kanban",
       "rows": 0,
       "columns": [
-        "updatedBy",
-        "completedBarcodeOverride",
-        "locationId",
-        "createdAt",
-        "supplierId",
-        "fromStorageUnitId",
-        "jobId",
-        "replenishmentSystem",
-        "updatedAt",
-        "quantity",
-        "storageUnitId",
         "companyId",
-        "conversionFactor",
         "id",
-        "autoRelease",
-        "purchaseUnitOfMeasureCode",
+        "conversionFactor",
+        "storageUnitId",
         "createdBy",
         "itemId",
-        "autoStartJob"
-      ]
-    },
-    {
-      "name": "memo",
-      "rows": 0,
-      "columns": [
-        "postedAt",
-        "memoId",
-        "reference",
-        "postingDate",
-        "exchangeRate",
-        "updatedAt",
-        "currencyCode",
-        "id",
-        "amount",
-        "supplierId",
-        "customFields",
-        "direction",
-        "notes",
-        "status",
-        "voidedAt",
-        "voidedBy",
-        "memoDate",
-        "updatedBy",
+        "autoStartJob",
+        "autoRelease",
+        "purchaseUnitOfMeasureCode",
+        "locationId",
         "createdAt",
-        "reasonAccount",
-        "companyId",
-        "customerId",
-        "postedBy",
-        "journalId",
-        "createdBy"
+        "updatedBy",
+        "completedBarcodeOverride",
+        "fromStorageUnitId",
+        "jobId",
+        "quantity",
+        "updatedAt",
+        "replenishmentSystem",
+        "supplierId"
       ]
     },
     {
@@ -5143,39 +5157,39 @@
       "name": "methodOperationParameter",
       "rows": 0,
       "columns": [
-        "value",
-        "operationId",
-        "createdBy",
-        "companyId",
         "key",
         "updatedAt",
-        "updatedBy",
         "id",
-        "createdAt"
+        "updatedBy",
+        "createdAt",
+        "operationId",
+        "value",
+        "createdBy",
+        "companyId"
       ]
     },
     {
       "name": "methodOperationStep",
       "rows": 0,
       "columns": [
-        "sortOrder",
-        "operationId",
-        "createdBy",
-        "updatedBy",
         "assemblyInstructionStepId",
         "description",
         "createdAt",
         "required",
         "unitOfMeasureCode",
-        "fileTypes",
-        "maxValue",
-        "id",
-        "type",
+        "sortOrder",
+        "operationId",
+        "createdBy",
+        "updatedBy",
         "companyId",
         "name",
         "updatedAt",
         "listValues",
-        "minValue"
+        "minValue",
+        "fileTypes",
+        "maxValue",
+        "id",
+        "type"
       ]
     },
     {
@@ -5236,8 +5250,8 @@
       "rows": 0,
       "columns": [
         "assignee",
-        "status",
         "updatedAt",
+        "status",
         "supplierId",
         "updatedBy",
         "createdAt",
@@ -5249,8 +5263,41 @@
         "actionTypeId",
         "completedDate",
         "companyId",
+        "sortOrder",
+        "id"
+      ]
+    },
+    {
+      "name": "nonConformancePurchaseReturnOrderLine",
+      "rows": 0,
+      "columns": [
+        "purchaseReturnOrderLineId",
+        "purchaseReturnOrderId",
+        "companyId",
+        "purchaseReturnOrderReadableId",
+        "nonConformanceId",
+        "updatedAt",
+        "createdAt",
+        "updatedBy",
+        "createdBy",
         "id",
-        "sortOrder"
+        "quantity"
+      ]
+    },
+    {
+      "name": "nonConformanceSalesReturnOrderLine",
+      "rows": 0,
+      "columns": [
+        "salesReturnOrderReadableId",
+        "createdAt",
+        "salesReturnOrderId",
+        "salesReturnOrderLineId",
+        "companyId",
+        "id",
+        "updatedAt",
+        "updatedBy",
+        "createdBy",
+        "nonConformanceId"
       ]
     },
     {
@@ -5320,17 +5367,17 @@
       "name": "purchaseInvoiceDelivery",
       "rows": 0,
       "columns": [
-        "companyId",
-        "incotermLocation",
         "customFields",
         "id",
-        "incoterm",
-        "updatedAt",
+        "incotermLocation",
+        "companyId",
         "locationId",
+        "updatedAt",
+        "incoterm",
         "supplierShippingCost",
-        "updatedBy",
         "shippingMethodId",
-        "shippingTermId"
+        "shippingTermId",
+        "updatedBy"
       ]
     },
     {
@@ -5423,15 +5470,15 @@
       "rows": 0,
       "columns": [
         "companyId",
-        "id",
         "updatedAt",
-        "createdBy",
+        "id",
         "updatedBy",
+        "createdBy",
         "nonConformanceId",
         "purchaseOrderReadableId",
         "createdAt",
-        "purchaseOrderId",
-        "purchaseOrderLineId"
+        "purchaseOrderLineId",
+        "purchaseOrderId"
       ]
     },
     {
@@ -5457,6 +5504,20 @@
         "createdAt",
         "userId",
         "type"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrderLineTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "createdBy",
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "createdAt",
+        "purchaseReturnOrderLineId",
+        "updatedAt",
+        "trackedEntityId"
       ]
     },
     {
@@ -5581,38 +5642,38 @@
       "name": "quoteOperationParameter",
       "rows": 0,
       "columns": [
+        "createdAt",
+        "updatedBy",
+        "id",
         "updatedAt",
         "key",
-        "createdAt",
-        "id",
-        "updatedBy",
+        "companyId",
         "createdBy",
-        "operationId",
         "value",
-        "companyId"
+        "operationId"
       ]
     },
     {
       "name": "quoteOperationStep",
       "rows": 0,
       "columns": [
-        "unitOfMeasureCode",
-        "description",
-        "required",
-        "createdAt",
-        "updatedBy",
-        "createdBy",
-        "operationId",
-        "sortOrder",
+        "type",
+        "fileTypes",
+        "id",
+        "maxValue",
         "listValues",
         "minValue",
         "name",
         "companyId",
         "updatedAt",
-        "type",
-        "fileTypes",
-        "id",
-        "maxValue"
+        "updatedBy",
+        "createdBy",
+        "operationId",
+        "sortOrder",
+        "unitOfMeasureCode",
+        "description",
+        "required",
+        "createdAt"
       ]
     },
     {
@@ -5699,138 +5760,170 @@
       "name": "nonConformanceReceiptLine",
       "rows": 0,
       "columns": [
-        "createdAt",
         "receiptLineId",
         "receiptId",
+        "createdAt",
         "receiptReadableId",
-        "createdBy",
-        "updatedBy",
         "nonConformanceId",
-        "companyId",
+        "updatedBy",
+        "createdBy",
         "updatedAt",
-        "id"
+        "id",
+        "companyId"
       ]
     },
     {
       "name": "salesInvoice",
       "rows": 0,
       "columns": [
-        "locationId",
-        "status",
-        "customerId",
-        "totalTax",
-        "totalAmount",
-        "invoiceCustomerLocationId",
-        "opportunityId",
-        "internalNotes",
-        "createdBy",
+        "currencyCode",
+        "exchangeRate",
+        "companyId",
+        "totalDiscount",
         "exchangeRateUpdatedAt",
         "customerReference",
-        "dateDue",
         "createdAt",
-        "exchangeRate",
-        "currencyCode",
-        "totalDiscount",
-        "companyId",
+        "dateDue",
+        "opportunityId",
+        "invoiceCustomerLocationId",
+        "internalNotes",
+        "createdBy",
+        "customerId",
+        "locationId",
+        "status",
+        "totalTax",
+        "totalAmount",
+        "invoiceCustomerId",
+        "assignee",
+        "id",
+        "paymentTermId",
+        "customFields",
+        "dateIssued",
+        "tags",
+        "invoiceCustomerContactId",
+        "externalNotes",
+        "shipmentId",
+        "updatedAt",
+        "postingDate",
         "subtotal",
         "datePaid",
         "invoiceId",
-        "updatedBy",
-        "externalNotes",
-        "tags",
-        "invoiceCustomerContactId",
-        "shipmentId",
-        "postingDate",
-        "updatedAt",
-        "paymentTermId",
-        "id",
-        "dateIssued",
-        "customFields",
-        "invoiceCustomerId",
-        "assignee"
+        "updatedBy"
       ]
     },
     {
       "name": "salesInvoiceLine",
       "rows": 0,
       "columns": [
-        "methodType",
-        "internalNotes",
-        "id",
-        "assetId",
+        "nonTaxableAddOnCost",
         "opportunityId",
         "unitOfMeasureCode",
-        "nonTaxableAddOnCost",
-        "customFields",
-        "salesOrderLineId",
-        "quantity",
-        "createdBy",
-        "externalNotes",
-        "setupPrice",
+        "id",
+        "assetId",
+        "internalNotes",
+        "methodType",
+        "storageUnitId",
         "updatedAt",
         "invoiceId",
-        "storageUnitId",
+        "setupPrice",
+        "externalNotes",
+        "createdBy",
+        "quantity",
+        "customFields",
+        "salesOrderLineId",
+        "itemId",
+        "companyId",
+        "locationId",
+        "unitPrice",
         "modelUploadId",
         "addOnCost",
-        "unitPrice",
-        "locationId",
-        "companyId",
-        "itemId",
-        "salesOrderId",
-        "accountId",
-        "updatedBy",
-        "createdAt",
+        "taxPercent",
+        "sortOrder",
+        "shippingCost",
         "description",
         "invoiceLineType",
         "exchangeRate",
-        "shippingCost",
-        "sortOrder",
-        "taxPercent"
+        "createdAt",
+        "accountId",
+        "updatedBy",
+        "salesOrderId"
       ]
     },
     {
       "name": "salesInvoiceShipment",
       "rows": 0,
       "columns": [
-        "companyId",
-        "locationId",
-        "shippingMethodId",
-        "incoterm",
-        "shippingTermId",
-        "createdAt",
-        "updatedAt",
         "shippingCost",
         "incotermLocation",
-        "customFields",
+        "createdAt",
+        "updatedAt",
         "createdBy",
         "id",
-        "updatedBy"
+        "updatedBy",
+        "customFields",
+        "locationId",
+        "shippingMethodId",
+        "companyId",
+        "incoterm",
+        "shippingTermId"
       ]
     },
     {
-      "name": "invoiceSettlement",
+      "name": "salesReturnOrderLine",
       "rows": 0,
       "columns": [
-        "targetExchangeRate",
-        "id",
-        "writeOffAmount",
-        "targetMemoId",
-        "appliedDate",
-        "paymentId",
-        "createdAt",
-        "sourceExchangeRate",
-        "discountAmount",
-        "targetPurchaseInvoiceId",
-        "sourceAmount",
-        "fxGainLossAmount",
-        "createdBy",
-        "appliedViaPaymentId",
-        "sourcePaymentId",
-        "updatedBy",
-        "targetSalesInvoiceId",
-        "memoId",
+        "salesInvoiceLineId",
+        "salesReturnOrderId",
         "companyId",
-        "appliedAmount"
+        "returnReasonId",
+        "unitPrice",
+        "salesOrderLineId",
+        "id",
+        "restockFeePercent",
+        "quantityReceived",
+        "updatedBy",
+        "createdAt",
+        "itemId",
+        "disposition",
+        "lineNumber",
+        "unitOfMeasureCode",
+        "quantity",
+        "updatedAt",
+        "shipmentLineId",
+        "closedComplete",
+        "customFields",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "salesReturnOrderLineTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "updatedAt",
+        "trackedEntityId",
+        "createdAt",
+        "salesReturnOrderLineId",
+        "updatedBy",
+        "companyId",
+        "quantity",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "salesReturnOrderCreditLine",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "salesReturnOrderLineId",
+        "quantity",
+        "unitPrice",
+        "createdBy",
+        "updatedBy",
+        "memoId",
+        "restockFee",
+        "createdAt",
+        "id",
+        "updatedAt"
       ]
     },
     {
@@ -5853,41 +5946,41 @@
       "name": "shipmentLine",
       "rows": 0,
       "columns": [
-        "shippedQuantity",
-        "storageUnitId",
+        "fulfillmentId",
+        "unitPrice",
+        "companyId",
+        "createdBy",
+        "itemId",
+        "requiresBatchTracking",
+        "lineId",
+        "updatedBy",
+        "updatedAt",
+        "outstandingQuantity",
+        "id",
+        "locationId",
+        "unitOfMeasure",
+        "orderQuantity",
         "createdAt",
         "requiresSerialTracking",
         "shipmentId",
-        "orderQuantity",
-        "locationId",
-        "id",
-        "unitOfMeasure",
-        "outstandingQuantity",
-        "requiresBatchTracking",
-        "lineId",
-        "itemId",
-        "updatedBy",
-        "updatedAt",
-        "companyId",
-        "createdBy",
-        "unitPrice",
-        "fulfillmentId"
+        "shippedQuantity",
+        "storageUnitId"
       ]
     },
     {
       "name": "nonConformanceShipmentLine",
       "rows": 0,
       "columns": [
-        "createdBy",
-        "updatedBy",
-        "nonConformanceId",
-        "companyId",
-        "id",
-        "updatedAt",
-        "createdAt",
-        "shipmentId",
+        "shipmentReadableId",
         "shipmentLineId",
-        "shipmentReadableId"
+        "shipmentId",
+        "createdAt",
+        "updatedAt",
+        "id",
+        "companyId",
+        "nonConformanceId",
+        "updatedBy",
+        "createdBy"
       ]
     },
     {
@@ -5962,33 +6055,33 @@
       "name": "shipment",
       "rows": 0,
       "columns": [
-        "customerId",
-        "id",
-        "postingDate",
-        "externalDocumentId",
-        "sourceDocumentReadableId",
-        "supplierId",
-        "externalNotes",
-        "invoiced",
-        "shipmentId",
-        "trackingNumber",
-        "customFields",
-        "status",
-        "updatedBy",
-        "sourceDocumentId",
-        "postedBy",
-        "createdBy",
-        "internalNotes",
-        "updatedAt",
-        "opportunityId",
-        "supplierInteractionId",
+        "shippingMethodId",
+        "tags",
         "locationId",
         "assignee",
         "sourceDocument",
-        "createdAt",
         "companyId",
-        "shippingMethodId",
-        "tags"
+        "createdAt",
+        "opportunityId",
+        "supplierInteractionId",
+        "internalNotes",
+        "updatedAt",
+        "updatedBy",
+        "postedBy",
+        "createdBy",
+        "sourceDocumentId",
+        "trackingNumber",
+        "status",
+        "customFields",
+        "externalNotes",
+        "shipmentId",
+        "invoiced",
+        "sourceDocumentReadableId",
+        "supplierId",
+        "customerId",
+        "id",
+        "postingDate",
+        "externalDocumentId"
       ]
     },
     {
@@ -6176,6 +6269,137 @@
         "updatedAt",
         "id",
         "paymentComplete"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrder",
+      "rows": 0,
+      "columns": [
+        "currencyCode",
+        "id",
+        "purchaseOrderId",
+        "supplierContactId",
+        "purchaseReturnOrderId",
+        "orderDate",
+        "externalNotes",
+        "replacementPurchaseOrderId",
+        "locationId",
+        "createdAt",
+        "exchangeRate",
+        "supplierLocationId",
+        "updatedAt",
+        "assignee",
+        "internalNotes",
+        "updatedBy",
+        "companyId",
+        "createdBy",
+        "supplierId",
+        "expirationDate",
+        "status",
+        "customFields",
+        "supplierReference"
+      ]
+    },
+    {
+      "name": "memo",
+      "rows": 0,
+      "columns": [
+        "postedAt",
+        "memoId",
+        "reference",
+        "postingDate",
+        "exchangeRate",
+        "updatedAt",
+        "currencyCode",
+        "id",
+        "amount",
+        "purchaseReturnOrderId",
+        "supplierId",
+        "customFields",
+        "direction",
+        "notes",
+        "status",
+        "voidedAt",
+        "voidedBy",
+        "memoDate",
+        "updatedBy",
+        "createdAt",
+        "reasonAccount",
+        "companyId",
+        "customerId",
+        "postedBy",
+        "salesReturnOrderId",
+        "journalId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "invoiceSettlement",
+      "rows": 0,
+      "columns": [
+        "targetExchangeRate",
+        "id",
+        "writeOffAmount",
+        "targetMemoId",
+        "appliedDate",
+        "paymentId",
+        "createdAt",
+        "sourceExchangeRate",
+        "discountAmount",
+        "targetPurchaseInvoiceId",
+        "sourceAmount",
+        "fxGainLossAmount",
+        "createdBy",
+        "appliedViaPaymentId",
+        "sourcePaymentId",
+        "updatedBy",
+        "targetSalesInvoiceId",
+        "memoId",
+        "companyId",
+        "appliedAmount"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrderLine",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "createdAt",
+        "quantity",
+        "customFields",
+        "receiptLineId",
+        "unitOfMeasureCode",
+        "updatedAt",
+        "updatedBy",
+        "itemId",
+        "lineNumber",
+        "closedComplete",
+        "quantityShipped",
+        "purchaseOrderLineId",
+        "id",
+        "restockFeePercent",
+        "returnReasonId",
+        "unitPrice",
+        "purchaseInvoiceLineId",
+        "purchaseReturnOrderId",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "purchaseReturnOrderCreditLine",
+      "rows": 0,
+      "columns": [
+        "unitPrice",
+        "quantity",
+        "purchaseReturnOrderLineId",
+        "companyId",
+        "id",
+        "createdAt",
+        "updatedAt",
+        "restockFee",
+        "memoId",
+        "createdBy",
+        "updatedBy"
       ]
     },
     {

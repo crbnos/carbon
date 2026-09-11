@@ -14,6 +14,7 @@ import {
   getQuote,
   getSalesOrder,
   getSalesOrderInvoiceLines,
+  getSalesOrderInvoicePaymentsByIds,
   getSalesOrderInvoicesByIds,
   getSalesOrderLines,
   getSalesOrderRelatedItems
@@ -118,7 +119,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getSalesOrderInvoicesByIds(client, invoiceIds);
+    const [invoices, payments] = await Promise.all([
+      getSalesOrderInvoicesByIds(client, invoiceIds),
+      getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
+    ]);
 
     if (invoices.error) {
       throw redirect(
@@ -130,9 +134,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
+    if (payments.error) {
+      throw redirect(
+        path.to.salesOrder(orderId),
+        await flash(
+          request,
+          error(payments.error, "Failed to load sales invoice payments")
+        )
+      );
+    }
+
+    const paidBaseByInvoiceId = new Map<string, number>();
+    for (const payment of payments.data ?? []) {
+      if (!payment.targetSalesInvoiceId) continue;
+      paidBaseByInvoiceId.set(
+        payment.targetSalesInvoiceId,
+        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
+          payment.appliedAmount
+      );
+    }
+
     const orderCurrency = salesOrder.data?.currencyCode;
 
     for (const invoice of invoices.data ?? []) {
+      // A voided invoice was never billed — it must not inflate the invoiced
+      // total, nor contribute any payments to the paid total.
+      if (invoice.status === "Voided") {
+        continue;
+      }
+
       const invoiceTotal = invoice.invoiceTotal ?? 0;
       const invoiceCurrency = invoice.currencyCode;
 
@@ -146,9 +176,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      invoicedAmount += invoiceTotal;
-      if (invoice.status === "Paid") {
-        paidAmount += invoiceTotal;
+      invoicedAmount += invoiceTotal * (invoice.exchangeRate ?? 1);
+      if (invoice.id) {
+        paidAmount +=
+          (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
+          (invoice.exchangeRate ?? 1);
       }
     }
   }

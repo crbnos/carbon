@@ -446,7 +446,9 @@ const SalesReturnOrderLineForm = ({
                       onValueChange={onDispositionChange}
                       disabled={
                         quantityReceived === 0 ||
-                        isLocked ||
+                        // Not isLocked: full receipt auto-completes the RMA,
+                        // and disposition happens after goods arrive.
+                        status === "Cancelled" ||
                         !permissions.can("update", "sales") ||
                         dispositionFetcher.state !== "idle"
                       }
