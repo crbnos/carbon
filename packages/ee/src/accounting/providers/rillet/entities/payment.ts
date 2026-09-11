@@ -445,7 +445,7 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
         throw new JournalEntrySyncError({
           errorCode: "UNSUPPORTED_REIMBURSEMENT_PAYMENT",
           message:
-            'Rillet has no reimbursement-payment endpoint yet, so this payout cannot close the reimbursement in Rillet (it stays UNPAID there). Switch the Rillet setting "Employee reimbursements" to Bills if payouts recorded in Carbon must close the document, then retry.',
+            "Rillet has no reimbursement-payment endpoint yet, so this payout cannot close the reimbursement in Rillet (it stays UNPAID there). Mark the reimbursement paid in Rillet; retry once Rillet supports reimbursement payments.",
           warning: true,
           metadata: {
             targetDocumentId: context.targetDocumentId,

@@ -42,9 +42,10 @@ import {
  * two ledgers cannot drift. While this syncer is enabled the journal itself is
  * DOC_BACKED-excluded per row (core/posting.ts), never pushed twice.
  *
- * Only a Posted `Charge` with a merchant supplier is pushed. A `Credit`
- * (merchant refund) joins once the Rillet sandbox proves negative items
- * (`CHARGE_CREDIT_PROVIDERS`); the other three card-transaction types are
+ * Only a Posted `Charge` or `Credit` with a merchant supplier is pushed — a
+ * `Credit` (merchant refund) is a charge whose items are NEGATIVE, which the
+ * Rillet sandbox accepted 2026-09-10 (`CHARGE_CREDIT_PROVIDERS`, the mirror
+ * guard below stays for a provider outside that set); the other three card-transaction types are
  * money movements with no vendor and stay journal entries. Every skip here is
  * mirrored by the policy, so a skipped row's journal keeps pushing — the
  * spend always reaches Rillet as exactly one of the two.
@@ -347,7 +348,7 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
       local.type === "Credit" &&
       !CHARGE_CREDIT_PROVIDERS.has(this.provider.id)
     ) {
-      return "Rillet card credits (merchant refunds) sync as journal entries until negative charge items are verified";
+      return "Card credits (merchant refunds) sync as journal entries for this provider";
     }
     if (!local.supplierId) {
       return "Card charge has no merchant supplier — it syncs as a journal entry";

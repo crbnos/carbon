@@ -141,6 +141,8 @@ allowed dependency direction (ee must never import jobs).
   `RAMP_ACCOUNTS_BATCH_SIZE = 500`). The card-liability account is classified `CREDCARD`;
   otherwise `rampClassificationForClass` maps Carbon `glAccountClass` → Ramp
   `classification` (Asset→ASSET, etc.); an unclassifiable account is skipped.
+  The POST item is built by `toRampGlAccountPayload` — the Carbon-side `visible` flag must
+  never reach the wire (Ramp 422 DEVELOPER_7001 "Unknown field" rejects the whole batch).
   **Picker scope**: `isCodableAccount` decides whether an account is selectable —
   under the default `codingAccountScope: "expense"` only Expense-class accounts plus
   the card-liability account are; the rest are never created, and ones already in
@@ -167,6 +169,16 @@ allowed dependency direction (ee must never import jobs).
   `20260228024512` backfill). Runs on install / settings save AND as the
   `ramp-cost-centers` step of every `ramp-sync`, so a new cost center reaches Ramp
   within ≤1h.
+- Every purchase invoice the sync creates (bill AND reimbursement) gets a bare
+  `purchaseInvoiceDelivery` row (`createPurchaseInvoiceDelivery`, PK = invoice id) right
+  after the header — `post-purchase-invoice` reads it with `.single()` and refuses to post
+  without it ("Failed to fetch purchase invoice delivery"). Neither path inserted it until
+  2026-09-10 (hit live replaying the insert shape by hand; the demo sandbox's bills and
+  reimbursements are uncoded, so the pull itself could not be exercised end to end).
+- `ensureRampConnection` only CREATES (when `metadata.connectionId` is unset). A fresh Carbon
+  DB pointed at a Ramp business that already has a Carbon connection (a re-install, a new
+  worktree against the sandbox) fails the install hook — adopt the existing connection id
+  (`GET /accounting/connection`) into `metadata.connectionId` by hand until it self-heals.
 - `ensureRampWebhook` is idempotent (skips when `metadata.webhookId` set); on create it
   persists `webhookId` to the plaintext metadata column and the returned signing `secret`
   to the vault (`webhookSecret`) via `persistIntegrationSecrets` (the vault RPC REPLACES,
@@ -243,12 +255,17 @@ can't find (`verifyCostCenters`, one company-scoped `.in()` query) — fails tha
 
 ### Confirm semantics (`confirmSyncs`)
 
-After each card/bill/reimbursement family drains, it `POST /accounting/syncs` with
-`sync_type`, an idempotency key (`buildRampIdempotencyKey` over
+After each card/bill/reimbursement family drains, it `POST /accounting/syncs` (body built by
+the pure `buildSyncConfirmBody`) with `sync_type`, an idempotency key (`buildRampIdempotencyKey` over
 `(companyId, syncType, sha256(sorted ids))` — a retried confirm can't double-apply),
 `successful_syncs` (`{id, reference_id, deep_link_url?}`), and `failed_syncs`
-(`{id, message}`). A family confirms whatever it managed to gather **even if its own drain
-threw partway** (the confirm is outside the drain's try/catch). An empty batch is skipped.
+(`{ id, error: { message } }` — Ramp's item shape; `{id, message}` is a 422). **Both lists have
+`minItems: 1`: an empty list must be OMITTED, never sent as `[]`** — until 2026-09-10 every
+confirm 422'd on one of these and was only `console.error`'d, so synced transactions stayed
+`SYNC_READY` in Ramp forever and were re-listed each run. A confirm failure now also lands on
+the family's step output as `confirmError`. A family confirms whatever it managed to gather
+**even if its own drain threw partway** (the confirm is outside the drain's try/catch). An
+empty batch is skipped.
 **Repayments and the outbound families have no Ramp confirm** — their idempotency IS the
 `externalIntegrationMapping` / the cursor.
 

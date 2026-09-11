@@ -27,6 +27,7 @@ import {
   enqueueSyncOperations,
   insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
+  loadCardTransactionPolicyInputs,
   resolvePaymentJournalFamily,
   type SyncOperationRequest,
   type TerminalSyncOperationRequest
@@ -172,8 +173,10 @@ export async function reconcileEntities(args: {
 
     // "Card Transaction" journals are DOC_BACKED per ROW (only a Charge with
     // a supplier has a provider charge object), so the policy needs the
-    // backing cardTransaction — one query for the batch, keyed by journalId.
-    const cardTransactionByJournalId = new Map<
+    // backing cardTransaction — resolved through the journal lines so the
+    // VOID journal resolves to the same row as the posting journal (one
+    // batch of queries, keyed by journal id).
+    let cardTransactionByJournalId = new Map<
       string,
       CardTransactionPolicyInput
     >();
@@ -182,24 +185,10 @@ export async function reconcileEntities(args: {
         (id) => snapshotById.get(id)?.sourceType === "Card Transaction"
       );
       if (cardJournalIds.length > 0) {
-        const cardTransactions = await args.client
-          .from("cardTransaction")
-          .select("journalId, type, supplierId")
-          .eq("companyId", args.companyId)
-          .in("journalId", cardJournalIds);
-        if (cardTransactions.error) {
-          throw new Error(
-            `Failed to load card transactions: ${cardTransactions.error.message}`
-          );
-        }
-        for (const row of cardTransactions.data ?? []) {
-          if (row.journalId) {
-            cardTransactionByJournalId.set(row.journalId, {
-              type: row.type as CardTransactionPolicyInput["type"],
-              hasSupplier: row.supplierId != null
-            });
-          }
-        }
+        cardTransactionByJournalId = await loadCardTransactionPolicyInputs(
+          args.client,
+          { companyId: args.companyId, journalIds: cardJournalIds }
+        );
       }
     }
 

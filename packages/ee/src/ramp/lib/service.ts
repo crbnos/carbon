@@ -380,7 +380,7 @@ export async function ensureRampConnection(
 // \********************************************************/
 
 /** A GL account in the shape Carbon pushes to Ramp. */
-type RampGlAccount = {
+export type RampGlAccount = {
   id: string;
   name: string;
   code?: string;
@@ -404,6 +404,25 @@ function accountFingerprint(account: {
   return `${account.name} ${account.code ?? ""}|${
     account.visible === false ? "HIDDEN" : "VISIBLE"
   }`;
+}
+
+/**
+ * The exact `POST /accounting/accounts` item. `visible` is Carbon-side state
+ * (it drives the PATCH `visibility` and the fingerprint) and must never reach
+ * the wire — Ramp rejects unknown fields with 422 DEVELOPER_7001.
+ */
+export function toRampGlAccountPayload(account: RampGlAccount): {
+  id: string;
+  name: string;
+  code?: string;
+  classification: string;
+} {
+  return {
+    id: account.id,
+    name: account.name,
+    ...(account.code ? { code: account.code } : {}),
+    classification: account.classification
+  };
 }
 
 export type RampCodingAccountScope = "expense" | "all";
@@ -625,7 +644,9 @@ export async function pushChartOfAccounts(
   let created = 0;
   for (const batch of chunk(toCreate, RAMP_ACCOUNTS_BATCH_SIZE)) {
     try {
-      await client.postAccountingAccounts({ gl_accounts: batch });
+      await client.postAccountingAccounts({
+        gl_accounts: batch.map(toRampGlAccountPayload)
+      });
       created += batch.length;
     } catch (err) {
       if (!(err instanceof RampApiError && err.code === "DEVELOPER_7020")) {
@@ -633,7 +654,9 @@ export async function pushChartOfAccounts(
       }
       for (const account of batch) {
         try {
-          await client.postAccountingAccounts({ gl_accounts: [account] });
+          await client.postAccountingAccounts({
+            gl_accounts: [toRampGlAccountPayload(account)]
+          });
           created += 1;
         } catch (perErr) {
           // Already in Ramp from an earlier push — record the mapping anyway.
@@ -1359,19 +1382,59 @@ export async function confirmSyncs(
     scope
   });
 
-  await client.postAccountingSyncs({
+  await client.postAccountingSyncs(buildSyncConfirmBody(args, idempotencyKey));
+}
+
+/**
+ * The exact `POST /accounting/syncs` body. Two contract details Ramp enforces
+ * with a 422 (live-verified 2026-09-10) that used to make EVERY confirm fail
+ * silently, leaving synced transactions SYNC_READY in Ramp forever:
+ * `successful_syncs` / `failed_syncs` have `minItems: 1`, so an empty list must
+ * be OMITTED rather than sent as `[]`; and a failed item is
+ * `{ id, error: { message } }`, not `{ id, message }`.
+ */
+export function buildSyncConfirmBody(
+  args: {
+    syncType: string;
+    successful: Array<{
+      id: string;
+      referenceId: string;
+      deepLinkUrl?: string;
+    }>;
+    failed: Array<{ id: string; message: string }>;
+  },
+  idempotencyKey: string
+): {
+  sync_type: string;
+  idempotency_key: string;
+  successful_syncs?: Array<{
+    id: string;
+    reference_id: string;
+    deep_link_url?: string;
+  }>;
+  failed_syncs?: Array<{ id: string; error: { message: string } }>;
+} {
+  return {
     sync_type: args.syncType,
     idempotency_key: idempotencyKey,
-    successful_syncs: args.successful.map((item) => ({
-      id: item.id,
-      reference_id: item.referenceId,
-      ...(item.deepLinkUrl ? { deep_link_url: item.deepLinkUrl } : {})
-    })),
-    failed_syncs: args.failed.map((item) => ({
-      id: item.id,
-      message: item.message
-    }))
-  });
+    ...(args.successful.length > 0
+      ? {
+          successful_syncs: args.successful.map((item) => ({
+            id: item.id,
+            reference_id: item.referenceId,
+            ...(item.deepLinkUrl ? { deep_link_url: item.deepLinkUrl } : {})
+          }))
+        }
+      : {}),
+    ...(args.failed.length > 0
+      ? {
+          failed_syncs: args.failed.map((item) => ({
+            id: item.id,
+            error: { message: item.message }
+          }))
+        }
+      : {})
+  };
 }
 
 // /********************************************************\

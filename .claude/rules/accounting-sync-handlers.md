@@ -313,17 +313,25 @@ carries an additive carve-out beside the Inventory Adjustment one:
 `isChargeBackedCardTransaction({ type, hasSupplier }, docSync)` → `DOC_BACKED` with
 `backingDocument: { entityType: "charge" }` only when the `charge` entity is enabled
 AND the row is a `Charge` with a supplier (or a `Credit` where the provider is in
-`CHARGE_CREDIT_PROVIDERS` — Xero, QBO; Rillet joins once its sandbox proves negative
-items). `Payment` / `Cashback` / `Repayment` rows (card-liability ↔ bank movements, no
+`CHARGE_CREDIT_PROVIDERS` — Xero, QBO and Rillet; Rillet posts a Credit as a charge with
+NEGATIVE items, which its sandbox accepted on 2026-09-10). `Payment` / `Cashback` / `Repayment` rows (card-liability ↔ bank movements, no
 vendor) and a Charge with no merchant supplier keep pushing as journal entries. The
 executor (`reconcile-executor.ts`) and the event planner (`planJournalPostingOperation`)
-resolve the backing row with one `cardTransaction` query per batch (`type, supplierId`
-by `journalId`); each charge syncer's `shouldSync` mirrors the same rule, so the spend
-reaches the provider as exactly one of the two, never both and never neither. Already-
+resolve the backing row through the shared `loadCardTransactionPolicyInputs`
+(`accounting-sync-operations.ts`): **journal LINES → `documentType = 'Card Transaction'`,
+`documentId = cardTransaction.id`**, then one `cardTransaction` query per batch (`type,
+supplierId`), with `cardTransaction.journalId` only as a fallback for unlinked journals.
+The line link is what the posting journal AND the "VOID Card Transaction" journal share —
+the void is a NEW Posted journal (`post-card-transaction`, no `reversalOfId`), so keying on
+`cardTransaction.journalId` resolved only the original and the void pushed as a plain
+journal entry on top of the charge DELETE, netting Rillet to minus one charge (found live
+2026-09-10, fixed the same day). Each charge syncer's `shouldSync` mirrors the same rule, so
+the spend reaches the provider as exactly one of the two, never both and never neither. Already-
 synced journals are never re-planned (`reconcileJournal` skips covered rows).
 Statuses: `SWEPT_CHARGE_STATUSES = ["Posted", "Voided"]`; the sweep pages
 `cardTransaction` by `transactionDate` (+ `voidedAt` for late voids) filtered to
-`type IN ('Charge','Credit')`. Void: Rillet `DELETE /charges/{id}` (native, verified pattern); Xero POSTs the bank
+`type IN ('Charge','Credit')`. Void: Rillet `DELETE /charges/{id}` (**live-verified 2026-09-10**: mapping tombstoned
+`{voided: true}`, GET → 404, and the void journal records `Excluded/DOC_BACKED/charge`); Xero POSTs the bank
 transaction with `Status: DELETED` (**VERIFY** — the minimal body is unverified on a
 sandbox); **QBO has no void path yet** — a mapped Voided charge closes truthfully as
 Skipped with a reason and a `TODO(charge-void)` in `QboChargeSyncer.shouldSync`
@@ -334,6 +342,8 @@ adapters use provider-prefixed local types (`XeroCardCharge`, `QboCardCharge`) b
 `providers/index.ts` re-exports every provider — hoisting one `CardCharge` to `core/`
 is the obvious follow-up. Receipts
 (the `document` rows the Ramp sync stored) are attached best-effort after create.
+
+**Rillet charge — live-verified 2026-09-10 on the sandbox** (`.ai/plans/2026-09-10-ramp-project-coding-and-rillet-charge-sync.md` Part C): `POST /charges` lands with `vendor_id` (the merchant vendor, JIT-synced), one item per coded line (`account_code`, amount, `fields[]` = the auto-provisioned Cost Center Field + value), `charge_date` = transaction date, `impact_date` = posting date, both `external_references`. Two preconditions a customer must meet, both surfaced truthfully rather than guessed: (1) every account on the charge must be mapped (Account Mapping tab → "Match by code"), else Warning `UNMAPPED_ACCOUNTS` naming the ids; (2) **the Carbon account chosen as Ramp's card liability must map to a Rillet account of subtype "Credit Card"** — Rillet rejects anything else with `400 "Account <code> is not a credit card account"` (recorded as Failed with that message; remap and Retry). Rillet IS in `CHARGE_CREDIT_PROVIDERS`: a `Credit` (Delta refund) posts as a charge whose items are negative and its journal records `Excluded/DOC_BACKED/charge` — one representation, never both (before the flip it verifiably closed Skipped with the journal pushed instead, so the mirror holds both ways).
 The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-generic and
 `journalLine.documentId` already carries the `cardTransaction.id`.
 
@@ -344,9 +354,9 @@ supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
 `ensureDependencySynced("vendor")`.
 
 **Rillet reimbursements.** A purchase invoice to an "Employee" supplier (what the
-Ramp reimbursement sync creates) is written to `POST /reimbursements` instead of
-`/bills` when the Rillet setting `reimbursementRepresentation` is `"reimbursement"`
-(default; `"bill"` keeps today's behaviour). `RilletBillSyncer` routes in
+Ramp reimbursement sync creates) is ALWAYS written to `POST /reimbursements`, Rillet's
+native object, never to `/bills` — there is deliberately no setting for it (one was
+built and removed the same day: an unnecessary choice). `RilletBillSyncer` routes in
 `upsertRemote` (pure `toRilletReimbursement(billPayload, payableAccountCode)`; the
 payable is the AP control account of the posted journal, now returned by
 `loadBillCostingLines` as `payablesAccountId`), stamps the mapping
@@ -354,9 +364,13 @@ payable is the AP control account of the posted journal, now returned by
 metadata)` — the base now passes the mapping metadata — deletes the right object on
 void. Rillet publishes **no reimbursement-payment endpoint** (2026-09-10; the schema
 exists in its spec without a path), so `RilletPaymentSyncer.pushRemotePayment` parks a
-payout against such a bill as Warning `UNSUPPORTED_REIMBURSEMENT_PAYMENT` — visible,
-retryable after switching the setting to Bills — rather than 404ing on
-`/bills/{id}/payments`.
+payout against such a bill as Warning `UNSUPPORTED_REIMBURSEMENT_PAYMENT` — visible, and
+retryable once Rillet ships the endpoint; until then the reimbursement is marked paid in
+Rillet by hand — rather than 404ing on `/bills/{id}/payments`. **Both live-verified
+2026-09-10**: `POST /reimbursements` (vendor JIT-created, item on the coded account,
+`reimbursement_date` = `dateIssued`, mapping `remoteKind: reimbursement`, status UNPAID) and
+the parked payout Warning on a posted Carbon AP payment. The AP control account must be
+mapped too (`payable_account_code`).
 
 ## Dimensions (journal / bill analytics)
 

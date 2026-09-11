@@ -320,16 +320,11 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
 
   /**
    * An employee reimbursement is a purchase invoice to a supplier of the
-   * "Employee" type (what the Ramp reimbursement sync creates). Whether it
-   * becomes a Rillet reimbursement or a bill is the provider setting.
+   * "Employee" type (what the Ramp reimbursement sync creates). It is always
+   * written as Rillet's native reimbursement object, never as a bill.
    */
   private async isReimbursement(local: Accounting.Bill): Promise<boolean> {
-    if (
-      !local.supplierId ||
-      this.rilletProvider.reimbursementRepresentation !== "reimbursement"
-    ) {
-      return false;
-    }
+    if (!local.supplierId) return false;
     const cached = this.employeeSupplierIds.get(local.supplierId);
     if (cached !== undefined) return cached;
     const row = await this.database

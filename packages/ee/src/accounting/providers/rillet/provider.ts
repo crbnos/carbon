@@ -433,20 +433,6 @@ export class RilletProvider extends BaseProvider {
     return typeof value === "string" && value.length > 0 ? value : null;
   }
 
-  /**
-   * How an employee reimbursement (a purchase invoice to an "Employee"
-   * supplier, e.g. from Ramp) is represented in Rillet: its native
-   * `reimbursement` object (default) or a plain `bill`. Rillet publishes no
-   * reimbursement-payment endpoint yet, so `bill` is the fallback for a
-   * customer who needs Carbon-recorded payouts to close the document.
-   */
-  get reimbursementRepresentation(): "reimbursement" | "bill" {
-    if (this.creds?.type !== "apiKey") return "reimbursement";
-    return this.creds.providerMetadata?.reimbursementRepresentation === "bill"
-      ? "bill"
-      : "reimbursement";
-  }
-
   /** `providerMetadata.webhookToken` — the inbound webhook route's shared secret. */
   get webhookToken(): string | null {
     if (this.creds?.type !== "apiKey") return null;

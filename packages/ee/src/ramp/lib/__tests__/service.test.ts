@@ -4,6 +4,7 @@ import { RAMP_COST_CENTER_FIELD_ID } from "../coding";
 import {
   buildCostCenterFieldBody,
   buildCostCenterOptionsBody,
+  buildSyncConfirmBody,
   chunk,
   costCenterFingerprint,
   diffChartOfAccounts,
@@ -14,7 +15,8 @@ import {
   type RampCostCenterMapping,
   rampClassificationForClass,
   scaleLinesToTotal,
-  scaleRepaymentLines
+  scaleRepaymentLines,
+  toRampGlAccountPayload
 } from "../service";
 
 describe("rampClassificationForClass", () => {
@@ -448,5 +450,82 @@ describe("diffChartOfAccounts visibility", () => {
     );
     expect(toCreate).toEqual([]);
     expect(toUpdate).toEqual([]);
+  });
+});
+
+describe("toRampGlAccountPayload", () => {
+  it("sends only Ramp's fields — never the Carbon-side `visible` flag (422 Unknown field)", () => {
+    expect(
+      toRampGlAccountPayload({
+        id: "acc_travel",
+        name: "Travel",
+        code: "6100",
+        classification: "EXPENSE",
+        visible: false
+      })
+    ).toEqual({
+      id: "acc_travel",
+      name: "Travel",
+      code: "6100",
+      classification: "EXPENSE"
+    });
+    expect(
+      toRampGlAccountPayload({
+        id: "a",
+        name: "No code",
+        classification: "ASSET"
+      })
+    ).toEqual({ id: "a", name: "No code", classification: "ASSET" });
+  });
+});
+
+describe("buildSyncConfirmBody", () => {
+  it("omits an empty list (Ramp: minItems 1) and shapes failures as { id, error: { message } }", () => {
+    expect(
+      buildSyncConfirmBody(
+        {
+          syncType: "TRANSACTION_SYNC",
+          successful: [{ id: "tx_1", referenceId: "CARD-0001" }],
+          failed: []
+        },
+        "key"
+      )
+    ).toEqual({
+      sync_type: "TRANSACTION_SYNC",
+      idempotency_key: "key",
+      successful_syncs: [{ id: "tx_1", reference_id: "CARD-0001" }]
+    });
+    expect(
+      buildSyncConfirmBody(
+        {
+          syncType: "TRANSACTION_SYNC",
+          successful: [],
+          failed: [{ id: "tx_2", message: "uncoded" }]
+        },
+        "key"
+      )
+    ).toEqual({
+      sync_type: "TRANSACTION_SYNC",
+      idempotency_key: "key",
+      failed_syncs: [{ id: "tx_2", error: { message: "uncoded" } }]
+    });
+  });
+
+  it("carries a bill deep link only when present", () => {
+    const body = buildSyncConfirmBody(
+      {
+        syncType: "BILL_SYNC",
+        successful: [
+          { id: "b_1", referenceId: "PI-1", deepLinkUrl: "https://erp/x" }
+        ],
+        failed: []
+      },
+      "key"
+    );
+    expect(body.successful_syncs?.[0]).toEqual({
+      id: "b_1",
+      reference_id: "PI-1",
+      deep_link_url: "https://erp/x"
+    });
   });
 });

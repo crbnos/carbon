@@ -130,7 +130,13 @@ const INVOICE_SETTLED_STATUSES = new Set(["Paid", "Voided"]);
 
 type SyncItem = { id: string; referenceId: string; deepLinkUrl?: string };
 type FailItem = { id: string; message: string };
-type FamilyResult = { created: number; reconfirmed: number; failed: number };
+type FamilyResult = {
+  created: number;
+  reconfirmed: number;
+  failed: number;
+  /** Why the Ramp confirm (`POST /accounting/syncs`) failed, if it did. */
+  confirmError?: string;
+};
 
 /**
  * Shared per-run context: the service-role client, the mapping service, and the
@@ -870,6 +876,29 @@ async function buildBillLines(
 }
 
 /**
+ * The delivery row every purchase invoice carries (`purchaseInvoiceDelivery`,
+ * PK = the invoice id). The app creates it alongside the header
+ * (`invoicing.service.ts` upsertPurchaseInvoice); `post-purchase-invoice`
+ * reads it with `.single()` and refuses to post without it ("Failed to fetch
+ * purchase invoice delivery" — hit live 2026-09-10 replaying this insert
+ * shape by hand). A Ramp bill/reimbursement has no shipping, so the row is
+ * bare. Returns an error message, or null when the row exists.
+ */
+async function createPurchaseInvoiceDelivery(
+  ctx: Ctx,
+  invoiceRowId: string
+): Promise<string | null> {
+  const delivery = await ctx.client.from("purchaseInvoiceDelivery").insert({
+    id: invoiceRowId,
+    supplierShippingCost: 0,
+    companyId: ctx.companyId
+  });
+  return delivery.error
+    ? `Failed to create purchase invoice delivery: ${delivery.error.message}`
+    : null;
+}
+
+/**
  * Set a Draft purchase invoice to Pending and post it through the
  * `post-purchase-invoice` edge function. Reverts to Draft on error (clone of the
  * $invoiceId.post route). Returns the readable invoice id on success.
@@ -1262,6 +1291,19 @@ async function syncBill(
       };
     }
     invoiceRowId = header.data.id;
+
+    const deliveryError = await createPurchaseInvoiceDelivery(
+      ctx,
+      invoiceRowId
+    );
+    if (deliveryError) {
+      await ctx.client
+        .from("purchaseInvoice")
+        .delete()
+        .eq("id", invoiceRowId)
+        .eq("companyId", ctx.companyId);
+      return { fail: { id: bill.id, message: deliveryError } };
+    }
 
     const lineRows = built.lines.map((line, lineIndex) => ({
       invoiceId: invoiceRowId,
@@ -1764,6 +1806,16 @@ async function syncReimbursement(
   }
   const invoiceRowId = header.data.id;
 
+  const deliveryError = await createPurchaseInvoiceDelivery(ctx, invoiceRowId);
+  if (deliveryError) {
+    await ctx.client
+      .from("purchaseInvoice")
+      .delete()
+      .eq("id", invoiceRowId)
+      .eq("companyId", ctx.companyId);
+    return { fail: { id: reimbursement.id, message: deliveryError } };
+  }
+
   const lineRows = built.lines.map((line, lineIndex) => ({
     invoiceId: invoiceRowId,
     invoiceLineType: "G/L Account" as const,
@@ -2000,7 +2052,14 @@ export const rampSyncFunction = inngest.createFunction(
           `[RAMP SYNC] ${companyId}: chart-of-accounts push failed`,
           err
         );
-        return { created: 0, updated: 0, failed: 1 };
+        // Surface the reason on the step output too: the run record is what
+        // an operator can actually read; the console line is not.
+        return {
+          created: 0,
+          updated: 0,
+          failed: 1,
+          error: err instanceof Error ? err.message : String(err)
+        };
       }
     });
 
@@ -2018,7 +2077,14 @@ export const rampSyncFunction = inngest.createFunction(
         return { created, renamed, hidden, shown, failed: 0 };
       } catch (err) {
         console.error(`[RAMP SYNC] ${companyId}: cost-center push failed`, err);
-        return { created: 0, renamed: 0, hidden: 0, shown: 0, failed: 1 };
+        return {
+          created: 0,
+          renamed: 0,
+          hidden: 0,
+          shown: 0,
+          failed: 1,
+          error: err instanceof Error ? err.message : String(err)
+        };
       }
     });
 
@@ -2172,6 +2238,10 @@ export const rampSyncFunction = inngest.createFunction(
           `[RAMP SYNC] ${companyId}: TRANSACTION_SYNC confirm failed`,
           confirmError
         );
+        result.confirmError =
+          confirmError instanceof Error
+            ? confirmError.message
+            : String(confirmError);
       }
 
       result.created = successful.length - mapped.length;
@@ -2264,6 +2334,10 @@ export const rampSyncFunction = inngest.createFunction(
           `[RAMP SYNC] ${companyId}: TRANSFER_SYNC confirm failed`,
           confirmError
         );
+        result.confirmError =
+          confirmError instanceof Error
+            ? confirmError.message
+            : String(confirmError);
       }
 
       result.created = successful.length - mapped.length;
@@ -2357,6 +2431,10 @@ export const rampSyncFunction = inngest.createFunction(
           `[RAMP SYNC] ${companyId}: STATEMENT_CREDIT_SYNC confirm failed`,
           confirmError
         );
+        result.confirmError =
+          confirmError instanceof Error
+            ? confirmError.message
+            : String(confirmError);
       }
 
       result.created = successful.length - mapped.length;
@@ -2425,6 +2503,10 @@ export const rampSyncFunction = inngest.createFunction(
           `[RAMP SYNC] ${companyId}: BILL_SYNC confirm failed`,
           confirmError
         );
+        result.confirmError =
+          confirmError instanceof Error
+            ? confirmError.message
+            : String(confirmError);
       }
 
       result.created = successful.length - reconfirmed;
@@ -2490,6 +2572,10 @@ export const rampSyncFunction = inngest.createFunction(
           `[RAMP SYNC] ${companyId}: BILL_PAYMENT_SYNC confirm failed`,
           confirmError
         );
+        result.confirmError =
+          confirmError instanceof Error
+            ? confirmError.message
+            : String(confirmError);
       }
 
       result.created = successful.length - reconfirmed;
@@ -2553,6 +2639,10 @@ export const rampSyncFunction = inngest.createFunction(
             `[RAMP SYNC] ${companyId}: REIMBURSEMENT_SYNC confirm failed`,
             confirmError
           );
+          result.confirmError =
+            confirmError instanceof Error
+              ? confirmError.message
+              : String(confirmError);
         }
 
         result.created = successful.length - reconfirmed;

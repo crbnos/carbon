@@ -101,7 +101,7 @@ export type PostingSyncDocumentSyncFlags = {
   chargeEnabled?: boolean;
   /** The provider can represent a merchant REFUND (a `Credit` card
    * transaction) as a native object too (QBO `Credit: true`, Xero RECEIVE);
-   * Rillet joins once its sandbox proves negative charge items. */
+   * Rillet posts a Credit as a charge with negative items. */
   chargeCreditEnabled?: boolean;
 };
 
@@ -128,15 +128,16 @@ export type CardTransactionPolicyInput = {
 /**
  * Providers whose native card-charge object can represent a merchant REFUND
  * (a `Credit` cardTransaction): QBO `Purchase` with `Credit: true`, Xero a
- * `RECEIVE` bank transaction on the card account. Rillet is added once its
- * sandbox accepts negative charge items; until then a Rillet Credit keeps
- * pushing as a journal entry. Read by the reconcile executor / event planner
+ * `RECEIVE` bank transaction on the card account, Rillet a charge with
+ * NEGATIVE items (its sandbox accepted, stored and returned a `-59.49` item
+ * on 2026-09-10). Read by the reconcile executor / event planner
  * (`docSync.chargeCreditEnabled`) and mirrored by each charge syncer's
  * `shouldSync`, so the policy and the syncer can never disagree.
  */
 export const CHARGE_CREDIT_PROVIDERS: ReadonlySet<string> = new Set([
   "xero",
-  "quickbooks"
+  "quickbooks",
+  "rillet"
 ]);
 
 /** Whether this card transaction's journal is replaced by a synced charge. */
@@ -530,8 +531,8 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   "UNSYNCED_DOCUMENT",
   // A Carbon payment settles a bill that was written to Rillet as a native
   // REIMBURSEMENT, and Rillet publishes no reimbursement-payment endpoint —
-  // the document stays UNPAID there. User-fixable by switching the Rillet
-  // "Employee reimbursements" setting to Bills, then Retry.
+  // the document stays UNPAID there until it is marked paid in Rillet by hand.
+  // Retryable once Rillet ships the endpoint.
   "UNSUPPORTED_REIMBURSEMENT_PAYMENT"
 ] as const;
 
