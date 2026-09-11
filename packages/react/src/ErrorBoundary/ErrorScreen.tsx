@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { GlitchHeading } from "./GlitchHeading";
 import { MagneticLink } from "./MagneticLink";
 import { NoiseOverlay } from "./NoiseOverlay";
@@ -18,6 +19,7 @@ export type ErrorScreenProps = {
   logLines: string[];
   highlightIndex?: number;
   actions: ErrorAction[];
+  requestId?: string;
 };
 
 export function ErrorScreen({
@@ -27,8 +29,18 @@ export function ErrorScreen({
   message,
   logLines,
   highlightIndex,
-  actions
+  actions,
+  requestId
 }: ErrorScreenProps) {
+  const [copied, setCopied] = useState(false);
+
+  const copyRequestId = () => {
+    if (requestId) {
+      navigator.clipboard.writeText(requestId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
   return (
     <main className="relative flex min-h-svh flex-col overflow-hidden bg-background text-foreground">
       <NoiseOverlay />
@@ -54,6 +66,23 @@ export function ErrorScreen({
             <p className="max-w-sm font-mono text-sm leading-relaxed text-muted-foreground text-pretty">
               {message}
             </p>
+            {requestId && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-mono text-muted-foreground">
+                  reference id
+                </p>
+                <button
+                  onClick={copyRequestId}
+                  className="max-w-fit rounded border border-muted-foreground/30 bg-muted/30 px-3 py-2 font-mono text-xs text-foreground transition-colors hover:border-muted-foreground/50 hover:bg-muted/50 active:scale-[0.96] active:duration-75"
+                  title="Click to copy"
+                >
+                  {requestId}
+                  <span className="ml-2 text-muted-foreground">
+                    {copied ? "✓" : "⎘"}
+                  </span>
+                </button>
+              </div>
+            )}
             <StatusReadout lines={logLines} highlightIndex={highlightIndex} />
           </div>
         </div>
