@@ -7398,6 +7398,8 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
           enforceInspectionFourEyes: boolean
+          forecastConsumptionBackwardPeriods: number
+          forecastConsumptionForwardPeriods: number
           gaugeCalibrationExpiredNotificationGroup: string[]
           id: string
           includeMaterialsOnTraveler: boolean
@@ -7450,6 +7452,8 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
+          forecastConsumptionBackwardPeriods?: number
+          forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id: string
           includeMaterialsOnTraveler?: boolean
@@ -7502,6 +7506,8 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
+          forecastConsumptionBackwardPeriods?: number
+          forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id?: string
           includeMaterialsOnTraveler?: boolean
@@ -11758,6 +11764,7 @@ export type Database = {
         Row: {
           companyId: string
           confidence: number | null
+          consumedQuantity: number
           createdAt: string
           createdBy: string
           forecastMethod: string | null
@@ -11773,6 +11780,7 @@ export type Database = {
         Insert: {
           companyId: string
           confidence?: number | null
+          consumedQuantity?: number
           createdAt?: string
           createdBy: string
           forecastMethod?: string | null
@@ -11788,6 +11796,7 @@ export type Database = {
         Update: {
           companyId?: string
           confidence?: number | null
+          consumedQuantity?: number
           createdAt?: string
           createdBy?: string
           forecastMethod?: string | null
@@ -71337,6 +71346,7 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           promisedDate: string | null
+          quantityToConsume: number | null
           quantityToSend: number | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
@@ -71512,14 +71522,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -77431,14 +77441,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
