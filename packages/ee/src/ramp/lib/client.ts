@@ -659,8 +659,8 @@ export class RampClient {
   /**
    * Retract a pushed bill on Carbon-side settlement. Ramp bills have NO
    * `/archive` endpoint (only purchase orders do) — `POST /bills/{id}/archive`
-   * 404s. Bills are retracted with `DELETE /bills/{id}`; callers treat this as
-   * best-effort (a bill already approved/paid in Ramp may refuse deletion).
+   * 404s. Bills are retracted with `DELETE /bills/{id}`. A bill already
+   * approved/paid in Ramp may refuse deletion; errors do not prove archival.
    */
   archiveBill<T = unknown>(id: string): Promise<T> {
     return this.request<T>("DELETE", `/developer/v1/bills/${id}`);

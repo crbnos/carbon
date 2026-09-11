@@ -435,9 +435,10 @@ export async function pushInvoiceDraftBill(
 
 /**
  * Archive a pushed Ramp bill once its Carbon invoice has settled (view-status
- * Paid/Voided). Tolerates an already-archived/already-paid bill by logging, then
- * stamps `archived: true` onto the mapping metadata (merging what is already
- * there — e.g. `rampPaid`) via a `link(...)` upsert so the archive never re-fires.
+ * Paid/Voided). Only a successful provider response stamps `archived: true`
+ * onto the mapping metadata (preserving e.g. `rampPaid`). Errors propagate so
+ * the caller can report failure and retry; neither a 404 nor error wording
+ * proves the bill was archived or settled.
  * The CALLER decides which mappings are eligible (settled + not yet archived).
  */
 export async function archiveRampBillForInvoice(
@@ -445,15 +446,7 @@ export async function archiveRampBillForInvoice(
   client: RampClient,
   mappingRow: ExternalIntegrationMapping
 ): Promise<void> {
-  try {
-    await client.archiveBill(mappingRow.externalId);
-  } catch (archiveError) {
-    // Tolerate "already paid / already archived" — the goal is the stamped flag.
-    console.warn(
-      `[RAMP] failed to archive bill ${mappingRow.externalId} for invoice ${mappingRow.entityId} (tolerated)`,
-      archiveError
-    );
-  }
+  await client.archiveBill(mappingRow.externalId);
 
   await mapping.link("bill", mappingRow.entityId, RAMP, mappingRow.externalId, {
     createdBy: mappingRow.createdBy ?? "system",
