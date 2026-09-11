@@ -3990,6 +3990,12 @@ msgstr "소모품"
 msgid "Consumables"
 msgstr "소모품"
 
+msgid "Consume forecast backward (weeks)"
+msgstr ""
+
+msgid "Consume forecast forward (weeks)"
+msgstr ""
+
 msgid "Consumed"
 msgstr "소진됨"
 
@@ -7728,6 +7734,9 @@ msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 
 msgid "Forecast"
 msgstr "예측"
+
+msgid "Forecast Consumption"
+msgstr ""
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -19269,6 +19278,9 @@ msgstr "{name}이(가) 변경될 때"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "완성 제품의 보존 기간이 계산됨으로 설정된 경우, 계산에 영향을 주는 소모된 입력을 선택하세요."
+
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "일련번호 또는 배치가 만료되는 시점과 만료 후 사용 시의 처리 방식입니다 — 회사 정책은 경고, 차단, 또는 승인 후 차단 중 하나로 설정할 수 있습니다."

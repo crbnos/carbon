@@ -3990,6 +3990,12 @@ msgstr "耗材"
 msgid "Consumables"
 msgstr "耗材"
 
+msgid "Consume forecast backward (weeks)"
+msgstr ""
+
+msgid "Consume forecast forward (weeks)"
+msgstr ""
+
 msgid "Consumed"
 msgstr "已消耗"
 
@@ -7728,6 +7734,9 @@ msgstr "用于任何事项。他们会调配合适的人员。"
 
 msgid "Forecast"
 msgstr "预测"
+
+msgid "Forecast Consumption"
+msgstr ""
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -19269,6 +19278,9 @@ msgstr "当 {name} 更改时"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "当成品的保质期设置为计算时，选择哪些已消耗的输入项用于计算。"
+
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "当序列号或批次过期时,以及之后使用时会发生什么 — 公司政策可以警告、阻止或使用覆盖阻止。"

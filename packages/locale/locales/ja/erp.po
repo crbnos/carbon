@@ -3990,6 +3990,12 @@ msgstr "消耗品"
 msgid "Consumables"
 msgstr "消耗品"
 
+msgid "Consume forecast backward (weeks)"
+msgstr ""
+
+msgid "Consume forecast forward (weeks)"
+msgstr ""
+
 msgid "Consumed"
 msgstr "消費済み"
 
@@ -7728,6 +7734,9 @@ msgstr "何でも構いません。彼らが適切な人を連れてきます。
 
 msgid "Forecast"
 msgstr "予測"
+
+msgid "Forecast Consumption"
+msgstr ""
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -19269,6 +19278,9 @@ msgstr "{name}が変更されるとき"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "完成品の保存期間が「計算」に設定されている場合、計算に使用される消費材料を選択してください。"
+
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "シリアルまたはバッチが期限切れになるとき、およびその後使用された場合に何が起こるか — 会社のポリシーは警告、ブロック、またはブロック上書きできます。"

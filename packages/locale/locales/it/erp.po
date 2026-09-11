@@ -3990,6 +3990,12 @@ msgstr "materiali di consumo"
 msgid "Consumables"
 msgstr "Materiali di consumo"
 
+msgid "Consume forecast backward (weeks)"
+msgstr ""
+
+msgid "Consume forecast forward (weeks)"
+msgstr ""
+
 msgid "Consumed"
 msgstr "Consumato"
 
@@ -7728,6 +7734,9 @@ msgstr "per qualsiasi cosa. Porteranno la persona giusta."
 
 msgid "Forecast"
 msgstr "Previsione"
+
+msgid "Forecast Consumption"
+msgstr ""
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -19269,6 +19278,9 @@ msgstr "Quando {name} cambia"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Quando la durata di conservazione di un prodotto finito è impostata su Calcolata, scegli quali input consumati alimentano il calcolo."
+
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Quando un numero di serie o un lotto scade, e cosa succede se usato dopo — una politica aziendale può Avvertire, Bloccare o BloccareCon Sostituzione."

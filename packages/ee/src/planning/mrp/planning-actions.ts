@@ -524,8 +524,8 @@ export async function generatePlanningActions(
 
   const resolveAssignee = await loadResponsibleEmployeeResolver(db, companyId);
 
-  // ── demand per (item, location, period): actual + forecast + projection,
-  //    the same union the planning RPCs read
+  // ── demand per (item, location, period): actual + forecast + projection
+  //    (net of consumption), the same union the planning RPCs read
   const [demandActuals, demandForecasts, demandProjections] = await Promise.all(
     [
       db
@@ -540,7 +540,13 @@ export async function generatePlanningActions(
         .execute(),
       db
         .selectFrom("demandProjection")
-        .select(["itemId", "locationId", "periodId", "forecastQuantity"])
+        .select([
+          "itemId",
+          "locationId",
+          "periodId",
+          "forecastQuantity",
+          "consumedQuantity"
+        ])
         .where("companyId", "=", companyId)
         .execute()
     ]
@@ -570,7 +576,16 @@ export async function generatePlanningActions(
     addDemand(row.itemId, row.locationId, row.periodId, row.forecastQuantity);
   }
   for (const row of demandProjections) {
-    addDemand(row.itemId, row.locationId, row.periodId, row.forecastQuantity);
+    addDemand(
+      row.itemId,
+      row.locationId,
+      row.periodId,
+      Math.max(
+        (Number(row.forecastQuantity) || 0) -
+          (Number(row.consumedQuantity) || 0),
+        0
+      )
+    );
   }
 
   // ── on-hand

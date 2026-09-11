@@ -3990,6 +3990,12 @@ msgstr "उपभोग्य सामग्री"
 msgid "Consumables"
 msgstr "उपभोग्य सामग्री"
 
+msgid "Consume forecast backward (weeks)"
+msgstr ""
+
+msgid "Consume forecast forward (weeks)"
+msgstr ""
+
 msgid "Consumed"
 msgstr "उपभोग किया गया"
 
@@ -7728,6 +7734,9 @@ msgstr "किसी भी चीज़ के लिए। वे सही �
 
 msgid "Forecast"
 msgstr "पूर्वानुमान"
+
+msgid "Forecast Consumption"
+msgstr ""
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -19269,6 +19278,9 @@ msgstr "जब {name} परिवर्तन होता है"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "जब किसी तैयार उत्पाद की शेल्फ लाइफ को गणना के लिए सेट किया जाता है, तो चुनें कि गणना को कौन सी उपयोग की गई इनपुट प्रदान करती हैं।"
+
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "जब एक सीरियल या बैच समाप्त हो जाता है, और उपयोग के बाद क्या होता है — एक कंपनी नीति सतर्क, अवरुद्ध, या ब्लॉकविदअधिग्रहण हो सकती है।"
