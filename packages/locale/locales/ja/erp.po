@@ -82,7 +82,7 @@ msgstr "{0}個のデルタを持つセル"
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
-msgstr ""
+msgstr "{0} 消費済"
 
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
@@ -340,7 +340,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 個の権限"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} 件選択"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}つのフェーズでご利用開始までご案内します。各フェーズはチェックポイントで終了します。"
@@ -349,7 +349,7 @@ msgid "{total} phases to go live"
 msgstr "{total}個のフェーズをライブにする"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} 件の結果"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
@@ -1344,10 +1344,10 @@ msgid "Add from library…"
 msgstr "ライブラリから追加…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "入荷から追加"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "出荷から追加"
 
 msgid "Add Group"
 msgstr "グループを追加"
@@ -1371,7 +1371,7 @@ msgid "Add lines from document"
 msgstr "ドキュメントから行を追加"
 
 msgid "Add manually"
-msgstr ""
+msgstr "手動で追加"
 
 msgid "Add match"
 msgstr "マッチを追加"
@@ -1624,7 +1624,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "すべての返却可能な明細"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
@@ -1648,7 +1648,7 @@ msgid "All tools"
 msgstr "すべてのツール"
 
 msgid "All types"
-msgstr ""
+msgstr "すべてのタイプ"
 
 msgid "All Types"
 msgstr "すべてのタイプ"
@@ -2498,7 +2498,7 @@ msgid "As the company owner, you can transfer ownership to another employee. Thi
 msgstr "会社責任者として、別の従業員に所有権を譲渡できます。これにより、請求とシステム管理の設定への完全なアクセス権が与えられます。"
 
 msgid "ASAP"
-msgstr ""
+msgstr "ASAP"
 
 msgid "Ascending"
 msgstr "昇順"
@@ -2572,7 +2572,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
 msgid "Assign"
-msgstr ""
+msgstr "割り当て"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
@@ -2584,7 +2584,7 @@ msgid "Assign to Groups"
 msgstr "グループに割り当て"
 
 msgid "Assign to..."
-msgstr ""
+msgstr "割り当て先..."
 
 msgid "Assigned"
 msgstr "割り当て済み"
@@ -2891,7 +2891,7 @@ msgid "Batches"
 msgstr "バッチ"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "返却対象のバッチ"
 
 msgid "Batching"
 msgstr "バッチ処理"
@@ -3511,7 +3511,7 @@ msgid "Choose another file"
 msgstr "別のファイルを選択"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "このリターンに明細を追加する方法を選択してください。"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
@@ -3697,7 +3697,7 @@ msgid "Company"
 msgstr "会社"
 
 msgid "Company default"
-msgstr ""
+msgstr "会社のデフォルト"
 
 msgid "Company group"
 msgstr "会社グループ"
@@ -3995,10 +3995,10 @@ msgid "Consumables"
 msgstr "消耗品"
 
 msgid "Consume forecast backward (weeks)"
-msgstr ""
+msgstr "予測の遡及消費 (週)"
 
 msgid "Consume forecast forward (weeks)"
-msgstr ""
+msgstr "予測の先行消費 (週)"
 
 msgid "Consumed"
 msgstr "消費済み"
@@ -5100,7 +5100,7 @@ msgid "Day-to-day questions and hypercare after launch"
 msgstr "日々の質問とローンチ後のハイパーケア"
 
 msgid "days"
-msgstr ""
+msgstr "日"
 
 msgid "Days"
 msgstr "日数"
@@ -6718,7 +6718,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "品目と数量を自分で入力してください。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "発注書に対する仕入先請求書を入力して承認します（三点照合）"
@@ -7740,7 +7740,7 @@ msgid "Forecast"
 msgstr "予測"
 
 msgid "Forecast Consumption"
-msgstr ""
+msgstr "予測消費"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -9473,10 +9473,10 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "発注書入荷が転記されると、明細がここに表示され、別の仕入先リターンで既に承認されていない数量のみが対象です。ブラインドリターンの場合は「明細を追加」を使用してください。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "受注出荷が転記されると、明細がここに表示され、別のRMAで既に承認されていない数量のみが対象です。ブラインドリターンの場合は「明細を追加」を使用してください。"
 
 msgid "Lines need internal part numbers"
 msgstr "明細には社内部品番号が必要です"
@@ -10330,7 +10330,7 @@ msgid "Morning, {name}."
 msgstr "朝、{name}さん。"
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "最新 — 他を検索する"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "ほとんどのことはここで発見され、解決されます。明確に名前を付けてください。"
@@ -10389,7 +10389,7 @@ msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
 msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr ""
+msgstr "MRPは、既存の注文のスケジュール日がこの日数を超えてずれている場合のみ、変更を提案します。より小さいズレは作業リストの静寂を保つために抑制されます。"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
@@ -10401,7 +10401,7 @@ msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
 
 msgid "My actions"
-msgstr ""
+msgstr "マイアクション"
 
 msgid "My Documents"
 msgstr "マイドキュメント"
@@ -10863,7 +10863,7 @@ msgid "No action needed"
 msgstr "対応は不要です"
 
 msgid "No actions assigned to you"
-msgstr ""
+msgstr "割り当てられたアクションがありません"
 
 msgid "No actions found."
 msgstr "アクションが見つかりません。"
@@ -10909,7 +10909,7 @@ msgid "No batches"
 msgstr "バッチなし"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "バッチがまだ選択されていません。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
@@ -11170,7 +11170,7 @@ msgid "No planned or recorded time."
 msgstr "計画時間または記録時間がありません。"
 
 msgid "No planning actions"
-msgstr ""
+msgstr "計画アクションなし"
 
 msgid "No planning data"
 msgstr "計画データなし"
@@ -11245,13 +11245,13 @@ msgid "No results found"
 msgstr "検索結果が見つかりません"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "この得意先に返却可能な明細がありません"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "この仕入先に返却可能な明細がありません"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "検索に一致する返却可能な明細がありません"
 
 msgid "No rows here."
 msgstr "ここに行はありません。"
@@ -11263,7 +11263,7 @@ msgid "No scheduled work in this window"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "シリアル番号がまだ選択されていません。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "シフトが構成されていません — 月～金、8時間営業を想定"
@@ -12419,13 +12419,13 @@ msgid "Pick serials/batches to return"
 msgstr "返品するシリアル/バッチを選択"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "この仕入先から受け取った手持ちバッチを選択してください。"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "在庫が必要なビンを選択してから、引き出すビンを選択します。"
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "この仕入先から受け取った手持ちシリアル番号を選択してください。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -12523,10 +12523,10 @@ msgid "Planning"
 msgstr "計画"
 
 msgid "Planning Actions"
-msgstr ""
+msgstr "計画アクション"
 
 msgid "Planning Ownership"
-msgstr ""
+msgstr "計画所有権"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "計画ラウンドは、この数の整数倍まで補充を提案しました。"
@@ -13110,7 +13110,7 @@ msgid "Purchase Qty"
 msgstr "購入数量"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "購買返品"
 
 msgid "Purchase Tax Payable"
 msgstr "仕入税金支払い（デフォルト）"
@@ -14021,7 +14021,7 @@ msgid "Requires staffing"
 msgstr "スタッフが必要"
 
 msgid "Reschedule Tolerance"
-msgstr ""
+msgstr "スケジュール変更許容値"
 
 msgid "Reserve floor"
 msgstr "予備床"
@@ -14082,7 +14082,7 @@ msgid "Resources"
 msgstr "リソース"
 
 msgid "Responsible Employee"
-msgstr ""
+msgstr "担当従業員"
 
 msgid "Restock"
 msgstr "補充"
@@ -14263,10 +14263,10 @@ msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
 
 msgid "Review on Job"
-msgstr ""
+msgstr "製造指図のレビュー"
 
 msgid "Review on PO"
-msgstr ""
+msgstr "発注書のレビュー"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"
@@ -14608,7 +14608,7 @@ msgid "Sales Person"
 msgstr "営業担当者"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "販売返品"
 
 msgid "Sales Revenue"
 msgstr "販売売上高"
@@ -14855,10 +14855,10 @@ msgid "Search by linear issue title..."
 msgstr "Linear イシュータイトルで検索..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "入荷、PO、または品目で検索"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "出荷、受注、または品目で検索"
 
 msgid "Search customers and types..."
 msgstr "得意先とタイプを検索..."
@@ -15105,10 +15105,10 @@ msgid "Select operations"
 msgstr "作業を選択"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "この仕入先からの転記済入荷明細を返品として選択してください。"
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "この得意先への転記済出荷明細を返品として選択してください。"
 
 msgid "Select Printer"
 msgstr "プリンターを選択"
@@ -15244,7 +15244,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "返品するシリアル番号"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "シリアルまたはバッチ追跡が必要です"
@@ -15298,10 +15298,10 @@ msgid "Session locked"
 msgstr "セッションがロック中"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "出荷から追加するにはこのリターンに得意先を設定してください。"
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "入荷から追加するにはこのリターンに仕入先を設定してください。"
 
 msgid "Set a target"
 msgstr "ターゲットを設定"
@@ -15592,10 +15592,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "仕入先リスト、仕入先フォーム、ドロップダウンで読みやすい仕入先IDカラムを表示します。仕入先はどちらの方法でも内部的に識別されます。"
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "利用可能なバッチ番号を表示"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "利用可能な追跡番号を表示"
 
 msgid "Show Customer IDs"
 msgstr "得意先IDを表示"
@@ -15604,7 +15604,7 @@ msgid "Show Durations"
 msgstr "期間を表示"
 
 msgid "Show more"
-msgstr ""
+msgstr "さらに表示"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "床と事務所の両方が信頼できる1つの在庫番号を表示する"
@@ -16232,7 +16232,7 @@ msgid "Suggest with AI"
 msgstr "AIで提案"
 
 msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr ""
+msgstr "最後のMRP実行により提案されました。適用はコミット前の供給に対して機能し、送付済み注文はレビューにリンクします。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
@@ -19284,7 +19284,7 @@ msgid "When a finished product's shelf life is set to Calculated, pick which con
 msgstr "完成品の保存期間が「計算」に設定されている場合、計算に使用される消費材料を選択してください。"
 
 msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr ""
+msgstr "受注または製造指図が残りの予測がない週に到着した場合、所要量の二重計算を回避するため、最大この数の週前後から予測を消費します。ネッティングを同じ週に限定するには、両方を0に設定してください。"
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "シリアルまたはバッチが期限切れになるとき、およびその後使用された場合に何が起こるか — 会社のポリシーは警告、ブロック、またはブロック上書きできます。"
@@ -19473,7 +19473,7 @@ msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "見積、注文、購買の承認が必要な人と時期"
 
 msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
-msgstr ""
+msgstr "MRP計画アクションの所有者。拠点は会社のデフォルトを継承し、品目グループはそれらの拠点を継承します。最も具体的な割り当てが優先され、各品目は計画タブで上書きできます。"
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "保全関連の保全指示の通知を受け取る必要があるのは誰ですか？"

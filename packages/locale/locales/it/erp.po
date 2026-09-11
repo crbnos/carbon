@@ -82,7 +82,7 @@ msgstr "{0} celle con delta"
 
 #. placeholder {0}: formatQuantity(consumed)
 msgid "{0} consumed"
-msgstr ""
+msgstr "{0} consumato"
 
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
@@ -340,7 +340,7 @@ msgid "{scopeCount} permissions"
 msgstr "{scopeCount} autorizzazioni"
 
 msgid "{selectedCount} selected"
-msgstr ""
+msgstr "{selectedCount} selezionati"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} fasi per mettere la tua azienda online su Carbon. Ognuna termina a un checkpoint."
@@ -349,7 +349,7 @@ msgid "{total} phases to go live"
 msgstr "{total} fasi per andare live"
 
 msgid "{totalCount} results"
-msgstr ""
+msgstr "{totalCount} risultati"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unità} other {# unità}}"
@@ -1344,10 +1344,10 @@ msgid "Add from library…"
 msgstr "Aggiungi dalla libreria…"
 
 msgid "Add from receipt"
-msgstr ""
+msgstr "Aggiungi da Entrata merci"
 
 msgid "Add from shipment"
-msgstr ""
+msgstr "Aggiungi da Spedizione"
 
 msgid "Add Group"
 msgstr "Aggiungi Gruppo"
@@ -1371,7 +1371,7 @@ msgid "Add lines from document"
 msgstr "Aggiungi righe dal documento"
 
 msgid "Add manually"
-msgstr ""
+msgstr "Aggiungi manualmente"
 
 msgid "Add match"
 msgstr "Aggiungi corrispondenza"
@@ -1624,7 +1624,7 @@ msgid "All members of selected groups and selected individuals will be able to a
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
 
 msgid "All returnable lines"
-msgstr ""
+msgstr "Tutte le righe restituibili"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
@@ -1648,7 +1648,7 @@ msgid "All tools"
 msgstr "Tutti gli strumenti"
 
 msgid "All types"
-msgstr ""
+msgstr "Tutti i tipi"
 
 msgid "All Types"
 msgstr "Tutti i tipi"
@@ -2498,7 +2498,7 @@ msgid "As the company owner, you can transfer ownership to another employee. Thi
 msgstr "Come proprietario dell'azienda, puoi trasferire la proprietà a un altro dipendente. Questo darà loro accesso completo alla fatturazione e alle impostazioni amministrative."
 
 msgid "ASAP"
-msgstr ""
+msgstr "ASAP"
 
 msgid "Ascending"
 msgstr "Ascendente"
@@ -2572,7 +2572,7 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
 msgid "Assign"
-msgstr ""
+msgstr "Assegna"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
@@ -2584,7 +2584,7 @@ msgid "Assign to Groups"
 msgstr "Assegna ai Gruppi"
 
 msgid "Assign to..."
-msgstr ""
+msgstr "Assegna a..."
 
 msgid "Assigned"
 msgstr "Assegnato"
@@ -2891,7 +2891,7 @@ msgid "Batches"
 msgstr "Lotti"
 
 msgid "Batches to return"
-msgstr ""
+msgstr "Lotti di produzione da restituire"
 
 msgid "Batching"
 msgstr "Raggruppamento in Lotti"
@@ -3511,7 +3511,7 @@ msgid "Choose another file"
 msgstr "Scegli un altro file"
 
 msgid "Choose how to add lines to this return."
-msgstr ""
+msgstr "Scegli come aggiungere righe a questo reso."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Scegli cosa appare sul cartellino di produzione stampato."
@@ -3697,7 +3697,7 @@ msgid "Company"
 msgstr "Azienda"
 
 msgid "Company default"
-msgstr ""
+msgstr "Azienda predefinita"
 
 msgid "Company group"
 msgstr "Gruppo aziendale"
@@ -3995,10 +3995,10 @@ msgid "Consumables"
 msgstr "Materiali di consumo"
 
 msgid "Consume forecast backward (weeks)"
-msgstr ""
+msgstr "Consumo previsione indietro (settimane)"
 
 msgid "Consume forecast forward (weeks)"
-msgstr ""
+msgstr "Consumo previsione avanti (settimane)"
 
 msgid "Consumed"
 msgstr "Consumato"
@@ -5100,7 +5100,7 @@ msgid "Day-to-day questions and hypercare after launch"
 msgstr "Domande quotidiane e supporto intensivo dopo il lancio"
 
 msgid "days"
-msgstr ""
+msgstr "giorni"
 
 msgid "Days"
 msgstr "Giorni"
@@ -6718,7 +6718,7 @@ msgid "Enter a quantity between 1 and {0}."
 msgstr "Inserisci una quantità tra 1 e {0}."
 
 msgid "Enter an item and quantity yourself."
-msgstr ""
+msgstr "Inserisci un Articolo e una Quantità tu stesso."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Inserire e Approvare Fatture di acquisto in base a un Ordine di acquisto (Riscontro a tre vie)"
@@ -7740,7 +7740,7 @@ msgid "Forecast"
 msgstr "Previsione"
 
 msgid "Forecast Consumption"
-msgstr ""
+msgstr "Consumo Previsione"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -9473,10 +9473,10 @@ msgid "Lines"
 msgstr "Righe"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "Le righe appaiono qui una volta che un'Entrata merci è stata registrata, e solo per le Quantità non già autorizzate su un altro reso a Fornitore. Usa Aggiungi Elemento Riga per un reso cieco."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
-msgstr ""
+msgstr "Le righe appaiono qui una volta che una Spedizione è stata registrata, e solo per le Quantità non già autorizzate su un altro RMA. Usa Aggiungi Elemento Riga per un reso cieco."
 
 msgid "Lines need internal part numbers"
 msgstr "Le righe necessitano di numeri di parte interni"
@@ -10330,7 +10330,7 @@ msgid "Morning, {name}."
 msgstr "Mattino, {name}."
 
 msgid "Most recent — search to find more"
-msgstr ""
+msgstr "Più recenti — cerca per trovare altri"
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "La maggior parte dei problemi viene identificata e risolta qui. Nominala chiaramente."
@@ -10389,7 +10389,7 @@ msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
 msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr ""
+msgstr "MRP suggerisce solo lo spostamento di un Ordine quando la sua data è scostata di più di questo numero di giorni. Gli scostamenti più piccoli vengono soppressi per mantenere la lista di lavoro pulita."
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP viene eseguito automaticamente ogni 3 ore, ma puoi eseguirlo manualmente qui."
@@ -10401,7 +10401,7 @@ msgid "Must be in the same location"
 msgstr "Deve essere nella stessa posizione"
 
 msgid "My actions"
-msgstr ""
+msgstr "Le mie azioni"
 
 msgid "My Documents"
 msgstr "I miei documenti"
@@ -10863,7 +10863,7 @@ msgid "No action needed"
 msgstr "Nessuna azione necessaria"
 
 msgid "No actions assigned to you"
-msgstr ""
+msgstr "Nessuna azione assegnata a te"
 
 msgid "No actions found."
 msgstr "Nessuna azione trovata."
@@ -10909,7 +10909,7 @@ msgid "No batches"
 msgstr "Nessun lotto di produzione"
 
 msgid "No batches selected yet."
-msgstr ""
+msgstr "Nessun Lotto di produzione ancora selezionato."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Nessun articolo di ingresso BOM ha una politica di shelf-life"
@@ -11170,7 +11170,7 @@ msgid "No planned or recorded time."
 msgstr "Nessun tempo pianificato o registrato."
 
 msgid "No planning actions"
-msgstr ""
+msgstr "Nessuna azione di pianificazione"
 
 msgid "No planning data"
 msgstr "Nessun dato di pianificazione"
@@ -11245,13 +11245,13 @@ msgid "No results found"
 msgstr "Nessun risultato trovato"
 
 msgid "No returnable lines for this customer"
-msgstr ""
+msgstr "Nessuna riga restituibile per questo Cliente"
 
 msgid "No returnable lines for this supplier"
-msgstr ""
+msgstr "Nessuna riga restituibile per questo Fornitore"
 
 msgid "No returnable lines match your search"
-msgstr ""
+msgstr "Nessuna riga restituibile corrisponde alla tua ricerca"
 
 msgid "No rows here."
 msgstr "Nessuna riga qui."
@@ -11263,7 +11263,7 @@ msgid "No scheduled work in this window"
 msgstr "Nessun lavoro programmato in questo intervallo"
 
 msgid "No serial numbers selected yet."
-msgstr ""
+msgstr "Nessun Numero di serie ancora selezionato."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Nessun turno configurato — presupponendo giorni lun–ven, 8h"
@@ -12419,13 +12419,13 @@ msgid "Pick serials/batches to return"
 msgstr "Seleziona i numeri di serie/lotti da restituire"
 
 msgid "Pick the batches on hand that were received from this supplier."
-msgstr ""
+msgstr "Seleziona i Lotti di produzione disponibili che sono stati ricevuti da questo Fornitore."
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Scegli il contenitore che ha bisogno di stock, quindi scegli i contenitori da cui prelevarlo."
 
 msgid "Pick the serial numbers on hand that were received from this supplier."
-msgstr ""
+msgstr "Seleziona i Numeri di serie disponibili che sono stati ricevuti da questo Fornitore."
 
 msgid "Pick tracked item"
 msgstr "Seleziona articolo tracciato"
@@ -12523,10 +12523,10 @@ msgid "Planning"
 msgstr "Pianificazione"
 
 msgid "Planning Actions"
-msgstr ""
+msgstr "Azioni di Pianificazione"
 
 msgid "Planning Ownership"
-msgstr ""
+msgstr "Responsabilità di Pianificazione"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "I cicli di pianificazione hanno suggerito il rifornimento fino a un multiplo intero di questo numero."
@@ -13110,7 +13110,7 @@ msgid "Purchase Qty"
 msgstr "Quantità Acquisto"
 
 msgid "Purchase Return"
-msgstr ""
+msgstr "Reso di Acquisto"
 
 msgid "Purchase Tax Payable"
 msgstr "Imposta di Acquisto Pagabile (predefinita)"
@@ -14021,7 +14021,7 @@ msgid "Requires staffing"
 msgstr "Richiede personale"
 
 msgid "Reschedule Tolerance"
-msgstr ""
+msgstr "Tolleranza di Riprogrammazione"
 
 msgid "Reserve floor"
 msgstr "Limite di riserva"
@@ -14082,7 +14082,7 @@ msgid "Resources"
 msgstr "Risorse"
 
 msgid "Responsible Employee"
-msgstr ""
+msgstr "Dipendente Responsabile"
 
 msgid "Restock"
 msgstr "Riapprovvigionamento"
@@ -14263,10 +14263,10 @@ msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Rivedi le modifiche di ogni articolo, quindi conferma — il rilascio non può essere annullato."
 
 msgid "Review on Job"
-msgstr ""
+msgstr "Revisione su Ordine di produzione"
 
 msgid "Review on PO"
-msgstr ""
+msgstr "Revisione su Ordine di acquisto"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Rivedi lo stato patrimoniale e il conto economico del periodo e conferma che i dati siano corretti. Si tratta di un'autorizzazione manuale — segna come fatto dopo averli revisionati."
@@ -14608,7 +14608,7 @@ msgid "Sales Person"
 msgstr "Addetto alle vendite"
 
 msgid "Sales Return"
-msgstr ""
+msgstr "Reso di vendita"
 
 msgid "Sales Revenue"
 msgstr "Ricavi di vendita"
@@ -14855,10 +14855,10 @@ msgid "Search by linear issue title..."
 msgstr "Cerca per titolo problema linear..."
 
 msgid "Search by receipt, PO, or item"
-msgstr ""
+msgstr "Cerca per entrata merci, ordine di acquisto o articolo"
 
 msgid "Search by shipment, sales order, or item"
-msgstr ""
+msgstr "Cerca per spedizione, ordine di vendita o articolo"
 
 msgid "Search customers and types..."
 msgstr "Cerca clienti e tipi..."
@@ -15105,10 +15105,10 @@ msgid "Select operations"
 msgstr "Seleziona operazioni"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr ""
+msgstr "Seleziona le righe di entrata merci registrate da questo fornitore da restituire."
 
 msgid "Select posted shipment lines to this customer to return."
-msgstr ""
+msgstr "Seleziona le righe di spedizione registrate a questo cliente da restituire."
 
 msgid "Select Printer"
 msgstr "Seleziona Stampante"
@@ -15244,7 +15244,7 @@ msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "I numeri di serie vengono generati solo per articoli tracciati in serie o per lotto."
 
 msgid "Serial numbers to return"
-msgstr ""
+msgstr "Numeri di serie da restituire"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Tracciamento Seriale o Batch Richiesto"
@@ -15298,10 +15298,10 @@ msgid "Session locked"
 msgstr "Sessione bloccata"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr ""
+msgstr "Imposta un cliente su questo reso per aggiungere da una spedizione."
 
 msgid "Set a supplier on this return to add from a receipt."
-msgstr ""
+msgstr "Imposta un fornitore su questo reso per aggiungere da un'entrata merci."
 
 msgid "Set a target"
 msgstr "Imposta un obiettivo"
@@ -15592,10 +15592,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "Mostra una colonna ID Fornitore leggibile nell'elenco dei fornitori, nei moduli fornitori e nei menu a discesa. I fornitori sono comunque identificati internamente in entrambi i casi."
 
 msgid "Show available batch numbers"
-msgstr ""
+msgstr "Mostra i numeri di lotto di produzione disponibili"
 
 msgid "Show available tracking numbers"
-msgstr ""
+msgstr "Mostra i numeri di tracciamento disponibili"
 
 msgid "Show Customer IDs"
 msgstr "Mostra ID Cliente"
@@ -15604,7 +15604,7 @@ msgid "Show Durations"
 msgstr "Mostra durate"
 
 msgid "Show more"
-msgstr ""
+msgstr "Mostra di più"
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "Mostra un numero di inventario unico in cui sia il reparto che l'ufficio si fidano"
@@ -16232,7 +16232,7 @@ msgid "Suggest with AI"
 msgstr "Suggerisci con l'IA"
 
 msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr ""
+msgstr "Suggerito dall'ultimo ciclo MRP. L'applicazione agisce sulla copertura non impegnata; gli ordini inviati rimandano a una revisione."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Ordini suggeriti che non hai ancora effettuato."
@@ -19284,7 +19284,7 @@ msgid "When a finished product's shelf life is set to Calculated, pick which con
 msgstr "Quando la durata di conservazione di un prodotto finito è impostata su Calcolata, scegli quali input consumati alimentano il calcolo."
 
 msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr ""
+msgstr "Quando un ordine di vendita o un ordine di produzione cade in una settimana senza previsione residua, consuma previsione da fino a questo numero di settimane indietro e poi in avanti, anziché contare due volte il fabbisogno. Impostare entrambi a 0 per limitare il netting alla stessa settimana."
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Quando un numero di serie o un lotto scade, e cosa succede se usato dopo — una politica aziendale può Avvertire, Bloccare o BloccareCon Sostituzione."
@@ -19473,7 +19473,7 @@ msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Chi deve approvare preventivi, ordini e acquisti — e quando"
 
 msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
-msgstr ""
+msgstr "Chi è responsabile delle azioni di pianificazione MRP. Le ubicazioni ereditano l'impostazione predefinita dell'azienda; i gruppi di articoli ereditano la loro ubicazione. L'assegnazione più specifica ha la priorità e ogni articolo può impostare una forzatura nella scheda Pianificazione."
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "Chi dovrebbe ricevere notifiche per interventi di manutenzione?"
