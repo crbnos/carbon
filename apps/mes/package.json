@@ -33,6 +33,7 @@
     "@lingui/vite-plugin": "catalog:",
     "@nanostores/react": "catalog:",
     "@react-aria/i18n": "catalog:",
+    "@react-email/components": "catalog:",
     "@react-pdf/renderer": "catalog:",
     "@react-router/dev": "catalog:",
     "@react-router/remix-routes-option-adapter": "catalog:",
