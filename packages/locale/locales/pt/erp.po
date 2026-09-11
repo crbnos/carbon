@@ -8642,7 +8642,7 @@ msgid "Inherited from the parent group."
 msgstr "Herdado do grupo pai."
 
 msgid "inherits {inheritedName}"
-msgstr ""
+msgstr "herda {inheritedName}"
 
 msgid "Input"
 msgstr "Entrada"

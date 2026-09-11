@@ -8642,7 +8642,7 @@ msgid "Inherited from the parent group."
 msgstr "मूल समूह से विरासत में मिला।"
 
 msgid "inherits {inheritedName}"
-msgstr ""
+msgstr "{inheritedName} से विरासत"
 
 msgid "Input"
 msgstr "इनपुट"
