@@ -1,14 +1,28 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { applyRate, SCALE, taxableBase } from "@carbon/utils";
+import {
+  applyRate,
+  RoundingMode,
+  round,
+  SCALE,
+  taxableBase
+} from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
+  getPlanningAction,
+  markPlanningActionsActioned
+} from "~/modules/production";
+import {
   insertPurchaseOrder,
+  isPurchaseOrderLocked,
   plannedOrderValidator,
+  shortClosePurchaseOrderLine,
+  updatePurchaseOrderLineSchedule,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchasing", "planning");
 
@@ -27,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
       bypassRls: true
     });
 
-  const { items, action, locationId } = await request.json();
+  const { items, action, locationId, planningActionIds } = await request.json();
 
   if (typeof locationId !== "string") {
     return data(
@@ -516,11 +530,182 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
+    // ── Apply a persisted planning action to its target PO line (spec §P1.5).
+    // IDOR guard: the request carries ONLY planningActionIds — the type, target
+    // and proposal values come from the persisted row, loaded by id+companyId
+    // and required to be Open. The commitment gate re-reads the parent PO
+    // status; a locked (sent) PO is never silently edited.
+    case "expedite":
+    case "defer":
+    case "increase":
+    case "decrease":
+    case "cancel": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+
+      const wireToType: Record<string, string> = {
+        expedite: "Expedite",
+        defer: "Defer",
+        increase: "Increase",
+        decrease: "Decrease",
+        cancel: "Cancel"
+      };
+
+      const db = getDatabaseClient();
+      const applied: string[] = [];
+      const requiresManualAction: {
+        id: string;
+        purchaseOrderId: string | null;
+      }[] = [];
+      const errors: string[] = [];
+
+      for (const planningActionId of parsedIds.data) {
+        const actionRow = await getPlanningAction(client, {
+          id: planningActionId,
+          companyId
+        });
+        if (actionRow.error || !actionRow.data) {
+          errors.push(`Planning action ${planningActionId} not found`);
+          continue;
+        }
+        const row = actionRow.data;
+        if (row.status !== "Open") {
+          errors.push(`Planning action ${planningActionId} is not open`);
+          continue;
+        }
+        if (wireToType[action] !== row.type) {
+          errors.push(
+            `Planning action ${planningActionId} is a ${row.type}, not ${wireToType[action]}`
+          );
+          continue;
+        }
+        if (!row.purchaseOrderLineId) {
+          errors.push(
+            `Planning action ${planningActionId} does not target a purchase order line`
+          );
+          continue;
+        }
+
+        const line = await client
+          .from("purchaseOrderLine")
+          .select(
+            "id, purchaseOrderId, conversionFactor, purchaseOrder!inner(id, status)"
+          )
+          .eq("id", row.purchaseOrderLineId)
+          .eq("companyId", companyId)
+          .single();
+        if (line.error || !line.data) {
+          errors.push(
+            `Purchase order line for planning action ${planningActionId} not found`
+          );
+          continue;
+        }
+
+        const poStatus = line.data.purchaseOrder?.status;
+        if (!poStatus || isPurchaseOrderLocked(poStatus)) {
+          // committed supply — surface "Review on PO" instead of editing
+          requiresManualAction.push({
+            id: planningActionId,
+            purchaseOrderId: line.data.purchaseOrderId
+          });
+          continue;
+        }
+
+        if (action === "cancel") {
+          try {
+            await shortClosePurchaseOrderLine(db, {
+              lineId: line.data.id,
+              purchaseOrderId: line.data.purchaseOrderId,
+              companyId,
+              userId,
+              intent: "close"
+            });
+          } catch (err) {
+            errors.push(
+              `Failed to close PO line for planning action ${planningActionId}: ${
+                err instanceof Error ? err.message : "unknown error"
+              }`
+            );
+            continue;
+          }
+        } else if (action === "expedite" || action === "defer") {
+          const update = await updatePurchaseOrderLineSchedule(client, {
+            lineId: line.data.id,
+            companyId,
+            userId,
+            requiredDate: row.suggestedDate
+          });
+          if (update.error) {
+            errors.push(
+              `Failed to reschedule PO line for planning action ${planningActionId}: ${update.error.message}`
+            );
+            continue;
+          }
+        } else {
+          // increase / decrease — suggestedQuantity is in INVENTORY units;
+          // the line stores PURCHASE units
+          const conversionFactor = line.data.conversionFactor ?? 1;
+          const purchaseQuantity =
+            conversionFactor > 0
+              ? round(
+                  Number(row.suggestedQuantity) / conversionFactor,
+                  0,
+                  RoundingMode.Up
+                )
+              : Number(row.suggestedQuantity);
+          const update = await updatePurchaseOrderLineSchedule(client, {
+            lineId: line.data.id,
+            companyId,
+            userId,
+            purchaseQuantity
+          });
+          if (update.error) {
+            errors.push(
+              `Failed to update PO line quantity for planning action ${planningActionId}: ${update.error.message}`
+            );
+            continue;
+          }
+        }
+
+        const mark = await markPlanningActionsActioned(client, {
+          ids: [planningActionId],
+          companyId,
+          userId
+        });
+        if (mark.error) {
+          errors.push(
+            `Applied but failed to mark planning action ${planningActionId} actioned: ${mark.error.message}`
+          );
+          continue;
+        }
+        applied.push(planningActionId);
+      }
+
+      return {
+        success: errors.length === 0,
+        message:
+          errors.length === 0
+            ? `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
+            : `Applied ${applied.length}; ${errors.length} failed`,
+        applied,
+        requiresManualAction,
+        errors: errors.length > 0 ? errors : undefined
+      };
+    }
+
     default:
       return data(
         {
           success: false,
-          message: `Unknown action '${action}'. Expected action: 'order'`
+          message: `Unknown action '${action}'. Expected one of: 'order', 'expedite', 'defer', 'increase', 'decrease', 'cancel'`
         },
         { status: 500 }
       );

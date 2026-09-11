@@ -5,9 +5,14 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
+  getPlanningAction,
   insertJob,
+  markPlanningActionsActioned,
+  notifyScheduleInputsChanged,
   productionOrderValidator,
   recalculateJobRequirements,
+  updateJob,
+  updateJobStatus,
   upsertJobMethod
 } from "~/modules/production";
 
@@ -27,7 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
     bypassRls: true
   });
 
-  const { items, action, locationId } = await request.json();
+  const { items, action, locationId, planningActionIds } = await request.json();
 
   if (typeof locationId !== "string") {
     return data(
@@ -403,11 +408,174 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
+    // ── Apply a persisted planning action to its target job (spec §P1.5).
+    // IDOR guard: the request carries ONLY planningActionIds — the type, target
+    // and proposal values come from the persisted row, loaded by id+companyId
+    // and required to be Open. The commitment gate re-reads the job status; a
+    // released job (Ready or later) is never silently edited. Job dates flow
+    // through updateJob (recomputes priority) + notifyScheduleInputsChanged —
+    // never jobOperation date writes.
+    case "expedite":
+    case "defer":
+    case "increase":
+    case "decrease":
+    case "cancel": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+
+      const wireToType: Record<string, string> = {
+        expedite: "Expedite",
+        defer: "Defer",
+        increase: "Increase",
+        decrease: "Decrease",
+        cancel: "Cancel"
+      };
+
+      const COMMITTED_JOB_STATUSES = ["Ready", "In Progress", "Paused"];
+
+      const applied: string[] = [];
+      const requiresManualAction: { id: string; jobId: string | null }[] = [];
+      const errors: string[] = [];
+
+      for (const planningActionId of parsedIds.data) {
+        const actionRow = await getPlanningAction(client, {
+          id: planningActionId,
+          companyId
+        });
+        if (actionRow.error || !actionRow.data) {
+          errors.push(`Planning action ${planningActionId} not found`);
+          continue;
+        }
+        const row = actionRow.data;
+        if (row.status !== "Open") {
+          errors.push(`Planning action ${planningActionId} is not open`);
+          continue;
+        }
+        if (wireToType[action] !== row.type) {
+          errors.push(
+            `Planning action ${planningActionId} is a ${row.type}, not ${wireToType[action]}`
+          );
+          continue;
+        }
+        if (!row.jobId) {
+          errors.push(
+            `Planning action ${planningActionId} does not target a job`
+          );
+          continue;
+        }
+
+        const job = await client
+          .from("job")
+          .select("id, status")
+          .eq("id", row.jobId)
+          .eq("companyId", companyId)
+          .single();
+        if (job.error || !job.data) {
+          errors.push(`Job for planning action ${planningActionId} not found`);
+          continue;
+        }
+
+        if (
+          !job.data.status ||
+          COMMITTED_JOB_STATUSES.includes(job.data.status)
+        ) {
+          // released to the floor — surface "Review on Job" instead of editing
+          requiresManualAction.push({
+            id: planningActionId,
+            jobId: job.data.id
+          });
+          continue;
+        }
+
+        if (action === "cancel") {
+          const cancel = await updateJobStatus(client, {
+            id: job.data.id,
+            companyId,
+            status: "Cancelled",
+            updatedBy: userId
+          });
+          if (cancel.error) {
+            errors.push(
+              `Failed to cancel job for planning action ${planningActionId}: ${cancel.error.message}`
+            );
+            continue;
+          }
+        } else if (action === "expedite" || action === "defer") {
+          const update = await updateJob(client, {
+            id: job.data.id,
+            updatedBy: userId,
+            dueDate: row.suggestedDate
+          });
+          if (update.error) {
+            errors.push(
+              `Failed to reschedule job for planning action ${planningActionId}: ${update.error.message}`
+            );
+            continue;
+          }
+          await notifyScheduleInputsChanged(
+            companyId,
+            "reorder",
+            "Planning action rescheduled a job",
+            job.data.id
+          );
+        } else {
+          const update = await updateJob(client, {
+            id: job.data.id,
+            updatedBy: userId,
+            quantity: Number(row.suggestedQuantity)
+          });
+          if (update.error) {
+            errors.push(
+              `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
+            );
+            continue;
+          }
+          await recalculateJobRequirements(client, {
+            id: job.data.id,
+            companyId,
+            userId
+          });
+        }
+
+        const mark = await markPlanningActionsActioned(client, {
+          ids: [planningActionId],
+          companyId,
+          userId
+        });
+        if (mark.error) {
+          errors.push(
+            `Applied but failed to mark planning action ${planningActionId} actioned: ${mark.error.message}`
+          );
+          continue;
+        }
+        applied.push(planningActionId);
+      }
+
+      return {
+        success: errors.length === 0,
+        message:
+          errors.length === 0
+            ? `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
+            : `Applied ${applied.length}; ${errors.length} failed`,
+        applied,
+        requiresManualAction,
+        errors: errors.length > 0 ? errors : undefined
+      };
+    }
+
     default:
       return data(
         {
           success: false,
-          message: `Unknown action '${action}'. Expected action: 'order'`
+          message: `Unknown action '${action}'. Expected one of: 'order', 'expedite', 'defer', 'increase', 'decrease', 'cancel'`
         },
         { status: 500 }
       );

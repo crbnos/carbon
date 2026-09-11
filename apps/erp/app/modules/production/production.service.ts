@@ -9614,3 +9614,182 @@ export async function completeOperation(
 
   return issue;
 }
+
+// ── Planning actions (spec §P1) ────────────────────────────────────────────
+// Persisted MRP action messages (Order/Make/Expedite/Defer/Cancel/Increase/
+// Decrease). Written diff-write by generatePlanningActions (@carbon/ee/planning);
+// these are the app-side reads and worklist mutations. planningAction carries
+// no FKs to item/PO-line/job, so enrichment is flat queries + a JS merge
+// (the items-module G6 pattern), never PostgREST embeds.
+
+export async function getPlanningActions(
+  client: SupabaseClient<Database>,
+  args: GenericQueryFilters & {
+    companyId: string;
+    locationId: string;
+    kind: "Buy" | "Make";
+    search: string | null;
+  }
+) {
+  const { companyId, locationId, kind, search, ...filters } = args;
+
+  let query = client
+    .from("planningAction")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .neq("status", "Actioned");
+
+  // Buy worklist = new purchase suggestions + change actions on PO lines;
+  // Make worklist = new job suggestions + change actions on jobs.
+  query =
+    kind === "Buy"
+      ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
+      : query.or("type.eq.Make,jobId.not.is.null");
+
+  if (search) {
+    const matchingItems = await client
+      .from("item")
+      .select("id")
+      .eq("companyId", companyId)
+      .or(`name.ilike.%${search}%,readableIdWithRevision.ilike.%${search}%`);
+    const ids = matchingItems.data?.map((i) => i.id) ?? [];
+    if (ids.length === 0) {
+      return { data: [], count: 0, error: null };
+    }
+    query = query.in("itemId", ids);
+  }
+
+  query = setGenericQueryFilters(query, filters, [
+    { column: "suggestedDate", ascending: true }
+  ]);
+
+  const actions = await query;
+  if (actions.error) {
+    return { data: null, count: 0, error: actions.error };
+  }
+
+  const rows = actions.data ?? [];
+  const itemIds = [...new Set(rows.map((r) => r.itemId))];
+  const poLineIds = [
+    ...new Set(
+      rows.flatMap((r) =>
+        r.purchaseOrderLineId ? [r.purchaseOrderLineId] : []
+      )
+    )
+  ];
+  const jobIds = [...new Set(rows.flatMap((r) => (r.jobId ? [r.jobId] : [])))];
+
+  const [items, poLines, jobs] = await Promise.all([
+    itemIds.length > 0
+      ? client
+          .from("item")
+          .select("id, readableIdWithRevision, name")
+          .eq("companyId", companyId)
+          .in("id", itemIds)
+      : Promise.resolve({ data: [], error: null }),
+    poLineIds.length > 0
+      ? client
+          .from("purchaseOrderLine")
+          .select("id, purchaseOrderId, purchaseOrder(purchaseOrderId)")
+          .eq("companyId", companyId)
+          .in("id", poLineIds)
+      : Promise.resolve({ data: [], error: null }),
+    jobIds.length > 0
+      ? client
+          .from("job")
+          .select("id, jobId")
+          .eq("companyId", companyId)
+          .in("id", jobIds)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  const itemById = new Map((items.data ?? []).map((i) => [i.id, i] as const));
+  const poLineById = new Map(
+    (poLines.data ?? []).map((l) => [l.id, l] as const)
+  );
+  const jobById = new Map((jobs.data ?? []).map((j) => [j.id, j] as const));
+
+  const enriched = rows.map((row) => {
+    const item = itemById.get(row.itemId);
+    const poLine = row.purchaseOrderLineId
+      ? poLineById.get(row.purchaseOrderLineId)
+      : undefined;
+    const job = row.jobId ? jobById.get(row.jobId) : undefined;
+    return {
+      ...row,
+      itemReadableId: item?.readableIdWithRevision ?? null,
+      itemName: item?.name ?? null,
+      // navigation target: the PARENT purchase order id — the stored value is
+      // the LINE id and would 404 in path.to.purchaseOrder
+      purchaseOrderId: poLine?.purchaseOrderId ?? null,
+      purchaseOrderReadableId: poLine?.purchaseOrder?.purchaseOrderId ?? null,
+      jobReadableId: job?.jobId ?? null
+    };
+  });
+
+  return {
+    data: enriched,
+    count: actions.count ?? enriched.length,
+    error: null
+  };
+}
+
+export async function dismissPlanningActions(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; companyId: string; userId: string }
+) {
+  return client
+    .from("planningAction")
+    .update({ status: "Dismissed" as const, updatedBy: args.userId })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
+}
+
+export async function markPlanningActionsActioned(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; companyId: string; userId: string }
+) {
+  return client
+    .from("planningAction")
+    .update({ status: "Actioned" as const, updatedBy: args.userId })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
+}
+
+/**
+ * Assigning through this function (not the generic api/assign route) both sets
+ * the assignee AND marks it human-overridden so the next MRP diff-write never
+ * re-resolves it from the responsibleEmployee ladder.
+ */
+export async function assignPlanningAction(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    assignee: string | null;
+    userId: string;
+  }
+) {
+  return client
+    .from("planningAction")
+    .update({
+      assignee: args.assignee || null,
+      assigneeOverridden: true,
+      updatedBy: args.userId
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId);
+}
+
+export async function getPlanningAction(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string }
+) {
+  return client
+    .from("planningAction")
+    .select("*")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .single();
+}

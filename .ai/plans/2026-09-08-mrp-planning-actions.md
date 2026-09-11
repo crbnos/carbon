@@ -20,8 +20,8 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
 - [x] Task 4: Zod models — tuples + dismiss/assign validators (derived type lands with Task 7)
 - [x] Task 5: ladder resolver + bulk loader in @carbon/ee, precedence tests green
 - [x] Task 6: generatePlanningActions — derive+diff pure fns tested (833 ee tests), wired into runMrp post-Phase-7, errors propagate
-- [ ] Task 7: Read + mutation services (`getPlanningActions`, dismiss, assign, mark-actioned)
-- [ ] Task 8: Apply-action route handling (extend `planning.update` + commitment gate)
+- [x] Task 7: getPlanningActions (flat queries + JS merge, parent PO id join) + dismiss/assign/mark-actioned services + PlanningAction type
+- [x] Task 8: planning.update extended (both routes) — IDOR bind by id+companyId+Open, commitment gates, updateJob+notify for jobs, shortClose for cancel, wire map lowercase
 - [ ] Task 9: `responsibleEmployee` field on the item Planning tab (all 4 item types)
 - [ ] Task 10: Ownership settings screen (clone printer `AssignmentsCard`)
 - [ ] Task 11: Worklist columns + "my actions" filter + bulk apply/assign/dismiss on both planning pages
