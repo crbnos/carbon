@@ -31,7 +31,7 @@ import {
 } from "recharts";
 import type { z } from "zod";
 import { Hidden, Item, Location, Number, Submit } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import { demandProjectionValidator } from "../../production.models";
 
@@ -42,6 +42,7 @@ type LoaderData = {
 
 type DemandProjectionsFormProps = {
   initialValues?: z.infer<typeof demandProjectionValidator>;
+  consumedValues?: Record<number, number>;
   isEditing?: boolean;
   onClose: () => void;
 };
@@ -65,12 +66,14 @@ const toFinite = (value: unknown): number => {
 
 const DemandProjectionsForm = ({
   initialValues: propInitialValues,
+  consumedValues,
   isEditing = false,
   onClose
 }: DemandProjectionsFormProps) => {
   const permissions = usePermissions();
   const { t, i18n } = useLingui();
   const numberFormatter = useNumberFormatter();
+  const formatQuantity = useQuantityFormatter();
   const fetcher = useFetcher<{ id: string }>();
   const loaderData = useLoaderData<LoaderData>();
   const periods = loaderData?.periods ?? [];
@@ -256,16 +259,23 @@ const DemandProjectionsForm = ({
                         { length: quarter.end - quarter.start },
                         (_, offset) => {
                           const index = quarter.start + offset;
+                          const consumed = consumedValues?.[index];
                           return (
-                            <Number
-                              key={index}
-                              name={`week${index}`}
-                              label={weekLabels[index]}
-                              minValue={0}
-                              onChange={(value) =>
-                                handleWeekChange(index, value)
-                              }
-                            />
+                            <div key={index} className="flex flex-col gap-1">
+                              <Number
+                                name={`week${index}`}
+                                label={weekLabels[index]}
+                                minValue={0}
+                                onChange={(value) =>
+                                  handleWeekChange(index, value)
+                                }
+                              />
+                              {consumed !== undefined && (
+                                <span className="text-xs text-muted-foreground">
+                                  {t`${formatQuantity(consumed)} consumed`}
+                                </span>
+                              )}
+                            </div>
                           );
                         }
                       )}

@@ -16,12 +16,12 @@ persisted as `demandProjection.consumedQuantity`, subtracted with
 - [x] Task 1: Pure `consumeForecast` function + unit tests (e24cc547b6)
 - [x] Task 2: Migration — columns, view column, three function forks (322288b5be)
 - [x] Task 3: Apply migration + regenerate types (322288b5be; dataset/backup hook checks skipped — no DB connection at commit time, rerun in Task 10)
-- [ ] Task 4: Wire consumption into `runMrp` (Phase 1/4/7)
-- [ ] Task 5: Net projections in `generatePlanningActions`
-- [ ] Task 6: Net projections in `getItemDemand` + item planning chart
-- [ ] Task 7: Settings service fn + planning settings card
-- [ ] Task 8: Consumed annotation in the forecast edit grid
-- [ ] Task 9: Docs/rules/spec sync
+- [x] Task 4: Wire consumption into `runMrp` (Phase 1/4/7) (42c3a86f5c)
+- [x] Task 5: Net projections in `generatePlanningActions` (201a87040b)
+- [x] Task 6: Net projections in `getItemDemand` + item planning chart (a592b29b80 — merged in the forecast loader, not the chart, so Outgoing card + Supply & Demand list fix too)
+- [x] Task 7: Settings service fn + planning settings card (committed; + ui/Planning barrel export)
+- [x] Task 8: Consumed annotation in the forecast edit grid (committed; useQuantityFormatter is a callable, not Intl — used directly)
+- [x] Task 9: Docs/rules/spec sync (committed with design artifacts; KB regenerated from docs source per agent-knowledge-base rule)
 - [ ] Task 10: Validation gates + browser verification
 
 ## Dependencies
