@@ -1776,8 +1776,33 @@ export async function getSalesOrderInvoicesByIds(
 ) {
   return client
     .from("salesInvoices")
-    .select("id, invoiceTotal, balance, status, currencyCode")
+    .select(
+      "id, invoiceTotal, balance, status, baseStatus, currencyCode, exchangeRate"
+    )
     .in("id", invoiceIds);
+}
+
+export async function getSalesOrderInvoicePaymentsByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceIds: string[]
+) {
+  return fetchAllFromTable<{
+    targetSalesInvoiceId: string | null;
+    sourceAmount: number | null;
+    payment: { status: string } | null;
+  }>(
+    client,
+    "invoiceSettlement",
+    "targetSalesInvoiceId, sourceAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("payment.companyId", companyId)
+        .eq("payment.status", "Posted")
+        .in("targetSalesInvoiceId", invoiceIds)
+        .order("id")
+  );
 }
 
 export async function getSalesOrderLinesByItemId(
