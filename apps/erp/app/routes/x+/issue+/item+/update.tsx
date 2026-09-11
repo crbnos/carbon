@@ -35,6 +35,11 @@ export async function action({ request }: ActionFunctionArgs) {
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
+  // Without this, an update against a missing row matches nothing and still
+  // reports success.
+  if (parent.error || !parent.data) {
+    return { error: { message: "Issue item not found" }, data: null };
+  }
   const lockedError = requireUnlockedBulk({
     statuses: [(parent.data as any)?.nonConformance?.status ?? null],
     checkFn: isIssueLocked,

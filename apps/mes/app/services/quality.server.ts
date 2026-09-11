@@ -569,6 +569,14 @@ export async function createInspectionRejectionIssue(
     };
   }
   const insp = inspection.data as any;
+  // getInspection reads with the service role by id alone, and the issue this
+  // creates links the inspection — so the lot must belong to this company.
+  if (insp.companyId !== companyId) {
+    return {
+      error: new Error("Inspection is not in this company"),
+      message: "Failed to load the lot for the quality issue"
+    };
+  }
   const jobOperationId = insp.sourceDocumentLineId as string | null;
   if (!jobOperationId) {
     return { error: null, message: "Lot has no job operation to link" };

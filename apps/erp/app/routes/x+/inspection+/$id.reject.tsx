@@ -246,11 +246,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const trackedEntityIds = ((insp.inspectionSample as any[]) ?? [])
     .map((s) => s.trackedEntityId as string)
     .filter(Boolean);
-  const receiptLineEntities = await client
+  // A failed read would link only part of the lot and still report success,
+  // so roll the NCR back and let the operator retry the reject instead.
+  const failLotRead = async (err: unknown): Promise<never> => {
+    await deleteIssue(serviceRole, ncrId);
+    throw redirect(
+      path.to.inspection(id),
+      await flash(
+        request,
+        error(err, "Lot rejected, but failed to read the lot for the NCR")
+      )
+    );
+  };
+  const receiptLineEntities = await serviceRole
     .from("trackedEntity")
     .select("id")
     .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
     .eq("companyId", companyId);
+  if (receiptLineEntities.error) await failLotRead(receiptLineEntities.error);
   const allLotEntityIds = Array.from(
     new Set([
       ...trackedEntityIds,
@@ -264,7 +277,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .select("id, quantity")
           .in("id", allLotEntityIds)
           .eq("companyId", companyId)
-      : { data: [] };
+      : { data: [], error: null };
+  if (entityQuantities.error) await failLotRead(entityQuantities.error);
 
   // insertIssue inserted nonConformanceItem rows with default qty 0 and
   // disposition 'Pending'. Now that we know the lot context, overwrite with

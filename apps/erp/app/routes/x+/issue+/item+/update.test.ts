@@ -35,15 +35,25 @@ vi.mock("~/modules/quality/quality-disposition.server", () => ({
 import { updateIssueItemQuantity } from "~/modules/quality/quality-disposition.server";
 import { action } from "./update";
 
+// The item lookup the route runs before its field switch; `parentRow` null
+// simulates a missing (or other-company) item.
+let parentRow: { nonConformance: { status: string } } | null;
+const update = vi.fn();
 const client = {
   from: () => {
     const chain: any = {
       select: () => chain,
       eq: () => chain,
-      single: async () => ({
-        data: { nonConformance: { status: "In Progress" } },
-        error: null
-      })
+      update: (value: unknown) => {
+        update(value);
+        return chain;
+      },
+      single: async () =>
+        parentRow
+          ? { data: parentRow, error: null }
+          : { data: null, error: { message: "No rows found" } },
+      then: (onFulfilled: (value: unknown) => unknown) =>
+        Promise.resolve({ data: null, error: null }).then(onFulfilled)
     };
     return chain;
   }
@@ -68,6 +78,7 @@ async function run(request: Request) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  parentRow = { nonConformance: { status: "In Progress" } };
   vi.mocked(requirePermissions).mockResolvedValue({
     client,
     companyId: "company-1",
@@ -103,5 +114,22 @@ describe("issue item update — quantity", () => {
 
     expect(result.error?.message).toBe("Invalid expected quantity");
     expect(updateIssueItemQuantity).not.toHaveBeenCalled();
+  });
+
+  it("refuses a missing item before the field switch", async () => {
+    parentRow = null;
+    const body = new FormData();
+    body.set("id", "nci-missing");
+    body.set("field", "disposition");
+    body.set("value", "Scrap");
+    const result = await run(
+      new Request("http://localhost/x/issue/item/update", {
+        method: "POST",
+        body
+      })
+    );
+
+    expect(result.error?.message).toBe("Issue item not found");
+    expect(update).not.toHaveBeenCalled();
   });
 });

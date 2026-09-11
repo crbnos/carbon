@@ -428,6 +428,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
             inspection.data.sourceDocumentLineId
           )
           .eq("companyId", companyId);
+        // A failed read would link only the sampled part of the lot.
+        if (receiptLineEntities.error) {
+          logger.error("Failed to create association", {
+            error: receiptLineEntities.error
+          });
+          return {
+            success: false,
+            message: "Failed to create issue inbound inspection"
+          };
+        }
         lotEntityIds = Array.from(
           new Set([
             ...sampledIds,
@@ -540,13 +550,8 @@ async function linkInspection(
     trackedEntityIds
   } = args;
 
-  await insertMissingTrackedEntities(client, {
-    nonConformanceId,
-    companyId,
-    userId,
-    trackedEntityIds
-  });
-
+  // Read before writing anything: a failed read would seed the row with
+  // wrong quantities and still report success.
   const entityQuantities =
     trackedEntityIds.length > 0
       ? await client
@@ -554,7 +559,21 @@ async function linkInspection(
           .select("id, quantity")
           .in("id", trackedEntityIds)
           .eq("companyId", companyId)
-      : { data: [] };
+      : { data: [], error: null };
+  if (entityQuantities.error) {
+    logger.error("Failed to create association", {
+      error: entityQuantities.error
+    });
+    return false;
+  }
+
+  await insertMissingTrackedEntities(client, {
+    nonConformanceId,
+    companyId,
+    userId,
+    trackedEntityIds
+  });
+
   const quantityById = new Map(
     (
       (entityQuantities.data ?? []) as { id: string; quantity: number | null }[]

@@ -281,6 +281,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .select("id, quantity")
       .in("id", entityIds)
       .eq("companyId", companyId);
+    if (entityQuantities.error) {
+      throw await failWithRollback(
+        entityQuantities.error,
+        "Failed to read the returned entities for the Issue"
+      );
+    }
     entityRows = (entityQuantities.data ?? []).map((entity) => ({
       id: entity.id,
       quantity: Number(entity.quantity ?? 1)
