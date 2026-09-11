@@ -1644,3 +1644,13 @@ full-screen ERP route.
 **Rule:** Route financial side effects only from an explicit allowlist grounded in the provider contract. Unsupported, missing, or ambiguous discriminator values must fail before mapping or posting; expanding the allowlist requires contract evidence and positive routing tests.
 
 **Applies to:** Ramp bills, reimbursements, repayments, and every integration enum that selects accounts, settlement state, or document type.
+
+## Coding lines are positive magnitudes, not signed journal legs
+
+**Context:** Card Charge, Credit, and Repayment documents translate positive coding allocations into debit or credit journal legs according to the transaction type.
+
+**Problem:** Zero, negative, or non-finite line amounts could pass a header-sum check and invert or erase an individual accounting leg even though the overall entry still balanced.
+
+**Rule:** Validate every document coding amount as finite and strictly positive before applying debit/credit semantics. A balanced journal is necessary but does not prove the document's line-level meaning is valid.
+
+**Applies to:** Card transaction coding lines and other financial document builders that assign journal direction separately from stored line magnitude.

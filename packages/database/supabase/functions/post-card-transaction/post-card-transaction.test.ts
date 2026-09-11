@@ -263,6 +263,32 @@ Deno.test("throws when the line sum does not equal the header amount", () => {
   );
 });
 
+for (const invalidAmount of [0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
+  Deno.test(`rejects invalid coding line amount ${invalidAmount}`, () => {
+    assertThrows(
+      () =>
+        buildCardTransactionJournal(
+          base({
+            transaction: {
+              type: "Charge",
+              amount: 100,
+              cardAccountId: "card",
+              offsetAccountId: null,
+              currencyCode: "USD",
+              exchangeRate: 1,
+            },
+            lines: [
+              { accountId: "exp1", amount: invalidAmount },
+              { accountId: "exp2", amount: 100 - invalidAmount },
+            ],
+          }),
+        ),
+      Error,
+      "coding line amounts must be finite and greater than zero",
+    );
+  });
+}
+
 // ---------------------------------------------------------------------------
 // FX — exchangeRate ≠ 1 must convert BOTH sides to base currency, or the entry
 // silently posts foreign face value / unbalances. `exchangeRate` is the

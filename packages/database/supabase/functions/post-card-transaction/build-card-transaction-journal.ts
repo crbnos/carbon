@@ -157,6 +157,11 @@ export function buildCardTransactionJournal(
         `Card transaction ${documentReadableId}: ${type} requires at least one line`,
       );
     }
+    if (lines.some((line) => !Number.isFinite(line.amount) || line.amount <= 0)) {
+      throw new Error(
+        `Card transaction ${documentReadableId}: coding line amounts must be finite and greater than zero`,
+      );
+    }
     const lineSum = lines.reduce((sum, l) => sum + l.amount, 0);
     if (Math.abs(lineSum - amount) > EPSILON) {
       throw new Error(
