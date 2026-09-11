@@ -333,8 +333,14 @@ export async function requirePermissions(
   }
 
   let role: string | undefined;
+  let subject: string | undefined;
   try {
-    role = (JSON.parse(atob(parts[1]!)) as { role?: string }).role;
+    const claims = JSON.parse(atob(parts[1]!)) as {
+      role?: string;
+      sub?: string;
+    };
+    role = claims.role;
+    subject = claims.sub;
   } catch {
     throw new Error("Invalid authorization token");
   }
@@ -344,8 +350,14 @@ export async function requirePermissions(
   }
 
   if (role === "authenticated") {
+    if (!subject) {
+      throw new Error("Invalid authorization token");
+    }
+    if (subject !== userId) {
+      throw new Error("Authenticated user does not match requested user");
+    }
     const claimsResult = await serviceRole.rpc("get_claims", {
-      uid: userId,
+      uid: subject,
       company: companyId,
     });
 

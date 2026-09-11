@@ -5,10 +5,14 @@ const companyId = "card-auth-company";
 const serviceToken = `header.${
   btoa(JSON.stringify({ role: "service_role" }))
 }.signature`;
+const authenticatedToken = `header.${
+  btoa(JSON.stringify({ role: "authenticated", sub: "attacker-user" }))
+}.signature`;
 
 async function withAuthTransport(
   scopes: Record<string, string[]>,
   run: () => Promise<void>,
+  authenticatedClaims?: Record<string, unknown>,
 ) {
   const originalFetch = globalThis.fetch;
   const variables = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
@@ -37,6 +41,11 @@ async function withAuthTransport(
         remaining: 59,
         resetAt: 0,
       }));
+    }
+    if (
+      url.pathname === "/rest/v1/rpc/get_claims" && authenticatedClaims
+    ) {
+      return Promise.resolve(Response.json(authenticatedClaims));
     }
     throw new Error(`Unexpected auth request: ${url.pathname}`);
   };
@@ -111,4 +120,57 @@ Deno.test("service-role jobs and scoped invoicing API keys can post", async () =
       assertEquals(response.status, 200);
     }
   });
+});
+
+Deno.test("authenticated callers cannot borrow another user's permissions", async () => {
+  await withAuthTransport({}, async () => {
+    let posts = 0;
+    const response = await handlePostCardTransaction(
+      new Request("http://localhost/post-card-transaction", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authenticatedToken}` },
+        body: JSON.stringify({
+          companyId,
+          userId: "privileged-user",
+          cardTransactionId: "card-1",
+        }),
+      }),
+      () => {
+        posts++;
+        return Promise.resolve({ journalId: "journal-1" });
+      },
+    );
+
+    assertEquals(await response.json(), {
+      message: "Authenticated user does not match requested user",
+    });
+    assertEquals(response.status, 500);
+    assertEquals(posts, 0);
+  }, { invoicing_update: [companyId] });
+});
+
+Deno.test("authenticated callers can post as their JWT subject", async () => {
+  await withAuthTransport({}, async () => {
+    const response = await handlePostCardTransaction(
+      new Request("http://localhost/post-card-transaction", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authenticatedToken}` },
+        body: JSON.stringify({
+          companyId,
+          userId: "attacker-user",
+          cardTransactionId: "card-1",
+        }),
+      }),
+      (args) => {
+        assertEquals(args.userId, "attacker-user");
+        return Promise.resolve({ journalId: "journal-1" });
+      },
+    );
+
+    assertEquals(await response.json(), {
+      success: true,
+      journalId: "journal-1",
+    });
+    assertEquals(response.status, 200);
+  }, { invoicing_update: [companyId] });
 });
