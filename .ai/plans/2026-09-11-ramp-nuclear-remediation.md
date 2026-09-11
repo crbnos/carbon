@@ -23,10 +23,22 @@
 - [x] Task 16: Make inbound bill staging transactional and provenance-safe
 - [x] Task 17: Surface family drain failures
 - [x] Task 18: Make provider charge create/void retry-safe
+- [x] Task 19: Bind edge permissions to the authenticated JWT subject (`a30afa3fc7`)
+- [x] Task 20: Reject ignored Payment/Cashback coding lines (`c4e2a33380`)
+- [x] Task 21: Keep failed Ramp bill archival retryable (`13435e74cb`)
+- [x] Task 22: Hold outbound cursors on supplier lookup errors (`04eb4d7216`)
+- [x] Task 23: Refresh mapped card Drafts from corrected Ramp input (`7666cc8f61`)
+- [x] Task 24: Bind journal dimensions to preallocated line ids (`5bf802406c`)
+- [x] Task 25: Require authoritative outbound invoice FX (`8438ecf5e6`)
+- [x] Task 26: Fail closed on unsupported financial discriminators (`e13c6ab70a`)
+- [x] Task 27: Reject invalid card coding-line magnitudes (`ef1b83f26f`)
+- [x] Task 28: Release-gate unverified outbound bill export (`21d83b81a4`)
+- [x] Task 29: Authenticate every webhook challenge (`95ad2310e0`)
+- [x] Task 30: Constrain legacy reimbursement adoption (`80281070e1`)
 
 ## Dependencies
 
-Tasks 2 and 5 are independent. Task 3 depends on its migration being applied and generated. Task 4 depends on Tasks 2–3. Task 6 depends on Task 5. Task 7 depends on Task 5. Task 8 is independent. Task 9 depends on Tasks 3 and 8. Tasks 11–12 depend on the completed behavioral fixes and preserve their contracts. Tasks 13–18 are the findings from the follow-up nuclear review and depend on the relevant earlier foundations. Task 10's final gates depend on all implementation and nuclear-refactor tasks.
+Tasks 2 and 5 are independent. Task 3 depends on its migration being applied and generated. Task 4 depends on Tasks 2–3. Task 6 depends on Task 5. Task 7 depends on Task 5. Task 8 is independent. Task 9 depends on Tasks 3 and 8. Tasks 11–12 depend on the completed behavioral fixes and preserve their contracts. Tasks 13–18 are the findings from the follow-up nuclear review and depend on the relevant earlier foundations. Tasks 19–30 resolve the final review's ten Must Fixes plus its line-magnitude and webhook risks. Task 10's final gates depend on all implementation and nuclear-refactor tasks.
 
 ---
 
@@ -358,9 +370,54 @@ commit with its own regression coverage:
 **Verification:** Focused unit, integration, real-database, Deno, and scoped typecheck gates
 are recorded in the commits. Task 10 reruns the aggregate branch gates after these changes.
 
+## Tasks 19–30: Final nuclear-review corrections
+
+**Depends on:** Tasks 5–9 and 13–18
+
+The ten Must Fixes and two independently identified risks landed separately:
+
+19. `a30afa3fc7` — authenticated edge requests must bind body `userId` to JWT `sub`;
+    permission lookup uses the verified subject. Handler regressions reject impersonated ids.
+20. `c4e2a33380` — Payment/Cashback refuse persisted coding lines rather than silently
+    dropping them from their header-only journal. Builder and transactional tests cover both.
+21. `13435e74cb` — archive failures propagate without stamping `archived`; network/auth/5xx,
+    rate-limit, 404, and misleading already-paid wording preserve retry eligibility.
+22. `04eb4d7216` — failed supplier/supplier-type lookups cannot masquerade as excluded rows
+    or advance PO/invoice cursors. Lookup-error and successful-retry tests pin the boundary.
+23. `7666cc8f61` — mapped card Drafts atomically replace their header/coding from corrected
+    Ramp input under the posting lock; Posted rows remain unchanged. Real-DB tests prove
+    recoding, failed-refresh rollback, and retry after failure.
+24. `5bf802406c` — card post and void preallocate journal-line ids and use explicit identity
+    maps for dimensions. Reordered-return tests prove projects stay on the right lines.
+25. `8438ecf5e6` — foreign outbound invoices require finite positive stored FX; base currency
+    alone defaults to one. Invalid rates fail and hold the cursor.
+26. `e13c6ab70a` — bill payment methods, reimbursement states, and repayment funding use
+    explicit supported branches. `ONE_TIME_CARD_DELIVERY` skips AP bank posting;
+    `REIMBURSED_VIA_PUSH` requires settlement; manual reimbursements do not debit bank;
+    only documented `ach` repayment funding is supported. Unknown values fail before writes.
+27. `ef1b83f26f` — **line-magnitude risk:** Charge/Credit/Repayment reject zero, negative,
+    NaN, or infinite coding-line magnitudes even if offsetting values sum to the header.
+28. `21d83b81a4` — `RAMP_DRAFT_BILL_CONTRACT_VERIFIED = false` blocks outbound invoice export
+    before provider/vendor/document I/O, including existing enabled installations. The gate
+    has no customer override; exports remain retryable until contract proof enables it.
+29. `95ad2310e0` — **webhook risk:** all challenges require a valid HMAC before callback or
+    echo. Only the signed body supplies a challenge; query parameters cannot override it.
+30. `80281070e1` — reimbursement reference adoption requires a unique unposted system Draft
+    with matching identity, dates, currency, complete delivery/lines, coding and amounts,
+    preserved valid FX, zero tax/shipping and no unrelated source provenance. Incomplete,
+    mismatched, ambiguous or non-Draft reference matches fail without destructive repair.
+
+**Verification evidence:** Each commit includes targeted regression coverage. The discriminator
+suite recorded 20 red failures followed by 36 passing cases; archive recorded seven failures
+followed by eight passing cases; webhook recorded five failures followed by six passing cases.
+The associated full EE run passed 1,165 tests; the Jobs run passed 705 with 28 opt-in skips;
+EE/Jobs and ERP scoped typechecks passed. Later gate/adoption changes have their own focused
+and real-database evidence; these earlier totals are not an aggregate verdict on Task 30.
+Task 10 records final branch-wide verification separately.
+
 ## Task 10: Refresh documentation and run final gates
 
-**Depends on:** Tasks 2–9 and 11–18
+**Depends on:** Tasks 2–9 and 11–30
 **Files:**
 - Modify: `.claude/rules/ramp-integration.md`
 - Modify: `.claude/rules/accounting-sync-handlers.md`
@@ -390,7 +447,7 @@ git diff --check
 # Expected: every command exits 0, with no missing translations or compatibility verdicts.
 ```
 
-**Result:** EE 1,157/1,157; Jobs 648/648 runnable tests (26 intentional skips across three
+**Earlier result (before Tasks 19–30):** EE 1,157/1,157; Jobs 648/648 runnable tests (26 intentional skips across three
 files); Auth 44/44; all five scoped typechecks; full lint; four dataset checks; backup
 compatibility; the nine-target production build; and `git diff --check` passed. Lint and
 build retained the repository's existing non-fatal diagnostics. The explicit Ramp database

@@ -47,7 +47,7 @@ providers, which own the data and mirror it out.
 >   `buildTransactionLines` scales the lines to the settlement total via the shared
 >   `scaleLinesToTotal`. It uses the canonical bounded Hamilton allocator so no line
 >   absorbs more than one minor unit of residual; same-currency input is a no-op.
-> - **Outbound PO/bill push** — FIXED + live-verified (option B). PO create uses `external_id`
+> - **Outbound PO push** — FIXED + live-verified (option B). PO create uses `external_id`
 >   (not `remote_id`) with required `currency` + `entity_id` (resolved from `metadata.entityId`
 >   or the business's first entity) + `three_way_match_enabled: false`; line items use
 >   `external_id` + `unit_quantity`. The PO/bill `vendor_id` is a **Ramp SPEND vendor**
@@ -57,6 +57,8 @@ providers, which own the data and mirror it out.
 >   object** (plural name, `allOf` of one). `loadRampVendorSuppliers` batches the
 >   supplier→purchasing-contact/address embed. `archiveBill` now `DELETE /bills/{id}` (bills
 >   have no `/archive`). Webhook signing encoding is the one thing the public docs don't cover.
+>   Historical draft-bill acceptance did not verify money/coding/submit identity; outbound
+>   invoice export is now release-gated off pending that contract proof (see below).
 
 ## Pieces
 
@@ -244,13 +246,15 @@ total. Durable steps remain, in order:
 | `ramp-bill-payments` | paid bills' `payment` | AP `payment` + `invoiceSettlement` | `BILL_PAYMENT_SYNC` |
 | `ramp-reimbursements` | reimbursements `SYNC_READY` | `purchaseInvoice` (Employee supplier) | `REIMBURSEMENT_SYNC` |
 | `ramp-repayments` | repayments (`from_repaid_at` cursor) | `cardTransaction` Repayment | *(no Ramp confirm)* |
-| `ramp-outbound` | Carbon POs + posted invoices | Ramp POs + draft bills; archive settled | *(no confirm)* |
+| `ramp-outbound` | Carbon POs + posted invoices | Ramp POs; invoice export release-gated; archive settled | *(no confirm)* |
 
 Card families use `stageOrResumeRampCardTransaction` to advisory-lock the company/Ramp id
 and atomically create or resume the **Draft** `cardTransaction`, lines, and mapping before
 posting it through `post-card-transaction`. A missing or ambiguous edge response succeeds
 only when a tenant-scoped reread observes `Posted`; Ramp receipts are then stored on the
-Carbon transaction best-effort. Bills likewise use `stageOrResumeRampBill` to atomically
+Carbon transaction best-effort. A mapped Draft is refreshed from the latest validated Ramp
+header and coding in that same transaction; a failed refresh rolls back, and Posted rows
+remain immutable. Bills likewise use `stageOrResumeRampBill` to atomically
 stage the supplier interaction, Draft `purchaseInvoice`, delivery, lines, and mapping
 before `post-purchase-invoice`; an ambiguous response is accepted only after observing
 `Posted`. Bill payments delegate to
@@ -285,8 +289,9 @@ resolved `exchangeRate` on header and lines (NEVER write the generated `unitPric
 generated base `unitPrice`.
 Outbound pushes send DOCUMENT currency under the `currency`/`invoice_currency`
 label — PO push uses `purchaseOrderLine.supplierUnitPrice` (already document),
-draft-bill push converts the generated base `totalAmount` back via
-`toDocumentAmount(total, rate, decimals)`.
+the release-gated draft-bill implementation converts the generated base `totalAmount` back
+via `toDocumentAmount(total, rate, decimals)`. Its foreign-currency path requires a finite
+positive stored invoice rate; only base currency uses rate one.
 
 Coding: `codeSelections` (pure, `packages/ee/src/ramp/lib/coding.ts`, unit-tested) reads a
 Ramp `accounting_field_selections` list — the first `category_info.type === "GL_ACCOUNT"`
@@ -336,7 +341,19 @@ spaces); bill payments → `payment`.
 - **Bill payments** (`syncBillPayment`): a bill paid by a **Ramp card** (`payment_method`
   in `CARD_PAYMENT_METHODS`) is **confirmed WITHOUT posting an AP payment** — the card
   spend already routes through the card-transaction sync, so posting a payment would
-  double-count. Non-card payments post the AP payment that closes the invoice.
+  double-count. Card methods include `ONE_TIME_CARD_DELIVERY`. Only the verified bank rails
+  `ACH`, `CHECK`, `DIRECT_DEBIT`, `DOMESTIC_WIRE`, `FED_NOW`, `INTERNATIONAL`,
+  `LOCAL_BANK_TRANSFER`, `RTP`, and `SWIFT` post an AP payment. Missing/unknown methods,
+  `PAID_MANUALLY`, `VENDOR_CREDIT`, crypto, and `UNSPECIFIED` fail visibly rather than
+  guessing the statement bank account.
+- **Reimbursements**: `REIMBURSED` and `REIMBURSED_VIA_PUSH` require a posted settlement.
+  `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT`, and `MANUALLY_REIMBURSED`
+  create/confirm the invoice without a Ramp bank payment. Other states fail before writes.
+  Legacy adoption requires exactly one unposted, system-created Draft with the expected
+  `RAMP-REIMB-<id>` reference, supplier interaction, complete delivery/lines, matching dates,
+  currency, amounts and coding, valid preserved FX, zero tax/shipping, and no PO/item/asset
+  provenance. Incomplete or ambiguous reference matches are rejected without repair;
+  an existing mapping remains the authoritative resume identity.
 - **Suppliers** (`resolveRampSupplier`): mapping-first (`vendor` entityType) → case-
   insensitive exact `supplier.name` match → auto-create. `resolveEmployeeSupplier`
   (reimbursements/repayment users) does the same but ensures an "Employee" `supplierType`
@@ -345,14 +362,17 @@ spaces); bill payments → `payment`.
 ### Repayments (cursor-driven)
 
 There is no Ramp confirm for repayments, so the `metadata.cursors.repaymentsRepaidAt`
-high-water mark IS the idempotency. `computeRepaymentCursor` advances to
+high-water mark controls replay and the `repayment:<id>` mapping prevents duplicates.
+`computeRepaymentCursor` advances to
 `min(max(processed), min(failed) − 1s)` so a failed item is re-listed next sweep — the
 cursor only advances over provably-covered work. Each repayment scales its ORIGINAL card
 transaction's coding lines by `repaymentAmount / originalAmount` via the pure
 `scaleRepaymentLines` (the canonical bounded allocator distributes residual by largest
 remainder so lines sum exactly to the header without distorting one line). A nonzero
-repayment with no source basis is rejected rather than fabricated. Funding:
-`STATEMENT_CREDIT` offsets the card liability; otherwise the statement bank account.
+repayment with no source basis is rejected rather than fabricated. The API's funding field
+is a free string; only its documented lowercase `ach` value is supported, using the statement
+bank offset. Missing or unverified funding (including `STATEMENT_CREDIT`) fails visibly and
+holds the cursor before that item instead of selecting an account by fallback.
 
 ### Outbound: the draft-bill-only rule
 
@@ -360,24 +380,26 @@ repayment with no source basis is rejected rather than fabricated. Funding:
 (`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`). These string metadata slots hold
 JSON-encoded `[updatedAt,id]` keysets; legacy timestamp-only values replay their boundary
 inclusively. Each page advances only across its contiguous successful prefix, so a failed
-row and every row after it remain eligible on the next run.
+row and every row after it remain eligible on the next run. Failed supplier or supplier-type
+lookups are failures, not missing/excluded suppliers, and cannot advance either cursor.
 
 - **POs** (`pushPurchaseOrder`): Completed/Closed mapped POs are archived; released POs
   ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
   bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO.
-- **Invoices** (`pushInvoiceDraftBill`): posted invoices still Open/Partially Paid, not
-  already mapped in either direction, not an Employee-supplier reimbursement, are pushed
-  as a **draft bill then SUBMITted** (`POST /bills/drafts` + `/submit`, landing in Ramp
-  "Pending approval"). **An auto-approved `POST /bills` is NEVER used** — draft + submit
-  only, so a human approves in Ramp. Best-effort attaches the invoice PDF.
-  **Release-gated off:** `spend.ts` keeps `RAMP_DRAFT_BILL_CONTRACT_VERIFIED = false`
+- **Invoices** (`pushInvoiceDraftBill`): **release-gated off**. `spend.ts` keeps
+  `RAMP_DRAFT_BILL_CONTRACT_VERIFIED = false`
   until monetary units, coding, PDF fields, and the submit response's bill identity
   have verified contract tests. The gate runs before any vendor/document/provider
   I/O and applies even to existing `pushInvoices: true` installs; it has no customer
   setting or environment override. Blocked exports count as failures and retain the
   cursor for retry. Purchase-order push and archive-on-settlement remain available.
+  The gated implementation targets unmapped Open/Partially Paid invoices from non-Employee
+  suppliers and uses draft + submit, never an auto-approved `POST /bills`. Its payload/PDF
+  assumptions are not a supported export contract while this gate is closed.
 - **Archive-on-settlement**: a pushed bill whose Carbon invoice is now Paid/Voided is
-  archived and the mapping stamped `archived: true` so it never re-fires.
+  stamped `archived: true` only after Ramp confirms the archive request. Provider/network
+  errors propagate and leave it eligible for retry; 404 or "already paid" wording alone is
+  not proof of archival.
 
 If any family leaves failures, a final `ramp-notify-failures` step sends one in-app
 `NotificationEvent.IntegrationSync` to the integration's configurer (`updatedBy`, unless
@@ -443,6 +465,10 @@ Repeated post of Posted or void of Voided returns the stored journal id without 
 journal. The database parent-locking line trigger takes the same lock, closing the line-edit
 race.
 
+The handler requires invoicing-update permission. For an authenticated JWT, the shared
+edge permission helper requires its `sub` to equal the requested `userId` and looks up
+permissions for that subject; a body-supplied privileged user cannot substitute for it.
+
 - **post**: only from Draft. Requires company settings/config, active non-group posting
   accounts in the company group, a Liability card account, Asset payment offset, Revenue
   cashback offset, and company-scoped cost centers. Resolves the accounting period (shifts a Locked/Closed period
@@ -455,18 +481,24 @@ race.
   active Cost Center dimension") rather than posting a balanced journal that silently
   lost the tag — `pushCostCenters` creates the row for installed integrations, so this
   only fires for a company posting card transactions without the Ramp converge.
+  Payment/Cashback reject any coding lines; Charge/Credit/Repayment require finite,
+  strictly positive line magnitudes summing to the header. Journal line ids are allocated
+  before insertion and bound explicitly to dimensions, never inferred from RETURNING order.
 - **void**: only from Posted. When a journal exists, requires accounting enabled and proves
   the original company-scoped journal is Posted, source type `Card Transaction`, and every
   line points back to this document. It writes a new Posted reversal with negated amounts
   and copied dimensions, then flips the document to Voided. Documents posted while
   accounting was disabled have no journal and void without fabricating one.
+  Reversal line ids are also allocated before insertion, preserving each original line's
+  dimension identity even if a database returns inserted rows in another order.
 
 ### The journal builder (`build-card-transaction-journal.ts`)
 
 Pure, unit-testable, golden-master-pinned. Amounts are **natural-balance-signed** via
 `credit()`/`debit()` (a balanced entry has debits == credits and does NOT sum to zero in
 stored `amount`; a separate debit(+)/credit(−) total is asserted ~0 within
-`BALANCE_TOLERANCE = 0.01`). Both sides scale by `exchangeRate` to base currency. The card
+`BALANCE_TOLERANCE = 0.01`). Both sides divide by the foreign-per-base `exchangeRate` to
+base currency. The card
 account is **always booked as a LIABILITY** (a credit card is money owed). The five types:
 
 | Type | Journal |
@@ -497,13 +529,14 @@ constant-time HMAC) is what Ramp POSTs to. A delivery is a **nudge, not data**: 
 verification it fires the same `trigger("ramp-sync", { reason: "webhook" })` the sweep
 fires, so the sync body re-derives everything and a lost delivery is only latency. Flow:
 `getRampIntegration` (404 when not installed/active; resolves the vaulted `webhookSecret`)
-→ **challenge handshake** (a `challenge` in the body or `?challenge=`, handled BEFORE
-signature since a verification probe may be unsigned — calls `completeWebhookVerification`
-AND echoes `{ challenge }`) → **signature verify** (`x-ramp-signature` header +
-`verifyRampWebhookSignature`, fail-closed 401 without a stored secret or valid signature) →
+→ **signature verify** (`x-ramp-signature` header + `verifyRampWebhookSignature`,
+fail-closed 401 without a stored secret or valid signature) → **challenge handshake**
+(only a `challenge` in the signed body calls `completeWebhookVerification` and echoes
+`{ challenge }`; an unsigned query parameter cannot supply or override it) → otherwise
 parse `RampWebhookEventSchema` (unrecognized events acked, never rejected) →
 `trigger("ramp-sync")`. The exact Ramp header name, signing encoding, and challenge shape
-are `// TODO(task-1)` (sandbox-unverified defaults). The **hourly `ramp-sweep` remains the
+remain sandbox-unverified defaults; unsigned handshakes are rejected. The **hourly
+`ramp-sweep` remains the
 correctness guarantee**; the webhook is latency only.
 
 ## Caveats & not-yet-built
@@ -514,12 +547,12 @@ correctness guarantee**; the webhook is latency only.
 - **Sandbox** = `demo-api.ramp.com` (`RAMP_SANDBOX_HOST`) for a stored legacy
   `client_credentials` record. The current Connect UI creates production OAuth records and
   exposes no environment selector.
-- **`// TODO(task-1)` API uncertainties remain narrowly source-marked**: reimbursement
-  paid-state, bill sync/payment and card payment-method enums, repayment funding enum and
-  amount shape, the draft-bill payload/submit identity, the all-connections/accounts
-  endpoints, and the webhook challenge/signing contract. Transaction amount/coding behavior
-  and converted PO-line reconciliation are implemented and are not
-  part of that unresolved list. Grep `TODO(task-1)` in `packages/ee/src/ramp/**` and
+- **API uncertainties remain source-marked**: the draft-bill payload/submit identity,
+  repayment funding beyond documented `ach`, all-connections/accounts endpoints, and the
+  webhook challenge/signing contract. Bill payment methods and reimbursement states use
+  explicit supported sets checked against Ramp's 2026-09-11 OpenAPI contract; other values
+  fail closed. Transaction amount/coding behavior and converted PO-line reconciliation are
+  implemented. Grep `TODO(task-1)` in `packages/ee/src/ramp/**` and
   `packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts` before relying on one
   of the remaining values.
 - There is **no `apps/erp/app/modules/invoicing/AGENTS.md`** to cross-reference.

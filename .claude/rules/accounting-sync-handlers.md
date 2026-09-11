@@ -368,6 +368,11 @@ advisory-lock a company/Ramp id and atomically stage their Draft header, lines, 
 rows, and mapping before calling the posting edge function; ambiguous responses require a
 tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance
 and quantity, while multi-PO bills remain standalone instead of choosing an arbitrary order.
+Mapped card Drafts refresh their header and coding from validated Ramp input atomically;
+Posted cards cannot be rewritten. The card-post handler binds authenticated permission checks
+to the JWT subject. Payment/Cashback reject coding lines they would otherwise ignore, and
+Charge/Credit/Repayment require finite positive line magnitudes. Post and reversal allocate
+journal-line ids before insertion, so dimension linkage never depends on RETURNING order.
 
 Bill payments and reimbursements follow the same rule.
 `ramp-sync-bill.ts` owns the bill-payment drain/confirm family and delegates each item to
@@ -377,14 +382,33 @@ preserving the stored source-FX snapshot; `createOrResumeRampPayment` posts and 
 ambiguous edge-function response only when a tenant-scoped reread shows the payment is
 Posted. Card-backed bill payments are confirmed without an AP payment because the card
 transaction already represents the cash movement.
+The explicit card set includes `ONE_TIME_CARD_DELIVERY`; only documented bank rails enter
+the AP bank-payment path. Unknown methods, vendor credits, manual payments, and other
+unmapped funding semantics fail visibly rather than becoming a statement-bank payment.
 `ramp-sync-reimbursement-family.ts` owns listing and confirmation and delegates an item to
 `syncRampReimbursement` in `ramp-sync-reimbursement.ts`. The staging helper uses an
 advisory lock scoped to the company and Ramp reimbursement id, then
-`stageOrResumeRampReimbursementInvoice` atomically writes or repairs the supplier
-interaction, Draft purchase invoice, delivery, all lines, and mapping. It may adopt only
-a uniquely identifiable legacy untracked Draft. The family confirms Ramp only after the
+`stageOrResumeRampReimbursementInvoice` atomically creates the supplier interaction, Draft
+purchase invoice, delivery, lines, and mapping. It may adopt only one unposted system Draft
+whose expected Ramp reference, supplier, dates, currency, complete delivery/line structure,
+coding and amounts match, with valid preserved FX, zero tax/shipping, and no PO/item/asset
+provenance. Partial or mismatched reference-only invoices are rejected without rewriting.
+The family confirms Ramp only after the
 invoice, and the payment when Ramp-paid, are observably Posted. Do not split either staged
 write set into Supabase-client calls; those calls do not form a transaction.
+`REIMBURSED` and `REIMBURSED_VIA_PUSH` require that payment; the supported invoice-only
+states are `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT`, and
+`MANUALLY_REIMBURSED`. Other states fail before any financial write. Repayment funding is
+also explicit: only documented lowercase `ach` currently selects the bank offset; unknown
+or statement-credit funding cannot fall through to a bank account.
+
+Ramp outbound invoice export is release-gated off until its money/coding/PDF/submit-identity
+contract is verified. The gated implementation requires a finite positive stored rate for
+foreign-currency invoices. Supplier lookup errors and blocked exports retain their outbound
+cursor positions. Archive-on-settlement stamps mapping metadata only after a successful
+provider archive; arbitrary errors never close the retry path. Ramp ownership challenges
+likewise require a valid body HMAC before callback or echo; query parameters are unsigned
+and cannot supply the challenge. See `ramp-integration.md` for these support boundaries.
 
 **Rillet reimbursements.** A purchase invoice to an "Employee" supplier (what the
 Ramp reimbursement sync creates) is ALWAYS written to `POST /reimbursements`, Rillet's
