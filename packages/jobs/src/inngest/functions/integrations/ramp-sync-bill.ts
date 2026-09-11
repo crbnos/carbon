@@ -5,6 +5,12 @@ import {
   type RampClient,
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
+import { round } from "@carbon/utils";
+import {
+  isPostedRampBill,
+  type RampBillLine,
+  stageOrResumeRampBill
+} from "./ramp-sync-bill-stage";
 import { syncRampBillPayment } from "./ramp-sync-payment";
 import {
   isRampEntityInScope,
@@ -25,43 +31,14 @@ import {
 } from "./ramp-sync-shared";
 
 /** Ramp bill status that means the bill has been fully paid. */
-// TODO(task-1): confirm Ramp's paid bill status string.
 const BILL_PAID_STATUS = "PAID";
 
-async function reconfirmMappedInvoices(
-  ctx: RampSyncContext,
-  mapped: Array<{ rampId: string; entityId: string }>
-): Promise<SyncItem[]> {
-  if (mapped.length === 0) return [];
-  const entityIds = [...new Set(mapped.map((item) => item.entityId))];
-  const { data } = await ctx.client
-    .from("purchaseInvoice")
-    .select("id, invoiceId")
-    .eq("companyId", ctx.companyId)
-    .in("id", entityIds);
-  const readableById = new Map(
-    (data ?? []).map((row) => [row.id, row.invoiceId])
-  );
-  return mapped.map((item) => ({
-    id: item.rampId,
-    referenceId: readableById.get(item.entityId) ?? item.entityId,
-    deepLinkUrl: invoiceDeepLinkUrl(item.entityId)
-  }));
-}
-
-type BuiltInvoiceLine = {
-  accountId: string;
-  costCenterId: string | null;
-  amount: number;
-  description: string | null;
-};
+type BuiltInvoiceLine = RampBillLine;
 
 /**
- * Extract the Ramp vendor `{ id?, name }` a bill was issued to. The bill's
- * `vendor` object shape is not yet confirmed against a live sandbox.
+ * GET /bills exposes vendor.id/name; retain legacy business_name compatibility.
  */
 function extractRampVendor(bill: RampBill): { id?: string; name: string } {
-  // TODO(task-1): confirm the bill.vendor object shape (id / name fields).
   const vendor = bill.vendor as
     | {
         id?: string;
@@ -85,13 +62,19 @@ function extractRampVendor(bill: RampBill): { id?: string; name: string } {
 async function buildBillLines(
   ctx: RampSyncContext,
   bill: RampBill,
-  currencyCode: string,
-  decimals: number
+  currencyCode: string
 ): Promise<{ lines: BuiltInvoiceLine[] } | { error: string }> {
   const uncoded =
     "Bill line is coded to an account Carbon doesn't recognize — recode the bill in Ramp";
+  if (!ctx.companyGroupId)
+    return { error: "Cannot verify bill accounts without a company group" };
 
-  const items = bill.line_items ?? [];
+  const items = [
+    ...(bill.line_items ?? []),
+    ...((Array.isArray(bill.inventory_line_items)
+      ? bill.inventory_line_items
+      : []) as NonNullable<RampBill["line_items"]>)
+  ];
   if (items.length === 0) {
     return { error: "Bill has no line items to post" };
   }
@@ -112,7 +95,11 @@ async function buildBillLines(
     lines.push({
       accountId,
       costCenterId,
-      amount: Math.abs(normalized.value),
+      amount: normalized.value,
+      ...(typeof item.purchase_order_line_item_id === "string"
+        ? { purchaseOrderLineId: item.purchase_order_line_item_id }
+        : {}),
+      ...(typeof item.quantity === "number" ? { quantity: item.quantity } : {}),
       description: item.memo ?? null
     });
   }
@@ -146,32 +133,9 @@ async function buildBillLines(
 }
 
 /**
- * The delivery row every purchase invoice carries (`purchaseInvoiceDelivery`,
- * PK = the invoice id). The app creates it alongside the header
- * (`invoicing.service.ts` upsertPurchaseInvoice); `post-purchase-invoice`
- * reads it with `.single()` and refuses to post without it ("Failed to fetch
- * purchase invoice delivery" — hit live 2026-09-10 replaying this insert
- * shape by hand). A Ramp bill/reimbursement has no shipping, so the row is
- * bare. Returns an error message, or null when the row exists.
- */
-async function createPurchaseInvoiceDelivery(
-  ctx: RampSyncContext,
-  invoiceRowId: string
-): Promise<string | null> {
-  const delivery = await ctx.client.from("purchaseInvoiceDelivery").insert({
-    id: invoiceRowId,
-    supplierShippingCost: 0,
-    companyId: ctx.companyId
-  });
-  return delivery.error
-    ? `Failed to create purchase invoice delivery: ${delivery.error.message}`
-    : null;
-}
-
-/**
- * Set a Draft purchase invoice to Pending and post it through the
- * `post-purchase-invoice` edge function. Reverts to Draft on error (clone of the
- * $invoiceId.post route). Returns the readable invoice id on success.
+ * Claim only a Draft, then observe the stored outcome. The posting edge
+ * function owns rollback; an ambiguous response must never re-draft a posted
+ * invoice or start a second invocation while the first is still Pending.
  */
 export async function postPurchaseInvoice(
   ctx: RampSyncContext,
@@ -179,41 +143,67 @@ export async function postPurchaseInvoice(
 ): Promise<{ readableId: string } | { fail: string }> {
   const info = await ctx.client
     .from("purchaseInvoice")
-    .select("invoiceId")
+    .select("invoiceId, status")
     .eq("id", invoiceRowId)
     .eq("companyId", ctx.companyId)
     .single();
-  const readableId = info.data?.invoiceId ?? invoiceRowId;
+  if (info.error || !info.data) {
+    return {
+      fail: `Failed to read invoice: ${info.error?.message ?? "missing"}`
+    };
+  }
+  const readableId = info.data.invoiceId;
+  if (info.data.status === "Pending" || info.data.status === "Voided") {
+    return {
+      fail: `Invoice ${readableId} is ${info.data.status}, not ready to post`
+    };
+  }
+  if (isPostedRampBill(info.data.status)) return { readableId };
+  if (info.data.status !== "Draft")
+    return { fail: `Invoice ${readableId} is not a posted bill` };
 
   const pending = await ctx.client
     .from("purchaseInvoice")
     .update({ status: "Pending" })
     .eq("id", invoiceRowId)
-    .eq("companyId", ctx.companyId);
-  if (pending.error) {
-    return { fail: `Failed to set invoice pending: ${pending.error.message}` };
+    .eq("companyId", ctx.companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .maybeSingle();
+  if (pending.error || !pending.data) {
+    return {
+      fail: `Failed to claim Draft invoice: ${pending.error?.message ?? "invoice is no longer Draft"}`
+    };
   }
 
-  const posted = await ctx.client.functions.invoke("post-purchase-invoice", {
-    body: {
-      invoiceId: invoiceRowId,
-      userId: "system",
-      companyId: ctx.companyId
-    }
-  });
-  if (posted.error) {
-    await ctx.client
-      .from("purchaseInvoice")
-      .update({ status: "Draft" })
-      .eq("id", invoiceRowId)
-      .eq("companyId", ctx.companyId);
-    const message =
-      posted.error instanceof Error
-        ? posted.error.message
-        : String(posted.error);
-    return { fail: `Failed to post invoice: ${message}` };
+  let postError: string | undefined;
+  try {
+    const posted = await ctx.client.functions.invoke("post-purchase-invoice", {
+      body: {
+        invoiceId: invoiceRowId,
+        userId: "system",
+        companyId: ctx.companyId
+      }
+    });
+    postError = posted.error?.message;
+  } catch (error) {
+    postError = error instanceof Error ? error.message : String(error);
   }
-
+  const observed = await ctx.client
+    .from("purchaseInvoice")
+    .select("status")
+    .eq("id", invoiceRowId)
+    .eq("companyId", ctx.companyId)
+    .maybeSingle();
+  if (
+    observed.error ||
+    !observed.data ||
+    !isPostedRampBill(observed.data.status)
+  ) {
+    return {
+      fail: `Invoice ${readableId} is ${observed.data?.status ?? "unobservable"}, not posted${postError ? `: ${postError}` : observed.error ? `: ${observed.error.message}` : ""}`
+    };
+  }
   return { readableId };
 }
 
@@ -289,111 +279,139 @@ async function attachBillDocuments(
  */
 async function syncBill(
   ctx: RampSyncContext,
+  ramp: RampClient,
   bill: RampBill
 ): Promise<{ ok: SyncItem } | { skip: SyncItem } | { fail: FailItem }> {
-  // Out of scope for v1: bills that apply vendor credits.
-  const vendorCredits = (bill as { applied_vendor_credits?: unknown[] })
-    .applied_vendor_credits;
-  if (Array.isArray(vendorCredits) && vendorCredits.length > 0) {
-    return {
-      fail: {
-        id: bill.id,
-        message:
-          "Bill applies vendor credits — vendor credits not supported yet"
-      }
-    };
-  }
-
-  // Carbon-born short-circuit: the bill's remote_id is a Carbon invoice we pushed.
-  if (bill.remote_id) {
-    const invoice = await ctx.client
-      .from("purchaseInvoice")
-      .select("id, invoiceId")
-      .eq("id", bill.remote_id)
-      .eq("companyId", ctx.companyId)
-      .maybeSingle();
-    if (invoice.data) {
-      await ctx.mapping.link("bill", invoice.data.id, "ramp", bill.id, {
-        createdBy: "system"
-      });
-      return {
-        skip: {
-          id: bill.id,
-          referenceId: invoice.data.invoiceId,
-          deepLinkUrl: invoiceDeepLinkUrl(invoice.data.id)
-        }
-      };
-    }
-  }
-
-  // Supplier (mapping -> name -> auto-create).
-  const vendor = extractRampVendor(bill);
-  if (!vendor.name) {
-    return {
-      fail: {
-        id: bill.id,
-        message: "Bill has no vendor — cannot resolve a supplier"
-      }
-    };
-  }
-  let supplierId: string;
   try {
-    supplierId = await resolveRampSupplier(
+    const vendorCredits = bill.applied_vendor_credits;
+    if (Array.isArray(vendorCredits) && vendorCredits.length > 0) {
+      throw new Error(
+        "Bill applies vendor credits — vendor credits not supported yet"
+      );
+    }
+    const vendor = extractRampVendor(bill);
+    if (!vendor.name)
+      throw new Error("Bill has no vendor — cannot resolve a supplier");
+    const supplierId = await resolveRampSupplier(
       ctx.client,
       ctx.companyId,
       vendor,
       "system",
       ctx.db
     );
-  } catch (supplierError) {
-    return {
-      fail: {
-        id: bill.id,
-        message:
-          supplierError instanceof Error
-            ? supplierError.message
-            : String(supplierError)
-      }
-    };
-  }
-
-  const invoiceNumber = (bill.invoice_number ?? "").trim();
-
-  // Duplicate guard: same supplier + supplierReference already invoiced. Only a
-  // NON-Draft (actually posted/posting) invoice counts as an already-synced
-  // duplicate — a stuck Draft left behind by a prior failed post must NOT be
-  // treated as synced, or we would confirm the bill to Ramp while the invoice
-  // never reaches the GL.
-  if (invoiceNumber) {
-    const dup = await ctx.client
-      .from("purchaseInvoice")
-      .select("id, invoiceId")
-      .eq("companyId", ctx.companyId)
-      .eq("supplierId", supplierId)
-      .eq("supplierReference", invoiceNumber)
-      .neq("status", "Draft")
-      .limit(1)
-      .maybeSingle();
-    if (dup.data) {
-      await ctx.mapping.link("bill", dup.data.id, "ramp", bill.id, {
-        createdBy: "system"
+    // GET /bills returns CurrencyAmount; its currency is authoritative, not the
+    // company's base currency (the older flat currency_code is optional).
+    const wireAmount = bill.amount as { currency_code?: string } | undefined;
+    const currencyCode = wireAmount?.currency_code ?? bill.currency_code;
+    if (!currencyCode) throw new Error("Ramp bill has no verified currency");
+    const decimals = await getRampCurrencyDecimals(ctx, currencyCode);
+    const exchangeRate = await getRampExchangeRate(ctx, currencyCode);
+    const total = await normalizeVerifiedMinorAmount(
+      ctx,
+      bill.amount,
+      currencyCode,
+      "Bill total"
+    );
+    if (!total.ok) throw new Error(total.error);
+    const built = await buildBillLines(ctx, bill, currencyCode);
+    if ("error" in built) throw new Error(built.error);
+    const difference = round(
+      total.value - built.lines.reduce((sum, line) => sum + line.amount, 0),
+      decimals
+    );
+    if (difference !== 0) {
+      // Header charges can only use explicit, unambiguous bill coding. Never
+      // choose an arbitrary account when the bill splits several dimensions.
+      const coding = new Map(
+        built.lines.map((line) => [
+          JSON.stringify([line.accountId, line.costCenterId]),
+          line
+        ])
+      );
+      if (coding.size !== 1)
+        throw new Error(
+          "Bill total differs from its lines and adjustment coding is ambiguous"
+        );
+      const line = [...coding.values()][0]!;
+      built.lines.push({
+        accountId: line.accountId,
+        costCenterId: line.costCenterId,
+        amount: difference,
+        description: "Ramp bill total adjustment"
       });
-      return {
-        skip: {
-          id: bill.id,
-          referenceId: dup.data.invoiceId,
-          deepLinkUrl: invoiceDeepLinkUrl(dup.data.id)
-        }
-      };
     }
-  }
 
-  const currencyCode = bill.currency_code ?? ctx.baseCurrency;
-  let decimals: number;
-  let exchangeRate: number;
-  try {
-    decimals = await getRampCurrencyDecimals(ctx, currencyCode);
-    exchangeRate = await getRampExchangeRate(ctx, currencyCode);
+    // GET uses purchase_order_id; retain plural compatibility with persisted
+    // create payloads. Multi-PO bills are standalone and retain a clear memo.
+    const rampPoIds = [
+      ...new Set([
+        ...(bill.purchase_order_ids ?? []),
+        ...(typeof bill.purchase_order_id === "string"
+          ? [bill.purchase_order_id]
+          : [])
+      ])
+    ];
+    const purchaseOrderId =
+      rampPoIds.length === 1
+        ? await ctx.mapping.getEntityId("ramp", rampPoIds[0]!, "purchaseOrder")
+        : null;
+    if (purchaseOrderId) {
+      const references = built.lines.filter((line) => line.purchaseOrderLineId);
+      if (references.length) {
+        // Carbon pushes PO lines with external_id = Carbon purchaseOrderLine.id.
+        // Resolve Ramp's line UUID through that verified external reference.
+        const remotePo = await ramp.request<{
+          line_items?: Array<{ id: string; external_id?: string | null }>;
+        }>(
+          "GET",
+          `/developer/v1/purchase-orders/${encodeURIComponent(rampPoIds[0]!)}`
+        );
+        const ids = new Map(
+          (remotePo.line_items ?? []).map((line) => [line.id, line.external_id])
+        );
+        for (const line of references) {
+          const id = ids.get(line.purchaseOrderLineId!);
+          if (id) line.purchaseOrderLineId = id;
+          else delete line.purchaseOrderLineId; // explicitly coded G/L fallback
+        }
+      }
+    } else {
+      for (const line of built.lines) delete line.purchaseOrderLineId;
+    }
+    const staged = await stageOrResumeRampBill(ctx.db, {
+      companyId: ctx.companyId,
+      sourceId: bill.id,
+      supplierId,
+      supplierReference: (bill.invoice_number ?? "").trim(),
+      currencyCode,
+      exchangeRate,
+      decimals,
+      totalAmount: total.value,
+      dateIssued: bill.issued_at?.slice(0, 10) ?? null,
+      dateDue: bill.due_at?.slice(0, 10) ?? null,
+      lines: built.lines,
+      purchaseOrderId: purchaseOrderId ?? undefined,
+      carbonBornInvoiceId: bill.remote_id,
+      ...(rampPoIds.length > 1
+        ? {
+            memo: `Ramp bill ${bill.id} spans ${rampPoIds.length} purchase orders; posted standalone.`
+          }
+        : {})
+    });
+    const posted = await postPurchaseInvoice(ctx, staged.invoiceRowId);
+    if ("fail" in posted) throw new Error(posted.fail);
+    if (staged.status === "Draft") {
+      await attachBillDocuments(ctx, {
+        invoiceRowId: staged.invoiceRowId,
+        urls: bill.invoice_urls ?? []
+      });
+    }
+    const item = {
+      id: bill.id,
+      referenceId: posted.readableId,
+      deepLinkUrl: invoiceDeepLinkUrl(staged.invoiceRowId)
+    };
+    return staged.status === "Draft" ? { ok: item } : { skip: item };
   } catch (error) {
     return {
       fail: {
@@ -402,245 +420,6 @@ async function syncBill(
       }
     };
   }
-  // Foreign-per-base rate for the bill's currency; the generated
-  // purchaseInvoiceLine.unitPrice/totalAmount = supplierUnitPrice / exchangeRate
-  // is what post-purchase-invoice posts to the GL in base currency.
-  const dateIssued = bill.issued_at?.slice(0, 10) ?? null;
-  const dateDue = bill.due_at?.slice(0, 10) ?? null;
-
-  // PO-linked: convert the first mapped Carbon PO into an invoice.
-  const rampPoIds = bill.purchase_order_ids ?? [];
-  let carbonPoId: string | null = null;
-  for (const rampPoId of rampPoIds) {
-    const poId = await ctx.mapping.getEntityId(
-      "ramp",
-      rampPoId,
-      "purchaseOrder"
-    );
-    if (poId) {
-      carbonPoId = poId;
-      break;
-    }
-  }
-
-  let invoiceRowId: string;
-
-  if (carbonPoId) {
-    // Retry guard: a prior sweep may have converted this PO into a Draft invoice
-    // but crashed/failed before posting AND before writing the `bill` mapping.
-    // Re-converting would create a SECOND invoice from the same PO (the `convert`
-    // edge fn does not dedupe — it supports partial invoicing). Reuse the existing
-    // unposted invoice instead. Linkage is `purchaseInvoiceLine.purchaseOrderId`.
-    const candidateLines = await ctx.client
-      .from("purchaseInvoiceLine")
-      .select("invoiceId")
-      .eq("companyId", ctx.companyId)
-      .eq("purchaseOrderId", carbonPoId);
-    const candidateInvoiceIds = [
-      ...new Set(
-        (candidateLines.data ?? [])
-          .map((row) => row.invoiceId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    let reuseInvoiceId: string | null = null;
-    if (candidateInvoiceIds.length > 0) {
-      const draft = await ctx.client
-        .from("purchaseInvoice")
-        .select("id")
-        .eq("companyId", ctx.companyId)
-        .in("id", candidateInvoiceIds)
-        .eq("status", "Draft")
-        .limit(1)
-        .maybeSingle();
-      reuseInvoiceId = draft.data?.id ?? null;
-    }
-
-    if (reuseInvoiceId) {
-      invoiceRowId = reuseInvoiceId;
-    } else {
-      const converted = await ctx.client.functions.invoke<{ id: string }>(
-        "convert",
-        {
-          body: {
-            type: "purchaseOrderToPurchaseInvoice",
-            id: carbonPoId,
-            companyId: ctx.companyId,
-            userId: "system"
-          }
-        }
-      );
-      if (converted.error || !converted.data?.id) {
-        const message =
-          converted.error instanceof Error
-            ? converted.error.message
-            : String(converted.error ?? "convert returned no invoice id");
-        return {
-          fail: {
-            id: bill.id,
-            message: `Failed to convert purchase order to invoice: ${message}`
-          }
-        };
-      }
-      invoiceRowId = converted.data.id;
-    }
-
-    // Multi-PO bills post against the first mapped PO only (v1 out of scope).
-    const memo =
-      rampPoIds.length > 1
-        ? `Ramp bill ${bill.id} spans ${rampPoIds.length} purchase orders; posted against the first mapped PO only.`
-        : null;
-
-    // TODO(task-1): reconcile the converted PO lines to the bill's line amounts
-    // (match purchase_order_line_item_id). v1 keeps the PO-derived line amounts.
-    const headerUpdate: Record<string, unknown> = {};
-    if (invoiceNumber) headerUpdate.supplierReference = invoiceNumber;
-    if (dateIssued) headerUpdate.dateIssued = dateIssued;
-    if (dateDue) headerUpdate.dateDue = dateDue;
-    if (memo) headerUpdate.internalNotes = { content: memo };
-    if (Object.keys(headerUpdate).length > 0) {
-      await ctx.client
-        .from("purchaseInvoice")
-        .update(headerUpdate as never)
-        .eq("id", invoiceRowId)
-        .eq("companyId", ctx.companyId);
-    }
-  } else {
-    // Standalone: build G/L lines and insert a fresh Draft invoice.
-    const built = await buildBillLines(ctx, bill, currencyCode, decimals);
-    if ("error" in built) {
-      return { fail: { id: bill.id, message: built.error } };
-    }
-
-    const interaction = await ctx.client
-      .from("supplierInteraction")
-      .insert([{ companyId: ctx.companyId, supplierId }])
-      .select("id")
-      .single();
-    if (interaction.error || !interaction.data) {
-      return {
-        fail: {
-          id: bill.id,
-          message: `Failed to create supplier interaction: ${
-            interaction.error?.message ?? "unknown error"
-          }`
-        }
-      };
-    }
-
-    const seq = await ctx.client.rpc("get_next_sequence", {
-      sequence_name: "purchaseInvoice",
-      company_id: ctx.companyId
-    });
-    if (seq.error || !seq.data) {
-      return {
-        fail: {
-          id: bill.id,
-          message: `Failed to generate invoice number: ${
-            seq.error?.message ?? "unknown error"
-          }`
-        }
-      };
-    }
-    const readableId = seq.data as string;
-
-    const header = await ctx.client
-      .from("purchaseInvoice")
-      .insert({
-        invoiceId: readableId,
-        status: "Draft",
-        supplierId,
-        supplierReference: invoiceNumber,
-        currencyCode,
-        exchangeRate,
-        dateIssued,
-        dateDue,
-        supplierInteractionId: interaction.data.id,
-        companyId: ctx.companyId,
-        createdBy: "system"
-      })
-      .select("id")
-      .single();
-    if (header.error || !header.data) {
-      return {
-        fail: {
-          id: bill.id,
-          message: `Failed to create purchase invoice: ${
-            header.error?.message ?? "unknown error"
-          }`
-        }
-      };
-    }
-    invoiceRowId = header.data.id;
-
-    const deliveryError = await createPurchaseInvoiceDelivery(
-      ctx,
-      invoiceRowId
-    );
-    if (deliveryError) {
-      await ctx.client
-        .from("purchaseInvoice")
-        .delete()
-        .eq("id", invoiceRowId)
-        .eq("companyId", ctx.companyId);
-      return { fail: { id: bill.id, message: deliveryError } };
-    }
-
-    const lineRows = built.lines.map((line, lineIndex) => ({
-      invoiceId: invoiceRowId,
-      invoiceLineType: "G/L Account" as const,
-      accountId: line.accountId,
-      costCenterId: line.costCenterId,
-      description: line.description,
-      quantity: 1,
-      // Document-currency amount; the generated unitPrice/totalAmount divide by
-      // exchangeRate to post the GL in base currency.
-      supplierUnitPrice: line.amount,
-      exchangeRate,
-      sortOrder: lineIndex + 1,
-      companyId: ctx.companyId,
-      createdBy: "system"
-    }));
-    const insertedLines = await ctx.client
-      .from("purchaseInvoiceLine")
-      .insert(lineRows);
-    if (insertedLines.error) {
-      // FK is ON DELETE CASCADE — deleting the header removes partial lines.
-      await ctx.client
-        .from("purchaseInvoice")
-        .delete()
-        .eq("id", invoiceRowId)
-        .eq("companyId", ctx.companyId);
-      return {
-        fail: {
-          id: bill.id,
-          message: `Failed to create invoice lines: ${insertedLines.error.message}`
-        }
-      };
-    }
-  }
-
-  const postOutcome = await postPurchaseInvoice(ctx, invoiceRowId);
-  if ("fail" in postOutcome) {
-    return { fail: { id: bill.id, message: postOutcome.fail } };
-  }
-
-  await ctx.mapping.link("bill", invoiceRowId, "ramp", bill.id, {
-    createdBy: "system"
-  });
-
-  await attachBillDocuments(ctx, {
-    invoiceRowId,
-    urls: bill.invoice_urls ?? []
-  });
-
-  return {
-    ok: {
-      id: bill.id,
-      referenceId: postOutcome.readableId,
-      deepLinkUrl: invoiceDeepLinkUrl(invoiceRowId)
-    }
-  };
 }
 
 export async function syncRampBills(
@@ -654,25 +433,16 @@ export async function syncRampBills(
 
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
-  const mapped: Array<{ rampId: string; entityId: string }> = [];
   let reconfirmed = 0;
 
   try {
     for await (const page of ramp.listBills({
       sync_ready: true,
-      // TODO(task-1): confirm the NOT_SYNCED sync_status string + sync_ready param.
       sync_status: "NOT_SYNCED"
     })) {
       for (const bill of page as RampBill[]) {
         if (!isRampEntityInScope(entityId, bill.entity_id)) continue;
-        const existing = await ctx.mapping.getEntityId("ramp", bill.id, "bill");
-        if (existing) {
-          // Batched reconfirm after the drain (one query, not one per bill).
-          mapped.push({ rampId: bill.id, entityId: existing });
-          continue;
-        }
-
-        const outcome = await syncBill(ctx, bill);
+        const outcome = await syncBill(ctx, ramp, bill);
         if ("ok" in outcome) {
           successful.push(outcome.ok);
         } else if ("skip" in outcome) {
@@ -686,9 +456,6 @@ export async function syncRampBills(
   } catch (familyError) {
     console.error(`[RAMP SYNC] ${companyId}: bills drain failed`, familyError);
   }
-
-  successful.push(...(await reconfirmMappedInvoices(ctx, mapped)));
-  reconfirmed += mapped.length;
 
   try {
     await confirmSyncs(client, companyId, {
