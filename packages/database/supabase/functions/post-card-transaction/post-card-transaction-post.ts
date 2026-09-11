@@ -7,6 +7,7 @@ import {
   buildCardTransactionJournal,
   type GLAccountClass,
 } from "./build-card-transaction-journal.ts";
+import { allocateJournalLineIds } from "./journal-line-ids.ts";
 
 export type CardTransactionContext = {
   trx: Transaction<DB>;
@@ -186,8 +187,13 @@ export async function postCardTransaction(
     const createdJournalId = journal.id;
     journalId = createdJournalId;
     const journalLineReference = nanoid();
-    const insertedLines = await trx.insertInto("journalLine").values(
-      built.journalLines.map((line) => ({
+    const journalLineIds = await allocateJournalLineIds(
+      trx,
+      built.journalLines.length,
+    );
+    await trx.insertInto("journalLine").values(
+      built.journalLines.map((line, index) => ({
+        id: journalLineIds[index],
         journalId: createdJournalId,
         accountId: line.accountId,
         amount: line.amount,
@@ -198,10 +204,10 @@ export async function postCardTransaction(
         journalLineReference,
         companyId,
       })),
-    ).returning("id").execute();
+    ).execute();
     if (costCenterDimensionId) {
       const dimensionValues = built.journalLines.flatMap((line, index) => {
-        const journalLineId = insertedLines[index]?.id;
+        const journalLineId = journalLineIds[index];
         if (!line.costCenterId) return [];
         if (!journalLineId) throw new Error("Failed to map card journal line");
         return [{

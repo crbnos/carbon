@@ -9,6 +9,7 @@ import {
   databaseTest,
 } from "./post-card-transaction-test-fixture.ts";
 import { postCardTransactionTransaction } from "./post-card-transaction-transaction.ts";
+import { allocateJournalLineIds } from "./journal-line-ids.ts";
 
 databaseTest(
   "posting creates a missing month from the stored transaction date",
@@ -32,6 +33,20 @@ databaseTest(
     }
   },
 );
+
+databaseTest("journal line ids are allocated before a bulk insert", async () => {
+  const f = await cardTransactionFixture();
+  try {
+    const ids = await f.db.transaction().execute((trx) =>
+      allocateJournalLineIds(trx, 3)
+    );
+    assertEquals(ids.length, 3);
+    assertEquals(new Set(ids).size, 3);
+    assertEquals(ids.every((id) => id.startsWith("jl_")), true);
+  } finally {
+    await f.cleanup();
+  }
+});
 
 databaseTest(
   "posting shifts a locked month to the next open period",
@@ -364,8 +379,41 @@ databaseTest(
     try {
       const posted = await postCardTransactionTransaction(f.db, f.args);
       const voidArgs = { ...f.args, type: "void" as const };
-      const first = await postCardTransactionTransaction(f.db, voidArgs);
-      const second = await postCardTransactionTransaction(f.db, voidArgs);
+      // PostgreSQL does not promise INSERT ... RETURNING order. Simulate a
+      // driver returning the two inserted ids in reverse; explicit preallocated
+      // ids must keep the CostCenter bound to the expense line regardless.
+      const returningId = f.db.insertInto("journalLine").returning("id")
+        .toOperationNode().returning!;
+      const targeted = new WeakSet<object>();
+      let reversedReturning = 0;
+      const reverseBulkIdResults = f.db.withPlugin({
+        transformQuery: ({ node, queryId }) => {
+          if (
+            node.kind === "InsertQueryNode" &&
+            node.into?.table.identifier.name === "journalLine"
+          ) {
+            targeted.add(queryId);
+            return { ...node, returning: returningId };
+          }
+          return node;
+        },
+        transformResult({ queryId, result }) {
+          if (targeted.has(queryId) && result.rows.length > 1) {
+            reversedReturning++;
+            return { ...result, rows: [...result.rows].reverse() };
+          }
+          return result;
+        },
+      });
+      const first = await postCardTransactionTransaction(
+        reverseBulkIdResults,
+        voidArgs,
+      );
+      const second = await postCardTransactionTransaction(
+        reverseBulkIdResults,
+        voidArgs,
+      );
+      assertEquals(reversedReturning, 1);
       assertEquals(first, posted);
       assertEquals(second, posted);
       assertEquals(
@@ -389,14 +437,39 @@ databaseTest(
         f.companyId,
       ).where("documentType", "=", "Card Transaction").execute();
       assertEquals(lines.reduce((total, line) => total + line.amount, 0), 0);
-      assertEquals(
-        (await f.db.selectFrom("journalLineDimension").select("id").where(
-          "companyId",
-          "=",
-          f.companyId,
-        ).execute()).length,
-        2,
-      );
+      const dimensions = await f.db
+        .selectFrom("journalLineDimension as dimension")
+        .innerJoin("journalLine as line", (join) =>
+          join
+            .onRef("line.id", "=", "dimension.journalLineId")
+            .onRef("line.companyId", "=", "dimension.companyId")
+        )
+        .innerJoin("journal", "journal.id", "line.journalId")
+        .select([
+          "journal.description as journalDescription",
+          "line.accountId",
+          "dimension.dimensionId",
+          "dimension.valueId",
+        ])
+        .where("dimension.companyId", "=", f.companyId)
+        .orderBy("journal.description")
+        .execute();
+      assertEquals(dimensions, [
+        {
+          journalDescription:
+            `Card Transaction cardtest-${f.cardTransactionId.split("-")[1]}-readable`,
+          accountId: f.account("expense"),
+          dimensionId: f.dimensionId,
+          valueId: f.costCenterId,
+        },
+        {
+          journalDescription:
+            `VOID Card Transaction cardtest-${f.cardTransactionId.split("-")[1]}-readable`,
+          accountId: f.account("expense"),
+          dimensionId: f.dimensionId,
+          valueId: f.costCenterId,
+        },
+      ]);
     } finally {
       await f.cleanup();
     }

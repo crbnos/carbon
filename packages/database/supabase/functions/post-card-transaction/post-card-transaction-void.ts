@@ -1,6 +1,7 @@
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import type { CardTransactionContext } from "./post-card-transaction-post.ts";
 import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
+import { allocateJournalLineIds } from "./journal-line-ids.ts";
 
 export async function voidCardTransaction(
   context: CardTransactionContext,
@@ -69,8 +70,13 @@ export async function voidCardTransaction(
       postedBy: userId,
       createdBy: userId,
     }).returning("id").executeTakeFirstOrThrow();
-    const reversedLines = await trx.insertInto("journalLine").values(
-      originalLines.map((line) => ({
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length,
+    );
+    await trx.insertInto("journalLine").values(
+      originalLines.map((line, index) => ({
+        id: reversalLineIds[index],
         journalId: reversal.id,
         accountId: line.accountId,
         amount: -Number(line.amount),
@@ -82,7 +88,7 @@ export async function voidCardTransaction(
         journalLineReference: line.journalLineReference,
         companyId,
       })),
-    ).returning("id").execute();
+    ).execute();
     const dimensions = await trx.selectFrom("journalLineDimension").select([
       "journalLineId",
       "dimensionId",
@@ -91,7 +97,7 @@ export async function voidCardTransaction(
       .where("journalLineId", "in", originalLines.map((line) => line.id))
       .execute();
     const reversalByOriginal = new Map(
-      originalLines.map((line, index) => [line.id, reversedLines[index]?.id]),
+      originalLines.map((line, index) => [line.id, reversalLineIds[index]]),
     );
     if (dimensions.length) {
       const reversedDimensions = dimensions.map((dimension) => {
