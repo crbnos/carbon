@@ -1544,3 +1544,13 @@ full-screen ERP route.
 **Rule:** When a journal's disposition depends on a backing document, resolve journal → document through the journal lines' `documentType`/`documentId` (one batch query), which every journal the document produces shares; treat the document's own `journalId` column as a fallback for unlinked rows. And any DOC_BACKED carve-out must be exercised across the document's full lifecycle (post → void) on a real provider before it is called done.
 
 **Applies to:** `loadCardTransactionPolicyInputs`, every future DOC_BACKED source type, and the void/reversal audit still open in the always-on posting plan (Task 7).
+
+## Integration money shapes are contracts, not interchangeable numbers
+
+**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated card-transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
+
+**Problem:** One generic converter treated every number as minor units, understating a `$123.45` fallback to `$1.23`; missing values became zero, unknown currency precision became two decimals, and unresolved foreign exchange rates became one. Those defaults turned malformed or incomplete provider payloads into apparently valid financial documents.
+
+**Rule:** Normalize each provider money field through a helper tied to its verified wire shape. Reject missing, non-finite, fractional-minor, currency-mismatched, or unverified bare-number values per item. Currency precision and exchange rates are required accounting facts; never guess them or silently post foreign currency at par.
+
+**Applies to:** Ramp card transactions, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.

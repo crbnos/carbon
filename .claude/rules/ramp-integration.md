@@ -226,12 +226,18 @@ PO for a PO-linked bill) and post it via `post-purchase-invoice`; bill payments 
 Ramp-paid reimbursements post an AP `payment` via `post-payment`. All writes attribute to
 `"system"`. Gating: `metadata.sync.pull*` flags; `cardLiabilityAccountId` (required for
 every card family); `statementBankAccountId` (transfers, bill payments, repayments);
-`cashbackIncomeAccountId` (cashbacks). Amounts come from `fromMinorUnits`; the currency's
+`cashbackIncomeAccountId` (cashbacks). A configured `entityId` is enforced locally on
+every inbound row before mapping or writes; only endpoints with a verified query contract
+receive the remote `entity_id` filter. Amounts use their verified wire shape: signed and
+currency amounts are integer minor units, while the deprecated card-transaction fallback
+is a major-unit decimal. Missing, non-finite, fractional-minor, currency-mismatched, or
+ambiguous values fail that item instead of becoming zero. The currency's authoritative
 `decimalPlaces` is read once per code and cached.
 
 **FX (foreign-per-base convention).** `exchangeRate` everywhere here is the
 `get_exchange_rate` foreign-per-base rate (`getExchangeRate(ctx, code)`, cached;
-base → 1, unresolved → 1 so a missing rate never blocks the sync). The card
+base → 1). A missing/invalid currency precision or exchange rate fails the affected
+item; Ramp sync never guesses two decimals or posts foreign currency at par. The card
 journal converts document→base by DIVIDING via the shared `toBaseAmount`
 (`build-card-transaction-journal.ts`) — NOT multiplying. Inbound bills/
 reimbursements write the document amount to `purchaseInvoiceLine.supplierUnitPrice`

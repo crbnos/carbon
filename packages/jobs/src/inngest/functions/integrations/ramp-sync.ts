@@ -27,8 +27,9 @@ import {
   archiveRampBillForInvoice,
   codeSelections,
   confirmSyncs,
-  fromMinorUnits,
   getRampIntegration,
+  normalizeRampCardTransactionAmount,
+  parseVerifiedRampMinorAmount,
   pushChartOfAccounts,
   pushCostCenters,
   pushInvoiceDraftBill,
@@ -37,7 +38,6 @@ import {
   type RampBillPayment,
   type RampCashback,
   type RampClient,
-  type RampCurrencyAmount,
   type RampIntegrationMetadata,
   type RampLineItem,
   type RampReimbursement,
@@ -45,11 +45,14 @@ import {
   type RampTransaction,
   type RampTransfer,
   type RampVendorSupplier,
+  rampMinorAmountToMajor,
   resolveEmployeeSupplier,
   resolveMerchantSupplier,
   resolveRampSupplier,
   scaleLinesToTotal,
-  scaleRepaymentLines
+  scaleRepaymentLines,
+  validateRampCurrencyDecimals,
+  validateRampExchangeRate
 } from "@carbon/ee/ramp.server";
 import { getAppUrl } from "@carbon/env";
 import { trigger } from "@carbon/lib/trigger";
@@ -58,6 +61,11 @@ import { toDocumentAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  isRampEntityInScope,
+  isRampInboundFamilyEnabled,
+  rampEntityQuery
+} from "./ramp-sync-policy";
 
 type CarbonClient = SupabaseClient<Database>;
 
@@ -195,44 +203,33 @@ function invoiceDeepLinkUrl(invoiceRowId: string): string {
   return `${getAppUrl()}${PURCHASE_INVOICE_PATH}/${invoiceRowId}`;
 }
 
-/**
- * Extract the integer minor-unit amount from a Ramp money value. Handles both
- * money shapes the API returns: `CurrencyAmount` (`{ amount }`) and
- * `ApiSignedAmount` (`{ value }`, used by transaction `entity_amount` /
- * `merchant_amount`). A bare number is assumed already-minor (legacy callers).
- */
-function toMinorUnits(
-  value:
-    | number
-    | RampCurrencyAmount
-    | { value: number; currency?: string }
-    | null
-    | undefined
-): number | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === "number") return value;
-  if ("value" in value && typeof value.value === "number") return value.value;
-  if ("amount" in value && typeof value.amount === "number")
-    return value.amount;
-  return null;
-}
-
 async function getDecimals(ctx: Ctx, currencyCode: string): Promise<number> {
   const cached = ctx.decimalsCache.get(currencyCode);
   if (cached !== undefined) return cached;
 
-  let decimals = 2;
-  if (ctx.companyGroupId) {
-    const { data } = await ctx.client
-      .from("currency")
-      .select("decimalPlaces")
-      .eq("companyGroupId", ctx.companyGroupId)
-      .eq("code", currencyCode)
-      .maybeSingle();
-    if (data?.decimalPlaces != null) decimals = data.decimalPlaces;
+  if (!ctx.companyGroupId) {
+    throw new Error(
+      `Cannot resolve currency precision for ${currencyCode}: company group is missing`
+    );
   }
-  ctx.decimalsCache.set(currencyCode, decimals);
-  return decimals;
+  const { data, error } = await ctx.client
+    .from("currency")
+    .select("decimalPlaces")
+    .eq("companyGroupId", ctx.companyGroupId)
+    .eq("code", currencyCode)
+    .maybeSingle();
+  if (error) {
+    throw new Error(
+      `Failed to resolve currency precision for ${currencyCode}: ${error.message}`
+    );
+  }
+  const validated = validateRampCurrencyDecimals(
+    data?.decimalPlaces,
+    currencyCode
+  );
+  if (!validated.ok) throw new Error(validated.error);
+  ctx.decimalsCache.set(currencyCode, validated.value);
+  return validated.value;
 }
 
 /**
@@ -240,8 +237,8 @@ async function getDecimals(ctx: Ctx, currencyCode: string): Promise<number> {
  * card transaction, via the shared `get_exchange_rate` RPC — a per-company
  * override, else the latest platform-global rate (the resolution every Carbon
  * document uses since the exchange-rate refactor; `currency.exchangeRate` was
- * removed). Base currency is 1; a non-base transaction with no resolvable rate
- * (the RPC raises) falls back to 1 rather than blocking the sync.
+ * removed). Base currency is 1; a non-base transaction without a resolvable
+ * rate fails closed so Carbon never silently posts foreign currency at par.
  */
 async function getExchangeRate(
   ctx: Ctx,
@@ -251,17 +248,52 @@ async function getExchangeRate(
   const cached = ctx.exchangeRateCache.get(currencyCode);
   if (cached !== undefined) return cached;
 
-  let rate = 1;
   const { data, error } = await ctx.client.rpc("get_exchange_rate", {
     p_company_id: ctx.companyId,
     p_currency_code: currencyCode
   });
-  const resolved = typeof data === "number" ? data : Number(data);
-  if (!error && Number.isFinite(resolved) && resolved > 0) {
-    rate = resolved;
+  if (error) {
+    throw new Error(
+      `Failed to resolve exchange rate for ${currencyCode}: ${error.message}`
+    );
   }
-  ctx.exchangeRateCache.set(currencyCode, rate);
-  return rate;
+  const validated = validateRampExchangeRate(data, currencyCode);
+  if (!validated.ok) throw new Error(validated.error);
+  ctx.exchangeRateCache.set(currencyCode, validated.value);
+  return validated.value;
+}
+
+async function normalizeVerifiedMinorAmount(
+  ctx: Ctx,
+  value: unknown,
+  expectedCurrencyCode: string,
+  label: string,
+  options: { allowDifferentCurrency?: boolean } = {}
+): Promise<{ ok: true; value: number } | { ok: false; error: string }> {
+  const parsed = parseVerifiedRampMinorAmount(value, label);
+  if (!parsed.ok) return parsed;
+  const sourceCurrencyCode = parsed.value.currencyCode ?? expectedCurrencyCode;
+  if (
+    !options.allowDifferentCurrency &&
+    sourceCurrencyCode !== expectedCurrencyCode
+  ) {
+    return {
+      ok: false,
+      error: `${label} currency ${sourceCurrencyCode} does not match ${expectedCurrencyCode}`
+    };
+  }
+  try {
+    const decimals = await getDecimals(ctx, sourceCurrencyCode);
+    return {
+      ok: true,
+      value: rampMinorAmountToMajor(parsed.value, sourceCurrencyCode, decimals)
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 /** A supplier row with its purchasing contact + a location's address embedded. */
@@ -517,14 +549,17 @@ async function buildTransactionLines(
         item.accounting_field_selections
       );
       if (!accountId) return { error: uncoded };
-      const minor = toMinorUnits(item.amount);
-      const amount =
-        minor === null
-          ? 0
-          : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+      const normalized = await normalizeVerifiedMinorAmount(
+        ctx,
+        item.amount,
+        currencyCode,
+        "Card transaction line amount",
+        { allowDifferentCurrency: true }
+      );
+      if (!normalized.ok) return { error: normalized.error };
       lines.push({
         accountId,
-        amount,
+        amount: Math.abs(normalized.value),
         costCenterId,
         description: item.memo ?? null
       });
@@ -622,7 +657,17 @@ async function createAndPostTransaction(
   }
   const readableId = seq.data as string;
 
-  const exchangeRate = await getExchangeRate(ctx, args.currencyCode);
+  let exchangeRate: number;
+  try {
+    exchangeRate = await getExchangeRate(ctx, args.currencyCode);
+  } catch (error) {
+    return {
+      fail: {
+        id: args.rampId,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
 
   const header = await ctx.client
     .from("cardTransaction")
@@ -834,15 +879,17 @@ async function buildBillLines(
       item.accounting_field_selections
     );
     if (!accountId) return { error: uncoded };
-    const minor = toMinorUnits(item.amount);
-    const amount =
-      minor === null
-        ? 0
-        : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+    const normalized = await normalizeVerifiedMinorAmount(
+      ctx,
+      item.amount,
+      currencyCode,
+      "Bill line amount"
+    );
+    if (!normalized.ok) return { error: normalized.error };
     lines.push({
       accountId,
       costCenterId,
-      amount,
+      amount: Math.abs(normalized.value),
       description: item.memo ?? null
     });
   }
@@ -1119,11 +1166,22 @@ async function syncBill(
   }
 
   const currencyCode = bill.currency_code ?? ctx.baseCurrency;
-  const decimals = await getDecimals(ctx, currencyCode);
+  let decimals: number;
+  let exchangeRate: number;
+  try {
+    decimals = await getDecimals(ctx, currencyCode);
+    exchangeRate = await getExchangeRate(ctx, currencyCode);
+  } catch (error) {
+    return {
+      fail: {
+        id: bill.id,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
   // Foreign-per-base rate for the bill's currency; the generated
   // purchaseInvoiceLine.unitPrice/totalAmount = supplierUnitPrice / exchangeRate
   // is what post-purchase-invoice posts to the GL in base currency.
-  const exchangeRate = await getExchangeRate(ctx, currencyCode);
   const dateIssued = bill.issued_at?.slice(0, 10) ?? null;
   const dateDue = bill.due_at?.slice(0, 10) ?? null;
 
@@ -1541,12 +1599,18 @@ async function syncBillPayment(
 
   const currencyCode =
     invoice.data.currencyCode ?? bill.currency_code ?? ctx.baseCurrency;
-  const decimals = await getDecimals(ctx, currencyCode);
-  const minor = toMinorUnits(payment.amount);
-  const amount =
-    minor === null
-      ? 0
-      : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+  const normalizedAmount = await normalizeVerifiedMinorAmount(
+    ctx,
+    payment.amount,
+    currencyCode,
+    "Bill payment amount"
+  );
+  if (!normalizedAmount.ok) {
+    return {
+      fail: { id: paymentRampId, message: normalizedAmount.error }
+    };
+  }
+  const amount = Math.abs(normalizedAmount.value);
   const paymentDate = (payment.effective_date ?? payment.payment_date)?.slice(
     0,
     10
@@ -1557,7 +1621,19 @@ async function syncBillPayment(
     };
   }
 
-  const invoiceExchangeRate = invoice.data.exchangeRate ?? 1;
+  let invoiceExchangeRate = invoice.data.exchangeRate;
+  if (invoiceExchangeRate === null) {
+    try {
+      invoiceExchangeRate = await getExchangeRate(ctx, currencyCode);
+    } catch (error) {
+      return {
+        fail: {
+          id: paymentRampId,
+          message: error instanceof Error ? error.message : String(error)
+        }
+      };
+    }
+  }
 
   const outcome = await createAndPostPayment(ctx, {
     supplierId: invoice.data.supplierId,
@@ -1648,15 +1724,17 @@ async function buildGlLinesFromItems(
       item.accounting_field_selections
     );
     if (!accountId) return { error: uncoded };
-    const minor = toMinorUnits(item.amount);
-    const amount =
-      minor === null
-        ? 0
-        : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+    const normalized = await normalizeVerifiedMinorAmount(
+      ctx,
+      item.amount,
+      currencyCode,
+      "Reimbursement line amount"
+    );
+    if (!normalized.ok) return { error: normalized.error };
     lines.push({
       accountId,
       costCenterId,
-      amount,
+      amount: Math.abs(normalized.value),
       description: item.memo ?? null
     });
   }
@@ -1725,11 +1803,44 @@ async function syncReimbursement(
   }
 
   const currencyCode = reimbursement.currency_code ?? ctx.baseCurrency;
-  const decimals = await getDecimals(ctx, currencyCode);
+  let decimals: number;
+  let exchangeRate: number;
+  try {
+    decimals = await getDecimals(ctx, currencyCode);
+    exchangeRate = await getExchangeRate(ctx, currencyCode);
+  } catch (error) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
   // Foreign-per-base rate for the reimbursement's currency; the generated
   // purchaseInvoiceLine.unitPrice = supplierUnitPrice / exchangeRate is what
   // post-purchase-invoice posts to the GL in base currency.
-  const exchangeRate = await getExchangeRate(ctx, currencyCode);
+
+  // Validate a Ramp-paid reimbursement's payout before creating the invoice.
+  // Otherwise an ambiguous amount could leave a posted invoice whose payment
+  // can never be safely retried.
+  const isRampPaid = reimbursement.state
+    ? REIMBURSEMENT_PAID_STATES.has(reimbursement.state)
+    : false;
+  let reimbursementPaymentAmount: number | null = null;
+  if (isRampPaid) {
+    const normalizedAmount = await normalizeVerifiedMinorAmount(
+      ctx,
+      reimbursement.amount,
+      currencyCode,
+      "Reimbursement payment amount"
+    );
+    if (!normalizedAmount.ok) {
+      return {
+        fail: { id: reimbursement.id, message: normalizedAmount.error }
+      };
+    }
+    reimbursementPaymentAmount = Math.abs(normalizedAmount.value);
+  }
 
   const built = await buildGlLinesFromItems(
     ctx,
@@ -1861,9 +1972,6 @@ async function syncReimbursement(
 
   // Ramp-paid reimbursements post the AP payment that closes the invoice; a
   // manual-payout (APPROVED) reimbursement is left Open for Carbon to pay.
-  const isRampPaid = reimbursement.state
-    ? REIMBURSEMENT_PAID_STATES.has(reimbursement.state)
-    : false;
   if (isRampPaid) {
     const bankAccount =
       ctx.metadata.reimbursementBankAccountId ??
@@ -1872,12 +1980,15 @@ async function syncReimbursement(
       console.error(
         `[RAMP SYNC] ${ctx.companyId}: reimbursement ${reimbursement.id} is Ramp-paid but no reimbursement/statement bank account is configured — invoice left Open`
       );
+    } else if (reimbursementPaymentAmount === null) {
+      return {
+        fail: {
+          id: reimbursement.id,
+          message: "Ramp-paid reimbursement amount was not validated"
+        }
+      };
     } else {
-      const minor = toMinorUnits(reimbursement.amount);
-      const amount =
-        minor === null
-          ? 0
-          : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+      const amount = reimbursementPaymentAmount;
       const paymentDate = (
         reimbursement.approved_at ?? reimbursement.transaction_date
       )?.slice(0, 10);
@@ -2011,6 +2122,17 @@ export const rampSyncFunction = inngest.createFunction(
       .select("companyGroupId, baseCurrencyCode")
       .eq("id", companyId)
       .single();
+    if (
+      company.error ||
+      !company.data?.companyGroupId ||
+      !company.data.baseCurrencyCode
+    ) {
+      throw new Error(
+        `Ramp sync cannot resolve company accounting scope: ${
+          company.error?.message ?? "company group or base currency is missing"
+        }`
+      );
+    }
     const integrationRow = await client
       .from("companyIntegration")
       .select("updatedBy, updatedAt")
@@ -2025,8 +2147,8 @@ export const rampSyncFunction = inngest.createFunction(
       mapping: createMappingService(jobDb, companyId),
       companyId,
       metadata,
-      baseCurrency: company.data?.baseCurrencyCode ?? "USD",
-      companyGroupId: company.data?.companyGroupId ?? null,
+      baseCurrency: company.data.baseCurrencyCode,
+      companyGroupId: company.data.companyGroupId,
       decimalsCache: new Map(),
       exchangeRateCache: new Map()
     };
@@ -2091,7 +2213,9 @@ export const rampSyncFunction = inngest.createFunction(
     // ---- Card transactions (Charge / Credit) -----------------------------
     const cardResult = await step.run("ramp-card-transactions", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-      if (!metadata.sync.pullTransactions) return result;
+      if (!isRampInboundFamilyEnabled("transactions", metadata.sync)) {
+        return result;
+      }
       if (!cardLiabilityAccountId) {
         console.warn(
           `[RAMP SYNC] ${companyId}: no cardLiabilityAccountId configured — skipping card transactions`
@@ -2106,9 +2230,10 @@ export const rampSyncFunction = inngest.createFunction(
       try {
         for await (const page of ramp.listTransactions({
           sync_status: "SYNC_READY",
-          ...(entityId ? { entity_id: entityId } : {})
+          ...rampEntityQuery(entityId)
         })) {
           for (const tx of page as RampTransaction[]) {
+            if (!isRampEntityInScope(entityId, tx.entity_id)) continue;
             const existing = await ctx.mapping.getEntityId(
               "ramp",
               tx.id,
@@ -2124,21 +2249,36 @@ export const rampSyncFunction = inngest.createFunction(
               tx.currency_code ??
               tx.currency ??
               ctx.baseCurrency;
-            const decimals = await getDecimals(ctx, currencyCode);
+            let decimals: number;
+            try {
+              decimals = await getDecimals(ctx, currencyCode);
+            } catch (error) {
+              failed.push({
+                id: tx.id,
+                message: error instanceof Error ? error.message : String(error)
+              });
+              continue;
+            }
             // Prefer `entity_amount.value` (signed integer minor units / cents)
             // — the non-deprecated settlement amount per the Ramp OpenAPI spec.
             // The top-level `amount` is DEPRECATED and a major-unit (dollar)
             // float, so reading it as minor units understated every charge 100×.
             // Fall back to it only when entity_amount is absent (rare: no valid
             // settlement currency). Verified 2026-08-28 against the spec.
-            const rawMinor = toMinorUnits(tx.entity_amount) ?? tx.amount ?? 0;
-            const isCredit =
-              rawMinor < 0 || Boolean(tx.original_transaction_id);
-            const headerAmount = fromMinorUnits(
-              Math.abs(rawMinor),
+            const normalizedAmount = normalizeRampCardTransactionAmount({
+              entityAmount: tx.entity_amount,
+              deprecatedMajorAmount: tx.amount,
               currencyCode,
               decimals
-            );
+            });
+            if (!normalizedAmount.ok) {
+              failed.push({ id: tx.id, message: normalizedAmount.error });
+              continue;
+            }
+            const signedAmount = normalizedAmount.value;
+            const isCredit =
+              signedAmount < 0 || Boolean(tx.original_transaction_id);
+            const headerAmount = Math.abs(signedAmount);
 
             const built = await buildTransactionLines(
               ctx,
@@ -2253,6 +2393,9 @@ export const rampSyncFunction = inngest.createFunction(
     // ---- Transfers (statement Payment) -----------------------------------
     const transferResult = await step.run("ramp-transfers", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
+      if (!isRampInboundFamilyEnabled("transfers", metadata.sync)) {
+        return result;
+      }
       if (!cardLiabilityAccountId || !metadata.statementBankAccountId) {
         return result;
       }
@@ -2266,6 +2409,7 @@ export const rampSyncFunction = inngest.createFunction(
           sync_status: "SYNC_READY"
         })) {
           for (const transfer of page as RampTransfer[]) {
+            if (!isRampEntityInScope(entityId, transfer.entity_id)) continue;
             const existing = await ctx.mapping.getEntityId(
               "ramp",
               transfer.id,
@@ -2277,13 +2421,20 @@ export const rampSyncFunction = inngest.createFunction(
             }
 
             const currencyCode = transfer.currency_code ?? ctx.baseCurrency;
-            const decimals = await getDecimals(ctx, currencyCode);
-            const minor = toMinorUnits(transfer.amount) ?? 0;
-            const amount = fromMinorUnits(
-              Math.abs(minor),
+            const normalizedAmount = await normalizeVerifiedMinorAmount(
+              ctx,
+              transfer.amount,
               currencyCode,
-              decimals
+              "Transfer amount"
             );
+            if (!normalizedAmount.ok) {
+              failed.push({
+                id: transfer.id,
+                message: normalizedAmount.error
+              });
+              continue;
+            }
+            const amount = Math.abs(normalizedAmount.value);
             const transactionDate = transfer.created_at?.slice(0, 10);
             if (!transactionDate) {
               failed.push({
@@ -2349,6 +2500,9 @@ export const rampSyncFunction = inngest.createFunction(
     // ---- Cashbacks (statement credit) ------------------------------------
     const cashbackResult = await step.run("ramp-cashbacks", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
+      if (!isRampInboundFamilyEnabled("cashbacks", metadata.sync)) {
+        return result;
+      }
       // Skip the family silently when no cashback income account is configured.
       if (!cardLiabilityAccountId || !metadata.cashbackIncomeAccountId) {
         return result;
@@ -2363,6 +2517,7 @@ export const rampSyncFunction = inngest.createFunction(
           sync_status: "SYNC_READY"
         })) {
           for (const cashback of page as RampCashback[]) {
+            if (!isRampEntityInScope(entityId, cashback.entity_id)) continue;
             const existing = await ctx.mapping.getEntityId(
               "ramp",
               cashback.id,
@@ -2374,13 +2529,20 @@ export const rampSyncFunction = inngest.createFunction(
             }
 
             const currencyCode = cashback.currency_code ?? ctx.baseCurrency;
-            const decimals = await getDecimals(ctx, currencyCode);
-            const minor = toMinorUnits(cashback.amount) ?? 0;
-            const amount = fromMinorUnits(
-              Math.abs(minor),
+            const normalizedAmount = await normalizeVerifiedMinorAmount(
+              ctx,
+              cashback.amount,
               currencyCode,
-              decimals
+              "Cashback amount"
             );
+            if (!normalizedAmount.ok) {
+              failed.push({
+                id: cashback.id,
+                message: normalizedAmount.error
+              });
+              continue;
+            }
+            const amount = Math.abs(normalizedAmount.value);
             const transactionDate = cashback.created_at?.slice(0, 10);
             if (!transactionDate) {
               failed.push({
@@ -2446,7 +2608,7 @@ export const rampSyncFunction = inngest.createFunction(
     // ---- Bills (AP purchase invoices) ------------------------------------
     const billResult = await step.run("ramp-bills", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-      if (!metadata.sync.pullBills) return result;
+      if (!isRampInboundFamilyEnabled("bills", metadata.sync)) return result;
 
       const successful: SyncItem[] = [];
       const failed: FailItem[] = [];
@@ -2460,6 +2622,7 @@ export const rampSyncFunction = inngest.createFunction(
           sync_status: "NOT_SYNCED"
         })) {
           for (const bill of page as RampBill[]) {
+            if (!isRampEntityInScope(entityId, bill.entity_id)) continue;
             const existing = await ctx.mapping.getEntityId(
               "ramp",
               bill.id,
@@ -2519,7 +2682,9 @@ export const rampSyncFunction = inngest.createFunction(
     const billPaymentResult = await step.run("ramp-bill-payments", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
       // Bill payments ride the same gate as bills (no separate flag).
-      if (!metadata.sync.pullBills) return result;
+      if (!isRampInboundFamilyEnabled("billPayments", metadata.sync)) {
+        return result;
+      }
       if (!metadata.statementBankAccountId) {
         console.warn(
           `[RAMP SYNC] ${companyId}: no statementBankAccountId configured — skipping bill payments`
@@ -2538,6 +2703,7 @@ export const rampSyncFunction = inngest.createFunction(
           sync_status: "BILL_SYNCED"
         })) {
           for (const bill of page as RampBill[]) {
+            if (!isRampEntityInScope(entityId, bill.entity_id)) continue;
             // TODO(task-1): confirm bill.status vs payment.status for PAID.
             if (bill.status !== BILL_PAID_STATUS) continue;
             const payment = bill.payment;
@@ -2589,7 +2755,9 @@ export const rampSyncFunction = inngest.createFunction(
       "ramp-reimbursements",
       async () => {
         const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-        if (!metadata.sync.pullReimbursements) return result;
+        if (!isRampInboundFamilyEnabled("reimbursements", metadata.sync)) {
+          return result;
+        }
 
         const successful: SyncItem[] = [];
         const failed: FailItem[] = [];
@@ -2601,6 +2769,9 @@ export const rampSyncFunction = inngest.createFunction(
             sync_status: "SYNC_READY"
           })) {
             for (const reimbursement of page as RampReimbursement[]) {
+              if (!isRampEntityInScope(entityId, reimbursement.entity_id)) {
+                continue;
+              }
               // Idempotency: already synced → reconfirm only (reuses `bill`).
               const existing = await ctx.mapping.getEntityId(
                 "ramp",
@@ -2656,7 +2827,9 @@ export const rampSyncFunction = inngest.createFunction(
     const repaymentResult = await step.run("ramp-repayments", async () => {
       const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
       // Repayments ride the same expense-recording gate as reimbursements.
-      if (!metadata.sync.pullReimbursements) return result;
+      if (!isRampInboundFamilyEnabled("repayments", metadata.sync)) {
+        return result;
+      }
       if (!cardLiabilityAccountId || !metadata.statementBankAccountId) {
         return result;
       }
@@ -2678,6 +2851,7 @@ export const rampSyncFunction = inngest.createFunction(
           cursor ? { from_repaid_at: cursor } : {}
         )) {
           for (const repayment of page as RampRepayment[]) {
+            if (!isRampEntityInScope(entityId, repayment.entity_id)) continue;
             if (repayment.status !== REPAYMENT_REPAID_STATUS) continue;
             const repaidAt = repayment.repaid_at ?? null;
 
@@ -2751,14 +2925,33 @@ export const rampSyncFunction = inngest.createFunction(
               repayment.currency_code ??
               original.data.currencyCode ??
               ctx.baseCurrency;
-            const decimals = await getDecimals(ctx, currencyCode);
-            const minor = toMinorUnits(
-              repayment.repayment_amount ?? repayment.amount
+            let decimals: number;
+            try {
+              decimals = await getDecimals(ctx, currencyCode);
+            } catch (error) {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} has invalid currency precision`,
+                error
+              );
+              continue;
+            }
+            const normalizedAmount = await normalizeVerifiedMinorAmount(
+              ctx,
+              repayment.repayment_amount ?? repayment.amount,
+              currencyCode,
+              "Repayment amount"
             );
-            const repaymentAmount =
-              minor === null
-                ? 0
-                : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+            if (!normalizedAmount.ok) {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} amount is invalid: ${normalizedAmount.error}`
+              );
+              continue;
+            }
+            const repaymentAmount = Math.abs(normalizedAmount.value);
 
             const scaled = scaleRepaymentLines(
               (originalLines.data ?? []).map((line) => ({
