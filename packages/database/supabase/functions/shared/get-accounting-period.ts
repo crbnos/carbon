@@ -1,33 +1,10 @@
-import { parseDate } from "@internationalized/date";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Kysely } from "kysely";
-import { DB } from "../lib/database.ts";
+import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Kysely, sql } from "kysely";
+import type { DB } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { Database } from "../lib/types.ts";
+import type { Database } from "../lib/types.ts";
 
-const isLeapYear = (year: number) => {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-};
-
-const daysInMonths: Record<number, number> = {
-  1: 31,
-  2: 28,
-  3: 31,
-  4: 30,
-  5: 31,
-  6: 30,
-  7: 31,
-  8: 31,
-  9: 30,
-  10: 31,
-  11: 30,
-  12: 31,
-};
-
-// Mirrors MONTH_NUMBER / fiscalYearAndPeriodFor in @carbon/utils (which can't be
-// imported into a Deno edge function). Fiscal year is named by its ending
-// calendar year (FY2026 = the year ending in 2026); periodNumber is 1..12
-// counted from the fiscal start month.
 const MONTH_NUMBER: Record<string, number> = {
   January: 1,
   February: 2,
@@ -43,280 +20,147 @@ const MONTH_NUMBER: Record<string, number> = {
   December: 12,
 };
 
-function fiscalYearAndPeriodFor(
-  year: number,
-  month: number,
-  startMonth: number
-): { fiscalYear: number; periodNumber: number } {
-  const periodNumber = ((month - startMonth + 12) % 12) + 1;
-  const fiscalYear =
-    startMonth === 1 ? year : month >= startMonth ? year + 1 : year;
-  return { fiscalYear, periodNumber };
-}
+type PeriodMode = "historical" | "historical-with-shift" | "current";
 
-// Run `fn` inside a transaction, reusing `db` when it is already one.
-// The edge-function connection pool is size 1, so opening a nested
-// `db.transaction()` while the caller already holds the pool's only connection
-// would wait forever for a second connection and the isolate would be killed
-// (wall-clock timeout). Callers already inside a transaction must therefore pass
-// their `trx` so we reuse it; callers that resolve the period before starting a
-// transaction pass the pool and we open one (the pre-existing behavior).
-async function runInTransaction<R>(
-  db: Kysely<DB>,
-  fn: (trx: Kysely<DB>) => Promise<R>
-): Promise<R> {
-  return db.isTransaction ? fn(db) : db.transaction().execute(fn);
-}
-
-// Resolve the accounting period containing an arbitrary posting date (used by
-// stock-movement corrections, which post into the ORIGINAL movement's period,
-// not today's). Throws when that period is Locked or Closed; lazily creates the
-// month's period (status 'Inactive' — the Active flip is owned by
-// getCurrentAccountingPeriod) when none exists.
-//
-// Pass the caller's transaction (`trx`) as `db` when calling from inside a
-// transaction — see runInTransaction above.
-export async function getAccountingPeriodForDate(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  db: Kysely<DB>,
-  date: string // yyyy-MM-dd
-) {
-  const existingPeriod = await client
-    .from("accountingPeriod")
-    .select("*")
-    .eq("companyId", companyId)
-    .gte("endDate", date)
-    .lte("startDate", date)
-    .maybeSingle();
-
-  if (existingPeriod.error) {
-    throw new Error("Failed to fetch accounting period");
+function closedPeriodError(mode: PeriodMode, closed: boolean): Error {
+  if (mode === "historical") {
+    return new Error(
+      closed
+        ? "The original movement's accounting period is closed — its movements can no longer be corrected."
+        : "The original movement's accounting period is locked. Unlock it before posting a correction.",
+    );
   }
-
-  if (existingPeriod.data) {
-    const closeStatus =
-      existingPeriod.data.closeStatus ??
-      (existingPeriod.data.closedAt ? "Closed" : "Open");
-
-    // Closed is permanent — there is no reopening a closed period, so a
-    // movement whose period has closed can no longer be corrected. Locked is
-    // reversible (unlock), so that message offers the way forward.
-    if (closeStatus === "Closed") {
-      throw new Error(
-        "The original movement's accounting period is closed — its movements can no longer be corrected."
-      );
-    }
-
-    if (closeStatus === "Locked") {
-      throw new Error(
-        "The original movement's accounting period is locked. Unlock it before posting a correction."
-      );
-    }
-
-    return existingPeriod.data.id;
-  }
-
-  const [yearStr, monthStr] = date.split("-");
-  const year = Number(yearStr);
-  const month = Number(monthStr);
-  const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
-  let endDate = `${year}-${month.toString().padStart(2, "0")}-${
-    daysInMonths[month]
-  }`;
-
-  if (month === 2 && isLeapYear(year)) {
-    endDate = `${year}-${month.toString().padStart(2, "0")}-29`;
-  }
-
-  const fiscalYearSettings = await client
-    .from("fiscalYearSettings")
-    .select("startMonth")
-    .eq("companyId", companyId)
-    .maybeSingle();
-  const startMonth = fiscalYearSettings.data?.startMonth
-    ? (MONTH_NUMBER[fiscalYearSettings.data.startMonth] ?? 1)
-    : 1;
-  const { fiscalYear, periodNumber } = fiscalYearAndPeriodFor(
-    year,
-    month,
-    startMonth
+  return new Error(
+    closed
+      ? "Accounting period is closed. Reopen it before posting."
+      : "Accounting period is locked. Unlock it before posting operational documents.",
   );
-
-  try {
-    const newPeriod = await runInTransaction(db, async (trx) => {
-      return await trx
-        .insertInto("accountingPeriod")
-        .values({
-          startDate,
-          endDate,
-          companyId,
-          status: "Inactive",
-          closeStatus: "Open",
-          fiscalYear,
-          periodNumber,
-          createdBy: "system",
-        } as any)
-        .returning("id")
-        .executeTakeFirstOrThrow();
-    });
-    return newPeriod.id;
-  } catch (err) {
-    // A concurrent caller may have created the same month's period between our
-    // lookup and insert — the unique (companyId, fiscalYear, periodNumber)
-    // index makes the loser land here. Re-select and use the winner's row.
-    const racedPeriod = await client
-      .from("accountingPeriod")
-      .select("id")
-      .eq("companyId", companyId)
-      .gte("endDate", date)
-      .lte("startDate", date)
-      .maybeSingle();
-    if (racedPeriod.data) return racedPeriod.data.id;
-    throw err;
-  }
 }
 
-// tries to get the current accounting period
-// and if not found, creates a fiscal year and accounting periods
-// and updates the active accounting period/fiscal year
-//
-// Pass the caller's transaction (`trx`) as `db` when calling from inside a
-// transaction — see runInTransaction above.
-export async function getCurrentAccountingPeriod<T>(
-  client: SupabaseClient<Database>,
-  companyId: string,
+/** Resolve a posting date and lock its period on the caller's transaction.
+ * Historical card imports may shift to the next open period; corrections keep
+ * their original date. Only current-period posting changes the Active period.
+ */
+export async function resolveAccountingPeriod(
   db: Kysely<DB>,
-  // Pass the SAME hoisted business day the caller stamps on its ledger and
-  // journal rows — two independent "today" resolutions inside one transaction
-  // can straddle midnight and split the journal's period from its ledger
-  // dates. Omitted = resolved fresh in the company timezone.
-  forDate?: string // yyyy-MM-dd
-) {
-  // "Today" in the company's business timezone — one set of books needs one
-  // calendar, so ledger-scoped derivation never uses the process clock.
-  const companyToday = forDate
-    ? parseDate(forDate)
-    : datetime.today(await getCompanyTimeZone(client, companyId));
-  const d = companyToday.toString();
+  companyId: string,
+  requestedDate: string,
+  mode: PeriodMode,
+): Promise<{ id: string; postingDate: string }> {
+  // Reuse a transaction instead of borrowing a second connection from the
+  // edge function's size-one pool. All reads observe the same transaction.
+  if (!db.isTransaction) {
+    return db.transaction().execute((trx) =>
+      resolveAccountingPeriod(trx, companyId, requestedDate, mode)
+    );
+  }
 
-  // get the current accounting period
-  const currentAccountingPeriod = await client
-    .from("accountingPeriod")
-    .select("*")
-    .eq("companyId", companyId)
-    .gte("endDate", d)
-    .lte("startDate", d)
-    .single();
+  const periods = db.selectFrom("accountingPeriod").select([
+    "id",
+    // DATE decoding differs across the Node and Deno drivers. Keep calendar
+    // values as ISO text, without passing through a JavaScript Date.
+    sql<string>`"startDate"::text`.as("startDate"),
+    "status",
+    "closeStatus",
+    "closedAt",
+  ]).where("companyId", "=", companyId);
+  let period = await periods.where("startDate", "<=", requestedDate)
+    .where("endDate", ">=", requestedDate)
+    .orderBy("startDate").orderBy("id").forUpdate().executeTakeFirst();
 
-  // Operational posting (receipts, shipments, invoices, payments) is not
-  // allowed into a Locked or Closed period. The close-lifecycle columns are
-  // cloud-generated and not yet in the committed types, so read through a cast.
-  if (currentAccountingPeriod.data) {
-    const closeStatus =
-      (
-        currentAccountingPeriod.data as unknown as {
-          closeStatus?: string | null;
-        }
-      ).closeStatus ??
-      (currentAccountingPeriod.data.closedAt ? "Closed" : "Open");
-
-    if (closeStatus === "Closed") {
-      throw new Error("Accounting period is closed. Reopen it before posting.");
-    }
-
-    if (closeStatus === "Locked") {
+  const isClosed = period && (period.closeStatus === "Locked" ||
+    period.closeStatus === "Closed" || period.closedAt !== null);
+  if (isClosed && mode === "historical-with-shift") {
+    period = await periods.where("startDate", ">", requestedDate)
+      .where("closeStatus", "=", "Open").where("closedAt", "is", null)
+      .orderBy("startDate").orderBy("id").forUpdate().executeTakeFirst();
+    if (!period) {
       throw new Error(
-        "Accounting period is locked. Unlock it before posting operational documents."
+        "Accounting period is locked or closed; no open successor exists",
       );
     }
+  } else if (period && isClosed) {
+    throw closedPeriodError(
+      mode,
+      period.closeStatus === "Closed" || period.closedAt !== null,
+    );
   }
 
-  if (
-    currentAccountingPeriod.data &&
-    currentAccountingPeriod.data.status === "Active"
-  ) {
-    return currentAccountingPeriod.data.id;
-  }
-
-  if (
-    currentAccountingPeriod.data &&
-    currentAccountingPeriod.data.status === "Inactive"
-  ) {
-    const periodId = currentAccountingPeriod.data.id;
-    await runInTransaction(db, async (trx) => {
-      await trx
-        .updateTable("accountingPeriod")
-        .set({ status: "Inactive" })
-        .where("status", "=", "Active")
-        .where("companyId", "=", companyId)
-        .execute();
-
-      await trx
-        .updateTable("accountingPeriod")
-        .set({ status: "Active" })
-        .where("id", "=", periodId)
-        .where("companyId", "=", companyId)
-        .execute();
-    });
-
-    return periodId;
-  }
-
-  const year = companyToday.year;
-  const month = companyToday.month;
-  const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
-  let endDate = `${year}-${month.toString().padStart(2, "0")}-${
-    daysInMonths[month]
-  }`;
-
-  if (month === 2 && isLeapYear(year)) {
-    endDate = `${year}-${month.toString().padStart(2, "0")}-29`;
-  }
-
-  // Stamp the fiscal-year label / period number from the company's fiscal start
-  // month (defaults to January) so lazily-created periods match the app-service
-  // path (getOrCreateAccountingPeriod) and don't land NULL.
-  const fiscalYearSettings = await client
-    .from("fiscalYearSettings")
-    .select("startMonth")
-    .eq("companyId", companyId)
-    .maybeSingle();
-  const startMonth = fiscalYearSettings.data?.startMonth
-    ? (MONTH_NUMBER[fiscalYearSettings.data.startMonth] ?? 1)
-    : 1;
-  const { fiscalYear, periodNumber } = fiscalYearAndPeriodFor(
-    year,
-    month,
-    startMonth
-  );
-
-  const newPeriod = await runInTransaction(db, async (trx) => {
-    await trx
-      .updateTable("accountingPeriod")
-      .set({ status: "Inactive" })
-      .where("status", "=", "Active")
-      .where("companyId", "=", companyId)
-      .execute();
-
-    return await trx
-      .insertInto("accountingPeriod")
-      .values({
-        startDate,
-        endDate,
-        companyId,
-        status: "Active",
-        // Lazily-created periods start Open; close-lifecycle columns are
-        // cloud-generated and not yet in the committed Kysely types, hence the
-        // cast.
-        closeStatus: "Open",
-        fiscalYear,
-        periodNumber,
-        createdBy: "system",
-      } as any)
-      .returning("id")
+  if (!period) {
+    const date = parseDate(requestedDate);
+    const fiscalSettings = await db.selectFrom("fiscalYearSettings").select(
+      "startMonth",
+    )
+      .where("companyId", "=", companyId).executeTakeFirst();
+    const startMonth = fiscalSettings?.startMonth
+      ? (MONTH_NUMBER[fiscalSettings.startMonth] ?? 1)
+      : 1;
+    const fiscalYear = startMonth === 1 || date.month < startMonth
+      ? date.year
+      : date.year + 1;
+    const periodNumber = ((date.month - startMonth + 12) % 12) + 1;
+    // Create inactive, then activate below: this also preserves one active
+    // period while simultaneous first-time callers converge on the same row.
+    await db.insertInto("accountingPeriod").values({
+      startDate: startOfMonth(date).toString(),
+      endDate: endOfMonth(date).toString(),
+      fiscalYear,
+      periodNumber,
+      status: "Inactive",
+      closeStatus: "Open",
+      companyId,
+      createdBy: "system",
+    }).onConflict((oc) =>
+      oc.columns(["companyId", "fiscalYear", "periodNumber"]).doNothing()
+    ).execute();
+    period = await periods.where("fiscalYear", "=", fiscalYear)
+      .where("periodNumber", "=", periodNumber).forUpdate()
       .executeTakeFirstOrThrow();
-  });
+    if (
+      period.closeStatus === "Locked" || period.closeStatus === "Closed" ||
+      period.closedAt !== null
+    ) {
+      throw closedPeriodError(
+        mode,
+        period.closeStatus === "Closed" || period.closedAt !== null,
+      );
+    }
+  }
 
-  return newPeriod.id;
+  if (mode === "current" && period.status !== "Active") {
+    await db.updateTable("accountingPeriod").set({ status: "Inactive" })
+      .where("companyId", "=", companyId).where("status", "=", "Active")
+      .execute();
+    await db.updateTable("accountingPeriod").set({ status: "Active" })
+      .where("companyId", "=", companyId).where("id", "=", period.id).execute();
+  }
+  return {
+    id: period.id,
+    postingDate:
+      mode === "historical-with-shift" && period.startDate > requestedDate
+        ? period.startDate
+        : requestedDate,
+  };
+}
+
+/** Original-period corrections retain the existing public calling contract. */
+export async function getAccountingPeriodForDate(
+  _client: SupabaseClient<Database>,
+  companyId: string,
+  db: Kysely<DB>,
+  date: string,
+) {
+  return (await resolveAccountingPeriod(db, companyId, date, "historical")).id;
+}
+
+/** Pass the same business day used by the caller's journal and ledger rows. */
+export async function getCurrentAccountingPeriod(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  db: Kysely<DB>,
+  forDate?: string,
+) {
+  const date = forDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  return (await resolveAccountingPeriod(db, companyId, date, "current")).id;
 }

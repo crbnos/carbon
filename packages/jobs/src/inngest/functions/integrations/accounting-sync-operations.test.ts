@@ -19,6 +19,7 @@ import {
   isDailyConsolidationMarker,
   isJournalEntryPostingEnabled,
   type JournalPostingEventInput,
+  loadCardTransactionPolicyInputs,
   MAX_RECONCILIATION_DRIFT_ENTRIES,
   mergePostingSyncReconciliation,
   mergePullCursor,
@@ -1446,5 +1447,195 @@ describe("shouldEnqueueMissingDocument", () => {
         `latest ${status} must not re-enqueue`
       ).toBe(false);
     }
+  });
+});
+
+// ── loadCardTransactionPolicyInputs ─────────────────────────────────────────
+// The backing card transaction resolves through the journal LINES' document
+// link, which the posting journal AND the void journal both carry.
+// `cardTransaction.journalId` only names the posting journal, so keying on it
+// let the void journal of a charge-backed card transaction push as a plain
+// journal entry on top of the charge DELETE (live on the Rillet sandbox).
+
+function stubCardClient(args: {
+  lines: Array<{ journalId: string; documentId: string }>;
+  cardTransactions: Array<{
+    id: string;
+    journalId: string | null;
+    type: string;
+    supplierId: string | null;
+  }>;
+}): {
+  client: SupabaseClient<Database>;
+  queries: string[];
+  ranges: Array<[number, number]>;
+} {
+  const queries: string[] = [];
+  const ranges: Array<[number, number]> = [];
+  const client = {
+    from(table: string) {
+      if (table === "journalLine") {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                in: (_column: string, journalIds: string[]) => ({
+                  not: () => {
+                    queries.push(`journalLine:${journalIds.join(",")}`);
+                    const matching = args.lines.filter((line) =>
+                      journalIds.includes(line.journalId)
+                    );
+                    const page = (from = 0, to = 999) => ({
+                      data: matching.slice(from, to + 1),
+                      error: null,
+                      count: matching.length
+                    });
+                    return {
+                      range: async (from: number, to: number) => {
+                        ranges.push([from, to]);
+                        return page(from, to);
+                      },
+                      then: (
+                        resolve: (value: ReturnType<typeof page>) => unknown,
+                        reject: (reason: unknown) => unknown
+                      ) => Promise.resolve(page()).then(resolve, reject)
+                    };
+                  }
+                })
+              })
+            })
+          })
+        };
+      }
+      if (table === "cardTransaction") {
+        return {
+          select: () => ({
+            eq: () => ({
+              in: async (column: string, values: string[]) => {
+                queries.push(`cardTransaction.${column}:${values.join(",")}`);
+                return {
+                  data: args.cardTransactions.filter((row) =>
+                    column === "id"
+                      ? values.includes(row.id)
+                      : row.journalId !== null && values.includes(row.journalId)
+                  ),
+                  error: null
+                };
+              }
+            })
+          })
+        };
+      }
+      throw new Error(`unexpected table ${table}`);
+    }
+  } as unknown as SupabaseClient<Database>;
+  return { client, queries, ranges };
+}
+
+describe("loadCardTransactionPolicyInputs", () => {
+  const hertz = {
+    id: "ct_hertz",
+    journalId: "je_post",
+    type: "Charge",
+    supplierId: "sup_hertz"
+  };
+
+  it("resolves the VOID journal to the same card transaction as the posting journal", async () => {
+    const { client, queries } = stubCardClient({
+      lines: [
+        { journalId: "je_post", documentId: "ct_hertz" },
+        { journalId: "je_void", documentId: "ct_hertz" }
+      ],
+      cardTransactions: [hertz]
+    });
+    const result = await loadCardTransactionPolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_post", "je_void"]
+    });
+    expect(result.get("je_post")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    expect(result.get("je_void")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    // One line query + one card query for the batch — never per row, and no
+    // journalId fallback query when every journal carries the link.
+    expect(queries).toEqual([
+      "journalLine:je_post,je_void",
+      "cardTransaction.id:ct_hertz"
+    ]);
+  });
+
+  it("falls back to cardTransaction.journalId for a journal whose lines carry no link", async () => {
+    const { client, queries } = stubCardClient({
+      lines: [],
+      cardTransactions: [{ ...hertz, supplierId: null }]
+    });
+    const result = await loadCardTransactionPolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_post", "je_other"]
+    });
+    expect(result.get("je_post")).toEqual({
+      type: "Charge",
+      hasSupplier: false
+    });
+    expect(result.has("je_other")).toBe(false);
+    expect(queries).toEqual([
+      "journalLine:je_post,je_other",
+      "cardTransaction.journalId:je_post,je_other"
+    ]);
+  });
+
+  it("loads card-document links beyond the PostgREST row cap", async () => {
+    const padding = Array.from({ length: 1000 }, (_, index) => ({
+      journalId: "je_padding",
+      documentId: `ct_padding_${index}`
+    }));
+    const { client, ranges } = stubCardClient({
+      lines: [...padding, { journalId: "je_tail", documentId: "ct_tail" }],
+      cardTransactions: [
+        {
+          id: "ct_padding_0",
+          journalId: "je_padding",
+          type: "Charge",
+          supplierId: "sup_padding"
+        },
+        {
+          id: "ct_tail",
+          journalId: null,
+          type: "Charge",
+          supplierId: "sup_tail"
+        }
+      ]
+    });
+
+    const result = await loadCardTransactionPolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_padding", "je_tail"]
+    });
+
+    expect(result.get("je_tail")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    expect(ranges).toEqual([
+      [0, 999],
+      [1000, 1999]
+    ]);
+  });
+
+  it("issues no queries for an empty batch", async () => {
+    const { client, queries } = stubCardClient({
+      lines: [],
+      cardTransactions: []
+    });
+    const result = await loadCardTransactionPolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: []
+    });
+    expect(result.size).toBe(0);
+    expect(queries).toEqual([]);
   });
 });

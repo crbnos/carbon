@@ -21,7 +21,8 @@ export const TABLE_TO_ENTITY_MAP: Partial<
   salesInvoice: "invoice",
   salesOrder: "salesOrder",
   journal: "journalEntry",
-  payment: "payment"
+  payment: "payment",
+  cardTransaction: "charge"
 };
 
 export function getEntityTypeFromTable(

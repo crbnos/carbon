@@ -3335,6 +3335,12 @@ msgstr "L'app officina di Carbon dove gli operatori eseguono operazioni, segnala
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Il singolo record di Carbon per qualsiasi cosa con un numero di componente — Componente, Materiale, Utensile, Servizio, Materiale di consumo o Attrezzatura di fissaggio — che ordini di produzione, metodi, ordini e magazzino puntano."
 
+msgid "Card Holder"
+msgstr "Titolare della Carta"
+
+msgid "Card Transactions"
+msgstr "Transazioni della Carta"
+
 msgid "Cards"
 msgstr "Schede"
 
@@ -4391,6 +4397,9 @@ msgstr "Impossibile ripianificare il lavoro. Riprova."
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Impossibile salvare la connessione a Onshape"
+
+msgid "Couldn't save the Ramp connection"
+msgstr "Non è stato possibile salvare la connessione Ramp"
 
 msgid "Count"
 msgstr "Conteggio"
@@ -6919,6 +6928,9 @@ msgstr "Tasso di cambio aggiornato alle"
 
 msgid "Exchange Rates"
 msgstr "Tassi di Cambio"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Lo scambio del codice di autorizzazione per ottenere l'accesso non è riuscito. Prova a connetterti di nuovo."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Lo scambio del codice di autorizzazione con un token di accesso non è riuscito. Riprova a connetterti."
@@ -10104,6 +10116,9 @@ msgstr "Data Memo"
 msgid "Memo ID"
 msgstr "ID Memo"
 
+msgid "Merchant"
+msgstr "Esercente"
+
 msgid "MES"
 msgstr "MES"
 
@@ -11021,6 +11036,9 @@ msgstr "Non sono stati creati ordini di produzione"
 msgid "No journal lines in scope for this period"
 msgstr "Nessuna riga di prima nota per questo periodo"
 
+msgid "No lines"
+msgstr "Nessuna riga"
+
 msgid "No lines to map"
 msgstr "Nessuna riga da mappare"
 
@@ -11732,6 +11750,9 @@ msgstr "Programmato Aperto"
 
 msgid "Open task details"
 msgstr "Apri dettagli attività"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Apri l'integrazione Ramp e prova a connetterti di nuovo per completare la configurazione."
 
 msgid "Open the Setup Map"
 msgstr "Apri la Mappa di Configurazione"
@@ -13332,6 +13353,24 @@ msgstr "Segnalalo nella riunione di stato settimanale"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "segnalalo presto e segnalalo chiaramente. Un problema identificato nella settimana 2 è una piccola correzione; lo stesso problema al lancio è un ritardo."
 
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp ha autorizzato la connessione, ma non è stato possibile salvarla. Prova a connetterti di nuovo."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp è connesso, ma la configurazione non è stata completata"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp ha negato la connessione"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp non ha restituito un codice di autorizzazione"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp ha rifiutato l'autorizzazione"
+
 msgid "Rate"
 msgstr "Tasso"
 
@@ -14108,6 +14147,8 @@ msgstr "Riprova ripristino"
 msgid "Return Home"
 msgstr "Torna alla Home"
 
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Torna a Integrazioni e connetti nuovamente Ramp."
 msgid "Return ID"
 msgstr "ID Reso"
 
@@ -16655,6 +16696,9 @@ msgstr "Il record di sola aggiunta di ogni movimento di inventario; la giacenza 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "L'autorizzazione è stata rifiutata in Onshape. Riprova a connetterti."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "L'autorizzazione è stata rifiutata in Ramp. Prova a connetterti di nuovo."
+
 msgid "The backup job reported this error."
 msgstr "Il lavoro di backup ha segnalato questo errore."
 
@@ -17170,6 +17214,9 @@ msgstr "Il preventivo è stato creato"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Il preventivo verrà copiato con un suffisso di revisione"
 
+msgid "The Ramp connection expired"
+msgstr "La connessione Ramp è scaduta"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Le materie prime e il master materiale che acquisti e consumi"
 
@@ -17209,6 +17256,9 @@ msgstr "Il WIP residuo che un ordine di produzione ha lasciato alla chiusura, tr
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Nella risposta di Onshape mancavano i parametri richiesti. Riprova a connetterti."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Nella risposta di Ramp mancavano dei parametri obbligatori. Prova a connetterti di nuovo."
 
 msgid "The restore job reported this error."
 msgstr "Il lavoro di ripristino ha segnalato questo errore."
@@ -18081,6 +18131,12 @@ msgstr "Formazione del tuo team tramite l'Academy e le guide in-app"
 
 msgid "Trainings"
 msgstr "Corsi di formazione"
+
+msgid "Transaction Date"
+msgstr "Data Transazione"
+
+msgid "Transaction ID"
+msgstr "ID Transazione"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Le transazioni creeranno voci di prima nota e aggiorneranno la contabilità generale."

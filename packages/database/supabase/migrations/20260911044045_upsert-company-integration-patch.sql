@@ -1,0 +1,5 @@
+-- Tombstone: this applied branch-only migration is intentionally inert.
+--
+-- The retry-safe company-integration metadata patch RPC is installed by
+-- 20260911150054_upsert-company-integration-patch-forward.sql. Keep this file
+-- at its original version so databases that recorded it do not replay a rename.

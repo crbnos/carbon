@@ -80,6 +80,8 @@ export default $config({
         QUICKBOOKS_CLIENT_ID: process.env.QUICKBOOKS_CLIENT_ID,
         QUICKBOOKS_CLIENT_SECRET: process.env.QUICKBOOKS_CLIENT_SECRET,
         QUICKBOOKS_WEBHOOK_SECRET: process.env.QUICKBOOKS_WEBHOOK_SECRET,
+        RAMP_CLIENT_ID: process.env.RAMP_CLIENT_ID,
+        RAMP_CLIENT_SECRET: process.env.RAMP_CLIENT_SECRET,
         RESEND_API_KEY: process.env.RESEND_API_KEY,
         REDIS_URL: process.env.REDIS_URL,
         RESEND_DOMAIN: process.env.RESEND_DOMAIN ?? "carbon.ms",

@@ -3335,6 +3335,12 @@ msgstr "Aplikacja Carbon do pracy na hali, gdzie operatorzy uruchamiają operacj
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Pojedynczy zapis Carbon dla wszystkiego z numerem części — Część, Materiał, Narzędzie, Usługa, Materiał eksploatacyjny lub Przyrząd obróbkowy — na które wskazują zlecenia, metody, zamówienia i zapasy."
 
+msgid "Card Holder"
+msgstr "Posiadacz Karty"
+
+msgid "Card Transactions"
+msgstr "Transakcje Kartą"
+
 msgid "Cards"
 msgstr "Karty"
 
@@ -4391,6 +4397,9 @@ msgstr "Nie można przeplanować zadania. Spróbuj ponownie."
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Nie udało się zapisać połączenia z Onshape"
+
+msgid "Couldn't save the Ramp connection"
+msgstr "Nie udało się zapisać połączenia z Ramp"
 
 msgid "Count"
 msgstr "Liczba"
@@ -6919,6 +6928,9 @@ msgstr "Kurs wymiany zaktualizowany"
 
 msgid "Exchange Rates"
 msgstr "Kursy wymiany"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Wymiana kodu autoryzacyjnego na dostęp nie powiodła się. Spróbuj połączyć się ponownie."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Wymiana kodu autoryzacji na token dostępu nie udała się. Spróbuj połączyć się ponownie."
@@ -10104,6 +10116,9 @@ msgstr "Data memorandum"
 msgid "Memo ID"
 msgstr "ID Notatki"
 
+msgid "Merchant"
+msgstr "Handlowiec"
+
 msgid "MES"
 msgstr "MES"
 
@@ -11021,6 +11036,9 @@ msgstr "Nie utworzono zleceń produkcyjnych"
 msgid "No journal lines in scope for this period"
 msgstr "Brak pozycji dowodu księgowego dla tego okresu"
 
+msgid "No lines"
+msgstr "Brak wierszy"
+
 msgid "No lines to map"
 msgstr "Brak linii do mapowania"
 
@@ -11732,6 +11750,9 @@ msgstr "Otwarte zaplanowane"
 
 msgid "Open task details"
 msgstr "Otwórz szczegóły zadania"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Otwórz integrację Ramp i spróbuj połączyć się ponownie, aby dokończyć konfigurację."
 
 msgid "Open the Setup Map"
 msgstr "Otwórz mapę konfiguracji"
@@ -13332,6 +13353,24 @@ msgstr "Zgłoś to na cotygodniowym spotkaniu statusowym"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "zgłoś to wcześnie i zgłoś to jasno. Problem zidentyfikowany w tygodniu 2 to mała naprawa; ten sam problem w momencie uruchomienia to opóźnienie."
 
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp autoryzował połączenie, ale nie udało się go zapisać. Spróbuj połączyć się ponownie."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Połączono z Ramp, ale konfiguracja nie została ukończona"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp odrzucił połączenie"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp nie zwrócił kodu autoryzacyjnego"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp odrzucił autoryzację"
+
 msgid "Rate"
 msgstr "Kurs"
 
@@ -14108,6 +14147,8 @@ msgstr "Ponów przywracanie"
 msgid "Return Home"
 msgstr "Wróć do domu"
 
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Wróć do sekcji Integracje i ponownie połącz się z Ramp."
 msgid "Return ID"
 msgstr "Identyfikator zwrotu"
 
@@ -16655,6 +16696,9 @@ msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna iloś�
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Autoryzacja została odrzucona w Ramp. Spróbuj połączyć się ponownie."
+
 msgid "The backup job reported this error."
 msgstr "Zadanie kopii zapasowej zgłosiło ten błąd."
 
@@ -17170,6 +17214,9 @@ msgstr "Oferta została utworzona"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Oferta zostanie skopiowana z przyrostkiem rewizji"
 
+msgid "The Ramp connection expired"
+msgstr "Połączenie z Ramp wygasło"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Surowy materiał i główny katalog materiałów, które kupujesz i zużywasz"
 
@@ -17209,6 +17256,9 @@ msgstr "Rezydualna produkcja w toku, którą zlecenie ma przy zamknięciu, przen
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "W odpowiedzi z Onshape brakowało wymaganych parametrów. Spróbuj połączyć się ponownie."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "W odpowiedzi z Ramp brakowało wymaganych parametrów. Spróbuj połączyć się ponownie."
 
 msgid "The restore job reported this error."
 msgstr "Zadanie przywrócenia zgłosiło ten błąd."
@@ -18081,6 +18131,12 @@ msgstr "Szkolenie zespołu za pośrednictwem Academy i przewodników w aplikacji
 
 msgid "Trainings"
 msgstr "Szkolenia"
+
+msgid "Transaction Date"
+msgstr "Data Transakcji"
+
+msgid "Transaction ID"
+msgstr "ID Transakcji"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transakcje będą tworzyć wpisy księgowe i aktualizować księgę główną."

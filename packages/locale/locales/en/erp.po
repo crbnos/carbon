@@ -3335,6 +3335,12 @@ msgstr "Carbon's shop-floor app where operators run operations, report quantitie
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 
+msgid "Card Holder"
+msgstr "Card Holder"
+
+msgid "Card Transactions"
+msgstr "Card Transactions"
+
 msgid "Cards"
 msgstr "Cards"
 
@@ -4391,6 +4397,9 @@ msgstr "Couldn't reschedule the job. Please try again."
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Couldn't save the Onshape connection"
+
+msgid "Couldn't save the Ramp connection"
+msgstr "Couldn't save the Ramp connection"
 
 msgid "Count"
 msgstr "Count"
@@ -6919,6 +6928,9 @@ msgstr "Exchange rate updated at"
 
 msgid "Exchange Rates"
 msgstr "Exchange Rates"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Exchanging the authorization code for access failed. Try connecting again."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Exchanging the authorization code for an access token failed. Try connecting again."
@@ -10104,6 +10116,9 @@ msgstr "Memo Date"
 msgid "Memo ID"
 msgstr "Memo ID"
 
+msgid "Merchant"
+msgstr "Merchant"
+
 msgid "MES"
 msgstr "MES"
 
@@ -11021,6 +11036,9 @@ msgstr "No jobs were created"
 msgid "No journal lines in scope for this period"
 msgstr "No journal lines in scope for this period"
 
+msgid "No lines"
+msgstr "No lines"
+
 msgid "No lines to map"
 msgstr "No lines to map"
 
@@ -11732,6 +11750,9 @@ msgstr "Open Scheduled"
 
 msgid "Open task details"
 msgstr "Open task details"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Open the Ramp integration and try connecting again to finish setup."
 
 msgid "Open the Setup Map"
 msgstr "Open the Setup Map"
@@ -13332,6 +13353,24 @@ msgstr "Raise it at the weekly status call"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp authorized the connection but saving it failed. Try connecting again."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp connected but setup didn't finish"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp denied the connection"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp didn't return an authorization code"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp rejected the authorization"
+
 msgid "Rate"
 msgstr "Rate"
 
@@ -14108,6 +14147,8 @@ msgstr "Retry revert"
 msgid "Return Home"
 msgstr "Return Home"
 
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Return to Integrations and connect Ramp again."
 msgid "Return ID"
 msgstr "Return ID"
 
@@ -16655,6 +16696,9 @@ msgstr "The append-only record of every stock movement; on-hand is the sum of it
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "The authorization was refused in Onshape. Try connecting again."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "The authorization was refused in Ramp. Try connecting again."
+
 msgid "The backup job reported this error."
 msgstr "The backup job reported this error."
 
@@ -17170,6 +17214,9 @@ msgstr "The quote has been created"
 msgid "The quote will be copied with a revision suffix"
 msgstr "The quote will be copied with a revision suffix"
 
+msgid "The Ramp connection expired"
+msgstr "The Ramp connection expired"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "The raw stock and material master you buy and consume"
 
@@ -17209,6 +17256,9 @@ msgstr "The residual WIP a job has left at close, swept to a Production Variance
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "The response from Onshape was missing required parameters. Try connecting again."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "The response from Ramp was missing required parameters. Try connecting again."
 
 msgid "The restore job reported this error."
 msgstr "The restore job reported this error."
@@ -18081,6 +18131,12 @@ msgstr "Training your team via the Academy and in-app guides"
 
 msgid "Trainings"
 msgstr "Trainings"
+
+msgid "Transaction Date"
+msgstr "Transaction Date"
+
+msgid "Transaction ID"
+msgstr "Transaction ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transactions will create journal entries and update the general ledger."

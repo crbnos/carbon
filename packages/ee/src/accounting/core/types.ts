@@ -236,7 +236,9 @@ export type AccountingEntityType =
   | "invoice"
   | "payment"
   | "inventoryAdjustment"
-  | "journalEntry";
+  | "journalEntry"
+  /** A Carbon `cardTransaction` (Charge/Credit) pushed as the provider's native card-charge object. */
+  | "charge";
 
 export interface EntityConfig {
   /** Is this entity sync active? */

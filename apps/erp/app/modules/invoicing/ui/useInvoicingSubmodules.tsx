@@ -1,10 +1,16 @@
 import { useLingui } from "@lingui/react/macro";
-import { LuBanknote, LuCreditCard, LuReceiptText } from "react-icons/lu";
+import {
+  LuBanknote,
+  LuCreditCard,
+  LuReceipt,
+  LuReceiptText
+} from "react-icons/lu";
 import {
   BanknoteArrowDown,
   BanknoteArrowUp
 } from "~/assets/icons/BanknoteArrows";
 import { usePermissions } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -12,7 +18,27 @@ import { path } from "~/utils/path";
 export default function useInvoicingSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const integrations = useIntegrations();
   const { addSavedViewsToRoutes } = useSavedViews();
+
+  const hasRamp = integrations.has("ramp");
+
+  // Routes that only make sense with an active integration; hidden otherwise.
+  const integrationRoutes = new Map<string, boolean>([
+    [path.to.cardTransactions, hasRamp]
+  ]);
+
+  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
+    if (integrationRoutes.has(route.to) && !integrationRoutes.get(route.to)) {
+      return false;
+    }
+    if (route.role) {
+      return permissions.is(route.role);
+    } else if (route.permission) {
+      return permissions.can("view", route.permission);
+    }
+    return true;
+  };
 
   const invoicingRoutes: AuthenticatedRouteGroup[] = [
     {
@@ -68,6 +94,13 @@ export default function useInvoicingSubmodules() {
           icon: <LuCreditCard />,
           table: "memo",
           permission: "invoicing"
+        },
+        {
+          name: t`Card Transactions`,
+          to: path.to.cardTransactions,
+          icon: <LuReceipt />,
+          table: "cardTransaction",
+          permission: "invoicing"
         }
       ]
     }
@@ -75,32 +108,10 @@ export default function useInvoicingSubmodules() {
 
   return {
     groups: invoicingRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else if (route.permission) {
-            return permissions.can("view", route.permission);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
+      .filter((group) => group.routes.some(isRouteVisible))
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else if (route.permission) {
-              return permissions.can("view", route.permission);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
 }

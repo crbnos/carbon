@@ -1,4 +1,4 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json as DatabaseJson } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -28,6 +28,12 @@ export const SECRET_KEYS: Record<string, string[]> = {
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
+  ramp: [
+    "credentials.clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken",
+    "webhookSecret"
+  ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
   resend: ["apiKey"],
@@ -47,6 +53,54 @@ export class IntegrationSecretUnavailableError extends Error {
 }
 
 type Json = Record<string, unknown>;
+type CompanyIntegrationRow =
+  Database["public"]["Tables"]["companyIntegration"]["Row"];
+
+export type IntegrationStatePatch = {
+  /** Flat dot-path map applied to the current plaintext metadata object. */
+  metadata?: Record<string, DatabaseJson | undefined>;
+  /** Flat dot-path map merged into the current Vault secret bag. */
+  secrets?: Record<string, DatabaseJson | undefined>;
+  removeMetadata?: string[];
+  removeSecrets?: string[];
+  active?: boolean;
+  updatedBy?: string;
+};
+
+/**
+ * Atomically patch one integration row and its Vault secret bag. The RPC locks
+ * the logical `(integrationId, companyId)` key and reads the current values
+ * inside the transaction; callers never submit a stale whole metadata object.
+ * Requires a SERVICE-ROLE client.
+ */
+export async function patchIntegrationState(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string,
+  patch: IntegrationStatePatch
+): Promise<CompanyIntegrationRow> {
+  const { data, error } = await serviceClient.rpc(
+    "upsert_company_integration_patch",
+    {
+      p_company_id: companyId,
+      p_integration_id: integrationId,
+      p_metadata_patch: patch.metadata ?? {},
+      p_secret_patch: patch.secrets ?? {},
+      p_metadata_remove: patch.removeMetadata ?? [],
+      p_secret_remove: patch.removeSecrets ?? [],
+      p_active: patch.active,
+      p_updated_by: patch.updatedBy
+    }
+  );
+
+  if (error) throw error;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(
+      `Integration state patch returned no row for ${integrationId} (company ${companyId})`
+    );
+  }
+  return data as CompanyIntegrationRow;
+}
 
 /** Read a dot-path (`a.b.c`) from a nested object; undefined if any hop is missing. */
 export function getPath(obj: unknown, path: string): unknown {

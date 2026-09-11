@@ -24,7 +24,7 @@ The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/acco
 
 ## Entity types & directions
 
-`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry`. `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
+`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge`. `charge` is a Carbon `cardTransaction` pushed as the provider's native card-charge object (see "Card charges as provider objects"). `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
 
 `SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers then force an entity's config in their `build{Xero,Qbo,Rillet}SyncConfig`. **Carbon owns everything** is the standardized stance: every provider forces the master + document entities `customer`/`vendor`/`item`/`invoice`/`bill` to `push-to-accounting` / `owner: "carbon"` (`XERO_CARBON_OWNED_ENTITIES`, `QBO_CARBON_OWNED_ENTITIES`, Rillet's `RILLET_PUSH_ONLY_ENTITIES`) — the provider is a downstream mirror. `payment` is the one accounting-owned exception (forced `pull-from-accounting` / `owner: "accounting"`; Rillet two-way for Phase G push-back). There is **no** per-entity "Source of Truth" setting — it was removed; `owner` is provider-forced, not user-configurable. `owner` decides the winner on conflict: for a Carbon-owned entity, an inbound provider change to an already-linked record is skipped (`BaseEntitySyncer.pullBatchFromAccounting`, `core/types.ts`). Note the webhook path sends an explicit `pull-from-accounting` that overrides `direction`, so a net-new record created directly in the provider can still be ingested — `owner: "carbon"` only guards *linked* records; QBO's CDC pull-sweep (`listChanges`) does honor `direction` and skips push-only entities entirely.
 
@@ -287,6 +287,148 @@ revenue, so it cannot mirror Carbon's posting. Spec:
 - **PO / SO / Quote are unchanged** — item-referenced, no GL constraint (QBO PO
   keeps `buildQboExpenseLines` / `ItemBasedExpenseLineDetail`).
 
+## Card charges as provider objects (`charge` entity)
+
+A Carbon `cardTransaction` (Ramp card spend, `.claude/rules/ramp-integration.md`) is
+pushed as each provider's **native card-charge object** instead of an opaque journal
+entry — Rillet `POST /charges`, QBO `Purchase` with `PaymentType: "CreditCard"`, Xero
+`BankTransactions` `Type: "SPEND"` on the `CREDITCARD` bank account. Every one of them
+derives the same posting Carbon's `Card Transaction` journal already books (debit the
+coded lines, credit the card liability), so the switch carries no GL-drift risk and
+recovers the merchant (vendor) and dimensions the journal path dropped. Ramp receipts stay
+on Carbon `document` rows; Rillet additionally uploads them best-effort after create, while
+the Xero and QBO charge adapters do not currently attach remote files. Entity type `charge`
+(`AccountingEntityType`, `ENTITY_DEFINITIONS`,
+`DEFAULT_SYNC_CONFIG`, `SyncConfigSchema`); table map `cardTransaction → charge`
+(`events/sync-tables.ts`); subscription `{ table: "cardTransaction", INSERT/UPDATE }`
+in `COMMON_PUSH_TABLES` for all three providers; the event trigger and tenant-safe
+`supplierId` relationship are converged by
+`20260911150050_reconcile-ramp-card-transactions-forward.sql` (no subscription backfill —
+runtime subscription convergence). Syncers:
+`providers/rillet/entities/charge.ts` (`RilletChargeSyncer`, reference), plus the Xero
+and QBO adapters cloned from their bill syncers. Costing lines come from the shared
+`loadCardTransactionCostingLines` (`core/document-costing.ts`): the posted journal's
+coded lines minus the card-liability line (identified by the header's `cardAccountId`,
+not a description role), base-currency debit-signed, with dimensions.
+
+**Per-row policy, not per source type.** `POSTING_POLICY["Card Transaction"]` stays
+`representation: "journal"`; `getJournalPostingPolicyDecision` (`core/posting.ts`)
+carries an additive carve-out beside the Inventory Adjustment one:
+`isChargeBackedCardTransaction({ type, hasSupplier }, docSync)` → `DOC_BACKED` with
+`backingDocument: { entityType: "charge" }` only when the `charge` entity is enabled
+AND the row is a `Charge` with a supplier (or a `Credit` where the provider is in
+`CHARGE_CREDIT_PROVIDERS` — Xero, QBO and Rillet; Rillet posts a Credit as a charge with
+NEGATIVE items, which its sandbox accepted on 2026-09-10). `Payment` / `Cashback` / `Repayment` rows (card-liability ↔ bank movements, no
+vendor) and a Charge with no merchant supplier keep pushing as journal entries. The
+executor (`reconcile-executor.ts`) and the event planner (`planJournalPostingOperation`)
+resolve the backing row through the shared `loadCardTransactionPolicyInputs`
+(`accounting-sync-operations.ts`): **journal LINES → `documentType = 'Card Transaction'`,
+`documentId = cardTransaction.id`**, then one `cardTransaction` query per batch (`type,
+supplierId`), with `cardTransaction.journalId` only as a fallback for unlinked journals.
+The line link is what the posting journal AND the "VOID Card Transaction" journal share —
+the void is a NEW Posted journal (`post-card-transaction`, no `reversalOfId`), so keying on
+`cardTransaction.journalId` resolved only the original and the void pushed as a plain
+journal entry on top of the charge DELETE, netting Rillet to minus one charge (found live
+2026-09-10, fixed the same day). Each charge syncer's `shouldSync` mirrors the same rule, so
+the spend reaches the provider as exactly one of the two, never both and never neither. Already-
+synced journals are never re-planned (`reconcileJournal` skips covered rows).
+Statuses: `SWEPT_CHARGE_STATUSES = ["Posted", "Voided"]`; the sweep pages
+`cardTransaction` by `transactionDate` (+ `voidedAt` for late voids) filtered to
+`type IN ('Charge','Credit')`. `ChargeSyncerBase` handles the lifecycle uniformly: a
+successful create is mapped before the batch advances; a mapped Void invokes the provider's
+native delete and tombstones the mapping only after the provider confirms it. Rillet uses
+`DELETE /charges/{id}` (**live-verified 2026-09-10**: GET → 404); Xero rereads the complete
+bank transaction and POSTs that resource with `Status: DELETED`; QBO performs the required
+`POST /purchase?operation=delete` with its current `SyncToken`. The Xero/QBO paths follow their official
+contracts but still need live sandbox verification. A Voided charge without a durable remote
+id fails closed as `UNCONFIRMED_REMOTE_VOID` for manual provider verification rather than
+claiming success. QBO's
+`DepartmentRef` is header-level on a `Purchase` (only `ClassRef` is per line) and its
+`TxnDate` is the posting date (already period-shifted by the Ramp sync). Both
+adapters use provider-prefixed aliases (`XeroCardCharge`, `QboCardCharge`) of the shared
+`CardChargeSource` in `core/card-charge-source.ts`; the shared loader batches tenant- and
+provider-scoped local rows for one drain. Create retry identity is provider-specific and
+stable: Rillet's entity-scoped idempotency key, Xero's deterministic Carbon `Reference` lookup
+plus its six-minute idempotency key, and QBO's deterministic `requestid`. QBO retains sparse
+updates with `SyncToken` retry. Each successful item links immediately, so a later item failure
+cannot lose the earlier remote identity.
+
+**Rillet charge — live-verified 2026-09-10 on the sandbox** (`.ai/plans/2026-09-10-ramp-project-coding-and-rillet-charge-sync.md` Part C): `POST /charges` lands with `vendor_id` (the merchant vendor, JIT-synced), one item per coded line (`account_code`, amount, `fields[]` = the auto-provisioned Cost Center Field + value), `charge_date` = transaction date, `impact_date` = posting date, both `external_references`. Two preconditions a customer must meet, both surfaced truthfully rather than guessed: (1) every account on the charge must be mapped (Account Mapping tab → "Match by code"), else Warning `UNMAPPED_ACCOUNTS` naming the ids; (2) **the Carbon account chosen as Ramp's card liability must map to a Rillet account of subtype "Credit Card"** — Rillet rejects anything else with `400 "Account <code> is not a credit card account"` (recorded as Failed with that message; remap and Retry). Rillet IS in `CHARGE_CREDIT_PROVIDERS`: a `Credit` (Delta refund) posts as a charge whose items are negative and its journal records `Excluded/DOC_BACKED/charge` — one representation, never both (before the flip it verifiably closed Skipped with the journal pushed instead, so the mirror holds both ways).
+The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-generic and
+`journalLine.documentId` already carries the `cardTransaction.id`.
+
+`cardTransaction.supplierId` (same migration) is the merchant resolved to a Carbon
+supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
+`merchant` by Ramp `merchant_id` → case-insensitive name → auto-create tagged
+"Card Merchant"); the existing vendor syncers carry it to the provider via
+`ensureDependencySynced("vendor")`.
+
+**Ramp inbound financial records are staged transactionally.** Card transactions and bills
+advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
+rows, and mapping before calling the posting edge function; ambiguous responses require a
+tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance
+and quantity, while multi-PO bills remain standalone instead of choosing an arbitrary order.
+Mapped card Drafts refresh their header and coding from validated Ramp input atomically;
+Posted cards cannot be rewritten. The card-post handler binds authenticated permission checks
+to the JWT subject. Payment/Cashback reject coding lines they would otherwise ignore, and
+Charge/Credit/Repayment require finite positive line magnitudes. Post and reversal allocate
+journal-line ids before insertion, so dimension linkage never depends on RETURNING order.
+
+Bill payments and reimbursements follow the same rule.
+`ramp-sync-bill.ts` owns the bill-payment drain/confirm family and delegates each item to
+`syncRampBillPayment` in `ramp-sync-payment.ts`. `stageRampPaymentDraft` writes or resumes
+the Draft `payment`, `invoiceSettlement`, and Ramp mapping in one Kysely transaction while
+preserving the stored source-FX snapshot; `createOrResumeRampPayment` posts and accepts an
+ambiguous edge-function response only when a tenant-scoped reread shows the payment is
+Posted. Card-backed bill payments are confirmed without an AP payment because the card
+transaction already represents the cash movement.
+The explicit card set includes `ONE_TIME_CARD_DELIVERY`; only documented bank rails enter
+the AP bank-payment path. Unknown methods, vendor credits, manual payments, and other
+unmapped funding semantics fail visibly rather than becoming a statement-bank payment.
+`ramp-sync-reimbursement-family.ts` owns listing and confirmation and delegates an item to
+`syncRampReimbursement` in `ramp-sync-reimbursement.ts`. The staging helper uses an
+advisory lock scoped to the company and Ramp reimbursement id, then
+`stageOrResumeRampReimbursementInvoice` atomically creates the supplier interaction, Draft
+purchase invoice, delivery, lines, and mapping. It may adopt only one unposted system Draft
+whose expected Ramp reference, supplier, dates, currency, complete delivery/line structure,
+coding and amounts match, with valid preserved FX, zero tax/shipping, and no PO/item/asset
+provenance. Partial or mismatched reference-only invoices are rejected without rewriting.
+The family confirms Ramp only after the
+invoice, and the payment when Ramp-paid, are observably Posted. Do not split either staged
+write set into Supabase-client calls; those calls do not form a transaction.
+`REIMBURSED` and `REIMBURSED_VIA_PUSH` require that payment; the supported invoice-only
+states are `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT`, and
+`MANUALLY_REIMBURSED`. Other states fail before any financial write. Repayment funding is
+also explicit: only documented lowercase `ach` currently selects the bank offset; unknown
+or statement-credit funding cannot fall through to a bank account.
+
+Ramp outbound invoice export is release-gated off until its money/coding/PDF/submit-identity
+contract is verified. The gated implementation requires a finite positive stored rate for
+foreign-currency invoices. Supplier lookup errors and blocked exports retain their outbound
+cursor positions. Archive-on-settlement stamps mapping metadata only after a successful
+provider archive; arbitrary errors never close the retry path. Ramp ownership challenges
+likewise require a valid body HMAC before callback or echo; query parameters are unsigned
+and cannot supply the challenge. See `ramp-integration.md` for these support boundaries.
+
+**Rillet reimbursements.** A purchase invoice to an "Employee" supplier (what the
+Ramp reimbursement sync creates) is ALWAYS written to `POST /reimbursements`, Rillet's
+native object, never to `/bills` — there is deliberately no setting for it (one was
+built and removed the same day: an unnecessary choice). `RilletBillSyncer` routes in
+`upsertRemote` (pure `toRilletReimbursement(billPayload, payableAccountCode)`; the
+payable is the AP control account of the posted journal, now returned by
+`loadBillCostingLines` as `payablesAccountId`), stamps the mapping
+`metadata.remoteKind = "reimbursement"` in `linkEntities`, and `deleteRemote(remoteId,
+metadata)` — the base now passes the mapping metadata — deletes the right object on
+void. Rillet publishes **no reimbursement-payment endpoint** (2026-09-10; the schema
+exists in its spec without a path), so `RilletPaymentSyncer.pushRemotePayment` parks a
+payout against such a bill as Warning `UNSUPPORTED_REIMBURSEMENT_PAYMENT` — visible, and
+retryable once Rillet ships the endpoint; until then the reimbursement is marked paid in
+Rillet by hand — rather than 404ing on `/bills/{id}/payments`. **Both live-verified
+2026-09-10**: `POST /reimbursements` (vendor JIT-created, item on the coded account,
+`reimbursement_date` = `dateIssued`, mapping `remoteKind: reimbursement`, status UNPAID) and
+the parked payout Warning on a posted Carbon AP payment. The AP control account must be
+mapped too (`payable_account_code`).
+
 ## Dimensions (journal / bill analytics)
 
 Journal-entry and bill line dimensions (`journalLineDimension`) map to provider
@@ -315,6 +457,8 @@ is dead config for Rillet only, left in place for the capped providers.
 - The event-queue drainer (`events/queue.ts`) archives unknown-`handlerType` messages to pgmq's dead-letter table (`pgmq.a_event_system`) instead of crash-looping the whole drain (v4 F8) — a poison message can no longer wedge ALL event processing.
 - `ContactSyncer.getRemoteId` checks both `customer` and `vendor` mappings (one Xero Contact backs both).
 - Transaction syncers (PO, invoice, bill) use `ensureDependencySynced(type, localId)` for JIT dependency syncing (e.g. push the customer before its invoice); `dependsOn` is declared in `ENTITY_DEFINITIONS`.
-- DELETE sync is not implemented anywhere yet.
+- DELETE is entity-specific rather than generic: mapped documents/payments and native card
+  charges implement provider-aware void/delete paths where supported; unsupported or
+  unconfirmed deletes fail or park visibly and never receive a false tombstone.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
 </content>

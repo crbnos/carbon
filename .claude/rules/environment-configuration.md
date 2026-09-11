@@ -50,7 +50,7 @@ keys listed in `getBrowserEnv()` are exposed client-side.
   which crbn never writes). Use it to point a local stack at a remote service.
 - Self-hosting? The Swarm stack does **not** use a prod `.env` for secrets — it
   uses Docker Swarm secrets + non-secret `contrib/deploying/simple-docker-caddy/.env`.
-  See [contrib-deployment-swarm.md](contrib-deployment-swarm.md).
+  See [the self-host deployment README](../../contrib/deploying/simple-docker-caddy/README.md).
 - `scripts/setup-env-files.ts` symlinks the root `.env` (and `.env.local` if
   present) into `apps/*` and packages `database`, `jobs`, `kv`.
 
@@ -67,7 +67,8 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_DEV` is set). Dev also uses `INNGEST_DEV`, `INNGEST_BASE_URL`,
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
-**Auth / session** — `SESSION_SECRET` (required), `AUTH_PROVIDERS`
+**Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
+single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`.
 `SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in
@@ -85,12 +86,20 @@ endpoint (`/api/webhook/stripe`, billing) and the Connect endpoint
 **Email** — `RESEND_API_KEY`, `RESEND_DOMAIN` (default `carbon.ms`),
 `DISABLE_RESEND` (short-circuits sends), optional `RESEND_AUDIENCE_ID`.
 
-**Integrations (all optional)** — Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
+**Integrations (all optional)** — Ramp (`RAMP_CLIENT_ID`, public and exposed by
+`getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
+exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
 `SLACK_OAUTH_REDIRECT_URL`), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
 `ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
+
+Ramp intentionally has no separate `RAMP_STATE_SECRET`. `issueOAuthState()` stores a
+random nonce plus `{integrationId,userId,companyId,expiresAt}` in a signed HttpOnly
+cookie backed by `SESSION_SECRET`; `consumeOAuthState()` validates all fields and
+destroys the cookie on every attempt. Managed deployment propagates both Ramp OAuth
+vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
 (required, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →

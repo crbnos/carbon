@@ -3335,6 +3335,12 @@ msgstr "Carbonの生産現場アプリ：作業者が工程を実行し、数量
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbonの単一レコード。部品番号を持つあらゆるもの（部品、材料、工具、外注サービス、消耗品、治具）に対応し、製造指図、製法、受注、在庫管理すべてが参照します。"
 
+msgid "Card Holder"
+msgstr "カードホルダー"
+
+msgid "Card Transactions"
+msgstr "カード取引"
+
 msgid "Cards"
 msgstr "カード"
 
@@ -4391,6 +4397,9 @@ msgstr "ジョブを再スケジュールできませんでした。もう一度
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 接続を保存できませんでした"
+
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp 接続を保存できませんでした"
 
 msgid "Count"
 msgstr "数"
@@ -6919,6 +6928,9 @@ msgstr "為替レート更新時刻"
 
 msgid "Exchange Rates"
 msgstr "為替レート"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "アクセス権を取得するための認可コードの交換に失敗しました。もう一度接続してください。"
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "認可コードとアクセストークンの交換に失敗しました。もう一度接続してください。"
@@ -10104,6 +10116,9 @@ msgstr "メモ日付"
 msgid "Memo ID"
 msgstr "メモID"
 
+msgid "Merchant"
+msgstr "マーチャント"
+
 msgid "MES"
 msgstr "MES"
 
@@ -11021,6 +11036,9 @@ msgstr "製造指図は作成されませんでした"
 msgid "No journal lines in scope for this period"
 msgstr "この期間の対象仕訳明細がありません"
 
+msgid "No lines"
+msgstr "ラインなし"
+
 msgid "No lines to map"
 msgstr "マップするラインがありません"
 
@@ -11732,6 +11750,9 @@ msgstr "スケジュール済みを開く"
 
 msgid "Open task details"
 msgstr "タスク詳細を開く"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp 連携を開き、設定を完了するためにもう一度接続してください。"
 
 msgid "Open the Setup Map"
 msgstr "セットアップマップを開く"
@@ -13332,6 +13353,24 @@ msgstr "毎週のステータスミーティングで提起してください"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "早期に報告し、明確に報告してください。2週目に特定された問題は小さな修正で済みますが、本番リリース時の同じ問題は遅延につながります。"
 
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp に接続しましたが、設定を完了できませんでした"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp が接続を拒否しました"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp が認可コードを返しませんでした"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp が認可を拒否しました"
+
 msgid "Rate"
 msgstr "レート"
 
@@ -14108,6 +14147,8 @@ msgstr "リバートを再試行"
 msgid "Return Home"
 msgstr "ホームに戻る"
 
+msgid "Return to Integrations and connect Ramp again."
+msgstr "連携に戻り、Ramp にもう一度接続してください。"
 msgid "Return ID"
 msgstr "返品ID"
 
@@ -16655,6 +16696,9 @@ msgstr "すべての在庫移動の追加専用レコード。手持在庫はそ
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Ramp で認可が拒否されました。もう一度接続してください。"
+
 msgid "The backup job reported this error."
 msgstr "バックアップジョブがこのエラーを報告しました。"
 
@@ -17170,6 +17214,9 @@ msgstr "見積書が作成されました"
 msgid "The quote will be copied with a revision suffix"
 msgstr "見積はリビジョンサフィックス付きでコピーされます。"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp 接続が期限切れになりました"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "購入して消費する原材料とマテリアルマスター"
 
@@ -17209,6 +17256,9 @@ msgstr "製造指図がクローズ時に残した残留仕掛品は、生産差
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
 
 msgid "The restore job reported this error."
 msgstr "復元ジョブがこのエラーを報告しました。"
@@ -18081,6 +18131,12 @@ msgstr "アカデミーとアプリ内ガイドを使用してチームを教育
 
 msgid "Trainings"
 msgstr "教育訓練"
+
+msgid "Transaction Date"
+msgstr "取引日付"
+
+msgid "Transaction ID"
+msgstr "取引ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "トランザクションは仕訳帳エントリを作成し、総勘定元帳を更新します。"

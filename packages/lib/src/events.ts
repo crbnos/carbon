@@ -625,6 +625,17 @@ export type Events = {
     };
   };
 
+  // Ramp inbound sync — drain every ready-to-sync Ramp accounting family for
+  // one company into Carbon card transactions (+ bills/reimbursements/etc. in
+  // later tasks). Fired per company by the hourly ramp-sweep, the install hook,
+  // and the Ramp webhook route.
+  "carbon/ramp-sync": {
+    data: {
+      companyId: string;
+      reason?: string;
+    };
+  };
+
   // Paperless parts integration (full webhook payload)
   "carbon/paperless-parts": {
     data: {

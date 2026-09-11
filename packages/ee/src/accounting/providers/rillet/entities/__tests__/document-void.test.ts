@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { RilletBillSyncer } from "../bill";
+import { RilletChargeSyncer } from "../charge";
 import { RilletSalesInvoiceSyncer } from "../invoice";
 
 const { linked } = vi.hoisted(() => ({ linked: [] as unknown[] }));
@@ -23,7 +24,8 @@ vi.mock("../../../../core/utils", async (importOriginal) => ({
 
 describe.each([
   ["invoice", RilletSalesInvoiceSyncer],
-  ["bill", RilletBillSyncer]
+  ["bill", RilletBillSyncer],
+  ["charge", RilletChargeSyncer]
 ] as const)("Rillet %s void", (entityType, Syncer) => {
   function setup(status: string, mapping: unknown, failure?: Error) {
     linked.length = 0;
@@ -42,7 +44,8 @@ describe.each([
       provider: {
         id: "rillet",
         deleteInvoice: deletion,
-        deleteBill: deletion
+        deleteBill: deletion,
+        deleteCharge: deletion
       } as never
     });
     vi.spyOn(syncer, "fetchLocal").mockResolvedValue({

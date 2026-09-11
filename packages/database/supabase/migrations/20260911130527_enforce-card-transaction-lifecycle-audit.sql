@@ -1,0 +1,5 @@
+-- Tombstone: this applied branch-only migration is intentionally inert.
+--
+-- The validated card-transaction lifecycle invariant is installed by
+-- 20260911150058_enforce-card-transaction-lifecycle-audit-forward.sql. Keep this
+-- file at its original version so databases that recorded it do not replay a rename.

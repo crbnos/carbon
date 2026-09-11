@@ -3335,6 +3335,12 @@ msgstr "Carbon का शॉप फ्लोर ऐप जहां ऑपरे
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon का एकल रिकॉर्ड किसी भी चीज़ के लिए जिसका पार्ट नंबर है — पार्ट, सामग्री, टूल, सेवा, उपभोग्य सामग्री, या फिक्स्चर — जिस पर जॉब, विधि, आदेश और इन्वेंटरी सभी इंगित करते हैं।"
 
+msgid "Card Holder"
+msgstr "कार्ड धारक"
+
+msgid "Card Transactions"
+msgstr "कार्ड लेनदेन"
+
 msgid "Cards"
 msgstr "कार्ड"
 
@@ -4391,6 +4397,9 @@ msgstr "कार्य पुनर्निर्धारित नहीं 
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape कनेक्शन सहेजा नहीं जा सका"
+
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp कनेक्शन को सहेजा नहीं जा सका"
 
 msgid "Count"
 msgstr "गिनती"
@@ -6919,6 +6928,9 @@ msgstr "विनिमय दर अपडेट किया गया"
 
 msgid "Exchange Rates"
 msgstr "विनिमय दरें"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "पहुँच के लिए प्राधिकरण कोड का विनिमय विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "प्राधिकरण कोड को एक्सेस टोकन से बदलना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -10104,6 +10116,9 @@ msgstr "मेमो तारीख"
 msgid "Memo ID"
 msgstr "मेमो आईडी"
 
+msgid "Merchant"
+msgstr "व्यापारी"
+
 msgid "MES"
 msgstr "MES"
 
@@ -11021,6 +11036,9 @@ msgstr "कोई जॉब नहीं बनाया गया"
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
 
+msgid "No lines"
+msgstr "कोई पंक्तियाँ नहीं"
+
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
 
@@ -11732,6 +11750,9 @@ msgstr "खुली अनुसूचित"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp एकीकरण खोलें और कॉन्फ़िगरेशन पूरा करने के लिए दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "Open the Setup Map"
 msgstr "सेटअप मैप खोलें"
@@ -13332,6 +13353,24 @@ msgstr "इसे साप्ताहिक स्थिति कॉल म�
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "इसे जल्दी उठाएं और स्पष्ट रूप से उठाएं। सप्ताह 2 में नामित समस्या एक छोटी सी मरम्मत है; go-live पर वही समस्या एक देरी है।"
 
+msgid "Ramp"
+msgstr "रैम्प"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजा नहीं जा सका। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp कनेक्ट हो गया, लेकिन कॉन्फ़िगरेशन पूरा नहीं हुआ"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp ने कनेक्शन अस्वीकार कर दिया"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp ने प्राधिकरण कोड नहीं लौटाया"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp ने प्राधिकरण अस्वीकार कर दिया"
+
 msgid "Rate"
 msgstr "दर"
 
@@ -14108,6 +14147,8 @@ msgstr "पूर्ववत् करने का पुन: प्रया�
 msgid "Return Home"
 msgstr "घर लौटें"
 
+msgid "Return to Integrations and connect Ramp again."
+msgstr "एकीकरण पर वापस जाएँ और Ramp को फिर से कनेक्ट करें।"
 msgid "Return ID"
 msgstr "रिटर्न ID"
 
@@ -16655,6 +16696,9 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Ramp में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
 
@@ -17170,6 +17214,9 @@ msgstr "उद्धरण बनाया जा चुका है"
 msgid "The quote will be copied with a revision suffix"
 msgstr "कोटेशन को एक रिवीजन प्रत्यय के साथ कॉपी किया जाएगा"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp कनेक्शन समाप्त हो गया"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "कच्चा स्टॉक और सामग्री मास्टर जो आप खरीदते और उपभोग करते हैं"
 
@@ -17209,6 +17256,9 @@ msgstr "अवशिष्ट WIP जो एक जॉब के पास ब�
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp से मिले उत्तर में आवश्यक पैरामीटर मौजूद नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The restore job reported this error."
 msgstr "पुनर्स्थापन जॉब ने इस त्रुटि की रिपोर्ट की।"
@@ -18081,6 +18131,12 @@ msgstr "Academy और इन-ऐप गाइड के माध्यम स�
 
 msgid "Trainings"
 msgstr "प्रशिक्षण"
+
+msgid "Transaction Date"
+msgstr "लेनदेन की तारीख"
+
+msgid "Transaction ID"
+msgstr "लेनदेन आईडी"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "लेनदेन जर्नल प्रविष्टियां बनाएंगे और सामान्य खाता बही को अपडेट करेंगे।"

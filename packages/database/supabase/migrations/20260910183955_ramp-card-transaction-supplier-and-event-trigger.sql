@@ -1,0 +1,5 @@
+-- Tombstone: this branch-only incremental migration is intentionally inert.
+--
+-- Supplier tenancy and event-trigger attachment are reconciled idempotently by
+-- 20260911150050_reconcile-ramp-card-transactions-forward.sql. Preserve this version so
+-- an environment that already recorded it is not asked to replay or rename it.

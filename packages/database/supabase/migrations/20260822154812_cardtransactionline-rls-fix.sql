@@ -1,0 +1,5 @@
+-- Tombstone: this branch-only follow-up is intentionally inert.
+--
+-- The corrected, tenant-composite policies and database mutation guards are
+-- installed by 20260911150050_reconcile-ramp-card-transactions-forward.sql for both
+-- clean and previously-applied branch databases.

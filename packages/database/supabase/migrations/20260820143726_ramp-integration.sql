@@ -1,0 +1,6 @@
+-- Tombstone: this branch-only, backdated migration is intentionally inert.
+--
+-- Its complete effect is reconciled by the forward, retry-safe migration
+-- 20260911150050_reconcile-ramp-card-transactions-forward.sql. Keep this file at its
+-- original version number so databases that already recorded it do not see a renamed
+-- migration, while clean databases avoid applying ordering-dependent schema.

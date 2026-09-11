@@ -3335,6 +3335,12 @@ msgstr "Carbon'ın operatörlerin operasyonları çalıştırdığı, miktarlar�
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon'ın bir parça numarası olan her şey için — Parça, Malzeme, Takım, Hizmet, Sarf malzemesi veya Bağlama aparatı — iş emirleri, yöntemler, siparişler ve envanterin işaret ettiği tek stok kartı."
 
+msgid "Card Holder"
+msgstr "Kart Sahibi"
+
+msgid "Card Transactions"
+msgstr "Kart İşlemleri"
+
 msgid "Cards"
 msgstr "Kartlar"
 
@@ -4391,6 +4397,9 @@ msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape bağlantısı kaydedilemedi"
+
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp bağlantısı kaydedilemedi"
 
 msgid "Count"
 msgstr "Adet"
@@ -6919,6 +6928,9 @@ msgstr "Döviz kuru güncelleme tarihi"
 
 msgid "Exchange Rates"
 msgstr "Döviz Kurları"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Yetkilendirme kodunun erişim için değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Yetkilendirme kodunun erişim belirteciyle değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
@@ -10104,6 +10116,9 @@ msgstr "Muhasebe Tarihi"
 msgid "Memo ID"
 msgstr "Muhasebe Belgesi Kimliği"
 
+msgid "Merchant"
+msgstr "Satıcı"
+
 msgid "MES"
 msgstr "MES"
 
@@ -11021,6 +11036,9 @@ msgstr "İş emri oluşturulmadı"
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde muhasebe fişi satırı yok"
 
+msgid "No lines"
+msgstr "Satır yok"
+
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
 
@@ -11732,6 +11750,9 @@ msgstr "Planlanmış Açık"
 
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp entegrasyonunu açın ve kurulumu tamamlamak için yeniden bağlanmayı deneyin."
 
 msgid "Open the Setup Map"
 msgstr "Kurulum Haritasını Aç"
@@ -13332,6 +13353,24 @@ msgstr "Bunu haftalık durum çağrısında gündeme getir"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "bunu erken ve açık bir şekilde dile getir. 2. haftada adı konulan bir sorun küçük bir düzeltmedir; go-live'da aynı sorun bir gecikmedir."
 
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp bağlandı ancak kurulum tamamlanmadı"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp bağlantıyı reddetti"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp bir yetkilendirme kodu döndürmedi"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp yetkilendirmeyi reddetti"
+
 msgid "Rate"
 msgstr "Kur"
 
@@ -14108,6 +14147,8 @@ msgstr "Geri alma'yı tekrar dene"
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
 
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Entegrasyonlara geri dönün ve Ramp'i yeniden bağlayın."
 msgid "Return ID"
 msgstr "İade Kimliği"
 
@@ -16655,6 +16696,9 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Yetkilendirme Ramp'te reddedildi. Yeniden bağlanmayı deneyin."
+
 msgid "The backup job reported this error."
 msgstr "Yedekleme işi bu hatayı bildirdi."
 
@@ -17170,6 +17214,9 @@ msgstr "Teklif oluşturuldu"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Teklif revizyon ekiyle kopyalanacaktır"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp bağlantısının süresi doldu"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
 
@@ -17209,6 +17256,9 @@ msgstr "Bir iş emrinin kapatıldığında bıraktığı artık yarı mamul, Ür
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
 
 msgid "The restore job reported this error."
 msgstr "Geri yükleme işi bu hatayı bildirdi."
@@ -18081,6 +18131,12 @@ msgstr "Ekibinizi Academy ve uygulama içi kılavuzlar aracılığıyla eğitin"
 
 msgid "Trainings"
 msgstr "Eğitimler"
+
+msgid "Transaction Date"
+msgstr "İşlem Tarihi"
+
+msgid "Transaction ID"
+msgstr "İşlem Kimliği"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "İşlemler muhasebe fişileri oluşturacak ve Büyük defteri güncelleyecektir."
