@@ -10,6 +10,7 @@ import {
   resolveMerchantSupplier,
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
+import { stageOrResumeRampCardTransaction } from "./ramp-sync-card-stage";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled,
@@ -201,10 +202,9 @@ async function buildTransactionLines(
 }
 
 /**
- * Create a Draft `cardTransaction` (+ lines), post it through the edge
- * function, link the mapping, and attach receipts. Returns the confirm item on
- * success or a failure message. Creates NOTHING on a pre-post failure; deletes
- * the Draft row on a post failure.
+ * Atomically stage a Draft `cardTransaction` (+ lines + Ramp mapping), post it,
+ * and attach receipts. Ambiguous edge responses are accepted only when a
+ * tenant-scoped reread proves the mapped document is Posted.
  */
 export async function createAndPostTransaction(
   ctx: RampSyncContext,
@@ -227,22 +227,6 @@ export async function createAndPostTransaction(
     getReceipt: (id: string) => Promise<unknown>;
   }
 ): Promise<{ ok: SyncItem } | { fail: FailItem }> {
-  const seq = await ctx.client.rpc("get_next_sequence", {
-    sequence_name: "cardTransaction",
-    company_id: ctx.companyId
-  });
-  if (seq.error || !seq.data) {
-    return {
-      fail: {
-        id: args.rampId,
-        message: `Failed to generate card transaction number: ${
-          seq.error?.message ?? "unknown error"
-        }`
-      }
-    };
-  }
-  const readableId = seq.data as string;
-
   let exchangeRate: number;
   try {
     exchangeRate = await getRampExchangeRate(ctx, args.currencyCode);
@@ -255,101 +239,62 @@ export async function createAndPostTransaction(
     };
   }
 
-  const header = await ctx.client
-    .from("cardTransaction")
-    .insert({
-      cardTransactionId: readableId,
-      type: args.type,
-      status: "Draft",
-      integration: "ramp",
-      cardAccountId: args.cardAccountId,
-      offsetAccountId: args.offsetAccountId,
-      merchantName: args.merchantName,
-      supplierId: args.supplierId,
-      cardHolderName: args.cardHolderName,
-      memo: args.memo,
-      transactionDate: args.transactionDate,
-      postingDate: args.postingDate,
-      currencyCode: args.currencyCode,
-      exchangeRate,
-      amount: args.amount,
+  let staged: Awaited<ReturnType<typeof stageOrResumeRampCardTransaction>>;
+  try {
+    staged = await stageOrResumeRampCardTransaction(ctx.db, {
+      ...args,
       companyId: ctx.companyId,
-      createdBy: "system"
-    })
-    .select("id")
-    .single();
-  if (header.error || !header.data) {
+      actorId: "system",
+      exchangeRate
+    });
+  } catch (error) {
     return {
       fail: {
         id: args.rampId,
-        message: `Failed to create card transaction: ${
-          header.error?.message ?? "unknown error"
-        }`
+        message: error instanceof Error ? error.message : String(error)
       }
     };
   }
-  const cardTransactionId = header.data.id;
-
-  if (args.lines.length > 0) {
-    const lineRows = await ctx.client.from("cardTransactionLine").insert(
-      args.lines.map((line, index) => ({
-        cardTransactionId,
-        companyId: ctx.companyId,
-        accountId: line.accountId,
-        costCenterId: line.costCenterId,
-        description: line.description,
-        amount: line.amount,
-        sequence: index,
-        createdBy: "system"
-      }))
-    );
-    if (lineRows.error) {
-      // FK is ON DELETE CASCADE — deleting the header removes any partial lines.
-      await ctx.client
-        .from("cardTransaction")
-        .delete()
-        .eq("id", cardTransactionId)
-        .eq("companyId", ctx.companyId);
-      return {
-        fail: {
-          id: args.rampId,
-          message: `Failed to create card transaction lines: ${lineRows.error.message}`
-        }
-      };
-    }
+  if (staged.status === "Voided") {
+    return {
+      fail: {
+        id: args.rampId,
+        message: "Mapped Ramp card transaction is Voided in Carbon"
+      }
+    };
   }
 
-  const posted = await ctx.client.functions.invoke("post-card-transaction", {
-    body: {
-      type: "post",
-      cardTransactionId,
-      userId: "system",
-      companyId: ctx.companyId
-    }
-  });
-  if (posted.error) {
-    await ctx.client
-      .from("cardTransaction")
-      .delete()
-      .eq("id", cardTransactionId)
-      .eq("companyId", ctx.companyId);
-    const message =
-      posted.error instanceof Error
-        ? posted.error.message
-        : String(posted.error);
+  let postError: unknown;
+  if (staged.status === "Draft") {
+    const posted = await ctx.client.functions.invoke("post-card-transaction", {
+      body: {
+        type: "post",
+        cardTransactionId: staged.cardTransactionId,
+        userId: "system",
+        companyId: ctx.companyId
+      }
+    });
+    postError = posted.error;
+  }
+
+  const observed = await ctx.client
+    .from("cardTransaction")
+    .select("status")
+    .eq("id", staged.cardTransactionId)
+    .eq("companyId", ctx.companyId)
+    .maybeSingle();
+  if (observed.error || observed.data?.status !== "Posted") {
+    const message = postError
+      ? postError instanceof Error
+        ? postError.message
+        : String(postError)
+      : (observed.error?.message ??
+        "Ramp card transaction is not observably Posted in Carbon");
     return { fail: { id: args.rampId, message } };
   }
 
-  await ctx.mapping.link(
-    "cardTransaction",
-    cardTransactionId,
-    "ramp",
-    args.rampId,
-    { createdBy: "system" }
-  );
-
   await attachReceipts(ctx, {
-    cardTransactionId,
+    cardTransactionId: staged.cardTransactionId,
     receiptIds: args.receiptIds,
     getReceipt: args.getReceipt
   });
@@ -357,33 +302,89 @@ export async function createAndPostTransaction(
   return {
     ok: {
       id: args.rampId,
-      referenceId: readableId,
+      referenceId: staged.readableId,
       deepLinkUrl: cardTransactionsDeepLinkUrl()
     }
   };
 }
 
-/** Look up readable ids for already-mapped Ramp items (one query). */
+/** Resume Draft mappings and reconfirm only observably Posted documents. */
 async function reconfirmMapped(
   ctx: RampSyncContext,
   mapped: Array<{ rampId: string; entityId: string }>
-): Promise<SyncItem[]> {
-  if (mapped.length === 0) return [];
+): Promise<{ successful: SyncItem[]; failed: FailItem[] }> {
+  if (mapped.length === 0) return { successful: [], failed: [] };
   const entityIds = [...new Set(mapped.map((m) => m.entityId))];
-  const { data } = await ctx.client
+  const { data, error } = await ctx.client
     .from("cardTransaction")
-    .select("id, cardTransactionId")
+    .select("id, cardTransactionId, status")
     .eq("companyId", ctx.companyId)
     .in("id", entityIds);
-  const readableById = new Map(
-    (data ?? []).map((row) => [row.id, row.cardTransactionId])
-  );
+  if (error) {
+    return {
+      successful: [],
+      failed: mapped.map(({ rampId }) => ({
+        id: rampId,
+        message: error.message
+      }))
+    };
+  }
+  const rowsById = new Map((data ?? []).map((row) => [row.id, row]));
   const url = cardTransactionsDeepLinkUrl();
-  return mapped.map((m) => ({
-    id: m.rampId,
-    referenceId: readableById.get(m.entityId) ?? m.entityId,
-    deepLinkUrl: url
-  }));
+  const successful: SyncItem[] = [];
+  const failed: FailItem[] = [];
+  for (const item of mapped) {
+    const row = rowsById.get(item.entityId);
+    if (!row) {
+      failed.push({
+        id: item.rampId,
+        message: "Mapped Ramp card transaction no longer exists"
+      });
+      continue;
+    }
+    if (row.status === "Draft") {
+      const posted = await ctx.client.functions.invoke(
+        "post-card-transaction",
+        {
+          body: {
+            type: "post",
+            cardTransactionId: row.id,
+            userId: "system",
+            companyId: ctx.companyId
+          }
+        }
+      );
+      const observed = await ctx.client
+        .from("cardTransaction")
+        .select("status")
+        .eq("id", row.id)
+        .eq("companyId", ctx.companyId)
+        .maybeSingle();
+      if (observed.error || observed.data?.status !== "Posted") {
+        failed.push({
+          id: item.rampId,
+          message:
+            posted.error instanceof Error
+              ? posted.error.message
+              : (observed.error?.message ??
+                "Mapped Ramp card transaction is not observably Posted")
+        });
+        continue;
+      }
+    } else if (row.status !== "Posted") {
+      failed.push({
+        id: item.rampId,
+        message: `Mapped Ramp card transaction is ${row.status} in Carbon`
+      });
+      continue;
+    }
+    successful.push({
+      id: item.rampId,
+      referenceId: row.cardTransactionId,
+      deepLinkUrl: url
+    });
+  }
+  return { successful, failed };
 }
 
 export async function syncRampCardTransactions(
@@ -546,7 +547,9 @@ export async function syncRampCardTransactions(
     );
   }
 
-  successful.push(...(await reconfirmMapped(ctx, mapped)));
+  const reconfirmed = await reconfirmMapped(ctx, mapped);
+  successful.push(...reconfirmed.successful);
+  failed.push(...reconfirmed.failed);
 
   try {
     await confirmSyncs(client, companyId, {
@@ -565,8 +568,8 @@ export async function syncRampCardTransactions(
         : String(confirmError);
   }
 
-  result.created = successful.length - mapped.length;
-  result.reconfirmed = mapped.length;
+  result.created = successful.length - reconfirmed.successful.length;
+  result.reconfirmed = reconfirmed.successful.length;
   result.failed = failed.length;
   return result;
 }
@@ -658,7 +661,9 @@ export async function syncRampTransfers(
     );
   }
 
-  successful.push(...(await reconfirmMapped(ctx, mapped)));
+  const reconfirmed = await reconfirmMapped(ctx, mapped);
+  successful.push(...reconfirmed.successful);
+  failed.push(...reconfirmed.failed);
 
   try {
     await confirmSyncs(client, companyId, {
@@ -677,8 +682,8 @@ export async function syncRampTransfers(
         : String(confirmError);
   }
 
-  result.created = successful.length - mapped.length;
-  result.reconfirmed = mapped.length;
+  result.created = successful.length - reconfirmed.successful.length;
+  result.reconfirmed = reconfirmed.successful.length;
   result.failed = failed.length;
   return result;
 }
@@ -771,7 +776,9 @@ export async function syncRampCashbacks(
     );
   }
 
-  successful.push(...(await reconfirmMapped(ctx, mapped)));
+  const reconfirmed = await reconfirmMapped(ctx, mapped);
+  successful.push(...reconfirmed.successful);
+  failed.push(...reconfirmed.failed);
 
   try {
     await confirmSyncs(client, companyId, {
@@ -790,8 +797,8 @@ export async function syncRampCashbacks(
         : String(confirmError);
   }
 
-  result.created = successful.length - mapped.length;
-  result.reconfirmed = mapped.length;
+  result.created = successful.length - reconfirmed.successful.length;
+  result.reconfirmed = reconfirmed.successful.length;
   result.failed = failed.length;
   return result;
 }
