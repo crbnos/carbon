@@ -1346,3 +1346,34 @@ export async function getOrCreateJobOperationInspection(
     );
   }
 }
+
+// -------------------------------------------------------------
+// Issue disposition lock
+// -------------------------------------------------------------
+
+/**
+ * Serializes writes to an issue's disposition rows. Every writer that inserts
+ * `nonConformanceItemTrackedEntity` or `nonConformanceInspection` rows, or
+ * changes `nonConformanceItem.quantity`, takes this lock first inside its
+ * transaction — before touching any item row, so the lock order is always
+ * issue → item and writers cannot deadlock each other.
+ *
+ * It holds a `FOR NO KEY UPDATE` lock on the `nonConformance` row, which
+ * conflicts with other holders of the same lock but not with the FK checks of
+ * unrelated child inserts. Returns the issue status for the caller's
+ * locked-issue check; throws when the issue does not exist in the company.
+ */
+export async function lockIssueDispositions(
+  trx: Transaction<KyselyDatabase>,
+  args: { nonConformanceId: string; companyId: string }
+): Promise<{ status: string }> {
+  const issue = await trx
+    .selectFrom("nonConformance")
+    .select(["status"])
+    .where("id", "=", args.nonConformanceId)
+    .where("companyId", "=", args.companyId)
+    .forNoKeyUpdate()
+    .executeTakeFirst();
+  if (!issue) throw new Error("Issue not found");
+  return { status: issue.status };
+}

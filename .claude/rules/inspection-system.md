@@ -214,7 +214,8 @@ quality engine stays pure (verdicts only); orchestration lives in
 (`getInspectionOutcomeState` — buckets recomputed fresh from the DB per POST;
 `getSerialCompletionCandidates` / `postSerialCompletions` /
 `postBulkCompletion`; `createInspectionRejectionIssue` — the NCR block lifted
-from the retired reject route).
+from the retired reject route; it passes `inspectionId` to `createQualityIssue` so the
+inspection link is written with the disposition row under the issue lock).
 
 | Decision | Physical postings |
 |---|---|

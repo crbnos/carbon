@@ -51,13 +51,25 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
   an inline-editable quantity + disposition `Select` (no entity chips; "Move entities"
   stays gated on `links.length > 0`). The quantity saves through `item+/update.tsx`
-  (`field: "quantity"`, user-scoped client so the audit log records the actor), which
-  refuses rows with entity links (their quantity is the link sum) and any NCR with a
-  `nonConformanceInspection` link (the reject already wrote off the lot, and
+  (`field: "quantity"`) → `updateIssueItemQuantity` (`quality-disposition.server.ts`),
+  which refuses rows with entity links (their quantity is the link sum) and any NCR with
+  a `nonConformanceInspection` link (the reject already wrote off the lot, and
   `closeIssue` restores `row.quantity` on Use As Is / Rework). The write is a
   compare-and-set on `expectedQuantity` (the quantity the client last saw), so a stale
-  save, or one racing a tracked-entity link (link writers also change the row
-  quantity), matches no row and is refused. **Split** works for a non-tracked row as a pure quantity split
+  save matches no row and is refused. It is a Kysely write, so the audit actor comes
+  from `updatedBy` (the audit handler's fallback when `auth.uid()` is null).
+- **Issue disposition lock**: `lockIssueDispositions` (`@carbon/database/quality`)
+  takes `FOR NO KEY UPDATE` on the `nonConformance` row. Every writer that inserts
+  `nonConformanceItemTrackedEntity` / `nonConformanceInspection` rows or changes
+  `nonConformanceItem.quantity` takes it first, inside its transaction, before touching
+  any item row: the quantity edit, `assignEntitiesToIssueItem`, `splitIssueItem`, the
+  inspection association (`$id.association.new.tsx`), `new.tsx` job-operation
+  auto-link, the ERP inspection reject, sales-return escalation, and MES
+  `linkIssueDispositionContext` (which also writes the MES reject's inspection link, via
+  `createQualityIssue({ inspectionId })`). `linkEntitiesToIssueItemRow` is the shared
+  find-or-create-row + link + grow-quantity step. A new writer of those tables must take
+  the lock too, or the quantity edit's link / inspection checks can race it.
+- **Split** works for a non-tracked row as a pure quantity split
   (`splitIssueItem` creates a new `Pending` row for the split-off quantity and shrinks
   the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
   rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.
