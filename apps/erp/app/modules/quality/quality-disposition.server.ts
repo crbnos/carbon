@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { EPSILON } from "@carbon/utils";
+import { lockIssueDispositions } from "@carbon/database/quality";
+import { datetime, EPSILON, round } from "@carbon/utils";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
@@ -43,6 +44,25 @@ export async function assignEntitiesToIssueItem(args: {
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Lock the issue before reading any quantity, so a concurrent quantity
+      // edit or link writer on the same issue waits for this move.
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", nonConformanceItemId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) throw new Error("Source item association not found");
+      // Re-check the closed lock inside the transaction: the route check is a
+      // separate read and could race with a concurrent close.
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const source = await trx
         .selectFrom("nonConformanceItem")
         .select(["id", "nonConformanceId", "quantity"])
@@ -61,18 +81,6 @@ export async function assignEntitiesToIssueItem(args: {
 
       if (source.nonConformanceId !== target.nonConformanceId) {
         throw new Error("Cannot move entities between different NCRs");
-      }
-
-      // Re-check the lock inside the transaction: the route check is a separate
-      // read and could race with a concurrent close.
-      const parent = await trx
-        .selectFrom("nonConformance")
-        .select(["status"])
-        .where("id", "=", source.nonConformanceId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (isIssueLocked(parent?.status)) {
-        throw new Error("Cannot modify a closed issue. Reopen it first.");
       }
 
       const existingLinks = await trx
@@ -144,6 +152,204 @@ export async function assignEntitiesToIssueItem(args: {
       err instanceof Error ? err.message : "Failed to move entities"
     );
   }
+}
+
+// -------------------------------------------------------------
+// updateIssueItemQuantity
+// -------------------------------------------------------------
+// Writes:
+//   - nonConformanceItem.quantity (compare-and-set on expectedQuantity)
+//
+// Only link-less rows on issues without an inspection link are editable: a
+// tracked row's quantity is the sum of its links, and an inspection-originated
+// issue already wrote off the lot, which closeIssue restores as row.quantity
+// on Use As Is / Rework. The checks and the update run under the issue lock,
+// which every link and inspection writer also takes, so a link cannot land
+// between the check and the write.
+
+export async function updateIssueItemQuantity(args: {
+  id: string;
+  companyId: string;
+  userId: string;
+  quantity: number;
+  expectedQuantity: number;
+}): Promise<Result<{ id: string }>> {
+  const { id, companyId, userId, quantity, expectedQuantity } = args;
+  const db = getDatabaseClient();
+
+  try {
+    return await db.transaction().execute(async (trx) => {
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return errResult("Issue item not found");
+
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        return errResult("Cannot modify a closed issue. Reopen it first.");
+      }
+
+      const link = await trx
+        .selectFrom("nonConformanceItemTrackedEntity")
+        .select(["id"])
+        .where("nonConformanceItemId", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (link) {
+        return errResult(
+          "This row's quantity comes from its linked tracked entities. Split or move entities instead."
+        );
+      }
+
+      const inspection = await trx
+        .selectFrom("nonConformanceInspection")
+        .select(["id"])
+        .where("nonConformanceId", "=", owner.nonConformanceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (inspection) {
+        return errResult(
+          "Quantity is set by the rejected inspection lot and cannot be edited."
+        );
+      }
+
+      // Compare-and-set: a stale save (an older request finishing after a
+      // newer one) matches no row instead of overwriting it.
+      const updated = await trx
+        .updateTable("nonConformanceItem")
+        .set({
+          quantity: round(quantity),
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .where("quantity", "=", expectedQuantity)
+        .returning(["id"])
+        .executeTakeFirst();
+      if (!updated) {
+        return errResult(
+          "This quantity changed since the page loaded. Refresh and try again."
+        );
+      }
+      return { data: { id: updated.id }, error: null };
+    });
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to update quantity"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// linkEntitiesToIssueItemRow
+// -------------------------------------------------------------
+// Writes:
+//   - nonConformanceItem (find-or-create the item's row, grow its quantity)
+//   - nonConformanceItemTrackedEntity (one link per entity not yet on a row)
+//
+// The caller must hold lockIssueDispositions for the issue. Entities already
+// linked to any row of the issue are skipped (an entity sits on at most one
+// disposition row per issue). The row quantity grows by the linked entities'
+// quantities, so it stays equal to the link sum. With no entities at all, a
+// row still at 0 takes `fallbackQuantity` (e.g. an untracked inspection lot
+// size); entities that are all already linked change nothing.
+
+export async function linkEntitiesToIssueItemRow(
+  trx: KyselyTx,
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    itemId: string;
+    entities: { id: string; quantity: number }[];
+    fallbackQuantity?: number;
+  }
+): Promise<void> {
+  const { nonConformanceId, companyId, userId, itemId, entities } = args;
+  const nowIso = datetime.timestamp();
+
+  let row = await trx
+    .selectFrom("nonConformanceItem")
+    .select(["id", "quantity"])
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!row) {
+    row = await trx
+      .insertInto("nonConformanceItem")
+      .values({
+        nonConformanceId,
+        itemId,
+        quantity: 0,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id", "quantity"])
+      .executeTakeFirstOrThrow();
+  }
+  const currentQty = Number(row.quantity ?? 0);
+
+  if (entities.length === 0) {
+    const fallback = args.fallbackQuantity ?? 0;
+    if (currentQty === 0 && fallback > 0) {
+      await trx
+        .updateTable("nonConformanceItem")
+        .set({ quantity: fallback, updatedBy: userId, updatedAt: nowIso })
+        .where("id", "=", row.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return;
+  }
+
+  const alreadyLinked = await trx
+    .selectFrom("nonConformanceItemTrackedEntity")
+    .select(["trackedEntityId"])
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where(
+      "trackedEntityId",
+      "in",
+      entities.map((e) => e.id)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const alreadyLinkedIds = new Set(alreadyLinked.map((l) => l.trackedEntityId));
+  const toLink = entities.filter((e) => !alreadyLinkedIds.has(e.id));
+  if (toLink.length === 0) return;
+
+  await trx
+    .insertInto("nonConformanceItemTrackedEntity")
+    .values(
+      toLink.map((e) => ({
+        nonConformanceItemId: row.id,
+        nonConformanceId,
+        trackedEntityId: e.id,
+        quantity: e.quantity,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  const addedQty = toLink.reduce((acc, e) => acc + e.quantity, 0);
+  await trx
+    .updateTable("nonConformanceItem")
+    .set({
+      quantity: currentQty + addedQty,
+      updatedBy: userId,
+      updatedAt: nowIso
+    })
+    .where("id", "=", row.id)
+    .where("companyId", "=", companyId)
+    .execute();
 }
 
 // -------------------------------------------------------------
@@ -368,6 +574,25 @@ export async function splitIssueItem(args: {
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Lock the issue before reading the row quantity, so a concurrent
+      // quantity edit or link writer on the same issue waits for this split.
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) throw new Error("Item association not found");
+      // Re-check inside the transaction: the route lock check is a separate read
+      // and could race with a concurrent close.
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const item = await trx
         .selectFrom("nonConformanceItem")
         .select(["id", "nonConformanceId", "itemId", "quantity"])
@@ -378,15 +603,10 @@ export async function splitIssueItem(args: {
 
       const issue = await trx
         .selectFrom("nonConformance")
-        .select(["nonConformanceId", "status", "locationId"])
+        .select(["nonConformanceId", "locationId"])
         .where("id", "=", item.nonConformanceId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
-      // Re-check inside the transaction: the route lock check is a separate read
-      // and could race with a concurrent close.
-      if (isIssueLocked(issue?.status)) {
-        throw new Error("Cannot modify a closed issue. Reopen it first.");
-      }
       const readableNc = issue?.nonConformanceId ?? item.nonConformanceId;
       const locationId = issue?.locationId ?? null;
 

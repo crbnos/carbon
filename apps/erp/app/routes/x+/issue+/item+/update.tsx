@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { disposition } from "~/modules/quality/quality.models";
+import { updateIssueItemQuantity } from "~/modules/quality/quality-disposition.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -34,6 +35,11 @@ export async function action({ request }: ActionFunctionArgs) {
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
+  // Without this, an update against a missing row matches nothing and still
+  // reports success.
+  if (parent.error || !parent.data) {
+    return { error: { message: "Issue item not found" }, data: null };
+  }
   const lockedError = requireUnlockedBulk({
     statuses: [(parent.data as any)?.nonConformance?.status ?? null],
     checkFn: isIssueLocked,
@@ -60,6 +66,39 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedAt: new Date().toISOString()
         })
         .eq("id", id);
+    case "quantity": {
+      const quantity = Number(value);
+      if (
+        value === null ||
+        value.trim() === "" ||
+        !Number.isFinite(quantity) ||
+        quantity < 0
+      ) {
+        return {
+          error: { message: "Quantity must be zero or more" },
+          data: null
+        };
+      }
+      const expected = formData.get("expectedQuantity");
+      const expectedQuantity = Number(expected);
+      if (
+        typeof expected !== "string" ||
+        expected.trim() === "" ||
+        !Number.isFinite(expectedQuantity)
+      ) {
+        return {
+          error: { message: "Invalid expected quantity" },
+          data: null
+        };
+      }
+      return await updateIssueItemQuantity({
+        id,
+        companyId,
+        userId,
+        quantity,
+        expectedQuantity
+      });
+    }
     default:
       return {
         error: { message: `Invalid field: ${field}` },

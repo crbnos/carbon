@@ -18,6 +18,7 @@ Non-conformances (issues/NCRs), corrective/preventive actions (CAPAs), gauge man
 - MUST check `isIssueLocked(status)` before allowing edits — Closed issues are locked.
 - MUST use `deleteIssueAssociation` with the `type` parameter for managing NCR links — it handles 10+ association types via `nonConformanceAssociationType`.
 - MUST scope all queries by `companyId`.
+- MUST take `lockIssueDispositions` (`@carbon/database/quality`) first, inside the transaction, before inserting `nonConformanceItemTrackedEntity` / `nonConformanceInspection` rows or changing `nonConformanceItem.quantity` — the inline quantity edit's link and inspection checks rely on every such writer holding it. See `.claude/rules/issue-module.md`.
 - MUST use `saveInspectionDocumentAtomic` RPC for inspection document saves — it handles balloons and features atomically.
 
 ### Ask First
