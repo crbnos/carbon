@@ -1465,8 +1465,13 @@ function stubCardClient(args: {
     type: string;
     supplierId: string | null;
   }>;
-}): { client: SupabaseClient<Database>; queries: string[] } {
+}): {
+  client: SupabaseClient<Database>;
+  queries: string[];
+  ranges: Array<[number, number]>;
+} {
   const queries: string[] = [];
+  const ranges: Array<[number, number]> = [];
   const client = {
     from(table: string) {
       if (table === "journalLine") {
@@ -1475,13 +1480,25 @@ function stubCardClient(args: {
             eq: () => ({
               eq: () => ({
                 in: (_column: string, journalIds: string[]) => ({
-                  not: async () => {
+                  not: () => {
                     queries.push(`journalLine:${journalIds.join(",")}`);
+                    const matching = args.lines.filter((line) =>
+                      journalIds.includes(line.journalId)
+                    );
+                    const page = (from = 0, to = 999) => ({
+                      data: matching.slice(from, to + 1),
+                      error: null,
+                      count: matching.length
+                    });
                     return {
-                      data: args.lines.filter((line) =>
-                        journalIds.includes(line.journalId)
-                      ),
-                      error: null
+                      range: async (from: number, to: number) => {
+                        ranges.push([from, to]);
+                        return page(from, to);
+                      },
+                      then: (
+                        resolve: (value: ReturnType<typeof page>) => unknown,
+                        reject: (reason: unknown) => unknown
+                      ) => Promise.resolve(page()).then(resolve, reject)
                     };
                   }
                 })
@@ -1512,7 +1529,7 @@ function stubCardClient(args: {
       throw new Error(`unexpected table ${table}`);
     }
   } as unknown as SupabaseClient<Database>;
-  return { client, queries };
+  return { client, queries, ranges };
 }
 
 describe("loadCardTransactionPolicyInputs", () => {
@@ -1568,6 +1585,44 @@ describe("loadCardTransactionPolicyInputs", () => {
     expect(queries).toEqual([
       "journalLine:je_post,je_other",
       "cardTransaction.journalId:je_post,je_other"
+    ]);
+  });
+
+  it("loads card-document links beyond the PostgREST row cap", async () => {
+    const padding = Array.from({ length: 1000 }, (_, index) => ({
+      journalId: "je_padding",
+      documentId: `ct_padding_${index}`
+    }));
+    const { client, ranges } = stubCardClient({
+      lines: [...padding, { journalId: "je_tail", documentId: "ct_tail" }],
+      cardTransactions: [
+        {
+          id: "ct_padding_0",
+          journalId: "je_padding",
+          type: "Charge",
+          supplierId: "sup_padding"
+        },
+        {
+          id: "ct_tail",
+          journalId: null,
+          type: "Charge",
+          supplierId: "sup_tail"
+        }
+      ]
+    });
+
+    const result = await loadCardTransactionPolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_padding", "je_tail"]
+    });
+
+    expect(result.get("je_tail")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    expect(ranges).toEqual([
+      [0, 999],
+      [1000, 1999]
     ]);
   });
 

@@ -16,6 +16,10 @@ import {
   rampKeysetFilter
 } from "./ramp-sync-cursor";
 import {
+  loadRampPurchaseInvoiceLines,
+  loadRampPurchaseOrderLines
+} from "./ramp-sync-outbound-lines";
+import {
   getRampCurrencyDecimals,
   type RampSyncContext
 } from "./ramp-sync-shared";
@@ -213,15 +217,11 @@ export async function syncRampOutbound(
         // `currency: po.currencyCode` (the PO's transaction currency), which
         // is the currency `supplierUnitPrice` is denominated in. Sending base
         // amounts under a foreign-currency label mis-states every non-base PO.
-        const lines = await client
-          .from("purchaseOrderLine")
-          .select(
-            "id, purchaseOrderId, description, purchaseQuantity, supplierUnitPrice, purchaseOrderLineType, sortOrder"
-          )
-          .eq("companyId", companyId)
-          .in("purchaseOrderId", poIds)
-          .neq("purchaseOrderLineType", "Comment")
-          .order("sortOrder", { ascending: true });
+        const lines = await loadRampPurchaseOrderLines(
+          client,
+          companyId,
+          poIds
+        );
         const linesByPo = new Map<
           string,
           Array<{
@@ -231,7 +231,7 @@ export async function syncRampOutbound(
             unitPrice: number | null;
           }>
         >();
-        for (const line of lines.data ?? []) {
+        for (const line of lines) {
           const list = linesByPo.get(line.purchaseOrderId) ?? [];
           list.push({
             id: line.id,
@@ -381,17 +381,16 @@ export async function syncRampOutbound(
         // (supplierUnitPrice·qty ÷ rate + shipping ÷ rate + tax ÷ rate). It
         // is converted back to the invoice's document currency per candidate
         // below, since Ramp is told `invoice_currency: invoice.currencyCode`.
-        const invLines = await client
-          .from("purchaseInvoiceLine")
-          .select("invoiceId, description, totalAmount, sortOrder")
-          .eq("companyId", companyId)
-          .in("invoiceId", invoiceIds)
-          .order("sortOrder", { ascending: true });
+        const invLines = await loadRampPurchaseInvoiceLines(
+          client,
+          companyId,
+          invoiceIds
+        );
         const linesByInvoice = new Map<
           string,
           Array<{ description: string | null; amount: number }>
         >();
-        for (const line of invLines.data ?? []) {
+        for (const line of invLines) {
           const list = linesByInvoice.get(line.invoiceId) ?? [];
           list.push({
             description: line.description,

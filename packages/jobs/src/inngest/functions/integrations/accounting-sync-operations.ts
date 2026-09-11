@@ -26,7 +26,7 @@
  * claim time for the daily-consolidation cron instead of being pushed
  * individually.
  */
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllFromTable } from "@carbon/database";
 import {
   type AccountingEntityType,
   type AccountingProvider,
@@ -320,13 +320,16 @@ export async function loadCardTransactionPolicyInputs(
   const result = new Map<string, CardTransactionPolicyInput>();
   if (args.journalIds.length === 0) return result;
 
-  const lines = await client
-    .from("journalLine")
-    .select("journalId, documentId")
-    .eq("companyId", args.companyId)
-    .eq("documentType", "Card Transaction")
-    .in("journalId", args.journalIds)
-    .not("documentId", "is", null);
+  const lines = await fetchAllFromTable<{
+    journalId: string;
+    documentId: string | null;
+  }>(client, "journalLine", "journalId, documentId", (query) =>
+    query
+      .eq("companyId", args.companyId)
+      .eq("documentType", "Card Transaction")
+      .in("journalId", args.journalIds)
+      .not("documentId", "is", null)
+  );
   if (lines.error) {
     throw new Error(`Failed to load journal lines: ${lines.error.message}`);
   }
