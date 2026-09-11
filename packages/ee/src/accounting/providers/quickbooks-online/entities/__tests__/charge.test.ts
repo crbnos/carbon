@@ -313,12 +313,12 @@ describe("QboChargeSyncer.shouldSync", () => {
     expect(push(charge({ status: "Draft" }))).toContain("must be posted");
   });
 
-  it("skips a void truthfully (not yet propagated) rather than reporting success", () => {
+  it("does not create a new Purchase for a void (mapped voids use the lifecycle path)", () => {
     expect(push(charge({ status: "Voided" }), true)).toContain(
-      "nothing to push"
+      "must be posted"
     );
     expect(push(charge({ status: "Voided" }), false)).toContain(
-      "not yet propagated"
+      "must be posted"
     );
   });
 

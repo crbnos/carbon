@@ -140,6 +140,13 @@ export const CHARGE_CREDIT_PROVIDERS: ReadonlySet<string> = new Set([
   "rillet"
 ]);
 
+/** Native card-document deletion is implemented and checked by each adapter. */
+export const CHARGE_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set([
+  "xero",
+  "quickbooks",
+  "rillet"
+]);
+
 /** Whether this card transaction's journal is replaced by a synced charge. */
 export function isChargeBackedCardTransaction(
   cardTransaction: CardTransactionPolicyInput | null | undefined,

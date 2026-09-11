@@ -1,3 +1,7 @@
+import {
+  type CardChargeSource,
+  loadCardChargeSources
+} from "../../../core/card-charge-source";
 import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   type CardTransactionCostingResult,
@@ -5,9 +9,7 @@ import {
   loadCardTransactionCostingLines,
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
-import { createMappingService } from "../../../core/external-mapping";
 import {
-  type CardTransactionType,
   CHARGE_CREDIT_PROVIDERS,
   JournalEntrySyncError
 } from "../../../core/posting";
@@ -55,20 +57,7 @@ import {
  */
 
 /** The Carbon `cardTransaction` header as the syncer reads it. */
-export type CardCharge = {
-  id: string;
-  companyId: string;
-  /** Readable id (`CARD-…`). */
-  cardTransactionId: string;
-  type: CardTransactionType;
-  status: "Draft" | "Posted" | "Voided";
-  supplierId: string | null;
-  /** The supplier's Rillet vendor id, when already mapped. */
-  supplierExternalId: string | null;
-  merchantName: string | null;
-  memo: string | null;
-  updatedAt: string | null;
-};
+export type CardCharge = CardChargeSource;
 
 /** Costing lines are the shared shape; aliased so the mapper's tests read against a stable name. */
 export type ChargePostingJournalLine = CostingLine;
@@ -248,63 +237,11 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
   private async fetchChargesByIds(
     ids: string[]
   ): Promise<Map<string, CardCharge>> {
-    const result = new Map<string, CardCharge>();
-    if (ids.length === 0) return result;
-
-    const rows = await this.database
-      .selectFrom("cardTransaction")
-      .select([
-        "id",
-        "companyId",
-        "cardTransactionId",
-        "type",
-        "status",
-        "supplierId",
-        "merchantName",
-        "memo",
-        "updatedAt"
-      ])
-      .where("cardTransaction.id", "in", ids)
-      .where("cardTransaction.companyId", "=", this.companyId)
-      .execute();
-
-    const supplierIds = [
-      ...new Set(
-        rows
-          .map((row) => row.supplierId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    const supplierExternalIds = new Map<string, string | null>();
-    const mappingService = createMappingService(this.database, this.companyId);
-    for (const supplierId of supplierIds) {
-      supplierExternalIds.set(
-        supplierId,
-        await mappingService.getExternalId(
-          "vendor",
-          supplierId,
-          this.provider.id
-        )
-      );
-    }
-
-    for (const row of rows) {
-      result.set(row.id, {
-        id: row.id,
-        companyId: row.companyId,
-        cardTransactionId: row.cardTransactionId,
-        type: row.type as CardTransactionType,
-        status: row.status as CardCharge["status"],
-        supplierId: row.supplierId ?? null,
-        supplierExternalId: row.supplierId
-          ? (supplierExternalIds.get(row.supplierId) ?? null)
-          : null,
-        merchantName: row.merchantName ?? null,
-        memo: row.memo ?? null,
-        updatedAt: row.updatedAt ? String(row.updatedAt) : null
-      });
-    }
-    return result;
+    return loadCardChargeSources(this.database, {
+      ids,
+      companyId: this.companyId,
+      integration: this.provider.id
+    });
   }
 
   // =================================================================

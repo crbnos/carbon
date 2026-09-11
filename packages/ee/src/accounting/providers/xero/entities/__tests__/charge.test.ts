@@ -98,8 +98,8 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
       Type: "SPEND",
       Contact: { ContactID: "contact-uuid" },
       BankAccount: { Code: "2100" },
-      Date: "2026-09-07",
-      Reference: "CARD-2026-09-0001",
+      Date: "2026-09-08",
+      Reference: "CARD-2026-09-0001 [carbon:company-1:ct_1]",
       Status: "AUTHORISED",
       LineAmountTypes: "NoTax",
       CurrencyCode: "USD",
@@ -375,8 +375,10 @@ describe("XeroChargeSyncer transport", () => {
         requests.push({
           method,
           url,
-          body: JSON.parse(String(init?.body))
+          body: init?.body ? JSON.parse(String(init.body)) : null
         });
+        if (method === "GET")
+          return { error: false, data: { BankTransactions: [] } };
         return {
           error: false,
           data: { BankTransactions: [{ BankTransactionID: "bt-remote" }] }
@@ -394,6 +396,11 @@ describe("XeroChargeSyncer transport", () => {
     );
     expect(requests).toEqual([
       {
+        method: "GET",
+        url: `/BankTransactions?where=${encodeURIComponent(`Reference==${JSON.stringify(payload.Reference)}`)}&page=1`,
+        body: null
+      },
+      {
         method: "PUT",
         url: "/BankTransactions?unitdp=4",
         body: { BankTransactions: [JSON.parse(JSON.stringify(payload))] }
@@ -408,9 +415,22 @@ describe("XeroChargeSyncer transport", () => {
         requests.push({
           method,
           url,
-          body: JSON.parse(String(init?.body))
+          body: init?.body ? JSON.parse(String(init.body)) : null
         });
-        return { error: false, data: { BankTransactions: [] } };
+        return {
+          error: false,
+          data: {
+            BankTransactions: [
+              {
+                BankTransactionID: "bt-remote",
+                Type: "SPEND",
+                BankAccount: { Code: "card" },
+                LineItems: [],
+                Status: method === "GET" ? "AUTHORISED" : "DELETED"
+              }
+            ]
+          }
+        };
       },
       mapping: { externalId: "bt-remote", metadata: { retained: true } },
       local: { status: "Voided" }
@@ -422,12 +442,19 @@ describe("XeroChargeSyncer transport", () => {
       remoteId: "bt-remote"
     });
     expect(requests).toEqual([
+      { method: "GET", url: "/BankTransactions/bt-remote", body: null },
       {
         method: "POST",
-        url: "/BankTransactions",
+        url: "/BankTransactions/bt-remote",
         body: {
           BankTransactions: [
-            { BankTransactionID: "bt-remote", Status: "DELETED" }
+            {
+              BankTransactionID: "bt-remote",
+              Type: "SPEND",
+              BankAccount: { Code: "card" },
+              LineItems: [],
+              Status: "DELETED"
+            }
           ]
         }
       }
@@ -437,6 +464,18 @@ describe("XeroChargeSyncer transport", () => {
       externalId: "bt-remote",
       metadata: { retained: true, voided: true }
     });
+  });
+
+  it("never tombstones an unconfirmed Xero deletion", async () => {
+    const syncer = makeSyncer({
+      local: { status: "Voided" },
+      mapping: { externalId: "bt-remote" },
+      request: async () => ({ error: false, data: { BankTransactions: [] } })
+    });
+    expect(await syncer.pushToAccounting("ct_1")).toMatchObject({
+      status: "error"
+    });
+    expect(linked).toHaveLength(0);
   });
 
   it("skips repeat deletes after the durable marker", async () => {
@@ -452,6 +491,57 @@ describe("XeroChargeSyncer transport", () => {
       action: "deleted"
     });
     expect(request).not.toHaveBeenCalled();
+  });
+
+  it("recovers an accepted create on retry without another PUT after the key expires", async () => {
+    const payload = mapCardTransactionToXeroBankTransaction({
+      charge: charge(),
+      costing: costing(),
+      ...base
+    });
+    const request = vi.fn(async (_method: string) => ({
+      error: false,
+      data: {
+        BankTransactions: [
+          {
+            BankTransactionID: "remote-original",
+            Reference: payload.Reference,
+            Status: "AUTHORISED"
+          }
+        ]
+      }
+    }));
+    await expect(
+      makeSyncer({ request }).upsertRemote(payload, "ct_1")
+    ).resolves.toBe("remote-original");
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls[0]?.[0]).toBe("GET");
+  });
+
+  it("refuses to create when recovery finds multiple transactions or the lookup fails", async () => {
+    const payload = mapCardTransactionToXeroBankTransaction({
+      charge: charge(),
+      costing: costing(),
+      ...base
+    });
+    for (const response of [
+      {
+        error: false,
+        data: {
+          BankTransactions: [
+            { BankTransactionID: "a" },
+            { BankTransactionID: "b" }
+          ]
+        }
+      },
+      { error: true, code: 503, message: "Unavailable", data: null }
+    ]) {
+      const request = vi.fn(async () => response);
+      await expect(
+        makeSyncer({ request }).upsertRemote(payload, "ct_1")
+      ).rejects.toThrow();
+      expect(request).toHaveBeenCalledTimes(1);
+    }
   });
 
   it("keeps a pushed Posted charge immutable (idempotent skip)", async () => {

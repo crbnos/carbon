@@ -1,5 +1,11 @@
+import { createHash } from "node:crypto";
 import type { KyselyTx } from "@carbon/database/client";
 import { loadAccountCodesById } from "../../../core/account-mapping";
+import {
+  type CardChargeSource,
+  loadCardChargeSources
+} from "../../../core/card-charge-source";
+import { ChargeSyncerBase } from "../../../core/charge-syncer";
 import {
   buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
@@ -14,21 +20,18 @@ import {
   loadCardTransactionCostingLines,
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
-import { createMappingService } from "../../../core/external-mapping";
 import {
-  type CardTransactionType,
   CHARGE_CREDIT_PROVIDERS,
   JournalEntrySyncError,
   type PostingSyncSettings,
   resolvePostingSyncSettings
 } from "../../../core/posting";
-import {
-  BaseEntitySyncer,
-  type BatchSyncResult,
-  type ShouldSyncContext,
-  type SyncResult
+import type {
+  BatchSyncResult,
+  ShouldSyncContext,
+  SyncResult
 } from "../../../core/types";
-import { throwXeroApiError, withTriggersDisabled } from "../../../core/utils";
+import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import { parseXeroTrackingTarget, type XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
@@ -65,20 +68,7 @@ import type { XeroJournalDimensionArgs } from "./journal-entry";
  */
 
 /** The Carbon `cardTransaction` header as the syncer reads it. */
-export type XeroCardCharge = {
-  id: string;
-  companyId: string;
-  /** Readable id (`CARD-…`). */
-  cardTransactionId: string;
-  type: CardTransactionType;
-  status: "Draft" | "Posted" | "Voided";
-  supplierId: string | null;
-  /** The supplier's Xero ContactID, when already mapped. */
-  supplierExternalId: string | null;
-  merchantName: string | null;
-  memo: string | null;
-  updatedAt: string | null;
-};
+export type XeroCardCharge = CardChargeSource;
 
 /** Costing lines are the shared shape; aliased so the mapper's tests read against a stable name. */
 export type XeroChargePostingJournalLine = CostingLine;
@@ -236,8 +226,8 @@ export function mapCardTransactionToXeroBankTransaction(args: {
     Type: isCredit ? "RECEIVE" : "SPEND",
     Contact: { ContactID: args.vendorRemoteId },
     BankAccount: { Code: cardAccountCode },
-    Date: costing.transactionDate,
-    Reference: charge.cardTransactionId,
+    Date: costing.postingDate,
+    Reference: `${charge.cardTransactionId} [carbon:${charge.companyId}:${charge.id}]`,
     Status: "AUTHORISED",
     // Tax-neutral replay: the card posting folds tax into cost, so the lines
     // already embed it; let Xero total the NONE-taxed lines.
@@ -253,7 +243,7 @@ export function mapCardTransactionToXeroBankTransaction(args: {
   };
 }
 
-export class XeroChargeSyncer extends BaseEntitySyncer<
+export class XeroChargeSyncer extends ChargeSyncerBase<
   XeroCardCharge,
   Xero.BankTransaction,
   XeroBankTransactionWriteOmit
@@ -411,63 +401,11 @@ export class XeroChargeSyncer extends BaseEntitySyncer<
   private async fetchChargesByIds(
     ids: string[]
   ): Promise<Map<string, XeroCardCharge>> {
-    const result = new Map<string, XeroCardCharge>();
-    if (ids.length === 0) return result;
-
-    const rows = await this.database
-      .selectFrom("cardTransaction")
-      .select([
-        "id",
-        "companyId",
-        "cardTransactionId",
-        "type",
-        "status",
-        "supplierId",
-        "merchantName",
-        "memo",
-        "updatedAt"
-      ])
-      .where("cardTransaction.id", "in", ids)
-      .where("cardTransaction.companyId", "=", this.companyId)
-      .execute();
-
-    const supplierIds = [
-      ...new Set(
-        rows
-          .map((row) => row.supplierId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    const supplierExternalIds = new Map<string, string | null>();
-    const mappingService = createMappingService(this.database, this.companyId);
-    for (const supplierId of supplierIds) {
-      supplierExternalIds.set(
-        supplierId,
-        await mappingService.getExternalId(
-          "vendor",
-          supplierId,
-          this.provider.id
-        )
-      );
-    }
-
-    for (const row of rows) {
-      result.set(row.id, {
-        id: row.id,
-        companyId: row.companyId,
-        cardTransactionId: row.cardTransactionId,
-        type: row.type as CardTransactionType,
-        status: row.status as XeroCardCharge["status"],
-        supplierId: row.supplierId ?? null,
-        supplierExternalId: row.supplierId
-          ? (supplierExternalIds.get(row.supplierId) ?? null)
-          : null,
-        merchantName: row.merchantName ?? null,
-        memo: row.memo ?? null,
-        updatedAt: row.updatedAt ? String(row.updatedAt) : null
-      });
-    }
-    return result;
+    return loadCardChargeSources(this.database, {
+      ids,
+      companyId: this.companyId,
+      integration: this.provider.id
+    });
   }
 
   // =================================================================
@@ -640,12 +578,46 @@ export class XeroChargeSyncer extends BaseEntitySyncer<
 
   protected async upsertRemote(
     data: XeroBankTransactionWrite,
-    _localId: string
+    localId: string
   ): Promise<string> {
+    // Xero's key expires after six minutes. The exact Carbon reference is the
+    // durable recovery path when a create succeeded but its mapping did not.
+    // https://developer.xero.com/documentation/guides/idempotent-requests/idempotency/
+    const existing = await this.xeroProvider.request<{
+      BankTransactions: Xero.BankTransaction[];
+    }>(
+      "GET",
+      `/BankTransactions?where=${encodeURIComponent(`Reference==${JSON.stringify(data.Reference)}`)}&page=1`
+    );
+    if (existing.error) throwXeroApiError("recover card charge", existing);
+    if (!Array.isArray(existing.data?.BankTransactions))
+      throw new Error("Xero card charge lookup returned no transaction list");
+    const matches = existing.data.BankTransactions;
+    if (matches.length > 1)
+      throw new Error(
+        "Multiple Xero card transactions match this Carbon charge; resolve duplicates before retrying"
+      );
+    const match = matches[0];
+    if (match) {
+      if (
+        match.Reference !== data.Reference ||
+        match.Status !== "AUTHORISED" ||
+        !match.BankTransactionID
+      )
+        throw new Error(
+          "Xero card charge recovery found a deleted or inconsistent transaction"
+        );
+      return match.BankTransactionID;
+    }
     const result = await this.xeroProvider.request<{
       BankTransactions: Xero.BankTransaction[];
     }>("PUT", "/BankTransactions?unitdp=4", {
-      body: JSON.stringify({ BankTransactions: [data] })
+      body: JSON.stringify({ BankTransactions: [data] }),
+      headers: {
+        "Idempotency-Key": createHash("sha256")
+          .update(`${this.companyId}:charge:${localId}`)
+          .digest("hex")
+      }
     });
 
     if (result.error) {
@@ -678,173 +650,46 @@ export class XeroChargeSyncer extends BaseEntitySyncer<
    * Xero has no DELETE verb for bank transactions: POSTing the transaction
    * with Status DELETED is the delete (spend/receive money only). Xero
    * refuses once the transaction is reconciled, and that refusal surfaces as
-   * the operation's failure rather than a silent tombstone. VERIFY: confirm
-   * the minimal `{ BankTransactionID, Status: "DELETED" }` body against the
-   * Xero sandbox before relying on this in production.
+   * the operation's failure rather than a silent tombstone. The read/update
+   * shape follows Xero's official SDK example; live sandbox verification is
+   * still required for reconciled transactions and locked accounting periods.
    */
-  private async deleteRemote(remoteId: string): Promise<void> {
+  protected async deleteRemote(remoteId: string): Promise<void> {
+    // Follow Xero's official SDK example: read the transaction, remove
+    // response-only timestamps/contact, then update that specific resource.
+    // https://github.com/XeroAPI/xero-node-oauth2-app/blob/master/src/app.ts
+    const path = `/BankTransactions/${encodeURIComponent(remoteId)}`;
+    const current = await this.xeroProvider.request<{
+      BankTransactions: Xero.BankTransaction[];
+    }>("GET", path);
+    if (current.error)
+      throwXeroApiError("read bank transaction before delete", current);
+    const remote = current.data?.BankTransactions?.[0];
+    if (remote?.BankTransactionID !== remoteId)
+      throw new Error(
+        "Xero did not return the card transaction; deletion is unconfirmed"
+      );
+    if (remote.Status === "DELETED") return;
+    const {
+      UpdatedDateUTC: _updatedAt,
+      Contact: _contact,
+      ...payload
+    } = remote;
     const result = await this.xeroProvider.request<{
       BankTransactions: Xero.BankTransaction[];
-    }>("POST", "/BankTransactions", {
+    }>("POST", path, {
       body: JSON.stringify({
-        BankTransactions: [{ BankTransactionID: remoteId, Status: "DELETED" }]
+        BankTransactions: [{ ...payload, Status: "DELETED" }]
       })
     });
-
-    if (result.error) {
-      throwXeroApiError("delete bank transaction", result);
-    }
+    if (result.error) throwXeroApiError("delete bank transaction", result);
+    const deleted = result.data?.BankTransactions?.[0];
+    if (deleted?.BankTransactionID !== remoteId || deleted.Status !== "DELETED")
+      throw new Error("Xero did not confirm the card transaction was deleted");
   }
 
   // =================================================================
-  // 9. PUSH WORKFLOW (void propagation + structured pre-flight failures)
-  // =================================================================
-
-  /**
-   * Reimplements the base push workflow, as the manual-journal syncer does,
-   * for three things the base cannot express: a Voided charge with a mapping
-   * is DELETED remotely and its mapping tombstoned (`metadata.voided`) so a
-   * retry never deletes twice; a mapped Posted charge is a hard idempotent
-   * skip (the base's lastSyncedAt bailout would re-push on any header edit);
-   * and pre-flight failures reach the caller as structured
-   * JournalEntrySyncFailure objects on `SyncResult.error`.
-   */
-  async pushToAccounting(entityId: string): Promise<SyncResult> {
-    if (!this.config.enabled) {
-      return {
-        status: "skipped",
-        action: "none",
-        localId: entityId,
-        error: "Sync disabled in config"
-      };
-    }
-
-    try {
-      const existingMapping = await this.mappingService.getByEntity(
-        this.entityType,
-        entityId,
-        this.provider.id
-      );
-
-      const localEntity = await this.fetchLocal(entityId);
-      if (!localEntity) {
-        return {
-          status: "error",
-          action: "none",
-          localId: entityId,
-          error: `Entity ${entityId} not found in Carbon`
-        };
-      }
-
-      if (existingMapping?.externalId && localEntity.status === "Voided") {
-        if (existingMapping.metadata?.voided !== true) {
-          await this.deleteRemote(existingMapping.externalId);
-          await withTriggersDisabled(this.database, async (tx) => {
-            await createMappingService(tx, this.companyId).link(
-              this.entityType,
-              entityId,
-              this.provider.id,
-              existingMapping.externalId,
-              { metadata: { ...existingMapping.metadata, voided: true } }
-            );
-          });
-        }
-        return {
-          status: "success",
-          action: "deleted",
-          localId: entityId,
-          remoteId: existingMapping.externalId
-        };
-      }
-
-      if (existingMapping?.externalId) {
-        return {
-          status: "skipped",
-          action: "none",
-          localId: entityId,
-          remoteId: existingMapping.externalId,
-          error: "Card charge already pushed to Xero — skipping (idempotent)"
-        };
-      }
-
-      const shouldSyncResult = await this.shouldSync({
-        direction: "push",
-        localEntity,
-        isFirstSync: true,
-        entityId
-      });
-
-      if (shouldSyncResult !== true) {
-        return {
-          status: "skipped",
-          action: "none",
-          localId: entityId,
-          error:
-            typeof shouldSyncResult === "string"
-              ? shouldSyncResult
-              : "Entity not eligible for sync"
-        };
-      }
-
-      const remotePayload = await this.mapToRemote(localEntity);
-      const remoteId = await this.upsertRemote(remotePayload, entityId);
-
-      await withTriggersDisabled(this.database, async (tx) => {
-        await this.linkEntities(tx, entityId, remoteId);
-      });
-
-      return {
-        status: "success",
-        action: "created",
-        localId: entityId,
-        remoteId
-      };
-    } catch (err) {
-      if (err instanceof JournalEntrySyncError) {
-        console.error("[XeroChargeSyncer] pre-flight failure", {
-          entityId,
-          ...err.failure
-        });
-        return {
-          status: "error",
-          action: "none",
-          localId: entityId,
-          error: err.failure
-        };
-      }
-
-      console.error("[XeroChargeSyncer] push failed", { entityId, err });
-      return {
-        status: "error",
-        action: "none",
-        localId: entityId,
-        error: err instanceof Error ? err.message : String(err)
-      };
-    }
-  }
-
-  /**
-   * Batch push composes the overridden single push so the void path and the
-   * structured failures survive the batch path too. Charges arrive in
-   * claim-sized batches (≤20), so a sequential loop costs nothing.
-   */
-  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
-    const results: SyncResult[] = [];
-
-    for (const entityId of entityIds) {
-      results.push(await this.pushToAccounting(entityId));
-    }
-
-    return {
-      results,
-      successCount: results.filter((r) => r.status === "success").length,
-      errorCount: results.filter((r) => r.status === "error").length,
-      skippedCount: results.filter((r) => r.status === "skipped").length
-    };
-  }
-
-  // =================================================================
-  // 10. PULL WORKFLOW - Not supported (push-only)
+  // 9. PULL WORKFLOW - Not supported (push-only)
   // =================================================================
 
   async pullFromAccounting(remoteId: string): Promise<SyncResult> {

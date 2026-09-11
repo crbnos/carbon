@@ -1,4 +1,10 @@
+import { createHash } from "node:crypto";
 import type { KyselyTx } from "@carbon/database/client";
+import {
+  type CardChargeSource,
+  loadCardChargeSources
+} from "../../../core/card-charge-source";
+import { ChargeSyncerBase } from "../../../core/charge-syncer";
 import {
   buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
@@ -15,13 +21,12 @@ import {
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import {
-  type CardTransactionType,
   CHARGE_CREDIT_PROVIDERS,
   JournalEntrySyncError,
   type PostingSyncSettings,
   resolvePostingSyncSettings
 } from "../../../core/posting";
-import { BaseEntitySyncer, type ShouldSyncContext } from "../../../core/types";
+import type { ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   QBO_DIMENSION_TARGET_CLASS,
@@ -73,20 +78,7 @@ import {
  * the Rillet charge syncer reads, named per provider because the provider
  * barrels are re-exported side by side (`export *` would collide).
  */
-export type QboCardCharge = {
-  id: string;
-  companyId: string;
-  /** Readable id (`CARD-…`). */
-  cardTransactionId: string;
-  type: CardTransactionType;
-  status: "Draft" | "Posted" | "Voided";
-  supplierId: string | null;
-  /** The supplier's QBO Vendor id, when already mapped. */
-  supplierExternalId: string | null;
-  merchantName: string | null;
-  memo: string | null;
-  updatedAt: string | null;
-};
+export type QboCardCharge = CardChargeSource;
 
 /** Costing lines are the shared shape; aliased so the mapper's tests read against a stable name. */
 export type QboChargeCostingLine = CostingLine;
@@ -247,11 +239,12 @@ export function mapCardTransactionToQboPurchase(args: {
   };
 }
 
-export class QboChargeSyncer extends BaseEntitySyncer<
+export class QboChargeSyncer extends ChargeSyncerBase<
   QboCardCharge,
   Qbo.Purchase,
   QboWriteOmit
 > {
+  protected readonly updateMappedCharges = true;
   // Per-instance caches — a drain reuses one syncer across its claimed
   // operations, so settings, account refs and the dimension-value lookup are
   // each fetched at most once per drain
@@ -419,6 +412,10 @@ export class QboChargeSyncer extends BaseEntitySyncer<
   // 3. LOCAL FETCH (Single + Batch)
   // =================================================================
 
+  protected async deleteRemote(remoteId: string): Promise<void> {
+    await this.qboProvider.deletePurchase(remoteId);
+  }
+
   async fetchLocal(id: string): Promise<QboCardCharge | null> {
     const charges = await this.fetchChargesByIds([id]);
     return charges.get(id) ?? null;
@@ -433,65 +430,11 @@ export class QboChargeSyncer extends BaseEntitySyncer<
   private async fetchChargesByIds(
     ids: string[]
   ): Promise<Map<string, QboCardCharge>> {
-    const result = new Map<string, QboCardCharge>();
-    if (ids.length === 0) return result;
-
-    const rows = await this.database
-      .selectFrom("cardTransaction")
-      .select([
-        "id",
-        "companyId",
-        "cardTransactionId",
-        "type",
-        "status",
-        "supplierId",
-        "merchantName",
-        "memo",
-        "updatedAt"
-      ])
-      .where("cardTransaction.id", "in", ids)
-      .where("cardTransaction.companyId", "=", this.companyId)
-      .execute();
-
-    // Supplier external IDs (entityType "vendor" — what the vendor syncer
-    // stores)
-    const supplierIds = [
-      ...new Set(
-        rows
-          .map((row) => row.supplierId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    const supplierExternalIds = new Map<string, string | null>();
-    const mappingService = createMappingService(this.database, this.companyId);
-    for (const supplierId of supplierIds) {
-      supplierExternalIds.set(
-        supplierId,
-        await mappingService.getExternalId(
-          "vendor",
-          supplierId,
-          this.provider.id
-        )
-      );
-    }
-
-    for (const row of rows) {
-      result.set(row.id, {
-        id: row.id,
-        companyId: row.companyId,
-        cardTransactionId: row.cardTransactionId,
-        type: row.type as CardTransactionType,
-        status: row.status as QboCardCharge["status"],
-        supplierId: row.supplierId ?? null,
-        supplierExternalId: row.supplierId
-          ? (supplierExternalIds.get(row.supplierId) ?? null)
-          : null,
-        merchantName: row.merchantName ?? null,
-        memo: row.memo ?? null,
-        updatedAt: row.updatedAt ? String(row.updatedAt) : null
-      });
-    }
-    return result;
+    return loadCardChargeSources(this.database, {
+      ids,
+      companyId: this.companyId,
+      integration: this.provider.id
+    });
   }
 
   // =================================================================
@@ -527,21 +470,6 @@ export class QboChargeSyncer extends BaseEntitySyncer<
     }
     const local = context.localEntity;
     if (!local) return true;
-    if (local.status === "Voided") {
-      // TODO(charge-void): propagate the void as QBO's native delete —
-      // `POST /purchase?operation=delete` with `{ Id, SyncToken }` (add a
-      // `deletePurchase(id, syncToken)` to QboProvider over `request`; the
-      // SyncToken comes from `getPurchase`). Then mirror
-      // RilletTransactionSyncer.pushToAccounting: when a mapping exists and
-      // `metadata.voided !== true`, delete the remote Purchase, re-link the
-      // mapping with `metadata.voided = true`, and return
-      // `{ status: "success", action: "deleted" }`; an unmapped void stays a
-      // skip. Until then a mapped void is a truthful Skipped, not a
-      // phantom success.
-      return context.isFirstSync
-        ? "Card transaction was voided before it synced to QuickBooks Online — nothing to push"
-        : "Voided card transaction is not yet propagated to QuickBooks Online — delete the Purchase there manually";
-    }
     if (local.status !== "Posted") {
       return `Card transaction must be posted before syncing (current status: ${local.status})`;
     }
@@ -646,12 +574,28 @@ export class QboChargeSyncer extends BaseEntitySyncer<
 
   protected async upsertRemote(
     data: QboCreatePayload<Qbo.Purchase>,
-    localId: string
+    localId: string,
+    knownRemoteId?: string | null
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    const existingRemoteId =
+      knownRemoteId === undefined
+        ? await this.getRemoteId(localId)
+        : knownRemoteId;
 
     if (!existingRemoteId) {
-      const created = await this.qboProvider.createPurchase(data);
+      // Intuit replays a write's original response for the same requestid.
+      // https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
+      const created = await this.qboProvider.createPurchase(
+        data,
+        createHash("sha256")
+          .update(`${this.companyId}:charge:${localId}`)
+          .digest("hex")
+          .slice(0, 40)
+      );
+      if (!created?.Id)
+        throw new Error(
+          "QuickBooks did not return a Purchase Id for this card charge"
+        );
       this.rememberRemoteEntity(created);
       return created.Id;
     }

@@ -13,6 +13,7 @@ import type { Database } from "@carbon/database";
 import {
   type CardTransactionPolicyInput,
   CHARGE_CREDIT_PROVIDERS,
+  CHARGE_NATIVE_VOID_PROVIDERS,
   PAYMENT_PUSH_PROVIDERS,
   type PostingSyncSettings,
   type ProviderID,
@@ -396,7 +397,10 @@ export async function reconcileEntities(args: {
             }
           : {}),
         context: {
-          providerSupportsNativeVoid: args.providerId === "rillet",
+          providerSupportsNativeVoid:
+            entityType === "charge"
+              ? CHARGE_NATIVE_VOID_PROVIDERS.has(args.providerId)
+              : args.providerId === "rillet",
           journalEntryPushEnabled,
           entityPushEnabled,
           providerSupportsPaymentPush: PAYMENT_PUSH_PROVIDERS.has(

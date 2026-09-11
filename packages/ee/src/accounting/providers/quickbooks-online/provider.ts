@@ -598,11 +598,12 @@ export class QboProvider extends BaseProvider {
     resource: string,
     envelopeKey: string,
     operation: string,
-    payload: unknown
+    payload: unknown,
+    requestId?: string
   ): Promise<T> {
     const response = await this.request<Record<string, T>>(
       "POST",
-      `/${resource}`,
+      `/${resource}${requestId ? `?requestid=${encodeURIComponent(requestId)}` : ""}`,
       { body: JSON.stringify(payload) }
     );
 
@@ -774,14 +775,43 @@ export class QboProvider extends BaseProvider {
    * live QBO company.
    */
   async createPurchase(
-    purchase: QboCreatePayload<Qbo.Purchase>
+    purchase: QboCreatePayload<Qbo.Purchase>,
+    requestId?: string
   ): Promise<Qbo.Purchase> {
     return this.writeEntity(
       "purchase",
       "Purchase",
       "create purchase",
-      purchase
+      purchase,
+      requestId
     );
+  }
+
+  /** Intuit's Purchase-Delete contract uses POST with Id + current SyncToken.
+   * https://www.postman.com/intuit-developer/intuit-developer-quickbooks-online-accounting-api/request/4884662-823fd98f-4f9c-4f4e-9c9b-8667c474a851
+   * Do not use forgiving getPurchase here: a failed read is not proof of deletion. */
+  async deletePurchase(id: string): Promise<void> {
+    const current = await this.request<{
+      Purchase: Qbo.Purchase & { status?: string };
+    }>("GET", `/purchase/${encodeURIComponent(id)}`);
+    if (current.error) throwQboApiError("read purchase before delete", current);
+    const purchase = current.data?.Purchase;
+    if (purchase?.Id === id && purchase.status === "Deleted") return;
+    if (purchase?.Id !== id || !purchase.SyncToken)
+      throw new Error(
+        "QuickBooks purchase read returned no current SyncToken; deletion was not attempted"
+      );
+    const deleted = await this.request<{
+      Purchase: { Id: string; status?: string };
+    }>("POST", "/purchase?operation=delete", {
+      body: JSON.stringify({ Id: id, SyncToken: purchase.SyncToken })
+    });
+    if (deleted.error) throwQboApiError("delete purchase", deleted);
+    if (
+      deleted.data?.Purchase?.Id !== id ||
+      deleted.data.Purchase.status !== "Deleted"
+    )
+      throw new Error("QuickBooks did not confirm the purchase was deleted");
   }
 
   async updatePurchase(

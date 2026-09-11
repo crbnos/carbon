@@ -732,6 +732,50 @@ describe("golden: master data", () => {
 });
 
 describe("Rillet mapped void reconciliation", () => {
+  it("parks an attempted but unmapped charge void for explicit remote verification", () => {
+    const source = input({
+      entityType: "charge",
+      snapshot: { status: "Voided" },
+      hasUnvoidedPushMapping: false,
+      context: { ...baseContext, providerSupportsNativeVoid: true },
+      latestOperation: {
+        id: "ambiguous-create",
+        status: "Failed",
+        errorCode: "API_ERROR",
+        attemptCount: 1,
+        createdAt: "2026-09-09T10:00:00Z"
+      }
+    });
+    expect(computeReconcileDecision(source).actions).toEqual([
+      {
+        kind: "record-terminal",
+        request: expect.objectContaining({
+          entityType: "charge",
+          status: "Warning",
+          errorCode: "UNCONFIRMED_REMOTE_VOID"
+        })
+      }
+    ]);
+    expect(
+      kinds(
+        computeReconcileDecision({
+          ...source,
+          latestOperation: {
+            ...source.latestOperation!,
+            status: "Warning",
+            errorCode: "UNCONFIRMED_REMOTE_VOID"
+          }
+        })
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(computeReconcileDecision({ ...source, latestOperation: null }))
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(computeReconcileDecision({ ...source, hasLiveOperation: true }))
+    ).toEqual(["nothing"]);
+  });
+
   it.each([
     "invoice",
     "bill",

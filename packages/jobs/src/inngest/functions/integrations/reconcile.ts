@@ -122,7 +122,7 @@ export type ReconcileContext = {
   entityPushEnabled: boolean;
   /** Rillet true — the only provider with outbound payment push. */
   providerSupportsPaymentPush: boolean;
-  /** Rillet supports native invoice, bill, and Carbon-origin payment deletion. */
+  /** Rillet supports native document/payment deletion; Xero/QBO support charge deletion. */
   providerSupportsNativeVoid?: boolean;
   /** Inputs the journal policy core needs (planJournalPostingFromState). */
   settings: PostingSyncSettings;
@@ -263,15 +263,42 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
  * 4. Otherwise nothing — parked dispositions belong to humans/policy.
  */
 function reconcileNativeVoid(input: ReconcileEntityInput): ReconcileDecision {
-  if (
-    !input.context.providerSupportsNativeVoid ||
-    !input.hasUnvoidedPushMapping
-  ) {
+  if (!input.context.providerSupportsNativeVoid) {
     return nothing("no active native push mapping to void");
   }
   if (input.hasLiveOperation)
     return nothing("a live operation covers the void");
   const latest = input.latestOperation;
+  if (!input.hasUnvoidedPushMapping) {
+    // A create may have reached the provider before its response or mapping
+    // persisted. Do not silently lose that remote GL effect when Carbon voids
+    // before a retry can recover the create identity. Never create just to void.
+    if (
+      input.entityType === "charge" &&
+      !input.hasMappingWithExternalId &&
+      latest &&
+      ["Failed", "Warning", "Completed"].includes(latest.status) &&
+      latest.errorCode !== "UNCONFIRMED_REMOTE_VOID"
+    ) {
+      return {
+        actions: [
+          {
+            kind: "record-terminal",
+            request: {
+              entityType: input.entityType,
+              entityId: input.entityId,
+              direction: "push-to-accounting",
+              status: "Warning",
+              errorCode: "UNCONFIRMED_REMOTE_VOID",
+              errorMessage:
+                "A card charge was voided after a sync attempt without a durable remote identity. Verify and remove any provider transaction before resolving this warning."
+            }
+          }
+        ]
+      };
+    }
+    return nothing("no active native push mapping to void");
+  }
   if (latest?.status === "Failed" || latest?.status === "Warning") {
     // A document can reach the provider before its payment void drains. Retry
     // that transient ordering failure through the bounded ledger lifecycle.
