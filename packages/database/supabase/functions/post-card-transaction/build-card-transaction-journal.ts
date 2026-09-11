@@ -1,6 +1,6 @@
 // Pure construction of the GL journal for posting a card transaction (Ramp and
 // other card integrations). No DB, no I/O, no clock — so it is unit-testable
-// with `deno test`. The driver (`index.ts`) resolves the account classes,
+// with `deno test`. The posting transaction resolves the account classes,
 // accounting period, journalLineReference and cost-center dimensions (all
 // impure), then hands the shaped inputs here to compute the balanced
 // double-entry. Keeping this pure is what lets the golden-master tests pin the
@@ -93,9 +93,10 @@ export interface BuildCardTransactionJournalResult {
 const BALANCE_TOLERANCE = 0.01;
 
 export function buildCardTransactionJournal(
-  input: BuildCardTransactionJournalInput
+  input: BuildCardTransactionJournalInput,
 ): BuildCardTransactionJournalResult {
-  const { transaction, lines, accounts, documentId, documentReadableId } = input;
+  const { transaction, lines, accounts, documentId, documentReadableId } =
+    input;
   const { type, amount, cardAccountId, offsetAccountId, exchangeRate } =
     transaction;
 
@@ -115,7 +116,7 @@ export function buildCardTransactionJournal(
     const account = accounts[accountId];
     if (!account) {
       throw new Error(
-        `Card transaction ${documentReadableId}: missing account class for ${accountId}`
+        `Card transaction ${documentReadableId}: missing account class for ${accountId}`,
       );
     }
     return account.class.toLowerCase() as AccountType;
@@ -133,15 +134,14 @@ export function buildCardTransactionJournal(
       accountId: string;
       description: string;
       costCenterId?: string | null;
-    }
+    },
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
     journalLines.push({
       accountId: fields.accountId,
-      amount:
-        side === "debit"
-          ? debit(accountType, magnitude)
-          : credit(accountType, magnitude),
+      amount: side === "debit"
+        ? debit(accountType, magnitude)
+        : credit(accountType, magnitude),
       description: fields.description,
       documentType: "Card Transaction",
       documentId,
@@ -154,13 +154,13 @@ export function buildCardTransactionJournal(
   const requireLineSum = () => {
     if (lines.length === 0) {
       throw new Error(
-        `Card transaction ${documentReadableId}: ${type} requires at least one line`
+        `Card transaction ${documentReadableId}: ${type} requires at least one line`,
       );
     }
     const lineSum = lines.reduce((sum, l) => sum + l.amount, 0);
     if (Math.abs(lineSum - amount) > EPSILON) {
       throw new Error(
-        `Card transaction ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`
+        `Card transaction ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`,
       );
     }
   };
@@ -168,7 +168,7 @@ export function buildCardTransactionJournal(
   const requireOffset = (): string => {
     if (!offsetAccountId) {
       throw new Error(
-        `Card transaction ${documentReadableId}: ${type} requires an offset account`
+        `Card transaction ${documentReadableId}: ${type} requires an offset account`,
       );
     }
     return offsetAccountId;
@@ -270,7 +270,7 @@ export function buildCardTransactionJournal(
     default: {
       // Exhaustiveness guard — a new cardTransactionType must add a branch here.
       throw new Error(
-        `Card transaction ${documentReadableId}: unsupported type ${type as string}`
+        `Card transaction ${documentReadableId}: unsupported type ${type as string}`,
       );
     }
   }
@@ -283,7 +283,12 @@ export function buildCardTransactionJournal(
   // `requireLineSum` (the subledger must equal the header). This assert exists so
   // a future edit that breaks the matched-legs invariant fails loudly here rather
   // than writing an unbalanced journal to the GL.
-  assertBalanced(signedDebitTotal, 0, BALANCE_TOLERANCE, "Card transaction journal");
+  assertBalanced(
+    signedDebitTotal,
+    0,
+    BALANCE_TOLERANCE,
+    "Card transaction journal",
+  );
 
   return { journalLines };
 }

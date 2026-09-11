@@ -1,4 +1,5 @@
 import {
+  assert,
   assertEquals,
   assertRejects,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
@@ -8,6 +9,106 @@ import {
   databaseTest,
 } from "./post-card-transaction-test-fixture.ts";
 import { postCardTransactionTransaction } from "./post-card-transaction-transaction.ts";
+
+databaseTest(
+  "an edit started after posting's parent lock waits and then refuses",
+  async () => {
+    const f = await cardTransactionFixture();
+    const poster = await f.connect();
+    const writer = await f.connect();
+    const posterPid =
+      (await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        poster,
+      )).rows[0]!.pid;
+    const writerPid =
+      (await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        writer,
+      )).rows[0]!.pid;
+    const headerLocked = Promise.withResolvers<void>();
+    const resumePosting = Promise.withResolvers<void>();
+    let paused = false;
+    const postingDb = poster.withPlugin({
+      transformQuery: ({ node }) => node,
+      async transformResult({ result }) {
+        if (
+          !paused &&
+          result.rows.some((row) =>
+            row.id === f.cardTransactionId && row.status === "Draft"
+          )
+        ) {
+          paused = true;
+          headerLocked.resolve();
+          await resumePosting.promise;
+        }
+        return result;
+      },
+    });
+    let posting:
+      | Promise<PromiseSettledResult<{ journalId: string | null }>>
+      | undefined;
+    let edit: Promise<PromiseSettledResult<unknown>> | undefined;
+    try {
+      await sql`SET statement_timeout = '5s'`.execute(poster);
+      await sql`SET statement_timeout = '5s'`.execute(writer);
+      posting = postCardTransactionTransaction(postingDb, f.args).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason) => ({ status: "rejected" as const, reason }),
+      );
+      await Promise.race([
+        headerLocked.promise,
+        posting.then((result) => {
+          if (result.status === "rejected") throw result.reason;
+          throw new Error(
+            "Posting completed without acquiring the header lock",
+          );
+        }),
+      ]);
+      edit = writer.updateTable("cardTransactionLine").set({
+        description: "Too late",
+      })
+        .where("id", "=", f.lineId).where("companyId", "=", f.companyId)
+        .execute().then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason }),
+        );
+      // Observe the actual lock wait before allowing posting to read its lines.
+      let blocked = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const observed = await sql<
+          { blocked: boolean }
+        >`SELECT ${posterPid} = ANY(pg_blocking_pids(${writerPid})) AS blocked`
+          .execute(f.db);
+        if (observed.rows[0]?.blocked) {
+          blocked = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      assert(
+        blocked,
+        "The edit must reach the parent lock before posting resumes",
+      );
+      resumePosting.resolve();
+      const result = await posting;
+      assertEquals(result.status, "fulfilled");
+      const mutation = await edit;
+      assertEquals(mutation.status, "rejected");
+      if (mutation.status === "rejected") {
+        assert(
+          String(mutation.reason).includes("immutable"),
+          String(mutation.reason),
+        );
+      }
+    } finally {
+      resumePosting.resolve();
+      await posting;
+      await edit;
+      await writer.destroy();
+      await poster.destroy();
+      await f.cleanup();
+    }
+  },
+);
 
 databaseTest("concurrent posting retries create one journal", async () => {
   const f = await cardTransactionFixture();

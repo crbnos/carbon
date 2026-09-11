@@ -11,6 +11,69 @@ import {
 import { postCardTransactionTransaction } from "./post-card-transaction-transaction.ts";
 
 databaseTest(
+  "posting creates a missing month from the stored transaction date",
+  async () => {
+    const f = await cardTransactionFixture();
+    try {
+      await f.db.deleteFrom("accountingPeriod").where(
+        "companyId",
+        "=",
+        f.companyId,
+      ).execute();
+      const result = await postCardTransactionTransaction(f.db, f.args);
+      assertExists(result.journalId);
+      const period = await f.db.selectFrom("accountingPeriod").select([
+        sql<string>`"startDate"::text`.as("startDate"),
+        sql<string>`"endDate"::text`.as("endDate"),
+      ]).where("companyId", "=", f.companyId).executeTakeFirstOrThrow();
+      assertEquals(period, { startDate: "2026-09-01", endDate: "2026-09-30" });
+    } finally {
+      await f.cleanup();
+    }
+  },
+);
+
+databaseTest(
+  "posting shifts a locked month to the next open period",
+  async () => {
+    const f = await cardTransactionFixture();
+    try {
+      await f.db.updateTable("accountingPeriod").set({
+        startDate: "2026-09-01",
+        endDate: "2026-09-30",
+        closeStatus: "Locked",
+      }).where("companyId", "=", f.companyId).execute();
+      const nextPeriod = await f.db.insertInto("accountingPeriod").values({
+        companyId: f.companyId,
+        startDate: "2026-10-01",
+        endDate: "2026-10-31",
+        fiscalYear: 2026,
+        periodNumber: 10,
+        closeStatus: "Open",
+        status: "Inactive",
+        createdBy: "system",
+      }).returning("id").executeTakeFirstOrThrow();
+      const result = await postCardTransactionTransaction(f.db, f.args);
+      assertExists(result.journalId);
+      const journal = await f.db.selectFrom("journal").select([
+        "accountingPeriodId",
+        sql<string>`"postingDate"::text`.as("postingDate"),
+      ]).where("id", "=", result.journalId).executeTakeFirstOrThrow();
+      assertEquals(journal, {
+        accountingPeriodId: nextPeriod.id,
+        postingDate: "2026-10-01",
+      });
+      const header = await f.db.selectFrom("cardTransaction").select(
+        sql<string>`"postingDate"::text`.as("postingDate"),
+      ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow();
+      assertEquals(header.postingDate, journal.postingDate);
+    } finally {
+      await f.cleanup();
+    }
+  },
+);
+
+databaseTest(
   "posting is atomic, dimension-complete, and idempotent",
   async () => {
     const f = await cardTransactionFixture();
@@ -96,28 +159,37 @@ databaseTest(
   "a failure after journal creation rolls the entire post back",
   async () => {
     const f = await cardTransactionFixture();
-    const triggerName = "test_fail_card_transaction_post_update";
-    const functionName = "test_fail_card_transaction_post_update";
+    let unrelated:
+      | Awaited<ReturnType<typeof cardTransactionFixture>>
+      | undefined;
+    const triggerName = `test_fail_post_${f.lineId.replaceAll("-", "_")}`;
+    const functionName = triggerName;
     try {
-      await sql.raw(`
-      CREATE OR REPLACE FUNCTION public.${functionName}()
+      unrelated = await cardTransactionFixture();
+      await sql`
+      CREATE FUNCTION ${sql.id("public", functionName)}()
       RETURNS trigger
       LANGUAGE plpgsql
       AS $function$
       BEGIN
-        IF NEW.status = 'Posted' THEN
+        IF NEW.status = 'Posted'
+           AND NEW."companyId" = TG_ARGV[0]
+           AND NEW.id = TG_ARGV[1] THEN
           RAISE EXCEPTION 'forced mid-transaction failure';
         END IF;
         RETURN NEW;
       END;
       $function$;
-      DROP TRIGGER IF EXISTS ${triggerName} ON public."cardTransaction";
-      CREATE TRIGGER ${triggerName}
+      CREATE TRIGGER ${sql.id(triggerName)}
         BEFORE UPDATE ON public."cardTransaction"
         FOR EACH ROW
-        EXECUTE FUNCTION public.${functionName}();
-    `).execute(f.db);
+        EXECUTE FUNCTION ${sql.id("public", functionName)}(${
+        sql.lit(f.companyId)
+      }, ${sql.lit(f.cardTransactionId)});
+    `.execute(f.db);
 
+      // Failure injection must never affect other companies sharing this DB.
+      await postCardTransactionTransaction(unrelated.db, unrelated.args);
       await assertRejects(
         () => postCardTransactionTransaction(f.db, f.args),
         Error,
@@ -149,11 +221,20 @@ databaseTest(
         [],
       );
     } finally {
-      await sql.raw(`
-      DROP TRIGGER IF EXISTS ${triggerName} ON public."cardTransaction";
-      DROP FUNCTION IF EXISTS public.${functionName}();
-    `).execute(f.db);
-      await f.cleanup();
+      try {
+        await sql`
+          DROP TRIGGER IF EXISTS ${
+          sql.id(triggerName)
+        } ON public."cardTransaction";
+          DROP FUNCTION IF EXISTS ${sql.id("public", functionName)}();
+        `.execute(f.db);
+      } finally {
+        try {
+          await unrelated?.cleanup();
+        } finally {
+          await f.cleanup();
+        }
+      }
     }
   },
 );

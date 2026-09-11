@@ -1,4 +1,4 @@
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import type { DB } from "../lib/database.ts";
 import { datetime } from "../lib/datetime.ts";
 import { postCardTransaction } from "./post-card-transaction-post.ts";
@@ -19,7 +19,21 @@ export function postCardTransactionTransaction(
   return db.transaction().execute(async (trx) => {
     // This is deliberately the first database read. The line mutation trigger
     // takes the same parent lock, so every snapshot below is stable.
-    const cardTransaction = await trx.selectFrom("cardTransaction").selectAll()
+    const cardTransaction = await trx.selectFrom("cardTransaction")
+      .select([
+        "id",
+        "cardTransactionId",
+        "type",
+        "status",
+        "amount",
+        "cardAccountId",
+        "offsetAccountId",
+        "currencyCode",
+        "exchangeRate",
+        "journalId",
+        sql<string>`"transactionDate"::text`.as("transactionDate"),
+        sql<string | null>`"postingDate"::text`.as("postingDate"),
+      ])
       .where("id", "=", cardTransactionId)
       .where("companyId", "=", companyId)
       .forUpdate()

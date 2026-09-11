@@ -1,8 +1,6 @@
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import {
-  type CardTransactionContext,
-  resolveCardTransactionPeriod,
-} from "./post-card-transaction-post.ts";
+import type { CardTransactionContext } from "./post-card-transaction-post.ts";
+import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
 
 export async function voidCardTransaction(
   context: CardTransactionContext,
@@ -53,7 +51,7 @@ export async function voidCardTransaction(
     ) {
       throw new Error("Original card transaction journal has invalid lines");
     }
-    const period = await resolveCardTransactionPeriod(
+    const period = await resolveAccountingPeriod(
       trx,
       companyId,
       today,

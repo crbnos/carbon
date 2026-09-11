@@ -1,8 +1,8 @@
-import { parseDate } from "@internationalized/date";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import type { Selectable, Transaction } from "kysely";
 import type { DB } from "../lib/database.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
 import {
   buildCardTransactionJournal,
   type GLAccountClass,
@@ -10,7 +10,21 @@ import {
 
 export type CardTransactionContext = {
   trx: Transaction<DB>;
-  cardTransaction: Selectable<DB["cardTransaction"]>;
+  cardTransaction: Pick<
+    Selectable<DB["cardTransaction"]>,
+    | "id"
+    | "cardTransactionId"
+    | "type"
+    | "status"
+    | "amount"
+    | "cardAccountId"
+    | "offsetAccountId"
+    | "currencyCode"
+    | "exchangeRate"
+    | "transactionDate"
+    | "postingDate"
+    | "journalId"
+  >;
   company: Pick<
     Selectable<DB["company"]>,
     "companyGroupId" | "baseCurrencyCode" | "timezone"
@@ -21,179 +35,6 @@ export type CardTransactionContext = {
   timestamp: string;
   today: string;
 };
-
-const MONTH_NUMBER: Record<string, number> = {
-  January: 1,
-  February: 2,
-  March: 3,
-  April: 4,
-  May: 5,
-  June: 6,
-  July: 7,
-  August: 8,
-  September: 9,
-  October: 10,
-  November: 11,
-  December: 12,
-};
-
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
-
-function monthEnd(year: number, month: number): number {
-  const days = [
-    31,
-    isLeapYear(year) ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31,
-  ][month - 1];
-  if (!days) throw new Error("Invalid accounting period month");
-  return days;
-}
-
-function fiscalCoordinates(
-  year: number,
-  month: number,
-  startMonth: number,
-): { fiscalYear: number; periodNumber: number } {
-  return {
-    fiscalYear: startMonth === 1 || month < startMonth ? year : year + 1,
-    periodNumber: ((month - startMonth + 12) % 12) + 1,
-  };
-}
-
-type PeriodMode = "historical-with-shift" | "current";
-
-/** Resolve and lock the period used by the journal without leaving the transaction. */
-export async function resolveCardTransactionPeriod(
-  trx: Transaction<DB>,
-  companyId: string,
-  requestedDate: string,
-  mode: PeriodMode,
-): Promise<{ id: string; postingDate: string }> {
-  let period = await trx.selectFrom("accountingPeriod").select([
-    "id",
-    "startDate",
-    "status",
-    "closeStatus",
-    "closedAt",
-  ]).where("companyId", "=", companyId)
-    .where("startDate", "<=", requestedDate)
-    .where("endDate", ">=", requestedDate)
-    .orderBy("startDate")
-    .orderBy("id")
-    .forUpdate()
-    .executeTakeFirst();
-
-  const isClosed = period &&
-    (period.closeStatus === "Locked" || period.closeStatus === "Closed" ||
-      period.closedAt !== null);
-  if (isClosed && mode === "historical-with-shift") {
-    period = await trx.selectFrom("accountingPeriod").select([
-      "id",
-      "startDate",
-      "status",
-      "closeStatus",
-      "closedAt",
-    ]).where("companyId", "=", companyId)
-      .where("startDate", ">", requestedDate)
-      .where("closeStatus", "=", "Open")
-      .where("closedAt", "is", null)
-      .orderBy("startDate")
-      .orderBy("id")
-      .forUpdate()
-      .executeTakeFirst();
-    if (!period) {
-      throw new Error("Card transaction accounting period is locked or closed");
-    }
-  } else if (isClosed) {
-    throw new Error("Card transaction accounting period is locked or closed");
-  }
-
-  if (!period) {
-    const date = parseDate(requestedDate);
-    const fiscalSettings = await trx.selectFrom("fiscalYearSettings").select(
-      "startMonth",
-    ).where("companyId", "=", companyId).executeTakeFirst();
-    const startMonth = fiscalSettings?.startMonth
-      ? (MONTH_NUMBER[fiscalSettings.startMonth] ?? 1)
-      : 1;
-    const { fiscalYear, periodNumber } = fiscalCoordinates(
-      date.year,
-      date.month,
-      startMonth,
-    );
-    const startDate = `${date.year}-${String(date.month).padStart(2, "0")}-01`;
-    const endDate = `${date.year}-${String(date.month).padStart(2, "0")}-${
-      String(monthEnd(date.year, date.month)).padStart(2, "0")
-    }`;
-    if (mode === "current") {
-      await trx.updateTable("accountingPeriod").set({ status: "Inactive" })
-        .where("companyId", "=", companyId)
-        .where("status", "=", "Active")
-        .execute();
-    }
-    const inserted = await trx.insertInto("accountingPeriod").values({
-      startDate,
-      endDate,
-      fiscalYear,
-      periodNumber,
-      status: mode === "current" ? "Active" : "Inactive",
-      closeStatus: "Open",
-      companyId,
-      createdBy: "system",
-    }).onConflict((oc) =>
-      oc.columns(["companyId", "fiscalYear", "periodNumber"]).doNothing()
-    ).returning(["id", "startDate", "status", "closeStatus", "closedAt"])
-      .executeTakeFirst();
-    period = inserted ?? await trx.selectFrom("accountingPeriod").select([
-      "id",
-      "startDate",
-      "status",
-      "closeStatus",
-      "closedAt",
-    ]).where("companyId", "=", companyId)
-      .where("fiscalYear", "=", fiscalYear)
-      .where("periodNumber", "=", periodNumber)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!period) throw new Error("Failed to create card transaction period");
-    if (
-      period.closeStatus === "Locked" || period.closeStatus === "Closed" ||
-      period.closedAt !== null
-    ) {
-      throw new Error("Card transaction accounting period is locked or closed");
-    }
-  }
-
-  if (mode === "current" && period.status !== "Active") {
-    await trx.updateTable("accountingPeriod").set({ status: "Inactive" })
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Active")
-      .execute();
-    await trx.updateTable("accountingPeriod").set({ status: "Active" })
-      .where("id", "=", period.id)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-
-  return {
-    id: period.id,
-    postingDate:
-      mode === "historical-with-shift" && period.startDate > requestedDate
-        ? period.startDate
-        : requestedDate,
-  };
-}
 
 function isAccountClass(value: string | null): value is GLAccountClass {
   return value === "Asset" || value === "Liability" || value === "Equity" ||
@@ -212,12 +53,13 @@ export async function postCardTransaction(
     userId,
     timestamp,
   } = context;
+  // The parent lock serializes line writes. Locking line tuples too would
+  // deadlock with an UPDATE whose BEFORE trigger is waiting for that parent.
   const lines = await trx.selectFrom("cardTransactionLine").selectAll()
     .where("cardTransactionId", "=", cardTransaction.id)
     .where("companyId", "=", companyId)
     .orderBy("sequence")
     .orderBy("id")
-    .forUpdate()
     .execute();
   const accountIds = [
     ...new Set([
@@ -288,7 +130,7 @@ export async function postCardTransaction(
     cardTransaction.transactionDate;
   let journalId: string | null = null;
   if (accountingEnabled) {
-    const period = await resolveCardTransactionPeriod(
+    const period = await resolveAccountingPeriod(
       trx,
       companyId,
       postingDate,

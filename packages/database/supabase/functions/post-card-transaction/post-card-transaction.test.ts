@@ -25,26 +25,27 @@ const ACCOUNTS: Record<string, { class: GLAccountClass }> = {
 
 const line = <T extends { accountId: string }>(
   lines: T[],
-  accountId: string
+  accountId: string,
 ) => lines.find((l) => l.accountId === accountId);
 
 // A journal balances in debit/credit space when the natural-signed amounts,
 // re-projected to debit(+)/credit(−) by account class, sum to ~0. Simpler here:
 // re-derive from the known account classes.
 const debitCreditBalance = (
-  lines: { accountId: string; amount: number }[]
+  lines: { accountId: string; amount: number }[],
 ) =>
   lines.reduce((sum, l) => {
     const cls = ACCOUNTS[l.accountId].class;
     // Asset/Expense: stored amount already equals its debit-signed value.
     // Liability/Equity/Revenue: stored amount is the negation of debit-signed.
-    const debitSigned =
-      cls === "Asset" || cls === "Expense" ? l.amount : -l.amount;
+    const debitSigned = cls === "Asset" || cls === "Expense"
+      ? l.amount
+      : -l.amount;
     return sum + debitSigned;
   }, 0);
 
 const base = (
-  over: Partial<BuildCardTransactionJournalInput> = {}
+  over: Partial<BuildCardTransactionJournalInput> = {},
 ): BuildCardTransactionJournalInput => ({
   transaction: {
     type: "Charge",
@@ -80,7 +81,7 @@ Deno.test("Charge with two split lines: DR each expense / CR card liability", ()
         { accountId: "exp1", amount: 60, costCenterId: "cc_1" },
         { accountId: "exp2", amount: 40 },
       ],
-    })
+    }),
   );
 
   assertEquals(journalLines.length, 3);
@@ -110,7 +111,7 @@ Deno.test("Credit: CR expense line / DR card liability", () => {
         exchangeRate: 1,
       },
       lines: [{ accountId: "exp1", amount: 100 }],
-    })
+    }),
   );
 
   assertEquals(journalLines.length, 2);
@@ -134,7 +135,7 @@ Deno.test("Payment: DR card liability / CR bank asset", () => {
         currencyCode: "USD",
         exchangeRate: 1,
       },
-    })
+    }),
   );
 
   assertEquals(journalLines.length, 2);
@@ -158,7 +159,7 @@ Deno.test("Cashback: DR card liability / CR revenue", () => {
         currencyCode: "USD",
         exchangeRate: 1,
       },
-    })
+    }),
   );
 
   assertEquals(journalLines.length, 2);
@@ -183,7 +184,7 @@ Deno.test("Repayment: DR bank offset / CR card liability line", () => {
         exchangeRate: 1,
       },
       lines: [{ accountId: "card", amount: 300 }],
-    })
+    }),
   );
 
   assertEquals(journalLines.length, 2);
@@ -213,10 +214,10 @@ Deno.test("throws when the line sum does not equal the header amount", () => {
             { accountId: "exp1", amount: 60 },
             { accountId: "exp2", amount: 30 }, // 90 ≠ 100
           ],
-        })
+        }),
       ),
     Error,
-    "does not equal header amount"
+    "does not equal header amount",
   );
 });
 
@@ -244,7 +245,7 @@ Deno.test("Charge at exchangeRate 2: both the lines AND the card credit convert 
         { accountId: "exp1", amount: 60 },
         { accountId: "exp2", amount: 40 },
       ],
-    })
+    }),
   );
 
   assertEquals(journalLines.length, 3);
@@ -284,7 +285,7 @@ Deno.test("Charge with three rounding lines: card side = Σ rounded lines, balan
         { accountId: "exp3", amount: 0.333334 },
       ],
       accounts,
-    })
+    }),
   );
 
   // Each line rounds to 0.33333 at internal scale; the card credit is their sum
